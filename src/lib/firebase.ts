@@ -19,8 +19,10 @@ import {
     increment,
     arrayUnion,
     writeBatch,
-    getDocsFromServer
+    getDocsFromServer,
+    Timestamp
 } from "firebase/firestore";
+
 
 
 const firebaseConfig = {
@@ -60,7 +62,9 @@ export {
     increment,
     arrayUnion,
     writeBatch,
-    getDocsFromServer
+    getDocsFromServer,
+    Timestamp
 };
+
 
 
