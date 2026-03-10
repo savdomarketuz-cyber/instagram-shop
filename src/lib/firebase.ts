@@ -17,8 +17,11 @@ import {
     getDoc,
     onSnapshot,
     increment,
-    arrayUnion
+    arrayUnion,
+    writeBatch,
+    getDocsFromServer
 } from "firebase/firestore";
+
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -55,6 +58,9 @@ export {
     getDoc,
     onSnapshot,
     increment,
-    arrayUnion
+    arrayUnion,
+    writeBatch,
+    getDocsFromServer
 };
+
 
