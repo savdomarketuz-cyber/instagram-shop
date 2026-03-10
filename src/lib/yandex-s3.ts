@@ -1,0 +1,49 @@
+import { S3_UPLOAD_ENDPOINT } from "./constants";
+
+/**
+ * Upload file to Yandex S3 via server-side API route
+ * Maxfiy kalitlar endi serverda — client-da ko'rinmaydi
+ */
+export async function uploadToYandexS3(file: File | Blob, fileName?: string): Promise<string> {
+    const finalFileName = fileName || (file as File).name || `file_${Date.now()}`;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("fileName", finalFileName);
+
+    const response = await fetch(S3_UPLOAD_ENDPOINT, {
+        method: "POST",
+        body: formData
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Upload failed");
+    }
+
+    const data = await response.json();
+    return data.url;
+}
+
+/**
+ * Downloads an image from an external URL and uploads it to Yandex S3
+ */
+export async function uploadFromUrlToYandexS3(externalUrl: string): Promise<string> {
+    try {
+        // If it's already on our S3, don't re-upload
+        if (externalUrl.includes("yandexcloud.net")) {
+            return externalUrl;
+        }
+
+        const response = await fetch(externalUrl);
+        if (!response.ok) throw new Error(`External image fetch failed: ${response.statusText}`);
+
+        const blob = await response.blob();
+        const fileName = externalUrl.split('/').pop()?.split('?')[0] || 'image.jpg';
+
+        return await uploadToYandexS3(blob, fileName);
+    } catch (error) {
+        console.error("Failed to proxy image to S3:", error);
+        return externalUrl; // Fallback to original URL if proxying fails
+    }
+}
