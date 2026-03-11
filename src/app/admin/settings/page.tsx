@@ -10,8 +10,9 @@ export default function AdminSettings() {
     const [showSuccess, setShowSuccess] = useState(false);
 
     const [shopData, setShopData] = useState({
-        name: "Modern Shop",
+        name: "Velari",
         phone: "+998 90 123 45 67",
+
         instagram: "",
         telegram: "",
     });

@@ -1,7 +1,8 @@
 {
-  "name": "Instagram Shop",
-  "short_name": "InstaShop",
-  "description": "Modern E-commerce Experience",
+  "name": "Velari - Elektronika do'koni",
+  "short_name": "Velari",
+  "description": "Premium elektronika va aksessuarlar",
+
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

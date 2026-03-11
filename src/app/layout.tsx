@@ -1,18 +1,19 @@
 import "./globals.css";
 
 export const metadata = {
-    title: "Modern Shop",
-    description: "Minimalist E-commerce Experience",
+    title: "Velari | Elektronika do'koni",
+    description: "Premium elektronika va aksessuarlar",
     manifest: "/manifest.json",
     appleWebApp: {
         capable: true,
         statusBarStyle: "default",
-        title: "Modern Shop",
+        title: "Velari",
     },
     formatDetection: {
         telephone: false,
     },
 };
+
 
 export const viewport = {
     themeColor: "#000000",
