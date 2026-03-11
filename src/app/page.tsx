@@ -62,8 +62,21 @@ interface Banner {
 export default function Home() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center bg-white">
-                <Loader2 className="animate-spin text-black" size={32} />
+            <div className="min-h-screen bg-white animate-pulse">
+                {/* Header Skeleton */}
+                <div className="h-20 border-b border-gray-100 flex items-center px-10 gap-8">
+                    <div className="w-32 h-8 bg-gray-50 rounded-full" />
+                    <div className="flex-1 max-w-2xl h-12 bg-gray-50 rounded-2xl mx-auto" />
+                    <div className="w-12 h-12 bg-gray-50 rounded-2xl" />
+                </div>
+                {/* Banner Skeleton */}
+                <div className="mt-4 px-4 h-[210px]">
+                    <div className="w-full h-full bg-gray-50 rounded-[32px]" />
+                </div>
+                {/* Filter Skeleton */}
+                <div className="mt-8 px-10 flex gap-3 overflow-hidden">
+                    {[...Array(6)].map((_, i) => <div key={i} className="w-24 h-10 bg-gray-50 rounded-2xl shrink-0" />)}
+                </div>
             </div>
         }>
             <HomeContent />

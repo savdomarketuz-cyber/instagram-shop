@@ -86,8 +86,8 @@ export const BannerSection = ({ banners, bannerSettings, currentBanner, setCurre
                         )}
                     </>
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-300">
-                        <Loader2 className="animate-spin" />
+                    <div className="w-full h-full bg-gray-100 animate-pulse flex items-center justify-center">
+                        <div className="w-1/4 h-8 bg-gray-200/50 rounded-full" />
                     </div>
                 )}
             </div>

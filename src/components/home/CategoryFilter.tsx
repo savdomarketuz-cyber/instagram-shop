@@ -54,6 +54,16 @@ export const CategoryFilter = ({
         }
     };
 
+    if (allCategories.length === 0) {
+        return (
+            <div className="mt-8 px-4 flex gap-3 overflow-x-auto no-scrollbar py-2">
+                {[...Array(6)].map((_, i) => (
+                    <div key={i} className="shrink-0 w-24 h-10 bg-gray-50 animate-pulse rounded-2xl" />
+                ))}
+            </div>
+        );
+    }
+    
     return (
         <div className="mt-8 px-4 flex flex-col gap-3">
             <div className="flex gap-3 overflow-x-auto no-scrollbar py-2">
