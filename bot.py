@@ -33,9 +33,10 @@ def start(message):
     
     bot.send_message(
         message.chat.id, 
-        "Assalomu alaykum! Do'konimizdan ro'yxatdan o'tish uchun quyidagi tugmani bosib telefon raqamingizni yuboring:", 
+        "Assalomu alaykum! Velari do'konimizdan ro'yxatdan o'tish uchun quyidagi tugmani bosib telefon raqamingizni yuboring:", 
         reply_markup=markup
     )
+
 
 @bot.message_handler(content_types=['contact'])
 def contact(message):
