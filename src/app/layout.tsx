@@ -1,8 +1,9 @@
 import "./globals.css";
 
 export const metadata = {
-    title: "Velari | Elektronika do'koni",
-    description: "Premium elektronika va aksessuarlar",
+    title: "Velari | Global Electronics",
+    description: "Premium tech store - Dunyo brendlari bir joyda",
+
     manifest: "/manifest.json",
     appleWebApp: {
         capable: true,
