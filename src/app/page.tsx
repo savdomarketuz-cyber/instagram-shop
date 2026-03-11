@@ -81,7 +81,7 @@ export default function Home() {
     const [loading, setLoading] = useState(cachedProducts.length === 0);
     const [page, setPage] = useState(1);
     const [currentBanner, setCurrentBanner] = useState(0);
-    const [bannerSettings, setBannerSettings] = useState({ desktopHeight: 450, borderRadius: 32 });
+    const [bannerSettings, setBannerSettings] = useState({ desktopHeight: 210, borderRadius: 32 });
 
     const observerTarget = useRef(null);
 
@@ -111,7 +111,7 @@ export default function Home() {
         const unsubSettings = onSnapshot(doc(db, "settings", "banners"), (snap) => {
             if (snap.exists()) {
                 setBannerSettings({
-                    desktopHeight: snap.data().desktopHeight || 450,
+                    desktopHeight: snap.data().desktopHeight || 210,
                     borderRadius: snap.data().borderRadius || 32
                 });
             }
