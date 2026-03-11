@@ -143,8 +143,8 @@ export const ProductMedia = ({
                     <div className="w-full h-full flex items-center justify-center relative">
                         <div ref={lightboxCarouselRef} className="flex w-full h-full overflow-x-auto snap-x snap-mandatory no-scrollbar">
                             {allMedia.map((media, i) => (
-                                <div key={i} className="min-w-full h-full flex items-center justify-center snap-center p-4 select-none">
-                                    <div className="relative w-full h-full flex items-center justify-center">
+                                <div key={i} className="min-w-full h-full flex items-center justify-center snap-center select-none">
+                                    <div className="relative w-full h-full">
                                         <MediaItem media={media} isActive={activeImage === i} isLightbox={true} alt={product.name} />
                                     </div>
                                 </div>

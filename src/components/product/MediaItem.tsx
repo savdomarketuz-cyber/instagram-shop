@@ -31,13 +31,24 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt }: MediaIt
     if (media.type === 'video') {
         return (
             <div
-                className={`w-full h-full relative flex items-center justify-center cursor-pointer ${isLightbox ? 'bg-black' : ''}`}
+                className={`w-full h-full relative flex items-center justify-center cursor-pointer overflow-hidden ${isLightbox ? 'bg-black' : ''}`}
                 onClick={onClick}
             >
+                {/* Blurred Background for Lightbox */}
+                {isLightbox && (
+                    <video
+                        src={media.url}
+                        className="absolute inset-0 w-full h-full object-cover scale-150 blur-3xl opacity-40"
+                        muted
+                        loop
+                        playsInline
+                    />
+                )}
+                
                 <video
                     ref={videoRef}
                     src={media.url}
-                    className={isLightbox ? "max-w-full max-h-full object-contain" : "w-full h-full object-cover"}
+                    className={isLightbox ? "w-full h-full object-cover" : "w-full h-full object-cover"}
                     muted={!isLightbox}
                     loop
                     playsInline
@@ -55,13 +66,23 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt }: MediaIt
 
     return (
         <div
-            className={`w-full h-full flex items-center justify-center cursor-pointer ${isLightbox ? 'bg-black' : ''}`}
+            className={`w-full h-full flex items-center justify-center cursor-pointer relative overflow-hidden ${isLightbox ? 'bg-black' : ''}`}
             onClick={onClick}
         >
+            {/* Blurred Background for Lightbox (Optional, but kept for edges if not perfect cover) */}
+            {isLightbox && (
+                <img
+                    src={media.url}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover scale-150 blur-3xl opacity-50"
+                    draggable={false}
+                />
+            )}
+
             <img
                 src={media.url}
                 alt={alt || "Velari product image"}
-                className={isLightbox ? "max-w-full max-h-full object-contain animate-in zoom-in duration-500" : "w-full h-full object-cover zoom-animation"}
+                className={isLightbox ? "w-full h-full object-cover animate-in fade-in duration-500 shadow-2xl" : "w-full h-full object-cover zoom-animation"}
                 draggable={false}
             />
         </div>
