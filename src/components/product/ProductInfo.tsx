@@ -17,7 +17,7 @@ export const ProductInfo = ({
     product, language, t, groupProducts, totalStock, getDeliveryDateText, onDescriptionOpen
 }: ProductInfoProps) => {
     return (
-        <div className="px-8 pt-10 relative -mt-12 bg-white rounded-t-[50px] shadow-[0_-20px_50px_rgba(0,0,0,0.05)]">
+        <div className="px-8 pt-12 relative -mt-24 bg-white rounded-t-[50px] shadow-[0_-30px_60px_rgba(0,0,0,0.1)] z-20">
             <div className="mb-10">
                 {product.isOriginal && (
                     <div className="inline-flex items-center gap-2 bg-green-50 px-3 py-1.5 rounded-xl mb-4 animate-in fade-in slide-in-from-bottom-2 duration-700">

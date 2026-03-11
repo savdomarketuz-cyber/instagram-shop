@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { db, doc, getDoc, collection, query, where, getDocs, limit, updateDoc, increment, arrayUnion, setDoc } from "@/lib/firebase";
 import { translations } from "@/lib/translations";
-import { Loader2, Plus, Minus, ShoppingBag } from "lucide-react";
+import { Loader2, Plus, Minus, ShoppingBag, Heart, Star, Check, Truck, Clock, ShieldCheck, RefreshCw, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { getDeliveryDateText } from "@/lib/date-utils";
 
@@ -179,7 +179,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
     ], [product]);
 
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="min-h-screen flex items-center justify-center bg-white font-sans">
             <Loader2 className="animate-spin text-black" size={32} />
         </div>
     );
@@ -236,33 +236,159 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
     };
 
     return (
-        <div className="bg-white min-h-screen pb-40">
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-            />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-            />
-            <ProductMedia 
-                allMedia={allMedia}
-                activeImage={activeImage}
-                setActiveImage={setActiveImage}
-                isWishlisted={isWishlisted}
-                toggleWishlist={toggleWishlist}
-                product={product}
-            />
+        <div className="bg-white min-h-screen text-black font-sans selection:bg-black selection:text-white">
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
-            <ProductInfo 
-                product={product}
-                language={language}
-                t={t}
-                groupProducts={groupProducts}
-                totalStock={totalStock}
-                getDeliveryDateText={() => getDeliveryDateText(language, deliverySettings)}
-                onDescriptionOpen={() => setIsDescriptionModalOpen(true)}
-            />
+            {/* Mobile View (Social Style) */}
+            <div className="md:hidden" style={{ overscrollBehavior: 'none', touchAction: 'pan-x pan-y' }}>
+                <ProductMedia 
+                    allMedia={allMedia}
+                    activeImage={activeImage}
+                    setActiveImage={setActiveImage}
+                    isWishlisted={isWishlisted}
+                    toggleWishlist={toggleWishlist}
+                    product={product}
+                />
+                <ProductInfo 
+                    product={product}
+                    language={language}
+                    t={t}
+                    groupProducts={groupProducts}
+                    totalStock={totalStock}
+                    getDeliveryDateText={() => getDeliveryDateText(language, deliverySettings)}
+                    onDescriptionOpen={() => setIsDescriptionModalOpen(true)}
+                />
+            </div>
+
+            {/* Desktop View (E-commerce Grid Style) */}
+            <div className="hidden md:block max-w-[1440px] mx-auto px-10 py-12">
+                <div className="flex items-center gap-2 text-xs text-gray-400 font-bold uppercase tracking-widest mb-10 overflow-x-auto no-scrollbar whitespace-nowrap">
+                    <Link href="/" className="hover:text-black transition-colors">MAHSULOTLAR</Link>
+                    <span>/</span>
+                    <Link href={`/catalog?category=${product.category}`} className="hover:text-black transition-colors">{product[language === 'uz' ? 'category_uz' : 'category_ru'] || product.category}</Link>
+                    <span>/</span>
+                    <span className="text-black italic">{product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name}</span>
+                </div>
+
+                <div className="grid grid-cols-12 gap-16">
+                    {/* Left: Gallery */}
+                    <div className="col-span-12 lg:col-span-7 flex gap-6 h-[700px]">
+                        <div className="flex flex-col gap-4 overflow-y-auto no-scrollbar w-24 shrink-0">
+                            {allMedia.map((media, i) => (
+                                <button 
+                                    key={i}
+                                    onClick={() => setActiveImage(i)}
+                                    className={`aspect-square rounded-2xl overflow-hidden border-2 transition-all group ${activeImage === i ? "border-black scale-95 shadow-xl" : "border-gray-50 opacity-60 hover:opacity-100"}`}
+                                >
+                                    {media.type === 'image' ? (
+                                        <img src={media.url} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                                    ) : (
+                                        <div className="w-full h-full bg-black flex items-center justify-center text-white"><Loader2 size={16} /></div>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="flex-1 bg-gray-50 rounded-[40px] overflow-hidden relative group/hero shadow-2xl shadow-black/5">
+                            <img 
+                                src={allMedia[activeImage]?.url} 
+                                className="w-full h-full object-contain p-10 animate-in fade-in zoom-in-95 duration-500" 
+                                alt={product.name} 
+                            />
+                            <button 
+                                onClick={() => toggleWishlist(product)}
+                                className="absolute top-8 right-8 p-5 bg-white/80 backdrop-blur-xl rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all text-black border border-white"
+                            >
+                                <Heart size={24} fill={isWishlisted ? "black" : "none"} />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Right: Info Panels */}
+                    <div className="col-span-12 lg:col-span-5 space-y-10">
+                        {/* 1. Header & Price */}
+                        <div className="bg-white p-10 rounded-[40px] border border-gray-100 shadow-sm">
+                            <h1 className="text-4xl font-black tracking-tighter italic uppercase mb-6 leading-tight">
+                                {product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name}
+                            </h1>
+                            <div className="flex items-center gap-2 mb-8 bg-gray-50/50 w-fit px-4 py-2 rounded-2xl">
+                                <Star size={16} className="text-yellow-400 fill-yellow-400" />
+                                <span className="font-black text-sm">{product.rating || 4.9}</span>
+                                <span className="text-xs text-gray-400 font-bold uppercase tracking-widest ml-2">({product.reviewCount || 0} sharh)</span>
+                            </div>
+
+                            <div className="space-y-2 mb-10">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{t.common.price}</p>
+                                <div className="flex items-center gap-6">
+                                    <div className="text-6xl font-black italic tracking-tighter text-black">
+                                        {product.price.toLocaleString()} <span className="text-2xl not-italic">$</span>
+                                    </div>
+                                    {product.oldPrice && product.oldPrice > product.price && (
+                                        <div className="space-y-1">
+                                            <span className="text-gray-300 line-through font-bold text-2xl block">{product.oldPrice.toLocaleString()} $</span>
+                                            <span className="bg-red-500 text-white px-3 py-1 rounded-xl text-xs font-black tracking-tighter">
+                                                -{Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)}%
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="grid grid-cols-1 gap-4 mt-12">
+                                {cartItem ? (
+                                    <div className="flex gap-4">
+                                        <div className="flex items-center gap-8 bg-gray-50 px-8 py-4 rounded-[28px] border border-gray-100 flex-1 justify-center">
+                                            <button onClick={() => updateQuantity(product.id, cartItem.quantity - 1)} className="text-gray-400 hover:text-black transition-colors"><Minus size={20} strokeWidth={3} /></button>
+                                            <span className="text-2xl font-black w-8 text-center">{cartItem.quantity}</span>
+                                            <button onClick={() => updateQuantity(product.id, cartItem.quantity + 1)} className="text-gray-400 hover:text-black transition-colors"><Plus size={20} strokeWidth={3} /></button>
+                                        </div>
+                                        <Link href="/cart" className="bg-[#E4D9FF] text-[#6335ED] px-10 py-4 rounded-[28px] font-black text-xs uppercase tracking-widest flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-[#6335ED]/10">
+                                            <ShoppingBag size={20} strokeWidth={3} /> {language === 'uz' ? "O'TISH" : "ПЕРЕЙТИ"}
+                                        </Link>
+                                    </div>
+                                ) : (
+                                    <button 
+                                        onClick={() => addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any)}
+                                        className="w-full bg-black text-white py-6 rounded-[32px] font-black text-lg uppercase tracking-widest flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-black/20"
+                                    >
+                                        <Plus size={24} strokeWidth={3} /> {language === 'uz' ? "SAVATGA QO'SHISH" : "V KORZINU"}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* 2. Delivery & Benefits */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div className="bg-gray-50/50 p-8 rounded-[40px] border border-gray-100 flex flex-col gap-6 group hover:bg-white hover:shadow-xl transition-all">
+                                <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
+                                    <Truck size={28} className="text-black" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Etkazib berish</p>
+                                    <p className="text-lg font-black italic uppercase tracking-tighter">{getDeliveryDateText(language, deliverySettings)}</p>
+                                </div>
+                            </div>
+                            <div className="bg-[#F8FFF9] p-8 rounded-[40px] border border-green-100/50 flex flex-col gap-6 group hover:bg-white hover:shadow-xl transition-all">
+                                <div className="w-16 h-16 bg-green-500 text-white rounded-3xl flex items-center justify-center shadow-xl shadow-green-500/20 group-hover:scale-110 transition-transform">
+                                    <ShieldCheck size={28} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-green-600/50 uppercase tracking-widest mb-2">Kafolat</p>
+                                    <p className="text-lg font-black italic uppercase tracking-tighter">1 yil rasmiy kafolat</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-24 max-w-4xl">
+                    <h2 className="text-3xl font-black tracking-tighter mb-8 italic uppercase">Batafsil ma'lumot</h2>
+                    <div className="prose prose-lg max-w-none text-gray-600 font-medium leading-relaxed bg-gray-50 p-12 rounded-[50px] border border-gray-100">
+                        {product[language === 'uz' ? 'description_uz' : 'description_ru'] || product.description}
+                    </div>
+                </div>
+            </div>
 
             <ReviewsSection 
                 productId={params.id}
@@ -290,30 +416,6 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                 popularLoading={popularLoading}
                 t={t}
             />
-
-            {/* Bottom Sticky Action Bar */}
-            <div className="fixed bottom-0 left-0 right-0 p-8 max-w-md mx-auto bg-gradient-to-t from-white via-white/100 to-transparent z-40 backdrop-blur-sm">
-                {cartItem ? (
-                    <div className="flex items-center gap-4 animate-in slide-in-from-bottom duration-500">
-                        <div className="flex items-center gap-6 bg-gray-50 border border-gray-100 px-8 py-5 rounded-[28px] shadow-sm flex-1 justify-center text-black">
-                            <button onClick={() => updateQuantity(product.id, cartItem.quantity - 1)} className="text-gray-400"><Minus size={20} strokeWidth={3} /></button>
-                            <span className="text-lg font-black w-4 text-center">{cartItem.quantity}</span>
-                            <button onClick={() => updateQuantity(product.id, cartItem.quantity + 1)} className="text-gray-400"><Plus size={20} strokeWidth={3} /></button>
-                        </div>
-                        <Link href="/cart" className="bg-[#E4D9FF] text-[#6335ED] p-5 rounded-[28px] flex items-center gap-3 font-black text-sm pr-10 shadow-xl group">
-                            <div className="p-2 bg-white rounded-2xl"><ShoppingBag size={20} strokeWidth={3} /></div>
-                            {language === 'uz' ? "O'TISH" : "ПЕРЕЙТИ"}
-                        </Link>
-                    </div>
-                ) : (
-                    <button 
-                        onClick={() => addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any)} 
-                        className="w-full py-6 bg-black text-white rounded-full font-black text-xl flex items-center justify-center gap-4 shadow-2xl active:scale-95"
-                    >
-                        <Plus size={24} strokeWidth={3} /> {language === 'uz' ? "SAVATGA QO'SHISH" : "V KORZINU"}
-                    </button>
-                )}
-            </div>
 
             <ProductDescriptionModal 
                 isOpen={isDescriptionModalOpen}
