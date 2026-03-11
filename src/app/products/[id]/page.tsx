@@ -296,7 +296,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                                 alt={product.name} 
                             />
                             <button 
-                                onClick={() => toggleWishlist(product)}
+                                onClick={() => toggleWishlist({ ...product, imageUrl: product.image } as any)}
                                 className="absolute top-8 right-8 p-5 bg-white/80 backdrop-blur-xl rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all text-black border border-white"
                             >
                                 <Heart size={24} fill={isWishlisted ? "black" : "none"} />
