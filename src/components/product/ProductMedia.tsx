@@ -104,6 +104,7 @@ export const ProductMedia = ({
                                     isActive={activeImage === i} 
                                     isLightbox={false} 
                                     onClick={() => !isDragging && setIsLightboxOpen(true)} 
+                                    alt={product.name}
                                 />
                             </div>
                         </div>
@@ -144,7 +145,7 @@ export const ProductMedia = ({
                             {allMedia.map((media, i) => (
                                 <div key={i} className="min-w-full h-full flex items-center justify-center snap-center p-4 select-none">
                                     <div className="relative w-full h-full flex items-center justify-center">
-                                        <MediaItem media={media} isActive={activeImage === i} isLightbox={true} />
+                                        <MediaItem media={media} isActive={activeImage === i} isLightbox={true} alt={product.name} />
                                     </div>
                                 </div>
                             ))}

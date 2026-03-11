@@ -11,9 +11,10 @@ interface MediaItemProps {
     isActive: boolean;
     isLightbox: boolean;
     onClick?: () => void;
+    alt?: string;
 }
 
-export const MediaItem = ({ media, isActive, isLightbox, onClick }: MediaItemProps) => {
+export const MediaItem = ({ media, isActive, isLightbox, onClick, alt }: MediaItemProps) => {
     const videoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
@@ -59,7 +60,7 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick }: MediaItemPro
         >
             <img
                 src={media.url}
-                alt="Product media"
+                alt={alt || "Velari product image"}
                 className={isLightbox ? "max-w-full max-h-full object-contain animate-in zoom-in duration-500" : "w-full h-full object-cover zoom-animation"}
                 draggable={false}
             />

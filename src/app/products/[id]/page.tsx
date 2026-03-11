@@ -184,8 +184,36 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
 
     if (!product) return null;
 
+    const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name,
+        "image": allMedia.filter(m => m.type === 'image').map(m => m.url),
+        "description": product[language === 'uz' ? 'description_uz' : 'description_ru'] || product.description,
+        "sku": product.sku || product.id,
+        "brand": {
+            "@type": "Brand",
+            "name": "Velari"
+        },
+        "offers": {
+            "@type": "Offer",
+            "url": `https://velari.uz/products/${product.id}`,
+            "priceCurrency": "UZS",
+            "price": product.price,
+            "availability": totalStock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+            "seller": {
+                "@type": "Organization",
+                "name": "Velari"
+            }
+        }
+    };
+
     return (
         <div className="bg-white min-h-screen pb-40">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
             <ProductMedia 
                 allMedia={allMedia}
                 activeImage={activeImage}
