@@ -26,6 +26,8 @@ interface Product {
     image: string;
     images?: string[];
     category: string;
+    category_uz?: string;
+    category_ru?: string;
     description?: string;
     description_uz?: string;
     description_ru?: string;
@@ -208,11 +210,40 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
         }
     };
 
+    const breadcrumbJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": language === 'uz' ? "Bosh sahifa" : "Главная",
+                "item": "https://velari.uz"
+            },
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": product[language === 'uz' ? 'category_uz' : 'category_ru'] || product.category,
+                "item": `https://velari.uz/catalog?category=${product.category}`
+            },
+            {
+                "@type": "ListItem",
+                "position": 3,
+                "name": product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name,
+                "item": `https://velari.uz/products/${product.id}`
+            }
+        ]
+    };
+
     return (
         <div className="bg-white min-h-screen pb-40">
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
             />
             <ProductMedia 
                 allMedia={allMedia}
