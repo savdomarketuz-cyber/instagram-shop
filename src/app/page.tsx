@@ -219,9 +219,10 @@ export default function Home() {
     const displayProducts = useMemo(() => filteredProducts.slice(0, page * 20), [filteredProducts, page]);
 
     return (
-        <main className="min-h-screen bg-white pb-24">
-            <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md px-4 py-3 border-b border-gray-100 flex items-center gap-3">
-                <div className="flex-1 relative">
+        <main className="min-h-screen bg-white pb-24 max-w-[1440px] mx-auto">
+            <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md px-4 md:px-10 py-3 md:py-6 border-b border-gray-100 flex items-center gap-3 md:gap-8">
+                <Link href="/" className="hidden md:block text-2xl font-black italic tracking-tighter">VELARI</Link>
+                <div className="flex-1 relative max-w-2xl mx-auto">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input
                         type="text"
@@ -231,12 +232,15 @@ export default function Home() {
                             setSearch(e.target.value);
                             setHomeSearchQuery(e.target.value);
                         }}
-                        className="w-full bg-gray-50 border-none rounded-2xl py-3 pl-12 pr-4 text-sm font-medium focus:ring-2 focus:ring-purple-500/20"
+                        className="w-full bg-gray-50 border-none rounded-2xl py-3 md:py-4 pl-12 pr-4 text-sm font-medium focus:ring-2 focus:ring-black/5 outline-none transition-all"
                     />
                 </div>
-                <Link href="/wishlist" className="p-3 bg-gray-50 rounded-2xl text-gray-400 hover:text-red-500 transition-all active:scale-90">
-                    <Heart size={22} fill={wishlist.length > 0 ? "#ef4444" : "none"} className={wishlist.length > 0 ? "text-red-500" : ""} />
-                </Link>
+                <div className="flex items-center gap-3">
+                    <Link href="/wishlist" className="p-3 bg-gray-50 rounded-2xl text-gray-400 hover:text-red-500 transition-all active:scale-90 flex items-center gap-2">
+                        <Heart size={22} fill={wishlist.length > 0 ? "#ef4444" : "none"} className={wishlist.length > 0 ? "text-red-500" : ""} />
+                        <span className="hidden md:inline text-[10px] font-black uppercase tracking-widest text-black/40">Saralanganlar</span>
+                    </Link>
+                </div>
             </div>
 
             <BannerSection 
@@ -247,18 +251,20 @@ export default function Home() {
                 language={language} 
             />
 
-            <CategoryFilter 
-                allCategories={allCategories}
-                activeFilter={activeFilter}
-                setActiveFilter={setActiveFilter}
-                activeParent={activeParent}
-                setActiveParent={setActiveParent}
-                language={language}
-                translations={t}
-                setHomeActiveFilter={setHomeActiveFilter}
-            />
+            <div className="md:px-10">
+                <CategoryFilter 
+                    allCategories={allCategories}
+                    activeFilter={activeFilter}
+                    setActiveFilter={setActiveFilter}
+                    activeParent={activeParent}
+                    setActiveParent={setActiveParent}
+                    language={language}
+                    translations={t}
+                    setHomeActiveFilter={setHomeActiveFilter}
+                />
+            </div>
 
-            <div className="px-2 mt-4">
+            <div className="px-2 md:px-10 mt-4">
                 <div className="flex items-center justify-around relative mx-2 mb-6 border-b border-gray-50">
                     {["for_you", "popular"].map(tab => (
                         <button
