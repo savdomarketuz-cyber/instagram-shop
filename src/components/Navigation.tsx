@@ -20,7 +20,8 @@ export default function Navigation() {
     }, [cart]);
 
     return (
-        <nav className="fixed bottom-0 w-full max-w-md mx-auto bg-white/80 border-t border-gray-100/50 px-2 py-3 pb-8 flex justify-between items-end z-50 backdrop-blur-2xl">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 flex justify-center z-50 pointer-events-none">
+            <nav className="w-full max-w-md bg-white/80 border-t border-gray-100/50 px-2 py-3 pb-8 flex justify-between items-end backdrop-blur-2xl pointer-events-auto">
             <Link href="/" className={`flex flex-col items-center flex-1 transition-all duration-300 ${pathname === '/' ? 'text-black scale-110' : 'text-gray-400'}`}>
                 <Home size={22} strokeWidth={pathname === '/' ? 2.5 : 2} />
                 <span className="text-[9px] mt-1 font-black uppercase tracking-tighter">{t.nav.home}</span>
@@ -74,6 +75,7 @@ export default function Navigation() {
                 <MessageCircle size={22} strokeWidth={pathname === '/messages' ? 2.5 : 2} />
                 <span className="text-[9px] mt-1 font-black uppercase tracking-tighter">{language === 'uz' ? 'DM' : 'Чат'}</span>
             </Link>
-        </nav>
+            </nav>
+        </div>
     );
 }

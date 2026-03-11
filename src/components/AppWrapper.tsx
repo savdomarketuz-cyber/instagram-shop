@@ -159,7 +159,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
     }
 
     return (
-        <div className="max-w-md mx-auto bg-white min-h-screen relative shadow-2xl">
+        <div className="max-w-md md:max-w-full mx-auto bg-white min-h-screen relative shadow-2xl">
             <NotificationHandler />
             {children}
 
