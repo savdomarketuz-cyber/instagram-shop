@@ -3,12 +3,17 @@ import { NextRequest, NextResponse } from "next/server";
 const GROQ_API_KEYS = [
     process.env.GROQ_API_KEY_1 || "",
     process.env.GROQ_API_KEY_2 || ""
-];
+].filter(key => key !== "");
 
 let currentKeyIndex = 0;
 
 export async function POST(req: NextRequest) {
     try {
+        if (GROQ_API_KEYS.length === 0) {
+            console.error("AI API Error: GROQ_API_KEYS are missing in environment variables.");
+            return NextResponse.json({ error: "AI configuration missing" }, { status: 503 });
+        }
+
         const { messages, model = "llama-3.1-70b-versatile" } = await req.json();
 
         if (!messages || !Array.isArray(messages)) {

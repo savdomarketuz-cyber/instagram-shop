@@ -197,7 +197,7 @@ function PaymentContent() {
             <div className="p-8 bg-gray-50 rounded-[40px] mb-8 border border-gray-100">
                 <div className="flex justify-between items-center font-black italic tracking-tighter text-xl">
                     <span className="text-gray-400 uppercase tracking-widest text-[10px] not-italic">{t.common.total}:</span>
-                    <span>{total.toLocaleString()} $</span>
+                    <span>{total.toLocaleString()} so'm</span>
                 </div>
             </div>
 

@@ -149,7 +149,7 @@ export default function AdminOrders() {
                                     </div>
                                 </td>
                                 <td className="p-8">
-                                    <div className="text-xl font-black italic tracking-tighter">{order.total} $</div>
+                                    <div className="text-xl font-black italic tracking-tighter">{order.total?.toLocaleString()} so'm</div>
                                 </td>
                                 <td className="p-8">
                                     <div className="flex items-center gap-2">
@@ -220,7 +220,7 @@ export default function AdminOrders() {
                                 }`}>{order.status}</span>
                         </div>
                         <div className="flex justify-between items-end border-t border-gray-50 pt-4">
-                            <div className="text-2xl font-black italic">{order.total} $</div>
+                            <div className="text-2xl font-black italic">{order.total?.toLocaleString()} so'm</div>
                             <button className="p-3 bg-gray-50 rounded-xl"><MoreVertical size={16} /></button>
                         </div>
                     </div>
@@ -293,7 +293,7 @@ export default function AdminOrders() {
                                 <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Mahsulotlar Ro'yxati</h4>
                                 <div className="text-right">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-1">Jami Summa</p>
-                                    <p className="text-4xl font-black italic tracking-tighter">{selectedOrder.total} $</p>
+                                    <p className="text-4xl font-black italic tracking-tighter">{selectedOrder.total?.toLocaleString()} so'm</p>
                                 </div>
                             </div>
 
@@ -326,11 +326,11 @@ export default function AdminOrders() {
                                                 </div>
                                                 <div className="flex justify-between items-center text-[10px] font-bold text-gray-400">
                                                     <span>Narxi:</span>
-                                                    <span className="text-black font-black">{item.price} $</span>
+                                                    <span className="text-black font-black">{item.price?.toLocaleString()} so'm</span>
                                                 </div>
                                                 <div className="flex justify-between items-center text-[10px] font-black text-blue-500 mt-1 uppercase tracking-tighter pt-1 border-t border-blue-50">
                                                     <span>Jami:</span>
-                                                    <span>{item.price * item.quantity} $</span>
+                                                    <span>{(item.price * item.quantity)?.toLocaleString()} so'm</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -391,7 +391,7 @@ export default function AdminOrders() {
                             <div className="grid grid-cols-2 gap-4 mb-10">
                                 <div className="p-5 bg-gray-50 rounded-3xl border border-gray-100">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-1"><Tag size={10} /> Narxi</p>
-                                    <p className="text-2xl font-black italic tracking-tighter">{selectedProduct.price?.toLocaleString()} $</p>
+                                    <p className="text-2xl font-black italic tracking-tighter">{selectedProduct.price?.toLocaleString()} so'm</p>
                                 </div>
                                 <div className="p-5 bg-gray-50 rounded-3xl border border-gray-100">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-1"><Layers size={10} /> Qoldiq</p>

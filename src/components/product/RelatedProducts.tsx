@@ -23,7 +23,7 @@ export const RelatedProducts = ({
 }: RelatedProductsProps) => {
 
     const renderGrid = (products: any[]) => (
-        <div className="grid grid-cols-2 gap-x-2 gap-y-6 px-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-2 md:gap-x-6 gap-y-6 md:gap-y-10 px-4 max-w-[1440px] mx-auto">
             {products.map(p => (
                 <ProductCard 
                     key={p.id}

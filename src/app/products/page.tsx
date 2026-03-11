@@ -119,7 +119,7 @@ export default function ProductsPage() {
                             <h3 className="text-[13px] font-black text-gray-900 leading-tight truncate px-1">
                                 {item[`name_${language}`] || item.name}
                             </h3>
-                            <p className="text-lg font-black italic tracking-tighter px-1">{item.price.toLocaleString()} $</p>
+                            <p className="text-lg font-black italic tracking-tighter px-1">{item.price.toLocaleString()} so'm</p>
                         </Link>
                     </div>
                 ))}

@@ -173,7 +173,7 @@ export default function CheckoutPage() {
                     <div className="relative z-10">
                         <div className="flex justify-between mb-3 opacity-60 text-xs font-bold uppercase tracking-widest">
                             <span>{t.cart.items}</span>
-                            <span>{total} $</span>
+                            <span>{total.toLocaleString()} so'm</span>
                         </div>
                         <div className="flex justify-between mb-6 opacity-60 text-xs font-bold uppercase tracking-widest">
                             <span>{t.common.delivery}</span>
@@ -181,7 +181,7 @@ export default function CheckoutPage() {
                         </div>
                         <div className="flex justify-between font-black text-2xl pt-6 border-t border-white/10">
                             <span>{t.common.total}</span>
-                            <span>{total} $</span>
+                            <span>{total.toLocaleString()} so'm</span>
                         </div>
                     </div>
                 </div>

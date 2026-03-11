@@ -255,7 +255,7 @@ export default function OrdersPage() {
                             </div>
 
                             <div className="flex justify-between items-center pt-5 border-t border-gray-200/50">
-                                <div className="text-xl font-black italic tracking-tighter">{order.total?.toLocaleString()} $</div>
+                                <div className="text-xl font-black italic tracking-tighter">{order.total?.toLocaleString()} so'm</div>
                                 <button className="flex items-center text-[10px] font-black uppercase tracking-widest text-black/40 group-hover:text-black transition-colors">
                                     {language === 'uz' ? 'Batafsil' : 'Подробнее'} <ChevronRight size={14} className="ml-1" />
                                 </button>
@@ -311,10 +311,10 @@ export default function OrdersPage() {
                                                     {item[`name_${language}`] || item.name}
                                                 </p>
                                                 <p className="text-[10px] font-bold text-gray-400">
-                                                    {item.quantity} {language === 'uz' ? 'dona' : 'шт'} x {item.price.toLocaleString()} $
+                                                    {item.quantity} {language === 'uz' ? 'dona' : 'шт'} x {item.price.toLocaleString()} so'm
                                                 </p>
                                                 <div className="font-black italic text-black mt-1">
-                                                    {(item.price * item.quantity).toLocaleString()} $
+                                                    {(item.price * item.quantity).toLocaleString()} so'm
                                                 </div>
                                             </div>
                                         </div>
@@ -383,7 +383,7 @@ export default function OrdersPage() {
                             {/* Total */}
                             <div className="mt-10 p-8 bg-black text-white rounded-[32px] flex justify-between items-center shadow-2xl shadow-black/20">
                                 <div className="text-xs font-black uppercase tracking-widest opacity-60">{t.common.total}</div>
-                                <div className="text-3xl font-black italic tracking-tighter">{selectedOrder.total?.toLocaleString()} $</div>
+                                <div className="text-3xl font-black italic tracking-tighter">{selectedOrder.total?.toLocaleString()} so'm</div>
                             </div>
                         </div>
                     </div>

@@ -65,6 +65,7 @@ export const ProductCard = ({
     return (
         <div 
             className="group relative flex flex-col h-full bg-white rounded-xl overflow-hidden shadow-sm border border-gray-50 active:scale-[0.98] transition-all"
+            style={{ overflowAnchor: 'none' }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
@@ -143,10 +144,10 @@ export const ProductCard = ({
 
                     <div className="mt-auto flex flex-col mb-3">
                         {(item.oldPrice || 0) > 0 && (
-                            <span className="text-[10px] text-gray-400 line-through font-bold">{item.oldPrice?.toLocaleString()} $</span>
+                            <span className="text-[10px] text-gray-400 line-through font-bold">{item.oldPrice?.toLocaleString()} so'm</span>
                         )}
                         <span className={`text-sm font-black italic ${(item.oldPrice || 0) > item.price ? "text-red-500" : "text-black"}`}>
-                            {item.price.toLocaleString()} $
+                            {item.price.toLocaleString()} so'm
                         </span>
                     </div>
                 </div>

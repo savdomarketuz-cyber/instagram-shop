@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { Search, Loader2, Heart } from "lucide-react";
 import { useStore } from "@/store/store";
 import { db, collection, query, getDocs, orderBy, onSnapshot, doc, getDoc, limit } from "@/lib/firebase";
 import { getAiRecommendations } from "@/lib/ai";
 import { translations } from "@/lib/translations";
+import { useSearchParams } from "next/navigation";
 
 // Components
 import { BannerSection } from "@/components/home/BannerSection";
@@ -59,6 +60,21 @@ interface Banner {
 }
 
 export default function Home() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-white">
+                <Loader2 className="animate-spin text-black" size={32} />
+            </div>
+        }>
+            <HomeContent />
+        </Suspense>
+    );
+}
+
+function HomeContent() {
+    const searchParams = useSearchParams();
+    const urlCategory = searchParams.get("category");
+
     const {
         addToCart, cart, toggleWishlist, wishlist, updateQuantity,
         removeFromCart, user, cachedProducts, setCachedProducts,
@@ -75,7 +91,7 @@ export default function Home() {
     const [allCategories, setAllCategories] = useState<Category[]>(cachedCategories || []);
     const [banners, setBanners] = useState<Banner[]>([]);
     const [search, setSearch] = useState(homeSearchQuery);
-    const [activeFilter, setActiveFilter] = useState(homeActiveFilter);
+    const [activeFilter, setActiveFilter] = useState(urlCategory || homeActiveFilter);
     const [activeParent, setActiveParent] = useState("all");
     const [activeTab, setActiveTab] = useState(homeActiveTab);
     const [loading, setLoading] = useState(cachedProducts.length === 0);
@@ -84,6 +100,14 @@ export default function Home() {
     const [bannerSettings, setBannerSettings] = useState({ desktopHeight: 210, borderRadius: 32 });
 
     const observerTarget = useRef(null);
+
+    // Sync activeFilter with URL category if it changes
+    useEffect(() => {
+        if (urlCategory) {
+            setActiveFilter(urlCategory);
+            setHomeActiveFilter(urlCategory);
+        }
+    }, [urlCategory, setHomeActiveFilter]);
 
     // AI Recommendations logic (one time on mount/auth)
     useEffect(() => {

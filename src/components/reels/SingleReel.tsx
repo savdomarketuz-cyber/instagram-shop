@@ -183,7 +183,7 @@ export const SingleReel = ({
                         </div>
                         <div className="flex flex-col">
                             <h4 className="text-[11px] font-black text-black uppercase tracking-tighter line-clamp-1 w-32">{reel[`name_${language}`] || reel.name}</h4>
-                            <span className="text-[13px] font-black italic text-[#6335ED] italic">{reel.price.toLocaleString()} $</span>
+                            <span className="text-[13px] font-black italic text-[#6335ED] italic">{reel.price.toLocaleString()} so'm</span>
                         </div>
                     </Link>
                     <div className="h-8 w-[1px] bg-gray-200/50 mx-1 shrink-0" />

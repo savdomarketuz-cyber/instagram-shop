@@ -825,9 +825,9 @@ export default function AdminProducts() {
                                         <div className="flex items-end justify-between">
                                             <div className="flex flex-col">
                                                 {p.oldPrice && p.oldPrice > 0 && (
-                                                    <span className="text-xs text-gray-400 line-through font-bold">{p.oldPrice.toLocaleString()} $</span>
+                                                    <span className="text-xs text-gray-400 line-through font-bold">{p.oldPrice.toLocaleString()} so'm</span>
                                                 )}
-                                                <span className="text-xl font-black italic tracking-tighter">{p.price.toLocaleString()} $</span>
+                                                <span className="text-xl font-black italic tracking-tighter">{p.price.toLocaleString()} so'm</span>
                                             </div>
                                             <div className="text-right">
                                                 {/* Stock hidden as per request - now managed via warehouses */}
@@ -889,8 +889,8 @@ export default function AdminProducts() {
                                             </td>
                                             <td className="px-8 py-5">
                                                 <div className="flex flex-col">
-                                                    {p.oldPrice && p.oldPrice > 0 && <span className="text-[10px] text-gray-400 line-through">{p.oldPrice.toLocaleString()} $</span>}
-                                                    <span className="font-black text-sm italic">{p.price.toLocaleString()} $</span>
+                                                    {p.oldPrice && p.oldPrice > 0 && <span className="text-[10px] text-gray-400 line-through">{p.oldPrice.toLocaleString()} so'm</span>}
+                                                    <span className="font-black text-sm italic">{p.price.toLocaleString()} so'm</span>
                                                 </div>
                                             </td>
                                             <td className="px-8 py-5">
@@ -1158,7 +1158,7 @@ export default function AdminProducts() {
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Hozirgi Narx ($)</label>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Hozirgi Narx (so'm)</label>
                                             <input
                                                 required
                                                 type="number"
@@ -1168,7 +1168,7 @@ export default function AdminProducts() {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Eski Narx ($)</label>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Eski Narx (so'm)</label>
                                             <input
                                                 type="number"
                                                 value={newProduct.oldPrice || ""}

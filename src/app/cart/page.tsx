@@ -92,7 +92,7 @@ export default function CartPage() {
                                         </div>
 
                                         <div className="col-span-6 lg:col-span-3 text-right">
-                                            <p className="text-xl md:text-2xl font-black italic tracking-tighter">{(item.price * item.quantity).toLocaleString()} $</p>
+                                            <p className="text-xl md:text-2xl font-black italic tracking-tighter">{(item.price * item.quantity).toLocaleString()} so'm</p>
                                         </div>
                                     </div>
                                 </div>
@@ -118,7 +118,7 @@ export default function CartPage() {
                                 <div className="mb-10">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">{t.common.total}</p>
                                     <div className="text-5xl font-black italic tracking-tighter text-black">
-                                        {total.toLocaleString()} <span className="text-2xl not-italic">$</span>
+                                        {total.toLocaleString()} <span className="text-2xl not-italic">so'm</span>
                                     </div>
                                 </div>
 

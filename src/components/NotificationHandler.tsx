@@ -39,7 +39,15 @@ export default function NotificationHandler() {
         };
 
         if (user?.phone) {
-            requestPermission();
+            const checkPermission = async () => {
+                if (Notification.permission === 'default') {
+                    // Do not ask yet, browsers require user interaction for requestPermission
+                    // console.log('Notification permission is default. Waiting for user interaction to ask.');
+                } else if (Notification.permission === 'granted') {
+                    requestPermission(); // Already granted, just refresh token
+                }
+            };
+            checkPermission();
         }
 
         const unsubscribe = onMessage(messaging, (payload) => {

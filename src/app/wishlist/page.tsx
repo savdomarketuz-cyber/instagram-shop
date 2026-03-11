@@ -62,7 +62,7 @@ export default function WishlistPage() {
                                 <h3 className="text-[13px] font-bold text-gray-900 leading-tight">
                                     {item[`name_${language}`] || item.name}
                                 </h3>
-                                <p className="text-sm font-black text-black mt-1">{item.price} $</p>
+                                <p className="text-sm font-black text-black mt-1">{item.price?.toLocaleString()} so'm</p>
                             </Link>
                             <button
                                 onClick={() => toggleWishlist(item)}

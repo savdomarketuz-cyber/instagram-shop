@@ -158,12 +158,14 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
         return <>{children}</>;
     }
 
+    const showNav = !isProductDetail && !isCheckout && !isPayment && !isChat;
+
     return (
-        <div className="max-w-md md:max-w-full mx-auto bg-white min-h-screen relative shadow-2xl">
+        <div className={`mx-auto bg-white min-h-screen relative shadow-2xl ${showNav ? 'md:pl-64' : ''}`}>
             <NotificationHandler />
             {children}
 
-            {!isProductDetail && !isCheckout && !isPayment && !isChat && <Navigation />}
+            {showNav && <Navigation />}
 
 
             {/* Animated Toast Notification — to'g'ri subscribe qilingan */}

@@ -60,6 +60,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
     const [popularProducts, setPopularProducts] = useState<Product[]>([]);
     const [groupProducts, setGroupProducts] = useState<Product[]>([]);
     const [comments, setComments] = useState<any[]>([]);
+    const [categoryData, setCategoryData] = useState<any>(null);
     
     // UI State
     const [activeImage, setActiveImage] = useState(0);
@@ -94,12 +95,19 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                 }
 
                 // Parallel fetching for performance
+                const fetchCat = async () => {
+                    const catRef = doc(db, "categories", data.category);
+                    const catSnap = await getDoc(catRef);
+                    if (catSnap.exists()) setCategoryData(catSnap.data());
+                };
+
                 Promise.all([
                     fetchRelated(data.category, data.id),
                     fetchBoughtTogether(),
                     fetchPopular(),
                     data.groupId ? fetchGroup(data.groupId) : Promise.resolve(),
-                    fetchDeliverySettings(data)
+                    fetchDeliverySettings(data),
+                    fetchCat()
                 ]);
 
             } else { router.push("/"); }
@@ -223,7 +231,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
             {
                 "@type": "ListItem",
                 "position": 2,
-                "name": product[language === 'uz' ? 'category_uz' : 'category_ru'] || product.category,
+                "name": categoryData ? (categoryData[language === 'uz' ? 'name_uz' : 'name_ru'] || categoryData.name) : (product[language === 'uz' ? 'category_uz' : 'category_ru'] || product.category),
                 "item": `https://velari.uz/catalog?category=${product.category}`
             },
             {
@@ -266,7 +274,9 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                 <div className="flex items-center gap-2 text-xs text-gray-400 font-bold uppercase tracking-widest mb-10 overflow-x-auto no-scrollbar whitespace-nowrap">
                     <Link href="/" className="hover:text-black transition-colors">MAHSULOTLAR</Link>
                     <span>/</span>
-                    <Link href={`/catalog?category=${product.category}`} className="hover:text-black transition-colors">{product[language === 'uz' ? 'category_uz' : 'category_ru'] || product.category}</Link>
+                    <Link href={`/catalog?category=${product.category}`} className="hover:text-black transition-colors">
+                        {categoryData ? (categoryData[language === 'uz' ? 'name_uz' : 'name_ru'] || categoryData.name) : (product[language === 'uz' ? 'category_uz' : 'category_ru'] || product.category)}
+                    </Link>
                     <span>/</span>
                     <span className="text-black italic">{product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name}</span>
                 </div>
@@ -321,11 +331,11 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{t.common.price}</p>
                                 <div className="flex items-center gap-6">
                                     <div className="text-6xl font-black italic tracking-tighter text-black">
-                                        {product.price.toLocaleString()} <span className="text-2xl not-italic">$</span>
+                                        {product.price.toLocaleString()} <span className="text-2xl not-italic">so'm</span>
                                     </div>
                                     {product.oldPrice && product.oldPrice > product.price && (
                                         <div className="space-y-1">
-                                            <span className="text-gray-300 line-through font-bold text-2xl block">{product.oldPrice.toLocaleString()} $</span>
+                                            <span className="text-gray-300 line-through font-bold text-2xl block">{product.oldPrice.toLocaleString()} so'm</span>
                                             <span className="bg-red-500 text-white px-3 py-1 rounded-xl text-xs font-black tracking-tighter">
                                                 -{Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)}%
                                             </span>
@@ -333,6 +343,34 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                                     )}
                                 </div>
                             </div>
+
+                            {/* Variants / Group Products */}
+                            {groupProducts.length > 1 && (
+                                <div className="bg-gray-50/50 p-10 rounded-[40px] border border-gray-100">
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 px-2">
+                                        {language === 'uz' ? 'Rangni tanlang' : 'Выберите цвет'}: <span className="text-black font-black italic ml-2">{product.colorName || (language === 'uz' ? "Tanlanmagan" : "Не выбран")}</span>
+                                    </p>
+                                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-4">
+                                        {groupProducts.map((v) => (
+                                            <Link 
+                                                replace 
+                                                key={v.id} 
+                                                href={`/products/${v.id}`} 
+                                                className={`aspect-[3/4] rounded-3xl overflow-hidden border-2 transition-all flex-shrink-0 shadow-sm relative group/v ${v.id === product.id ? "border-black scale-105 shadow-xl z-10" : "border-white opacity-60 hover:opacity-100 hover:border-gray-200"}`}
+                                            >
+                                                <img src={v.image} className="w-full h-full object-cover transition-transform duration-500 group-hover/v:scale-110" alt={v.colorName} />
+                                                {v.id === product.id && (
+                                                    <div className="absolute inset-0 bg-black/5 flex items-center justify-center">
+                                                        <div className="bg-white rounded-full p-1 shadow-lg">
+                                                            <Check size={12} strokeWidth={4} />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Action Buttons */}
                             <div className="grid grid-cols-1 gap-4 mt-12">

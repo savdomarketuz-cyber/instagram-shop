@@ -84,6 +84,10 @@ export async function POST(req: NextRequest) {
 
         const fileBuffer = await file.arrayBuffer();
 
+        if (fileBuffer.byteLength > 4.5 * 1024 * 1024) {
+             return NextResponse.json({ error: "File too large (Max 4.5MB)" }, { status: 413 });
+        }
+
         const uploadResponse = await fetch(url, {
             method: method,
             headers: {
@@ -99,14 +103,14 @@ export async function POST(req: NextRequest) {
             const errorBody = await uploadResponse.text();
             console.error("Yandex S3 Error:", errorBody);
             return NextResponse.json(
-                { error: `S3 Error: ${uploadResponse.status}` },
+                { error: `S3 Error: ${uploadResponse.status} - ${errorBody.slice(0, 50)}` },
                 { status: 500 }
             );
         }
 
         return NextResponse.json({ url });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Upload error:", error);
-        return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+        return NextResponse.json({ error: `Upload failed: ${error.message || "Unknown error"}` }, { status: 500 });
     }
 }

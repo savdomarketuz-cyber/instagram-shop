@@ -17,12 +17,25 @@ export async function uploadToYandexS3(file: File | Blob, fileName?: string): Pr
     });
 
     if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Upload failed");
+        let errorMsg = "Upload failed";
+        try {
+            const error = await response.json();
+            errorMsg = error.error || errorMsg;
+        } catch {
+            const text = await response.text();
+            errorMsg = text.slice(0, 100) || errorMsg;
+        }
+        throw new Error(errorMsg);
     }
 
-    const data = await response.json();
-    return data.url;
+    try {
+        const data = await response.json();
+        return data.url;
+    } catch {
+        const text = await response.text();
+        console.error("Non-JSON response from upload API:", text);
+        throw new Error("Server returned invalid response. Please try again or check file size.");
+    }
 }
 
 /**
