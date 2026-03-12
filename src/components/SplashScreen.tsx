@@ -4,30 +4,40 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 
 export default function SplashScreen() {
-    const [isVisible, setIsVisible] = useState(false);
+    // Start as visible to prevent the "flash" of content
+    const [isVisible, setIsVisible] = useState(true);
     const [isFadingOut, setIsFadingOut] = useState(false);
+    const [isPWA, setIsPWA] = useState(false);
 
     useEffect(() => {
-        // Only show if running as PWA (standalone)
+        // Rapid PWA check
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches 
             || (window.navigator as any).standalone 
             || document.referrer.includes('android-app://');
 
-        if (!isStandalone) return;
+        if (!isStandalone) {
+            // If not PWA, disappear instantly
+            setIsVisible(false);
+            return;
+        }
 
-        setIsVisible(true);
+        setIsPWA(true);
 
         const timer = setTimeout(() => {
             setIsFadingOut(true);
             setTimeout(() => {
                 setIsVisible(false);
             }, 800);
-        }, 3500); // Give time for the animation to play
+        }, 3500);
 
         return () => clearTimeout(timer);
     }, []);
 
+    // If not PWA and useEffect has run, don't show anything
     if (!isVisible) return null;
+    
+    // If useEffect hasn't determined PWA status yet, we show a blank blocking screen 
+    // to prevent the underlying content from flashing.
 
     return (
         <div className={`
@@ -49,7 +59,10 @@ export default function SplashScreen() {
                             {char}
                         </span>
                     ))}
-                    <span className="dot inline-block text-[#2d6e3e] text-[100px] relative top-[8px] opacity-0 scale-0 -rotate-180 animate-[dotSpin_0.55s_cubic-bezier(0.34,1.56,0.64,1)_forwards] style={{ animationDelay: '0.62s' }}">
+                    <span 
+                        className="dot inline-block text-[#2d6e3e] text-[100px] relative top-[8px] opacity-0 scale-0 -rotate-180 animate-[dotSpin_0.55s_cubic-bezier(0.34,1.56,0.64,1)_forwards]" 
+                        style={{ animationDelay: '0.62s' }}
+                    >
                         .
                     </span>
                 </div>
