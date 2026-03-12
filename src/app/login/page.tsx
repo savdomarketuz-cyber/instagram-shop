@@ -25,7 +25,7 @@ export default function LoginPage() {
 
         try {
             // Check for Admin Hardcoded Login
-            if (id.toLowerCase() === "admin" && password === "admin777") {
+            if (id.toLowerCase() === "admin" && password === "Abdulaziz2244") {
                 setUser({ id: "ADMIN", phone: "ADMIN", name: "Administrator", isAdmin: true });
                 router.push("/admin");
                 return;
