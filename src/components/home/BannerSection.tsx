@@ -2,6 +2,7 @@
 
 import { useRef, useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import Image from "next/image";
 
 interface Banner {
     id: string;
@@ -59,11 +60,13 @@ export const BannerSection = ({ banners, bannerSettings, currentBanner, setCurre
 
                                     return (
                                         <div key={banner.id} className="min-w-full h-full snap-center relative">
-                                            <img 
+                                            <Image 
                                                 src={imageUrl} 
-                                                className="w-full h-full object-cover" 
+                                                fill
+                                                className="object-cover" 
                                                 alt={title || ""} 
-                                                referrerPolicy="no-referrer" 
+                                                priority={banners.indexOf(banner) === 0}
+                                                sizes="100vw"
                                             />
                                             {tabName && (
                                                 <div className="absolute bottom-6 left-6 bg-white/20 backdrop-blur-xl px-6 py-2 rounded-full border border-white/30 text-white font-black text-[10px] uppercase tracking-widest shadow-2xl">

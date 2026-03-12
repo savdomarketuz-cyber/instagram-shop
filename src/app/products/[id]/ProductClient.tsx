@@ -8,6 +8,7 @@ import { translations } from "@/lib/translations";
 import { Loader2, Plus, Minus, ShoppingBag, Heart, Star, Check, Truck, Clock, ShieldCheck, RefreshCw, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { getDeliveryDateText } from "@/lib/date-utils";
+import Image from "next/image";
 
 // Components
 import { ProductMedia } from "@/components/product/ProductMedia";
@@ -271,7 +272,15 @@ export default function ProductClient({ params }: { params: { id: string } }) {
                                     className={`aspect-square rounded-2xl overflow-hidden border-2 transition-all group ${activeImage === i ? "border-black scale-95 shadow-xl" : "border-gray-50 opacity-60 hover:opacity-100"}`}
                                 >
                                     {media.type === 'image' ? (
-                                        <img src={media.url} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                                        <div className="relative w-full h-full">
+                                            <Image 
+                                                src={media.url} 
+                                                fill
+                                                className="object-cover group-hover:scale-110 transition-transform" 
+                                                alt={`Thumbnail ${i}`}
+                                                sizes="96px"
+                                            />
+                                        </div>
                                     ) : (
                                         <div className="w-full h-full bg-black flex items-center justify-center text-white"><Loader2 size={16} /></div>
                                     )}
@@ -279,10 +288,13 @@ export default function ProductClient({ params }: { params: { id: string } }) {
                             ))}
                         </div>
                         <div className="flex-1 bg-gray-50 rounded-[40px] overflow-hidden relative group/hero shadow-2xl shadow-black/5">
-                            <img 
+                            <Image 
                                 src={allMedia[activeImage]?.url} 
-                                className="w-full h-full object-contain p-10 animate-in fade-in zoom-in-95 duration-500" 
+                                fill
+                                className="object-contain p-10 animate-in fade-in zoom-in-95 duration-500" 
                                 alt={product.name} 
+                                priority
+                                sizes="(max-width: 1024px) 100vw, 60vw"
                             />
                             <button 
                                 onClick={() => toggleWishlist({ ...product, imageUrl: product.image } as any)}
@@ -337,7 +349,13 @@ export default function ProductClient({ params }: { params: { id: string } }) {
                                                 href={`/products/${v.id}`} 
                                                 className={`aspect-[3/4] rounded-3xl overflow-hidden border-2 transition-all flex-shrink-0 shadow-sm relative group/v ${v.id === product.id ? "border-black scale-105 shadow-xl z-10" : "border-white opacity-60 hover:opacity-100 hover:border-gray-200"}`}
                                             >
-                                                <img src={v.image} className="w-full h-full object-cover transition-transform duration-500 group-hover/v:scale-110" alt={v.colorName} />
+                                                <Image 
+                                                    src={v.image} 
+                                                    fill
+                                                    className="object-cover transition-transform duration-500 group-hover/v:scale-110" 
+                                                    alt={v.colorName || "Variant"} 
+                                                    sizes="100px"
+                                                />
                                                 {v.id === product.id && (
                                                     <div className="absolute inset-0 bg-black/5 flex items-center justify-center">
                                                         <div className="bg-white rounded-full p-1 shadow-lg">

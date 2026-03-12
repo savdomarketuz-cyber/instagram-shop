@@ -4,6 +4,7 @@ import { useStore } from "@/store/store";
 import Link from "next/link";
 import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, ShoppingCart, Package, ChevronLeft } from "lucide-react";
 import { translations } from "@/lib/translations";
+import Image from "next/image";
 
 export default function CartPage() {
     const { cart, updateQuantity, removeFromCart, language } = useStore();
@@ -56,8 +57,14 @@ export default function CartPage() {
                                 <div key={item.id} className="bg-white border md:border-gray-100 rounded-[40px] p-6 group hover:shadow-2xl hover:shadow-black/5 transition-all">
                                     <div className="grid grid-cols-12 gap-6 items-center">
                                         <div className="col-span-12 lg:col-span-6 flex gap-6 items-center">
-                                            <div className="w-24 h-24 md:w-32 md:h-32 bg-gray-50 rounded-[32px] overflow-hidden flex-shrink-0 border border-gray-50">
-                                                <img src={item.imageUrl} alt={item[`name_${language}`] || item.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                                            <div className="w-24 h-24 md:w-32 md:h-32 bg-gray-50 rounded-[32px] overflow-hidden flex-shrink-0 border border-gray-50 relative">
+                                                <Image 
+                                                    src={item.imageUrl} 
+                                                    alt={item[`name_${language}`] || item.name} 
+                                                    fill
+                                                    className="object-cover transition-transform duration-700 group-hover:scale-110" 
+                                                    sizes="(max-width: 768px) 96px, 128px"
+                                                />
                                             </div>
                                             <div className="flex-1">
                                                 <h3 className="font-black text-xs md:text-sm text-gray-900 leading-tight uppercase tracking-tight mb-2">
