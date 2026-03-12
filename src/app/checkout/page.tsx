@@ -10,7 +10,7 @@ import { translations } from "@/lib/translations";
 
 export default function CheckoutPage() {
     const router = useRouter();
-    const { cart, user, clearCart, language } = useStore();
+    const { cart, user, clearCart, language, showToast } = useStore();
     const [displayProducts, setDisplayProducts] = useState<any[]>([]);
     const [isFastBuy, setIsFastBuy] = useState(false);
     const t = translations[language];
@@ -24,7 +24,7 @@ export default function CheckoutPage() {
 
     useEffect(() => {
         setMounted(true);
-        if (isSubmitting || isValidating) return; // Guard against redirects during submission
+        if (isSubmitting) return;
 
         const searchParams = new URLSearchParams(window.location.search);
         const fast = searchParams.get('fast') === 'true';
@@ -39,23 +39,35 @@ export default function CheckoutPage() {
                 router.push('/');
             }
         } else {
-            setDisplayProducts(cart);
-            if (cart.length === 0) router.push('/');
+            if (cart.length > 0) {
+                setDisplayProducts(cart);
+            } else if (mounted) {
+                router.push('/');
+            }
         }
-    }, [cart, isSubmitting, isValidating]);
+    }, [cart, isSubmitting, mounted]);
 
     useEffect(() => {
         if (displayProducts.length > 0) {
-            validateStock();
+            performStockCheck();
         }
     }, [displayProducts]);
 
-    const validateStock = async () => {
+    const performStockCheck = async () => {
         setIsValidating(true);
-        const errors: { id: string, name: string, available: number }[] = [];
+        try {
+            const errors = await getStockErrors();
+            setStockErrors(errors);
+        } finally {
+            setIsValidating(false);
+        }
+    };
 
+    const getStockErrors = async () => {
+        const errors: { id: string, name: string, available: number }[] = [];
         try {
             for (const item of displayProducts) {
+                if (!item.id) continue;
                 const productRef = doc(db, "products", item.id);
                 const snap = await getDoc(productRef);
                 if (snap.exists()) {
@@ -64,16 +76,18 @@ export default function CheckoutPage() {
                     const actualStock = Object.values(stockDetails).reduce((a: number, b: any) => a + (Number(b) || 0), 0);
 
                     if (item.quantity > actualStock) {
-                        errors.push({ id: item.id, name: item[`name_${language}`] || item.name, available: actualStock as number });
+                        errors.push({ 
+                            id: item.id, 
+                            name: item[`name_${language}`] || item.name, 
+                            available: actualStock as number 
+                        });
                     }
                 }
             }
-            setStockErrors(errors);
         } catch (e) {
-            console.error("Stock validation error:", e);
-        } finally {
-            setIsValidating(false);
+            console.error("Stock check error:", e);
         }
+        return errors;
     };
 
     const total = displayProducts.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -85,17 +99,21 @@ export default function CheckoutPage() {
             return;
         }
 
+        if (isSubmitting || isValidating) return;
+
         setIsSubmitting(true);
         try {
-            // Final stock check before processing
-            await validateStock();
-            if (stockErrors.length > 0) {
+            // Final stock check
+            const errors = await getStockErrors();
+            if (errors.length > 0) {
+                setStockErrors(errors);
+                showToast(language === 'uz' ? "Ayrim mahsulotlar qoldig'i yetarli emas" : "Недостаточное количество некоторых товаров", 'error');
                 setIsSubmitting(false);
                 return;
             }
 
-            // 2. Save order to Firebase
-            const orderId = Date.now().toString().slice(-6) + Math.floor(1000 + Math.random() * 9000).toString();
+            // Generate a simpler numeric ID for compatibility
+            const orderId = Math.floor(100000 + Math.random() * 900000).toString() + Date.now().toString().slice(-4);
 
             await setDoc(doc(db, "orders", orderId), {
                 userPhone: user.phone,
@@ -104,7 +122,7 @@ export default function CheckoutPage() {
                     name: item[`name_${language}`] || item.name,
                     price: item.price,
                     quantity: item.quantity,
-                    image: item.imageUrl
+                    image: item.imageUrl || item.image // Handle both keys
                 })),
                 total: total,
                 address: address,
@@ -113,16 +131,17 @@ export default function CheckoutPage() {
                 createdAt: serverTimestamp(),
             });
 
-            if (!isFastBuy) {
-                clearCart();
-            } else {
+            if (isFastBuy) {
                 sessionStorage.removeItem('fast_buy_item');
             }
-
+            
+            // DO NOT clearCart here, it's handled in PaymentPage or OrderSuccess
+            // This prevents the redirect-to-home bug
+            
             router.push(`/payment?orderId=${orderId}`);
-        } catch (error) {
-            console.error("Order error:", error);
-            alert(language === 'uz' ? "Xatolik yuz berdi. Iltimos qaytadan urinib ko'ring." : "Произошла ошибка. Пожалуйста, попробуйте еще раз.");
+        } catch (error: any) {
+            console.error("Order submit error:", error);
+            showToast(language === 'uz' ? "Xatolik yuz berdi: " + error.message : "Произошла ошибка: " + error.message, 'error');
         } finally {
             setIsSubmitting(false);
         }
