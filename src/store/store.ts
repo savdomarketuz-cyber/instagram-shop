@@ -1,51 +1,28 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { Product, CartItem, User, Category, Toast, Language } from "@/types";
 
-export interface Product {
-    id: string;
-    name: string; // compatibility
-    name_uz?: string;
-    name_ru?: string;
-    price: number;
-    oldPrice?: number;
-    imageUrl: string;
-    category: string;
-    category_uz?: string;
-    category_ru?: string;
-    description?: string;
-    description_uz?: string;
-    description_ru?: string;
-    stock?: number;
-    sku?: string;
-    groupId?: string;
-    colorName?: string;
-    sales?: number;
-    isDeleted?: boolean;
-    article?: string;
-}
-
-interface CartItem extends Product {
-    quantity: number;
-}
+// Re-export for backward compatibility
+export type { Product, CartItem };
 
 interface StoreState {
     cart: CartItem[];
     wishlist: Product[];
-    user: { id?: string; phone: string; name?: string; username?: string; isAdmin?: boolean } | null;
-    language: "uz" | "ru";
-    setLanguage: (lang: "uz" | "ru") => void;
+    user: User | null;
+    language: Language;
+    setLanguage: (lang: Language) => void;
     addToCart: (product: Product) => void;
     removeFromCart: (productId: string) => void;
     updateQuantity: (productId: string, quantity: number) => void;
     toggleWishlist: (product: Product) => void;
     clearCart: () => void;
-    setUser: (user: { id?: string; phone: string; name?: string; username?: string; isAdmin?: boolean } | null) => void;
+    setUser: (user: User | null) => void;
     logout: () => void;
     // Cache for Home Page
-    cachedProducts: any[];
-    cachedCategories: any[];
-    setCachedProducts: (products: any[]) => void;
-    setCachedCategories: (categories: any[]) => void;
+    cachedProducts: Product[];
+    cachedCategories: Category[];
+    setCachedProducts: (products: Product[]) => void;
+    setCachedCategories: (categories: Category[]) => void;
     homeScrollPosition: number;
     homeSearchQuery: string;
     setHomeScrollPosition: (pos: number) => void;
@@ -54,8 +31,8 @@ interface StoreState {
     homeActiveTab: string;
     setHomeActiveFilter: (filter: string) => void;
     setHomeActiveTab: (tab: string) => void;
-    toast: { message: string, type: 'success' | 'error' | 'info' } | null;
-    showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
+    toast: Toast | null;
+    showToast: (message: string, type?: Toast['type']) => void;
 }
 
 export const useStore = create<StoreState>()(
@@ -126,3 +103,4 @@ export const useStore = create<StoreState>()(
         }
     )
 );
+

@@ -7,15 +7,7 @@ import { useStore } from "@/store/store";
 import { translations } from "@/lib/translations";
 import { db, collection, query, getDocs, orderBy } from "@/lib/firebase";
 
-interface Product {
-    id: string;
-    name: string;
-    price: number;
-    image: string;
-    category: string;
-    tag?: string;
-    stock: number;
-}
+import type { Product } from "@/types";
 
 export default function ProductsPage() {
     const { addToCart, language } = useStore();
@@ -99,16 +91,10 @@ export default function ProductsPage() {
                         {item.stock > 0 && (
                             <button
                                 onClick={() => addToCart({
-                                    id: item.id,
-                                    name: item.name,
-                                    name_uz: item.name_uz,
-                                    name_ru: item.name_ru,
-                                    price: item.price,
-                                    imageUrl: item.image,
-                                    category: item.category,
-                                    category_uz: item.category_uz,
-                                    category_ru: item.category_ru
-                                })}
+                                    ...item,
+                                    image: item.image,
+                                    sales: item.sales || 0
+                                } as Product)}
                                 className="absolute top-2 right-2 p-3 bg-white/90 backdrop-blur-md rounded-2xl shadow-lg hover:bg-black hover:text-white transition-all z-10"
                             >
                                 <Plus size={18} strokeWidth={3} />

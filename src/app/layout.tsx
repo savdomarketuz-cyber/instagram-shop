@@ -73,7 +73,7 @@ export const viewport = {
     themeColor: "#000000",
     width: "device-width",
     initialScale: 1,
-    maximumScale: 1,
+    viewportFit: "cover" as const,
 };
 
 
@@ -109,7 +109,7 @@ export default function RootLayout({
     };
 
     return (
-        <html lang="en">
+        <html lang="uz">
             <head>
                 <script
                     type="application/ld+json"
@@ -147,6 +147,9 @@ export default function RootLayout({
                 `}} />
             </head>
             <body className="bg-gray-100 text-gray-900 antialiased">
+                <a href="#main-content" className="skip-to-main">
+                    Asosiy kontentga o&apos;tish
+                </a>
                 <div id="pwa-splash">
                     <div className="logo-container">
                         <div className="glow"></div>
@@ -161,16 +164,18 @@ export default function RootLayout({
                         </div>
                         <div className="smile-line">
                             <div className="arc-wrap">
-                                <svg width="560" height="210" viewBox="0 0 560 210" xmlns="http://www.w3.org/2000/svg">
+                                <svg width="560" height="210" viewBox="0 0 560 210" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                     <path d="M 0 20 Q 280 240 560 20 Q 280 180 0 20 Z" fill="#2d6e3e" />
                                 </svg>
                             </div>
                         </div>
                     </div>
                 </div>
-                <AppWrapper>
-                    {children}
-                </AppWrapper>
+                <div id="main-content">
+                    <AppWrapper>
+                        {children}
+                    </AppWrapper>
+                </div>
             </body>
         </html>
     );

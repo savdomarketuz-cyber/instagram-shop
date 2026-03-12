@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { db, doc, setDoc, updateDoc, serverTimestamp, deleteDoc } from "@/lib/firebase";
 import NotificationHandler from "@/components/NotificationHandler";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 
 export default function AppWrapper({ children }: { children: React.ReactNode }) {
@@ -68,19 +69,23 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
             }
         };
 
-        // Click tracking
+        // Click tracking — debounce bilan optimallashtirilgan
+        let clickTimeout: ReturnType<typeof setTimeout>;
         const handleGlobalClick = (e: MouseEvent) => {
-            const target = e.target as HTMLElement;
-            let actionText = "Klikladi";
+            clearTimeout(clickTimeout);
+            clickTimeout = setTimeout(() => {
+                const target = e.target as HTMLElement;
+                let actionText = "Klikladi";
 
-            if (target.closest('button')) {
-                const btn = target.closest('button');
-                actionText = btn?.innerText || btn?.ariaLabel || "Tugma bosildi";
-            } else if (target.closest('a')) {
-                actionText = "Havolaga o'tdi";
-            }
+                if (target.closest('button')) {
+                    const btn = target.closest('button');
+                    actionText = btn?.innerText || btn?.ariaLabel || "Tugma bosildi";
+                } else if (target.closest('a')) {
+                    actionText = "Havolaga o'tdi";
+                }
 
-            updateActivity(actionText.substring(0, 30));
+                updateActivity(actionText.substring(0, 30));
+            }, 2000); // 2 soniya debounce — Firestore xarajatini kamaytirish
         };
 
         // addEventListener qo'shish — leak bo'lmasin
@@ -185,9 +190,11 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
             ${showNav ? 'md:pl-64' : ''}
             ${isSplashActive ? 'opacity-0 overflow-hidden h-screen' : 'opacity-100 transition-opacity duration-1000'}
         `}>
-            <PWAInstallPrompt />
-            <NotificationHandler />
-            {children}
+            <ErrorBoundary>
+                <PWAInstallPrompt />
+                <NotificationHandler />
+                {children}
+            </ErrorBoundary>
 
             {showNav && <Navigation />}
 

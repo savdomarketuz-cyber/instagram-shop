@@ -59,7 +59,7 @@ export default function CartPage() {
                                         <div className="col-span-12 lg:col-span-6 flex gap-6 items-center">
                                             <div className="w-24 h-24 md:w-32 md:h-32 bg-gray-50 rounded-[32px] overflow-hidden flex-shrink-0 border border-gray-50 relative">
                                                 <Image 
-                                                    src={item.imageUrl} 
+                                                    src={item.imageUrl || item.image || ''} 
                                                     alt={item[`name_${language}`] || item.name} 
                                                     fill
                                                     className="object-cover transition-transform duration-700 group-hover:scale-110" 

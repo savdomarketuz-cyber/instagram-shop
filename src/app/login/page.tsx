@@ -24,15 +24,24 @@ export default function LoginPage() {
         setError("");
 
         try {
-            // Check for Admin Hardcoded Login
-            if (id.toLowerCase() === "admin" && password === "Abdulaziz2244") {
-                setUser({ id: "ADMIN", phone: "ADMIN", name: "Administrator", isAdmin: true });
-                router.push("/admin");
-                return;
+            // 1. Admin login — server-side orqali tekshirish
+            const authRes = await fetch("/api/auth", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id, password })
+            });
+
+            if (authRes.ok) {
+                const authData = await authRes.json();
+                if (authData.success) {
+                    setUser(authData.user);
+                    const params = new URLSearchParams(window.location.search);
+                    router.push(params.get('redirect') || "/admin");
+                    return;
+                }
             }
 
-            // Normal User Login logic
-            // Check if input is a phone number (start with numbers) or a custom ID
+            // 2. Normal User Login logic
             const isPhoneNumber = /^\d+$/.test(id.replace(/\s+/g, "").replace("+", ""));
 
             let queryId = id;
@@ -109,15 +118,16 @@ export default function LoginPage() {
                     </label>
                     <div className="relative group">
                         <span className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 font-bold transition-opacity group-focus-within:opacity-100">
-                            {id.toLowerCase() === "admin" ? "" : "+998"}
+                            +998
                         </span>
                         <input
                             required
                             type="text"
                             value={id}
                             onChange={(e) => setId(e.target.value)}
-                            className={`w-full bg-gray-50 rounded-2xl py-4 ${id.toLowerCase() === "admin" ? "px-6" : "pl-16 pr-6"} focus:outline-none focus:ring-2 focus:ring-black transition-all font-bold placeholder:text-gray-300 placeholder:font-medium`}
-                            placeholder={id.toLowerCase() === "admin" ? (language === 'uz' ? "Login" : "Логин") : "90 123 45 67"}
+                            className="w-full bg-gray-50 rounded-2xl py-4 pl-16 pr-6 focus:outline-none focus:ring-2 focus:ring-black transition-all font-bold placeholder:text-gray-300 placeholder:font-medium"
+                            placeholder="90 123 45 67"
+                            aria-label={language === 'uz' ? 'Telefon raqami' : 'Номер телефона'}
                         />
                     </div>
                 </div>

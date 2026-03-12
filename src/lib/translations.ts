@@ -41,7 +41,16 @@ export const translations = {
             empty: "Savatingiz bo'sh",
             title: "Savat",
             items: "ta mahsulot",
-            clear: "Savatni tozalash"
+            clear: "Savatni tozalash",
+            orderSummary: "Buyurtma xulosasi",
+            productCount: "Mahsulotlar soni",
+            delivery: "Yetkazib berish",
+            free: "Bepul",
+            startShopping: "Xaridni boshlash",
+            product: "Mahsulot",
+            quantity: "Soni",
+            price: "Narxi",
+            remove: "O'chirish"
         },
         account: {
             title: "Mening profilim",
@@ -134,7 +143,16 @@ export const translations = {
             empty: "Ваша корзина пуста",
             title: "Корзина",
             items: "товаров",
-            clear: "Очистить корзину"
+            clear: "Очистить корзину",
+            orderSummary: "Итог заказа",
+            productCount: "Количество товаров",
+            delivery: "Доставка",
+            free: "Бесплатно",
+            startShopping: "Начать покупки",
+            product: "Товар",
+            quantity: "Кол-во",
+            price: "Цена",
+            remove: "Удалить"
         },
         account: {
             title: "Мой профиль",

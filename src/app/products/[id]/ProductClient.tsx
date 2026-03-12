@@ -17,33 +17,7 @@ import { ReviewsSection } from "@/components/product/ReviewsSection";
 import { ProductDescriptionModal } from "@/components/product/ProductDescriptionModal";
 import { RelatedProducts } from "@/components/product/RelatedProducts";
 
-interface Product {
-    id: string;
-    name: string;
-    name_uz?: string;
-    name_ru?: string;
-    price: number;
-    oldPrice?: number;
-    image: string;
-    images?: string[];
-    category: string;
-    category_uz?: string;
-    category_ru?: string;
-    description?: string;
-    description_uz?: string;
-    description_ru?: string;
-    stock: number;
-    sales?: number;
-    sku?: string;
-    groupId?: string;
-    colorName?: string;
-    isDeleted?: boolean;
-    isOriginal?: boolean;
-    stockDetails?: { [key: string]: number };
-    rating?: number;
-    reviewCount?: number;
-    videoUrl?: string;
-}
+import type { Product } from "@/types";
 
 export default function ProductClient({ params }: { params: { id: string } }) {
     const router = useRouter();

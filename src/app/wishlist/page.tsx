@@ -57,7 +57,7 @@ export default function WishlistPage() {
                         <div key={item.id} className="relative group">
                             <Link href={`/products/${item.id}`} className="block">
                                 <div className="aspect-[3/4] overflow-hidden rounded-[28px] bg-gray-50 mb-3 shadow-sm">
-                                    <img src={item.imageUrl} alt={item[`name_${language}`] || item.name} className="object-cover w-full h-full" />
+                                    <img src={item.imageUrl || item.image || ''} alt={item[`name_${language}`] || item.name} className="object-cover w-full h-full" />
                                 </div>
                                 <h3 className="text-[13px] font-bold text-gray-900 leading-tight">
                                     {item[`name_${language}`] || item.name}

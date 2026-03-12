@@ -13,6 +13,47 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Accessibility: Focus visible for keyboard navigation */
+*:focus-visible {
+  outline: 2px solid #7000FF;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Accessibility: Reduced motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Skip to main content link for screen readers */
+.skip-to-main {
+  position: absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  padding: 12px 24px;
+  background: #000;
+  color: #fff;
+  border-radius: 0 0 12px 12px;
+  font-weight: 900;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: top 0.2s;
+}
+
+.skip-to-main:focus {
+  top: 0;
+}
+
 @layer utilities {
   /* No Scrollbar utility — ikkala nom bilan ishlaydi */
   .no-scrollbar::-webkit-scrollbar,
