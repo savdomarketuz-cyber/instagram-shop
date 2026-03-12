@@ -4,17 +4,25 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 
 export default function SplashScreen() {
-    const [isVisible, setIsVisible] = useState(true);
+    const [isVisible, setIsVisible] = useState(false);
     const [isFadingOut, setIsFadingOut] = useState(false);
 
     useEffect(() => {
-        // Show splash for 2 seconds then fade out
+        // Only show if running as PWA (standalone)
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches 
+            || (window.navigator as any).standalone 
+            || document.referrer.includes('android-app://');
+
+        if (!isStandalone) return;
+
+        setIsVisible(true);
+
         const timer = setTimeout(() => {
             setIsFadingOut(true);
             setTimeout(() => {
                 setIsVisible(false);
-            }, 800); // Match this with the duration of the fade-out animation
-        }, 2200);
+            }, 800);
+        }, 3500); // Give time for the animation to play
 
         return () => clearTimeout(timer);
     }, []);
@@ -23,49 +31,58 @@ export default function SplashScreen() {
 
     return (
         <div className={`
-            fixed inset-0 z-[1000] flex flex-col items-center justify-center bg-white transition-opacity duration-700 ease-in-out
+            fixed inset-0 z-[1000] flex flex-col items-center justify-center bg-[#f0f0f2] transition-opacity duration-700 ease-in-out
             ${isFadingOut ? "opacity-0 pointer-events-none" : "opacity-100"}
         `}>
-            {/* Background Decorative Elements */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-gray-50 rounded-full blur-[120px] opacity-50" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-gray-50 rounded-full blur-[120px] opacity-50" />
-            </div>
+            {/* Background Glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-gradient-to-r from-[#2d6e3e]/10 to-transparent blur-3xl opacity-0 animate-[glowIn_1.4s_ease_forwards_0.3s]" />
 
-            <div className="relative flex flex-col items-center gap-10 animate-in fade-in zoom-in duration-1000 ease-out">
-                {/* Logo Container with Pulse Animation */}
-                <div className="relative">
-                    {/* Pulsing Glow */}
-                    <div className="absolute inset-0 bg-black/5 rounded-full blur-2xl animate-pulse scale-150" />
-                    
-                    <div className="relative w-32 h-32 bg-black text-white rounded-[40px] flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden">
-                        {/* Animated Shining Effect */}
-                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
-                        <span className="text-6xl font-black italic tracking-tighter selec-none">V</span>
+            <div className="flex flex-col items-center relative scale-50 md:scale-100 transition-transform">
+                {/* Letters Container */}
+                <div className="flex items-baseline font-['Helvetica_Neue',_Helvetica,_Arial,_sans-serif] text-[140px] font-[750] text-[#0d1117] tracking-tight leading-none overflow-hidden">
+                    {['V', 'E', 'L', 'A', 'R', 'I'].map((char, i) => (
+                        <span 
+                            key={i} 
+                            className="inline-block translate-y-[100px] opacity-0 animate-[letterRise_0.7s_cubic-bezier(0.16,1,0.3,1)_forwards]"
+                            style={{ animationDelay: `${0.05 + i * 0.08}s` }}
+                        >
+                            {char}
+                        </span>
+                    ))}
+                    <span className="dot inline-block text-[#2d6e3e] text-[100px] relative top-[8px] opacity-0 scale-0 -rotate-180 animate-[dotSpin_0.55s_cubic-bezier(0.34,1.56,0.64,1)_forwards] style={{ animationDelay: '0.62s' }}">
+                        .
+                    </span>
+                </div>
+
+                {/* Smile Arc */}
+                <div className="mt-3 overflow-hidden">
+                    <div className="animate-[revealArc_1s_cubic-bezier(0.16,1,0.3,1)_forwards]" style={{ animationDelay: '0.75s', clipPath: 'inset(0 50% 0 50%)' }}>
+                        <svg width="560" height="210" viewBox="0 0 560 210" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M 0 20 Q 280 240 560 20 Q 280 180 0 20 Z"
+                                fill="#2d6e3e"
+                            />
+                        </svg>
                     </div>
                 </div>
-
-                <div className="flex flex-col items-center gap-3">
-                    <h1 className="text-4xl font-black italic tracking-tighter uppercase animate-in slide-in-from-bottom duration-700 delay-300">
-                        VELARI
-                    </h1>
-                    <div className="h-1 w-12 bg-black rounded-full animate-in zoom-in duration-700 delay-500" />
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] animate-in fade-in duration-1000 delay-700">
-                        Market
-                    </p>
-                </div>
-            </div>
-
-            {/* Bottom Slogan */}
-            <div className="absolute bottom-16 text-[9px] font-black text-gray-300 uppercase tracking-[0.3em] animate-pulse">
-                Premium Electronics Store
             </div>
 
             <style jsx global>{`
-                @keyframes shimmer {
-                    100% {
-                        transform: translateX(100%);
-                    }
+                @keyframes letterRise {
+                    0%   { opacity: 0; transform: translateY(100px); }
+                    100% { opacity: 1; transform: translateY(0); }
+                }
+                @keyframes dotSpin {
+                    0%   { opacity: 0; transform: scale(0) rotate(-180deg); }
+                    100% { opacity: 1; transform: scale(1) rotate(0deg); }
+                }
+                @keyframes revealArc {
+                    0%   { clip-path: inset(0 50% 0 50%); }
+                    100% { clip-path: inset(0 0%  0 0%); }
+                }
+                @keyframes glowIn {
+                    0%   { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+                    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
                 }
             `}</style>
         </div>

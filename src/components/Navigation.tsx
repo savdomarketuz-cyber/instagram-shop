@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Home, Heart, ShoppingBag, User, MessageCircle, Clapperboard, Headset, LayoutGrid } from "lucide-react";
+import Logo from "./Logo";
 import { useStore } from "@/store/store";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -24,14 +25,8 @@ export default function Navigation() {
         <>
             {/* Desktop Sidebar Navigation */}
             <nav className="hidden md:flex fixed left-0 top-0 bottom-0 w-72 bg-white border-r border-gray-100 flex-col p-8 z-50">
-                <Link href="/" className="flex items-center gap-4 mb-12 group">
-                    <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-black/20 group-hover:scale-110 transition-all duration-500 overflow-hidden">
-                        <span className="text-2xl font-black italic tracking-tighter">V</span>
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-2xl font-black tracking-tighter italic leading-none">VELARI</span>
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] leading-none mt-1 opacity-60">Market</span>
-                    </div>
+                <Link href="/" className="mb-12 group transition-transform active:scale-95">
+                    <Logo size="md" className="!items-start" />
                 </Link>
                 
                 <div className="flex-1 space-y-3">
