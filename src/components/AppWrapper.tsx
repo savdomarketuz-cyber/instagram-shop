@@ -5,16 +5,15 @@ import Navigation from "@/components/Navigation";
 import Link from "next/link";
 import { MessageSquare, CheckCircle, AlertCircle, Info } from "lucide-react";
 import { useStore } from "@/store/store";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { db, doc, setDoc, updateDoc, serverTimestamp, deleteDoc } from "@/lib/firebase";
 import NotificationHandler from "@/components/NotificationHandler";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
-import SplashScreen from "@/components/SplashScreen";
 
 
 export default function AppWrapper({ children }: { children: React.ReactNode }) {
     const { cart, user } = useStore();
-    // Toast-ni to'g'ri subscribe qilish — useStore.getState() emas
+    const [isSplashActive, setIsSplashActive] = useState(true);
     const toast = useStore(state => state.toast);
     const pathname = usePathname();
 
@@ -128,6 +127,24 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
         return () => clearTimeout(timer);
     }, [cart, user?.phone]);
 
+    // Cleanup Native PWA Splash
+    useEffect(() => {
+        const splash = document.getElementById('pwa-splash');
+        if (splash) {
+            // Wait for our cinematic animation to finish (approx 3.5s - 4s)
+            const timer = setTimeout(() => {
+                splash.style.transition = 'opacity 1s ease, visibility 1s';
+                splash.style.opacity = '0';
+                splash.style.visibility = 'hidden';
+                setIsSplashActive(false);
+                setTimeout(() => splash.remove(), 1000);
+            }, 4000);
+            return () => clearTimeout(timer);
+        } else {
+            setIsSplashActive(false);
+        }
+    }, []);
+
     const isAdmin = pathname?.startsWith("/admin");
     const isProductDetail = pathname?.startsWith("/products/") && pathname.split("/").length > 2;
     // Show navigation on main messages list, but hide inside actual chat rooms
@@ -163,8 +180,11 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
     const showNav = !isProductDetail && !isCheckout && !isPayment && !isChat;
 
     return (
-        <div className={`mx-auto bg-white min-h-screen relative shadow-2xl ${showNav ? 'md:pl-64' : ''}`}>
-            <SplashScreen />
+        <div className={`
+            mx-auto bg-white min-h-screen relative shadow-2xl 
+            ${showNav ? 'md:pl-64' : ''}
+            ${isSplashActive ? 'opacity-0 overflow-hidden h-screen' : 'opacity-100 transition-opacity duration-1000'}
+        `}>
             <PWAInstallPrompt />
             <NotificationHandler />
             {children}

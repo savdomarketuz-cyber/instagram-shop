@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import Image from "next/image";
+import Logo from "./Logo";
 
 export default function PWAInstallPrompt() {
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -78,7 +78,7 @@ export default function PWAInstallPrompt() {
                 </button>
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center overflow-hidden border border-gray-50 flex-shrink-0">
-                        <Image src="/logo.png" alt="Velari" width={32} height={32} className="object-contain" />
+                        <Logo size="sm" showSmile={false} />
                     </div>
                     <div>
                         <p className="text-[13px] font-bold text-gray-900 leading-none">Velari Market</p>

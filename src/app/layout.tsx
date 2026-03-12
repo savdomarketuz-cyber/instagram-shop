@@ -119,8 +119,55 @@ export default function RootLayout({
                     type="application/ld+json"
                     dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
                 />
+                <style dangerouslySetInnerHTML={{ __html: `
+                    #pwa-splash {
+                        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                        background: #f0f0f2; z-index: 999999; display: none;
+                        align-items: center; justify-content: center; overflow: hidden;
+                    }
+                    body.is-pwa #pwa-splash { display: flex; }
+                    .logo-container { display: flex; flex-direction: column; align-items: center; position: relative; transform: scale(0.6); }
+                    @media (min-width: 768px) { .logo-container { transform: scale(1); } }
+                    .logo-text { font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif; font-size: 140px; font-weight: 750; color: #0d1117; letter-spacing: -1px; line-height: 1; display: flex; align-items: baseline; }
+                    .letter { display: inline-block; opacity: 0; transform: translateY(60px); animation: letterRise 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+                    .logo-dot { display: inline-block; color: #2d6e3e; font-size: 100px; position: relative; top: 8px; opacity: 0; transform: scale(0) rotate(-180deg); animation: dotSpin 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.62s; }
+                    @keyframes letterRise { 0% { opacity: 0; transform: translateY(60px); } 100% { opacity: 1; transform: translateY(0); } }
+                    @keyframes dotSpin { 0% { opacity: 0; transform: scale(0) rotate(-180deg); } 100% { opacity: 1; transform: scale(1) rotate(0deg); } }
+                    .smile-line { margin-top: 12px; }
+                    .arc-wrap { clip-path: inset(0 50% 0 50%); animation: revealArc 1s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.75s; }
+                    @keyframes revealArc { 0% { clip-path: inset(0 50% 0 50%); } 100% { clip-path: inset(0 0% 0 0%); } }
+                    .glow { position: absolute; width: 700px; height: 700px; border-radius: 50%; background: radial-gradient(circle, rgba(45,110,62,0.07) 0%, transparent 65%); top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); animation: glowIn 1.4s ease forwards 0.3s; pointer-events: none; z-index: -1; }
+                    @keyframes glowIn { 0% { transform: translate(-50%, -50%) scale(0); opacity: 0; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+                `}} />
+                <script dangerouslySetInnerHTML={{ __html: `
+                    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone || document.referrer.includes('android-app://')) {
+                        document.documentElement.classList.add('is-pwa');
+                        document.body.classList.add('is-pwa');
+                    }
+                `}} />
             </head>
             <body className="bg-gray-100 text-gray-900 antialiased">
+                <div id="pwa-splash">
+                    <div className="logo-container">
+                        <div className="glow"></div>
+                        <div className="logo-text">
+                            <span className="letter" style={{animationDelay:'0.05s'}}>V</span>
+                            <span className="letter" style={{animationDelay:'0.13s'}}>E</span>
+                            <span className="letter" style={{animationDelay:'0.21s'}}>L</span>
+                            <span className="letter" style={{animationDelay:'0.29s'}}>A</span>
+                            <span className="letter" style={{animationDelay:'0.37s'}}>R</span>
+                            <span className="letter" style={{animationDelay:'0.45s'}}>I</span>
+                            <span className="logo-dot">.</span>
+                        </div>
+                        <div className="smile-line">
+                            <div className="arc-wrap">
+                                <svg width="560" height="210" viewBox="0 0 560 210" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M 0 20 Q 280 240 560 20 Q 280 180 0 20 Z" fill="#2d6e3e" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <AppWrapper>
                     {children}
                 </AppWrapper>
