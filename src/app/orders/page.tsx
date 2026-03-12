@@ -27,6 +27,7 @@ export default function OrdersPage() {
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [enrichedItems, setEnrichedItems] = useState<any[]>([]);
     const [isCancelling, setIsCancelling] = useState(false);
+    const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
 
     // Review states
     const [reviewProduct, setReviewProduct] = useState<any>(null);
@@ -96,10 +97,13 @@ export default function OrdersPage() {
     };
 
     const handleCancelOrder = async (orderId: string) => {
-        const confirmMsg = language === 'uz'
-            ? "Haqiqatan ham ushbu buyurtmani bekor qilmoqchimisiz?"
-            : "Вы уверены, что хотите отменить этот заказ?";
-        if (!confirm(confirmMsg)) return;
+        setOrderToCancel(orderId);
+    };
+
+    const confirmCancelOrder = async () => {
+        if (!orderToCancel) return;
+        const orderId = orderToCancel;
+        setOrderToCancel(null);
 
         setIsCancelling(true);
         try {
@@ -531,6 +535,41 @@ export default function OrdersPage() {
                                         <MessageCircle size={16} />
                                     </>
                                 )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Cancellation Confirmation Modal */}
+            {orderToCancel && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
+                    <div className="bg-white w-full max-w-sm rounded-[48px] p-10 text-center space-y-8 animate-in zoom-in duration-500 shadow-2xl">
+                        <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto shadow-xl shadow-red-500/10">
+                            <XCircle size={40} />
+                        </div>
+                        <div className="space-y-4">
+                            <h3 className="text-2xl font-black italic tracking-tighter uppercase leading-tight">
+                                {language === 'uz' ? 'Buyurtmani bekor qilish' : 'Отмена заказа'}
+                            </h3>
+                            <p className="text-sm font-bold text-gray-400">
+                                {language === 'uz' 
+                                    ? "Haqiqatan ham ushbu buyurtmani bekor qilmoqchimisiz? Bu amalni ortga qaytarib bo'lmaydi." 
+                                    : "Вы действительно хотите отменить этот заказ? Это действие нельзя отменить."}
+                            </p>
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={confirmCancelOrder}
+                                className="w-full py-5 bg-red-500 text-white rounded-[28px] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-red-500/20 active:scale-95 transition-all"
+                            >
+                                {language === 'uz' ? 'Tasdiqlash' : 'Подтвердить'}
+                            </button>
+                            <button
+                                onClick={() => setOrderToCancel(null)}
+                                className="w-full py-5 bg-gray-50 text-gray-400 rounded-[28px] font-black text-xs uppercase tracking-[0.2em] active:scale-95 transition-all"
+                            >
+                                {language === 'uz' ? 'Orqaga' : 'Назад'}
                             </button>
                         </div>
                     </div>

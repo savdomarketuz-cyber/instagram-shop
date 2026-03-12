@@ -2,7 +2,7 @@
 
 import { useStore } from "@/store/store";
 import { useRouter } from "next/navigation";
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { CheckCircle, QrCode, Banknote, Clock, Info, AlertCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { db, doc, getDoc, updateDoc, increment, collection } from "@/lib/firebase";
@@ -12,54 +12,72 @@ function PaymentContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const orderId = searchParams.get("orderId");
-    const { cart, clearCart, language } = useStore();
+    const { clearCart, language, showToast } = useStore();
     const t = translations[language];
+    const [order, setOrder] = useState<any>(null);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [loadingOrder, setLoadingOrder] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<"qr" | "cash">("qr");
-    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+    useEffect(() => {
+        if (orderId) {
+            fetchOrder();
+        } else {
+            setLoadingOrder(false);
+            setError(language === 'uz' ? "Buyurtma topilmadi." : "Заказ не найден.");
+        }
+    }, [orderId]);
+
+    const fetchOrder = async () => {
+        try {
+            const snap = await getDoc(doc(db, "orders", orderId!));
+            if (snap.exists()) {
+                setOrder({ id: snap.id, ...snap.data() });
+            } else {
+                setError(language === 'uz' ? "Buyurtma topilmadi." : "Заказ не найден.");
+            }
+        } catch (e) {
+            console.error("Fetch order error:", e);
+            setError(language === 'uz' ? "Ma'lumotlarni yuklashda xatolik." : "Ошибка при загрузке данных.");
+        } finally {
+            setLoadingOrder(false);
+        }
+    };
 
     const handlePayment = async () => {
-        if (!orderId) {
-            setError(language === 'uz' ? "Buyurtma topilmadi. Iltimos qaytadan urinib ko'ring." : "Заказ не найден. Пожалуйста, попробуйте еще раз.");
-            return;
-        }
+        if (!order || !orderId) return;
 
         setIsProcessing(true);
         setError(null);
 
         try {
-            // 1. Double check stock for ALL items before final confirmation
-            for (const item of cart) {
+            // 1. Double check stock for ALL items in the ORDER before final confirmation
+            for (const item of order.items) {
                 const productRef = doc(db, "products", item.id);
                 const pSnap = await getDoc(productRef);
                 if (!pSnap.exists()) {
-                    const errorMsg = language === 'uz' ? `${item.name} bazadan topilmadi.` : `${item.name} не найден в базе.`;
-                    throw new Error(errorMsg);
+                    throw new Error(language === 'uz' ? `${item.name} bazadan topilmadi.` : `${item.name} не найден в базе.`);
                 }
                 const data = pSnap.data();
                 const stockDetails = data.stockDetails || {};
                 const actualStock = Object.values(stockDetails).reduce((a: number, b: any) => a + (Number(b) || 0), 0);
 
                 if (actualStock < item.quantity) {
-                    const errorMsg = language === 'uz'
+                    throw new Error(language === 'uz'
                         ? `${item.name} qoldig'i yetarli emas (Faqat ${actualStock} ta qolgan).`
-                        : `${item.name} недостаточно на складе (Осталось всего ${actualStock} шт.).`;
-                    throw new Error(errorMsg);
+                        : `${item.name} недостаточно на складе (Осталось всего ${actualStock} шт.).`);
                 }
             }
 
-            // 2. Decrement stock and update status
-            const updates = cart.map(async (item) => {
+            // 2. Decrement stock
+            const updates = order.items.map(async (item: any) => {
                 const productRef = doc(db, "products", item.id);
                 const pSnap = await getDoc(productRef);
                 const pData = pSnap.data() || {};
-
-                // Update stockDetails (warehouse-specific stock)
                 const stockDetails = { ...(pData.stockDetails || {}) };
                 let remainingToDeduct = item.quantity;
 
-                // Pick warehouses to deduct from (pick first ones that have stock)
                 for (const wId in stockDetails) {
                     if (remainingToDeduct <= 0) break;
                     const available = stockDetails[wId] || 0;
@@ -70,7 +88,6 @@ function PaymentContent() {
                     }
                 }
 
-                // If still remaining (though shouldn't happen due to total stock check), take from first warehouse
                 if (remainingToDeduct > 0) {
                     const firstW = Object.keys(stockDetails)[0];
                     if (firstW) stockDetails[firstW] -= remainingToDeduct;
@@ -86,12 +103,9 @@ function PaymentContent() {
             await Promise.all(updates);
 
             // 3. Update order status
-            let finalStatus = "";
-            if (paymentMethod === 'qr') {
-                finalStatus = language === 'uz' ? "To'lov tekshirilmoqda" : "Проверка оплаты";
-            } else {
-                finalStatus = language === 'uz' ? "Qabul qilindi" : "Принят";
-            }
+            const finalStatus = paymentMethod === 'qr' 
+                ? (language === 'uz' ? "To'lov tekshirilmoqda" : "Проверка оплаты")
+                : (language === 'uz' ? "Qabul qilindi" : "Принят");
 
             await updateDoc(doc(db, "orders", orderId), {
                 status: finalStatus,
@@ -101,13 +115,18 @@ function PaymentContent() {
             clearCart();
             router.push("/order-success");
         } catch (err: any) {
-            console.error("Payment finalization error:", err);
-            const defaultError = language === 'uz' ? "Xatolik yuz berdi. Iltimos qaytadan urinib ko'ring." : "Произошла ошибка. Пожалуйста, попробуйте еще раз.";
-            setError(err.message || defaultError);
+            console.error("Payment error:", err);
+            setError(err.message || (language === 'uz' ? "Xatolik yuz berdi." : "Произошла ошибка."));
         } finally {
             setIsProcessing(false);
         }
     };
+
+    if (loadingOrder) return (
+        <div className="min-h-screen flex items-center justify-center bg-white">
+            <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
+        </div>
+    );
 
     return (
         <div className="p-6 bg-white min-h-screen pt-12 pb-24">
@@ -193,11 +212,10 @@ function PaymentContent() {
                 </div>
             )}
 
-            {/* Order Summary */}
             <div className="p-8 bg-gray-50 rounded-[40px] mb-8 border border-gray-100">
                 <div className="flex justify-between items-center font-black italic tracking-tighter text-xl">
                     <span className="text-gray-400 uppercase tracking-widest text-[10px] not-italic">{t.common.total}:</span>
-                    <span>{total.toLocaleString()} so'm</span>
+                    <span>{order?.total?.toLocaleString() || 0} so'm</span>
                 </div>
             </div>
 

@@ -24,6 +24,8 @@ export default function CheckoutPage() {
 
     useEffect(() => {
         setMounted(true);
+        if (isSubmitting || isValidating) return; // Guard against redirects during submission
+
         const searchParams = new URLSearchParams(window.location.search);
         const fast = searchParams.get('fast') === 'true';
         
@@ -40,7 +42,7 @@ export default function CheckoutPage() {
             setDisplayProducts(cart);
             if (cart.length === 0) router.push('/');
         }
-    }, [cart]);
+    }, [cart, isSubmitting, isValidating]);
 
     useEffect(() => {
         if (displayProducts.length > 0) {
@@ -198,18 +200,18 @@ export default function CheckoutPage() {
                     </div>
                 </div>
 
-                <div className="mt-12 p-8 bg-black text-white rounded-[40px] shadow-2xl relative overflow-hidden">
+                <div className="mt-12 p-10 bg-black text-white rounded-[40px] shadow-2xl relative overflow-hidden">
                     <div className="relative z-10">
-                        <div className="flex justify-between mb-3 opacity-60 text-xs font-bold uppercase tracking-widest">
+                        <div className="flex justify-between mb-4 opacity-60 text-[10px] font-black uppercase tracking-[0.2em] px-1">
                             <span>{t.cart.items}</span>
                             <span>{total.toLocaleString()} so'm</span>
                         </div>
-                        <div className="flex justify-between mb-6 opacity-60 text-xs font-bold uppercase tracking-widest">
+                        <div className="flex justify-between mb-8 opacity-60 text-[10px] font-black uppercase tracking-[0.2em] px-1">
                             <span>{t.common.delivery}</span>
-                            <span className="text-green-400">{language === 'uz' ? 'Bepul' : 'Бесплатно'}</span>
+                            <span className="text-green-400 font-black">{language === 'uz' ? 'Bepul' : 'Бесплатно'}</span>
                         </div>
-                        <div className="flex justify-between font-black text-2xl pt-6 border-t border-white/10">
-                            <span>{t.common.total}</span>
+                        <div className="flex justify-between font-black text-3xl italic tracking-tighter pt-8 border-t border-white/10 px-1">
+                            <span className="uppercase text-sm not-italic opacity-40">{t.common.total}</span>
                             <span>{total.toLocaleString()} so'm</span>
                         </div>
                     </div>
