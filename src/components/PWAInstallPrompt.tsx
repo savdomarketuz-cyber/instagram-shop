@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Download, X, Smartphone } from "lucide-react";
+import { X } from "lucide-react";
+import Image from "next/image";
 
 export default function PWAInstallPrompt() {
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -9,89 +10,89 @@ export default function PWAInstallPrompt() {
     const [isAppInstalled, setIsAppInstalled] = useState(false);
 
     useEffect(() => {
-        // 1. Check if already running as standalone (PWA installed and opened)
+        // 1. Ilova ichidan kirilganini tekshirish
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
-                           (window.navigator as any).standalone || 
-                           document.referrer.includes('android-app://');
+                           (window.navigator as any).standalone;
 
         if (isStandalone) {
             setIsAppInstalled(true);
             return;
         }
 
-        // 2. Listen for the install prompt event
+        // 2. O'rnatish hodisasini tutib olish
         const handleBeforeInstallPrompt = (e: any) => {
             e.preventDefault();
             setDeferredPrompt(e);
             
-            // Show prompt only if not dismissed in this session
-            const isDismissed = sessionStorage.getItem('pwa-prompt-dismissed');
+            const isDismissed = localStorage.getItem('pwa-banner-dismissed');
             if (!isDismissed) {
-                // Delay showing to not annoy immediately
-                setTimeout(() => setIsVisible(true), 3000);
+                setIsVisible(true);
             }
         };
 
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-        // 3. Detect when app is installed
-        window.addEventListener('appinstalled', () => {
-            setIsAppInstalled(true);
-            setIsVisible(false);
-            setDeferredPrompt(null);
-        });
+        // 3. Agar brauzer qo'llab-quvvatlamasa ham, foydalanuvchiga ko'rsatib turish uchun
+        // (Uzum Market stilida)
+        const isDismissed = localStorage.getItem('pwa-banner-dismissed');
+        if (!isDismissed && !isStandalone) {
+            // Android/iOS ekanligini tekshirish (faqat mobilda chiqishi uchun)
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            if (isMobile) {
+                setIsVisible(true);
+            }
+        }
 
         return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     }, []);
 
     const handleInstallClick = async () => {
-        if (!deferredPrompt) return;
+        if (!deferredPrompt) {
+            // Agar brauzerda prompt hali yo'q bo'lsa (masalan iOS), tushuntirish berish mumkin
+            alert("Ilovani o'rnatish uchun brauzer menyusidan 'Add to Home Screen' tugmasini bosing.");
+            return;
+        }
 
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
-        
         if (outcome === 'accepted') {
-            setDeferredPrompt(null);
             setIsVisible(false);
         }
     };
 
     const handleDismiss = () => {
         setIsVisible(false);
-        sessionStorage.setItem('pwa-prompt-dismissed', 'true');
+        localStorage.setItem('pwa-banner-dismissed', 'true');
     };
 
     if (!isVisible || isAppInstalled) return null;
 
     return (
-        <div className="fixed bottom-24 left-4 right-4 z-[100] animate-in fade-in slide-in-from-bottom-10 duration-500">
-            <div className="bg-black/90 backdrop-blur-xl border border-white/10 rounded-3xl p-4 shadow-2xl flex items-center justify-between gap-4">
+        <div className="bg-[#F2F4F7] border-b border-gray-100 px-4 py-3 flex items-center justify-between sticky top-0 z-[100] animate-in fade-in slide-in-from-top duration-500">
+            <div className="flex items-center gap-3">
+                <button 
+                    onClick={handleDismiss}
+                    className="p-1 text-gray-400 hover:text-gray-600"
+                >
+                    <X size={18} />
+                </button>
                 <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
-                        <Smartphone className="text-black" size={24} />
+                    <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center overflow-hidden border border-gray-50 flex-shrink-0">
+                        <Image src="/logo.png" alt="Velari" width={32} height={32} className="object-contain" />
                     </div>
-                    <div className="flex flex-col">
-                        <p className="text-white text-sm font-black italic tracking-tight uppercase leading-none mb-1">Velari App</p>
-                        <p className="text-white/50 text-[10px] font-bold uppercase tracking-widest leading-none">Ilovani o'rnating</p>
+                    <div>
+                        <p className="text-[13px] font-bold text-gray-900 leading-none">Velari Market</p>
+                        <p className="text-[11px] text-gray-400 mt-1 font-medium">Ilovani yuklab olish</p>
                     </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <button 
-                        onClick={handleInstallClick}
-                        className="bg-white text-black text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-full hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
-                    >
-                        <Download size={14} strokeWidth={3} />
-                        O'rnatish
-                    </button>
-                    <button 
-                        onClick={handleDismiss}
-                        className="p-3 text-white/30 hover:text-white transition-colors"
-                    >
-                        <X size={20} />
-                    </button>
                 </div>
             </div>
+
+            <button 
+                onClick={handleInstallClick}
+                className="bg-[#7000FF] hover:bg-[#5e00d6] text-white text-[11px] font-bold px-5 py-2.5 rounded-lg active:scale-95 transition-all shadow-lg shadow-purple-500/20"
+            >
+                Yuklab olish
+            </button>
         </div>
     );
 }
