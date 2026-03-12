@@ -8,6 +8,7 @@ import { useStore } from "@/store/store";
 import { useEffect } from "react";
 import { db, doc, setDoc, updateDoc, serverTimestamp, deleteDoc } from "@/lib/firebase";
 import NotificationHandler from "@/components/NotificationHandler";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 
 
 export default function AppWrapper({ children }: { children: React.ReactNode }) {
@@ -166,6 +167,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
             {children}
 
             {showNav && <Navigation />}
+            <PWAInstallPrompt />
 
 
             {/* Animated Toast Notification — to'g'ri subscribe qilingan */}
