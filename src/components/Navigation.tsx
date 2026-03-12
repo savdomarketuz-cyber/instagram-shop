@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Home, Heart, ShoppingBag, User, MessageCircle, Clapperboard, Headset, LayoutGrid } from "lucide-react";
 import { useStore } from "@/store/store";
 import { useEffect, useState } from "react";
@@ -23,7 +24,15 @@ export default function Navigation() {
         <>
             {/* Desktop Sidebar Navigation */}
             <nav className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-gray-100 flex-col p-8 z-50">
-                <Link href="/" className="text-3xl font-black italic tracking-tighter mb-12">VELARI</Link>
+                <Link href="/" className="relative w-full h-12 mb-12">
+                    <Image
+                        src="/logo.png"
+                        alt="Velari"
+                        fill
+                        className="object-contain object-left"
+                        priority
+                    />
+                </Link>
                 
                 <div className="flex-1 space-y-2">
                     <Link href="/" className={`flex items-center gap-4 p-4 rounded-2xl transition-all ${pathname === '/' ? 'bg-black text-white shadow-xl shadow-black/10' : 'text-gray-500 hover:bg-gray-50'}`}>

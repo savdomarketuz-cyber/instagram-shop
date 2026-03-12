@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { Search, Loader2, Heart } from "lucide-react";
+import Image from "next/image";
 import { useStore } from "@/store/store";
 import { db, collection, query, getDocs, orderBy, onSnapshot, doc, getDoc, limit } from "@/lib/firebase";
 import { getAiRecommendations } from "@/lib/ai";
@@ -258,7 +259,15 @@ function HomeContent() {
     return (
         <main className="min-h-screen bg-white pb-24 max-w-[1440px] mx-auto">
             <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md px-4 md:px-10 py-3 md:py-6 border-b border-gray-100 flex items-center gap-3 md:gap-8">
-                <Link href="/" className="hidden md:block text-2xl font-black italic tracking-tighter">VELARI</Link>
+                <Link href="/" className="hidden md:block relative w-32 h-10">
+                    <Image
+                        src="/logo.png"
+                        alt="Velari"
+                        fill
+                        className="object-contain object-left"
+                        priority
+                    />
+                </Link>
                 <div className="flex-1 relative max-w-2xl mx-auto">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input

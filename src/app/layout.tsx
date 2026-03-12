@@ -6,7 +6,7 @@ export const metadata = {
         template: "%s | Velari"
     },
     description: "Premium tech store in Uzbekistan. Global brands, official warranty, and fast delivery. Velari - Your connection to the future.",
-    keywords: ["electronics", "tech store", "Uzbekistan", "Velari", "smartphones", "laptops", "accessories"],
+    keywords: ["electronics", "tech store", "Uzbekistan", "Velari", "smartphones", "laptops", "accessories", "gadgets", "online shop", "muddatli to'lov", "muddatli tolov", "bo'lib to'lash"],
     authors: [{ name: "Velari Team" }],
     creator: "Velari",
     publisher: "Velari",
