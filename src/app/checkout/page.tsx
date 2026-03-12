@@ -11,6 +11,8 @@ import { translations } from "@/lib/translations";
 export default function CheckoutPage() {
     const router = useRouter();
     const { cart, user, clearCart, language } = useStore();
+    const [displayProducts, setDisplayProducts] = useState<any[]>([]);
+    const [isFastBuy, setIsFastBuy] = useState(false);
     const t = translations[language];
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [mounted, setMounted] = useState(false);
@@ -22,15 +24,36 @@ export default function CheckoutPage() {
 
     useEffect(() => {
         setMounted(true);
-        validateStock();
-    }, []);
+        const searchParams = new URLSearchParams(window.location.search);
+        const fast = searchParams.get('fast') === 'true';
+        
+        if (fast) {
+            const fastItem = sessionStorage.getItem('fast_buy_item');
+            if (fastItem) {
+                const item = JSON.parse(fastItem);
+                setDisplayProducts([item]);
+                setIsFastBuy(true);
+            } else {
+                router.push('/');
+            }
+        } else {
+            setDisplayProducts(cart);
+            if (cart.length === 0) router.push('/');
+        }
+    }, [cart]);
+
+    useEffect(() => {
+        if (displayProducts.length > 0) {
+            validateStock();
+        }
+    }, [displayProducts]);
 
     const validateStock = async () => {
         setIsValidating(true);
         const errors: { id: string, name: string, available: number }[] = [];
 
         try {
-            for (const item of cart) {
+            for (const item of displayProducts) {
                 const productRef = doc(db, "products", item.id);
                 const snap = await getDoc(productRef);
                 if (snap.exists()) {
@@ -51,7 +74,7 @@ export default function CheckoutPage() {
         }
     };
 
-    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const total = displayProducts.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -74,7 +97,7 @@ export default function CheckoutPage() {
 
             await setDoc(doc(db, "orders", orderId), {
                 userPhone: user.phone,
-                items: cart.map(item => ({
+                items: displayProducts.map(item => ({
                     id: item.id,
                     name: item[`name_${language}`] || item.name,
                     price: item.price,
@@ -87,6 +110,12 @@ export default function CheckoutPage() {
                 status: language === 'uz' ? "To'lov kutilmoqda" : "Ожидание оплаты",
                 createdAt: serverTimestamp(),
             });
+
+            if (!isFastBuy) {
+                clearCart();
+            } else {
+                sessionStorage.removeItem('fast_buy_item');
+            }
 
             router.push(`/payment?orderId=${orderId}`);
         } catch (error) {
@@ -188,7 +217,7 @@ export default function CheckoutPage() {
 
                 <button
                     type="submit"
-                    disabled={isSubmitting || cart.length === 0 || stockErrors.length > 0 || isValidating}
+                    disabled={isSubmitting || displayProducts.length === 0 || stockErrors.length > 0 || isValidating}
                     className="w-full bg-black text-white py-6 rounded-full font-black text-xl shadow-2xl mt-8 active:scale-95 transition-all disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none flex items-center justify-center gap-4"
                 >
                     {isValidating ? <Loader2 className="animate-spin" size={24} /> : (isSubmitting ? (language === 'uz' ? "Yuborilmoqda..." : "Отправка...") : (language === 'uz' ? "To'lovga o'tish" : "Перейти к оплате"))}

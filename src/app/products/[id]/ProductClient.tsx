@@ -180,6 +180,21 @@ export default function ProductClient({ params }: { params: { id: string } }) {
         product?.stockDetails ? Object.values(product.stockDetails).reduce((a: number, b: number) => a + b, 0) : 0
     , [product]);
 
+    const handleFastBuy = () => {
+        if (!product) return;
+        const item = {
+            id: product.id,
+            name: product.name,
+            name_uz: product.name_uz,
+            name_ru: product.name_ru,
+            price: product.price,
+            quantity: 1,
+            imageUrl: product.image
+        };
+        sessionStorage.setItem('fast_buy_item', JSON.stringify(item));
+        router.push('/checkout?fast=true');
+    };
+
     const isWishlisted = product ? wishlist.some(item => item.id === product.id) : false;
     const cartItem = product ? cart.find((item) => item.id === product.id) : null;
     const allMedia = useMemo(() => [
@@ -371,25 +386,34 @@ export default function ProductClient({ params }: { params: { id: string } }) {
 
                             {/* Action Buttons */}
                             <div className="grid grid-cols-1 gap-4 mt-12">
-                                {cartItem ? (
-                                    <div className="flex gap-4">
-                                        <div className="flex items-center gap-8 bg-gray-50 px-8 py-4 rounded-[28px] border border-gray-100 flex-1 justify-center">
-                                            <button onClick={() => updateQuantity(product.id, cartItem.quantity - 1)} className="text-gray-400 hover:text-black transition-colors"><Minus size={20} strokeWidth={3} /></button>
-                                            <span className="text-2xl font-black w-8 text-center">{cartItem.quantity}</span>
-                                            <button onClick={() => updateQuantity(product.id, cartItem.quantity + 1)} className="text-gray-400 hover:text-black transition-colors"><Plus size={20} strokeWidth={3} /></button>
-                                        </div>
-                                        <Link href="/cart" className="bg-[#E4D9FF] text-[#6335ED] px-10 py-4 rounded-[28px] font-black text-xs uppercase tracking-widest flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-[#6335ED]/10">
-                                            <ShoppingBag size={20} strokeWidth={3} /> {language === 'uz' ? "O'TISH" : "ПЕРЕЙТИ"}
-                                        </Link>
-                                    </div>
-                                ) : (
+                                <div className="flex gap-4 items-stretch">
                                     <button 
-                                        onClick={() => addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any)}
-                                        className="w-full bg-black text-white py-6 rounded-[32px] font-black text-lg uppercase tracking-widest flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-black/20"
+                                        onClick={handleFastBuy}
+                                        className="flex-1 bg-white border-2 border-black text-black py-5 rounded-[28px] font-black text-sm uppercase tracking-widest hover:bg-gray-50 active:scale-95 transition-all shadow-xl shadow-black/5"
                                     >
-                                        <Plus size={24} strokeWidth={3} /> {language === 'uz' ? "SAVATGA QO'SHISH" : "V KORZINU"}
+                                        {language === 'uz' ? "TEZKOR XARID" : "КУПИТЬ СЕЙЧАС"}
                                     </button>
-                                )}
+
+                                    {cartItem ? (
+                                        <div className="flex-1 flex items-center gap-2 animate-in fade-in zoom-in duration-300">
+                                            <div className="flex-1 bg-gray-50 p-4 rounded-[28px] border border-gray-100 flex items-center justify-around">
+                                                <button onClick={() => updateQuantity(product.id, cartItem.quantity - 1)} className="p-2 hover:bg-white rounded-xl transition-all"><Minus size={18} /></button>
+                                                <span className="text-sm font-black italic">{cartItem.quantity}</span>
+                                                <button onClick={() => updateQuantity(product.id, cartItem.quantity + 1)} className="p-2 hover:bg-white rounded-xl transition-all"><Plus size={18} /></button>
+                                            </div>
+                                            <Link href="/cart" className="bg-black text-white p-5 rounded-[28px] hover:scale-110 active:scale-90 transition-all shadow-xl">
+                                                <ShoppingBag size={20} strokeWidth={3} />
+                                            </Link>
+                                        </div>
+                                    ) : (
+                                        <button 
+                                            onClick={() => addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any)}
+                                            className="flex-1 bg-black text-white py-5 rounded-[28px] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-black/20"
+                                        >
+                                            <Plus size={20} strokeWidth={3} /> {language === 'uz' ? "SAVATGA" : "В КОРЗИНУ"}
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
