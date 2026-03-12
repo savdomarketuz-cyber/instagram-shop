@@ -83,11 +83,16 @@ export const useStore = create<StoreState>()(
             removeFromCart: (productId) => set((state) => ({
                 cart: state.cart.filter((item) => item.id !== productId)
             })),
-            updateQuantity: (productId, quantity) => set((state) => ({
-                cart: state.cart.map((item) =>
-                    item.id === productId ? { ...item, quantity: quantity } : item
-                )
-            })),
+            updateQuantity: (productId, quantity) => set((state) => {
+                if (quantity <= 0) {
+                    return { cart: state.cart.filter((item) => item.id !== productId) };
+                }
+                return {
+                    cart: state.cart.map((item) =>
+                        item.id === productId ? { ...item, quantity: Math.min(quantity, item.stock || 999) } : item
+                    )
+                };
+            }),
             toggleWishlist: (product) => set((state) => {
                 const exists = state.wishlist.some(item => item.id === product.id);
                 if (exists) {

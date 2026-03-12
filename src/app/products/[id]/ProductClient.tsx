@@ -151,6 +151,13 @@ export default function ProductClient({ params }: { params: { id: string } }) {
     };
 
     const fetchPopular = async () => {
+        // Use global cache if available to speed up page load
+        const { cachedProducts, setCachedProducts } = useStore.getState();
+        if (cachedProducts && cachedProducts.length > 0) {
+            setPopularProducts(cachedProducts.slice(0, 20));
+            return;
+        }
+
         setPopularLoading(true);
         const q = query(collection(db, "products"), where("isDeleted", "==", false), limit(20));
         const snap = await getDocs(q);
@@ -159,6 +166,7 @@ export default function ProductClient({ params }: { params: { id: string } }) {
                 .sort((a, b) => (b.sales || 0) - (a.sales || 0))
                 .slice(0, 20);
         setPopularProducts(fetched);
+        setCachedProducts(fetched); // Global cache
         setPopularLoading(false);
     };
 
@@ -396,10 +404,20 @@ export default function ProductClient({ params }: { params: { id: string } }) {
 
                                     {cartItem ? (
                                         <div className="flex-1 flex items-center gap-2 animate-in fade-in zoom-in duration-300">
-                                            <div className="flex-1 bg-gray-50 p-4 rounded-[28px] border border-gray-100 flex items-center justify-around">
-                                                <button onClick={() => updateQuantity(product.id, cartItem.quantity - 1)} className="p-2 hover:bg-white rounded-xl transition-all"><Minus size={18} /></button>
-                                                <span className="text-sm font-black italic">{cartItem.quantity}</span>
-                                                <button onClick={() => updateQuantity(product.id, cartItem.quantity + 1)} className="p-2 hover:bg-white rounded-xl transition-all"><Plus size={18} /></button>
+                                            <div className="flex-1 bg-gray-50 h-[60px] rounded-[28px] border border-gray-100 flex items-center justify-around">
+                                                <button 
+                                                    onClick={() => updateQuantity(product.id, cartItem.quantity - 1)} 
+                                                    className="p-3 text-gray-400 hover:text-black transition-colors"
+                                                >
+                                                    <Minus size={20} strokeWidth={3} />
+                                                </button>
+                                                <span className="text-xl font-black italic w-8 text-center">{cartItem.quantity}</span>
+                                                <button 
+                                                    onClick={() => updateQuantity(product.id, cartItem.quantity + 1)} 
+                                                    className="p-3 text-gray-400 hover:text-black transition-colors"
+                                                >
+                                                    <Plus size={20} strokeWidth={3} />
+                                                </button>
                                             </div>
                                             <Link href="/cart" className="bg-black text-white p-5 rounded-[28px] hover:scale-110 active:scale-90 transition-all shadow-xl">
                                                 <ShoppingBag size={20} strokeWidth={3} />
