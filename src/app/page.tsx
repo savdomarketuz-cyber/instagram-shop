@@ -258,6 +258,9 @@ function HomeContent() {
 
     return (
         <main className="min-h-screen bg-white pb-24 max-w-[1440px] mx-auto">
+            {/* Visually hidden H1 for SEO */}
+            <h1 className="sr-only">Velari - Premium Electronics Store in Uzbekistan. Gadgets, Smartphones and Accessories with muddatli to'lov.</h1>
+            
             <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md px-4 md:px-10 py-3 md:py-6 border-b border-gray-100 flex items-center gap-3 md:gap-8">
                 <Link href="/" className="hidden md:block relative w-32 h-10">
                     <Image

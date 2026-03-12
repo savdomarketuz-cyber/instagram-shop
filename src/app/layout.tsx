@@ -23,6 +23,17 @@ export const metadata = {
     alternates: {
         canonical: "/",
     },
+    robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+            index: true,
+            follow: true,
+            'max-video-preview': -1,
+            'max-image-preview': 'large',
+            'max-snippet': -1,
+        },
+    },
     openGraph: {
         title: "Velari | Global Electronics",
         description: "Premium tech store in Uzbekistan. Global brands, official warranty, and fast delivery.",

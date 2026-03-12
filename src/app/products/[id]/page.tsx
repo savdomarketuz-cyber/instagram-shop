@@ -47,9 +47,25 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
             },
             twitter: {
                 card: 'summary_large_image',
-                title: title,
+                title: product.name_uz || product.name,
                 description: description,
                 images: [ogUrl.toString()],
+            },
+            alternates: {
+                canonical: `/products/${params.id}`,
+            },
+            keywords: [
+                product.name, 
+                product.name_uz || "", 
+                "Velari", 
+                "muddatli to'lov", 
+                "skidka", 
+                "hamyonbop narx", 
+                product.category
+            ].filter(Boolean) as string[],
+            robots: {
+                index: true,
+                follow: true,
             },
         };
     } catch (error) {
