@@ -78,6 +78,7 @@ export const viewport = {
 
 
 import AppWrapper from "@/components/AppWrapper";
+import YandexMetrika from "@/components/YandexMetrika";
 
 export default function RootLayout({
     children,
@@ -176,6 +177,7 @@ export default function RootLayout({
                         {children}
                     </AppWrapper>
                 </div>
+                <YandexMetrika ymid="97711910" />
             </body>
         </html>
     );

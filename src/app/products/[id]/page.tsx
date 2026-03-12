@@ -2,6 +2,8 @@ import { Metadata } from 'next';
 import ProductClient from './ProductClient';
 import { db, doc, getDoc } from "@/lib/firebase";
 
+export const revalidate = 3600; // ISR configuration: revalidate every hour
+
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
     try {
         const docRef = doc(db, "products", params.id);

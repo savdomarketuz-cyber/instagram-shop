@@ -5,6 +5,7 @@ import { LayoutDashboard, ShoppingCart, Package, Layers, LogOut, Menu, X, Users,
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/store/store";
+import { AdminNotificationListener } from "@/components/AdminNotificationListener";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -60,6 +61,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     return (
         <div className="min-h-screen bg-[#F8F9FB] flex">
+            <AdminNotificationListener />
             {/* Sidebar for Desktop */}
             <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-black text-white transform transition-transform duration-500 ease-in-out lg:translate-x-0 flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="p-10 flex-1 overflow-y-auto scrollbar-hide">
