@@ -482,6 +482,38 @@ export default function ProductClient({ params }: { params: { id: string } }) {
                 product={product}
                 language={language}
             />
+
+            {/* Mobile Fixed Bottom Bar */}
+            <div className="md:hidden fixed bottom-0 left-0 right-0 z-[60] bg-white/80 backdrop-blur-2xl border-t border-gray-100 p-4 pb-8 animate-in slide-in-from-bottom duration-500">
+                <div className="flex gap-3 items-stretch h-14">
+                    <button 
+                        onClick={handleFastBuy}
+                        className="flex-1 bg-white border-2 border-black text-black rounded-2xl font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all shadow-lg"
+                    >
+                        {language === 'uz' ? "TEZKOR XARID" : "КУПИТЬ СЕЙЧАС"}
+                    </button>
+
+                    {cartItem ? (
+                        <div className="flex-1 flex items-center gap-2">
+                            <div className="flex-1 bg-gray-50 h-full rounded-2xl border border-gray-100 flex items-center justify-around">
+                                <button onClick={() => updateQuantity(product.id, cartItem.quantity - 1)} className="p-2 text-gray-400 hover:text-black"><Minus size={16} /></button>
+                                <span className="text-sm font-black italic">{cartItem.quantity}</span>
+                                <button onClick={() => updateQuantity(product.id, cartItem.quantity + 1)} className="p-2 text-gray-400 hover:text-black"><Plus size={16} /></button>
+                            </div>
+                            <Link href="/cart" className="bg-black text-white h-full aspect-square rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition-all">
+                                <ShoppingBag size={20} strokeWidth={3} />
+                            </Link>
+                        </div>
+                    ) : (
+                        <button 
+                            onClick={() => addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any)}
+                            className="flex-1 bg-black text-white rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-black/20"
+                        >
+                            <Plus size={18} strokeWidth={3} /> {language === 'uz' ? "SAVATGA" : "В КОРЗИНУ"}
+                        </button>
+                    )}
+                </div>
+            </div>
         </div>
     );
 }
