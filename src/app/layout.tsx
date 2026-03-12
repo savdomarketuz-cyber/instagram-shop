@@ -15,6 +15,10 @@ export const metadata = {
         address: false,
         telephone: false,
     },
+    icons: {
+        icon: "/favicon.ico",
+        apple: "/icons/icon-192x192.png",
+    },
     metadataBase: new URL("https://velari.uz"),
     alternates: {
         canonical: "/",
