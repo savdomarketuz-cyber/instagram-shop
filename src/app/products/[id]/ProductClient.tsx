@@ -224,59 +224,8 @@ export default function ProductClient({ params }: { params: { id: string } }) {
 
     if (!product) return null;
 
-    const jsonLd = {
-        "@context": "https://schema.org",
-        "@type": "Product",
-        "name": product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name,
-        "image": allMedia.filter(m => m.type === 'image').map(m => m.url),
-        "description": product[language === 'uz' ? 'description_uz' : 'description_ru'] || product.description,
-        "sku": product.sku || product.id,
-        "brand": {
-            "@type": "Brand",
-            "name": "Velari"
-        },
-        "offers": {
-            "@type": "Offer",
-            "url": `https://velari.uz/products/${product.id}`,
-            "priceCurrency": "UZS",
-            "price": product.price,
-            "availability": totalStock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-            "seller": {
-                "@type": "Organization",
-                "name": "Velari"
-            }
-        }
-    };
-
-    const breadcrumbJsonLd = {
-        "@context": "https://schema.org",
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-            {
-                "@type": "ListItem",
-                "position": 1,
-                "name": language === 'uz' ? "Bosh sahifa" : "Главная",
-                "item": "https://velari.uz"
-            },
-            {
-                "@type": "ListItem",
-                "position": 2,
-                "name": categoryData ? (categoryData[language === 'uz' ? 'name_uz' : 'name_ru'] || categoryData.name) : (product[language === 'uz' ? 'category_uz' : 'category_ru'] || product.category),
-                "item": `https://velari.uz/catalog?category=${product.category}`
-            },
-            {
-                "@type": "ListItem",
-                "position": 3,
-                "name": product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name,
-                "item": `https://velari.uz/products/${product.id}`
-            }
-        ]
-    };
-
     return (
         <div className="bg-white min-h-screen text-black font-sans selection:bg-black selection:text-white">
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
             {/* Mobile View (Social Style) */}
             <div className="md:hidden" style={{ overscrollBehavior: 'none', touchAction: 'pan-x pan-y' }}>
