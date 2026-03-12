@@ -262,14 +262,14 @@ function HomeContent() {
             <h1 className="sr-only">Velari - Premium Electronics Store in Uzbekistan. Gadgets, Smartphones and Accessories with muddatli to'lov.</h1>
             
             <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md px-4 md:px-10 py-3 md:py-6 border-b border-gray-100 flex items-center gap-3 md:gap-8">
-                <Link href="/" className="hidden md:block relative w-32 h-10">
-                    <Image
-                        src="/logo.png"
-                        alt="Velari"
-                        fill
-                        className="object-contain object-left"
-                        priority
-                    />
+                <Link href="/" className="hidden md:flex items-center gap-3 group transition-all duration-300">
+                    <div className="w-10 h-10 bg-black text-white rounded-xl flex items-center justify-center shadow-lg shadow-black/10 group-hover:scale-110 transition-transform">
+                        <span className="text-xl font-black italic tracking-tighter">V</span>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-xl font-black tracking-tighter italic leading-none">VELARI</span>
+                        <span className="text-[8px] font-black text-gray-400 uppercase tracking-[0.2em] leading-none mt-1 opacity-60">Market</span>
+                    </div>
                 </Link>
                 <div className="flex-1 relative max-w-2xl mx-auto">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />

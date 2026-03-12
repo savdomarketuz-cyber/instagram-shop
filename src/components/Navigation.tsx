@@ -23,41 +23,41 @@ export default function Navigation() {
     return (
         <>
             {/* Desktop Sidebar Navigation */}
-            <nav className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-gray-100 flex-col p-8 z-50">
-                <Link href="/" className="relative w-full h-12 mb-12">
-                    <Image
-                        src="/logo.png"
-                        alt="Velari"
-                        fill
-                        className="object-contain object-left"
-                        priority
-                    />
+            <nav className="hidden md:flex fixed left-0 top-0 bottom-0 w-72 bg-white border-r border-gray-100 flex-col p-8 z-50">
+                <Link href="/" className="flex items-center gap-4 mb-12 group">
+                    <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-black/20 group-hover:scale-110 transition-all duration-500 overflow-hidden">
+                        <span className="text-2xl font-black italic tracking-tighter">V</span>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-2xl font-black tracking-tighter italic leading-none">VELARI</span>
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] leading-none mt-1 opacity-60">Market</span>
+                    </div>
                 </Link>
                 
-                <div className="flex-1 space-y-2">
-                    <Link href="/" className={`flex items-center gap-4 p-4 rounded-2xl transition-all ${pathname === '/' ? 'bg-black text-white shadow-xl shadow-black/10' : 'text-gray-500 hover:bg-gray-50'}`}>
-                        <Home size={24} />
-                        <span className="font-black uppercase tracking-widest text-[10px]">{t.nav.home}</span>
+                <div className="flex-1 space-y-3">
+                    <Link href="/" className={`flex items-center gap-4 p-5 rounded-[24px] transition-all group ${pathname === '/' ? 'bg-black text-white shadow-2xl shadow-black/20' : 'text-gray-400 hover:bg-gray-50 hover:text-black'}`}>
+                        <Home size={22} strokeWidth={pathname === '/' ? 3 : 2} className="group-hover:scale-110 transition-transform" />
+                        <span className="font-black uppercase tracking-[0.2em] text-[10px]">{t.nav.home}</span>
                     </Link>
 
-                    <Link href="/catalog" className={`flex items-center gap-4 p-4 rounded-2xl transition-all ${pathname === '/catalog' ? 'bg-black text-white shadow-xl shadow-black/10' : 'text-gray-500 hover:bg-gray-50'}`}>
-                        <LayoutGrid size={24} />
-                        <span className="font-black uppercase tracking-widest text-[10px]">{language === 'uz' ? 'Katalog' : 'Каталог'}</span>
+                    <Link href="/catalog" className={`flex items-center gap-4 p-5 rounded-[24px] transition-all group ${pathname === '/catalog' ? 'bg-black text-white shadow-2xl shadow-black/20' : 'text-gray-400 hover:bg-gray-50 hover:text-black'}`}>
+                        <LayoutGrid size={22} strokeWidth={pathname === '/catalog' ? 3 : 2} className="group-hover:scale-110 transition-transform" />
+                        <span className="font-black uppercase tracking-[0.2em] text-[10px]">{language === 'uz' ? 'Katalog' : 'Каталог'}</span>
                     </Link>
 
-                    <Link href="/cart" className={`flex items-center gap-4 p-4 rounded-2xl transition-all relative ${pathname === '/cart' ? 'bg-black text-white shadow-xl shadow-black/10' : 'text-gray-500 hover:bg-gray-50'}`}>
-                        <ShoppingBag size={24} />
-                        <span className="font-black uppercase tracking-widest text-[10px]">{t.nav.cart}</span>
+                    <Link href="/cart" className={`flex items-center gap-4 p-5 rounded-[24px] transition-all relative group ${pathname === '/cart' ? 'bg-black text-white shadow-2xl shadow-black/20' : 'text-gray-400 hover:bg-gray-50 hover:text-black'}`}>
+                        <ShoppingBag size={22} strokeWidth={pathname === '/cart' ? 3 : 2} className="group-hover:scale-110 transition-transform" />
+                        <span className="font-black uppercase tracking-[0.2em] text-[10px]">{t.nav.cart}</span>
                         {cartCount > 0 && (
-                            <span className="absolute top-4 right-4 bg-red-500 text-white text-[9px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white">
+                            <span className="absolute top-4 right-4 bg-red-500 text-white text-[9px] font-black w-6 h-6 flex items-center justify-center rounded-full border-2 border-white animate-pulse">
                                 {cartCount}
                             </span>
                         )}
                     </Link>
 
-                    <Link href="/messages" className={`flex items-center gap-4 p-4 rounded-2xl transition-all ${pathname === '/messages' ? 'bg-black text-white shadow-xl shadow-black/10' : 'text-gray-500 hover:bg-gray-50'}`}>
-                        <MessageCircle size={24} />
-                        <span className="font-black uppercase tracking-widest text-[10px]">{language === 'uz' ? 'DM Chat' : 'Чat'}</span>
+                    <Link href="/messages" className={`flex items-center gap-4 p-5 rounded-[24px] transition-all group ${pathname === '/messages' ? 'bg-black text-white shadow-2xl shadow-black/20' : 'text-gray-400 hover:bg-gray-50 hover:text-black'}`}>
+                        <MessageCircle size={22} strokeWidth={pathname === '/messages' ? 3 : 2} className="group-hover:scale-110 transition-transform" />
+                        <span className="font-black uppercase tracking-[0.2em] text-[10px]">{language === 'uz' ? 'Chat' : 'Чat'}</span>
                     </Link>
                 </div>
 

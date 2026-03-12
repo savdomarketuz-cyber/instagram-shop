@@ -9,6 +9,7 @@ import { useEffect } from "react";
 import { db, doc, setDoc, updateDoc, serverTimestamp, deleteDoc } from "@/lib/firebase";
 import NotificationHandler from "@/components/NotificationHandler";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import SplashScreen from "@/components/SplashScreen";
 
 
 export default function AppWrapper({ children }: { children: React.ReactNode }) {
@@ -163,6 +164,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
 
     return (
         <div className={`mx-auto bg-white min-h-screen relative shadow-2xl ${showNav ? 'md:pl-64' : ''}`}>
+            <SplashScreen />
             <PWAInstallPrompt />
             <NotificationHandler />
             {children}
