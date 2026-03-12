@@ -177,7 +177,7 @@ export default function RootLayout({
                         {children}
                     </AppWrapper>
                 </div>
-                <YandexMetrika ymid="97711910" />
+                <YandexMetrika ymid="107383008" />
             </body>
         </html>
     );
