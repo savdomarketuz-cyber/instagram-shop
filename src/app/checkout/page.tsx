@@ -131,11 +131,7 @@ export default function CheckoutPage() {
                 createdAt: serverTimestamp(),
             });
 
-            if (isFastBuy) {
-                sessionStorage.removeItem('fast_buy_item');
-            }
-            
-            // DO NOT clearCart here, it's handled in PaymentPage or OrderSuccess
+            // DO NOT clearCart or sessionStorage here, it's handled in PaymentPage or OrderSuccess
             // This prevents the redirect-to-home bug
             
             router.push(`/payment?orderId=${orderId}`);

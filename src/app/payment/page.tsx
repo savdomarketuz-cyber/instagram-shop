@@ -113,6 +113,7 @@ function PaymentContent() {
             });
 
             clearCart();
+            sessionStorage.removeItem('fast_buy_item');
             router.push("/order-success");
         } catch (err: any) {
             console.error("Payment error:", err);
