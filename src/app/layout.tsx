@@ -1,4 +1,11 @@
 import "./globals.css";
+import { Inter } from "next/font/google";
+
+const inter = Inter({
+    subsets: ["latin", "cyrillic"],
+    display: "swap",
+    variable: "--font-inter",
+});
 
 export const metadata = {
     title: {
@@ -41,7 +48,7 @@ export const metadata = {
         siteName: "Velari",
         images: [
             {
-                url: "/og-image.png", // We should ensure this image exists
+                url: "/og-image.png",
                 width: 1200,
                 height: 630,
                 alt: "Velari Premium Electronics",
@@ -54,7 +61,7 @@ export const metadata = {
         card: "summary_large_image",
         title: "Velari | Global Electronics",
         description: "Premium tech store in Uzbekistan. Global brands, official warranty.",
-        images: ["/og-image.jpg"],
+        images: ["/og-image.png"],
     },
     manifest: "/manifest.json",
     appleWebApp: {
@@ -67,15 +74,12 @@ export const metadata = {
     },
 };
 
-
-
 export const viewport = {
     themeColor: "#000000",
     width: "device-width",
     initialScale: 1,
     viewportFit: "cover" as const,
 };
-
 
 import AppWrapper from "@/components/AppWrapper";
 import YandexMetrika from "@/components/YandexMetrika";
@@ -110,7 +114,7 @@ export default function RootLayout({
     };
 
     return (
-        <html lang="uz">
+        <html lang="uz" className={inter.variable}>
             <head>
                 <script
                     type="application/ld+json"
@@ -129,7 +133,7 @@ export default function RootLayout({
                     body.is-pwa #pwa-splash { display: flex; }
                     .logo-container { display: flex; flex-direction: column; align-items: center; position: relative; transform: scale(0.6); }
                     @media (min-width: 768px) { .logo-container { transform: scale(1); } }
-                    .logo-text { font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif; font-size: 140px; font-weight: 750; color: #0d1117; letter-spacing: -1px; line-height: 1; display: flex; align-items: baseline; }
+                    .logo-text { font-family: 'Inter', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif; font-size: 140px; font-weight: 750; color: #0d1117; letter-spacing: -1px; line-height: 1; display: flex; align-items: baseline; }
                     .letter { display: inline-block; opacity: 0; transform: translateY(60px); animation: letterRise 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
                     .logo-dot { display: inline-block; color: #2d6e3e; font-size: 100px; position: relative; top: 8px; opacity: 0; transform: scale(0) rotate(-180deg); animation: dotSpin 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.62s; }
                     @keyframes letterRise { 0% { opacity: 0; transform: translateY(60px); } 100% { opacity: 1; transform: translateY(0); } }
@@ -147,7 +151,7 @@ export default function RootLayout({
                     }
                 `}} />
             </head>
-            <body className="bg-gray-100 text-gray-900 antialiased">
+            <body className="bg-gray-100 text-gray-900 antialiased font-sans">
                 <a href="#main-content" className="skip-to-main">
                     Asosiy kontentga o&apos;tish
                 </a>
@@ -182,4 +186,3 @@ export default function RootLayout({
         </html>
     );
 }
-

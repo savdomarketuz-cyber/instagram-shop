@@ -37,7 +37,12 @@ node-v20.12.2-win-x64/
 node.zip
 ngrok.exe
 ngrok_v3.exe
+
+# sensitive files — NEVER commit these
 firebase-adminsdk.json
+*.session
+scan_results.json
+bot.py
 
 # PWA generated files
 /public/sw.js

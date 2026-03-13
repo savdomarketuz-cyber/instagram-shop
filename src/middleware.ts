@@ -2,10 +2,54 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 /**
- * Next.js Middleware — Admin sahifalarni himoyalash
- * Agar admin_token cookie yo'q bo'lsa, login-ga redirect qiladi
+ * Edge Runtime mos JWT verification
+ * Web Crypto API orqali HMAC-SHA256 tekshirish
  */
-export function middleware(request: NextRequest) {
+async function verifyTokenEdge(token: string, secret: string): Promise<Record<string, unknown> | null> {
+    try {
+        const [header, body, signature] = token.split('.');
+        if (!header || !body || !signature) return null;
+
+        // Web Crypto API — Edge Runtime uchun mos
+        const encoder = new TextEncoder();
+        const keyData = encoder.encode(secret);
+        const key = await crypto.subtle.importKey(
+            'raw',
+            keyData,
+            { name: 'HMAC', hash: 'SHA-256' },
+            false,
+            ['sign']
+        );
+
+        const data = encoder.encode(`${header}.${body}`);
+        const sig = await crypto.subtle.sign('HMAC', key, data);
+        const sigArray = new Uint8Array(sig);
+        let binary = '';
+        for (let i = 0; i < sigArray.byteLength; i++) {
+            binary += String.fromCharCode(sigArray[i]);
+        }
+        
+        // Base64url formatga aylantirish
+        const expectedSig = btoa(binary)
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/, '');
+
+        if (signature !== expectedSig) return null;
+
+        // Body'ni decode qilish
+        const bodyStr = atob(body.replace(/-/g, '+').replace(/_/g, '/'));
+        return JSON.parse(bodyStr);
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Next.js Middleware — Admin sahifalarni JWT bilan himoyalash
+ * Edge Runtime compatible (Web Crypto API)
+ */
+export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Admin sahifalarini himoyalash
@@ -18,19 +62,32 @@ export function middleware(request: NextRequest) {
             return NextResponse.redirect(loginUrl);
         }
 
-        // Token formatini tekshirish
-        try {
-            const decoded = Buffer.from(adminToken, 'base64').toString();
-            const [adminId, timestamp] = decoded.split(':');
+        // JWT tokenni tekshirish (Edge Runtime mos)
+        const ADMIN_SECRET = process.env.ADMIN_SECRET || '';
+        if (!ADMIN_SECRET) {
+            const response = NextResponse.redirect(new URL('/login', request.url));
+            response.cookies.delete('admin_token');
+            return response;
+        }
 
-            // Token 24 soatdan eski bo'lsa redirect
-            const tokenAge = Date.now() - parseInt(timestamp);
-            if (tokenAge > 24 * 60 * 60 * 1000 || !adminId) {
-                const response = NextResponse.redirect(new URL('/login', request.url));
-                response.cookies.delete('admin_token');
-                return response;
-            }
-        } catch {
+        const payload = await verifyTokenEdge(adminToken, ADMIN_SECRET);
+
+        if (!payload) {
+            const response = NextResponse.redirect(new URL('/login', request.url));
+            response.cookies.delete('admin_token');
+            return response;
+        }
+
+        // Token muddatini tekshirish
+        const now = Math.floor(Date.now() / 1000);
+        if (typeof payload.exp === 'number' && payload.exp < now) {
+            const response = NextResponse.redirect(new URL('/login', request.url));
+            response.cookies.delete('admin_token');
+            return response;
+        }
+
+        // Role tekshirish
+        if (payload.role !== 'admin') {
             const response = NextResponse.redirect(new URL('/login', request.url));
             response.cookies.delete('admin_token');
             return response;

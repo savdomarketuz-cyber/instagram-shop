@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { db, collection, addDoc, serverTimestamp, getDoc, doc, updateDoc, increment, setDoc } from "@/lib/firebase";
 import { AlertCircle, ArrowLeft, Loader2, PackageX, MapPin, Globe } from "lucide-react";
-import YandexMapPicker from "@/components/YandexMapPicker";
+import dynamic from "next/dynamic";
+const YandexMapPicker = dynamic(() => import("@/components/YandexMapPicker"), {
+    loading: () => <div className="h-64 animate-pulse bg-gray-50 rounded-3xl" />,
+    ssr: false,
+});
 import { translations } from "@/lib/translations";
 
 export default function CheckoutPage() {

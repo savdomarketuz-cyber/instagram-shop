@@ -16,50 +16,7 @@ import { BannerSection } from "@/components/home/BannerSection";
 import { CategoryFilter } from "@/components/home/CategoryFilter";
 import { ProductGrid } from "@/components/home/ProductGrid";
 
-interface Product {
-    id: string;
-    name: string;
-    name_uz?: string;
-    name_ru?: string;
-    price: number;
-    oldPrice?: number;
-    image: string;
-    images?: string[];
-    category: string;
-    category_uz?: string;
-    category_ru?: string;
-    rating?: number;
-    reviewCount?: number;
-    sales: number;
-    tag?: string;
-    isDeleted?: boolean;
-    stockDetails?: { [key: string]: number };
-    groupId?: string;
-    tags?: string[];
-    features?: string[];
-    isOriginal?: boolean;
-    videoUrl?: string;
-    createdAt?: any;
-}
-
-interface Category {
-    id: string;
-    name: string;
-    name_uz?: string;
-    name_ru?: string;
-    parentId?: string;
-}
-
-interface Banner {
-    id: string;
-    imageUrl_uz: string;
-    imageUrl_ru: string;
-    title_uz?: string;
-    title_ru?: string;
-    tabName_uz?: string;
-    tabName_ru?: string;
-    order?: number;
-}
+import type { Product, Category, Banner, BannerSettings } from "@/types";
 
 export default function Home() {
     return (
@@ -207,7 +164,7 @@ function HomeContent() {
         
         let items = allProducts.filter(p => {
             if (p.isDeleted) return false;
-            const totalStock = p.stockDetails ? Object.values(p.stockDetails).reduce((a: any, b: any) => a + (Number(b) || 0), 0) : 0;
+            const totalStock = p.stockDetails ? Object.values(p.stockDetails).reduce((a: number, b: number) => a + (Number(b) || 0), 0) : 0;
             if (totalStock <= 0) return false;
 
             const matchesSearch = (p[`name_${language}`] || p.name).toLowerCase().includes(query_search);

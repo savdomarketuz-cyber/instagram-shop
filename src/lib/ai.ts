@@ -1,4 +1,5 @@
 import { db, addDoc, collection, doc, getDoc, setDoc } from "./firebase";
+import type { Product } from "@/types";
 
 /**
  * Server-side AI API orqali chat qilish
@@ -29,7 +30,7 @@ export async function chatWithGroq(messages: any[], model: string = "llama-3.1-7
  * AI Recommendation logic
  * Based on user history and product tags
  */
-export async function getAiRecommendations(userInterests: any, allProducts: any[], userPhone: string = "Unknown") {
+export async function getAiRecommendations(userInterests: Record<string, unknown>, allProducts: Product[], userPhone: string = "Unknown") {
     // 1. Check if we have relatively fresh cached recommendations (less than 1 day old)
     try {
         const interestsRef = doc(db, "user_interests", userPhone);
@@ -41,7 +42,7 @@ export async function getAiRecommendations(userInterests: any, allProducts: any[
             
             // If recommendations exist and are less than 24h old, return them
             if (data.aiRecommendations && lastUpdate && (now.getTime() - lastUpdate.getTime() < 24 * 60 * 60 * 1000)) {
-                console.log("Using cached AI recommendations");
+                // Cache hit — keyingi so'rov uchun yangilanmaydi
                 return data.aiRecommendations;
             }
         }
@@ -50,8 +51,8 @@ export async function getAiRecommendations(userInterests: any, allProducts: any[
     }
 
     // 2. If no cache or cache old, fetch from Groq
-    const topCategories = Object.entries(userInterests.categories || {})
-        .sort((a: any, b: any) => b[1] - a[1])
+    const topCategories = Object.entries((userInterests.categories as Record<string, number>) || {})
+        .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
         .map(([cat]) => cat);
 

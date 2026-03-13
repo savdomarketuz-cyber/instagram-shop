@@ -13,7 +13,11 @@ import Image from "next/image";
 // Components
 import { ProductMedia } from "@/components/product/ProductMedia";
 import { ProductInfo } from "@/components/product/ProductInfo";
-import { ReviewsSection } from "@/components/product/ReviewsSection";
+import dynamic from "next/dynamic";
+const ReviewsSection = dynamic(() => import("@/components/product/ReviewsSection").then(mod => ({ default: mod.ReviewsSection })), {
+    loading: () => <div className="h-40 animate-pulse bg-gray-50 rounded-3xl mx-4 my-8" />,
+    ssr: false,
+});
 import { ProductDescriptionModal } from "@/components/product/ProductDescriptionModal";
 import { RelatedProducts } from "@/components/product/RelatedProducts";
 
@@ -34,14 +38,14 @@ export default function ProductClient({ params }: { params: { id: string } }) {
     const [boughtTogether, setBoughtTogether] = useState<Product[]>([]);
     const [popularProducts, setPopularProducts] = useState<Product[]>([]);
     const [groupProducts, setGroupProducts] = useState<Product[]>([]);
-    const [comments, setComments] = useState<any[]>([]);
-    const [categoryData, setCategoryData] = useState<any>(null);
+    const [comments, setComments] = useState<Record<string, unknown>[]>([]);
+    const [categoryData, setCategoryData] = useState<Record<string, string> | null>(null);
     
     // UI State
     const [activeImage, setActiveImage] = useState(0);
     const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
     const [popularLoading, setPopularLoading] = useState(false);
-    const [deliverySettings, setDeliverySettings] = useState<any>(null);
+    const [deliverySettings, setDeliverySettings] = useState<{ cutoff: number; days: number; offDays: string[]; holidays: string[] } | null>(null);
 
     // Initial Fetch
     useEffect(() => {
@@ -94,15 +98,17 @@ export default function ProductClient({ params }: { params: { id: string } }) {
     const fetchDeliverySettings = async (productData: Product) => {
         const warehousesSnap = await getDocs(collection(db, "warehouses"));
         const warehouses = warehousesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        const availableWhId = Object.keys(productData.stockDetails || {}).find(id => (productData.stockDetails as any)[id] > 0);
-        const warehouse: any = warehouses.find(w => w.id === availableWhId) || warehouses[0];
+        const availableWhId = Object.keys(productData.stockDetails || {}).find(id => (productData.stockDetails as Record<string, number>)[id] > 0);
+        const warehouse = warehouses.find(w => w.id === availableWhId) || warehouses[0];
         
-        if (warehouse?.dbs) {
+        const warehouseData = warehouse as Record<string, unknown>;
+        if (warehouseData?.dbs) {
+            const dbs = warehouseData.dbs as Record<string, unknown>;
             setDeliverySettings({
-                cutoff: warehouse.dbs.cutoffHour || 16,
-                days: warehouse.dbs.deliveryDays || 1,
-                offDays: warehouse.dbs.offDays || [],
-                holidays: warehouse.dbs.holidays || []
+                cutoff: (dbs.cutoffHour as number) || 16,
+                days: (dbs.deliveryDays as number) || 1,
+                offDays: (dbs.offDays as string[]) || [],
+                holidays: (dbs.holidays as string[]) || []
             });
         }
     };
@@ -154,7 +160,7 @@ export default function ProductClient({ params }: { params: { id: string } }) {
         const q = query(collection(db, "comments"), where("productId", "==", params.id));
         const snap = await getDocs(q);
         const fetched = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        fetched.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        fetched.sort((a: Record<string, unknown>, b: Record<string, unknown>) => new Date(b.timestamp as string).getTime() - new Date(a.timestamp as string).getTime());
         setComments(fetched);
     };
 

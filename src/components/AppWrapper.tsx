@@ -85,15 +85,15 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
                 }
 
                 updateActivity(actionText.substring(0, 30));
-            }, 2000); // 2 soniya debounce — Firestore xarajatini kamaytirish
+            }, 10000); // 10 soniya debounce — Firestore xarajatini kamaytirish
         };
 
         // addEventListener qo'shish — leak bo'lmasin
         document.addEventListener('click', handleGlobalClick);
 
         updateActivity();
-        // Heartbeat-ni 60 soniyaga oshirish (15 o'rniga) — Firestore xarajatini kamaytirish
-        intervalId = setInterval(() => updateActivity(), 60000);
+        // Heartbeat-ni 5 daqiqaga oshirish — Firestore xarajatini kamaytirish
+        intervalId = setInterval(() => updateActivity(), 300000);
 
         const handleVisibility = () => {
             if (document.visibilityState === 'visible') {
