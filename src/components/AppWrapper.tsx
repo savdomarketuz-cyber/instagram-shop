@@ -34,9 +34,12 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
             if (path.startsWith("/products/")) return "Mahsulot ko'rmoqda";
             if (path === "/cart") return "Savatda";
             if (path === "/wishlist") return "Saralanganlarda";
+            if (path === "/catalog") return "Katalogni ko'rmoqda";
             if (path === "/checkout") return "Buyurtma bermoqda";
             if (path === "/account") return "Profilida";
+            if (path === "/login") return "Kirish sahifasida";
             if (path.startsWith("/admin")) return "Admin Panelda";
+            if (path.startsWith("/messages")) return "Xabarlarda";
             return path;
         };
 

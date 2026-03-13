@@ -52,7 +52,7 @@ export default function AdminDashboard() {
 
     const cards = [
         { name: "Jami Buyurtmalar", value: stats.totalOrders, icon: ShoppingBag, color: "bg-blue-500" },
-        { name: "Jami Savdo", value: `${stats.totalRevenue.toLocaleString()} $`, icon: DollarSign, color: "bg-green-500" },
+        { name: "Jami Savdo", value: `${stats.totalRevenue.toLocaleString()} so'm`, icon: DollarSign, color: "bg-green-500" },
         { name: "Mijozlar", value: stats.totalUsers, icon: Users, color: "bg-purple-500" },
         { name: "Kutilmoqda", value: stats.pendingOrders, icon: Clock, color: "bg-orange-500" },
     ];
@@ -113,7 +113,7 @@ export default function AdminDashboard() {
                                         <div className="font-bold text-gray-900">{order.userPhone}</div>
                                         <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">#{order.id}</div>
                                     </td>
-                                    <td className="p-6 font-black text-lg">{order.total} $</td>
+                                    <td className="p-6 font-black text-lg">{order.total?.toLocaleString()} so'm</td>
                                     <td className="p-6 text-sm text-gray-500 font-medium">
                                         {order.createdAt?.toDate().toLocaleDateString('uz-UZ')}
                                     </td>
