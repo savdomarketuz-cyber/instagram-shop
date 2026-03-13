@@ -41,48 +41,32 @@ export default function LoginPage() {
                 }
             }
 
-            // 2. Normal User Login logic
+            // 2. Normal User Login logic — Server-side orqali
             const isPhoneNumber = /^\d+$/.test(id.replace(/\s+/g, "").replace("+", ""));
-
             let queryId = id;
             if (isPhoneNumber) {
                 queryId = id.startsWith("+998") ? id : `+998${id.replace(/\s+/g, "")}`;
             }
 
-            const q = query(collection(db, "users"), where("phone", "==", queryId));
-            const querySnapshot = await getDocs(q);
+            const userAuthRes = await fetch("/api/auth/user", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ phone: queryId, password })
+            });
 
-            if (querySnapshot.empty) {
-                setError(language === 'uz' ? "Bunday ma'lumot ro'yxatdan o'tmagan" : "Такие данные не зарегистрированы");
+            const userAuthData = await userAuthRes.json();
+
+            if (userAuthRes.ok && userAuthData.success) {
+                setUser(userAuthData.user);
+                router.push("/");
             } else {
-                const userDoc = querySnapshot.docs[0];
-                const userData = userDoc.data();
-
-                if (userData.password === password) {
-                    // Fetch IP Address
-                    let ip = "Aniqlanmadi";
-                    try {
-                        const ipRes = await fetch("https://api.ipify.org?format=json");
-                        const ipData = await ipRes.json();
-                        ip = ipData.ip;
-                    } catch (e) { console.error("IP Fetch Error:", e); }
-
-                    // Update User with IP and Last Login
-                    await updateDoc(doc(db, "users", userDoc.id), {
-                        ipAddress: ip,
-                        lastLogin: serverTimestamp()
-                    });
-
-                    setUser({
-                        id: userDoc.id,
-                        phone: queryId,
-                        name: userData.name || (language === 'uz' ? "Mijoz" : "Клиент"),
-                        username: userData.username || "",
-                        isAdmin: userData.isAdmin || false
-                    });
-                    router.push("/");
-                } else {
+                const errorMsg = userAuthData.error;
+                if (errorMsg === "User not found") {
+                    setError(language === 'uz' ? "Bunday ma'lumot ro'yxatdan o'tmagan" : "Такие данные не зарегистрированы");
+                } else if (errorMsg === "Invalid password") {
                     setError(language === 'uz' ? "Parol noto'g'ri" : "Неверный пароль");
+                } else {
+                    setError(language === 'uz' ? "Xatolik yuz berdi" : "Произошла ошибка");
                 }
             }
         } catch (err) {

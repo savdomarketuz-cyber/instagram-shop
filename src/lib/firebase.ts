@@ -20,7 +20,8 @@ import {
     arrayUnion,
     writeBatch,
     getDocsFromServer,
-    Timestamp
+    Timestamp,
+    runTransaction
 } from "firebase/firestore";
 
 
@@ -63,7 +64,8 @@ export {
     arrayUnion,
     writeBatch,
     getDocsFromServer,
-    Timestamp
+    Timestamp,
+    runTransaction
 };
 
 

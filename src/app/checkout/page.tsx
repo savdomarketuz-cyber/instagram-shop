@@ -3,7 +3,7 @@
 import { useStore } from "@/store/store";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { db, collection, addDoc, serverTimestamp, getDoc, doc, updateDoc, increment, setDoc } from "@/lib/firebase";
+import { db, collection, addDoc, serverTimestamp, getDoc, doc, updateDoc, increment, setDoc, runTransaction } from "@/lib/firebase";
 import { AlertCircle, ArrowLeft, Loader2, PackageX, MapPin, Globe } from "lucide-react";
 import dynamic from "next/dynamic";
 const YandexMapPicker = dynamic(() => import("@/components/YandexMapPicker"), {
@@ -107,38 +107,100 @@ export default function CheckoutPage() {
 
         setIsSubmitting(true);
         try {
-            // Final stock check
-            const errors = await getStockErrors();
-            if (errors.length > 0) {
-                setStockErrors(errors);
+            // Atomic Order Submission via Transaction
+            const result = await runTransaction(db, async (transaction) => {
+                const currentStockErrors: { id: string, name: string, available: number }[] = [];
+                const updates: { ref: any, data: any }[] = [];
+
+                for (const item of displayProducts) {
+                    const productRef = doc(db, "products", item.id);
+                    const productSnap = await transaction.get(productRef);
+                    
+                    if (!productSnap.exists()) {
+                        throw new Error(language === 'uz' ? `Mahsulot topilmadi: ${item.id}` : `Товар не найден: ${item.id}`);
+                    }
+
+                    const data = productSnap.data();
+                    const stockDetails = data.stockDetails || {};
+                    const actualStock = Object.values(stockDetails).reduce((a: number, b: any) => a + (Number(b) || 0), 0);
+
+                    if (item.quantity > actualStock) {
+                        currentStockErrors.push({ 
+                            id: item.id, 
+                            name: item[`name_${language}`] || item.name, 
+                            available: actualStock as number 
+                        });
+                    } else {
+                        // Stockni kamaytirish (OMBORLAR BO'YICHA)
+                        const newStockDetails = { ...stockDetails };
+                        let remaining = item.quantity;
+                        
+                        // Birinchi mos ombordan ayiramiz (yoki tarqatamiz)
+                        for (const whId in newStockDetails) {
+                            const whStock = Number(newStockDetails[whId]) || 0;
+                            if (whStock >= remaining) {
+                                newStockDetails[whId] = whStock - remaining;
+                                remaining = 0;
+                                break;
+                            } else {
+                                remaining -= whStock;
+                                newStockDetails[whId] = 0;
+                            }
+                        }
+
+                        updates.push({
+                            ref: productRef,
+                            data: {
+                                stockDetails: newStockDetails,
+                                sales: increment(item.quantity)
+                            }
+                        });
+                    }
+                }
+
+                if (currentStockErrors.length > 0) {
+                    return { success: false, errors: currentStockErrors };
+                }
+
+                // Hamma update-larni amalga oshiramiz
+                for (const update of updates) {
+                    transaction.update(update.ref, update.data);
+                }
+
+                // Buyurtmani yaratamiz
+                const orderId = Math.floor(100000 + Math.random() * 900000).toString() + Date.now().toString().slice(-4);
+                const orderRef = doc(db, "orders", orderId);
+                
+                transaction.set(orderRef, {
+                    userPhone: user.phone,
+                    items: displayProducts.map(item => ({
+                        id: item.id,
+                        name: item[`name_${language}`] || item.name,
+                        price: item.price,
+                        quantity: item.quantity,
+                        image: item.imageUrl || item.image
+                    })),
+                    total: total,
+                    address: address,
+                    coords: coords,
+                    status: language === 'uz' ? "To'lov kutilmoqda" : "Ожидание оплаты",
+                    createdAt: serverTimestamp(),
+                });
+
+                return { success: true, orderId };
+            });
+
+            if (!result.success && result.errors) {
+                setStockErrors(result.errors);
                 showToast(language === 'uz' ? "Ayrim mahsulotlar qoldig'i yetarli emas" : "Недостаточное количество некоторых товаров", 'error');
                 setIsSubmitting(false);
                 return;
             }
 
-            // Generate a simpler numeric ID for compatibility
-            const orderId = Math.floor(100000 + Math.random() * 900000).toString() + Date.now().toString().slice(-4);
+            if (result.success && result.orderId) {
+                router.push(`/payment?orderId=${result.orderId}`);
+            }
 
-            await setDoc(doc(db, "orders", orderId), {
-                userPhone: user.phone,
-                items: displayProducts.map(item => ({
-                    id: item.id,
-                    name: item[`name_${language}`] || item.name,
-                    price: item.price,
-                    quantity: item.quantity,
-                    image: item.imageUrl || item.image // Handle both keys
-                })),
-                total: total,
-                address: address,
-                coords: coords,
-                status: language === 'uz' ? "To'lov kutilmoqda" : "Ожидание оплаты",
-                createdAt: serverTimestamp(),
-            });
-
-            // DO NOT clearCart or sessionStorage here, it's handled in PaymentPage or OrderSuccess
-            // This prevents the redirect-to-home bug
-            
-            router.push(`/payment?orderId=${orderId}`);
         } catch (error: any) {
             console.error("Order submit error:", error);
             showToast(language === 'uz' ? "Xatolik yuz berdi: " + error.message : "Произошла ошибка: " + error.message, 'error');

@@ -5,6 +5,8 @@ import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp } from "fire
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
+import { hashPassword } from "@/lib/auth-utils";
+
 async function sendTelegramMessage(chatId: number, text: string, replyMarkup?: any) {
     await fetch(`${TELEGRAM_API}/sendMessage`, {
         method: "POST",
@@ -71,14 +73,14 @@ export async function POST(req: Request) {
                 }
 
                 await updateDoc(sessionRef, {
-                    tempPassword: text,
+                    tempPasswordHash: hashPassword(text), // Hash qilingan vaqtinchalik parol
                     step: "confirm_password"
                 });
 
                 await sendTelegramMessage(chatId, "Parolni tasdiqlash uchun qayta kiriting:");
             } 
             else if (session.step === "confirm_password") {
-                if (text !== session.tempPassword) {
+                if (hashPassword(text) !== session.tempPasswordHash) {
                     await sendTelegramMessage(chatId, "Xatolik! Parollar mos kelmadi. Qaytadan parol kiriting:");
                     await updateDoc(sessionRef, { step: "password" });
                     return NextResponse.json({ ok: true });
@@ -87,7 +89,7 @@ export async function POST(req: Request) {
                 // Foydalanuvchini asosiy bazaga saqlash
                 await setDoc(doc(db, "users", session.phone), {
                     phone: session.phone,
-                    password: text,
+                    password: hashPassword(text), // Hash qilingan parol
                     telegram_id: chatId,
                     createdAt: serverTimestamp()
                 });
