@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 async function getInitialData() {
     try {
-        // 1. Fetch first 20 products
+        // 1. Fetch first 20 products (Now using the created composite index)
         const productsQuery = query(
             collection(db, "products"), 
             where("isDeleted", "==", false),

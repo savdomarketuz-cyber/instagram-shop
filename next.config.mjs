@@ -9,6 +9,20 @@ const withPWA = withPWAInit({
     disable: process.env.NODE_ENV === "development",
     workboxOptions: {
         disableDevLogs: true,
+        runtimeCaching: [
+            {
+                urlPattern: /^https:\/\/firestore\.googleapis\.com\/.*$/,
+                handler: 'NetworkOnly',
+            },
+            {
+                urlPattern: /^https:\/\/firebaselogging\.googleapis\.com\/.*$/,
+                handler: 'NetworkOnly',
+            },
+            {
+                urlPattern: /^https:\/\/identitytoolkit\.googleapis\.com\/.*$/,
+                handler: 'NetworkOnly',
+            }
+        ]
     },
 });
 
