@@ -50,15 +50,35 @@ export const ProductCard = ({
         >
             <Link href={`/products/${item.id}`} className="flex flex-col flex-1 outline-none">
                 <div className="relative aspect-[3/4] overflow-hidden bg-gray-50 border-b border-gray-50">
-                    <Image
-                        src={item.images?.[0] || item.image || "/placeholder.png"}
-                        alt={item[`name_${language}`] || item.name}
-                        fill
-                        sizes="(max-width: 768px) 50vw, 33vw"
-                        className={`object-cover transition-transform duration-700 group-hover:scale-105 ${item.videoUrl && isHovered ? 'opacity-0' : 'opacity-100'}`}
-                        loading="lazy"
-                        referrerPolicy="no-referrer"
-                    />
+                    {(() => {
+                        const mainMedia = item.images?.[0] || item.image || "/placeholder.png";
+                        const isVideo = mainMedia.toLowerCase().endsWith('.mp4');
+                        
+                        if (isVideo) {
+                            return (
+                                <video
+                                    src={mainMedia}
+                                    className={`absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105`}
+                                    autoPlay
+                                    muted
+                                    loop
+                                    playsInline
+                                />
+                            );
+                        }
+
+                        return (
+                            <Image
+                                src={mainMedia}
+                                alt={item[`name_${language}`] || item.name}
+                                fill
+                                sizes="(max-width: 768px) 50vw, 33vw"
+                                className={`object-cover transition-transform duration-700 group-hover:scale-105 ${item.videoUrl && isHovered ? 'opacity-0' : 'opacity-100'}`}
+                                loading="lazy"
+                                referrerPolicy="no-referrer"
+                            />
+                        );
+                    })()}
 
                     {item.videoUrl && (
                         <video
