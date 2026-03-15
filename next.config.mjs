@@ -13,6 +13,10 @@ const withPWA = withPWAInit({
         clientsClaim: true,
         runtimeCaching: [
             {
+                urlPattern: /\/api\/ai.*/i,
+                handler: 'NetworkOnly',
+            },
+            {
                 urlPattern: /https:\/\/firestore\.googleapis\.com\/.*/i,
                 handler: 'NetworkOnly',
             },

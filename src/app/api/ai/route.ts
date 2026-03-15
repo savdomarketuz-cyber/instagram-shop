@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        model,
+                        model: attempts > 0 ? "llama3-8b-8192" : model,
                         messages,
                         temperature: 0.7,
                         max_tokens: 1024
@@ -41,22 +41,25 @@ export async function POST(req: NextRequest) {
                 });
 
                 if (response.status === 429) {
+                    console.warn(`Groq Rate Limit on Key ${currentKeyIndex + 1}`);
                     throw new Error("Rate limit exceeded");
                 }
 
                 if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error?.message || "Groq API error");
+                    const errorJson = await response.json().catch(() => ({}));
+                    console.error(`Groq API Error on Key ${currentKeyIndex + 1}:`, errorJson);
+                    throw new Error(errorJson.error?.message || "Groq API error");
                 }
 
                 const data = await response.json();
                 return NextResponse.json({ content: data.choices[0].message.content });
 
-            } catch (error) {
+            } catch (error: any) {
+                console.error(`AI Attempt ${attempts + 1} failed:`, error.message);
                 currentKeyIndex = (currentKeyIndex + 1) % GROQ_API_KEYS.length;
                 attempts++;
                 if (attempts >= maxRetries) {
-                    return NextResponse.json({ error: "AI service unavailable" }, { status: 503 });
+                    return NextResponse.json({ error: "AI service unavailable: " + error.message }, { status: 503 });
                 }
             }
         }
