@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "AI configuration missing" }, { status: 503 });
         }
 
-        const { messages, model = "llama-3.1-70b-versatile" } = await req.json();
+        const { messages, model = "llama-3.3-70b-versatile" } = await req.json();
 
         if (!messages || !Array.isArray(messages)) {
             return NextResponse.json({ error: "Messages required" }, { status: 400 });
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        model: attempts > 0 ? "llama3-8b-8192" : model,
+                        model: attempts > 0 ? "llama-3.1-8b-instant" : model,
                         messages,
                         temperature: 0.7,
                         max_tokens: 1024

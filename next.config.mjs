@@ -17,15 +17,15 @@ const withPWA = withPWAInit({
                 handler: 'NetworkOnly',
             },
             {
-                urlPattern: /https:\/\/firestore\.googleapis\.com\/.*/i,
+                urlPattern: /https:\/\/firestore\.googleapis\.com\/.*$/i,
                 handler: 'NetworkOnly',
             },
             {
-                urlPattern: /https:\/\/.*\.googleapis\.com\/.*/i,
+                urlPattern: /https:\/\/.*\.googleapis\.com\/.*$/i,
                 handler: 'NetworkOnly',
             },
             {
-                urlPattern: /https:\/\/.*\.yandex\.ru\/.*/i,
+                urlPattern: /https:\/\/.*\.yandex\.ru\/.*$/i,
                 handler: 'NetworkOnly',
             }
         ]
