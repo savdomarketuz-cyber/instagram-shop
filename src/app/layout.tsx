@@ -151,7 +151,7 @@ export default function RootLayout({
                     }
                 `}} />
             </head>
-            <body className="bg-gray-100 text-gray-900 antialiased font-sans">
+            <body className="bg-white text-gray-900 antialiased font-sans">
                 <a href="#main-content" className="skip-to-main">
                     Asosiy kontentga o&apos;tish
                 </a>

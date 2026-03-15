@@ -3,17 +3,19 @@
 import { ProductSkeleton } from "./ProductSkeleton";
 import { ProductCard } from "./ProductCard";
 import { WatchedProduct } from "./WatchedProduct";
+import { Product, User, CartItem } from "@/types";
+import { TranslationKeys } from "@/lib/translations";
 
 interface ProductGridProps {
-    products: any[];
+    products: Product[];
     loading: boolean;
     language: "uz" | "ru";
-    t: any;
-    cart: any[];
-    wishlist: any[];
-    user: any;
-    toggleWishlist: (product: any) => void;
-    addToCart: (product: any) => void;
+    t: TranslationKeys;
+    cart: CartItem[];
+    wishlist: Product[];
+    user: User | null;
+    toggleWishlist: (product: Product) => void;
+    addToCart: (product: Product) => void;
     updateQuantity: (id: string, qty: number) => void;
     removeFromCart: (id: string) => void;
 }

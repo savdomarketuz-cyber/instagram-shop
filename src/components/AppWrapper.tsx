@@ -137,18 +137,22 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
 
     // Cleanup Native PWA Splash
     useEffect(() => {
+        const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
         const splash = document.getElementById('pwa-splash');
-        if (splash) {
-            // Wait for our cinematic animation to finish (approx 3.5s - 4s)
+
+        if (splash && isPWA) {
+            // In PWA mode, show animation but faster (max 1.5s instead of 4s)
             const timer = setTimeout(() => {
-                splash.style.transition = 'opacity 1s ease, visibility 1s';
+                splash.style.transition = 'opacity 0.5s ease-out, visibility 0.5s';
                 splash.style.opacity = '0';
                 splash.style.visibility = 'hidden';
                 setIsSplashActive(false);
-                setTimeout(() => splash.remove(), 1000);
-            }, 4000);
+                setTimeout(() => splash.remove(), 500);
+            }, 1500);
             return () => clearTimeout(timer);
         } else {
+            // In regular browser mode, or if splash missing - show site IMMEDIATELY
+            if (splash) splash.remove();
             setIsSplashActive(false);
         }
     }, []);
@@ -191,7 +195,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
         <div className={`
             mx-auto bg-white min-h-screen relative shadow-2xl 
             ${showNav ? 'md:pl-64' : ''}
-            ${isSplashActive ? 'opacity-0 overflow-hidden h-screen' : 'opacity-100 transition-opacity duration-1000'}
+            ${isSplashActive ? 'opacity-0 overflow-hidden h-screen' : 'opacity-100 transition-opacity duration-300'}
         `}>
             <ErrorBoundary>
                 <PWAInstallPrompt />

@@ -5,14 +5,17 @@ import Link from "next/link";
 import Image from "next/image";
 import { Star, Heart, Check, Minus, Plus, Truck } from "lucide-react";
 
+import { Product, CartItem } from "@/types";
+import { TranslationKeys } from "@/lib/translations";
+
 interface ProductCardProps {
-    item: any;
+    item: Product;
     language: "uz" | "ru";
-    t: any;
-    cart: any[];
-    wishlist: any[];
-    toggleWishlist: (product: any) => void;
-    addToCart: (product: any) => void;
+    t: TranslationKeys;
+    cart: CartItem[];
+    wishlist: Product[];
+    toggleWishlist: (product: Product) => void;
+    addToCart: (product: Product) => void;
     updateQuantity: (id: string, qty: number) => void;
     removeFromCart: (id: string) => void;
 }
@@ -30,36 +33,12 @@ export const ProductCard = ({
     const handleToggleWishlist = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        toggleWishlist({
-            id: item.id,
-            name: item.name,
-            name_uz: item.name_uz,
-            name_ru: item.name_ru,
-            price: item.price,
-            oldPrice: item.oldPrice,
-            imageUrl: item.image,
-            category: item.category,
-            category_uz: item.category_uz,
-            category_ru: item.category_ru,
-            stock: totalStock
-        });
+        toggleWishlist(item);
     };
 
     const handleAddToCart = (e: React.MouseEvent) => {
         e.preventDefault();
-        addToCart({
-            id: item.id,
-            name: item.name,
-            name_uz: item.name_uz,
-            name_ru: item.name_ru,
-            price: item.price,
-            oldPrice: item.oldPrice,
-            imageUrl: item.image,
-            category: item.category,
-            category_uz: item.category_uz,
-            category_ru: item.category_ru,
-            stock: totalStock
-        });
+        addToCart(item);
     };
 
     return (

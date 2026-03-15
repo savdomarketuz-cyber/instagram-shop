@@ -7,6 +7,7 @@ import { translations } from "@/lib/translations";
 import { Loader2, Plus, ChevronLeft, Volume2, VolumeX, ShoppingBag, Send } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Reel } from "@/types";
 import { SingleReel } from "@/components/reels/SingleReel";
 import { CommentsSheet } from "@/components/reels/CommentsSheet";
 
@@ -15,7 +16,7 @@ export default function ReelsPage() {
     const { language } = useStore();
     const t = translations[language];
 
-    const [reels, setReels] = useState<any[]>([]);
+    const [reels, setReels] = useState<Reel[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeIndex, setActiveIndex] = useState(0);
     const [isMuted, setIsMuted] = useState(false);
@@ -27,12 +28,12 @@ export default function ReelsPage() {
             try {
                 // Fetch reels from 'reels' collection OR from products that have videoUrl
                 const reelsSnap = await getDocs(query(collection(db, "reels"), limit(20)));
-                let fetchedReels = reelsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                let fetchedReels = reelsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Reel[];
 
                 // If not enough reels, fetch products with videos
                 if (fetchedReels.length < 5) {
                     const productsSnap = await getDocs(query(collection(db, "products"), where("videoUrl", "!=", ""), limit(20)));
-                    const productReels = productsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    const productReels = productsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Reel[];
                     fetchedReels = [...fetchedReels, ...productReels.filter(pr => !fetchedReels.find(fr => fr.id === pr.id))];
                 }
 

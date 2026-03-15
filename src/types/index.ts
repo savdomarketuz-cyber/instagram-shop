@@ -99,6 +99,21 @@ export interface Toast {
     type: 'success' | 'error' | 'info';
 }
 
+export interface Reel {
+    id: string;
+    videoUrl: string;
+    thumbnailUrl?: string; // Optional cover image
+    productId?: string; // Link to a product
+    productName?: string;
+    productPrice?: number;
+    description?: string;
+    createdAt?: FirebaseTimestamp;
+    likes?: number;
+    views?: number;
+    // Allow for additional dynamic fields from products that double as reels
+    [key: string]: any; 
+}
+
 export type Language = "uz" | "ru";
 
 // Firebase Timestamp type (simplified)

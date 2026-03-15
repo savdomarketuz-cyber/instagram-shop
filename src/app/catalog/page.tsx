@@ -160,9 +160,15 @@ export default function CatalogPage() {
                                         onClick={() => handleCategoryClick(sub)}
                                         className="group flex flex-col items-center gap-4 p-4 md:p-8 bg-gray-50/50 rounded-[40px] border border-transparent hover:border-gray-100 hover:bg-white hover:shadow-2xl hover:shadow-black/5 transition-all duration-500"
                                     >
-                                        <div className="w-16 h-16 md:w-24 md:h-24 rounded-[28px] overflow-hidden bg-white shadow-lg shadow-black/5 group-hover:scale-110 transition-transform">
+                                        <div className="w-16 h-16 md:w-24 md:h-24 rounded-[28px] overflow-hidden bg-white shadow-lg shadow-black/5 group-hover:scale-110 transition-transform relative">
                                             {sub.image ? (
-                                                <img src={sub.image} alt={sub.name} className="w-full h-full object-cover" />
+                                                <Image 
+                                                    src={sub.image} 
+                                                    alt={sub.name} 
+                                                    fill
+                                                    className="object-cover" 
+                                                    sizes="(max-width: 768px) 64px, 96px"
+                                                />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-gray-100"><ShoppingBag size={32} /></div>
                                             )}

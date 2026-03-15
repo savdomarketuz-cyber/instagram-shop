@@ -3,11 +3,7 @@
 import { useEffect, useRef } from "react";
 import { db, doc, setDoc, increment, arrayUnion } from "@/lib/firebase";
 import { logAiActivity } from "@/lib/ai";
-
-interface Product {
-    id: string;
-    category: string;
-}
+import { Product } from "@/types";
 
 interface WatchedProductProps {
     product: Product;

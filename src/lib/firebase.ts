@@ -21,7 +21,10 @@ import {
     writeBatch,
     getDocsFromServer,
     Timestamp,
-    runTransaction
+    runTransaction,
+    startAfter,
+    startAt,
+    endAt,
 } from "firebase/firestore";
 
 
@@ -65,7 +68,10 @@ export {
     writeBatch,
     getDocsFromServer,
     Timestamp,
-    runTransaction
+    runTransaction,
+    startAfter,
+    startAt,
+    endAt,
 };
 
 
