@@ -19,6 +19,10 @@ const withPWA = withPWAInit({
             {
                 urlPattern: /https:\/\/.*\.googleapis\.com\/.*/i,
                 handler: 'NetworkOnly',
+            },
+            {
+                urlPattern: /https:\/\/.*\.yandex\.ru\/.*/i,
+                handler: 'NetworkOnly',
             }
         ]
     },

@@ -52,10 +52,10 @@ export default function HomeClient({
     const [activeFilter, setActiveFilter] = useState(urlCategory || homeActiveFilter);
     const [activeParent, setActiveParent] = useState("all");
     const [activeTab, setActiveTab] = useState(homeActiveTab);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(initialProducts.length === 0);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
     const [lastVisible, setLastVisible] = useState<any>(null);
-    const [hasMore, setHasMore] = useState(initialProducts.length === 20);
+    const [hasMore, setHasMore] = useState(initialProducts.length >= 20);
     const [currentBanner, setCurrentBanner] = useState(0);
     const [bannerSettings, setBannerSettings] = useState(initialBannerSettings);
 
@@ -122,9 +122,9 @@ export default function HomeClient({
 
     // Re-fetch when filters change (reset pagination)
     useEffect(() => {
-        // Skip first load if we have initial products and no active search/filter changes yet
+        // Fetch products if we're not on the default state OR if we have no products at all
         const isDefault = activeFilter === 'all' && activeTab === 'for_you' && !search;
-        if (!isDefault) {
+        if (!isDefault || allProducts.length === 0) {
             fetchProducts(false);
         }
     }, [activeFilter, activeTab, search]);
