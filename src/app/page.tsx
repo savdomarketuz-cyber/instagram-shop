@@ -33,7 +33,8 @@ async function getInitialData() {
             ? { desktopHeight: settingsSnap.data().desktopHeight || 210, borderRadius: settingsSnap.data().borderRadius || 32 }
             : { desktopHeight: 210, borderRadius: 32 };
 
-        return { products, categories, banners, bannerSettings };
+        // IMPORTANT: Serialize data to plain JSON for Server->Client boundary
+        return JSON.parse(JSON.stringify({ products, categories, banners, bannerSettings }));
     } catch (error) {
         console.error("Server-side fetch failed:", error);
         return { products: [], categories: [], banners: [], bannerSettings: { desktopHeight: 210, borderRadius: 32 } };
