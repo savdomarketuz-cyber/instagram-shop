@@ -1,22 +1,26 @@
 import { Metadata } from 'next';
 import ProductClient from './ProductClient';
-import { db, doc, getDoc } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
+import { mapProduct } from "@/lib/mappers";
 
 export const revalidate = 3600; // ISR configuration: revalidate every hour
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
     try {
-        const docRef = doc(db, "products", params.id);
-        const docSnap = await getDoc(docRef);
+        const { data: productData } = await supabase
+            .from("products")
+            .select("*")
+            .eq("id", params.id)
+            .single();
         
-        if (!docSnap.exists()) {
+        if (!productData) {
             return {
                 title: 'Mahsulot topilmadi | Velari',
                 description: 'Kechirasiz, siz qidirayotgan mahsulot topilmadi.'
             };
         }
         
-        const product = docSnap.data();
+        const product = mapProduct(productData);
         const baseUrl = "https://velari.uz";
         
         const ogUrl = new URL(`${baseUrl}/api/og`);
@@ -56,7 +60,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
                 "kafolat",
                 "Toshkent",
                 "Uzbekistan",
-                product.category
+                product.category as string
             ].filter(Boolean) as string[],
             robots: { index: true, follow: true },
         };
@@ -66,16 +70,19 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 }
 
 async function getProductData(id: string) {
-    const docRef = doc(db, "products", id);
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) return null;
-    return { id: docSnap.id, ...docSnap.data() };
+    const { data } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", id)
+        .single();
+    
+    return data ? mapProduct(data) : null;
 }
 
 export default async function Page({ params }: { params: { id: string } }) {
     const product: any = await getProductData(params.id);
     
-    if (!product) return <div>Mahsulot topilmadi</div>;
+    if (!product) return <div className="p-10 text-center">Mahsulot topilmadi</div>;
 
     // Structured Data (Schema.org) for Google to understand this is a PRODUCT
     const jsonLd = {

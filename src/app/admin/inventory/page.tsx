@@ -1,7 +1,5 @@
-"use client";
-
 import { useState, useEffect } from "react";
-import { db, collection, doc, onSnapshot, updateDoc, query, orderBy, serverTimestamp, writeBatch } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { Database, Search, Package, Home as WarehouseIcon, Save, Loader2, CheckCircle2, History, AlertCircle, FileSpreadsheet, Download, X, Upload } from "lucide-react";
 
 interface Product {
@@ -30,17 +28,34 @@ export default function AdminInventory() {
     const [isImporting, setIsImporting] = useState(false);
     const [importLog, setImportLog] = useState<string[]>([]);
 
-    useEffect(() => {
-        const unsubProducts = onSnapshot(query(collection(db, "products")), (snap) => {
-            setProducts(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Product[]);
+    const fetchData = async () => {
+        try {
+            const [productsRes, warehousesRes] = await Promise.all([
+                supabase.from("products").select("*"),
+                supabase.from("warehouses").select("id, name")
+            ]);
+
+            if (productsRes.error) throw productsRes.error;
+            if (warehousesRes.error) throw warehousesRes.error;
+
+            setProducts(productsRes.data.map(p => ({
+                id: p.id,
+                name: p.name,
+                image: p.image,
+                price: p.price,
+                sku: p.sku,
+                stockDetails: p.stock_details
+            })) as Product[]);
+
+            setWarehouses(warehousesRes.data as Warehouse[]);
             setLoading(false);
-        });
+        } catch (error) {
+            console.error("Fetch inventory error:", error);
+        }
+    };
 
-        const unsubWarehouses = onSnapshot(query(collection(db, "warehouses")), (snap) => {
-            setWarehouses(snap.docs.map(doc => ({ id: doc.id, name: doc.data().name })) as Warehouse[]);
-        });
-
-        return () => { unsubProducts(); unsubWarehouses(); };
+    useEffect(() => {
+        fetchData();
     }, []);
 
     const handleStockChange = (productId: string, warehouseId: string, val: string) => {
@@ -63,11 +78,15 @@ export default function AdminInventory() {
             const newStockDetails = { ...(product.stockDetails || {}), ...updates };
             const totalStock = Object.values(newStockDetails).reduce((a, b: any) => a + (Number(b) || 0), 0);
 
-            await updateDoc(doc(db, "products", product.id), {
-                stockDetails: newStockDetails,
-                stock: totalStock,
-                updatedAt: serverTimestamp()
-            });
+            const { error } = await supabase
+                .from("products")
+                .update({
+                    stock_details: newStockDetails,
+                    stock: totalStock
+                })
+                .eq("id", product.id);
+            
+            if (error) throw error;
 
             const newChanging = { ...changingStock };
             delete newChanging[product.id];
@@ -75,6 +94,7 @@ export default function AdminInventory() {
 
             setShowSuccess(true);
             setTimeout(() => setShowSuccess(false), 3000);
+            fetchData();
         } catch (e) {
             console.error(e);
             alert("Saqlashda xatolik!");
@@ -89,7 +109,6 @@ export default function AdminInventory() {
         script.onload = () => {
             const XLSX = (window as any).XLSX;
 
-            // Header: [SKU, Name, Warehouse 1, Warehouse 2...]
             const headers = ["SKU (Majburiy)", "Mahsulot nomi (O'zgartirmang)"];
             warehouses.forEach(w => {
                 headers.push(`Ombor: ${w.name} [ID:${w.id}]`);
@@ -152,7 +171,6 @@ export default function AdminInventory() {
                 if (warehousesInExcel.length === 0) throw new Error("Faylda ombor ustunlari topilmadi. Iltimos shablondan foydalaning.");
 
                 const rows = data.slice(1);
-                const batch = writeBatch(db);
                 let updateCount = 0;
 
                 setImportLog(prev => [...prev, `${rows.length} ta qator topildi. Bazadan SKU bo'yicha qidirilmoqda...`]);
@@ -171,18 +189,22 @@ export default function AdminInventory() {
 
                         const totalStock = Object.values(newStockDetails).reduce((a, b: any) => a + (Number(b) || 0), 0);
 
-                        batch.update(doc(db, "products", product.id), {
-                            stockDetails: newStockDetails,
-                            stock: totalStock,
-                            updatedAt: serverTimestamp()
-                        });
-                        updateCount++;
+                        const { error } = await supabase
+                            .from("products")
+                            .update({
+                                stock_details: newStockDetails,
+                                stock: totalStock
+                            })
+                            .eq("id", product.id);
+                        
+                        if (error) console.error("Error updating product stock:", error);
+                        else updateCount++;
                     }
                 }
 
                 if (updateCount > 0) {
-                    await batch.commit();
                     setImportLog(prev => [...prev, `Muvaffaqiyatli! ${updateCount} ta mahsulot yangilandi.`]);
+                    fetchData();
                 } else {
                     setImportLog(prev => [...prev, `Hech qanday mahsulot topilmadi.`]);
                 }

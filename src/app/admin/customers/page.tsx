@@ -1,7 +1,5 @@
-"use client";
-
 import { useState, useEffect } from "react";
-import { db, collection, getDocs, query, orderBy, onSnapshot, doc, getDoc } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { Search, User, Phone, ShoppingBag, DollarSign, Calendar, Loader2, Globe, Monitor, MapPin, X, Heart, Eye, TrendingUp, Sparkles, Clock, ShoppingCart } from "lucide-react";
 
 interface Customer {
@@ -29,63 +27,74 @@ export default function AdminCustomers() {
     const [allProducts, setAllProducts] = useState<any[]>([]);
 
     useEffect(() => {
-        const unsubUsers = onSnapshot(collection(db, "users"), (usersSnap) => {
-            const usersData = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const fetchData = async () => {
+            try {
+                const [usersRes, ordersRes, statusRes, productsRes] = await Promise.all([
+                    supabase.from("users").select("*"),
+                    supabase.from("orders").select("user_phone, total"),
+                    supabase.from("user_status").select("*"),
+                    supabase.from("products").select("id, name")
+                ]);
 
-            const unsubOrders = onSnapshot(collection(db, "orders"), (ordersSnap) => {
-                const ordersData = ordersSnap.docs.map(doc => doc.data());
+                if (usersRes.error) throw usersRes.error;
+                if (ordersRes.error) throw ordersRes.error;
+                if (statusRes.error) throw statusRes.error;
+                if (productsRes.error) throw productsRes.error;
 
-                const unsubStatus = onSnapshot(collection(db, "user_status"), (statusSnap) => {
-                    const statusData = statusSnap.docs.reduce((acc: any, doc) => {
-                        acc[doc.id] = doc.data();
-                        return acc;
-                    }, {});
+                const usersData = usersRes.data;
+                const ordersData = ordersRes.data;
+                const statusData = statusRes.data.reduce((acc: any, s) => {
+                    acc[s.id] = s;
+                    return acc;
+                }, {});
 
-                    const merged = usersData.map((user: any) => {
-                        const userOrders = ordersData.filter(order => order.userPhone === user.phone);
-                        const activity = statusData[user.phone] || {};
+                const merged = usersData.map((user: any) => {
+                    const userOrders = ordersData.filter(order => order.user_phone === user.phone);
+                    const activity = statusData[user.phone] || {};
 
-                        return {
-                            id: user.id,
-                            phone: user.phone,
-                            name: user.name || "Nomsiz Mijoz",
-                            createdAt: user.createdAt,
-                            ipAddress: activity.ipAddress || user.ipAddress || "Aniqlanmadi",
-                            locationString: activity.locationString || "Aniqlanmadi",
-                            locationType: activity.locationType || "ip",
-                            isOnline: activity.isOnline || false,
-                            lastSeen: activity.lastSeen || null,
-                            currentPath: activity.currentPath || "/",
-                            totalOrders: userOrders.length,
-                            totalSpent: userOrders.reduce((sum, order) => sum + (order.total || 0), 0)
-                        };
-                    });
-
-                    merged.sort((a, b) => b.totalSpent - a.totalSpent);
-                    setCustomers(merged as Customer[]);
-                    setLoading(false);
+                    return {
+                        id: user.id,
+                        phone: user.phone,
+                        name: user.name || "Nomsiz Mijoz",
+                        createdAt: user.created_at,
+                        ipAddress: activity.ip_address || user.ip_address || "Aniqlanmadi",
+                        locationString: activity.location_string || "Aniqlanmadi",
+                        locationType: activity.location_type || "ip",
+                        isOnline: activity.is_online || false,
+                        lastSeen: activity.last_seen || null,
+                        currentPath: activity.current_path || "/",
+                        totalOrders: userOrders.length,
+                        totalSpent: userOrders.reduce((sum, order) => sum + (order.total || 0), 0)
+                    };
                 });
-                return () => unsubStatus();
-            });
-            return () => unsubOrders();
-        });
 
-        // Fetch all products once for name lookups
-        getDocs(collection(db, "products")).then(snap => {
-            setAllProducts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-        });
+                merged.sort((a, b) => b.totalSpent - a.totalSpent);
+                setCustomers(merged as Customer[]);
+                setAllProducts(productsRes.data);
+            } catch (error) {
+                console.error("Error fetching customers data:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-        return () => unsubUsers();
+        fetchData();
     }, []);
 
     const fetchCustomerDetails = async (customer: Customer) => {
         setSelectedCustomer(customer);
         setLoadingDetails(true);
         try {
-            const interestsRef = doc(db, "user_interests", customer.phone);
-            const snap = await getDoc(interestsRef);
-            if (snap.exists()) {
-                setCustomerInterests(snap.data());
+            const { data, error } = await supabase
+                .from("user_interests")
+                .select("*")
+                .eq("id", customer.phone)
+                .single();
+            
+            if (error && error.code !== "PGRST116") throw error; // PGRST116 is "no rows found"
+
+            if (data) {
+                setCustomerInterests(data);
             } else {
                 setCustomerInterests(null);
             }

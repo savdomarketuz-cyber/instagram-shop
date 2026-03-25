@@ -1,7 +1,5 @@
-"use client";
-
 import { useState, useEffect } from "react";
-import { db, collection, query, getDocs, addDoc, deleteDoc, doc, updateDoc, setDoc, serverTimestamp, orderBy } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { Plus, Trash2, Tag, Loader2, Hash, Edit2, X, Save, Image as ImageIcon } from "lucide-react";
 import { uploadToYandexS3 } from "@/lib/yandex-s3";
 
@@ -26,11 +24,14 @@ export default function AdminBrands() {
     const fetchBrands = async (isInitial = false) => {
         if (isInitial) setLoading(true);
         try {
-            const q = query(collection(db, "brands"));
-            const querySnapshot = await getDocs(q);
-            const fetched = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
+            const { data, error } = await supabase.from("brands").select("*");
+            if (error) throw error;
+
+            const fetched = data.map(b => ({
+                id: b.id,
+                name: b.name,
+                logoUrl: b.image,
+                isDeleted: b.is_deleted
             })) as Brand[];
 
             // Sort by ID
@@ -96,15 +97,14 @@ export default function AdminBrands() {
                 finalId = editingId;
             }
 
-            const isNew = !brands.find(b => b.id === finalId);
-
-            await setDoc(doc(db, "brands", finalId), {
+            const { error } = await supabase.from("brands").upsert({
+                id: finalId,
                 name: name.trim(),
-                logoUrl: logoUrl.trim() || null,
-                updatedAt: serverTimestamp(),
-                isDeleted: false,
-                ...(isNew && { createdAt: serverTimestamp() })
-            }, { merge: true });
+                image: logoUrl.trim() || null,
+                is_deleted: false
+            });
+
+            if (error) throw error;
 
             handleCancelEdit();
             fetchBrands();
@@ -118,19 +118,19 @@ export default function AdminBrands() {
 
     const moveToTrash = async (id: string) => {
         if (window.confirm("Brendni o'chirmoqchimisiz?")) {
-            await updateDoc(doc(db, "brands", id), { isDeleted: true });
+            await supabase.from("brands").update({ is_deleted: true }).eq("id", id);
             fetchBrands();
         }
     };
 
     const restoreBrand = async (id: string) => {
-        await updateDoc(doc(db, "brands", id), { isDeleted: false });
+        await supabase.from("brands").update({ is_deleted: false }).eq("id", id);
         fetchBrands();
     };
 
     const deletePermanent = async (id: string) => {
         if (window.confirm("BUNYUNLAY o'chirmoqchimisiz?")) {
-            await deleteDoc(doc(db, "brands", id));
+            await supabase.from("brands").delete().eq("id", id);
             fetchBrands();
         }
     };

@@ -1,10 +1,8 @@
-"use client";
-
 import { useState } from "react";
 import Link from "next/link";
 import { Star, MessageSquare, Send, Reply, Pencil, Trash2, Smile, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { AppleEmoji } from "./AppleEmoji";
-import { db, collection, addDoc, doc, updateDoc, deleteDoc, query, where, getDocs } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 
 interface ReviewsSectionProps {
     productId: string;
@@ -54,13 +52,15 @@ export const ReviewsSection = ({
                     return;
                 }
 
-                const ordersRef = collection(db, "orders");
-                const q = query(ordersRef, where("phone", "==", user.phone || ""));
-                const orderSnap = await getDocs(q);
+                // Supabase query for orders
+                const { data: orders } = await supabase
+                    .from("orders")
+                    .select("items")
+                    .eq("user_phone", user.phone || "");
+                
                 let hasPurchased = false;
-                orderSnap.forEach(doc => {
-                    const data = doc.data();
-                    if (data.items?.some((item: any) => item.id === productId)) hasPurchased = true;
+                orders?.forEach(order => {
+                    if (order.items?.some((item: any) => item.id === productId)) hasPurchased = true;
                 });
 
                 if (!hasPurchased) {
@@ -70,28 +70,27 @@ export const ReviewsSection = ({
                 }
             }
 
-            const newComment: any = {
-                productId,
-                userId: user.id || user.phone,
+            const newComment = {
+                product_id: productId,
+                user_id: user.id || user.phone,
                 username: user.username,
                 text: commentText,
                 type: replyTo ? replyTo.type : activeCommentTab,
-                parentId: replyTo?.id || null,
-                timestamp: new Date().toISOString(),
-                isAdmin: user.isAdmin || user.phone === "ADMIN",
+                parent_id: replyTo?.id || null,
+                is_admin: !!(user.isAdmin || user.phone === "ADMIN"),
+                rating: (!replyTo && activeCommentTab === 'review') ? commentRating : null,
             };
 
-            if (!replyTo && activeCommentTab === 'review') newComment.rating = commentRating;
-
-            await addDoc(collection(db, "comments"), newComment);
+            const { error } = await supabase.from("comments").insert([newComment]);
+            if (error) throw error;
 
             if (!replyTo && activeCommentTab === 'review' && product) {
-                const productRef = doc(db, "products", productId);
                 const currentCount = product.reviewCount || 0;
                 const currentRating = product.rating || 0;
                 const newCount = currentCount + 1;
                 const newRating = ((currentRating * currentCount) + commentRating) / newCount;
-                await updateDoc(productRef, { rating: newRating, reviewCount: newCount });
+                
+                await supabase.from("products").update({ rating: newRating, review_count: newCount }).eq("id", productId);
             }
 
             setCommentText("");
@@ -109,11 +108,11 @@ export const ReviewsSection = ({
     const handleUpdateComment = async (commentId: string) => {
         if (!editingText.trim()) return;
         try {
-            await updateDoc(doc(db, "comments", commentId), {
+            await supabase.from("comments").update({
                 text: editingText,
-                isEdited: true,
-                lastUpdated: new Date().toISOString()
-            });
+                is_edited: true,
+            }).eq("id", commentId);
+            
             setEditingCommentId(null);
             setEditingText("");
             showToast(language === 'uz' ? "Tahrirlandi!" : "Изменено!");
@@ -126,7 +125,7 @@ export const ReviewsSection = ({
     const confirmDelete = async () => {
         if (!commentToDelete) return;
         try {
-            await deleteDoc(doc(db, "comments", commentToDelete));
+            await supabase.from("comments").delete().eq("id", commentToDelete);
             showToast(language === 'uz' ? "O'chirildi!" : "Удалено!");
             fetchComments();
             setCommentToDelete(null);
@@ -160,7 +159,7 @@ export const ReviewsSection = ({
         }
 
         try {
-            await updateDoc(doc(db, "comments", commentId), { reactions: currentReactions });
+            await supabase.from("comments").update({ reactions: currentReactions }).eq("id", commentId);
             fetchComments();
             setActiveReactionPicker(null);
         } catch (e) { console.error(e); }

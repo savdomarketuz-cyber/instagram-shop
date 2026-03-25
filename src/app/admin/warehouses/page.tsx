@@ -1,7 +1,5 @@
-"use client";
-
 import { useState, useEffect } from "react";
-import { db, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { Plus, Trash2, Edit2, Save, X, Loader2, Home as WarehouseIcon, MapPin, Truck, Clock, Calendar } from "lucide-react";
 
 interface Warehouse {
@@ -41,13 +39,31 @@ export default function AdminWarehouses() {
 
     const [holidayInput, setHolidayInput] = useState("");
 
-    useEffect(() => {
-        const q = query(collection(db, "warehouses"), orderBy("name", "asc"));
-        const unsub = onSnapshot(q, (snap) => {
-            setWarehouses(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Warehouse[]);
+    const fetchWarehouses = async () => {
+        try {
+            const { data, error } = await supabase
+                .from("warehouses")
+                .select("*")
+                .order("name", { ascending: true });
+            
+            if (error) throw error;
+            setWarehouses(data.map(w => ({
+                id: w.id,
+                name: w.name,
+                address: w.address,
+                type: w.type,
+                dbs: w.dbs_config,
+                active: w.active
+            })) as Warehouse[]);
+        } catch (error) {
+            console.error("Fetch warehouses error:", error);
+        } finally {
             setLoading(false);
-        });
-        return () => unsub();
+        }
+    };
+
+    useEffect(() => {
+        fetchWarehouses();
     }, []);
 
     const resetForm = () => {
@@ -66,12 +82,26 @@ export default function AdminWarehouses() {
         if (!formData.name) return alert("Nomini kiriting");
         setIsSaving(true);
         try {
+            const payload = {
+                name: formData.name,
+                address: formData.address,
+                type: formData.type,
+                dbs_config: formData.dbs,
+                active: formData.active
+            };
+
             if (editId) {
-                await updateDoc(doc(db, "warehouses", editId), { ...formData, updatedAt: serverTimestamp() });
+                const { error } = await supabase.from("warehouses").update(payload).eq("id", editId);
+                if (error) throw error;
             } else {
-                await addDoc(collection(db, "warehouses"), { ...formData, createdAt: serverTimestamp() });
+                const { error } = await supabase.from("warehouses").insert([{ 
+                    ...payload,
+                    id: crypto.randomUUID()
+                }]);
+                if (error) throw error;
             }
             resetForm();
+            fetchWarehouses();
         } catch (e) {
             console.error(e);
             alert("Xatolik!");
@@ -83,7 +113,9 @@ export default function AdminWarehouses() {
     const handleDelete = async (id: string) => {
         if (!confirm("O'chirilsinmi?")) return;
         try {
-            await deleteDoc(doc(db, "warehouses", id));
+            const { error } = await supabase.from("warehouses").delete().eq("id", id);
+            if (error) throw error;
+            fetchWarehouses();
         } catch (e) {
             console.error(e);
         }

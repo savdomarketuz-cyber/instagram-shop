@@ -1,10 +1,9 @@
-"use client";
-
 import { useState, useEffect } from "react";
-import { db, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDocs, where, addDoc, serverTimestamp } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { MessageSquare, Users, Star, Trash2, Reply, Send, CheckCircle2, Search, Headphones, AlertCircle, Loader2, ChevronRight, Paperclip, ChevronLeft, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+const { uploadToYandexS3 } = require("@/lib/yandex-s3");
 
 export default function AdminChatPage() {
     const [activeTab, setActiveTab] = useState<'support' | 'comments'>('support');
@@ -22,38 +21,99 @@ export default function AdminChatPage() {
     const [mediaPreview, setMediaPreview] = useState<string | null>(null);
     const [isUploadingMedia, setIsUploadingMedia] = useState(false);
     const fileInputRef = require("react").useRef(null);
-    const { uploadToYandexS3 } = require("@/lib/yandex-s3");
+
+    const fetchData = async () => {
+        try {
+            const [chatsRes, commentsRes] = await Promise.all([
+                supabase.from("support_chats").select("*").order("last_timestamp", { ascending: false }),
+                supabase.from("comments").select("*").order("created_at", { ascending: false })
+            ]);
+
+            if (chatsRes.error) throw chatsRes.error;
+            if (commentsRes.error) throw commentsRes.error;
+
+            setSupportChats(chatsRes.data.map(c => ({
+                id: c.id,
+                username: c.username,
+                lastMessage: c.last_message,
+                lastTimestamp: c.last_timestamp,
+                unreadByAdmin: c.unread_by_admin
+            })));
+
+            setComments(commentsRes.data.map(c => ({
+                id: c.id,
+                username: c.username,
+                text: c.text,
+                timestamp: c.created_at,
+                type: c.type,
+                productId: c.product_id,
+                rating: c.rating,
+                media: c.reactions?.media || []
+            })));
+        } catch (error) {
+            console.error("Fetch chats error:", error);
+        }
+    };
 
     useEffect(() => {
-        // Fetch support chats
-        const qChats = query(collection(db, "support_chats"), orderBy("lastTimestamp", "desc"));
-        const unsubChats = onSnapshot(qChats, (snap) => {
-            setSupportChats(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-        });
-
-        // Fetch product comments
-        const qComments = query(collection(db, "comments"), orderBy("timestamp", "desc"));
-        const unsubComments = onSnapshot(qComments, (snap) => {
-            setComments(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-        });
+        fetchData();
+        
+        // Subscribe to changes
+        const chatSub = supabase.channel('support_chats_all')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'support_chats' }, () => fetchData())
+            .subscribe();
+        
+        const commentSub = supabase.channel('comments_all')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, () => fetchData())
+            .subscribe();
 
         return () => {
-            unsubChats();
-            unsubComments();
+            supabase.removeChannel(chatSub);
+            supabase.removeChannel(commentSub);
         };
     }, []);
 
-    useEffect(() => {
-        if (selectedChat) {
-            const qMsgs = query(collection(db, "support_chats", selectedChat.id, "messages"), orderBy("timestamp", "asc"));
-            const unsubMsgs = onSnapshot(qMsgs, (snap) => {
-                setMessages(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            });
+    const fetchMessages = async (chatId: string) => {
+        try {
+            const { data, error } = await supabase
+                .from("support_messages")
+                .select("*")
+                .eq("chat_id", chatId)
+                .order("created_at", { ascending: true });
+            
+            if (error) throw error;
+            setMessages(data.map(m => ({
+                id: m.id,
+                text: m.text,
+                image: m.image,
+                video: m.video,
+                sender: m.sender_type,
+                timestamp: { toDate: () => new Date(m.created_at) }
+            })));
 
             // Mark as read
-            updateDoc(doc(db, "support_chats", selectedChat.id), { unreadByAdmin: 0 });
+            await supabase.from("support_chats").update({ unread_by_admin: 0 }).eq("id", chatId);
+        } catch (error) {
+            console.error("Fetch messages error:", error);
+        }
+    };
 
-            return () => unsubMsgs();
+    useEffect(() => {
+        if (selectedChat) {
+            fetchMessages(selectedChat.id);
+
+            const msgSub = supabase.channel(`messages_${selectedChat.id}`)
+                .on('postgres_changes', { 
+                    event: 'INSERT', 
+                    schema: 'public', 
+                    table: 'support_messages',
+                    filter: `chat_id=eq.${selectedChat.id}`
+                }, () => fetchMessages(selectedChat.id))
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(msgSub);
+            };
         }
     }, [selectedChat]);
 
@@ -83,24 +143,37 @@ export default function AdminChatPage() {
                 setIsUploadingMedia(false);
             }
 
-            const sessionRef = doc(db, "support_chats", selectedChat.id);
-            await addDoc(collection(sessionRef, "messages"), {
-                text: replyText,
-                image: fileType === 'image' ? uploadedUrl : null,
-                video: fileType === 'video' ? uploadedUrl : null,
-                sender: "admin",
-                timestamp: serverTimestamp()
-            });
+            const messageId = crypto.randomUUID();
+            const { error: msgError } = await supabase
+                .from("support_messages")
+                .insert([{
+                    id: messageId,
+                    chat_id: selectedChat.id,
+                    text: replyText,
+                    image: fileType === 'image' ? uploadedUrl : null,
+                    video: fileType === 'video' ? uploadedUrl : null,
+                    sender_type: "admin",
+                }]);
+
+            if (msgError) throw msgError;
 
             const lastMsgText = uploadedUrl ? (fileType === 'image' ? "🖼️ Rasm" : "🎥 Video") : replyText;
-            await updateDoc(sessionRef, {
-                lastMessage: lastMsgText,
-                lastTimestamp: serverTimestamp(),
-                unreadByAdmin: 0
-            });
+            const { error: chatError } = await supabase
+                .from("support_chats")
+                .update({
+                    last_message: lastMsgText,
+                    last_timestamp: new Date().toISOString(),
+                    unread_by_admin: 0
+                })
+                .eq("id", selectedChat.id);
+            
+            if (chatError) throw chatError;
+
             setReplyText("");
             setSelectedFile(null);
             setMediaPreview(null);
+            fetchMessages(selectedChat.id);
+            fetchData();
         } catch (e) {
             console.error(e);
         } finally {
@@ -111,7 +184,9 @@ export default function AdminChatPage() {
 
     const deleteComment = async (id: string) => {
         if (confirm("Ushbu sharhni o'chirishni tasdiqlaysizmi?")) {
-            await deleteDoc(doc(db, "comments", id));
+            const { error } = await supabase.from("comments").delete().eq("id", id);
+            if (error) console.error("Delete comment error:", error);
+            else fetchData();
         }
     };
 

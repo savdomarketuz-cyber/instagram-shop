@@ -2,24 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useStore } from "@/store/store";
-import { db, collection, query, orderBy, addDoc, onSnapshot, serverTimestamp, doc, updateDoc, setDoc, getDoc, limit } from "@/lib/firebase";
-import { Send, ChevronLeft, Loader2, Paperclip, CheckCircle2, MoreVertical } from "lucide-react";
+import { Send, ChevronLeft, Loader2, Paperclip, MoreVertical } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
-
-interface Message {
-    id: string;
-    text: string;
-    senderId: string;
-    timestamp: any;
-    image?: string;
-    video?: string;
-}
+import { supabase } from "@/lib/supabase";
 
 export default function P2PChatPage() {
     const { user, language } = useStore();
     const router = useRouter();
     const { id: targetPhone } = useParams();
-    const [messages, setMessages] = useState<Message[]>([]);
+    const [messages, setMessages] = useState<any[]>([]);
     const [inputText, setInputText] = useState("");
     const [loading, setLoading] = useState(true);
     const [isSending, setIsSending] = useState(false);
@@ -36,59 +27,73 @@ export default function P2PChatPage() {
     }, []);
 
     const { uploadToYandexS3 } = require("@/lib/yandex-s3");
-
-    // Room ID logic: Lexicographical order of phone numbers
     const roomId = user && targetPhone ? [user.phone, targetPhone as string].sort().join("_") : "";
 
     useEffect(() => {
         if (!mounted) return;
-
         if (!user || !targetPhone) {
             router.push("/login");
             return;
         }
 
-        // 1. Fetch target user info (to show name in header)
-        // Since we don't have a public 'users' collection with full details for everyone, 
-        // we might rely on the existing chat metadata or a dedicated user_status collection.
         const fetchTargetInfo = async () => {
-            const statusRef = doc(db, "user_status", targetPhone as string);
-            const snap = await getDoc(statusRef);
-            if (snap.exists()) {
-                setTargetUserData(snap.data());
+            const { data } = await supabase
+                .from("user_status")
+                .select("*")
+                .eq("id", targetPhone as string)
+                .single();
+            
+            if (data) {
+                setTargetUserData(data);
             } else {
                 setTargetUserData({ username: targetPhone, name: "User" });
             }
         };
         fetchTargetInfo();
 
-        // 2. Load Messages
-        const roomRef = doc(db, "private_chats", roomId);
-        const q = query(
-            collection(roomRef, "messages"),
-            orderBy("timestamp", "asc")
-        );
-
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const msgs = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as Message[];
-            setMessages(msgs);
+        const fetchMessages = async () => {
+            const { data, error } = await supabase
+                .from("private_messages")
+                .select("*")
+                .eq("chat_id", roomId)
+                .order("created_at", { ascending: true });
+            
+            if (error) throw error;
+            setMessages(data || []);
             setLoading(false);
             scrollToBottom();
-        });
+        };
+        fetchMessages();
 
-        // 3. Mark as Read
+        // Real-time
+        const channel = supabase
+            .channel(`room_${roomId}`)
+            .on('postgres_changes', { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'private_messages',
+                filter: `chat_id=eq.${roomId}`
+            }, (payload) => {
+                setMessages(prev => [...prev, payload.new]);
+                scrollToBottom();
+            })
+            .subscribe();
+
+        // Mark as Read
         const markAsRead = async () => {
-            await updateDoc(roomRef, {
-                [`unreadCount.${user.phone}`]: 0
-            }).catch(() => { });
+            // Updated unread_count for me to 0
+            const { data: chat } = await supabase.from("private_chats").select("unread_count").eq("id", roomId).single();
+            if (chat) {
+                const newUnread = { ...chat.unread_count, [user.phone]: 0 };
+                await supabase.from("private_chats").update({ unread_count: newUnread }).eq("id", roomId);
+            }
         };
         markAsRead();
 
-        return () => unsubscribe();
-    }, [user, targetPhone, roomId, router]);
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [user, targetPhone, roomId, router, mounted]);
 
     const scrollToBottom = () => {
         setTimeout(() => {
@@ -123,40 +128,42 @@ export default function P2PChatPage() {
                 setIsUploadingMedia(false);
             }
 
-            const roomRef = doc(db, "private_chats", roomId);
-            const messagesRef = collection(roomRef, "messages");
+            // 1. Ensure Chat exists
+            const { data: existingChat } = await supabase.from("private_chats").select("id, unread_count").eq("id", roomId).single();
+            const otherPhone = targetPhone as string;
+            
+            if (!existingChat) {
+                await supabase.from("private_chats").insert([{
+                    id: roomId,
+                    participants: [user.phone, otherPhone],
+                    participant_data: {
+                        [user.phone]: { name: user.name || "User", username: user.username || user.phone },
+                        [otherPhone]: { name: targetUserData?.name || "User", username: targetUserData?.username || otherPhone }
+                    },
+                    unread_count: { [otherPhone]: 1, [user.phone]: 0 }
+                }]);
+            }
 
-            // 1. Add Message
-            await addDoc(messagesRef, {
+            // 2. Add Message
+            const msgId = crypto.randomUUID();
+            await supabase.from("private_messages").insert([{
+                id: msgId,
+                chat_id: roomId,
                 text: inputText,
                 image: fileType === 'image' ? uploadedUrl : null,
                 video: fileType === 'video' ? uploadedUrl : null,
-                senderId: user.phone,
-                timestamp: serverTimestamp()
-            });
+                sender_id: user.phone
+            }]);
 
-            // 2. Update Chat Meta
+            // 3. Update Chat Meta
             const lastMsg = uploadedUrl ? (fileType === 'image' ? "🖼️ Photo" : "🎥 Video") : inputText;
-
-            // Get current unreadCount for the OTHER person
-            const roomSnap = await getDoc(roomRef);
-            let currentOtherUnread = 0;
-            if (roomSnap.exists()) {
-                currentOtherUnread = roomSnap.data().unreadCount?.[targetPhone as string] || 0;
-            }
-
-            const chatMeta = {
-                participants: [user.phone, targetPhone],
-                lastMessage: lastMsg,
-                lastTimestamp: serverTimestamp(),
-                participantData: {
-                    [user.phone]: { name: user.name || "User", username: user.username || user.phone },
-                    [targetPhone as string]: { name: targetUserData?.name || "User", username: targetUserData?.username || targetPhone }
-                },
-                [`unreadCount.${targetPhone}`]: currentOtherUnread + 1
-            };
-
-            await setDoc(roomRef, chatMeta, { merge: true });
+            const currentOtherUnread = existingChat?.unread_count?.[otherPhone] || 0;
+            
+            await supabase.from("private_chats").update({
+                last_message: lastMsg,
+                last_timestamp: new Date().toISOString(),
+                unread_count: { ...existingChat?.unread_count, [otherPhone]: currentOtherUnread + 1 }
+            }).eq("id", roomId);
 
             setInputText("");
             setSelectedFile(null);

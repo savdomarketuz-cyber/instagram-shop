@@ -5,7 +5,8 @@ import Link from "next/link";
 import { Filter, Plus, Loader2, Search, ShoppingBag } from "lucide-react";
 import { useStore } from "@/store/store";
 import { translations } from "@/lib/translations";
-import { db, collection, query, getDocs, orderBy } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
+import { mapProduct } from "@/lib/mappers";
 
 import type { Product } from "@/types";
 
@@ -22,13 +23,14 @@ export default function ProductsPage() {
 
     const fetchProducts = async () => {
         try {
-            const q = query(collection(db, "products"), orderBy("createdAt", "desc"));
-            const querySnapshot = await getDocs(q);
-            const fetched = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            setProducts(fetched);
+            const { data, error } = await supabase
+                .from("products")
+                .select("*")
+                .eq("is_deleted", false)
+                .order("created_at", { ascending: false });
+            
+            if (error) throw error;
+            setProducts(data.map(mapProduct));
         } catch (error) {
             console.error("Error fetching products:", error);
         } finally {

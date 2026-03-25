@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/store/store";
 import { X, MessageCircle, Loader2, Heart, Send } from "lucide-react";
-import { db, collection, query, where, getDocs, addDoc, orderBy } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 
 interface CommentsSheetProps {
     productId: string;
@@ -22,13 +22,22 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
     useEffect(() => {
         const fetchComments = async () => {
             try {
-                const q = query(
-                    collection(db, "comments"),
-                    where("productId", "==", productId),
-                    orderBy("timestamp", "desc")
-                );
-                const snapshot = await getDocs(q);
-                setComments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                const { data, error } = await supabase
+                    .from("comments")
+                    .select("*")
+                    .eq("product_id", productId)
+                    .order("created_at", { ascending: false });
+                
+                if (error) throw error;
+                setComments(data.map(c => ({
+                    id: c.id,
+                    productId: c.product_id,
+                    userId: c.user_id,
+                    username: c.username,
+                    text: c.text,
+                    timestamp: c.created_at,
+                    type: c.type
+                })));
             } catch (error) {
                 console.error("Error fetching comments:", error);
             } finally {
@@ -47,16 +56,27 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
 
         setIsPosting(true);
         try {
+            const commentId = crypto.randomUUID();
             const commentData = {
-                productId,
-                userId: user.phone,
+                id: commentId,
+                product_id: productId,
+                user_id: user.phone,
                 username: user.username || (language === 'uz' ? "Mijoz" : "Клиент"),
                 text: newComment,
-                timestamp: new Date().toISOString(),
                 type: 'review'
             };
-            const docRef = await addDoc(collection(db, "comments"), commentData);
-            setComments([{ id: docRef.id, ...commentData }, ...comments]);
+            const { error } = await supabase.from("comments").insert([commentData]);
+            if (error) throw error;
+
+            setComments([{ 
+                id: commentId, 
+                productId: commentData.product_id,
+                userId: commentData.user_id,
+                username: commentData.username,
+                text: commentData.text,
+                timestamp: new Date().toISOString(),
+                type: commentData.type 
+            }, ...comments]);
             setNewComment("");
             showToast(t.common.confirm);
         } catch (error) {

@@ -1,0 +1,66 @@
+import type { Product, Category, Banner } from "@/types";
+
+export const mapProduct = (p: any): Product => ({
+    ...p,
+    isDeleted: p.is_deleted,
+    createdAt: p.created_at,
+    category: p.category_id,
+    brand: p.brand_id,
+    oldPrice: p.old_price,
+    stockDetails: p.stock_details,
+    videoUrl: p.video_url,
+    reviewCount: p.review_count,
+    isOriginal: p.is_original,
+    groupId: p.group_id,
+    colorName: p.color_name
+});
+
+export const mapCategory = (c: any): Category => ({
+    ...c,
+    isDeleted: c.is_deleted,
+    parentId: c.parent_id
+});
+
+export const mapBanner = (b: any): Banner => ({
+    ...b,
+    imageUrl_uz: b.image_url_uz,
+    imageUrl_ru: b.image_url_ru,
+    linkType: b.link_type,
+    linkIds: b.link_ids,
+    buttonText: b.button_text,
+    order: b.order_index,
+    tabName_uz: b.tab_name_uz,
+    tabName_ru: b.tab_name_ru
+});
+
+export const mapUser = (u: any) => ({
+    ...u,
+    isAdmin: u.is_admin,
+    ipAddress: u.ip_address,
+    lastLogin: u.last_login,
+    createdAt: u.created_at
+});
+
+export const mapComment = (c: any) => ({
+    ...c,
+    productId: c.product_id,
+    userId: c.user_id,
+    parentId: c.parent_id,
+    isAdmin: c.is_admin,
+    timestamp: c.created_at,
+    isEdited: c.is_edited
+});
+
+export const mapOrder = (o: any) => ({
+    ...o,
+    userPhone: o.user_phone,
+    createdAt: o.created_at,
+});
+
+export const mapMessage = (m: any) => ({
+    ...m,
+    chatId: m.chat_id,
+    senderId: m.sender_id,
+    senderType: m.sender_type,
+    timestamp: m.created_at
+});

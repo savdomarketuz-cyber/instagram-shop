@@ -5,7 +5,8 @@ import Link from "next/link";
 import { Search, Loader2, Heart } from "lucide-react";
 import Logo from "@/components/Logo";
 import { useStore } from "@/store/store";
-import { db, collection, query, getDocs, orderBy, onSnapshot, doc, getDoc, limit, startAfter, where, startAt, endAt } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
+import { mapProduct, mapBanner } from "@/lib/mappers";
 import { getAiRecommendations } from "@/lib/ai";
 import { translations } from "@/lib/translations";
 import { useSearchParams } from "next/navigation";
@@ -54,7 +55,7 @@ export default function HomeClient({
     const [activeTab, setActiveTab] = useState(homeActiveTab);
     const [loading, setLoading] = useState(initialProducts.length === 0);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
-    const [lastVisible, setLastVisible] = useState<any>(null);
+    const [pageNumber, setPageNumber] = useState(0);
     const [hasMore, setHasMore] = useState(initialProducts.length >= 20);
     const [currentBanner, setCurrentBanner] = useState(0);
     const [bannerSettings, setBannerSettings] = useState(initialBannerSettings);
@@ -73,10 +74,14 @@ export default function HomeClient({
     useEffect(() => {
         if (user?.phone && allProducts.length > 0) {
             const fetchAiRecs = async () => {
-                const interestsRef = doc(db, "user_interests", user.phone || "");
-                const interestsSnap = await getDoc(interestsRef);
-                if (interestsSnap.exists()) {
-                    const ids = await getAiRecommendations(interestsSnap.data(), allProducts, user.phone);
+                const { data: interests } = await supabase
+                    .from("user_interests")
+                    .select("*")
+                    .eq("id", user.phone)
+                    .single();
+                
+                if (interests) {
+                    const ids = await getAiRecommendations(interests, allProducts, user.phone);
                     if (ids && ids.length > 0) setAiProductIds(ids);
                 }
             };
@@ -84,20 +89,27 @@ export default function HomeClient({
         }
     }, [user?.phone, allProducts.length]);
 
-    // Real-time updates for Banners and Settings
+    // Real-time updates for Banners and Settings (Supabase Realtime)
     useEffect(() => {
-        const unsubBanners = onSnapshot(collection(db, "banners"), (snap) => {
-            setBanners(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Banner[]);
-        });
+        const bannersChannel = supabase
+            .channel('banners-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'banners' }, async () => {
+                const { data } = await supabase.from('banners').select('*').eq('active', true).order('order_index');
+                setBanners((data || []).map(mapBanner));
+            })
+            .subscribe();
 
-        const unsubSettings = onSnapshot(doc(db, "settings", "banners"), (snap) => {
-            if (snap.exists()) {
-                setBannerSettings({
-                    desktopHeight: snap.data().desktopHeight || 210,
-                    borderRadius: snap.data().borderRadius || 32
-                });
-            }
-        });
+        const settingsChannel = supabase
+            .channel('settings-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'settings', filter: 'id=eq.banners' }, (payload: any) => {
+                if (payload.new && payload.new.data) {
+                    setBannerSettings({
+                        desktopHeight: payload.new.data.desktopHeight || 210,
+                        borderRadius: payload.new.data.borderRadius || 32
+                    });
+                }
+            })
+            .subscribe();
 
         if (homeScrollPosition > 0) {
             window.scrollTo({ top: homeScrollPosition, behavior: 'instant' as ScrollBehavior });
@@ -114,15 +126,14 @@ export default function HomeClient({
         window.addEventListener('scroll', handleScrollEvent);
 
         return () => {
-            unsubBanners();
-            unsubSettings();
+            supabase.removeChannel(bannersChannel);
+            supabase.removeChannel(settingsChannel);
             window.removeEventListener('scroll', handleScrollEvent);
         };
     }, []);
 
     // Re-fetch when filters change (reset pagination)
     useEffect(() => {
-        // Fetch products if we're not on the default state OR if we have no products at all
         const isDefault = activeFilter === 'all' && activeTab === 'for_you' && !search;
         if (!isDefault || allProducts.length === 0) {
             fetchProducts(false);
@@ -133,38 +144,43 @@ export default function HomeClient({
         if (isLoadMore && (!hasMore || isFetchingMore)) return;
 
         if (isLoadMore) setIsFetchingMore(true);
-        else setLoading(true);
+        else {
+            setLoading(true);
+            setPageNumber(0);
+        }
 
         try {
-            let q = query(collection(db, "products"), where("isDeleted", "==", false));
+            const currentPage = isLoadMore ? pageNumber + 1 : 0;
+            const from = currentPage * 20;
+            const to = from + 19;
+
+            let query = supabase
+                .from("products")
+                .select("*")
+                .eq("is_deleted", false);
 
             if (activeFilter !== 'all') {
                 const targetCategory = allCategories.find(c => c.id === activeFilter || c.name === activeFilter);
                 if (targetCategory) {
-                    q = query(q, where("category", "==", targetCategory.id));
+                    query = query.eq("category_id", targetCategory.id);
                 }
             }
 
             if (search.trim()) {
-                const searchTerm = search.toLowerCase();
-                q = query(q, orderBy("name"), startAt(searchTerm), endAt(searchTerm + '\uf8ff'));
+                query = query.ilike("name", `%${search}%`);
+            }
+
+            if (activeTab === "popular") {
+                query = query.order("sales", { ascending: false });
             } else {
-                if (activeTab === "popular") {
-                    q = query(q, orderBy("sales", "desc"));
-                } else {
-                    q = query(q, orderBy("createdAt", "desc"));
-                }
+                query = query.order("created_at", { ascending: false });
             }
 
-            q = query(q, limit(20));
+            const { data: newProductsData, error } = await query.range(from, to);
+            
+            if (error) throw error;
 
-            if (isLoadMore && lastVisible) {
-                q = query(q, startAfter(lastVisible));
-            }
-
-            const snapshot = await getDocs(q);
-            const newProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Product[];
-            const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+            const newProducts = (newProductsData || []).map(mapProduct);
 
             const availableProducts = newProducts.filter(p => {
                 const totalStock = p.stockDetails ? Object.values(p.stockDetails).reduce((a: number, b: number) => a + (Number(b) || 0), 0) : (p.stock || 0);
@@ -173,12 +189,12 @@ export default function HomeClient({
 
             if (isLoadMore) {
                 setAllProducts(prev => [...prev, ...availableProducts]);
+                setPageNumber(currentPage);
             } else {
                 setAllProducts(availableProducts);
                 if (activeFilter === 'all' && !search) setCachedProducts(availableProducts);
             }
 
-            setLastVisible(lastDoc);
             setHasMore(newProducts.length === 20);
         } catch (error) {
             console.error("Home Data Fetch failed:", error);
@@ -198,7 +214,7 @@ export default function HomeClient({
 
         if (observerTarget.current) observer.observe(observerTarget.current);
         return () => observer.disconnect();
-    }, [hasMore, loading, isFetchingMore, lastVisible]);
+    }, [hasMore, loading, isFetchingMore, pageNumber]);
 
     return (
         <main className="min-h-screen bg-white pb-24 max-w-[1440px] mx-auto">

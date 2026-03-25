@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import { CheckCircle, QrCode, Banknote, Clock, Info, AlertCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { db, doc, getDoc, updateDoc, increment, collection } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { translations } from "@/lib/translations";
 
 function PaymentContent() {
@@ -31,11 +31,16 @@ function PaymentContent() {
 
     const fetchOrder = async () => {
         try {
-            const snap = await getDoc(doc(db, "orders", orderId!));
-            if (snap.exists()) {
-                setOrder({ id: snap.id, ...snap.data() });
-            } else {
+            const { data, error } = await supabase
+                .from("orders")
+                .select("*")
+                .eq("id", orderId!)
+                .single();
+            
+            if (error || !data) {
                 setError(language === 'uz' ? "Buyurtma topilmadi." : "Заказ не найден.");
+            } else {
+                setOrder(data);
             }
         } catch (e) {
             console.error("Fetch order error:", e);
@@ -54,13 +59,17 @@ function PaymentContent() {
         try {
             // 1. Double check stock for ALL items in the ORDER before final confirmation
             for (const item of order.items) {
-                const productRef = doc(db, "products", item.id);
-                const pSnap = await getDoc(productRef);
-                if (!pSnap.exists()) {
+                const { data: pData } = await supabase
+                    .from("products")
+                    .select("stock_details, name")
+                    .eq("id", item.id)
+                    .single();
+                
+                if (!pData) {
                     throw new Error(language === 'uz' ? `${item.name} bazadan topilmadi.` : `${item.name} не найден в базе.`);
                 }
-                const data = pSnap.data();
-                const stockDetails = data.stockDetails || {};
+                
+                const stockDetails = pData.stock_details || {};
                 const actualStock = Object.values(stockDetails).reduce((a: number, b: any) => a + (Number(b) || 0), 0);
 
                 if (actualStock < item.quantity) {
@@ -71,46 +80,28 @@ function PaymentContent() {
             }
 
             // 2. Decrement stock
-            const updates = order.items.map(async (item: any) => {
-                const productRef = doc(db, "products", item.id);
-                const pSnap = await getDoc(productRef);
-                const pData = pSnap.data() || {};
-                const stockDetails = { ...(pData.stockDetails || {}) };
-                let remainingToDeduct = item.quantity;
-
-                for (const wId in stockDetails) {
-                    if (remainingToDeduct <= 0) break;
-                    const available = stockDetails[wId] || 0;
-                    if (available > 0) {
-                        const amountToTake = Math.min(available, remainingToDeduct);
-                        stockDetails[wId] -= amountToTake;
-                        remainingToDeduct -= amountToTake;
-                    }
-                }
-
-                if (remainingToDeduct > 0) {
-                    const firstW = Object.keys(stockDetails)[0];
-                    if (firstW) stockDetails[firstW] -= remainingToDeduct;
-                }
-
-                return updateDoc(productRef, {
-                    stock: increment(-item.quantity),
-                    sales: increment(item.quantity),
-                    stockDetails: stockDetails
+            for (const item of order.items) {
+                // We should use an RPC for atomic decrement to avoid race conditions
+                const { error: stockError } = await supabase.rpc('decrement_product_stock', {
+                    p_id: item.id,
+                    p_quantity: item.quantity
                 });
-            });
-
-            await Promise.all(updates);
+                
+                if (stockError) throw stockError;
+            }
 
             // 3. Update order status
             const finalStatus = paymentMethod === 'qr' 
                 ? (language === 'uz' ? "To'lov tekshirilmoqda" : "Проверка оплаты")
                 : (language === 'uz' ? "Qabul qilindi" : "Принят");
 
-            await updateDoc(doc(db, "orders", orderId), {
-                status: finalStatus,
-                paymentMethod: paymentMethod
-            });
+            await supabase
+                .from("orders")
+                .update({
+                    status: finalStatus,
+                    payment_method: paymentMethod
+                })
+                .eq("id", orderId);
 
             clearCart();
             sessionStorage.removeItem('fast_buy_item');

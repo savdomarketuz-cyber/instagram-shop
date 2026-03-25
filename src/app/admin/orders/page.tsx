@@ -1,8 +1,6 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { Search, ChevronRight, CheckCircle, Truck, Clock, XCircle, MoreVertical, MapPin, Phone, Package, User, Globe, X, Info, Tag, Layers, Hash } from "lucide-react";
-import { db, collection, query, getDocs, orderBy, updateDoc, doc, getDoc } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import Image from "next/image";
 
 interface Order {
@@ -29,11 +27,22 @@ export default function AdminOrders() {
 
     const fetchOrders = async () => {
         try {
-            const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
-            const querySnapshot = await getDocs(q);
-            const fetchedOrders = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
+            const { data, error } = await supabase
+                .from("orders")
+                .select("*")
+                .order("created_at", { ascending: false });
+            
+            if (error) throw error;
+
+            const fetchedOrders = data.map(o => ({
+                id: o.id,
+                userPhone: o.user_phone,
+                total: o.total,
+                status: o.status,
+                createdAt: o.created_at,
+                items: o.items,
+                address: o.address,
+                coords: o.coords
             })) as Order[];
             setOrders(fetchedOrders);
         } catch (error) {
@@ -45,8 +54,12 @@ export default function AdminOrders() {
 
     const updateStatus = async (orderId: string, newStatus: string) => {
         try {
-            const orderRef = doc(db, "orders", orderId);
-            await updateDoc(orderRef, { status: newStatus });
+            const { error } = await supabase
+                .from("orders")
+                .update({ status: newStatus })
+                .eq("id", orderId);
+            
+            if (error) throw error;
             setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
         } catch (error) {
             console.error("Update status error:", error);
@@ -56,11 +69,27 @@ export default function AdminOrders() {
     const fetchFullProduct = async (productId: string) => {
         setProductLoading(true);
         try {
-            const pDoc = await getDoc(doc(db, "products", productId));
-            if (pDoc.exists()) {
-                const data = pDoc.data();
-                setSelectedProduct({ id: pDoc.id, ...data });
-                setMainImage(data.imageUrl || data.image || (data.images && data.images[0]) || "/placeholder.png");
+            const { data, error } = await supabase
+                .from("products")
+                .select("*")
+                .eq("id", productId)
+                .single();
+            
+            if (error) throw error;
+
+            if (data) {
+                setSelectedProduct({
+                    id: data.id,
+                    name: data.name,
+                    price: data.price,
+                    image: data.image,
+                    images: data.images,
+                    description: data.description,
+                    category: data.category_id,
+                    stock: data.stock,
+                    article: data.article
+                });
+                setMainImage(data.image || (data.images && data.images[0]) || "/placeholder.png");
             } else {
                 alert("Mahsulot ma'lumotlari topilmadi.");
             }
@@ -127,8 +156,8 @@ export default function AdminOrders() {
                                 <td className="p-8">
                                     <div className="font-mono text-[11px] font-black text-black">#{order.id}</div>
                                     <div className="text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-tighter">
-                                        {order.createdAt?.toDate().toLocaleString('uz-UZ')}
-                                    </div>
+                                         {order.createdAt ? new Date(order.createdAt).toLocaleString('uz-UZ') : ""}
+                                     </div>
                                 </td>
                                 <td className="p-8">
                                     <div className="font-black text-sm">{order.userPhone}</div>

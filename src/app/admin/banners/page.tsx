@@ -1,7 +1,5 @@
-"use client";
-
 import { useState, useEffect } from "react";
-import { db, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { Plus, Trash2, Edit2, Save, X, Image as ImageIcon, Link as LinkIcon, Loader2, Search, Check } from "lucide-react";
 
 interface Banner {
@@ -86,34 +84,52 @@ export default function AdminBanners() {
     const [globalBanners, setGlobalBanners] = useState<Banner[]>([]);
     const [isGlobalSaving, setIsGlobalSaving] = useState(false);
 
-    useEffect(() => {
-        const unsubBanners = onSnapshot(query(collection(db, "banners"), orderBy("order", "asc")), (snap) => {
-            setBanners(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Banner[]);
-            setLoading(false);
-        });
+    const fetchData = async () => {
+        try {
+            const [bannersRes, productsRes, catsRes, settingsRes] = await Promise.all([
+                supabase.from("banners").select("*").order("order", { ascending: true }),
+                supabase.from("products").select("id, name, price"),
+                supabase.from("categories").select("id, name"),
+                supabase.from("settings").select("value").eq("id", "banners").single()
+            ]);
 
-        const unsubProducts = onSnapshot(collection(db, "products"), (snap) => {
-            setProducts(snap.docs.map(doc => ({ id: doc.id, name: doc.data().name, price: doc.data().price })) as Product[]);
-        });
+            if (bannersRes.error) throw bannersRes.error;
+            if (productsRes.error) throw productsRes.error;
+            if (catsRes.error) throw catsRes.error;
 
-        const unsubCats = onSnapshot(collection(db, "categories"), (snap) => {
-            setCategories(snap.docs.map(doc => ({ id: doc.id, name: doc.data().name })) as Category[]);
-        });
+            setBanners(bannersRes.data.map(b => ({
+                id: b.id,
+                title_uz: b.title_uz,
+                title_ru: b.title_ru,
+                subtitle_uz: b.subtitle_uz,
+                subtitle_ru: b.subtitle_ru,
+                imageUrl_uz: b.image_url_uz,
+                imageUrl_ru: b.image_url_ru,
+                linkType: b.link_type,
+                linkIds: b.link_ids || [],
+                buttonText: b.button_text,
+                active: b.active,
+                order: b.order,
+                tabName_uz: b.tab_name_uz,
+                tabName_ru: b.tab_name_ru
+            })) as Banner[]);
 
-        // Fetch Global Settings
-        const unsubSettings = onSnapshot(doc(db, "settings", "banners"), (doc) => {
-            if (doc.exists()) {
-                setGlobalHeight(doc.data().desktopHeight || 450);
-                setGlobalRadius(doc.data().borderRadius || 40);
+            setProducts(productsRes.data as Product[]);
+            setCategories(catsRes.data as Category[]);
+
+            if (settingsRes.data) {
+                setGlobalHeight(settingsRes.data.value.desktopHeight || 450);
+                setGlobalRadius(settingsRes.data.value.borderRadius || 40);
             }
-        });
+        } catch (error) {
+            console.error("Fetch banners data error:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        return () => {
-            unsubBanners();
-            unsubProducts();
-            unsubCats();
-            unsubSettings();
-        };
+    useEffect(() => {
+        fetchData();
     }, []);
 
     const resetForm = () => {
@@ -162,19 +178,34 @@ export default function AdminBanners() {
             return;
         }
         try {
+            const payload = {
+                title_uz: newBanner.title_uz,
+                title_ru: newBanner.title_ru,
+                subtitle_uz: newBanner.subtitle_uz,
+                subtitle_ru: newBanner.subtitle_ru,
+                image_url_uz: newBanner.imageUrl_uz,
+                image_url_ru: newBanner.imageUrl_ru,
+                link_type: newBanner.linkType,
+                link_ids: newBanner.linkIds,
+                button_text: newBanner.buttonText,
+                active: newBanner.active,
+                order: editId ? newBanner.order : banners.length,
+                tab_name_uz: newBanner.tabName_uz,
+                tab_name_ru: newBanner.tabName_ru
+            };
+
             if (editId) {
-                await updateDoc(doc(db, "banners", editId), {
-                    ...newBanner,
-                    updatedAt: serverTimestamp()
-                });
+                const { error } = await supabase.from("banners").update(payload).eq("id", editId);
+                if (error) throw error;
             } else {
-                await addDoc(collection(db, "banners"), {
-                    ...newBanner,
-                    order: banners.length,
-                    createdAt: serverTimestamp()
-                });
+                const { error } = await supabase.from("banners").insert([{
+                    ...payload,
+                    id: crypto.randomUUID()
+                }]);
+                if (error) throw error;
             }
             resetForm();
+            fetchData();
         } catch (e) {
             console.error(e);
             alert("Saqlashda xatolik yuz berdi");
@@ -184,7 +215,9 @@ export default function AdminBanners() {
     const handleDelete = async (id: string) => {
         if (!confirm("O'chirilsinmi?")) return;
         try {
-            await deleteDoc(doc(db, "banners", id));
+            const { error } = await supabase.from("banners").delete().eq("id", id);
+            if (error) throw error;
+            fetchData();
         } catch (e) {
             console.error(e);
         }
@@ -198,25 +231,25 @@ export default function AdminBanners() {
     const handleGlobalSave = async () => {
         setIsGlobalSaving(true);
         try {
-            const { setDoc, doc: fireDoc } = await import("firebase/firestore");
-
-            const batch = globalBanners.map(gb => {
-                return updateDoc(fireDoc(db, "banners", gb.id), {
+            const bannerUpdates = globalBanners.map(gb => {
+                return supabase.from("banners").update({
                     order: Number(gb.order),
-                    tabName_uz: gb.tabName_uz || "",
-                    tabName_ru: gb.tabName_ru || ""
-                });
+                    tab_name_uz: gb.tabName_uz || "",
+                    tab_name_ru: gb.tabName_ru || ""
+                }).eq("id", gb.id);
             });
 
-            // Save global height and radius with setDoc + merge for reliability
-            const settingsUpdate = setDoc(fireDoc(db, "settings", "banners"), {
-                desktopHeight: globalHeight,
-                borderRadius: globalRadius,
-                updatedAt: serverTimestamp()
-            }, { merge: true });
+            const settingsUpdate = supabase.from("settings").upsert({
+                id: "banners",
+                value: {
+                    desktopHeight: globalHeight,
+                    borderRadius: globalRadius
+                }
+            });
 
-            await Promise.all([...batch, settingsUpdate]);
+            await Promise.all([...bannerUpdates, settingsUpdate]);
             setIsGlobalModalOpen(false);
+            fetchData();
         } catch (e) {
             console.error(e);
             alert("Xatolik!");

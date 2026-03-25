@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, collection, query, where, getDocs, doc, updateDoc, serverTimestamp } from "@/lib/firebase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { hashPassword } from "@/lib/auth-utils";
 
 /**
@@ -14,17 +14,18 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Phone and password required" }, { status: 400 });
         }
 
-        // 1. Foydalanuvchini topish
-        const q = query(collection(db, "users"), where("phone", "==", phone));
-        const querySnapshot = await getDocs(q);
+        // 1. Foydalanuvchini topish (Supabase orqali)
+        const { data: user, error: findError } = await supabaseAdmin
+            .from("users")
+            .select("*")
+            .eq("phone", phone)
+            .single();
 
-        if (querySnapshot.empty) {
+        if (findError || !user) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        const userDoc = querySnapshot.docs[0];
-        const userData = userDoc.data();
-        const storedPassword = userData.password;
+        const storedPassword = user.password;
 
         let isAuthenticated = false;
         let needsMigration = false;
@@ -47,31 +48,31 @@ export async function POST(req: NextRequest) {
         }
 
         // 3. Auto-migration: Parolni hash-ga o'tkazish
+        const updateData: any = {};
         if (needsMigration) {
-            await updateDoc(doc(db, "users", userDoc.id), {
-                password: hashPassword(password),
-                migrationDate: serverTimestamp()
-            });
+            updateData.password = hashPassword(password);
         }
 
         // 4. IP va oxirgi kirishni yangilash
-        // IP-ni req-dan olishga harakat qilamiz
         const forwarded = req.headers.get("x-forwarded-for");
         const ip = forwarded ? forwarded.split(/, /)[0] : "Aniqlanmadi";
 
-        await updateDoc(doc(db, "users", userDoc.id), {
-            ipAddress: ip,
-            lastLogin: serverTimestamp()
-        });
+        updateData.ip_address = ip;
+        updateData.last_login = new Date().toISOString();
+
+        await supabaseAdmin
+            .from("users")
+            .update(updateData)
+            .eq("id", user.id);
 
         return NextResponse.json({
             success: true,
             user: {
-                id: userDoc.id,
-                phone: userData.phone,
-                name: userData.name || "Mijoz",
-                username: userData.username || "",
-                isAdmin: userData.isAdmin || false
+                id: user.id,
+                phone: user.phone,
+                name: user.name || "Mijoz",
+                username: user.username || "",
+                isAdmin: user.is_admin || false
             }
         });
 

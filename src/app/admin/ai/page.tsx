@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { db, collection, query, orderBy, limit, onSnapshot } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import {
     Sparkles,
     Monitor,
@@ -37,24 +37,50 @@ export default function AiMonitoring() {
         uniqueUsers: 0,
     });
 
-    useEffect(() => {
-        const q = query(collection(db, "ai_logs"), orderBy("timestamp", "desc"), limit(20));
+    const fetchData = async () => {
+        try {
+            const { data, error } = await supabase
+                .from("ai_logs")
+                .select("*")
+                .order("created_at", { ascending: false })
+                .limit(20);
+            
+            if (error) throw error;
+            
+            const fetched = data.map(l => ({
+                id: l.id,
+                timestamp: l.created_at,
+                userPhone: l.user_phone,
+                input: l.input,
+                output: l.output || [],
+                model: l.model,
+                action: l.action
+            })) as AiLog[];
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as AiLog);
             setLogs(fetched);
 
-            // Basic Stats
             const uniquePhones = new Set(fetched.map(l => l.userPhone));
             setStats({
                 requests: fetched.length,
                 uniqueUsers: uniquePhones.size
             });
-
+        } catch (error) {
+            console.error("Fetch ai logs error:", error);
+        } finally {
             setLoading(false);
-        });
+        }
+    };
 
-        return () => unsubscribe();
+    useEffect(() => {
+        fetchData();
+
+        const sub = supabase.channel('ai_logs_all')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ai_logs' }, () => fetchData())
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(sub);
+        };
     }, []);
 
     const getTimeAgo = (timestamp: string) => {

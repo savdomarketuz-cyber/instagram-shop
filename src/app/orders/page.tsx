@@ -1,13 +1,12 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { useStore } from "@/store/store";
-import { db, collection, query, where, getDocs, orderBy, getDoc, doc, updateDoc, addDoc } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { Package, ChevronRight, Clock, CheckCircle, Truck, XCircle, Loader2, Star, Camera, Video, MessageCircle, Play } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { translations } from "@/lib/translations";
 import { uploadToYandexS3 } from "@/lib/yandex-s3";
+import { mapOrder, mapProduct } from "@/lib/mappers";
 
 interface Order {
     id: string;
@@ -56,9 +55,9 @@ export default function OrdersPage() {
                 for (let i = 0; i < items.length; i++) {
                     const item = items[i];
                     if (!item.image && !item.imageUrl) {
-                        const pDoc = await getDoc(doc(db, "products", item.id));
-                        if (pDoc.exists()) {
-                            items[i] = { ...item, image: pDoc.data().image };
+                        const { data: pData } = await supabase.from("products").select("image_url").eq("id", item.id).single();
+                        if (pData) {
+                            items[i] = { ...item, image: pData.image_url };
                             setEnrichedItems([...items]);
                         }
                     }
@@ -70,25 +69,15 @@ export default function OrdersPage() {
 
     const fetchOrders = async () => {
         try {
-            // Simplified query to avoid index requirement
-            const q = query(
-                collection(db, "orders"),
-                where("userPhone", "==", user?.phone)
-            );
-            const querySnapshot = await getDocs(q);
-            const fetchedOrders = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as Order[];
-
-            // Client-side sorting by date
-            fetchedOrders.sort((a, b) => {
-                const dateA = a.createdAt?.toMillis?.() || 0;
-                const dateB = b.createdAt?.toMillis?.() || 0;
-                return dateB - dateA;
-            });
-
-            setOrders(fetchedOrders);
+            const { data: fetchedOrders, error } = await supabase
+                .from("orders")
+                .select("*")
+                .eq("user_phone", user?.phone)
+                .order("created_at", { ascending: false });
+            
+            if (fetchedOrders) {
+                setOrders(fetchedOrders.map(mapOrder));
+            }
         } catch (error) {
             console.error("Fetch orders error:", error);
         } finally {
@@ -107,11 +96,8 @@ export default function OrdersPage() {
 
         setIsCancelling(true);
         try {
-            const orderRef = doc(db, "orders", orderId);
             const statusLabel = language === 'uz' ? "Bekor qilingan" : "Отменен";
-            await updateDoc(orderRef, {
-                status: statusLabel
-            });
+            await supabase.from("orders").update({ status: statusLabel }).eq("id", orderId);
 
             // Update local state
             setOrders(orders.map(o => o.id === orderId ? { ...o, status: statusLabel } : o));
@@ -144,38 +130,38 @@ export default function OrdersPage() {
         setIsSubmittingReview(true);
         try {
             const newComment = {
-                productId: reviewProduct.id,
-                userId: user?.phone,
+                product_id: reviewProduct.id,
+                user_id: user?.id || user?.phone,
                 username: user?.username || user?.phone,
                 text: reviewText,
                 rating: reviewRating,
                 type: 'review',
-                parentId: null,
-                timestamp: new Date().toISOString(),
-                ...(reviewImages.length > 0 ? { images: reviewImages } : {}),
-                ...(reviewVideo ? { video: reviewVideo } : {})
+                parent_id: null,
+                is_admin: !!user.isAdmin,
+                data: {
+                    images: reviewImages,
+                    video: reviewVideo
+                }
             };
 
-            await addDoc(collection(db, "comments"), newComment);
+            await supabase.from("comments").insert([newComment]);
 
-            // Update product rating - wrap in its own try-catch as it might fail due to rules
+            // Update product rating
             try {
-                const productRef = doc(db, "products", reviewProduct.id);
-                const productSnap = await getDoc(productRef);
-                if (productSnap.exists()) {
-                    const prod = productSnap.data();
-                    const currentCount = prod.reviewCount || 0;
+                const { data: prod } = await supabase.from("products").select("rating, review_count").eq("id", reviewProduct.id).single();
+                if (prod) {
+                    const currentCount = prod.review_count || 0;
                     const currentRating = prod.rating || 0;
                     const newCount = currentCount + 1;
                     const newRating = ((currentRating * currentCount) + reviewRating) / newCount;
 
-                    await updateDoc(productRef, {
+                    await supabase.from("products").update({
                         rating: newRating,
-                        reviewCount: newCount
-                    });
+                        review_count: newCount
+                    }).eq("id", reviewProduct.id);
                 }
             } catch (ratingError) {
-                console.warn("Rating update failed (likely permission rules):", ratingError);
+                console.warn("Rating update failed:", ratingError);
             }
 
             setReviewProduct(null);

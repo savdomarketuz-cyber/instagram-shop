@@ -1,10 +1,9 @@
-"use client";
-
 import { useState, useEffect, useRef } from "react";
 import { useStore } from "@/store/store";
-import { db, collection, query, where, getDocs, orderBy, addDoc, onSnapshot, limit, serverTimestamp, doc, updateDoc, setDoc } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { Send, ChevronLeft, Loader2, User, Headset, Image as ImageIcon, Paperclip } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { mapMessage } from "@/lib/mappers";
 
 interface Message {
     id: string;
@@ -14,13 +13,13 @@ interface Message {
     isAdmin: boolean;
     image?: string;
     video?: string;
-    sender: "user" | "admin";
+    senderType: string;
 }
 
 export default function ChatPage() {
     const { user, language } = useStore();
     const router = useRouter();
-    const [messages, setMessages] = useState<Message[]>([]);
+    const [messages, setMessages] = useState<any[]>([]);
     const [inputText, setInputText] = useState("");
     const [loading, setLoading] = useState(true);
     const [isSending, setIsSending] = useState(false);
@@ -44,27 +43,38 @@ export default function ChatPage() {
             return;
         }
 
-        // We use the user's phone as the chat session ID
-        const sessionRef = doc(db, "support_chats", user.phone);
-        const q = query(
-            collection(sessionRef, "messages"),
-            orderBy("timestamp", "asc")
-        );
-
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const msgs = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as Message[];
-            setMessages(msgs);
+        const fetchMessages = async () => {
+            const { data, error } = await supabase
+                .from("support_messages")
+                .select("*")
+                .eq("chat_id", user.phone)
+                .order("created_at", { ascending: true });
+            
+            if (data) setMessages(data.map(mapMessage));
             setLoading(false);
             scrollToBottom();
-        }, (error) => {
-            console.error("Support chat error:", error);
-            setLoading(false);
-        });
+        };
 
-        return () => unsubscribe();
+        fetchMessages();
+
+        // Subscribe to new messages
+        const channel = supabase
+            .channel('public:support_messages')
+            .on('postgres_changes', { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'support_messages',
+                filter: `chat_id=eq.${user.phone}`
+            }, (payload) => {
+                const newMessage = mapMessage(payload.new);
+                setMessages((prev) => [...prev, newMessage]);
+                scrollToBottom();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [user, mounted, router]);
 
     const scrollToBottom = () => {
@@ -100,41 +110,35 @@ export default function ChatPage() {
                 setIsUploadingMedia(false);
             }
 
-            const sessionRef = doc(db, "support_chats", user.phone);
+            const chatId = user.phone;
+            const messageId = crypto.randomUUID();
 
-            // 1. Add message to subcollection
-            await addDoc(collection(sessionRef, "messages"), {
+            // 1. Add message
+            const { error: msgErr } = await supabase.from("support_messages").insert([{
+                id: messageId,
+                chat_id: chatId,
                 text: inputText,
                 image: fileType === 'image' ? uploadedUrl : null,
                 video: fileType === 'video' ? uploadedUrl : null,
-                senderId: user.phone,
-                sender: "user",
-                timestamp: serverTimestamp(),
-                isAdmin: false
+                sender_id: user.phone,
+                sender_type: "user",
+                is_admin: false
+            }]);
+
+            if (msgErr) throw msgErr;
+
+            // 2. Update session
+            const lastMsg = uploadedUrl ? (fileType === 'image' ? "🖼️ Rasm" : "🎥 Video") : inputText;
+            const { error: chatErr } = await supabase.from("support_chats").upsert({
+                id: chatId,
+                username: user.username || user.phone,
+                last_message: lastMsg,
+                last_timestamp: new Date().toISOString(),
+                status: 'active',
+                unread_by_admin: 1
             });
 
-            // 2. Update session metadata for admin list
-            const lastMsg = uploadedUrl ? (fileType === 'image' ? "🖼️ Rasm" : "🎥 Video") : inputText;
-            await updateDoc(sessionRef, {
-                userId: user.phone,
-                username: user.username || user.phone,
-                lastMessage: lastMsg,
-                lastTimestamp: serverTimestamp(),
-                status: 'active',
-                unreadByAdmin: 1
-            }).catch(async (e: any) => {
-                // If document doesn't exist, create it
-                if (e.code === 'not-found') {
-                    await setDoc(sessionRef, {
-                        userId: user.phone,
-                        username: user.username || user.phone,
-                        lastMessage: lastMsg,
-                        lastTimestamp: serverTimestamp(),
-                        status: 'active',
-                        unreadByAdmin: 1
-                    });
-                }
-            });
+            if (chatErr) throw chatErr;
 
             setInputText("");
             setSelectedFile(null);
@@ -213,7 +217,7 @@ export default function ChatPage() {
                                         {hasMedia && !msg.text && (
                                             <div className="absolute bottom-2 right-2 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-lg">
                                                 <p className="text-[9px] font-bold text-white uppercase tracking-widest opacity-80">
-                                                    {msg.timestamp?.toDate ? msg.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "..."}
+                                                    {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "..."}
                                                 </p>
                                             </div>
                                         )}
@@ -224,7 +228,7 @@ export default function ChatPage() {
                                             {msg.text && <p className="text-[13px] font-medium leading-relaxed mb-1.5">{msg.text}</p>}
                                             <div className={`flex items-center gap-2 ${isMe ? "justify-end" : "justify-start"}`}>
                                                 <p className={`text-[8px] font-black uppercase tracking-widest opacity-40 ${isMe ? "text-white/60" : "text-gray-400"}`}>
-                                                    {msg.timestamp?.toDate ? msg.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Hozirgina"}
+                                                    {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Hozirgina"}
                                                 </p>
                                             </div>
                                         </div>

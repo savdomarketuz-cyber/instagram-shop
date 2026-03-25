@@ -2,29 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useStore } from "@/store/store";
-import { db, collection, query, where, onSnapshot, orderBy, doc, getDocs, limit } from "@/lib/firebase";
-import { MessageSquare, ChevronLeft, User, Search, Loader2, Headset, Settings, LogOut, Package, CreditCard } from "lucide-react";
+import { MessageSquare, User, Search, Loader2, Headset, Settings, LogOut, Package } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
-interface ChatSession {
-    id: string;
-    participants: string[];
-    lastMessage: string;
-    lastTimestamp: any;
-    participantData: {
-        [key: string]: {
-            name: string;
-            username: string;
-        }
-    };
-    unreadCount: { [key: string]: number };
-}
+import { supabase } from "@/lib/supabase";
 
 export default function MessagesPage() {
     const { user, language } = useStore();
     const router = useRouter();
-    const [chats, setChats] = useState<ChatSession[]>([]);
+    const [chats, setChats] = useState<any[]>([]);
     const [supportChat, setSupportChat] = useState<any>(null);
     const [userResults, setUserResults] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -39,66 +25,71 @@ export default function MessagesPage() {
 
     useEffect(() => {
         if (!mounted) return;
-
         if (!user) {
             router.push("/login");
             return;
         }
 
-        try {
-            // 1. Fetch Private Chats
-            const q = query(
-                collection(db, "private_chats"),
-                where("participants", "array-contains", user.phone),
-                orderBy("lastTimestamp", "desc")
-            );
+        const fetchChats = async () => {
+            try {
+                // 1. Fetch Private Chats
+                const { data: sessions, error } = await supabase
+                    .from("private_chats")
+                    .select("*")
+                    .contains("participants", [user.phone])
+                    .order("last_timestamp", { ascending: false });
+                
+                if (error) throw error;
+                setChats(sessions || []);
 
-            const unsubscribe = onSnapshot(q, (snapshot) => {
-                const sessions = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                })) as ChatSession[];
-                setChats(sessions);
+                // 2. Fetch Support Chat
+                const { data: support } = await supabase
+                    .from("support_chats")
+                    .select("*")
+                    .eq("id", user.phone)
+                    .single();
+                
+                if (support) setSupportChat(support);
+                
                 setLoading(false);
-            }, (error) => {
-                console.error("Firestore error:", error);
-                if (error.message?.includes("index")) {
-                    const fallbackQ = query(
-                        collection(db, "private_chats"),
-                        where("participants", "array-contains", user.phone)
-                    );
-                    onSnapshot(fallbackQ, (s) => {
-                        const sess = s.docs.map(d => ({ id: d.id, ...d.data() })) as ChatSession[];
-                        sess.sort((a, b) => (b.lastTimestamp?.toMillis?.() || 0) - (a.lastTimestamp?.toMillis?.() || 0));
-                        setChats(sess);
-                        setLoading(false);
-                    });
-                } else {
-                    setLoading(false);
-                }
-            });
+            } catch (e) {
+                console.error("Chat fetch error:", e);
+                setLoading(false);
+            }
+        };
 
-            // 2. Fetch Support Chat (Admin)
-            const supportRef = doc(db, "support_chats", user.phone);
-            const unsubscribeSupport = onSnapshot(supportRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    setSupportChat({ id: docSnap.id, ...docSnap.data() });
-                }
-            });
+        fetchChats();
 
-            return () => {
-                unsubscribe();
-                unsubscribeSupport();
-            };
-        } catch (e) {
-            console.error(e);
-            setLoading(false);
-        }
+        // Real-time subscriptions
+        const privateChannel = supabase
+            .channel('private_chats_changes')
+            .on('postgres_changes', { 
+                event: '*', 
+                schema: 'public', 
+                table: 'private_chats',
+                filter: `participants=cs.{${user.phone}}` 
+            }, () => fetchChats())
+            .subscribe();
+
+        const supportChannel = supabase
+            .channel('support_chats_changes')
+            .on('postgres_changes', { 
+                event: '*', 
+                schema: 'public', 
+                table: 'support_chats',
+                filter: `id=eq.${user.phone}`
+            }, (payload) => setSupportChat(payload.new))
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(privateChannel);
+            supabase.removeChannel(supportChannel);
+        };
     }, [user, router, mounted]);
 
     // Global User Search Logic
     useEffect(() => {
-        const cleanQuery = searchQuery.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanQuery = searchQuery.trim().toLowerCase();
         if (cleanQuery.length < 2) {
             setUserResults([]);
             return;
@@ -107,27 +98,17 @@ export default function MessagesPage() {
         const delayDebounceFn = setTimeout(async () => {
             setIsSearching(true);
             try {
-                // Fetch potential matches
-                // We fetch a bit more and filter client-side for better "fuzzy" feel
-                const q = query(
-                    collection(db, "user_status"),
-                    limit(50)
-                );
+                // Search in user_status or users table
+                const { data, error } = await supabase
+                    .from("user_status")
+                    .select("*")
+                    .or(`username.ilike.%${cleanQuery}%,name.ilike.%${cleanQuery}%`)
+                    .neq("id", user?.phone)
+                    .limit(15);
 
-                const snapshot = await getDocs(q);
-                const results = snapshot.docs
-                    .map(d => ({ phone: d.id, ...d.data() } as any))
-                    .filter(u => {
-                        if (u.phone === user?.phone) return false;
-
-                        const uName = (u.username || "").toLowerCase().replace(/[^a-z0-9]/g, '');
-                        const fullName = (u.name || "").toLowerCase().replace(/[^a-z0-9]/g, '');
-
-                        return uName.includes(cleanQuery) || fullName.includes(cleanQuery);
-                    })
-                    .slice(0, 15);
-
-                setUserResults(results);
+                if (!error && data) {
+                    setUserResults(data.map(u => ({ phone: u.id, ...u })));
+                }
             } catch (e) {
                 console.error("Search error:", e);
             } finally {
@@ -138,8 +119,8 @@ export default function MessagesPage() {
         return () => clearTimeout(delayDebounceFn);
     }, [searchQuery, user?.phone]);
 
-    const filteredChats = chats.filter(chat => {
-        const otherParticipantPhone = chat.participants.find(p => p !== user?.phone);
+    const filteredChats = chats.filter((chat: any) => {
+        const otherParticipantPhone = chat.participants.find((p: string) => p !== user?.phone);
         const otherData = chat.participantData?.[otherParticipantPhone || ""];
         const searchStr = `${otherData?.name} ${otherData?.username} ${otherParticipantPhone}`.toLowerCase();
         return searchStr.includes(searchQuery.toLowerCase());
@@ -281,8 +262,8 @@ export default function MessagesPage() {
                             </Link>
                         )}
 
-                        {filteredChats.map(chat => {
-                            const otherPhone = chat.participants.find(p => p !== user?.phone) || "";
+                        {filteredChats.map((chat: any) => {
+                            const otherPhone = chat.participants.find((p: string) => p !== user?.phone) || "";
                             const otherData = chat.participantData?.[otherPhone] || { name: "User", username: otherPhone };
                             const unread = chat.unreadCount?.[user?.phone || ""] || 0;
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useStore } from "@/store/store";
-import { db, collection, getDocs, query, where, limit } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { translations } from "@/lib/translations";
 import { Loader2, Plus, ChevronLeft, Volume2, VolumeX, ShoppingBag, Send } from "lucide-react";
 import Link from "next/link";
@@ -26,14 +26,41 @@ export default function ReelsPage() {
     useEffect(() => {
         const fetchReelsData = async () => {
             try {
-                // Fetch reels from 'reels' collection OR from products that have videoUrl
-                const reelsSnap = await getDocs(query(collection(db, "reels"), limit(20)));
-                let fetchedReels = reelsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Reel[];
+                // Fetch from 'reels' table
+                const { data: reelsData } = await supabase
+                    .from("reels")
+                    .select("*")
+                    .limit(20);
+                
+                let fetchedReels = (reelsData || []).map(r => ({
+                    id: r.id,
+                    videoUrl: r.video_url,
+                    likesCount: r.likes_count,
+                    commentCount: r.comment_count,
+                    productId: r.product_id,
+                    name: r.name,
+                    price: r.price,
+                    image: r.image
+                })) as Reel[];
 
                 // If not enough reels, fetch products with videos
                 if (fetchedReels.length < 5) {
-                    const productsSnap = await getDocs(query(collection(db, "products"), where("videoUrl", "!=", ""), limit(20)));
-                    const productReels = productsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Reel[];
+                    const { data: productsWithVideos } = await supabase
+                        .from("products")
+                        .select("*")
+                        .not("video_url", "is", null)
+                        .neq("video_url", "")
+                        .limit(20);
+                    
+                    const productReels = (productsWithVideos || []).map(p => ({
+                        id: p.id,
+                        videoUrl: p.video_url,
+                        productId: p.id,
+                        name: p.name,
+                        price: p.price,
+                        image: p.image
+                    })) as Reel[];
+
                     fetchedReels = [...fetchedReels, ...productReels.filter(pr => !fetchedReels.find(fr => fr.id === pr.id))];
                 }
 

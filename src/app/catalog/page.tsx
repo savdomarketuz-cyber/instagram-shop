@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { translations } from "@/lib/translations";
-import { db, collection, query, getDocs, orderBy } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -34,9 +34,23 @@ export default function CatalogPage() {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const cq = query(collection(db, "categories"), orderBy("name", "asc"));
-                const cSnapshot = await getDocs(cq);
-                const cData = cSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Category[];
+                const { data, error } = await supabase
+                    .from("categories")
+                    .select("*")
+                    .eq("is_deleted", false)
+                    .order("name");
+                
+                if (error) throw error;
+
+                const cData = data.map(c => ({
+                    id: c.id,
+                    name: c.name,
+                    name_uz: c.name_uz,
+                    name_ru: c.name_ru,
+                    parentId: c.parent_id,
+                    image: c.image
+                })) as Category[];
+
                 setAllCategories(cData);
                 setCachedCategories(cData);
             } catch (error) {

@@ -1,9 +1,7 @@
-"use client";
-
 import { useStore } from "@/store/store";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { db, collection, addDoc, serverTimestamp, getDoc, doc, updateDoc, increment, setDoc, runTransaction } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { AlertCircle, ArrowLeft, Loader2, PackageX, MapPin, Globe } from "lucide-react";
 import dynamic from "next/dynamic";
 const YandexMapPicker = dynamic(() => import("@/components/YandexMapPicker"), {
@@ -72,11 +70,14 @@ export default function CheckoutPage() {
         try {
             for (const item of displayProducts) {
                 if (!item.id) continue;
-                const productRef = doc(db, "products", item.id);
-                const snap = await getDoc(productRef);
-                if (snap.exists()) {
-                    const data = snap.data();
-                    const stockDetails = data.stockDetails || {};
+                const { data: product } = await supabase
+                    .from("products")
+                    .select("*")
+                    .eq("id", item.id)
+                    .single();
+                
+                if (product) {
+                    const stockDetails = product.stock_details || {};
                     const actualStock = Object.values(stockDetails).reduce((a: number, b: any) => a + (Number(b) || 0), 0);
 
                     if (item.quantity > actualStock) {
@@ -107,98 +108,34 @@ export default function CheckoutPage() {
 
         setIsSubmitting(true);
         try {
-            // Atomic Order Submission via Transaction
-            const result = await runTransaction(db, async (transaction) => {
-                const currentStockErrors: { id: string, name: string, available: number }[] = [];
-                const updates: { ref: any, data: any }[] = [];
-
-                for (const item of displayProducts) {
-                    const productRef = doc(db, "products", item.id);
-                    const productSnap = await transaction.get(productRef);
-                    
-                    if (!productSnap.exists()) {
-                        throw new Error(language === 'uz' ? `Mahsulot topilmadi: ${item.id}` : `Товар не найден: ${item.id}`);
-                    }
-
-                    const data = productSnap.data();
-                    const stockDetails = data.stockDetails || {};
-                    const actualStock = Object.values(stockDetails).reduce((a: number, b: any) => a + (Number(b) || 0), 0);
-
-                    if (item.quantity > actualStock) {
-                        currentStockErrors.push({ 
-                            id: item.id, 
-                            name: item[`name_${language}`] || item.name, 
-                            available: actualStock as number 
-                        });
-                    } else {
-                        // Stockni kamaytirish (OMBORLAR BO'YICHA)
-                        const newStockDetails = { ...stockDetails };
-                        let remaining = item.quantity;
-                        
-                        // Birinchi mos ombordan ayiramiz (yoki tarqatamiz)
-                        for (const whId in newStockDetails) {
-                            const whStock = Number(newStockDetails[whId]) || 0;
-                            if (whStock >= remaining) {
-                                newStockDetails[whId] = whStock - remaining;
-                                remaining = 0;
-                                break;
-                            } else {
-                                remaining -= whStock;
-                                newStockDetails[whId] = 0;
-                            }
-                        }
-
-                        updates.push({
-                            ref: productRef,
-                            data: {
-                                stockDetails: newStockDetails,
-                                sales: increment(item.quantity)
-                            }
-                        });
-                    }
-                }
-
-                if (currentStockErrors.length > 0) {
-                    return { success: false, errors: currentStockErrors };
-                }
-
-                // Hamma update-larni amalga oshiramiz
-                for (const update of updates) {
-                    transaction.update(update.ref, update.data);
-                }
-
-                // Buyurtmani yaratamiz
-                const orderId = Math.floor(100000 + Math.random() * 900000).toString() + Date.now().toString().slice(-4);
-                const orderRef = doc(db, "orders", orderId);
-                
-                transaction.set(orderRef, {
-                    userPhone: user.phone,
-                    items: displayProducts.map(item => ({
-                        id: item.id,
-                        name: item[`name_${language}`] || item.name,
-                        price: item.price,
-                        quantity: item.quantity,
-                        image: item.imageUrl || item.image
-                    })),
-                    total: total,
-                    address: address,
-                    coords: coords,
-                    status: language === 'uz' ? "To'lov kutilmoqda" : "Ожидание оплаты",
-                    createdAt: serverTimestamp(),
-                });
-
-                return { success: true, orderId };
+            // Atomic Order Submission via Supabase RPC
+            const { data, error } = await supabase.rpc('place_order', {
+                p_user_phone: user.phone,
+                p_items: displayProducts.map(item => ({
+                    id: item.id,
+                    name: item[`name_${language}`] || item.name,
+                    price: item.price,
+                    quantity: item.quantity,
+                    image: item.imageUrl || item.image
+                })),
+                p_total: total,
+                p_address: address,
+                p_coords: coords,
+                p_status: language === 'uz' ? "To'lov kutilmoqda" : "Ожидание оплаты"
             });
 
-            if (!result.success && result.errors) {
-                setStockErrors(result.errors);
+            if (error) throw error;
+
+            if (!data.success && data.errors) {
+                setStockErrors(data.errors);
                 showToast(language === 'uz' ? "Ayrim mahsulotlar qoldig'i yetarli emas" : "Недостаточное количество некоторых товаров", 'error');
                 setIsSubmitting(false);
                 return;
             }
 
-            if (result.success && result.orderId) {
-                router.push(`/payment?orderId=${result.orderId}`);
+            if (data.success && data.orderId) {
+                if (!isFastBuy) clearCart();
+                router.push(`/payment?orderId=${data.orderId}`);
             }
 
         } catch (error: any) {

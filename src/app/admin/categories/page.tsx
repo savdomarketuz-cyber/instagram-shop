@@ -1,7 +1,5 @@
-"use client";
-
 import { useState, useEffect } from "react";
-import { db, collection, query, getDocs, addDoc, deleteDoc, doc, updateDoc, setDoc, serverTimestamp, orderBy } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { Plus, Trash2, Folder, Subtitles, Loader2, ChevronRight, Hash, Edit2, X, Save } from "lucide-react";
 
 interface Category {
@@ -67,11 +65,17 @@ export default function AdminCategories() {
     const fetchCategories = async (isInitial = false) => {
         if (isInitial) setLoading(true);
         try {
-            const q = query(collection(db, "categories"));
-            const querySnapshot = await getDocs(q);
-            const fetched = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
+            const { data, error } = await supabase.from("categories").select("*");
+            if (error) throw error;
+
+            const fetched = data.map(c => ({
+                id: c.id,
+                name: c.name,
+                name_uz: c.name_uz,
+                name_ru: c.name_ru,
+                parentId: c.parent_id,
+                iconUrl: c.image,
+                isDeleted: c.is_deleted
             })) as Category[];
 
             // Natural sort by ID
@@ -101,7 +105,6 @@ export default function AdminCategories() {
         try {
             let finalId = catId.trim();
 
-            // If ID is empty and not editing, generate a numeric ID
             if (!finalId && !editingId) {
                 const numericIds = categories
                     .map(c => Number(c.id))
@@ -109,22 +112,22 @@ export default function AdminCategories() {
                 const maxId = numericIds.length > 0 ? Math.max(...numericIds) : 100;
                 finalId = (maxId + 1).toString();
             } else if (editingId) {
-                finalId = editingId; // Keep same ID when editing
+                finalId = editingId;
             }
 
-            const isNew = !categories.find(c => c.id === finalId);
-
-            await setDoc(doc(db, "categories", finalId), {
+            const { error } = await supabase.from("categories").upsert({
+                id: finalId,
                 name: name_uz.trim(),
                 name_uz: name_uz.trim(),
                 name_ru: name_ru.trim(),
-                parentId: parentId === "none" ? null : parentId,
-                iconUrl: iconUrl.trim() || null,
-                updatedAt: serverTimestamp(),
-                ...(isNew && { createdAt: serverTimestamp() })
-            }, { merge: true });
+                parent_id: parentId === "none" ? null : parentId,
+                image: iconUrl.trim() || null,
+                is_deleted: false
+            });
 
-            handleCancelEdit(); // Clear form and exit edit mode
+            if (error) throw error;
+
+            handleCancelEdit();
             fetchCategories();
         } catch (error) {
             console.error("Error saving category:", error);
@@ -167,14 +170,16 @@ export default function AdminCategories() {
             const saveRecursive = async (cats: any[], pId: string | null = null) => {
                 for (const cat of cats) {
                     const id = cat.id ? String(cat.id) : Math.random().toString(36).substr(2, 9);
-                    await setDoc(doc(db, "categories", id), {
-                        name: cat.name_uz, // Old field for compatibility
+                    const { error } = await supabase.from("categories").upsert({
+                        id,
+                        name: cat.name_uz,
                         name_uz: cat.name_uz,
                         name_ru: cat.name_ru || "",
-                        parentId: pId === "none" ? null : pId,
-                        updatedAt: serverTimestamp(),
-                        createdAt: serverTimestamp()
-                    }, { merge: true });
+                        parent_id: pId === "none" ? null : pId,
+                        is_deleted: false
+                    });
+
+                    if (error) throw error;
 
                     if (cat.subcategories && Array.isArray(cat.subcategories)) {
                         await saveRecursive(cat.subcategories, id);
@@ -223,7 +228,7 @@ export default function AdminCategories() {
     const namesMap = getFullNamesMap(categories);
 
     const recursiveMoveToTrash = async (id: string) => {
-        await updateDoc(doc(db, "categories", id), { isDeleted: true });
+        await supabase.from("categories").update({ is_deleted: true }).eq("id", id);
         const children = categories.filter(c => c.parentId === id);
         for (const child of children) {
             await recursiveMoveToTrash(child.id);
@@ -231,10 +236,13 @@ export default function AdminCategories() {
     };
 
     const recursiveRestore = async (id: string) => {
-        await updateDoc(doc(db, "categories", id), { isDeleted: false });
-        const parent = categories.find(c => c.id === categories.find(cat => cat.id === id)?.parentId);
-        if (parent && parent.isDeleted) {
-            await recursiveRestore(parent.id);
+        await supabase.from("categories").update({ is_deleted: false }).eq("id", id);
+        const parentId_ = categories.find(cat => cat.id === id)?.parentId;
+        if (parentId_) {
+            const parent = categories.find(c => c.id === parentId_);
+            if (parent && parent.isDeleted) {
+                await recursiveRestore(parent.id);
+            }
         }
     };
 
@@ -281,7 +289,7 @@ export default function AdminCategories() {
         try {
             if (window.confirm("DIQQAT! Kategoriya butunlay o'chiriladi. Ushbu amalni qaytarib bo'lmaydi. Rozimisiz?")) {
                 setIsActionLoading(true);
-                await deleteDoc(doc(db, "categories", id));
+                await supabase.from("categories").delete().eq("id", id);
                 await fetchCategories(false);
             }
         } catch (error: any) {

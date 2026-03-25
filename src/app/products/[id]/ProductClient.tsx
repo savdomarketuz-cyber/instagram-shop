@@ -1,9 +1,8 @@
-"use client";
-
 import { useStore } from "@/store/store";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
-import { db, doc, getDoc, collection, query, where, getDocs, limit, updateDoc, increment, arrayUnion, setDoc } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
+import { mapProduct, mapComment } from "@/lib/mappers";
 import { translations } from "@/lib/translations";
 import { Loader2, Plus, Minus, ShoppingBag, Heart, Star, Check, Truck, Clock, ShieldCheck, RefreshCw, ChevronLeft } from "lucide-react";
 import Link from "next/link";
@@ -38,8 +37,8 @@ export default function ProductClient({ params }: { params: { id: string } }) {
     const [boughtTogether, setBoughtTogether] = useState<Product[]>([]);
     const [popularProducts, setPopularProducts] = useState<Product[]>([]);
     const [groupProducts, setGroupProducts] = useState<Product[]>([]);
-    const [comments, setComments] = useState<Record<string, unknown>[]>([]);
-    const [categoryData, setCategoryData] = useState<Record<string, string> | null>(null);
+    const [comments, setComments] = useState<any[]>([]);
+    const [categoryData, setCategoryData] = useState<any | null>(null);
     
     // UI State
     const [activeImage, setActiveImage] = useState(0);
@@ -56,32 +55,36 @@ export default function ProductClient({ params }: { params: { id: string } }) {
     const fetchProduct = async () => {
         setLoading(true);
         try {
-            const docRef = doc(db, "products", params.id);
-            const docSnap = await getDoc(docRef);
+            const { data: productData, error } = await supabase
+                .from("products")
+                .select("*")
+                .eq("id", params.id)
+                .single();
 
-            if (docSnap.exists()) {
-                const data = { id: docSnap.id, ...docSnap.data() } as Product;
+            if (productData) {
+                const data = mapProduct(productData);
                 setProduct(data);
                 
-                // Track interest and viewed
+                // Track interest and viewed (Optional / Future implementation with Supabase)
                 if (user?.phone) {
-                    const interestsRef = doc(db, "user_interests", user.phone);
-                    setDoc(interestsRef, {
-                        categories: { [data.category]: increment(1) },
-                        viewedProducts: arrayUnion(params.id),
-                        lastInteraction: new Date().toISOString()
-                    }, { merge: true }).catch(() => {});
+                   // We could use an RPC or just update user_interests table
+                   supabase.rpc('track_product_view', { 
+                       p_user_phone: user.phone, 
+                       p_product_id: params.id,
+                       p_category_id: data.category
+                   });
                 }
 
-                // Parallel fetching for performance
+                // Parallel fetching
                 const fetchCat = async () => {
-                    const catRef = doc(db, "categories", data.category);
-                    const catSnap = await getDoc(catRef);
-                    if (catSnap.exists()) setCategoryData(catSnap.data());
+                    if (data.category) {
+                        const { data: catData } = await supabase.from("categories").select("*").eq("id", data.category).single();
+                        if (catData) setCategoryData(catData);
+                    }
                 };
 
                 Promise.all([
-                    fetchRelated(data.category, data.id),
+                    fetchRelated(data.category as string, data.id),
                     fetchBoughtTogether(),
                     fetchPopular(),
                     data.groupId ? fetchGroup(data.groupId) : Promise.resolve(),
@@ -96,42 +99,47 @@ export default function ProductClient({ params }: { params: { id: string } }) {
     };
 
     const fetchDeliverySettings = async (productData: Product) => {
-        const warehousesSnap = await getDocs(collection(db, "warehouses"));
-        const warehouses = warehousesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const { data: warehouses } = await supabase.from("warehouses").select("*");
+        if (!warehouses) return;
+
         const availableWhId = Object.keys(productData.stockDetails || {}).find(id => (productData.stockDetails as Record<string, number>)[id] > 0);
         const warehouse = warehouses.find(w => w.id === availableWhId) || warehouses[0];
         
-        const warehouseData = warehouse as Record<string, unknown>;
-        if (warehouseData?.dbs) {
-            const dbs = warehouseData.dbs as Record<string, unknown>;
+        if (warehouse?.data?.dbs) {
+            const dbs = warehouse.data.dbs;
             setDeliverySettings({
-                cutoff: (dbs.cutoffHour as number) || 16,
-                days: (dbs.deliveryDays as number) || 1,
-                offDays: (dbs.offDays as string[]) || [],
-                holidays: (dbs.holidays as string[]) || []
+                cutoff: Number(dbs.cutoffHour) || 16,
+                days: Number(dbs.deliveryDays) || 1,
+                offDays: Array.isArray(dbs.offDays) ? dbs.offDays : [],
+                holidays: Array.isArray(dbs.holidays) ? dbs.holidays : []
             });
         }
     };
 
     const fetchRelated = async (category: string, currentId: string) => {
-        const q = query(collection(db, "products"), where("category", "==", category), limit(40));
-        const snap = await getDocs(q);
-        const fetched = snap.docs
-                .map(doc => ({ id: doc.id, ...doc.data() } as Product))
-                .filter(p => p.id !== currentId && !p.isDeleted)
-                .sort(() => Math.random() - 0.5)
-                .slice(0, 10);
-        setRelatedProducts(fetched);
+        const { data } = await supabase
+            .from("products")
+            .select("*")
+            .eq("category_id", category)
+            .eq("is_deleted", false)
+            .neq("id", currentId)
+            .limit(10);
+        
+        if (data) setRelatedProducts(data.map(mapProduct));
     };
 
     const fetchBoughtTogether = async () => {
-        const q = query(collection(db, "products"), limit(10));
-        const snap = await getDocs(q);
-        setBoughtTogether(snap.docs.map(d => ({ id: d.id, ...d.data() } as Product)).filter(p => p.id !== params.id));
+        const { data } = await supabase
+            .from("products")
+            .select("*")
+            .eq("is_deleted", false)
+            .neq("id", params.id)
+            .limit(10);
+        
+        if (data) setBoughtTogether(data.map(mapProduct));
     };
 
     const fetchPopular = async () => {
-        // Use global cache if available to speed up page load
         const { cachedProducts, setCachedProducts } = useStore.getState();
         if (cachedProducts && cachedProducts.length > 0) {
             setPopularProducts(cachedProducts.slice(0, 20));
@@ -139,29 +147,34 @@ export default function ProductClient({ params }: { params: { id: string } }) {
         }
 
         setPopularLoading(true);
-        const q = query(collection(db, "products"), where("isDeleted", "==", false), limit(20));
-        const snap = await getDocs(q);
-        const fetched = snap.docs
-                .map(d => ({ id: d.id, ...d.data() } as Product))
-                .sort((a, b) => (b.sales || 0) - (a.sales || 0))
-                .slice(0, 20);
-        setPopularProducts(fetched);
-        setCachedProducts(fetched); // Global cache
+        const { data } = await supabase
+            .from("products")
+            .select("*")
+            .eq("is_deleted", false)
+            .order("sales", { ascending: false })
+            .limit(20);
+        
+        if (data) {
+            const mapped = data.map(mapProduct);
+            setPopularProducts(mapped);
+            setCachedProducts(mapped);
+        }
         setPopularLoading(false);
     };
 
     const fetchGroup = async (groupId: string) => {
-        const q = query(collection(db, "products"), where("groupId", "==", groupId));
-        const snap = await getDocs(q);
-        setGroupProducts(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product)));
+        const { data } = await supabase.from("products").select("*").eq("group_id", groupId).eq("is_deleted", false);
+        if (data) setGroupProducts(data.map(mapProduct));
     };
 
     const fetchComments = async () => {
-        const q = query(collection(db, "comments"), where("productId", "==", params.id));
-        const snap = await getDocs(q);
-        const fetched = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        fetched.sort((a: Record<string, unknown>, b: Record<string, unknown>) => new Date(b.timestamp as string).getTime() - new Date(a.timestamp as string).getTime());
-        setComments(fetched);
+        const { data } = await supabase
+            .from("comments")
+            .select("*")
+            .eq("product_id", params.id)
+            .order("created_at", { ascending: false });
+        
+        if (data) setComments(data.map(mapComment));
     };
 
     const totalStock = useMemo(() => 

@@ -1,7 +1,5 @@
-"use client";
-
 import { useState, useEffect } from "react";
-import { db, doc, onSnapshot, updateDoc, serverTimestamp } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { Globe, Instagram, Send, Phone, Save, Loader2, CheckCircle2 } from "lucide-react";
 
 export default function AdminSettings() {
@@ -12,29 +10,44 @@ export default function AdminSettings() {
     const [shopData, setShopData] = useState({
         name: "Velari",
         phone: "+998 90 123 45 67",
-
         instagram: "",
         telegram: "",
     });
 
     useEffect(() => {
-        const unsubShop = onSnapshot(doc(db, "settings", "shop"), (snap) => {
-            if (snap.exists()) {
-                setShopData(snap.data() as any);
+        const fetchSettings = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from("settings")
+                    .select("value")
+                    .eq("id", "shop")
+                    .single();
+                
+                if (error && error.code !== "PGRST116") throw error;
+                if (data) {
+                    setShopData(data.value as any);
+                }
+            } catch (error) {
+                console.error("Fetch settings error:", error);
+            } finally {
+                setLoading(false);
             }
-        });
+        };
 
-        setLoading(false);
-        return () => { unsubShop(); };
+        fetchSettings();
     }, []);
 
     const handleSaveShop = async () => {
         setIsSaving(true);
         try {
-            await updateDoc(doc(db, "settings", "shop"), {
-                ...shopData,
-                updatedAt: serverTimestamp()
-            });
+            const { error } = await supabase
+                .from("settings")
+                .upsert({
+                    id: "shop",
+                    value: shopData
+                });
+            
+            if (error) throw error;
             setShowSuccess(true);
             setTimeout(() => setShowSuccess(false), 3000);
         } catch (e) {

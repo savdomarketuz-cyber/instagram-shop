@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { db, collection, query, onSnapshot, where, orderBy, Timestamp } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { Users, Monitor, Smartphone, Globe, MapPin, MousePointer2, Clock, Zap, UserCheck, Activity } from "lucide-react";
 
 interface ActiveUser {
@@ -20,36 +20,53 @@ export default function AdminLiveMonitoring() {
     const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        // Simple query without complex filters to avoid index requirement
-        const q = query(
-            collection(db, "user_status")
-        );
-
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const users = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as ActiveUser[];
-
+    const fetchData = async () => {
+        try {
+            const { data, error } = await supabase
+                .from("user_status")
+                .select("*")
+                .eq("is_online", true);
+            
+            if (error) throw error;
+            
             const now = Date.now();
-            // Filter users who were seen in the last 5 minutes AND are marked as online
-            const trulyActive = users.filter(u => {
-                if (!u.isOnline) return false;
+            const fetched = (data || []).map(u => ({
+                id: u.id,
+                name: u.name,
+                phone: u.user_phone,
+                ipAddress: u.ip_address,
+                currentPath: u.current_path,
+                lastSeen: { toMillis: () => new Date(u.last_seen).getTime() },
+                isOnline: u.is_online,
+                type: u.type as any,
+                lastAction: u.last_action
+            } as ActiveUser));
 
-                // Firestore serverTimestamp might be null locally before writing to server
+            // Filter users who were seen in the last 5 minutes
+            const trulyActive = fetched.filter(u => {
                 const lastSeenTime = u.lastSeen?.toMillis?.() || Date.now();
-                return (now - lastSeenTime) < 300000; // 5 minutes window
+                return (now - lastSeenTime) < 300000;
             });
 
-            // Sort by activity time
             trulyActive.sort((a, b) => (b.lastSeen?.toMillis?.() || 0) - (a.lastSeen?.toMillis?.() || 0));
-
             setActiveUsers(trulyActive);
+        } catch (error) {
+            console.error("Live monitoring error:", error);
+        } finally {
             setLoading(false);
-        });
+        }
+    };
 
-        return () => unsubscribe();
+    useEffect(() => {
+        fetchData();
+
+        const sub = supabase.channel('user_status_live')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'user_status' }, () => fetchData())
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(sub);
+        };
     }, []);
 
     const userCount = activeUsers.filter(u => u.type === "user").length;

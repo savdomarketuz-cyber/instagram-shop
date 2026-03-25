@@ -3,17 +3,8 @@
 import { useStore } from "@/store/store";
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { db, collection,
-    addDoc,
-    getDocs,
-    getDocsFromServer,
-    deleteDoc,
-    doc,
-    updateDoc,
-    query,
-    orderBy,
-    writeBatch,
-    serverTimestamp } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
+import { mapProduct } from "@/lib/mappers";
 import {
     LayoutGrid,
     List,
@@ -196,35 +187,31 @@ export default function AdminProducts() {
         if (isInitial) setLoading(true);
         try {
             console.log("Fetching products and categories...");
-            const pQuery = query(collection(db, "products"), orderBy("name"));
-            const pSnap = await getDocs(pQuery);
-            const pData = pSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
-            setProducts(pData);
+            const { data: pData } = await supabase
+                .from("products")
+                .select("*")
+                .order("name");
+            
+            if (pData) {
+                setProducts(pData.map(mapProduct) as any);
+            }
 
-            // Force bypass cache to see real state of DB
-            const cSnap = await getDocsFromServer(collection(db, "categories"));
-            const allCats = cSnap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as any));
+            const { data: allCats } = await supabase.from("categories").select("*");
+            if (!allCats) return;
             setRawCategories(allCats);
 
-            console.log("DB Raw Categories:", allCats.map((c: any) => ({ id: c.id, name: c.name, deleted: c.isDeleted })));
-
             const activeCats = allCats.filter((cat: any) => {
-                // 1. If category itself is deleted, hide it
-                if (cat.isDeleted === true) return false;
-
-                // 2. If it has a parent, check if parent exists AND is not deleted
-                const pId = cat.parentId || cat.parent;
+                if (cat.is_deleted) return false;
+                const pId = cat.parent_id;
                 if (pId && pId !== "none") {
                     const parent = allCats.find((p: any) => p.id === pId);
-                    // If parent is missing from DB or marked as deleted, hide the sub-category
-                    if (!parent || parent.isDeleted === true) return false;
+                    if (!parent || parent.is_deleted) return false;
                 }
-
                 return true;
             });
 
             const getRecursiveLabel = (cat: any): string => {
-                const pId = cat.parentId || cat.parent;
+                const pId = cat.parent_id;
                 if (pId && pId !== "none") {
                     const parent = allCats.find((p: any) => p.id === pId);
                     if (parent) {
@@ -243,19 +230,21 @@ export default function AdminProducts() {
             cData.forEach(c => { labelsMap[c.id] = c.label; });
             setCategoryLabels(labelsMap);
 
-            console.log("Final Filtered Categories:", cData);
             setCategories(cData);
 
             // Fetch Brands
-            const bSnap = await getDocs(collection(db, "brands"));
-            const bList = bSnap.docs
-                .map(doc => ({ id: doc.id, ...doc.data() } as any))
-                .filter(b => !b.isDeleted);
-            setBrands(bList);
-
-            const bLabels: { [key: string]: string } = {};
-            bList.forEach(b => { bLabels[b.id] = b.name; });
-            setBrandLabels(bLabels);
+            const { data: bList } = await supabase
+                .from("brands")
+                .select("*")
+                .eq("is_deleted", false)
+                .order("name");
+            
+            if (bList) {
+                setBrands(bList);
+                const bLabels: { [key: string]: string } = {};
+                bList.forEach(b => { bLabels[b.id] = b.name; });
+                setBrandLabels(bLabels);
+            }
         } catch (error) {
             console.error("Error fetching data:", error);
         } finally {
@@ -319,7 +308,6 @@ export default function AdminProducts() {
         const reader = new FileReader();
         reader.onload = async (evt) => {
             try {
-                // Ensure XLSX is loaded
                 if (!(window as any).XLSX) {
                     await new Promise((resolve) => {
                         const script = document.createElement("script");
@@ -340,10 +328,9 @@ export default function AdminProducts() {
                 }
 
                 const rows = data.slice(1); // Skip headers
-                const batch = writeBatch(db);
+                const productsToInsert: any[] = [];
                 let count = 0;
 
-                const log: string[] = [];
                 for (const row of rows) {
                     if (!row[0]) continue; // Skip empty rows
 
@@ -356,46 +343,46 @@ export default function AdminProducts() {
                     );
 
                     const productData = {
+                        id: crypto.randomUUID(),
                         name: String(row[0]),
                         name_uz: String(row[0]),
                         name_ru: String(row[1] || row[0]),
                         price: Number(row[2]) || 0,
-                        oldPrice: Number(row[3]) || 0,
-                        category: String(row[4]),
+                        old_price: Number(row[3]) || 0,
+                        category_id: String(row[4]),
                         image: proxiedImages[0] || "",
                         images: proxiedImages,
                         description: String(row[7] || ""),
                         description_uz: String(row[7] || ""),
                         description_ru: String(row[8] || ""),
                         sku: String(row[9] || ""),
-                        groupId: String(row[10] || ""),
-                        colorName: String(row[11] || ""),
-                        brand: String(row[12] || ""),
+                        group_id: String(row[10] || ""),
+                        color_name: String(row[11] || ""),
+                        brand_id: String(row[12] || ""),
                         article: generateArticle(),
                         barcode: String(row[13] || ""),
                         height: String(row[14] || ""),
                         width: String(row[15] || ""),
                         length: String(row[16] || ""),
                         weight: String(row[17] || ""),
-                        videoUrl: String(row[18] || ""),
-                        isDeleted: false,
-                        sales: 0,
-                        createdAt: serverTimestamp()
+                        video_url: String(row[18] || ""),
+                        is_deleted: false,
+                        sales: 0
                     };
 
-                    const newDocRef = doc(collection(db, "products"));
-                    batch.set(newDocRef, productData);
+                    productsToInsert.push(productData);
                     count++;
                 }
 
-                if (count > 0) {
-                    await batch.commit();
-                    log.push(`${count} ta mahsulot muvaffaqiyatli yuklandi!`);
+                if (productsToInsert.length > 0) {
+                    const { error } = await supabase.from("products").insert(productsToInsert);
+                    if (error) throw error;
+                    
+                    setImportLog(prev => [...prev, `${count} ta mahsulot muvaffaqiyatli yuklandi!`]);
                     fetchData();
                 } else {
-                    log.push("Yuklash uchun mahsulot topilmadi.");
+                    setImportLog(prev => [...prev, "Yuklash uchun mahsulot topilmadi."]);
                 }
-                setImportLog(log);
             } catch (error: any) {
                 console.error("Excel import error:", error);
                 setImportLog([`Xatolik: ${error.message}`]);
@@ -419,37 +406,44 @@ export default function AdminProducts() {
                 imagesArrayRaw.map(url => uploadFromUrlToYandexS3(url))
             );
 
-            const finalData = {
-                ...newProduct,
+            const finalData: any = {
+                name: newProduct.name,
+                name_uz: newProduct.name_uz,
+                name_ru: newProduct.name_ru,
                 image: imagesArray[0] || "",
                 images: imagesArray,
                 price: Number(newProduct.price),
-                oldPrice: newProduct.oldPrice ? Number(newProduct.oldPrice) : 0,
+                old_price: newProduct.oldPrice ? Number(newProduct.oldPrice) : 0,
                 stock: newProduct.stock ?? 0,
+                category_id: newProduct.category,
+                description: newProduct.description,
+                description_uz: newProduct.description_uz,
+                description_ru: newProduct.description_ru,
                 sku: newProduct.sku?.trim() || "",
-                groupId: newProduct.groupId?.trim() || "",
-                colorName: newProduct.colorName?.trim() || "",
-                brand: newProduct.brand?.trim() || "",
+                group_id: newProduct.groupId?.trim() || "",
+                color_name: newProduct.colorName?.trim() || "",
+                brand_id: newProduct.brand?.trim() || "",
                 height: newProduct.height?.trim() || "",
                 width: newProduct.width?.trim() || "",
                 length: newProduct.length?.trim() || "",
                 weight: newProduct.weight?.trim() || "",
                 barcode: newProduct.barcode?.trim() || "",
-                videoUrl: newProduct.videoUrl?.trim() || "",
+                video_url: newProduct.videoUrl?.trim() || "",
                 article: newProduct.article || generateArticle(),
-                isDeleted: newProduct.isDeleted || false,
-                isOriginal: newProduct.isOriginal || false
+                is_deleted: newProduct.isDeleted || false,
+                is_original: newProduct.isOriginal || false
             };
-            // Remove the temporary string field before saving
-            delete finalData.images_string;
 
             if (newProduct.id) {
-                await updateDoc(doc(db, "products", newProduct.id), finalData);
+                const { error } = await supabase.from("products").update(finalData).eq("id", newProduct.id);
+                if (error) throw error;
             } else {
-                await addDoc(collection(db, "products"), {
+                const { error } = await supabase.from("products").insert([{
                     ...finalData,
+                    id: crypto.randomUUID(),
                     sales: 0
-                });
+                }]);
+                if (error) throw error;
             }
             setIsModalOpen(false);
             setProductSelectionPath([]);
@@ -471,16 +465,19 @@ export default function AdminProducts() {
 
         setIsBulkActionLoading(true);
         try {
-            const batch = writeBatch(db);
-            selectedIds.forEach(id => {
-                const ref = doc(db, "products", id);
-                if (activeTab === "active") {
-                    batch.update(ref, { isDeleted: true });
-                } else {
-                    batch.delete(ref);
-                }
-            });
-            await batch.commit();
+            if (activeTab === "active") {
+                const { error } = await supabase
+                    .from("products")
+                    .update({ is_deleted: true })
+                    .in("id", selectedIds);
+                if (error) throw error;
+            } else {
+                const { error } = await supabase
+                    .from("products")
+                    .delete()
+                    .in("id", selectedIds);
+                if (error) throw error;
+            }
             setSelectedIds([]);
             await fetchData(false);
         } catch (error: any) {
@@ -506,10 +503,10 @@ export default function AdminProducts() {
                     imagesArrayRaw.map(url => uploadFromUrlToYandexS3(url))
                 );
 
-                await updateDoc(doc(db, "products", id), {
+                await supabase.from("products").update({
                     image: proxiedImages[0] || "",
                     images: proxiedImages
-                });
+                }).eq("id", id);
             }
             setSelectedIds([]);
             await fetchData(false);
@@ -529,7 +526,7 @@ export default function AdminProducts() {
         try {
             if (window.confirm("Mahsulotni savatga (Trash) olib o'tmoqchimisiz?")) {
                 setIsActionLoading(true);
-                await updateDoc(doc(db, "products", id), { isDeleted: true });
+                await supabase.from("products").update({ is_deleted: true }).eq("id", id);
                 await fetchData(false);
             }
         } catch (error: any) {
@@ -547,7 +544,7 @@ export default function AdminProducts() {
         try {
             if (window.confirm("Mahsulotni tiklamoqchimisiz?")) {
                 setIsActionLoading(true);
-                await updateDoc(doc(db, "products", id), { isDeleted: false });
+                await supabase.from("products").update({ is_deleted: false }).eq("id", id);
                 await fetchData(false);
             }
         } catch (error: any) {
@@ -565,7 +562,7 @@ export default function AdminProducts() {
         try {
             if (window.confirm("DIQQAT! Mahsulot butunlay o'chiriladi. Ushbu amalni qaytarib bo'lmaydi. Rozimisiz?")) {
                 setIsActionLoading(true);
-                await deleteDoc(doc(db, "products", id));
+                await supabase.from("products").delete().eq("id", id);
                 await fetchData(false);
             }
         } catch (error: any) {

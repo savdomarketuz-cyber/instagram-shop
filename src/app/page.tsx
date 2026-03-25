@@ -1,40 +1,54 @@
 import { Suspense } from "react";
 import HomeClient from "./HomeClient";
-import { db, collection, query, getDocs, orderBy, limit, where, doc, getDoc } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
+import { mapProduct, mapCategory, mapBanner } from "@/lib/mappers";
 import type { Product, Category, Banner } from "@/types";
 
-// This makes the page dynamic as it fetches data from Firestore on every request (or based on revalidate)
+// This makes the page dynamic as it fetches data from Supabase on every request
 export const dynamic = 'force-dynamic';
 
 async function getInitialData() {
     try {
-        // 1. Fetch first 20 products (Now using the created composite index)
-        const productsQuery = query(
-            collection(db, "products"), 
-            where("isDeleted", "==", false),
-            orderBy("createdAt", "desc"),
-            limit(20)
-        );
-        const productsSnap = await getDocs(productsQuery);
-        const products = productsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Product[];
+        // 1. Fetch first 20 products
+        const { data: productsData } = await supabase
+            .from("products")
+            .select("*")
+            .eq("is_deleted", false)
+            .order("created_at", { ascending: false })
+            .limit(20);
+        
+        const products = (productsData || []).map(mapProduct);
 
         // 2. Fetch categories
-        const categoriesQuery = query(collection(db, "categories"), orderBy("name", "asc"));
-        const categoriesSnap = await getDocs(categoriesQuery);
-        const categories = categoriesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Category[];
+        const { data: categoriesData } = await supabase
+            .from("categories")
+            .select("*")
+            .eq("is_deleted", false)
+            .order("name", { ascending: true });
+        
+        const categories = (categoriesData || []).map(mapCategory);
 
         // 3. Fetch banners
-        const bannersSnap = await getDocs(query(collection(db, "banners"), orderBy("order", "asc")));
-        const banners = bannersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Banner[];
+        const { data: bannersData } = await supabase
+            .from("banners")
+            .select("*")
+            .eq("active", true)
+            .order("order_index", { ascending: true });
+        
+        const banners = (bannersData || []).map(mapBanner);
 
         // 4. Fetch banner settings
-        const settingsSnap = await getDoc(doc(db, "settings", "banners"));
-        const bannerSettings = settingsSnap.exists() 
-            ? { desktopHeight: settingsSnap.data().desktopHeight || 210, borderRadius: settingsSnap.data().borderRadius || 32 }
+        const { data: settingsData } = await supabase
+            .from("settings")
+            .select("*")
+            .eq("id", "banners")
+            .single();
+        
+        const bannerSettings = settingsData?.data 
+            ? { desktopHeight: settingsData.data.desktopHeight || 210, borderRadius: settingsData.data.borderRadius || 32 }
             : { desktopHeight: 210, borderRadius: 32 };
 
-        // IMPORTANT: Serialize data to plain JSON for Server->Client boundary
-        return JSON.parse(JSON.stringify({ products, categories, banners, bannerSettings }));
+        return { products, categories, banners, bannerSettings };
     } catch (error) {
         console.error("Server-side fetch failed:", error);
         return { products: [], categories: [], banners: [], bannerSettings: { desktopHeight: 210, borderRadius: 32 } };

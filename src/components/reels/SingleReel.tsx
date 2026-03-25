@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Heart, MessageSquare, Share2, ShoppingBag, Plus, Sparkles, ChevronRight, Volume2, VolumeX, Play, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useStore } from "@/store/store";
-import { db, doc, updateDoc, increment } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 
 interface SingleReelProps {
     reel: any;
@@ -57,11 +57,14 @@ export const SingleReel = ({
             showToast(language === 'uz' ? "Yoqtirish uchun tizimga kiring" : "Войдите, чтобы поставить лайк", 'info');
             return;
         }
-        setLiked(!liked);
-        setLikesCount((prev: number) => liked ? prev - 1 : prev + 1);
+        const newLiked = !liked;
+        const diff = newLiked ? 1 : -1;
+        setLiked(newLiked);
+        setLikesCount((prev: number) => prev + diff);
         try {
-            await updateDoc(doc(db, "reels", reel.id), {
-                likesCount: increment(liked ? -1 : 1)
+            await supabase.rpc('increment_reel_likes', { 
+                reel_id: reel.id, 
+                diff: diff 
             });
         } catch (error) {
             console.error(error);

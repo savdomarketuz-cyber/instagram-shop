@@ -1,12 +1,11 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/store/store";
 import { ArrowRight, User as UserIcon, Camera, Package, Heart, LogOut, Save, Loader2, CheckCircle2, Phone, Headset } from "lucide-react";
-import { db, doc, getDoc, updateDoc, query, collection, where, getDocs } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { translations } from "@/lib/translations";
+import { mapUser } from "@/lib/mappers";
 
 export default function AccountPage() {
     const router = useRouter();
@@ -27,14 +26,17 @@ export default function AccountPage() {
 
         const fetchUserData = async () => {
             try {
-                const userDoc = await getDoc(doc(db, "users", user.phone));
-                if (userDoc.exists()) {
-                    const data = userDoc.data();
-                    const fetchedName = data.name || "";
-                    const fetchedUsername = data.username || "";
-                    setName(fetchedName);
-                    setUsername(fetchedUsername);
-                    setUser({ ...user, name: fetchedName, username: fetchedUsername });
+                const { data, error } = await supabase
+                    .from("users")
+                    .select("*")
+                    .eq("phone", user.phone)
+                    .single();
+
+                if (data) {
+                    const mappedUser = mapUser(data);
+                    setName(mappedUser.name || "");
+                    setUsername(mappedUser.username || "");
+                    setUser({ ...user, ...mappedUser });
                 }
             } catch (e) {
                 console.error("Error fetching user data:", e);
@@ -51,7 +53,6 @@ export default function AccountPage() {
         setUsernameError("");
 
         // Username validation
-        // Regex: only letters, numbers and underscores. NO spaces. Length 3-20.
         const usernameRegex = /^[a-zA-Z0-9_]+$/;
 
         if (username && !usernameRegex.test(username)) {
@@ -70,19 +71,30 @@ export default function AccountPage() {
         try {
             // Check if username is taken
             if (trimmedUsername && trimmedUsername !== user.username) {
-                const q = query(collection(db, "users"), where("username", "==", trimmedUsername));
-                const snap = await getDocs(q);
-                if (!snap.empty) {
+                const { data: existing } = await supabase
+                    .from("users")
+                    .select("phone")
+                    .eq("username", trimmedUsername)
+                    .neq("phone", user.phone)
+                    .maybeSingle();
+
+                if (existing) {
                     setUsernameError(language === 'uz' ? "Ushbu username band" : "Это имя пользователя уже занято");
                     setIsSaving(false);
                     return;
                 }
             }
 
-            await updateDoc(doc(db, "users", user.phone), {
-                name: name,
-                username: trimmedUsername
-            });
+            const { error } = await supabase
+                .from("users")
+                .update({
+                    name: name,
+                    username: trimmedUsername
+                })
+                .eq("phone", user.phone);
+            
+            if (error) throw error;
+
             setUser({ ...user, name: name, username: trimmedUsername });
             setUsername(trimmedUsername);
             setShowSuccess(true);

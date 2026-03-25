@@ -1,9 +1,8 @@
-"use client";
-
 import { useState, useEffect } from "react";
-import { db, collection, query, getDocs, orderBy, limit } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { TrendingUp, Users, ShoppingBag, DollarSign, Clock, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { mapOrder } from "@/lib/mappers";
 
 export default function AdminDashboard() {
     const [stats, setStats] = useState({
@@ -21,27 +20,32 @@ export default function AdminDashboard() {
 
     const fetchDashboardData = async () => {
         try {
-            const ordersSnapshot = await getDocs(collection(db, "orders"));
-            const ordersData = ordersSnapshot.docs.map(doc => doc.data());
-
-            const revenue = ordersData.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
-            const pending = ordersData.filter(order =>
+            // Fetch all orders for stats (can be optimized with RPC later)
+            const { data: allOrders } = await supabase.from("orders").select("total, status");
+            
+            const revenue = allOrders?.reduce((sum, order) => sum + (Number(order.total) || 0), 0) || 0;
+            const pending = allOrders?.filter(order =>
                 ["Kutilmoqda", "To'lov kutilmoqda", "Ожидание", "Ожидание оплаты"].some(s => order.status?.includes(s))
-            ).length;
+            ).length || 0;
 
-            const usersSnapshot = await getDocs(collection(db, "users"));
+            // Fetch user count
+            const { count: userCount } = await supabase.from("users").select("*", { count: "exact", head: true });
 
             setStats({
-                totalOrders: ordersSnapshot.size,
+                totalOrders: allOrders?.length || 0,
                 totalRevenue: revenue,
-                totalUsers: usersSnapshot.size,
+                totalUsers: userCount || 0,
                 pendingOrders: pending
             });
 
             // Get 5 most recent orders
-            const recentQ = query(collection(db, "orders"), orderBy("createdAt", "desc"), limit(5));
-            const recentSnapshot = await getDocs(recentQ);
-            setRecentOrders(recentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            const { data: recent } = await supabase
+                .from("orders")
+                .select("*")
+                .order("created_at", { ascending: false })
+                .limit(5);
+            
+            if (recent) setRecentOrders(recent.map(mapOrder));
 
         } catch (error) {
             console.error("Dashboard error:", error);
@@ -115,8 +119,8 @@ export default function AdminDashboard() {
                                     </td>
                                     <td className="p-6 font-black text-lg">{order.total?.toLocaleString()} so'm</td>
                                     <td className="p-6 text-sm text-gray-500 font-medium">
-                                        {order.createdAt?.toDate().toLocaleDateString('uz-UZ')}
-                                    </td>
+                                        {order.createdAt ? new Date(order.createdAt).toLocaleDateString('uz-UZ') : ""}
+                                     </td>
                                     <td className="p-6">
                                         <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tighter ${order.status === 'Kutilmoqda' ? 'bg-orange-100 text-orange-600' :
                                             order.status === 'Yetkazildi' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
