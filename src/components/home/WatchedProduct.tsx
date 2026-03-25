@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { db, doc, setDoc, increment, arrayUnion } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import { logAiActivity } from "@/lib/ai";
 import { Product } from "@/types";
 
@@ -23,12 +23,15 @@ export const WatchedProduct = ({ product, userPhone, children }: WatchedProductP
             if (document.hidden || hasTrackedId.current.has(stage)) return;
 
             try {
-                const interestsRef = doc(db, "user_interests", userPhone);
-                await setDoc(interestsRef, {
-                    categories: { [product.category]: increment(weight) },
-                    attentionProducts: arrayUnion(product.id),
-                    lastInteraction: new Date().toISOString()
-                }, { merge: true });
+                // Call Supabase RPC function
+                const { error } = await supabase.rpc('track_product_view', {
+                    p_user_phone: userPhone,
+                    p_product_id: product.id,
+                    p_category_id: product.category,
+                    p_weight: weight
+                });
+
+                if (error) throw error;
 
                 await logAiActivity({
                     userPhone,

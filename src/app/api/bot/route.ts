@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { supabaseAdmin } from "@/lib/supabase";
+import { hashPassword } from "@/lib/auth-utils";
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
-
-import { hashPassword } from "@/lib/auth-utils";
 
 async function sendTelegramMessage(chatId: number, text: string, replyMarkup?: any) {
     await fetch(`${TELEGRAM_API}/sendMessage`, {
@@ -28,14 +26,16 @@ export async function POST(req: Request) {
         const { chat, text, contact } = body.message;
         const chatId = chat.id;
 
-        // Bot sessiyasini Firestore orqali boshqarish
-        const sessionRef = doc(db, "bot_sessions", chatId.toString());
-        const sessionSnap = await getDoc(sessionRef);
-        const session = sessionSnap.exists() ? sessionSnap.data() : null;
+        // Bot sessiyasini Supabase orqali boshqarish
+        const { data: session } = await supabaseAdmin
+            .from("bot_sessions")
+            .select("*")
+            .eq("chat_id", chatId.toString())
+            .single();
 
         // 1. /start buyrug'i
         if (text === "/start") {
-            await deleteDoc(sessionRef);
+            await supabaseAdmin.from("bot_sessions").delete().eq("chat_id", chatId.toString());
             await sendTelegramMessage(chatId, 
                 "Assalomu alaykum! <b>Velari</b> do'konimizdan ro'yxatdan o'tish uchun quyidagi tugmani bosib telefon raqamingizni yuboring:",
                 {
@@ -52,10 +52,11 @@ export async function POST(req: Request) {
             let phone = contact.phone_number;
             if (!phone.startsWith("+")) phone = "+" + phone;
 
-            await setDoc(sessionRef, {
+            await supabaseAdmin.from("bot_sessions").upsert({
+                chat_id: chatId.toString(),
                 phone,
                 step: "password",
-                updatedAt: serverTimestamp()
+                updated_at: new Date().toISOString()
             });
 
             await sendTelegramMessage(chatId, "Yaxshi! Endi saytga kirish uchun yangi parol o'rnating (kamida 6 ta belgi):", {
@@ -72,39 +73,39 @@ export async function POST(req: Request) {
                     return NextResponse.json({ ok: true });
                 }
 
-                await updateDoc(sessionRef, {
-                    tempPasswordHash: hashPassword(text), // Hash qilingan vaqtinchalik parol
+                await supabaseAdmin.from("bot_sessions").update({
+                    temp_password_hash: hashPassword(text),
                     step: "confirm_password"
-                });
+                }).eq("chat_id", chatId.toString());
 
                 await sendTelegramMessage(chatId, "Parolni tasdiqlash uchun qayta kiriting:");
             } 
             else if (session.step === "confirm_password") {
-                if (hashPassword(text) !== session.tempPasswordHash) {
+                if (hashPassword(text) !== session.temp_password_hash) {
                     await sendTelegramMessage(chatId, "Xatolik! Parollar mos kelmadi. Qaytadan parol kiriting:");
-                    await updateDoc(sessionRef, { step: "password" });
+                    await supabaseAdmin.from("bot_sessions").update({ step: "password" }).eq("chat_id", chatId.toString());
                     return NextResponse.json({ ok: true });
                 }
 
                 // Foydalanuvchini asosiy bazaga saqlash
-                await setDoc(doc(db, "users", session.phone), {
+                await supabaseAdmin.from("users").upsert({
                     phone: session.phone,
                     password: hashPassword(text), // Hash qilingan parol
-                    telegram_id: chatId,
-                    createdAt: serverTimestamp()
+                    telegram_id: chatId.toString(),
+                    created_at: new Date().toISOString()
                 });
 
                 await sendTelegramMessage(chatId, 
                     `Muvaffaqiyatli! ✅\n\nSiz ro'yxatdan o'tdingiz.\nTelefon: <code>${session.phone}</code>\nSaytga kirib ushbu raqam va parolingizdan foydalanishingiz mumkin.`
                 );
 
-                await deleteDoc(sessionRef);
+                await supabaseAdmin.from("bot_sessions").delete().eq("chat_id", chatId.toString());
             }
         }
 
         return NextResponse.json({ ok: true });
     } catch (error) {
         console.error("Bot API Error:", error);
-        return NextResponse.json({ ok: true }); // Telegram'ga doim ok qaytaramiz
+        return NextResponse.json({ ok: true }); 
     }
 }

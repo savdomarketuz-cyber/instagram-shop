@@ -20,6 +20,9 @@ DROP TABLE IF EXISTS brands CASCADE;
 DROP TABLE IF EXISTS categories CASCADE;
 DROP TABLE IF EXISTS private_messages CASCADE;
 DROP TABLE IF EXISTS private_chats CASCADE;
+DROP TABLE IF EXISTS active_carts CASCADE;
+DROP TABLE IF EXISTS bot_sessions CASCADE;
+DROP TABLE IF EXISTS fcm_tokens CASCADE;
 
 -- Categories table
 create table categories (
@@ -188,6 +191,9 @@ create table user_interests (
   id text primary key,
   user_phone text references users(phone),
   categories jsonb default '{}'::jsonb,
+  attention_products text[] default '{}',
+  ai_recommendations text[] default '{}',
+  ai_recommendations_updated_at timestamp with time zone,
   updated_at timestamp with time zone default now()
 );
 
@@ -248,6 +254,30 @@ create table ai_logs (
   created_at timestamp with time zone default now()
 );
 
+-- Bot Sessions table
+create table bot_sessions (
+  chat_id text primary key,
+  phone text,
+  step text,
+  temp_password_hash text,
+  updated_at timestamp with time zone default now()
+);
+
+-- FCM Tokens table
+create table fcm_tokens (
+  user_phone text primary key references users(phone) on delete cascade,
+  token text not null,
+  platform text default 'web',
+  last_updated timestamp with time zone default now()
+);
+
+-- Active Carts table
+create table active_carts (
+  user_phone text primary key references users(phone) on delete cascade,
+  items jsonb default '[]'::jsonb,
+  updated_at timestamp with time zone default now()
+);
+
 -- Function to increment reel likes
 create or replace function increment_reel_likes(reel_id text, diff integer)
 returns void as $$
@@ -259,14 +289,15 @@ end;
 $$ language plpgsql;
 
 -- Function to track product view
-create or replace function track_product_view(p_user_phone text, p_product_id text, p_category_id text)
+create or replace function track_product_view(p_user_phone text, p_product_id text, p_category_id text, p_weight integer)
 returns void as $$
 begin
-  insert into user_interests (id, user_phone, categories, updated_at)
-  values (p_user_phone, p_user_phone, jsonb_build_object(p_category_id, 1), now())
+  insert into user_interests (id, user_phone, categories, attention_products, updated_at)
+  values (p_user_phone, p_user_phone, jsonb_build_object(p_category_id, p_weight), array[p_product_id], now())
   on conflict (id) do update 
   set categories = user_interests.categories || 
-      jsonb_build_object(p_category_id, coalesce((user_interests.categories->>p_category_id)::int, 0) + 1),
+      jsonb_build_object(p_category_id, coalesce((user_interests.categories->>p_category_id)::int, 0) + p_weight),
+      attention_products = (select array_agg(distinct e) from unnest(array_append(user_interests.attention_products, p_product_id)) e),
       updated_at = now();
 end;
 $$ language plpgsql;
@@ -357,21 +388,15 @@ $$ language plpgsql;
 
 async function main() {
   const client = new Client({
-    connectionString: process.env.DATABASE_URL
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
   });
   try {
     await client.connect();
     console.log('Connected to Supabase Postgres!');
-    
-    // Split SQL into separate commands
-    const commands = sql.split(';').map(cmd => cmd.trim()).filter(cmd => cmd.length > 0);
-    
-    for (const cmd of commands) {
-      console.log('Executing command...');
-      await client.query(cmd);
-    }
-    
-    console.log('✅ Tables created successfully!');
+    console.log('Executing SQL...');
+    await client.query(sql);
+    console.log('✅ Tables and functions created successfully!');
   } catch (err) {
     console.error('❌ Error executing SQL:', err);
   } finally {

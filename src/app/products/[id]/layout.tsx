@@ -1,5 +1,5 @@
 import { Metadata, ResolvingMetadata } from 'next';
-import { db, doc, getDoc } from "@/lib/firebase";
+import { supabaseAdmin } from "@/lib/supabase";
 
 type Props = {
   params: { id: string };
@@ -10,17 +10,18 @@ export async function generateMetadata(
   { params }: Props,
   parent: ResolvingMetadata
 ): Promise<Metadata> {
-  // fetch data
-  const docRef = doc(db, "products", params.id);
-  const docSnap = await getDoc(docRef);
+  const { data: product } = await supabaseAdmin
+    .from("products")
+    .select("*")
+    .eq("id", params.id)
+    .single();
 
-  if (!docSnap.exists()) {
+  if (!product) {
     return {
       title: 'Velari | Mahsulot topilmadi',
     };
   }
 
-  const product = docSnap.data();
   const previousImages = (await parent).openGraph?.images || [];
 
   return {

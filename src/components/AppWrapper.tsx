@@ -6,7 +6,7 @@ import Link from "next/link";
 import { MessageSquare, CheckCircle, AlertCircle, Info } from "lucide-react";
 import { useStore } from "@/store/store";
 import { useEffect, useState } from "react";
-import { db, doc, setDoc, updateDoc, serverTimestamp, deleteDoc } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 import NotificationHandler from "@/components/NotificationHandler";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -46,7 +46,6 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
         const updateActivity = async (action: string = "Ko'rmoqda") => {
             try {
                 let currentIp = sessionStorage.getItem("tracked_ip") || "Unknown";
-                // IP-ni faqat birinchi marta olish
                 if (currentIp === "Unknown") {
                     try {
                         const ipRes = await fetch("https://api.ipify.org?format=json");
@@ -56,17 +55,17 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
                     } catch { }
                 }
 
-                await setDoc(doc(db, "user_status", sessionId), {
+                await supabase.from("user_status").upsert({
                     id: sessionId,
-                    phone: user?.phone || null,
+                    user_phone: user?.phone || null,
                     name: user?.name || "Mehmon",
-                    ipAddress: currentIp,
-                    lastSeen: serverTimestamp(),
-                    isOnline: true,
-                    currentPath: getFriendlyPath(pathname),
-                    lastAction: action,
+                    ip_address: currentIp,
+                    last_seen: new Date().toISOString(),
+                    is_online: true,
+                    current_path: getFriendlyPath(pathname),
+                    last_action: action,
                     type: user?.phone ? "user" : "visitor"
-                }, { merge: true });
+                });
             } catch (e) {
                 // Silent fail for tracking
             }
@@ -88,14 +87,12 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
                 }
 
                 updateActivity(actionText.substring(0, 30));
-            }, 10000); // 10 soniya debounce — Firestore xarajatini kamaytirish
+            }, 10000); 
         };
 
-        // addEventListener qo'shish — leak bo'lmasin
         document.addEventListener('click', handleGlobalClick);
 
         updateActivity();
-        // Heartbeat-ni 5 daqiqaga oshirish — Firestore xarajatini kamaytirish
         intervalId = setInterval(() => updateActivity(), 300000);
 
         const handleVisibility = () => {
@@ -108,26 +105,25 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
 
         return () => {
             clearInterval(intervalId);
-            // To'g'ri cleanup — qo'shilganini olib tashlash
             document.removeEventListener('click', handleGlobalClick);
             document.removeEventListener("visibilitychange", handleVisibility);
-            updateDoc(doc(db, "user_status", sessionId), { isOnline: false }).catch(() => { });
+            supabase.from("user_status").update({ is_online: false, updated_at: new Date().toISOString() }).eq("id", sessionId);
         };
     }, [user?.phone, pathname]);
 
-    // Sync cart to Firestore
+    // Sync cart to Supabase
     useEffect(() => {
         if (!user?.phone) return;
 
         const syncCart = async () => {
-            const userCartRef = doc(db, "active_carts", user.phone);
             if (cart.length === 0) {
-                await deleteDoc(userCartRef).catch(() => { });
+                await supabase.from("active_carts").delete().eq("user_phone", user.phone);
             } else {
-                await setDoc(userCartRef, {
+                await supabase.from("active_carts").upsert({
+                    user_phone: user.phone,
                     items: cart.map(item => ({ id: item.id, quantity: item.quantity })),
-                    updatedAt: new Date().toISOString()
-                }, { merge: true });
+                    updated_at: new Date().toISOString()
+                });
             }
         };
 

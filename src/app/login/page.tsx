@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Phone, Lock, LogIn, ExternalLink, ShieldCheck } from "lucide-react";
-import { db, collection, query, where, getDocs, doc, updateDoc, serverTimestamp } from "@/lib/firebase";
 import { useStore } from "@/store/store";
 import { translations } from "@/lib/translations";
 
