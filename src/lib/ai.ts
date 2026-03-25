@@ -1,4 +1,4 @@
-import { supabase, supabaseAdmin } from "./supabase";
+import { supabase } from "./supabase";
 import type { Product } from "@/types";
 
 /**
