@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next';
-import { db, collection, getDocs, query, where } from '@/lib/firebase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const baseUrl = 'https://velari.uz';
@@ -21,21 +21,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     try {
         // Dynamic product routes
-        const productsQuery = query(collection(db, 'products'), where('isDeleted', '==', false));
-        const productsSnap = await getDocs(productsQuery);
-        
-        const productRoutes = productsSnap.docs.map((doc) => ({
-            url: `${baseUrl}/products/${doc.id}`,
-            lastModified: new Date(),
+        const { data: products } = await supabaseAdmin
+            .from('products')
+            .select('id, updated_at')
+            .eq('is_deleted', false);
+
+        const productRoutes = (products || []).map((product) => ({
+            url: `${baseUrl}/products/${product.id}`,
+            lastModified: product.updated_at ? new Date(product.updated_at) : new Date(),
             changeFrequency: 'weekly' as const,
             priority: 0.7,
         }));
 
-        // Dynamic category routes (if you have categorical landing pages)
-        const categoriesSnap = await getDocs(collection(db, 'categories'));
-        const categoryRoutes = categoriesSnap.docs.map((doc) => ({
-            url: `${baseUrl}/catalog?category=${doc.id}`,
-            lastModified: new Date(),
+        // Dynamic category routes
+        const { data: categories } = await supabaseAdmin
+            .from('categories')
+            .select('id, updated_at');
+
+        const categoryRoutes = (categories || []).map((cat) => ({
+            url: `${baseUrl}/catalog?category=${cat.id}`,
+            lastModified: cat.updated_at ? new Date(cat.updated_at) : new Date(),
             changeFrequency: 'monthly' as const,
             priority: 0.6,
         }));
