@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import Link from "next/link";
 import { Star, MessageSquare, Send, Reply, Pencil, Trash2, Smile, ChevronDown, ChevronUp, Loader2 } from "lucide-react";

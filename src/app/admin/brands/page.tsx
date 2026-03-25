@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Plus, Trash2, Tag, Loader2, Hash, Edit2, X, Save, Image as ImageIcon } from "lucide-react";

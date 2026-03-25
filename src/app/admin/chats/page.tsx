@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { MessageSquare, Users, Star, Trash2, Reply, Send, CheckCircle2, Search, Headphones, AlertCircle, Loader2, ChevronRight, Paperclip, ChevronLeft, Image as ImageIcon } from "lucide-react";

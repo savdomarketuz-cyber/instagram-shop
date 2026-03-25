@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Globe, Instagram, Send, Phone, Save, Loader2, CheckCircle2 } from "lucide-react";
