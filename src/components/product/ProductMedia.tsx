@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { ChevronLeft, Heart, X } from "lucide-react";
+import { ChevronLeft, Heart, X, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { MediaItem } from "./MediaItem";
 
@@ -130,24 +130,48 @@ export const ProductMedia = ({
                     ))}
                 </div>
 
-                {/* Back & Wishlist Controls - Floating Over Image */}
-                <div className="absolute top-8 left-8 right-8 flex justify-between items-center z-30 pointer-events-none">
-                    <button onClick={() => router.back()} className="p-4 bg-white/80 backdrop-blur-xl text-black rounded-[24px] shadow-xl active:scale-95 transition-all border border-white/50 pointer-events-auto">
-                        <ChevronLeft size={24} strokeWidth={3} />
-                    </button>
-                    <button 
-                        onClick={() => toggleWishlist({ 
-                            id: product.id, 
-                            name: product.name, 
-                            price: product.price, 
-                            oldPrice: product.oldPrice, 
-                            imageUrl: product.image, 
-                            category: product.category 
-                        })} 
-                        className="p-4 bg-white/80 backdrop-blur-xl text-black rounded-[24px] shadow-xl active:scale-95 transition-all border border-white/50 pointer-events-auto"
-                    >
-                        <Heart size={24} fill={isWishlisted ? "#ef4444" : "none"} className={isWishlisted ? "text-red-500" : "text-gray-400"} />
-                    </button>
+                {/* Floating Top Controls */}
+                <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-30 pointer-events-none">
+                    {/* Left Group */}
+                    <div className="flex flex-col gap-2">
+                        <button onClick={() => router.back()} className="p-3 bg-white/40 backdrop-blur-xl text-black rounded-full shadow-lg active:scale-90 transition-all border border-white/50 pointer-events-auto">
+                            <ChevronLeft size={20} strokeWidth={3} />
+                        </button>
+                        <button onClick={() => router.push('/')} className="p-3 bg-white/40 backdrop-blur-xl text-black rounded-full shadow-lg active:scale-90 transition-all border border-white/50 pointer-events-auto">
+                            <Search size={20} strokeWidth={3} />
+                        </button>
+                    </div>
+
+                    {/* Right Group */}
+                    <div className="flex flex-col gap-2">
+                        <button 
+                            onClick={async () => {
+                                try {
+                                    await navigator.share({
+                                        title: product.name,
+                                        text: product.description,
+                                        url: window.location.href,
+                                    });
+                                } catch (err) {}
+                            }} 
+                            className="p-3 bg-white/40 backdrop-blur-xl text-black rounded-full shadow-lg active:scale-90 transition-all border border-white/50 pointer-events-auto"
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                        </button>
+                        <button 
+                            onClick={() => toggleWishlist({ 
+                                id: product.id, 
+                                name: product.name, 
+                                price: product.price, 
+                                oldPrice: product.oldPrice, 
+                                imageUrl: product.image, 
+                                category: product.category 
+                            })} 
+                            className="p-3 bg-white/40 backdrop-blur-xl text-black rounded-full shadow-lg active:scale-90 transition-all border border-white/50 pointer-events-auto"
+                        >
+                            <Heart size={20} fill={isWishlisted ? "#ef4444" : "none"} className={isWishlisted ? "text-red-500" : "text-gray-400"} />
+                        </button>
+                    </div>
                 </div>
             </div>
 
