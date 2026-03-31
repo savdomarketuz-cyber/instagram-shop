@@ -26,7 +26,6 @@ export default function AdminCategories() {
     const [iconUrl, setIconUrl] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
-    const [activeTab, setActiveTab] = useState<"active" | "trash">("active");
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [selectionPath, setSelectionPath] = useState<string[]>([]); // Stepped selection path
@@ -229,59 +228,30 @@ export default function AdminCategories() {
 
     const namesMap = getFullNamesMap(categories);
 
-    const recursiveMoveToTrash = async (id: string) => {
-        await supabase.from("categories").update({ is_deleted: true }).eq("id", id);
-        const children = categories.filter(c => c.parentId === id);
-        for (const child of children) {
-            await recursiveMoveToTrash(child.id);
-        }
-    };
-
-    const recursiveRestore = async (id: string) => {
-        await supabase.from("categories").update({ is_deleted: false }).eq("id", id);
-        const parentId_ = categories.find(cat => cat.id === id)?.parentId;
-        if (parentId_) {
-            const parent = categories.find(c => c.id === parentId_);
-            if (parent && parent.isDeleted) {
-                await recursiveRestore(parent.id);
+    const recursiveDelete = async (id: string) => {
+        // 1. Get children
+        const { data: children } = await supabase.from("categories").select("id").eq("parent_id", id);
+        if (children) {
+            for (const child of children) {
+                await recursiveDelete(child.id);
             }
         }
-    };
 
-    const moveToTrash = async (id: string, e?: React.MouseEvent) => {
-        if (e) e.stopPropagation();
-        if (!id || isActionLoading) return;
-
-        try {
-            if (window.confirm("Ushbu kategoriya va uning barcha sub-kategoriyalarini savatga (Trash) olib o'tmoqchimisiz?")) {
-                setIsActionLoading(true);
-                await recursiveMoveToTrash(id);
-                await fetchCategories(false);
-            }
-        } catch (error: any) {
-            console.error("Error moving category to trash:", error);
-            alert("Xatolik (Trash): " + error.message);
-        } finally {
-            setIsActionLoading(false);
+        // 2. Get the category itself to delete its image from S3
+        const { data: cat } = await supabase.from("categories").select("image").eq("id", id).single();
+        if (cat?.image && cat.image.includes("yandexcloud.net")) {
+            await fetch('/api/upload', {
+                method: 'DELETE',
+                body: JSON.stringify({ fileUrl: cat.image }),
+                headers: { 'Content-Type': 'application/json' }
+            });
         }
-    };
 
-    const restoreCategory = async (id: string, e?: React.MouseEvent) => {
-        if (e) e.stopPropagation();
-        if (!id || isActionLoading) return;
+        // 3. Hide related products
+        await supabase.from("products").update({ is_deleted: true }).eq("category_id", id);
 
-        try {
-            if (window.confirm("Kategoriyani tiklamoqchimisiz? (Agar ota-kategoriya o'chirilgan bo'lsa, u ham tiklanadi)")) {
-                setIsActionLoading(true);
-                await recursiveRestore(id);
-                await fetchCategories(false);
-            }
-        } catch (error: any) {
-            console.error("Error restoring category:", error);
-            alert("Xatolik (Tiklash): " + error.message);
-        } finally {
-            setIsActionLoading(false);
-        }
+        // 4. Hard delete the category
+        await supabase.from("categories").delete().eq("id", id);
     };
 
     const deletePermanent = async (id: string, e?: React.MouseEvent) => {
@@ -289,9 +259,9 @@ export default function AdminCategories() {
         if (!id || isActionLoading) return;
 
         try {
-            if (window.confirm("DIQQAT! Kategoriya butunlay o'chiriladi. Ushbu amalni qaytarib bo'lmaydi. Rozimisiz?")) {
+            if (window.confirm("DIQQAT! Kategoriya, uning ostidagi barcha ichki kategoriyalar o'chiriladi. Unga ulangan mahsulotlar yashirinadi va rasmlar bulut(Cloud)dan o'chirib tashlanadi. Rozimisiz?")) {
                 setIsActionLoading(true);
-                await supabase.from("categories").delete().eq("id", id);
+                await recursiveDelete(id);
                 await fetchCategories(false);
             }
         } catch (error: any) {
@@ -303,10 +273,7 @@ export default function AdminCategories() {
     };
 
     const CategoryNode = ({ item, level = 0 }: { item: Category, level?: number }) => {
-        const children = categories.filter(c =>
-            c.parentId === item.id &&
-            (activeTab === "trash" ? c.isDeleted === true : (c.isDeleted === false || !c.isDeleted))
-        );
+        const children = categories.filter(c => c.parentId === item.id);
 
         return (
             <div className={`space-y-4 ${level > 0 ? "ml-8 mt-4 border-l-2 border-gray-50 pl-6" : ""}`}>
@@ -329,41 +296,20 @@ export default function AdminCategories() {
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            {activeTab === "active" ? (
-                                <>
-                                    <button
-                                        onClick={() => handleEdit(item)}
-                                        className="p-3 text-gray-300 hover:text-blue-500 transition-colors"
-                                        title="Tahrirlash"
-                                    >
-                                        <Edit2 size={level === 0 ? 18 : 16} />
-                                    </button>
-                                    <button
-                                        onClick={(e) => moveToTrash(item.id, e)}
-                                        className="p-3 text-gray-300 hover:text-red-500 transition-colors"
-                                        title="Trashga o'tkazish"
-                                    >
-                                        <Trash2 size={level === 0 ? 20 : 18} />
-                                    </button>
-                                </>
-                            ) : (
-                                <>
-                                    <button
-                                        onClick={(e) => restoreCategory(item.id, e)}
-                                        className="p-3 text-green-500 hover:bg-green-50 rounded-xl transition-all"
-                                        title="Tiklash"
-                                    >
-                                        <Plus size={level === 0 ? 20 : 18} />
-                                    </button>
-                                    <button
-                                        onClick={(e) => deletePermanent(item.id, e)}
-                                        className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                                        title="Butunlay o'chirish"
-                                    >
-                                        <Trash2 size={level === 0 ? 20 : 18} />
-                                    </button>
-                                </>
-                            )}
+                            <button
+                                onClick={() => handleEdit(item)}
+                                className="p-3 text-gray-300 hover:text-blue-500 transition-colors"
+                                title="Tahrirlash"
+                            >
+                                <Edit2 size={level === 0 ? 18 : 16} />
+                            </button>
+                            <button
+                                onClick={(e) => deletePermanent(item.id, e)}
+                                className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                title="Butunlay o'chirish"
+                            >
+                                <Trash2 size={level === 0 ? 20 : 18} />
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -376,9 +322,7 @@ export default function AdminCategories() {
         );
     };
 
-    const filteredCategories = categories.filter(c =>
-        (activeTab === "trash" ? c.isDeleted === true : (c.isDeleted === false || !c.isDeleted))
-    );
+    const filteredCategories = categories;
 
     // Get root nodes (nodes whose parents are NOT in the current tab's view)
     const rootNodes = filteredCategories.filter(c => {
@@ -403,21 +347,7 @@ export default function AdminCategories() {
                         </button>
                     </div>
                 </div>
-                <div className="flex bg-white rounded-3xl p-1 shadow-xl border border-gray-50">
-                    <button
-                        onClick={() => setActiveTab("active")}
-                        className={`px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${activeTab === "active" ? "bg-black text-white shadow-lg" : "text-gray-400 hover:text-black"}`}
-                    >
-                        Asosiylar ({categories.filter(c => !c.isDeleted).length})
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("trash")}
-                        className={`px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === "trash" ? "bg-red-500 text-white shadow-lg" : "text-gray-400 hover:text-red-500"}`}
-                    >
-                        <Trash2 size={14} />
-                        Trash ({categories.filter(c => c.isDeleted).length})
-                    </button>
-                </div>
+                {/* Trash tabs removed as we now use hard delete only */}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
