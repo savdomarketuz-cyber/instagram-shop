@@ -44,8 +44,21 @@ export default function ProductClient({ params }: { params: { id: string } }) {
     
     // UI State
     const [activeImage, setActiveImage] = useState(0);
+    const [isScrolledPast, setIsScrolledPast] = useState(false);
     const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
     const [popularLoading, setPopularLoading] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.scrollY > 800) {
+                setIsScrolledPast(true);
+            } else {
+                setIsScrolledPast(false);
+            }
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
     const [deliverySettings, setDeliverySettings] = useState<{ cutoff: number; days: number; offDays: string[]; holidays: string[] } | null>(null);
 
     // Initial Fetch
@@ -245,6 +258,67 @@ export default function ProductClient({ params }: { params: { id: string } }) {
 
     return (
         <div className="bg-white min-h-screen text-black font-sans selection:bg-black selection:text-white">
+            
+            {/* Sticky Quick-Buy Bar (Desktop) */}
+            <div className={`hidden md:flex fixed top-20 md:top-24 left-0 right-0 bg-white/95 backdrop-blur-2xl z-[90] border-b border-gray-100 py-4 shadow-2xl transition-all duration-500 transform ${isScrolledPast ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
+                <div className="max-w-[1440px] mx-auto px-10 flex items-center justify-between w-full h-16">
+                    <div className="flex items-center gap-6 flex-1 min-w-0">
+                        <div className="relative w-14 h-14 rounded-2xl overflow-hidden shrink-0 border border-gray-100 shadow-sm">
+                            <Image src={product.image} fill className="object-cover" alt={product.name} />
+                        </div>
+                        <div className="min-w-0">
+                            <h2 className="text-sm font-black italic uppercase truncate tracking-tight">{product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name}</h2>
+                            <div className="flex items-center gap-3">
+                                <span className="text-lg font-black italic">{product.price.toLocaleString()} <span className="text-[10px] not-italic">so&apos;m</span></span>
+                                {product.oldPrice && product.oldPrice > product.price && (
+                                    <span className="text-xs text-gray-300 line-through font-bold">{product.oldPrice.toLocaleString()}</span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-4">
+                        <button 
+                            onClick={() => toggleWishlist({ ...product, imageUrl: product.image } as any)}
+                            className="p-4 bg-gray-50 rounded-2xl hover:bg-black hover:text-white transition-all shadow-sm border border-transparent hover:border-black"
+                        >
+                            <Heart size={20} fill={isWishlisted ? "currentColor" : "none"} />
+                        </button>
+
+                        <button 
+                            onClick={handleFastBuy}
+                            className="px-10 py-4 bg-[#F2F3F5] hover:bg-black hover:text-white text-black rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] transition-all"
+                        >
+                            {language === 'uz' ? "Tezkor xarid" : "Купить сейчас"}
+                        </button>
+
+                        {cartItem ? (
+                           <div className="flex items-center bg-black text-white rounded-[24px] overflow-hidden shadow-2xl h-[56px]">
+                               <button 
+                                   onClick={() => updateQuantity(product.id, cartItem.quantity - 1)}
+                                   className="px-6 py-4 hover:bg-neutral-800 transition-colors"
+                               >
+                                   <Minus size={18} strokeWidth={3} />
+                               </button>
+                               <span className="px-2 font-black italic text-lg">{cartItem.quantity}</span>
+                               <button 
+                                   onClick={() => updateQuantity(product.id, cartItem.quantity + 1)}
+                                   className="px-6 py-4 hover:bg-neutral-800 transition-colors"
+                               >
+                                   <Plus size={18} strokeWidth={3} />
+                               </button>
+                           </div>
+                        ) : (
+                            <button 
+                                onClick={() => addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any)}
+                                className="bg-black text-white px-10 py-4 rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-black/10 flex items-center gap-3"
+                            >
+                                <Plus size={18} strokeWidth={3} /> {language === 'uz' ? "SAVATGA" : "В КОРЗИНУ"}
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
 
             {/* Mobile View (Social Style) */}
             <div className="md:hidden" style={{ overscrollBehavior: 'none', touchAction: 'pan-x pan-y' }}>
