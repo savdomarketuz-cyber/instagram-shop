@@ -51,7 +51,7 @@ export const BannerSection = ({ banners, bannerSettings, currentBanner, setCurre
                         >
                             {banners
                                 .sort((a, b) => (a.order || 0) - (b.order || 0))
-                                .map((banner) => {
+                                .map((banner, index) => {
                                     const title = language === 'uz' ? banner.title_uz : banner.title_ru;
                                     const imageUrl = language === 'uz' ? banner.imageUrl_uz : banner.imageUrl_ru;
                                     const tabName = language === 'uz' ? banner.tabName_uz : banner.tabName_ru;
@@ -59,15 +59,15 @@ export const BannerSection = ({ banners, bannerSettings, currentBanner, setCurre
                                     if (!imageUrl) return null;
 
                                     return (
-                                        <div key={banner.id} className="min-w-full h-full snap-center relative">
-                                            <Image 
-                                                src={imageUrl} 
-                                                fill
-                                                className="object-cover" 
-                                                alt={title || ""} 
-                                                priority={banners.indexOf(banner) === 0}
-                                                sizes="100vw"
-                                            />
+                                         <div key={banner.id} className="min-w-full h-full snap-center relative">
+                                             <Image 
+                                                 src={imageUrl} 
+                                                 fill
+                                                 className="object-cover" 
+                                                 alt={title || ""} 
+                                                 priority={index === 0}
+                                                 sizes="100vw"
+                                             />
                                             {tabName && (
                                                 <div className="absolute bottom-6 left-6 bg-white/20 backdrop-blur-xl px-6 py-2 rounded-full border border-white/30 text-white font-black text-[10px] uppercase tracking-widest shadow-2xl">
                                                     {tabName}

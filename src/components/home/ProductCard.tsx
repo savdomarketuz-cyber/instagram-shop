@@ -18,10 +18,11 @@ interface ProductCardProps {
     addToCart: (product: Product) => void;
     updateQuantity: (id: string, qty: number) => void;
     removeFromCart: (id: string) => void;
+    priority?: boolean;
 }
 
 export const ProductCard = ({
-    item, language, t, cart, wishlist, toggleWishlist, addToCart, updateQuantity, removeFromCart
+    item, language, t, cart, wishlist, toggleWishlist, addToCart, updateQuantity, removeFromCart, priority = false
 }: ProductCardProps) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isHovered, setIsHovered] = useState(false);
@@ -74,7 +75,7 @@ export const ProductCard = ({
                                 fill
                                 sizes="(max-width: 768px) 50vw, 33vw"
                                 className={`object-cover transition-transform duration-700 group-hover:scale-105 ${item.videoUrl && isHovered ? 'opacity-0' : 'opacity-100'}`}
-                                loading="lazy"
+                                priority={priority}
                                 referrerPolicy="no-referrer"
                             />
                         );

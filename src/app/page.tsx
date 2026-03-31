@@ -5,45 +5,26 @@ import { mapProduct, mapCategory, mapBanner } from "@/lib/mappers";
 import type { Product, Category, Banner } from "@/types";
 
 // This makes the page dynamic as it fetches data from Supabase on every request
-export const dynamic = 'force-dynamic';
+// ISR with 5 minute revalidation for fast response times while staying fresh
+export const revalidate = 300; 
 
 async function getInitialData() {
     try {
-        // 1. Fetch first 20 products
-        const { data: productsData } = await supabase
-            .from("products")
-            .select("*")
-            .eq("is_deleted", false)
-            .order("created_at", { ascending: false })
-            .limit(20);
+        const [
+            { data: productsData },
+            { data: categoriesData },
+            { data: bannersData },
+            { data: settingsData }
+        ] = await Promise.all([
+            supabase.from("products").select("*").eq("is_deleted", false).order("created_at", { ascending: false }).limit(20),
+            supabase.from("categories").select("*").eq("is_deleted", false).order("name", { ascending: true }),
+            supabase.from("banners").select("*").eq("active", true).order("order_index", { ascending: true }),
+            supabase.from("settings").select("*").eq("id", "banners").single()
+        ]);
         
         const products = (productsData || []).map(mapProduct);
-
-        // 2. Fetch categories
-        const { data: categoriesData } = await supabase
-            .from("categories")
-            .select("*")
-            .eq("is_deleted", false)
-            .order("name", { ascending: true });
-        
         const categories = (categoriesData || []).map(mapCategory);
-
-        // 3. Fetch banners
-        const { data: bannersData } = await supabase
-            .from("banners")
-            .select("*")
-            .eq("active", true)
-            .order("order_index", { ascending: true });
-        
         const banners = (bannersData || []).map(mapBanner);
-
-        // 4. Fetch banner settings
-        const { data: settingsData } = await supabase
-            .from("settings")
-            .select("*")
-            .eq("id", "banners")
-            .single();
-        
         const bannerSettings = settingsData?.data 
             ? { desktopHeight: settingsData.data.desktopHeight || 210, borderRadius: settingsData.data.borderRadius || 32 }
             : { desktopHeight: 210, borderRadius: 32 };
