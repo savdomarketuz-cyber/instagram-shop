@@ -18,7 +18,7 @@ function PaymentContent() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [loadingOrder, setLoadingOrder] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [paymentMethod, setPaymentMethod] = useState<"qr" | "cash">("qr");
+    const [paymentMethod, setPaymentMethod] = useState<"click" | "qr" | "cash">("click");
 
     useEffect(() => {
         if (orderId) {
@@ -105,6 +105,18 @@ function PaymentContent() {
 
             clearCart();
             sessionStorage.removeItem('fast_buy_item');
+
+            if (paymentMethod === "click") {
+                const serviceId = process.env.NEXT_PUBLIC_CLICK_SERVICE_ID || "";
+                const merchantId = process.env.NEXT_PUBLIC_CLICK_MERCHANT_ID || "";
+                if (!serviceId || !merchantId) {
+                    throw new Error("Click tizimi hozircha sozlanmagan.");
+                }
+                const clickUrl = `https://my.click.uz/services/pay?service_id=${serviceId}&merchant_id=${merchantId}&amount=${order.total}&transaction_param=${orderId}`;
+                window.location.href = clickUrl;
+                return;
+            }
+
             router.push("/order-success");
         } catch (err: any) {
             console.error("Payment error:", err);
@@ -146,6 +158,30 @@ function PaymentContent() {
                     </div>
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest ml-14">
                         {language === 'uz' ? 'Click, Payme, Paynet orqali skaner qiling' : 'Сканируйте через Click, Payme, Paynet'}
+                    </p>
+                </div>
+
+                {/* Click Option */}
+                <div
+                    onClick={() => setPaymentMethod("click")}
+                    className={`p-6 border-2 rounded-[32px] cursor-pointer transition-all ${paymentMethod === "click" ? "border-[#00a1ff] bg-[#00a1ff]/5 shadow-xl shadow-[#00a1ff]/10" : "border-gray-100"
+                        }`}
+                >
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-4">
+                            <div className={`p-3 rounded-2xl ${paymentMethod === "click" ? "bg-[#00a1ff] text-white" : "bg-gray-100"}`}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM11 19.93C7.05 19.43 4 16.05 4 12C4 7.95 7.05 4.57 11 4.07V19.93ZM13 4.07C16.95 4.57 20 7.95 20 12C20 16.05 16.95 19.43 13 19.93V4.07Z" fill="currentColor" />
+                                </svg>
+                            </div>
+                            <span className={`font-black text-sm italic uppercase tracking-tighter ${paymentMethod === "click" ? "text-[#00a1ff]" : ""}`}>
+                                {language === 'uz' ? 'Click orqali to\'lash' : 'Оплата через Click'}
+                            </span>
+                        </div>
+                        <input type="radio" checked={paymentMethod === "click"} readOnly className="accent-[#00a1ff] w-5 h-5" />
+                    </div>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest ml-14">
+                        {language === 'uz' ? 'Avtomatlashtirilgan Click portaliga o\'tish' : 'Переход на портал Click'}
                     </p>
                 </div>
 
@@ -214,13 +250,19 @@ function PaymentContent() {
             <button
                 onClick={handlePayment}
                 disabled={isProcessing}
-                className="w-full bg-black text-white py-6 rounded-full font-black text-sm uppercase tracking-widest flex justify-center items-center gap-3 shadow-2xl shadow-black/20 active:scale-95 transition-all disabled:opacity-70"
+                className={`w-full py-6 rounded-full font-black text-sm uppercase tracking-widest flex justify-center items-center gap-3 shadow-2xl active:scale-95 transition-all disabled:opacity-70 ${
+                    paymentMethod === "click" ? "bg-[#00a1ff] text-white shadow-[#00a1ff]/30" : "bg-black text-white shadow-black/20"
+                }`}
             >
                 {isProcessing ? (
                     <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
                 ) : (
                     <>
-                        <span>{language === 'uz' ? 'Buyurtmani rasmiylashtirish' : 'Оформить заказ'}</span>
+                        <span>
+                            {paymentMethod === "click" 
+                                ? (language === 'uz' ? 'Click\'ga o\'tish' : 'Перейти в Click') 
+                                : (language === 'uz' ? 'Buyurtmani rasmiylashtirish' : 'Оформить заказ')}
+                        </span>
                         <CheckCircle size={22} strokeWidth={3} />
                     </>
                 )}
