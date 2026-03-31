@@ -45,32 +45,32 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
         };
 
         const updateActivity = async (action: string = "Ko'rmoqda") => {
-            // Speed optimization: track ONLY on actual interaction or start, don't wait for IP
-            setTimeout(async () => {
-                try {
-                    let currentIp = sessionStorage.getItem("tracked_ip") || "Unknown";
-                    if (currentIp === "Unknown") {
-                        const ipRes = await fetch("https://api.ipify.org?format=json").catch(() => null);
-                        if (ipRes) {
-                            const ipData = await ipRes.json();
-                            currentIp = ipData.ip;
-                            sessionStorage.setItem("tracked_ip", currentIp);
-                        }
+            // Completely silent IP tracking - no toasts shown if this fails
+            try {
+                let currentIp = sessionStorage.getItem("tracked_ip") || "Unknown";
+                if (currentIp === "Unknown") {
+                    const ipRes = await fetch("https://api.ipify.org?format=json").catch(() => null);
+                    if (ipRes && ipRes.ok) {
+                        const ipData = await ipRes.json();
+                        currentIp = ipData.ip;
+                        sessionStorage.setItem("tracked_ip", currentIp);
                     }
+                }
 
-                    await supabase.from("user_status").upsert({
-                        id: sessionId,
-                        user_phone: user?.phone || null,
-                        name: user?.name || "Mehmon",
-                        ip_address: currentIp,
-                        last_seen: new Date().toISOString(),
-                        is_online: true,
-                        current_path: getFriendlyPath(pathname),
-                        last_action: action,
-                        type: user?.phone ? "user" : "visitor"
-                    }, { onConflict: 'id' });
-                } catch (e) { }
-            }, 0);
+                await supabase.from("user_status").upsert({
+                    id: sessionId,
+                    user_phone: user?.phone || null,
+                    name: user?.name || "Mehmon",
+                    ip_address: currentIp,
+                    last_seen: new Date().toISOString(),
+                    is_online: true,
+                    current_path: getFriendlyPath(pathname),
+                    last_action: action,
+                    type: user?.phone ? "user" : "visitor"
+                }, { onConflict: 'id' });
+            } catch (error) {
+                // Do nothing silenty
+            }
         };
 
         // Click tracking — debounce bilan optimallashtirilgan
