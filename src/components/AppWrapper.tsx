@@ -204,7 +204,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
 
 
             {/* Animated Toast Notification — to'g'ri subscribe qilingan */}
-            {toast && (
+            {toast && !toast.message.toLowerCase().includes('failed to fetch') && (
                 <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[200] w-[90%] max-w-sm animate-in fade-in slide-in-from-top-full duration-500">
                     <div className={`
                         flex items-center gap-3 p-4 rounded-3xl shadow-2xl backdrop-blur-xl border
