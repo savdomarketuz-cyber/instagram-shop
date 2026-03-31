@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutDashboard, ShoppingCart, Package, Layers, LogOut, Menu, X, Users, Image as ImageIcon, Database, Settings, Sparkles, Activity, Zap, MessageSquare, ShieldAlert } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Package, Layers, LogOut, Menu, X, Users, Image as ImageIcon, Database, Settings, Sparkles, Activity, Zap, MessageSquare, ShieldAlert, Truck, Warehouse } from "lucide-react";
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/store/store";
@@ -45,6 +45,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { name: "Mijozlar", href: "/admin/customers", icon: Users },
         { name: "Bannerlar", href: "/admin/banners", icon: ImageIcon },
         { name: "Qoldiqlar", href: "/admin/inventory", icon: Database },
+        { name: "Omborlar", href: "/admin/warehouses", icon: Warehouse },
+        { name: "Yetkazish", href: "/admin/delivery", icon: Truck },
         { name: "Chat", href: "/admin/chats", icon: MessageSquare },
         { name: "Sozlamalar", href: "/admin/settings", icon: Settings },
     ];
