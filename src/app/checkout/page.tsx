@@ -136,7 +136,7 @@ export default function CheckoutPage() {
             }
 
             if (data.success && data.orderId) {
-                if (!isFastBuy) clearCart();
+                // Do NOT call clearCart here because it triggers the useEffect that redirects to '/'
                 router.push(`/payment?orderId=${data.orderId}`);
             }
 
