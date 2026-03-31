@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 interface SingleReelProps {
     reel: any;
     isActive: boolean;
+    isNearby?: boolean;
     isMuted: boolean;
     toggleMute: () => void;
     onCommentOpen: (productId: string) => void;
@@ -17,7 +18,7 @@ interface SingleReelProps {
 }
 
 export const SingleReel = ({ 
-    reel, isActive, isMuted, toggleMute, onCommentOpen, language, t 
+    reel, isActive, isNearby, isMuted, toggleMute, onCommentOpen, language, t 
 }: SingleReelProps) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const { user, showToast, addToCart, cart } = useStore();
@@ -100,6 +101,7 @@ export const SingleReel = ({
                     className="max-w-full max-h-full object-contain pointer-events-auto cursor-pointer shadow-[0_0_100px_rgba(255,255,255,0.05)]"
                     loop
                     playsInline
+                    preload={isActive || isNearby ? "auto" : "metadata"}
                     onTimeUpdate={handleTimeUpdate}
                     onClick={togglePlay}
                     onWaiting={() => setIsBuffering(true)}

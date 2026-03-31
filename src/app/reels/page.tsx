@@ -99,18 +99,22 @@ export default function ReelsPage() {
                 className="w-full max-w-[500px] h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar bg-black shadow-2xl relative"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-                {reels.map((reel, index) => (
-                    <SingleReel 
-                        key={reel.id}
-                        reel={reel}
-                        isActive={activeIndex === index && !commentProductId}
-                        isMuted={isMuted}
-                        toggleMute={() => setIsMuted(!isMuted)}
-                        onCommentOpen={(pid) => setCommentProductId(pid)}
-                        language={language}
-                        t={t}
-                    />
-                ))}
+                {reels.map((reel, index) => {
+                    const isNearby = index === activeIndex + 1 || index === activeIndex + 2;
+                    return (
+                        <SingleReel 
+                            key={reel.id}
+                            reel={reel}
+                            isActive={activeIndex === index && !commentProductId}
+                            isNearby={isNearby}
+                            isMuted={isMuted}
+                            toggleMute={() => setIsMuted(!isMuted)}
+                            onCommentOpen={(pid) => setCommentProductId(pid)}
+                            language={language}
+                            t={t}
+                        />
+                    );
+                })}
             </div>
 
             {/* Global Back Link */}
