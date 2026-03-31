@@ -70,8 +70,8 @@ export default function Navigation() {
                     {/* Reels */}
                     <Link href="/reels" className={`flex flex-col items-center gap-1 group transition-all ${pathname === '/reels' ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
                         <div className="relative p-2 rounded-xl group-hover:bg-gray-50 transition-colors">
-                            <Clapperboard size={22} strokeWidth={pathname === '/reels' ? 3 : 2} />
-                            <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full animate-ping" />
+                            <Clapperboard size={22} strokeWidth={pathname === '/reels' ? 3 : 2} className="group-hover:scale-110 group-hover:-rotate-12 group-hover:text-black transition-all duration-300" />
+                            <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
                         </div>
                         <span className="text-[9px] font-black uppercase tracking-tighter hidden md:block">Reels</span>
                     </Link>
@@ -79,7 +79,7 @@ export default function Navigation() {
                     {/* Orders */}
                     <Link href="/account?tab=orders" className={`flex flex-col items-center gap-1 group transition-all ${pathname?.includes('/account') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
                         <div className="p-2 rounded-xl group-hover:bg-gray-50 transition-colors">
-                            <ShoppingBag size={22} strokeWidth={pathname?.includes('/account') ? 3 : 2} />
+                            <ShoppingBag size={22} strokeWidth={pathname?.includes('/account') ? 3 : 2} className="group-hover:-translate-y-1.5 group-hover:scale-110 group-hover:text-black transition-all duration-300" />
                         </div>
                         <span className="text-[9px] font-black uppercase tracking-tighter hidden md:block">{language === 'uz' ? 'Buyurtmalar' : 'Заказы'}</span>
                     </Link>
@@ -87,7 +87,7 @@ export default function Navigation() {
                     {/* Wishlist */}
                     <Link href="/wishlist" className={`flex flex-col items-center gap-1 group transition-all ${pathname === '/wishlist' ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
                         <div className="p-2 rounded-xl group-hover:bg-gray-50 relative transition-colors">
-                            <Heart size={22} fill={wishlist.length > 0 ? "black" : "none"} strokeWidth={pathname === '/wishlist' ? 3 : 2} className={wishlist.length > 0 ? "text-black" : ""} />
+                            <Heart size={22} fill={wishlist.length > 0 ? "black" : "none"} strokeWidth={pathname === '/wishlist' ? 3 : 2} className={`transition-all duration-500 group-hover:scale-125 ${wishlist.length > 0 ? "text-black animate-pulse" : ""}`} />
                             {wishlist.length > 0 && (
                                 <span className="absolute top-1 right-1 bg-black text-white text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full border border-white">
                                     {wishlist.length}
@@ -100,7 +100,7 @@ export default function Navigation() {
                     {/* Cart */}
                     <Link href="/cart" className={`flex flex-col items-center gap-1 group transition-all ${pathname === '/cart' ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
                         <div className="p-2 rounded-xl group-hover:bg-gray-50 relative transition-colors">
-                            <ShoppingCart size={22} strokeWidth={pathname === '/cart' ? 3 : 2} />
+                            <ShoppingCart size={22} strokeWidth={pathname === '/cart' ? 3 : 2} className="group-hover:translate-x-1.5 group-hover:-rotate-6 transition-all duration-300" />
                             {cartCount > 0 && (
                                 <span className="absolute top-1 right-1 bg-red-600 text-white text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full border border-white animate-bounce">
                                     {cartCount}
@@ -113,12 +113,12 @@ export default function Navigation() {
                     {/* Login / Chat Dynamic Button */}
                     <div className="pl-4 md:pl-6 border-l border-gray-100 flex items-center gap-4">
                         {user ? (
-                            <Link href="/messages" className="flex items-center gap-3 bg-[#F2F3F5] hover:bg-black hover:text-white px-6 py-3.5 rounded-2xl transition-all group">
-                                <MessageSquare size={18} className="group-hover:scale-110 transition-transform" />
+                            <Link href="/messages" className="flex items-center gap-3 bg-[#F2F3F5] hover:bg-black hover:text-white px-6 py-3.5 rounded-2xl transition-all group shadow-sm hover:shadow-xl">
+                                <MessageSquare size={18} className="group-hover:rotate-[360deg] transition-transform duration-700" />
                                 <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">Chat</span>
                             </Link>
                         ) : (
-                            <Link href="/login" className="bg-[#F2F3F5] hover:bg-black hover:text-white px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all">
+                            <Link href="/login" className="bg-[#F2F3F5] hover:bg-black hover:text-white px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-xl">
                                 Kirish
                             </Link>
                         )}
