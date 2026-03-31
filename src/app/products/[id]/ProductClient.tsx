@@ -348,20 +348,37 @@ export default function ProductClient({ params }: { params: { id: string } }) {
                                 <span className="text-xs text-gray-400 font-bold uppercase tracking-widest ml-2">({product.reviewCount || 0} sharh)</span>
                             </div>
 
-                            <div className="space-y-2 mb-10">
+                             <div className="flex flex-col gap-1 mb-8">
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{t.common.price}</p>
-                                <div className="flex items-center gap-6">
+                                <div className="flex items-baseline gap-4">
                                     <div className="text-6xl font-black italic tracking-tighter text-black">
                                         {product.price.toLocaleString()} <span className="text-2xl not-italic">so'm</span>
                                     </div>
                                     {product.oldPrice && product.oldPrice > product.price && (
-                                        <div className="space-y-1">
-                                            <span className="text-gray-300 line-through font-bold text-2xl block">{product.oldPrice.toLocaleString()} so'm</span>
-                                            <span className="bg-red-500 text-white px-3 py-1 rounded-xl text-xs font-black tracking-tighter">
-                                                -{Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)}%
-                                            </span>
-                                        </div>
+                                        <span className="text-gray-300 line-through font-bold text-2xl">{product.oldPrice.toLocaleString()}</span>
                                     )}
+                                </div>
+                                <div className="mt-4 p-4 bg-[#F2F3F5] rounded-2xl flex items-center justify-between group cursor-pointer hover:bg-[#EBEDF0] transition-colors border border-transparent hover:border-gray-200">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-yellow-400 rounded-xl flex items-center justify-center font-black text-[10px] shadow-sm">UZUM</div>
+                                        <div>
+                                            <p className="text-[11px] font-black italic">{(Math.round(product.price / 12)).toLocaleString()} so'm x 12 oy</p>
+                                            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Muddatli to'lov</p>
+                                        </div>
+                                    </div>
+                                    <ChevronLeft size={16} className="rotate-180 text-gray-300" />
+                                </div>
+                            </div>
+
+                            {/* Short Specs Summary */}
+                            <div className="grid grid-cols-2 gap-4 mb-10">
+                                <div className="space-y-1">
+                                    <p className="text-[9px] text-gray-400 font-black uppercase">Mahsulot kodi</p>
+                                    <p className="text-xs font-bold text-gray-800">#{product.article || product.sku || params.id.slice(0, 1) + '0329'}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[9px] text-gray-400 font-black uppercase">Asosiy</p>
+                                    <p className="text-xs font-bold text-green-600">Original / Brand New</p>
                                 </div>
                             </div>
 
@@ -411,29 +428,29 @@ export default function ProductClient({ params }: { params: { id: string } }) {
 
                                     {cartItem ? (
                                         <div className="flex-1 flex items-center gap-2 animate-in fade-in zoom-in duration-300">
-                                            <div className="flex-1 bg-gray-50 h-[60px] rounded-[28px] border border-gray-100 flex items-center justify-around">
+                                            <div className="flex-1 bg-[#F2F3F5] h-[60px] rounded-[28px] flex items-center justify-around">
                                                 <button 
                                                     onClick={() => updateQuantity(product.id, cartItem.quantity - 1)} 
-                                                    className="p-3 text-gray-400 hover:text-black transition-colors"
+                                                    className="p-3 text-gray-400 hover:text-black"
                                                 >
                                                     <Minus size={20} strokeWidth={3} />
                                                 </button>
-                                                <span className="text-xl font-black italic w-8 text-center">{cartItem.quantity}</span>
+                                                <span className="text-xl font-black italic">{cartItem.quantity}</span>
                                                 <button 
                                                     onClick={() => updateQuantity(product.id, cartItem.quantity + 1)} 
-                                                    className="p-3 text-gray-400 hover:text-black transition-colors"
+                                                    className="p-3 text-gray-400 hover:text-black"
                                                 >
                                                     <Plus size={20} strokeWidth={3} />
                                                 </button>
                                             </div>
-                                            <Link href="/cart" className="bg-black text-white p-5 rounded-[28px] hover:scale-110 active:scale-90 transition-all shadow-xl">
+                                            <Link href="/cart" className="bg-[#FFD11A] text-black p-5 rounded-[28px] hover:scale-110 active:scale-90 transition-all shadow-xl">
                                                 <ShoppingBag size={20} strokeWidth={3} />
                                             </Link>
                                         </div>
                                     ) : (
                                         <button 
                                             onClick={() => addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any)}
-                                            className="flex-1 bg-black text-white py-5 rounded-[28px] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-black/20"
+                                            className="flex-1 bg-[#FFD11A] hover:bg-[#F5C718] text-black py-5 rounded-[28px] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all shadow-2xl shadow-yellow-500/10"
                                         >
                                             <Plus size={20} strokeWidth={3} /> {language === 'uz' ? "SAVATGA" : "В КОРЗИНУ"}
                                         </button>
@@ -442,27 +459,31 @@ export default function ProductClient({ params }: { params: { id: string } }) {
                             </div>
                         </div>
 
-                        {/* 2. Delivery & Benefits */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div className="bg-gray-50/50 p-8 rounded-[40px] border border-gray-100 flex flex-col gap-6 group hover:bg-white hover:shadow-xl transition-all">
-                                <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
-                                    <Truck size={28} className="text-black" />
+                        {/* 2. Delivery Panel (Right Side as Yandex) */}
+                        <div className="bg-[#F2F3F5] p-10 rounded-[40px] border border-gray-100 flex flex-col gap-8">
+                            <div className="flex items-start gap-4">
+                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                                    <Truck size={24} className="text-black" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Etkazib berish</p>
-                                    <p className="text-lg font-black italic uppercase tracking-tighter">{getDeliveryDateText(language, deliverySettings)}</p>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Etkazib berish</p>
+                                    <p className="text-base font-black italic">{getDeliveryDateText(language, deliverySettings)}</p>
+                                    <p className="text-[11px] text-gray-500 font-medium">Toshkent bo&apos;ylab tekin</p>
                                 </div>
                             </div>
-                            <div className="bg-[#F8FFF9] p-8 rounded-[40px] border border-green-100/50 flex flex-col gap-6 group hover:bg-white hover:shadow-xl transition-all">
-                                <div className="w-16 h-16 bg-green-500 text-white rounded-3xl flex items-center justify-center shadow-xl shadow-green-500/20 group-hover:scale-110 transition-transform">
-                                    <ShieldCheck size={28} />
+                            <div className="flex items-start gap-4">
+                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                                    <ShieldCheck size={24} className="text-green-500" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black text-green-600/50 uppercase tracking-widest mb-2">Kafolat</p>
-                                    <p className="text-lg font-black italic uppercase tracking-tighter">1 yil rasmiy kafolat</p>
+                                    <p className="text-[10px] font-black text-green-600/50 uppercase tracking-widest mb-1">Kafolat</p>
+                                    <p className="text-base font-black italic">1 yil rasmiy kafolat</p>
+                                    <p className="text-[11px] text-gray-500 font-medium">Original mahsulot 100%</p>
                                 </div>
                             </div>
                         </div>
+
+
                     </div>
                 </div>
 
