@@ -46,7 +46,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { name: "Bannerlar", href: "/admin/banners", icon: ImageIcon },
         { name: "Qoldiqlar", href: "/admin/inventory", icon: Database },
         { name: "Omborlar", href: "/admin/warehouses", icon: Warehouse },
-        { name: "Yetkazish", href: "/admin/delivery", icon: Truck },
         { name: "Chat", href: "/admin/chats", icon: MessageSquare },
         { name: "Sozlamalar", href: "/admin/settings", icon: Settings },
     ];
