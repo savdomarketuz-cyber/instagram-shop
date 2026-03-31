@@ -113,7 +113,7 @@ function PaymentContent() {
                     throw new Error("Click tizimi hozircha sozlanmagan.");
                 }
                 const returnUrl = encodeURIComponent(`${window.location.origin}/order-success`);
-                const clickUrl = `https://my.click.uz/services/pay?service_id=${serviceId}&merchant_id=${merchantId}&amount=${order.total}&transaction_param=${orderId}&return_url=${returnUrl}&card_type=uzcard/humo`;
+                const clickUrl = `https://my.click.uz/services/pay?service_id=${serviceId}&merchant_id=${merchantId}&amount=${order.total}&transaction_param=${orderId}&return_url=${returnUrl}`;
                 window.location.href = clickUrl;
                 return;
             }
