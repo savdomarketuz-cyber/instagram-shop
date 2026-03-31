@@ -86,7 +86,7 @@ export const ProductMedia = ({
 
     return (
         <>
-            <div className="relative w-full aspect-[3/4] bg-gray-50 overflow-hidden group/media-section">
+            <div className="relative w-full aspect-[3/4] bg-white overflow-hidden group/media-section">
                 <div
                     ref={carouselRef}
                     onScroll={handleScroll}
@@ -110,12 +110,16 @@ export const ProductMedia = ({
                         </div>
                     ))}
                 </div>
-                <div className="absolute bottom-16 left-0 right-0 flex justify-center gap-1.5 z-20">
+                
+                {/* Dots / Pagination */}
+                <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-1.5 z-20">
                     {allMedia.map((_, i) => (
                         <div key={i} className={`h-1 rounded-full transition-all duration-500 ${activeImage === i ? "w-6 bg-black/40" : "w-1 bg-black/10"}`} />
                     ))}
                 </div>
-                <div className="absolute top-8 left-6 right-6 flex justify-between items-center z-10 pointer-events-none">
+
+                {/* Back & Wishlist Controls */}
+                <div className="absolute top-6 left-6 right-6 flex justify-between items-center z-30 pointer-events-none">
                     <button onClick={() => router.back()} className="p-4 bg-white/80 backdrop-blur-xl text-black rounded-[24px] shadow-xl active:scale-95 transition-all border border-white/50 pointer-events-auto">
                         <ChevronLeft size={24} strokeWidth={3} />
                     </button>

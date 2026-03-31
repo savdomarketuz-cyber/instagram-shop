@@ -82,7 +82,7 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt }: MediaIt
             <img
                 src={media.url}
                 alt={alt || "Velari product image"}
-                className={isLightbox ? "relative max-w-[95%] max-h-[90%] object-contain animate-in zoom-in-95 duration-500 shadow-2xl rounded-lg" : "w-full h-full object-cover zoom-animation"}
+                className={isLightbox ? "relative max-w-[95%] max-h-[90%] object-contain animate-in zoom-in-95 duration-500 shadow-2xl rounded-lg" : "w-full h-full object-contain zoom-animation p-4"}
                 draggable={false}
             />
         </div>
