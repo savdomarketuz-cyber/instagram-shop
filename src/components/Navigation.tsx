@@ -6,7 +6,7 @@ import Logo from "./Logo";
 import { useStore } from "@/store/store";
 import { usePathname, useRouter } from "next/navigation";
 import { translations } from "@/lib/translations";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 export default function Navigation() {
     const user = useStore(state => state.user);
@@ -21,6 +21,9 @@ export default function Navigation() {
     const [search, setSearch] = useState("");
     const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+    const isHomePage = pathname === "/";
+    const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         setHomeSearchQuery(search);
@@ -30,14 +33,24 @@ export default function Navigation() {
     return (
         <>
             {/* Main Header - Top Fixed */}
-            <header className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-2xl z-[100] border-b border-gray-100 h-16 md:h-24">
+            {/* Logic: Hidden on mobile if NOT on home page */}
+            <header className={`fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-2xl z-[100] border-b border-gray-100 h-16 md:h-24 ${!isHomePage ? 'hidden md:block' : 'block'}`}>
                 <div className="max-w-[1440px] mx-auto h-full px-4 md:px-10 flex items-center gap-3 md:gap-12">
                     
-                    {/* Logo Section */}
-                    <Link href="/" className="shrink-0 group transition-transform active:scale-95">
-                        <Logo size="sm" className="!items-start md:hidden" />
-                        <Logo size="md" className="!items-start hidden md:flex" />
-                    </Link>
+                    {/* Logo Section (Desktop) / Katalog Button (Mobile Home) */}
+                    <div className="shrink-0 group">
+                        <div className="md:hidden">
+                            <Link href="/catalog" className="flex items-center gap-2 bg-[#F2F3F5] px-4 py-2.5 rounded-xl active:scale-95 transition-all outline-none">
+                                <LayoutGrid size={20} strokeWidth={3} className="text-black" />
+                                <span className="text-[11px] font-black uppercase tracking-tighter text-black">Katalog</span>
+                            </Link>
+                        </div>
+                        <div className="hidden md:block">
+                            <Link href="/" className="transition-transform active:scale-95 flex">
+                                <Logo size="md" className="!items-start" />
+                            </Link>
+                        </div>
+                    </div>
 
                     {/* Catalog Button (Desktop only) */}
                     <Link href="/catalog" className="hidden lg:flex items-center gap-3 bg-black text-white px-6 py-3.5 rounded-2xl hover:scale-105 active:scale-95 transition-all group shadow-xl shadow-black/10">
@@ -70,7 +83,6 @@ export default function Navigation() {
                     {/* Desktop Navigation Actions (HIDDEN on Mobile) */}
                     <div className="hidden md:flex items-center gap-2 md:gap-6 shrink-0 h-full">
                         
-                        {/* Reels */}
                         <Link href="/reels" className={`flex flex-col items-center gap-1 group transition-all ${pathname === '/reels' ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
                             <div className="relative p-2 rounded-xl group-hover:bg-gray-50 transition-colors">
                                 <Clapperboard size={22} strokeWidth={pathname === '/reels' ? 3 : 2} className="group-hover:scale-110 group-hover:-rotate-12 group-hover:text-black transition-all duration-300" />
@@ -79,7 +91,6 @@ export default function Navigation() {
                             <span className="text-[9px] font-black uppercase tracking-tighter hidden xl:block">Reels</span>
                         </Link>
 
-                        {/* Orders */}
                         <Link href="/account?tab=orders" className={`flex flex-col items-center gap-1 group transition-all ${pathname?.includes('/account') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
                             <div className="p-2 rounded-xl group-hover:bg-gray-50 transition-colors">
                                 <ShoppingBag size={22} strokeWidth={pathname?.includes('/account') ? 3 : 2} className="group-hover:-translate-y-1.5 group-hover:scale-110 group-hover:text-black transition-all duration-300" />
@@ -87,7 +98,6 @@ export default function Navigation() {
                             <span className="text-[9px] font-black uppercase tracking-tighter hidden xl:block">{language === 'uz' ? 'Buyurtmalar' : 'Заказы'}</span>
                         </Link>
 
-                        {/* Wishlist */}
                         <Link href="/wishlist" className={`flex flex-col items-center gap-1 group transition-all ${pathname === '/wishlist' ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
                             <div className="p-2 rounded-xl group-hover:bg-gray-50 relative transition-colors">
                                 <Heart size={22} fill={wishlist.length > 0 ? "black" : "none"} strokeWidth={pathname === '/wishlist' ? 3 : 2} className={`transition-all duration-500 group-hover:scale-125 ${wishlist.length > 0 ? "text-black animate-pulse" : ""}`} />
@@ -100,7 +110,6 @@ export default function Navigation() {
                             <span className="text-[9px] font-black uppercase tracking-tighter hidden xl:block">{language === 'uz' ? 'Saralangan' : 'Избранное'}</span>
                         </Link>
 
-                        {/* Cart */}
                         <Link href="/cart" className={`flex flex-col items-center gap-1 group transition-all ${pathname === '/cart' ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
                             <div className="p-2 rounded-xl group-hover:bg-gray-50 relative transition-colors">
                                 <ShoppingCart size={22} strokeWidth={pathname === '/cart' ? 3 : 2} className="group-hover:translate-x-1.5 group-hover:-rotate-6 transition-all duration-300" />
@@ -113,7 +122,6 @@ export default function Navigation() {
                             <span className="text-[9px] font-black uppercase tracking-tighter hidden xl:block">{t.nav.cart}</span>
                         </Link>
 
-                        {/* Login / Chat Dynamic Button */}
                         <div className="pl-4 md:pl-6 border-l border-gray-100 items-center gap-4 hidden lg:flex">
                             {user ? (
                                 <Link href="/messages" className="flex items-center gap-3 bg-[#F2F3F5] hover:bg-black hover:text-white px-6 py-3.5 rounded-2xl transition-all group shadow-sm hover:shadow-xl">
@@ -126,12 +134,11 @@ export default function Navigation() {
                                 </Link>
                             )}
                         </div>
-
                     </div>
                 </div>
             </header>
 
-            {/* Mobile Bottom Bar (Independent Layer) */}
+            {/* Mobile Bottom Bar (Independent Layer) - Always Visible */}
             <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-3xl border-t border-gray-100 flex justify-between items-center z-[110] px-4 py-2 pb-8 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
                 <Link href="/" className={`flex flex-col items-center py-2 px-3 gap-1 ${pathname === '/' ? 'text-black' : 'text-gray-400'}`}>
                     <LayoutGrid size={22} strokeWidth={pathname === '/' ? 3 : 2} />

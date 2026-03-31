@@ -191,7 +191,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
     return (
         <div className={`
             mx-auto bg-white min-h-screen relative shadow-2xl 
-            ${showNav ? 'pt-20 md:pt-28' : ''}
+            ${showNav ? (pathname === '/' ? 'pt-16 md:pt-28' : 'md:pt-28') : ''}
             ${isSplashActive ? 'overflow-hidden h-screen' : ''}
         `}>
             {showNav && <Navigation />}
