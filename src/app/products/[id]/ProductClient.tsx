@@ -81,12 +81,14 @@ export default function ProductClient({ params }: { params: { id: string } }) {
                 setProduct(data);
                 
                 // Track interest and viewed (Optional / Future implementation with Supabase)
-                if (user?.phone) {
+                if (user?.phone && user.phone !== 'ADMIN') {
                    // We could use an RPC or just update user_interests table
                    supabase.rpc('track_product_view', { 
                        p_user_phone: user.phone, 
                        p_product_id: params.id,
                        p_category_id: data.category
+                   }).then(({ error }) => {
+                       if (error) console.warn("Interest tracking failed:", error);
                    });
                 }
 

@@ -57,6 +57,9 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
                     }
                 }
 
+                // Skip tracking for Admin users (prevents 406 Not Acceptable)
+                if (user?.phone === 'ADMIN') return;
+
                 await supabase.from("user_status").upsert({
                     id: sessionId,
                     user_phone: user?.phone || null,

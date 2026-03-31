@@ -82,7 +82,7 @@ export default function HomeClient({
 
     // AI Recommendations logic
     useEffect(() => {
-        if (user?.phone && allProducts.length > 0) {
+        if (user?.phone && user.phone !== 'ADMIN' && allProducts.length > 0) {
             const fetchAiRecs = async () => {
                 const { data: interests } = await supabase
                     .from("user_interests")
