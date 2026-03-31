@@ -358,16 +358,6 @@ export default function ProductClient({ params }: { params: { id: string } }) {
                                         <span className="text-gray-300 line-through font-bold text-2xl">{product.oldPrice.toLocaleString()}</span>
                                     )}
                                 </div>
-                                <div className="mt-4 p-4 bg-[#F2F3F5] rounded-2xl flex items-center justify-between group cursor-pointer hover:bg-[#EBEDF0] transition-colors border border-transparent hover:border-gray-200">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-yellow-400 rounded-xl flex items-center justify-center font-black text-[10px] shadow-sm">UZUM</div>
-                                        <div>
-                                            <p className="text-[11px] font-black italic">{(Math.round(product.price / 12)).toLocaleString()} so'm x 12 oy</p>
-                                            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Muddatli to'lov</p>
-                                        </div>
-                                    </div>
-                                    <ChevronLeft size={16} className="rotate-180 text-gray-300" />
-                                </div>
                             </div>
 
                             {/* Short Specs Summary */}
@@ -443,14 +433,14 @@ export default function ProductClient({ params }: { params: { id: string } }) {
                                                     <Plus size={20} strokeWidth={3} />
                                                 </button>
                                             </div>
-                                            <Link href="/cart" className="bg-[#FFD11A] text-black p-5 rounded-[28px] hover:scale-110 active:scale-90 transition-all shadow-xl">
+                                            <Link href="/cart" className="bg-black text-white p-5 rounded-[28px] hover:scale-110 active:scale-90 transition-all shadow-xl">
                                                 <ShoppingBag size={20} strokeWidth={3} />
                                             </Link>
                                         </div>
                                     ) : (
                                         <button 
                                             onClick={() => addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any)}
-                                            className="flex-1 bg-[#FFD11A] hover:bg-[#F5C718] text-black py-5 rounded-[28px] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all shadow-2xl shadow-yellow-500/10"
+                                            className="flex-1 bg-black hover:bg-neutral-800 text-white py-5 rounded-[28px] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all shadow-2xl shadow-black/10"
                                         >
                                             <Plus size={20} strokeWidth={3} /> {language === 'uz' ? "SAVATGA" : "В КОРЗИНУ"}
                                         </button>

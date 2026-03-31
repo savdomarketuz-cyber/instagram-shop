@@ -1,127 +1,151 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import { Home, Heart, ShoppingBag, User, MessageCircle, Clapperboard, Headset, LayoutGrid } from "lucide-react";
+import { Search, Heart, ShoppingBag, MessageSquare, Clapperboard, LayoutGrid, User, ShoppingCart } from "lucide-react";
 import Logo from "./Logo";
 import { useStore } from "@/store/store";
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { translations } from "@/lib/translations";
+import { useState } from "react";
 
 export default function Navigation() {
+    const user = useStore(state => state.user);
     const cart = useStore(state => state.cart);
+    const wishlist = useStore(state => state.wishlist);
     const language = useStore(state => state.language);
+    const setHomeSearchQuery = useStore(state => state.setHomeSearchQuery);
     const pathname = usePathname();
+    const router = useRouter();
     const t = translations[language];
     
+    const [search, setSearch] = useState("");
     const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-    const isReels = pathname === "/reels";
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        setHomeSearchQuery(search);
+        if (pathname !== "/") router.push("/");
+    };
 
     return (
-        <>
-            {/* Desktop Sidebar Navigation */}
-            <nav className="hidden md:flex fixed left-0 top-0 bottom-0 w-72 bg-white border-r border-gray-100 flex-col p-8 z-50">
-                <Link href="/" className="mb-12 group transition-transform active:scale-95">
+        <header className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-2xl z-[100] border-b border-gray-100 h-20 md:h-24">
+            <div className="max-w-[1440px] mx-auto h-full px-4 md:px-10 flex items-center gap-4 md:gap-12">
+                
+                {/* Logo Section */}
+                <Link href="/" className="shrink-0 group transition-transform active:scale-95">
                     <Logo size="md" className="!items-start" />
                 </Link>
-                
-                <div className="flex-1 space-y-3">
-                    <Link href="/" className={`flex items-center gap-4 p-5 rounded-[24px] transition-all group ${pathname === '/' ? 'bg-black text-white shadow-2xl shadow-black/20' : 'text-gray-400 hover:bg-gray-50 hover:text-black'}`}>
-                        <Home size={22} strokeWidth={pathname === '/' ? 3 : 2} className="group-hover:scale-110 transition-transform" />
-                        <span className="font-black uppercase tracking-[0.2em] text-[10px]">{t.nav.home}</span>
-                    </Link>
 
-                    <Link href="/catalog" className={`flex items-center gap-4 p-5 rounded-[24px] transition-all group ${pathname === '/catalog' ? 'bg-black text-white shadow-2xl shadow-black/20' : 'text-gray-400 hover:bg-gray-50 hover:text-black'}`}>
-                        <LayoutGrid size={22} strokeWidth={pathname === '/catalog' ? 3 : 2} className="group-hover:scale-110 transition-transform" />
-                        <span className="font-black uppercase tracking-[0.2em] text-[10px]">{language === 'uz' ? 'Katalog' : 'Каталог'}</span>
-                    </Link>
+                {/* Catalog Button */}
+                <Link href="/catalog" className="hidden lg:flex items-center gap-3 bg-black text-white px-6 py-3.5 rounded-2xl hover:scale-105 active:scale-95 transition-all group shadow-xl shadow-black/10">
+                    <LayoutGrid size={20} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-500" />
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em]">{language === 'uz' ? 'Katalog' : 'Каталог'}</span>
+                </Link>
 
-                    <Link href="/cart" className={`flex items-center gap-4 p-5 rounded-[24px] transition-all relative group ${pathname === '/cart' ? 'bg-black text-white shadow-2xl shadow-black/20' : 'text-gray-400 hover:bg-gray-50 hover:text-black'}`}>
-                        <ShoppingBag size={22} strokeWidth={pathname === '/cart' ? 3 : 2} className="group-hover:scale-110 transition-transform" />
-                        <span className="font-black uppercase tracking-[0.2em] text-[10px]">{t.nav.cart}</span>
-                        {cartCount > 0 && (
-                            <span className="absolute top-4 right-4 bg-red-500 text-white text-[9px] font-black w-6 h-6 flex items-center justify-center rounded-full border-2 border-white animate-pulse">
-                                {cartCount}
-                            </span>
-                        )}
-                    </Link>
-
-                    <Link href="/messages" className={`flex items-center gap-4 p-5 rounded-[24px] transition-all group ${pathname === '/messages' ? 'bg-black text-white shadow-2xl shadow-black/20' : 'text-gray-400 hover:bg-gray-50 hover:text-black'}`}>
-                        <MessageCircle size={22} strokeWidth={pathname === '/messages' ? 3 : 2} className="group-hover:scale-110 transition-transform" />
-                        <span className="font-black uppercase tracking-[0.2em] text-[10px]">{language === 'uz' ? 'Chat' : 'Чat'}</span>
-                    </Link>
-                </div>
-
-                <div className="mt-auto pt-8 border-t border-gray-50">
-                    <Link
-                        href={isReels ? "/chat" : "/reels"}
-                        className={`flex items-center gap-4 p-4 rounded-2xl transition-all ${isReels ? 'bg-orange-500 text-white' : 'bg-gray-100 text-black hover:bg-black hover:text-white'}`}
-                    >
-                        {isReels ? <Headset size={24} /> : <Clapperboard size={24} />}
-                        <span className="font-black uppercase tracking-widest text-[10px]">{isReels ? "Support" : "Reels"}</span>
-                    </Link>
-                </div>
-            </nav>
-
-            {/* Mobile Bottom Navigation Bar */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 flex justify-center z-50 pointer-events-none">
-                <nav className="w-full max-w-md bg-white/80 border-t border-gray-100/50 px-2 py-3 pb-8 flex justify-between items-end backdrop-blur-2xl pointer-events-auto">
-                    <Link href="/" className={`flex flex-col items-center flex-1 transition-all duration-300 ${pathname === '/' ? 'text-black scale-110' : 'text-gray-400'}`}>
-                        <Home size={22} strokeWidth={pathname === '/' ? 2.5 : 2} />
-                        <span className="text-[9px] mt-1 font-black uppercase tracking-tighter">{t.nav.home}</span>
-                    </Link>
-
-                    <Link href="/catalog" className={`flex flex-col items-center flex-1 transition-all duration-300 ${pathname === '/catalog' ? 'text-black scale-110' : 'text-gray-400'}`}>
-                        <LayoutGrid size={22} strokeWidth={pathname === '/catalog' ? 2.5 : 2} />
-                        <span className="text-[9px] mt-1 font-black uppercase tracking-tighter">{language === 'uz' ? 'Katalog' : 'Каталог'}</span>
-                    </Link>
-
-                    {/* Central REELS / CHAT Button */}
-                    <div className="flex-1 flex justify-center -mt-6">
-                        <Link
-                            href={isReels ? "/chat" : "/reels"}
-                            className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center transition-all duration-500 shadow-2xl relative overflow-hidden
-                                ${isReels
-                                    ? "bg-black text-white rotate-[360deg] scale-110"
-                                    : "bg-[#f0f0f0] text-black hover:bg-black hover:text-white"
-                                }`}
-                        >
-                            {isReels ? (
-                                <Headset size={24} strokeWidth={2.5} className="animate-in zoom-in duration-300" />
-                            ) : (
-                                <Clapperboard size={24} strokeWidth={2.5} className="animate-pulse" />
-                            )}
-                            <span className={`text-[8px] font-black uppercase mt-0.5 ${isReels ? 'text-white' : 'text-black'} group-hover:text-white`}>
-                                {isReels ? "Chat" : "Reels"}
-                            </span>
-
-                            {!isReels && (
-                                <div className="absolute top-0 right-0 p-1">
-                                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping" />
-                                </div>
-                            )}
-                        </Link>
+                {/* Search Bar - Globalized */}
+                <form onSubmit={handleSearch} className="flex-1 relative group max-w-2xl">
+                    <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+                        <Search className="text-gray-400 group-focus-within:text-black transition-colors" size={20} />
                     </div>
+                    <input
+                        type="text"
+                        placeholder={t.common.search}
+                        value={search}
+                        onChange={(e) => {
+                            setSearch(e.target.value);
+                            setHomeSearchQuery(e.target.value);
+                        }}
+                        className="w-full bg-[#F2F3F5] border-2 border-transparent rounded-[24px] py-4 pl-14 pr-6 text-base font-bold placeholder:text-gray-400 focus:bg-white focus:border-black outline-none transition-all shadow-sm hover:bg-[#EBEDF0]"
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden md:block">
+                        <button type="submit" className="bg-black text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all">
+                            QIDIRISH
+                        </button>
+                    </div>
+                </form>
 
-                    <Link href="/cart" className={`flex flex-col items-center flex-1 transition-all duration-300 ${pathname === '/cart' ? 'text-black scale-110' : 'text-gray-400'}`}>
-                        <div className="relative">
-                            <ShoppingBag size={22} strokeWidth={pathname === '/cart' ? 2.5 : 2} />
+                {/* Navigation Actions */}
+                <div className="flex items-center gap-2 md:gap-6 shrink-0">
+                    
+                    {/* Reels */}
+                    <Link href="/reels" className={`flex flex-col items-center gap-1 group transition-all ${pathname === '/reels' ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
+                        <div className="relative p-2 rounded-xl group-hover:bg-gray-50 transition-colors">
+                            <Clapperboard size={22} strokeWidth={pathname === '/reels' ? 3 : 2} />
+                            <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full animate-ping" />
+                        </div>
+                        <span className="text-[9px] font-black uppercase tracking-tighter hidden md:block">Reels</span>
+                    </Link>
+
+                    {/* Orders */}
+                    <Link href="/account?tab=orders" className={`flex flex-col items-center gap-1 group transition-all ${pathname?.includes('/account') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
+                        <div className="p-2 rounded-xl group-hover:bg-gray-50 transition-colors">
+                            <ShoppingBag size={22} strokeWidth={pathname?.includes('/account') ? 3 : 2} />
+                        </div>
+                        <span className="text-[9px] font-black uppercase tracking-tighter hidden md:block">{language === 'uz' ? 'Buyurtmalar' : 'Заказы'}</span>
+                    </Link>
+
+                    {/* Wishlist */}
+                    <Link href="/wishlist" className={`flex flex-col items-center gap-1 group transition-all ${pathname === '/wishlist' ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
+                        <div className="p-2 rounded-xl group-hover:bg-gray-50 relative transition-colors">
+                            <Heart size={22} fill={wishlist.length > 0 ? "black" : "none"} strokeWidth={pathname === '/wishlist' ? 3 : 2} className={wishlist.length > 0 ? "text-black" : ""} />
+                            {wishlist.length > 0 && (
+                                <span className="absolute top-1 right-1 bg-black text-white text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full border border-white">
+                                    {wishlist.length}
+                                </span>
+                            )}
+                        </div>
+                        <span className="text-[9px] font-black uppercase tracking-tighter hidden md:block">{language === 'uz' ? 'Saralangan' : 'Избранное'}</span>
+                    </Link>
+
+                    {/* Cart */}
+                    <Link href="/cart" className={`flex flex-col items-center gap-1 group transition-all ${pathname === '/cart' ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
+                        <div className="p-2 rounded-xl group-hover:bg-gray-50 relative transition-colors">
+                            <ShoppingCart size={22} strokeWidth={pathname === '/cart' ? 3 : 2} />
                             {cartCount > 0 && (
-                                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-black w-4 h-4 flex items-center justify-center rounded-full border-2 border-white animate-bounce">
+                                <span className="absolute top-1 right-1 bg-red-600 text-white text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full border border-white animate-bounce">
                                     {cartCount}
                                 </span>
                             )}
                         </div>
-                        <span className="text-[9px] mt-1 font-black uppercase tracking-tighter">{t.nav.cart}</span>
+                        <span className="text-[9px] font-black uppercase tracking-tighter hidden md:block">{t.nav.cart}</span>
                     </Link>
 
-                    <Link href="/messages" className={`flex flex-col items-center flex-1 transition-all duration-300 ${pathname === '/messages' ? 'text-black scale-110' : 'text-gray-400'}`}>
-                        <MessageCircle size={22} strokeWidth={pathname === '/messages' ? 2.5 : 2} />
-                        <span className="text-[9px] mt-1 font-black uppercase tracking-tighter">{language === 'uz' ? 'DM' : 'Чат'}</span>
-                    </Link>
-                </nav>
+                    {/* Login / Chat Dynamic Button */}
+                    <div className="pl-4 md:pl-6 border-l border-gray-100 flex items-center gap-4">
+                        {user ? (
+                            <Link href="/messages" className="flex items-center gap-3 bg-[#F2F3F5] hover:bg-black hover:text-white px-6 py-3.5 rounded-2xl transition-all group">
+                                <MessageSquare size={18} className="group-hover:scale-110 transition-transform" />
+                                <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">Chat</span>
+                            </Link>
+                        ) : (
+                            <Link href="/login" className="bg-[#F2F3F5] hover:bg-black hover:text-white px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all">
+                                Kirish
+                            </Link>
+                        )}
+                    </div>
+
+                </div>
             </div>
-        </>
+
+            {/* Mobile Bottom Bar - Essential Actions */}
+            <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-2xl border-t border-gray-100 px-6 py-3 flex justify-between items-center pb-8">
+                <Link href="/" className={`p-2 ${pathname === '/' ? 'text-black' : 'text-gray-400'}`}>
+                    <LayoutGrid size={24} />
+                </Link>
+                <Link href="/reels" className={`p-2 ${pathname === '/reels' ? 'text-black' : 'text-gray-400'}`}>
+                    <Clapperboard size={24} />
+                </Link>
+                <Link href="/cart" className="relative p-2 text-black">
+                    <ShoppingCart size={24} strokeWidth={3} />
+                    {cartCount > 0 && <span className="absolute top-1 right-1 bg-red-600 w-2 h-2 rounded-full border border-white" />}
+                </Link>
+                <Link href="/wishlist" className={`p-2 ${pathname === '/wishlist' ? 'text-black' : 'text-gray-400'}`}>
+                    <Heart size={24} />
+                </Link>
+                <Link href={user ? "/messages" : "/login"} className={`p-2 ${user ? 'text-black' : 'text-gray-400'}`}>
+                    <User size={24} />
+                </Link>
+            </div>
+        </header>
     );
 }

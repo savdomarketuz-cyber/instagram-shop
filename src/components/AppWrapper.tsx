@@ -191,16 +191,16 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
     return (
         <div className={`
             mx-auto bg-white min-h-screen relative shadow-2xl 
-            ${showNav ? 'md:pl-64' : ''}
+            ${showNav ? 'pt-20 md:pt-28' : ''}
             ${isSplashActive ? 'overflow-hidden h-screen' : ''}
         `}>
+            {showNav && <Navigation />}
+
             <ErrorBoundary>
                 <PWAInstallPrompt />
                 <NotificationHandler />
                 {children}
             </ErrorBoundary>
-
-            {showNav && <Navigation />}
 
 
             {/* Animated Toast Notification — to'g'ri subscribe qilingan */}

@@ -230,38 +230,7 @@ export default function HomeClient({
         <main className="min-h-screen bg-white pb-24 max-w-[1440px] mx-auto">
             <h1 className="sr-only">Velari - Premium Electronics Store in Uzbekistan. Gadgets, Smartphones and Accessories.</h1>
             
-            <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-2xl px-4 md:px-10 py-4 md:py-8 border-b border-gray-100 flex items-center gap-4 md:gap-12">
-                <Link href="/" className="hidden lg:block group transition-transform active:scale-95 shrink-0">
-                    <Logo size="md" className="!items-start" />
-                </Link>
-                <div className="flex-1 relative max-w-3xl mx-auto group">
-                    <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
-                        <Search className="text-gray-400 group-focus-within:text-black transition-colors" size={20} />
-                    </div>
-                    <input
-                        type="text"
-                        placeholder={t.common.search}
-                        value={search}
-                        onChange={(e) => {
-                            setSearch(e.target.value);
-                            setHomeSearchQuery(e.target.value);
-                        }}
-                        className="w-full bg-[#F2F3F5] border-2 border-transparent rounded-[24px] py-4 pl-14 pr-6 text-base font-bold placeholder:text-gray-400 focus:bg-white focus:border-black outline-none transition-all shadow-sm hover:bg-[#EBEDF0]"
-                    />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden md:block">
-                        <button className="bg-black text-white px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all">QIDIRISH</button>
-                    </div>
-                </div>
-                <div className="flex items-center gap-4 shrink-0">
-                    <Link href="/wishlist" className="p-4 bg-[#F2F3F5] rounded-[24px] text-gray-400 hover:text-red-500 transition-all active:scale-90 flex items-center gap-3 group shadow-sm hover:bg-white border border-transparent hover:border-gray-100">
-                        <Heart size={24} fill={wishlist.length > 0 ? "#ef4444" : "none"} className={wishlist.length > 0 ? "text-red-500" : "group-hover:scale-110 transition-transform"} />
-                        <div className="hidden xl:flex flex-col items-start -space-y-1">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-black/30">Saralangan</span>
-                            <span className="text-[11px] font-black text-black">{wishlist.length} ta</span>
-                        </div>
-                    </Link>
-                </div>
-            </div>
+
 
             <BannerSection 
                 banners={banners} 
