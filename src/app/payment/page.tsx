@@ -57,38 +57,8 @@ function PaymentContent() {
         setError(null);
 
         try {
-            // 1. Double check stock for ALL items in the ORDER before final confirmation
-            for (const item of order.items) {
-                const { data: pData } = await supabase
-                    .from("products")
-                    .select("stock_details, name")
-                    .eq("id", item.id)
-                    .single();
-                
-                if (!pData) {
-                    throw new Error(language === 'uz' ? `${item.name} bazadan topilmadi.` : `${item.name} не найден в базе.`);
-                }
-                
-                const stockDetails = pData.stock_details || {};
-                const actualStock = Object.values(stockDetails).reduce((a: number, b: any) => a + (Number(b) || 0), 0);
-
-                if (actualStock < item.quantity) {
-                    throw new Error(language === 'uz'
-                        ? `${item.name} qoldig'i yetarli emas (Faqat ${actualStock} ta qolgan).`
-                        : `${item.name} недостаточно на складе (Осталось всего ${actualStock} шт.).`);
-                }
-            }
-
-            // 2. Decrement stock
-            for (const item of order.items) {
-                // We should use an RPC for atomic decrement to avoid race conditions
-                const { error: stockError } = await supabase.rpc('decrement_product_stock', {
-                    p_id: item.id,
-                    p_quantity: item.quantity
-                });
-                
-                if (stockError) throw stockError;
-            }
+            // Note: Stock deduction is already handled atomically by the place_order RPC in the checkout page.
+            // We do not decrement stock here to avoid double deduction.
 
             // 3. Update order status
             const finalStatus = paymentMethod === 'qr' 
