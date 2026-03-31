@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { hashPassword } from "@/lib/auth-utils";
+import crypto from "crypto";
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
@@ -87,13 +88,16 @@ export async function POST(req: Request) {
                     return NextResponse.json({ ok: true });
                 }
 
+                // Foydalanuvchini bazadan izlash
+                const { data: existingUser } = await supabaseAdmin.from("users").select("id").eq("phone", session.phone).single();
+                
                 // Foydalanuvchini asosiy bazaga saqlash
                 await supabaseAdmin.from("users").upsert({
+                    id: existingUser?.id || crypto.randomUUID(),
                     phone: session.phone,
                     password: hashPassword(text), // Hash qilingan parol
                     telegram_id: chatId.toString(),
-                    created_at: new Date().toISOString()
-                });
+                }, { onConflict: 'phone' });
 
                 await sendTelegramMessage(chatId, 
                     `Muvaffaqiyatli! ✅\n\nSiz ro'yxatdan o'tdingiz.\nTelefon: <code>${session.phone}</code>\nSaytga kirib ushbu raqam va parolingizdan foydalanishingiz mumkin.`
