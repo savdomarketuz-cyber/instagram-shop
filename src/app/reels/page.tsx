@@ -91,12 +91,12 @@ export default function ReelsPage() {
     );
 
     return (
-        <div className="h-[100dvh] w-full bg-black relative flex flex-col items-center justify-center">
+        <div className="h-[calc(100vh-80px)] md:h-[calc(100vh-96px)] w-full bg-black relative flex flex-col items-center justify-center overflow-hidden">
              {/* Main Scroll Container */}
             <div 
                 ref={containerRef}
                 onScroll={handleScroll}
-                className="w-full h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar bg-black"
+                className="w-full max-w-[500px] h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar bg-black shadow-2xl relative"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
                 {reels.map((reel, index) => (

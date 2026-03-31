@@ -91,19 +91,21 @@ export const SingleReel = ({
     const inCart = cart.find(item => item.id === reel.id);
 
     return (
-        <div className="relative w-full h-[100dvh] snap-start bg-black overflow-hidden flex flex-col items-center justify-center">
-            {/* Video Background */}
-            <video
-                ref={videoRef}
-                src={reel.videoUrl}
-                className="w-full h-full object-cover"
-                loop
-                playsInline
-                onTimeUpdate={handleTimeUpdate}
-                onClick={togglePlay}
-                onWaiting={() => setIsBuffering(true)}
-                onPlaying={() => setIsBuffering(false)}
-            />
+        <div className="relative w-full h-full snap-start bg-black overflow-hidden flex flex-col items-center justify-center">
+            {/* Video Player - Optimized for 3:4 and 9:16 */}
+            <div className="relative w-full h-full bg-black flex items-center justify-center">
+                <video
+                    ref={videoRef}
+                    src={reel.videoUrl}
+                    className="max-w-full max-h-full object-contain pointer-events-auto cursor-pointer shadow-[0_0_100px_rgba(255,255,255,0.05)]"
+                    loop
+                    playsInline
+                    onTimeUpdate={handleTimeUpdate}
+                    onClick={togglePlay}
+                    onWaiting={() => setIsBuffering(true)}
+                    onPlaying={() => setIsBuffering(false)}
+                />
+            </div>
 
             {/* Content Top Overlay */}
             <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
