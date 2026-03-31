@@ -339,9 +339,9 @@ export default function AdminCategories() {
                 <div className={`bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 group ${level === 0 ? "p-8" : "p-4"}`}>
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-4">
-                            <div className={`${level === 0 ? "w-12 h-12" : "w-10 h-10"} bg-black text-white rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-all overflow-hidden`}>
+                            <div className={`${level === 0 ? "w-12 h-12" : "w-10 h-10"} bg-gray-100 text-black border border-gray-200 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-all overflow-hidden`}>
                                 {item.iconUrl ? (
-                                    <img src={item.iconUrl} className="w-full h-full object-cover" />
+                                    <img src={item.iconUrl} className="w-full h-full object-contain p-2" />
                                 ) : (
                                     <Folder size={level === 0 ? 20 : 16} />
                                 )}
@@ -499,8 +499,8 @@ export default function AdminCategories() {
                             <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Ikonka (100x100px)</label>
                             <div className="flex items-center gap-4">
                                 {iconUrl ? (
-                                    <div className="relative group w-20 h-20 rounded-2xl overflow-hidden border-2 border-gray-100 flex-shrink-0 shadow-sm">
-                                        <img src={iconUrl} className="w-full h-full object-cover" />
+                                    <div className="relative group w-20 h-20 rounded-2xl overflow-hidden border-2 border-gray-100 flex-shrink-0 shadow-sm bg-gray-100">
+                                        <img src={iconUrl} className="w-full h-full object-contain p-4" />
                                         <button
                                             type="button"
                                             onClick={() => setIconUrl("")}
