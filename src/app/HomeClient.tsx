@@ -34,13 +34,23 @@ export default function HomeClient({
     const searchParams = useSearchParams();
     const urlCategory = searchParams.get("category");
 
-    const {
-        addToCart, cart, toggleWishlist, wishlist, updateQuantity,
-        removeFromCart, user, setCachedProducts,
-        setCachedCategories, language,
-        homeScrollPosition, setHomeScrollPosition, homeSearchQuery, setHomeSearchQuery,
-        homeActiveFilter, setHomeActiveFilter, homeActiveTab, setHomeActiveTab
-    } = useStore();
+    const cart = useStore(state => state.cart);
+    const wishlist = useStore(state => state.wishlist);
+    const language = useStore(state => state.language);
+    const user = useStore(state => state.user);
+    const addToCart = useStore(state => state.addToCart);
+    const updateQuantity = useStore(state => state.updateQuantity);
+    const removeFromCart = useStore(state => state.removeFromCart);
+    const toggleWishlist = useStore(state => state.toggleWishlist);
+    const setCachedProducts = useStore(state => state.setCachedProducts);
+    const homeScrollPosition = useStore(state => state.homeScrollPosition);
+    const setHomeScrollPosition = useStore(state => state.setHomeScrollPosition);
+    const homeSearchQuery = useStore(state => state.homeSearchQuery);
+    const setHomeSearchQuery = useStore(state => state.setHomeSearchQuery);
+    const homeActiveFilter = useStore(state => state.homeActiveFilter);
+    const setHomeActiveFilter = useStore(state => state.setHomeActiveFilter);
+    const homeActiveTab = useStore(state => state.homeActiveTab);
+    const setHomeActiveTab = useStore(state => state.setHomeActiveTab);
 
     const t = translations[language];
     

@@ -201,8 +201,8 @@ export default function ProductClient({ params }: { params: { id: string } }) {
     const isWishlisted = product ? wishlist.some(item => item.id === product.id) : false;
     const cartItem = product ? cart.find((item) => item.id === product.id) : null;
     const allMedia = useMemo(() => [
-        ...(product?.videoUrl ? [{ type: 'video', url: product.videoUrl }] : []),
-        ...(product?.images && product.images.length > 0 ? product.images : [product?.image || ""]).map(img => ({ type: 'image', url: img }))
+        ...(product?.images && product.images.length > 0 ? product.images : [product?.image || ""]).map(img => ({ type: 'image', url: img })),
+        ...(product?.videoUrl ? [{ type: 'video', url: product.videoUrl }] : [])
     ], [product]);
 
     if (loading) return (
@@ -281,13 +281,13 @@ export default function ProductClient({ params }: { params: { id: string } }) {
 
                 <div className="grid grid-cols-12 gap-16">
                     {/* Left: Gallery */}
-                    <div className="col-span-12 lg:col-span-7 flex gap-6 h-[700px]">
-                        <div className="flex flex-col gap-4 overflow-y-auto no-scrollbar w-24 shrink-0">
+                    <div className="col-span-12 lg:col-span-7 flex gap-10 h-[800px]">
+                        <div className="flex flex-col gap-4 overflow-y-auto no-scrollbar w-40 shrink-0">
                             {allMedia.map((media, i) => (
                                 <button 
                                     key={i}
                                     onClick={() => setActiveImage(i)}
-                                    className={`aspect-square rounded-2xl overflow-hidden border-2 transition-all group ${activeImage === i ? "border-black scale-95 shadow-xl" : "border-gray-50 opacity-60 hover:opacity-100"}`}
+                                    className={`aspect-[3/4] rounded-3xl overflow-hidden border-2 transition-all group ${activeImage === i ? "border-black scale-95 shadow-xl" : "border-gray-50 opacity-60 hover:opacity-100"}`}
                                 >
                                     {media.type === 'image' ? (
                                         <div className="relative w-full h-full">
@@ -296,11 +296,23 @@ export default function ProductClient({ params }: { params: { id: string } }) {
                                                 fill
                                                 className="object-cover group-hover:scale-110 transition-transform" 
                                                 alt={`Thumbnail ${i}`}
-                                                sizes="96px"
+                                                sizes="160px"
                                             />
                                         </div>
                                     ) : (
-                                        <div className="w-full h-full bg-black flex items-center justify-center text-white"><Loader2 size={16} /></div>
+                                        <div className="relative w-full h-full bg-black">
+                                            <video 
+                                                src={media.url} 
+                                                className="w-full h-full object-cover opacity-60"
+                                                muted
+                                                playsInline
+                                            />
+                                            <div className="absolute inset-0 flex items-center justify-center text-white">
+                                                <div className="bg-black/50 backdrop-blur-md rounded-full p-2">
+                                                    <Loader2 size={20} className="animate-spin" />
+                                                </div>
+                                            </div>
+                                        </div>
                                     )}
                                 </button>
                             ))}

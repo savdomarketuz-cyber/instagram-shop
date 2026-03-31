@@ -13,9 +13,10 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 
 
 export default function AppWrapper({ children }: { children: React.ReactNode }) {
-    const { cart, user } = useStore();
-    const [isSplashActive, setIsSplashActive] = useState(true);
+    const cart = useStore(state => state.cart);
+    const user = useStore(state => state.user);
     const toast = useStore(state => state.toast);
+    const [isSplashActive, setIsSplashActive] = useState(false);
     const pathname = usePathname();
 
     // Real-time Activity & Action Tracking
@@ -44,31 +45,32 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
         };
 
         const updateActivity = async (action: string = "Ko'rmoqda") => {
-            try {
-                let currentIp = sessionStorage.getItem("tracked_ip") || "Unknown";
-                if (currentIp === "Unknown") {
-                    try {
-                        const ipRes = await fetch("https://api.ipify.org?format=json");
-                        const ipData = await ipRes.json();
-                        currentIp = ipData.ip;
-                        sessionStorage.setItem("tracked_ip", currentIp);
-                    } catch { }
-                }
+            // Speed optimization: track ONLY on actual interaction or start, don't wait for IP
+            setTimeout(async () => {
+                try {
+                    let currentIp = sessionStorage.getItem("tracked_ip") || "Unknown";
+                    if (currentIp === "Unknown") {
+                        const ipRes = await fetch("https://api.ipify.org?format=json").catch(() => null);
+                        if (ipRes) {
+                            const ipData = await ipRes.json();
+                            currentIp = ipData.ip;
+                            sessionStorage.setItem("tracked_ip", currentIp);
+                        }
+                    }
 
-                await supabase.from("user_status").upsert({
-                    id: sessionId,
-                    user_phone: user?.phone || null,
-                    name: user?.name || "Mehmon",
-                    ip_address: currentIp,
-                    last_seen: new Date().toISOString(),
-                    is_online: true,
-                    current_path: getFriendlyPath(pathname),
-                    last_action: action,
-                    type: user?.phone ? "user" : "visitor"
-                });
-            } catch (e) {
-                // Silent fail for tracking
-            }
+                    await supabase.from("user_status").upsert({
+                        id: sessionId,
+                        user_phone: user?.phone || null,
+                        name: user?.name || "Mehmon",
+                        ip_address: currentIp,
+                        last_seen: new Date().toISOString(),
+                        is_online: true,
+                        current_path: getFriendlyPath(pathname),
+                        last_action: action,
+                        type: user?.phone ? "user" : "visitor"
+                    }, { onConflict: 'id' });
+                } catch (e) { }
+            }, 0);
         };
 
         // Click tracking — debounce bilan optimallashtirilgan
@@ -136,19 +138,18 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
         const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
         const splash = document.getElementById('pwa-splash');
 
-        if (splash && isPWA) {
-            // In PWA mode, show animation but faster (max 1.5s instead of 4s)
+        if (isPWA && splash) {
+            setIsSplashActive(true);
             const timer = setTimeout(() => {
                 splash.style.transition = 'opacity 0.5s ease-out, visibility 0.5s';
                 splash.style.opacity = '0';
                 splash.style.visibility = 'hidden';
                 setIsSplashActive(false);
                 setTimeout(() => splash.remove(), 500);
-            }, 1500);
+            }, 1200);
             return () => clearTimeout(timer);
         } else {
-            // In regular browser mode, or if splash missing - show site IMMEDIATELY
-            if (splash) splash.remove();
+            if (splash) splash.style.display = 'none';
             setIsSplashActive(false);
         }
     }, []);
@@ -191,7 +192,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
         <div className={`
             mx-auto bg-white min-h-screen relative shadow-2xl 
             ${showNav ? 'md:pl-64' : ''}
-            ${isSplashActive ? 'opacity-0 overflow-hidden h-screen' : 'opacity-100 transition-opacity duration-300'}
+            ${isSplashActive ? 'overflow-hidden h-screen' : ''}
         `}>
             <ErrorBoundary>
                 <PWAInstallPrompt />

@@ -10,16 +10,13 @@ import { usePathname } from "next/navigation";
 import { translations } from "@/lib/translations";
 
 export default function Navigation() {
-    const { cart, language } = useStore();
+    const cart = useStore(state => state.cart);
+    const language = useStore(state => state.language);
     const pathname = usePathname();
     const t = translations[language];
-    const [cartCount, setCartCount] = useState(0);
-
+    
+    const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
     const isReels = pathname === "/reels";
-
-    useEffect(() => {
-        setCartCount(cart.reduce((sum, item) => sum + item.quantity, 0));
-    }, [cart]);
 
     return (
         <>
