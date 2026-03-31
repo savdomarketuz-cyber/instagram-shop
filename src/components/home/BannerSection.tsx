@@ -34,9 +34,9 @@ export const BannerSection = ({ banners, bannerSettings, currentBanner, setCurre
     };
 
     return (
-        <div className="mt-4 px-4">
+        <div className="mt-8 px-0 md:px-10 overflow-hidden">
             <div
-                className="relative overflow-hidden bg-gray-100 transition-all duration-500"
+                className="relative overflow-hidden bg-gray-50 transition-all duration-700 shadow-2xl shadow-black/5"
                 style={{
                     height: `${bannerSettings.desktopHeight}px`,
                     borderRadius: `${bannerSettings.borderRadius}px`

@@ -65,11 +65,11 @@ export const CategoryFilter = ({
     }
     
     return (
-        <div className="mt-8 px-4 flex flex-col gap-3">
-            <div className="flex gap-3 overflow-x-auto no-scrollbar py-2">
+        <div className="mt-12 px-0 flex flex-col gap-6">
+            <div className="flex gap-3 overflow-x-auto no-scrollbar py-2 px-2 md:px-0">
                 <button
                     onClick={() => handleMainClick("all")}
-                    className={`shrink-0 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeFilter === 'all' ? 'bg-black text-white shadow-xl shadow-black/20' : 'bg-gray-50 text-gray-400'}`}
+                    className={`shrink-0 px-8 py-4 rounded-[24px] text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 border-2 ${activeFilter === 'all' ? 'bg-black text-white border-black shadow-2xl shadow-black/20' : 'bg-[#F2F3F5] text-gray-400 border-transparent hover:bg-[#EBEDF0] hover:text-black'}`}
                 >
                     {t.common.all}
                 </button>
@@ -77,7 +77,7 @@ export const CategoryFilter = ({
                     <button
                         key={cat.id}
                         onClick={() => handleMainClick(cat.id)}
-                        className={`shrink-0 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeFilter === cat.id || activeParent === cat.id ? 'bg-black text-white shadow-xl shadow-black/20' : 'bg-gray-50 text-gray-400'}`}
+                        className={`shrink-0 px-8 py-4 rounded-[24px] text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 border-2 ${activeFilter === cat.id || activeParent === cat.id ? 'bg-black text-white border-black shadow-2xl shadow-black/20' : 'bg-[#F2F3F5] text-gray-400 border-transparent hover:bg-[#EBEDF0] hover:text-black'}`}
                     >
                         {cat[`name_${language}`] || cat.name}
                     </button>
