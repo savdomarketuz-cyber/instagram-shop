@@ -24,7 +24,7 @@ import { RelatedProducts } from "@/components/product/RelatedProducts";
 
 import type { Product } from "@/types";
 
-export default function ProductClient({ params }: { params: { id: string } }) {
+export default function ProductClient({ params, initialProduct }: { params: { id: string }, initialProduct?: Product | null }) {
     const router = useRouter();
     const { 
         addToCart, toggleWishlist, wishlist, cart, updateQuantity, 
@@ -33,8 +33,8 @@ export default function ProductClient({ params }: { params: { id: string } }) {
     const t = translations[language];
 
     // Core Data State
-    const [product, setProduct] = useState<Product | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [product, setProduct] = useState<Product | null>(initialProduct || null);
+    const [loading, setLoading] = useState(!initialProduct);
     const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
     const [boughtTogether, setBoughtTogether] = useState<Product[]>([]);
     const [popularProducts, setPopularProducts] = useState<Product[]>([]);
@@ -63,7 +63,19 @@ export default function ProductClient({ params }: { params: { id: string } }) {
 
     // Initial Fetch
     useEffect(() => {
-        fetchProduct();
+        if (!initialProduct || initialProduct.id !== params.id) {
+            fetchProduct();
+        } else {
+            // Background revalidation or parallel fetch of secondary data
+            Promise.all([
+                fetchRelated(initialProduct.category as string, initialProduct.id),
+                fetchBoughtTogether(),
+                fetchPopular(),
+                initialProduct.groupId ? fetchGroup(initialProduct.groupId) : Promise.resolve(),
+                fetchDeliverySettings(initialProduct),
+                // fetchCat secondary
+            ]);
+        }
         fetchComments();
     }, [params.id]);
 
