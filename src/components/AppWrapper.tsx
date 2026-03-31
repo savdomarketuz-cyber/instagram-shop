@@ -186,7 +186,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
         return <>{children}</>;
     }
 
-    const showNav = !isProductDetail && !isCheckout && !isPayment && !isChat;
+    const showNav = !isCheckout && !isPayment && !isChat;
 
     return (
         <div className={`
