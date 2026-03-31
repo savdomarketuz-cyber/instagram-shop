@@ -51,17 +51,18 @@ export const ProductMedia = ({
         setIsDragging(false);
         if (ref.current) {
             ref.current.style.scrollBehavior = 'smooth';
-            const index = Math.round(ref.current.scrollLeft / ref.current.offsetWidth);
-            handleMediaSelect(index, ref === lightboxCarouselRef);
+            // Custom snap logic for carousel with next items preview
+            const width = ref.current.offsetWidth * 0.85; 
+            const index = Math.round(ref.current.scrollLeft / width);
+            handleMediaSelect(Math.min(index, allMedia.length - 1));
         }
     };
 
-    const handleMediaSelect = (index: number, isLightbox: boolean = false) => {
+    const handleMediaSelect = (index: number) => {
         setActiveImage(index);
-        const ref = isLightbox ? lightboxCarouselRef : carouselRef;
-        if (ref.current) {
-            const width = ref.current.offsetWidth;
-            ref.current.scrollTo({
+        if (carouselRef.current) {
+            const width = carouselRef.current.offsetWidth * 0.85; // match item width + gap
+            carouselRef.current.scrollTo({
                 left: index * width,
                 behavior: 'smooth'
             });
@@ -70,8 +71,11 @@ export const ProductMedia = ({
 
     const handleScroll = () => {
         if (carouselRef.current && !isDragging) {
-            const index = Math.round(carouselRef.current.scrollLeft / carouselRef.current.offsetWidth);
-            setActiveImage(index);
+            const width = carouselRef.current.offsetWidth * 0.85;
+            const index = Math.round(carouselRef.current.scrollLeft / width);
+            if (index !== activeImage && index < allMedia.length) {
+                setActiveImage(index);
+            }
         }
     };
 
@@ -86,7 +90,8 @@ export const ProductMedia = ({
 
     return (
         <>
-            <div className="relative w-full aspect-[3/4] bg-white overflow-hidden group/media-section">
+            <div className="relative w-full bg-white pt-2 pb-6 overflow-hidden group/media-section">
+                {/* Horizontal Carousel with Next Preview (Social Style) */}
                 <div
                     ref={carouselRef}
                     onScroll={handleScroll}
@@ -94,10 +99,15 @@ export const ProductMedia = ({
                     onMouseMove={(e) => onMouseMove(e, carouselRef)}
                     onMouseUp={() => stopDragging(carouselRef)}
                     onMouseLeave={() => stopDragging(carouselRef)}
-                    className={`flex w-full h-full overflow-x-auto snap-x snap-mandatory no-scrollbar ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+                    className={`flex w-full h-full overflow-x-auto no-scrollbar px-5 gap-3 ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+                    style={{ scrollSnapType: 'x mandatory' }}
                 >
                     {allMedia.map((media, i) => (
-                        <div key={i} className="min-w-full h-full snap-center bg-white flex items-center justify-center relative pointer-events-none">
+                        <div 
+                            key={i} 
+                            style={{ scrollSnapAlign: 'start' }}
+                            className="min-w-[85vw] aspect-[3/4] rounded-[28px] overflow-hidden bg-gray-50 flex items-center justify-center relative shadow-sm border border-gray-100"
+                        >
                             <div className="w-full h-full pointer-events-auto">
                                 <MediaItem 
                                     media={media} 
@@ -109,17 +119,19 @@ export const ProductMedia = ({
                             </div>
                         </div>
                     ))}
+                    {/* Extra space at the end */}
+                    <div className="min-w-[10vw]" />
                 </div>
                 
                 {/* Dots / Pagination */}
-                <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-1.5 z-20">
+                <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-1.5 z-20 pointer-events-none">
                     {allMedia.map((_, i) => (
                         <div key={i} className={`h-1 rounded-full transition-all duration-500 ${activeImage === i ? "w-6 bg-black/40" : "w-1 bg-black/10"}`} />
                     ))}
                 </div>
 
-                {/* Back & Wishlist Controls */}
-                <div className="absolute top-6 left-6 right-6 flex justify-between items-center z-30 pointer-events-none">
+                {/* Back & Wishlist Controls - Floating Over Image */}
+                <div className="absolute top-8 left-8 right-8 flex justify-between items-center z-30 pointer-events-none">
                     <button onClick={() => router.back()} className="p-4 bg-white/80 backdrop-blur-xl text-black rounded-[24px] shadow-xl active:scale-95 transition-all border border-white/50 pointer-events-auto">
                         <ChevronLeft size={24} strokeWidth={3} />
                     </button>
@@ -139,6 +151,7 @@ export const ProductMedia = ({
                 </div>
             </div>
 
+            {/* Lightbox remains standard full screen */}
             {isLightboxOpen && (
                 <div className="fixed inset-0 bg-black z-[100] flex flex-col items-center justify-center animate-in fade-in duration-300">
                     <button onClick={() => setIsLightboxOpen(false)} className="absolute top-10 right-10 p-4 bg-white/10 text-white rounded-full backdrop-blur-xl transition-all z-[110] border border-white/10">
