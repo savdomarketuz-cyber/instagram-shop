@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabase";
+import { sendOrderNotification } from "@/lib/telegram";
 
 // POST URL for both Prepare and Complete
 export async function POST(req: Request) {
@@ -163,6 +164,9 @@ export async function POST(req: Request) {
                 .from("orders")
                 .update({ status: "paid" })
                 .eq("id", merchant_trans_id);
+
+            // Send Telegram Notification
+            await sendOrderNotification(merchant_trans_id, 'click');
 
             return NextResponse.json({
                 click_trans_id,

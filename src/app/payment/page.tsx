@@ -18,7 +18,7 @@ function PaymentContent() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [loadingOrder, setLoadingOrder] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [paymentMethod, setPaymentMethod] = useState<"click" | "qr" | "cash">("click");
+    const [paymentMethod, setPaymentMethod] = useState<"click" | "cash">("click");
 
     useEffect(() => {
         if (orderId) {
@@ -61,9 +61,9 @@ function PaymentContent() {
             // We do not decrement stock here to avoid double deduction.
 
             // 3. Update order status
-            const finalStatus = paymentMethod === 'qr' 
-                ? (language === 'uz' ? "To'lov tekshirilmoqda" : "Проверка оплаты")
-                : (language === 'uz' ? "Qabul qilindi" : "Принят");
+            const finalStatus = paymentMethod === 'cash' 
+                ? (language === 'uz' ? "Qabul qilindi" : "Принят")
+                : (language === 'uz' ? "To'lov kutilmoqda" : "Ожидание оплаты");
 
             await supabase
                 .from("orders")
@@ -88,6 +88,14 @@ function PaymentContent() {
                 return;
             }
 
+            if (paymentMethod === "cash") {
+                await fetch('/api/notify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderId: orderId, method: 'cash' })
+                });
+            }
+
             router.push("/order-success");
         } catch (err: any) {
             console.error("Payment error:", err);
@@ -110,28 +118,6 @@ function PaymentContent() {
             </h1>
 
             <div className="space-y-4 mb-8">
-                {/* Paynet QR Option */}
-                <div
-                    onClick={() => setPaymentMethod("qr")}
-                    className={`p-6 border-2 rounded-[32px] cursor-pointer transition-all ${paymentMethod === "qr" ? "border-black bg-gray-50 shadow-xl shadow-black/5" : "border-gray-100"
-                        }`}
-                >
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-4">
-                            <div className={`p-3 rounded-2xl ${paymentMethod === "qr" ? "bg-black text-white" : "bg-gray-100"}`}>
-                                <QrCode size={20} />
-                            </div>
-                            <span className="font-black text-sm italic uppercase tracking-tighter">
-                                {language === 'uz' ? 'Paynet QR orqali (Oldindan)' : 'Через Paynet QR (Предоплата)'}
-                            </span>
-                        </div>
-                        <input type="radio" checked={paymentMethod === "qr"} readOnly className="accent-black w-5 h-5" />
-                    </div>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest ml-14">
-                        {language === 'uz' ? 'Click, Payme, Paynet orqali skaner qiling' : 'Сканируйте через Click, Payme, Paynet'}
-                    </p>
-                </div>
-
                 {/* Click Option */}
                 <div
                     onClick={() => setPaymentMethod("click")}
@@ -178,30 +164,6 @@ function PaymentContent() {
                     </p>
                 </div>
             </div>
-
-            {/* QR Content */}
-            {paymentMethod === "qr" && (
-                <div className="mb-8 p-8 bg-black text-white rounded-[40px] shadow-2xl relative overflow-hidden text-center">
-                    <h3 className="text-xs font-black uppercase tracking-widest mb-6 flex items-center justify-center gap-3">
-                        <QrCode size={16} /> {language === 'uz' ? 'QR-kodni skanerlang' : 'Сканируйте QR-код'}
-                    </h3>
-                    <div className="bg-white p-6 rounded-[32px] inline-block shadow-2xl mb-6 scale-90 md:scale-100">
-                        <img
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent("00020101021140440012qr-online.uz01186qzrsRa1VsqN5t22Bd0202115204531153038605802UZ5910AO\"PAYNET\"6008Tashkent610610002164280002uz0106PAYNET0208Toshkent80520012qr-online.uz03097120207070419marketing@paynet.uz63049C69")}`}
-                            alt="Paynet QR"
-                            className="w-56 h-56"
-                        />
-                    </div>
-                    <div className="flex items-start gap-3 text-left text-[10px] font-bold text-white/50 bg-white/5 p-4 rounded-2xl border border-white/5">
-                        <Clock size={16} className="flex-shrink-0 mt-0.5" />
-                        <p>
-                            {language === 'uz'
-                                ? 'To\'lovlar 1 ish soati ichida administrator tomonidan tasdiqlanadi.'
-                                : 'Платежи подтверждаются администратором в течение 1 рабочего часа.'}
-                        </p>
-                    </div>
-                </div>
-            )}
 
             {/* Error Message */}
             {error && (
