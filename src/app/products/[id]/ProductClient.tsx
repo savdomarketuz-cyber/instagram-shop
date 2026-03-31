@@ -608,7 +608,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
             />
 
             {/* Mobile Fixed Bottom Bar (Floating above Nav) */}
-            <div className={`md:hidden fixed bottom-[72px] left-4 right-4 z-[60] bg-white/95 backdrop-blur-2xl border border-gray-100 p-3 rounded-[32px] shadow-2xl transition-all duration-500 transform ${isScrolledPast ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}>
+            <div className={`md:hidden fixed bottom-[92px] left-4 right-4 z-[60] bg-white/95 backdrop-blur-2xl border border-gray-100 p-3 rounded-[32px] shadow-2xl transition-all duration-500 transform ${isScrolledPast ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}>
                 <div className="flex gap-2 items-stretch h-14">
                     <button 
                         onClick={handleFastBuy}

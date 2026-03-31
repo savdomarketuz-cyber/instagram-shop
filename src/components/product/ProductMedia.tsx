@@ -86,7 +86,7 @@ export const ProductMedia = ({
 
     return (
         <>
-            <div className="relative w-full aspect-[3/4] bg-white overflow-hidden group/media-section">
+            <div className="relative w-full aspect-[3/4] bg-white overflow-hidden group/media-section rounded-b-[20px] shadow-sm">
                 <div
                     ref={carouselRef}
                     onScroll={handleScroll}
