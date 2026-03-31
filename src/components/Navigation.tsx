@@ -139,7 +139,7 @@ export default function Navigation() {
             </header>
 
             {/* Mobile Bottom Bar (Independent Layer) - Always Visible */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-3xl border-t border-gray-100 flex justify-between items-center z-[110] px-4 py-2 pb-8 rounded-t-[20px] shadow-[0_-15px_40px_rgba(0,0,0,0.08)]">
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-3xl border-t border-gray-100 flex justify-between items-center z-[110] px-4 py-2 pb-8 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
                 <Link href="/" className={`flex flex-col items-center py-2 px-3 gap-1 ${pathname === '/' ? 'text-black' : 'text-gray-400'}`}>
                     <LayoutGrid size={22} strokeWidth={pathname === '/' ? 3 : 2} />
                     <span className="text-[8px] font-bold uppercase tracking-tight">Asosiy</span>
