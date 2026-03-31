@@ -83,6 +83,8 @@ export const viewport = {
 
 import AppWrapper from "@/components/AppWrapper";
 import YandexMetrika from "@/components/YandexMetrika";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export default function RootLayout({
     children,
@@ -182,6 +184,8 @@ export default function RootLayout({
                     </AppWrapper>
                 </div>
                 <YandexMetrika ymid="107383008" />
+                <Analytics />
+                <SpeedInsights />
             </body>
         </html>
     );
