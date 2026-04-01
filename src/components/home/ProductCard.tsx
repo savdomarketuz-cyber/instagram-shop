@@ -107,7 +107,7 @@ export const ProductCard = ({
                     // Delayed navigation to let the animation "breathe" and distraction work
                     setTimeout(() => {
                         router.push(`/products/${item.id}`);
-                    }, 400); 
+                    }, 300); 
                 }}
             >
                 {/* Global Top Loading Bar */}
