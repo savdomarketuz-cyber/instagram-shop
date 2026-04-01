@@ -40,6 +40,9 @@ const nextConfig = {
     images: {
         unoptimized: false,
         formats: ['image/avif', 'image/webp'],
+        minimumCacheTTL: 3600,
+        deviceSizes: [640, 750, 828, 1080, 1200],
+        imageSizes: [16, 32, 48, 64, 96, 128, 256],
         remotePatterns: [
             { protocol: 'https', hostname: 'images.unsplash.com' },
             { protocol: 'https', hostname: 'storage.yandexcloud.net' },
@@ -47,6 +50,7 @@ const nextConfig = {
             { protocol: 'https', hostname: '**.googleapis.com' },
             { protocol: 'https', hostname: '**.wb.ru' },
             { protocol: 'https', hostname: 'images.uzum.uz' },
+            { protocol: 'https', hostname: '**.supabase.co' },
         ],
     },
 };

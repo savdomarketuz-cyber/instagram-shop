@@ -115,6 +115,7 @@ export const ProductMedia = ({
                                     isLightbox={false} 
                                     onClick={() => !isDragging && setIsLightboxOpen(true)} 
                                     alt={product.name}
+                                    priority={i === 0}
                                 />
                             </div>
                         </div>

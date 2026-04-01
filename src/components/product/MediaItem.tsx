@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { Play } from "lucide-react";
+import Image from "next/image";
 
 interface MediaItemProps {
     media: {
@@ -12,9 +13,10 @@ interface MediaItemProps {
     isLightbox: boolean;
     onClick?: () => void;
     alt?: string;
+    priority?: boolean;
 }
 
-export const MediaItem = ({ media, isActive, isLightbox, onClick, alt }: MediaItemProps) => {
+export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority = false }: MediaItemProps) => {
     const videoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
@@ -48,7 +50,7 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt }: MediaIt
                 <video
                     ref={videoRef}
                     src={media.url}
-                    className={isLightbox ? "w-full h-full object-cover" : "w-full h-full object-cover"}
+                    className="w-full h-full object-cover"
                     muted={!isLightbox}
                     loop
                     playsInline
@@ -64,26 +66,44 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt }: MediaIt
         );
     }
 
-    return (
-        <div
-            className={`w-full h-full flex items-center justify-center cursor-pointer relative overflow-hidden ${isLightbox ? 'bg-black' : ''}`}
-            onClick={onClick}
-        >
-            {/* Blurred Background for Lightbox (Optional, but kept for edges if not perfect cover) */}
-            {isLightbox && (
+    // Lightbox uses native img for pinch-zoom and full resolution
+    if (isLightbox) {
+        return (
+            <div
+                className="w-full h-full flex items-center justify-center cursor-pointer relative overflow-hidden bg-black"
+                onClick={onClick}
+            >
                 <img
                     src={media.url}
                     alt=""
                     className="absolute inset-0 w-full h-full object-cover scale-150 blur-3xl opacity-50"
                     draggable={false}
                 />
-            )}
+                <img
+                    src={media.url}
+                    alt={alt || "Velari product image"}
+                    className="relative max-w-[95%] max-h-[90%] object-contain animate-in zoom-in-95 duration-500 shadow-2xl rounded-lg"
+                    draggable={false}
+                />
+            </div>
+        );
+    }
 
-            <img
+    // Normal carousel: use Next.js Image for auto WebP/AVIF optimization
+    return (
+        <div
+            className="w-full h-full flex items-center justify-center cursor-pointer relative overflow-hidden"
+            onClick={onClick}
+        >
+            <Image
                 src={media.url}
                 alt={alt || "Velari product image"}
-                className={isLightbox ? "relative max-w-[95%] max-h-[90%] object-contain animate-in zoom-in-95 duration-500 shadow-2xl rounded-lg" : "w-full h-full object-cover zoom-animation"}
-                draggable={false}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 85vw, 60vw"
+                quality={80}
+                priority={priority}
+                referrerPolicy="no-referrer"
             />
         </div>
     );

@@ -25,11 +25,40 @@ export const ProductCard = ({
     item, language, t, cart, wishlist, toggleWishlist, addToCart, updateQuantity, removeFromCart, priority = false
 }: ProductCardProps) => {
     const videoRef = useRef<HTMLVideoElement>(null);
+    const cardRef = useRef<HTMLDivElement>(null);
     const [isHovered, setIsHovered] = useState(false);
+    const [isPrefetched, setIsPrefetched] = useState(false);
     const isInCart = cart.find(ci => ci.id === item.id);
     const isWished = wishlist.some(w => w.id === item.id);
 
     const totalStock = item.stockDetails ? Object.values(item.stockDetails).reduce((a: any, b: any) => a + (Number(b) || 0), 0) : 0;
+
+    // Prefetch all product images when card becomes visible
+    useEffect(() => {
+        if (isPrefetched || !cardRef.current) return;
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    // Prefetch all images for this product in the background
+                    const images = item.images && item.images.length > 0 ? item.images : [item.image];
+                    images.forEach((src) => {
+                        if (src && !src.endsWith('.mp4')) {
+                            const link = document.createElement('link');
+                            link.rel = 'prefetch';
+                            link.as = 'image';
+                            link.href = src;
+                            document.head.appendChild(link);
+                        }
+                    });
+                    setIsPrefetched(true);
+                    observer.disconnect();
+                }
+            },
+            { rootMargin: '200px', threshold: 0.1 }
+        );
+        observer.observe(cardRef.current);
+        return () => observer.disconnect();
+    }, [isPrefetched, item.images, item.image]);
 
     const handleToggleWishlist = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -44,6 +73,7 @@ export const ProductCard = ({
 
     return (
         <div 
+            ref={cardRef}
             className="group relative flex flex-col h-full bg-white rounded-xl overflow-hidden shadow-sm border border-gray-50 active:scale-[0.98] transition-all"
             style={{ overflowAnchor: 'none' }}
             onMouseEnter={() => setIsHovered(true)}
