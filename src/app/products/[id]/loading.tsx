@@ -1,6 +1,6 @@
 export default function Loading() {
     return (
-        <div className="min-h-screen bg-white font-sans">
+        <div className="min-h-screen bg-white font-sans animate-page-in">
             <style>{`
                 @keyframes shimmer {
                     0% { background-position: -400px 0; }

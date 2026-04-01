@@ -82,4 +82,15 @@ body {
       transform: scale(1) translateY(0);
     }
   }
+
+  .animate-loading-bar {
+    animation: loadingBar 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  @keyframes loadingBar {
+    0% { transform: scaleX(0); }
+    10% { transform: scaleX(0.3); }
+    50% { transform: scaleX(0.6); }
+    100% { transform: scaleX(0.8); }
+  }
 }
