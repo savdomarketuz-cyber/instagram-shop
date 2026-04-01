@@ -1,13 +1,9 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Star, Heart, Check, Minus, Plus, Truck, Loader2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import { mapProduct } from "@/lib/mappers";
-import { useStore } from "@/store/store";
+import { Star, Heart, Check, Minus, Plus, Truck } from "lucide-react";
 
 import { Product, CartItem } from "@/types";
 import { TranslationKeys } from "@/lib/translations";
@@ -28,56 +24,10 @@ interface ProductCardProps {
 export const ProductCard = ({
     item, language, t, cart, wishlist, toggleWishlist, addToCart, updateQuantity, removeFromCart, priority = false
 }: ProductCardProps) => {
-    const router = useRouter();
-    const { setPrefetchedProduct } = useStore();
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const cardRef = useRef<HTMLDivElement>(null);
-    const [isHovered, setIsHovered] = useState(false);
-    const [isPrefetched, setIsPrefetched] = useState(false);
-    const [isNavigating, setIsNavigating] = useState(false);
     const isInCart = cart.find(ci => ci.id === item.id);
     const isWished = wishlist.some(w => w.id === item.id);
 
     const totalStock = item.stockDetails ? Object.values(item.stockDetails).reduce((a: any, b: any) => a + (Number(b) || 0), 0) : 0;
-
-    // Prefetch all product images and data when card becomes visible
-    useEffect(() => {
-        if (isPrefetched || !cardRef.current) return;
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0].isIntersecting) {
-                    // Prefetch all images for this product in the background
-                    const images = item.images && item.images.length > 0 ? item.images : [item.image];
-                    images.forEach((src) => {
-                        if (src && !src.endsWith('.mp4')) {
-                            const link = document.createElement('link');
-                            link.rel = 'prefetch';
-                            link.as = 'image';
-                            link.href = src;
-                            document.head.appendChild(link);
-                        }
-                    });
-
-                    // Prefetch full product data from Supabase for instant page load
-                    supabase.from("products")
-                        .select("*")
-                        .eq("id", item.id)
-                        .single()
-                        .then(({ data }) => {
-                            if (data) {
-                                setPrefetchedProduct(mapProduct(data));
-                            }
-                        });
-
-                    setIsPrefetched(true);
-                    observer.disconnect();
-                }
-            },
-            { rootMargin: '200px', threshold: 0.1 }
-        );
-        observer.observe(cardRef.current);
-        return () => observer.disconnect();
-    }, [isPrefetched, item.images, item.image, item.id, setPrefetchedProduct]);
 
     const handleToggleWishlist = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -90,74 +40,34 @@ export const ProductCard = ({
         addToCart(item);
     };
 
+    const mainMedia = item.images?.[0] || item.image || "/placeholder.png";
+    const isVideo = mainMedia.toLowerCase().endsWith('.mp4');
+
     return (
         <div 
-            ref={cardRef}
-            className={`group relative flex flex-col h-full bg-white rounded-xl overflow-hidden shadow-sm border border-gray-50 active:scale-[0.98] transition-all duration-300 ${isNavigating ? 'scale-[1.05] z-[100] shadow-2xl relative' : 'hover:shadow-md'}`}
+            className="group relative flex flex-col h-full bg-white rounded-xl overflow-hidden shadow-sm border border-gray-50 active:scale-[0.97] transition-transform duration-150"
             style={{ overflowAnchor: 'none' }}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
         >
-            <Link 
-                href={`/products/${item.id}`} 
-                className="flex flex-col flex-1 outline-none relative"
-                onClick={(e) => {
-                    e.preventDefault();
-                    setIsNavigating(true);
-                    // Delayed navigation to let the animation "breathe" and distraction work
-                    setTimeout(() => {
-                        router.push(`/products/${item.id}`);
-                    }, 300); 
-                }}
-            >
-                {/* Global Top Loading Bar */}
-                {isNavigating && (
-                    <div className="fixed top-0 left-0 right-0 h-1 bg-[#7000FF] z-[1000] origin-left animate-loading-bar" />
-                )}
+            <Link href={`/products/${item.id}`} className="flex flex-col flex-1 outline-none" prefetch={true}>
                 <div className="relative aspect-[3/4] overflow-hidden bg-gray-50 border-b border-gray-50">
-                    {(() => {
-                        const mainMedia = item.images?.[0] || item.image || "/placeholder.png";
-                        const isVideo = mainMedia.toLowerCase().endsWith('.mp4');
-                        
-                        if (isVideo) {
-                            return (
-                                <video
-                                    src={mainMedia}
-                                    className={`absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105`}
-                                    autoPlay
-                                    muted
-                                    loop
-                                    playsInline
-                                />
-                            );
-                        }
-
-                        return (
-                            <Image
-                                src={mainMedia}
-                                alt={item[`name_${language}`] || item.name}
-                                fill
-                                sizes="(max-width: 768px) 50vw, 33vw"
-                                className={`object-cover transition-transform duration-700 group-hover:scale-105 ${item.videoUrl && isHovered ? 'opacity-0' : 'opacity-100'}`}
-                                priority={priority}
-                                referrerPolicy="no-referrer"
-                            />
-                        );
-                    })()}
-
-                    {item.videoUrl && (
+                    {isVideo ? (
                         <video
-                            ref={videoRef}
-                            src={item.videoUrl}
-                            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 pointer-events-none ${isHovered ? 'opacity-100' : 'opacity-0'}`}
+                            src={mainMedia}
+                            className="absolute inset-0 w-full h-full object-cover"
+                            autoPlay
                             muted
                             loop
                             playsInline
-                            onMouseEnter={() => videoRef.current?.play()}
-                            onMouseLeave={() => {
-                                videoRef.current?.pause();
-                                if (videoRef.current) videoRef.current.currentTime = 0;
-                            }}
+                        />
+                    ) : (
+                        <Image
+                            src={mainMedia}
+                            alt={item[`name_${language}`] || item.name}
+                            fill
+                            sizes="(max-width: 768px) 50vw, 33vw"
+                            className="object-cover"
+                            priority={priority}
+                            referrerPolicy="no-referrer"
                         />
                     )}
 
