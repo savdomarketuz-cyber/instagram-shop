@@ -28,13 +28,14 @@ export default function ProductClient({ params, initialProduct }: { params: { id
     const router = useRouter();
     const { 
         addToCart, toggleWishlist, wishlist, cart, updateQuantity, 
-        removeFromCart, user, language, showToast 
+        removeFromCart, user, language, showToast, prefetchedProducts 
     } = useStore();
     const t = translations[language];
 
     // Core Data State
-    const [product, setProduct] = useState<Product | null>(initialProduct || null);
-    const [loading, setLoading] = useState(!initialProduct);
+    const prefetched = prefetchedProducts[params.id];
+    const [product, setProduct] = useState<Product | null>(initialProduct || prefetched || null);
+    const [loading, setLoading] = useState<boolean>(!initialProduct && !prefetched);
     const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
     const [boughtTogether, setBoughtTogether] = useState<Product[]>([]);
     const [popularProducts, setPopularProducts] = useState<Product[]>([]);
@@ -80,7 +81,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
     }, [params.id]);
 
     const fetchProduct = async () => {
-        setLoading(true);
+        if (!product) setLoading(true);
         try {
             const { data: productData, error } = await supabase
                 .from("products")

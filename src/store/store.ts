@@ -33,6 +33,8 @@ interface StoreState {
     setHomeActiveTab: (tab: string) => void;
     toast: Toast | null;
     showToast: (message: string, type?: Toast['type']) => void;
+    prefetchedProducts: Record<string, Product>;
+    setPrefetchedProduct: (product: Product) => void;
 }
 
 export const useStore = create<StoreState>()(
@@ -97,9 +99,23 @@ export const useStore = create<StoreState>()(
                 set({ toast: { message, type } });
                 setTimeout(() => set({ toast: null }), 3000);
             },
+            prefetchedProducts: {},
+            setPrefetchedProduct: (product) => set((state) => ({
+                prefetchedProducts: { ...state.prefetchedProducts, [product.id]: product }
+            })),
         }),
         {
             name: "instagram-shop-storage",
+            partialize: (state) => ({
+                cart: state.cart,
+                wishlist: state.wishlist,
+                user: state.user,
+                language: state.language,
+                cachedProducts: state.cachedProducts,
+                cachedCategories: state.cachedCategories,
+                homeActiveFilter: state.homeActiveFilter,
+                homeActiveTab: state.homeActiveTab,
+            }),
         }
     )
 );

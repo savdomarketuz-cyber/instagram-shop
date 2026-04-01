@@ -4,6 +4,9 @@ import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Star, Heart, Check, Minus, Plus, Truck, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { mapProduct } from "@/lib/mappers";
+import { useStore } from "@/store/store";
 
 import { Product, CartItem } from "@/types";
 import { TranslationKeys } from "@/lib/translations";
@@ -24,6 +27,7 @@ interface ProductCardProps {
 export const ProductCard = ({
     item, language, t, cart, wishlist, toggleWishlist, addToCart, updateQuantity, removeFromCart, priority = false
 }: ProductCardProps) => {
+    const { setPrefetchedProduct } = useStore();
     const videoRef = useRef<HTMLVideoElement>(null);
     const cardRef = useRef<HTMLDivElement>(null);
     const [isHovered, setIsHovered] = useState(false);
@@ -34,7 +38,7 @@ export const ProductCard = ({
 
     const totalStock = item.stockDetails ? Object.values(item.stockDetails).reduce((a: any, b: any) => a + (Number(b) || 0), 0) : 0;
 
-    // Prefetch all product images when card becomes visible
+    // Prefetch all product images and data when card becomes visible
     useEffect(() => {
         if (isPrefetched || !cardRef.current) return;
         const observer = new IntersectionObserver(
@@ -51,6 +55,18 @@ export const ProductCard = ({
                             document.head.appendChild(link);
                         }
                     });
+
+                    // Prefetch full product data from Supabase for instant page load
+                    supabase.from("products")
+                        .select("*")
+                        .eq("id", item.id)
+                        .single()
+                        .then(({ data }) => {
+                            if (data) {
+                                setPrefetchedProduct(mapProduct(data));
+                            }
+                        });
+
                     setIsPrefetched(true);
                     observer.disconnect();
                 }
@@ -59,7 +75,7 @@ export const ProductCard = ({
         );
         observer.observe(cardRef.current);
         return () => observer.disconnect();
-    }, [isPrefetched, item.images, item.image]);
+    }, [isPrefetched, item.images, item.image, item.id, setPrefetchedProduct]);
 
     const handleToggleWishlist = (e: React.MouseEvent) => {
         e.preventDefault();
