@@ -169,7 +169,7 @@ export const ProductCard = ({
                 ) : (
                     <button
                         onClick={handleAddToCart}
-                        className="w-full h-[42px] bg-[#7000FF] hover:bg-[#5a00cc] text-white rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-purple-500/10"
+                        className="w-full h-[42px] bg-[#2d6e3e] hover:bg-[#1f5430] text-white rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-emerald-800/10"
                     >
                         <Truck size={12} strokeWidth={3} />
                         <span className="text-[10px] font-black uppercase tracking-tight">

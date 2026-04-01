@@ -19,13 +19,13 @@ body {
 }
 
 ::selection {
-  background: rgba(112, 0, 255, 0.15);
+  background: rgba(45, 110, 62, 0.15);
   color: inherit;
 }
 
 /* Accessibility: Focus visible for keyboard navigation */
 *:focus-visible {
-  outline: 2px solid #7000FF;
+  outline: 2px solid #2d6e3e;
   outline-offset: 2px;
   border-radius: 4px;
 }

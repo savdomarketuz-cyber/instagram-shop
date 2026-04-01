@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
                         right: '-10%',
                         width: '40%',
                         height: '40%',
-                        backgroundColor: '#7000FF',
+                        backgroundColor: '#2d6e3e',
                         borderRadius: '50%',
                         opacity: 0.1,
                     }} />
@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
                         }}>
                             <div style={{
                                 fontSize: '24px',
-                                color: '#7000FF',
+                                color: '#2d6e3e',
                                 fontWeight: 'bold',
                                 textTransform: 'uppercase',
                                 letterSpacing: '2px',

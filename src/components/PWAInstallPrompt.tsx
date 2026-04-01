@@ -89,7 +89,7 @@ export default function PWAInstallPrompt() {
 
             <button 
                 onClick={handleInstallClick}
-                className="bg-[#7000FF] hover:bg-[#5e00d6] text-white text-[11px] font-bold px-5 py-2.5 rounded-lg active:scale-95 transition-all shadow-lg shadow-purple-500/20"
+                className="bg-[#2d6e3e] hover:bg-[#1f5430] text-white text-[11px] font-bold px-5 py-2.5 rounded-lg active:scale-95 transition-all shadow-lg shadow-emerald-800/20"
             >
                 Yuklab olish
             </button>

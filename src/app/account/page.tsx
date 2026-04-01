@@ -136,7 +136,7 @@ export default function AccountPage() {
                         {language === 'uz' ? 'Buyurtmalaringizni kuzatish va ma\'lumotlaringizni saqlash uchun tizimga kiring.' : 'Войдите в систему, чтобы отслеживать свои заказы и сохранять свои данные.'}
                     </p>
                 </div>
-                <Link href="/login" className="w-full max-w-[200px] bg-black text-white py-4 rounded-full font-black text-xs uppercase tracking-widest shadow-xl shadow-black/10 active:scale-95 transition-all">
+                <Link href="/login" className="w-full max-w-[200px] bg-[#2d6e3e] text-white py-4 rounded-full font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-800/10 active:scale-95 transition-all">
                     {t.account.login}
                 </Link>
             </div>
@@ -150,7 +150,7 @@ export default function AccountPage() {
                 <h1 className="text-3xl font-black tracking-tighter mb-8 italic uppercase">{t.account.title}</h1>
 
                 {/* Profile Card */}
-                <div className="bg-black text-white p-8 rounded-[40px] mb-10 shadow-2xl relative overflow-hidden group">
+                <div className="bg-[#2d6e3e] text-white p-8 rounded-[40px] mb-10 shadow-2xl relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
 
                     <div className="flex items-center gap-6 relative z-10">
@@ -201,7 +201,7 @@ export default function AccountPage() {
                     <button
                         onClick={handleSave}
                         disabled={isSaving || (name === (user.name || "") && username === (user.username || ""))}
-                        className="w-full bg-black text-white py-5 rounded-[28px] font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                        className="w-full bg-[#2d6e3e] text-white py-5 rounded-[28px] font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                     >
                         {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                         {language === 'uz' ? 'Saqlash' : 'Сохранить'}

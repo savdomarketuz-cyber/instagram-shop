@@ -52,9 +52,9 @@ export default function Navigation() {
                     {/* Logo Section (Desktop) / Katalog Button (Mobile Home) */}
                     <div className="shrink-0 group">
                         <div className="md:hidden">
-                            <Link href="/catalog" className="flex items-center gap-2 bg-[#F2F3F5] px-4 py-2.5 rounded-xl active:scale-95 transition-all outline-none">
-                                <LayoutGrid size={20} strokeWidth={3} className="text-black" />
-                                <span className="text-[11px] font-black uppercase tracking-tighter text-black">Katalog</span>
+                            <Link href="/catalog" className="flex items-center gap-2 bg-[#E8F5EC] px-4 py-2.5 rounded-xl active:scale-95 transition-all outline-none">
+                                <LayoutGrid size={20} strokeWidth={3} className="text-[#2d6e3e]" />
+                                <span className="text-[11px] font-black uppercase tracking-tighter text-[#2d6e3e]">Katalog</span>
                             </Link>
                         </div>
                         <div className="hidden md:block">
@@ -65,7 +65,7 @@ export default function Navigation() {
                     </div>
 
                     {/* Catalog Button (Desktop only) */}
-                    <Link href="/catalog" className="hidden lg:flex items-center gap-3 bg-black text-white px-6 py-3.5 rounded-2xl hover:scale-105 active:scale-95 transition-all group shadow-xl shadow-black/10">
+                    <Link href="/catalog" className="hidden lg:flex items-center gap-3 bg-[#2d6e3e] text-white px-6 py-3.5 rounded-2xl hover:scale-105 active:scale-95 transition-all group shadow-xl shadow-emerald-800/20">
                         <LayoutGrid size={20} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-500" />
                         <span className="text-[11px] font-black uppercase tracking-[0.2em]">{language === 'uz' ? 'Katalog' : 'Каталог'}</span>
                     </Link>
@@ -84,10 +84,10 @@ export default function Navigation() {
                                 setSearch(e.target.value);
                                 setHomeSearchQuery(e.target.value);
                             }}
-                            className="w-full bg-[#F2F3F5] border-2 border-transparent rounded-xl md:rounded-2xl py-2 md:py-4 pl-10 md:pl-14 pr-4 md:pr-6 text-xs md:text-base font-bold placeholder:text-gray-400 focus:bg-white focus:border-black outline-none transition-all"
+                            className="w-full bg-[#F5F9F6] border-2 border-transparent rounded-xl md:rounded-2xl py-2 md:py-4 pl-10 md:pl-14 pr-4 md:pr-6 text-xs md:text-base font-bold placeholder:text-gray-400 focus:bg-white focus:border-[#2d6e3e]/30 focus:ring-4 focus:ring-[#2d6e3e]/5 outline-none transition-all"
                         />
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden md:block">
-                            <button type="submit" className="bg-black text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all">
+                            <button type="submit" className="bg-[#2d6e3e] text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#1f5430] active:scale-95 transition-all">
                                 QIDIRISH
                             </button>
                         </div>
@@ -153,24 +153,24 @@ export default function Navigation() {
 
             {/* iOS-style Bottom Tab Bar */}
             <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-gray-200/50 flex justify-around items-center z-[110]" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 8px), 8px)' }}>
-                <Link href="/" className={`flex flex-col items-center pt-2 pb-1 px-3 gap-0.5 transition-colors ${pathname === '/' ? 'text-[#7000FF]' : 'text-gray-400'}`}>
+                <Link href="/" className={`flex flex-col items-center pt-2 pb-1 px-3 gap-0.5 transition-colors ${pathname === '/' ? 'text-[#2d6e3e]' : 'text-gray-400'}`}>
                     <LayoutGrid size={24} strokeWidth={pathname === '/' ? 2.5 : 1.8} />
                     <span className="text-[10px] font-semibold">Asosiy</span>
                 </Link>
-                <Link href="/reels" className={`flex flex-col items-center pt-2 pb-1 px-3 gap-0.5 transition-colors ${pathname === '/reels' ? 'text-[#7000FF]' : 'text-gray-400'}`}>
+                <Link href="/reels" className={`flex flex-col items-center pt-2 pb-1 px-3 gap-0.5 transition-colors ${pathname === '/reels' ? 'text-[#2d6e3e]' : 'text-gray-400'}`}>
                     <Clapperboard size={24} strokeWidth={pathname === '/reels' ? 2.5 : 1.8} />
                     <span className="text-[10px] font-semibold">Reels</span>
                 </Link>
-                <Link href="/cart" className={`relative flex flex-col items-center pt-2 pb-1 px-3 gap-0.5 transition-colors ${pathname === '/cart' ? 'text-[#7000FF]' : 'text-gray-400'}`}>
+                <Link href="/cart" className={`relative flex flex-col items-center pt-2 pb-1 px-3 gap-0.5 transition-colors ${pathname === '/cart' ? 'text-[#2d6e3e]' : 'text-gray-400'}`}>
                     <ShoppingCart size={24} strokeWidth={pathname === '/cart' ? 2.5 : 1.8} />
                     {cartCount > 0 && <span className="absolute top-1 right-1 bg-red-500 w-4 h-4 flex items-center justify-center rounded-full text-white text-[9px] font-bold">{cartCount}</span>}
                     <span className="text-[10px] font-semibold">Savat</span>
                 </Link>
-                <Link href="/wishlist" className={`flex flex-col items-center pt-2 pb-1 px-3 gap-0.5 transition-colors ${pathname === '/wishlist' ? 'text-[#7000FF]' : 'text-gray-400'}`}>
+                <Link href="/wishlist" className={`flex flex-col items-center pt-2 pb-1 px-3 gap-0.5 transition-colors ${pathname === '/wishlist' ? 'text-[#2d6e3e]' : 'text-gray-400'}`}>
                     <Heart size={24} strokeWidth={pathname === '/wishlist' ? 2.5 : 1.8} fill={pathname === '/wishlist' ? 'currentColor' : 'none'} />
                     <span className="text-[10px] font-semibold">Saralar</span>
                 </Link>
-                <Link href={user ? "/account" : "/login"} className={`flex flex-col items-center pt-2 pb-1 px-3 gap-0.5 transition-colors ${pathname?.includes('/account') ? 'text-[#7000FF]' : 'text-gray-400'}`}>
+                <Link href={user ? "/account" : "/login"} className={`flex flex-col items-center pt-2 pb-1 px-3 gap-0.5 transition-colors ${pathname?.includes('/account') ? 'text-[#2d6e3e]' : 'text-gray-400'}`}>
                     <User size={24} strokeWidth={pathname?.includes('/account') ? 2.5 : 1.8} />
                     <span className="text-[10px] font-semibold">Profil</span>
                 </Link>

@@ -270,7 +270,7 @@ export default function HomeClient({
                                 )}
                             </div>
                             {activeTab === tab && (
-                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#7000FF] rounded-t-full" />
+                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2d6e3e] rounded-t-full" />
                             )}
                         </button>
                     ))}

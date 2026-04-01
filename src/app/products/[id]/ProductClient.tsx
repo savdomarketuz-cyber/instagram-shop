@@ -679,7 +679,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                     ) : (
                         <button 
                             onClick={() => addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any)}
-                            className="flex-1 bg-[#7000FF] text-white rounded-[20px] font-black text-[10px] uppercase tracking-tight flex flex-col items-center justify-center active:scale-95 transition-all shadow-xl shadow-purple-500/10"
+                            className="flex-1 bg-[#2d6e3e] text-white rounded-[20px] font-black text-[10px] uppercase tracking-tight flex flex-col items-center justify-center active:scale-95 transition-all shadow-xl shadow-emerald-800/10"
                         >
                             <span className="text-[8px] opacity-60 mb-0.5">{language === 'uz' ? "Savatga" : "В корзину"}</span>
                             <span className="flex items-center gap-1">
