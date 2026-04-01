@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Star, Heart, Check, Minus, Plus, Truck } from "lucide-react";
+import { Star, Heart, Check, Minus, Plus, Truck, Loader2 } from "lucide-react";
 
 import { Product, CartItem } from "@/types";
 import { TranslationKeys } from "@/lib/translations";
@@ -28,6 +28,7 @@ export const ProductCard = ({
     const cardRef = useRef<HTMLDivElement>(null);
     const [isHovered, setIsHovered] = useState(false);
     const [isPrefetched, setIsPrefetched] = useState(false);
+    const [isNavigating, setIsNavigating] = useState(false);
     const isInCart = cart.find(ci => ci.id === item.id);
     const isWished = wishlist.some(w => w.id === item.id);
 
@@ -79,7 +80,20 @@ export const ProductCard = ({
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            <Link href={`/products/${item.id}`} className="flex flex-col flex-1 outline-none">
+            <Link 
+                href={`/products/${item.id}`} 
+                className="flex flex-col flex-1 outline-none relative"
+                onClick={() => setIsNavigating(true)}
+            >
+                {/* Instant Feedback Overlay */}
+                {isNavigating && (
+                    <div className="absolute inset-0 z-50 bg-white/40 backdrop-blur-[2px] flex items-center justify-center animate-in fade-in duration-200">
+                        <div className="flex flex-col items-center gap-2 scale-75">
+                            <div className="w-10 h-10 border-4 border-[#7000FF]/20 border-t-[#7000FF] rounded-full animate-spin" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-[#7000FF] drop-shadow-sm">Ochilmoqda</span>
+                        </div>
+                    </div>
+                )}
                 <div className="relative aspect-[3/4] overflow-hidden bg-gray-50 border-b border-gray-50">
                     {(() => {
                         const mainMedia = item.images?.[0] || item.image || "/placeholder.png";
