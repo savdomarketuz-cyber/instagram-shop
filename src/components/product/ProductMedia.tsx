@@ -137,7 +137,7 @@ export const ProductMedia = ({
                         <button onClick={() => router.back()} className="p-3 bg-white/40 backdrop-blur-xl text-black rounded-full shadow-lg active:scale-90 transition-all border border-white/50 pointer-events-auto">
                             <ChevronLeft size={20} strokeWidth={3} />
                         </button>
-                        <button onClick={() => router.push('/')} className="p-3 bg-white/40 backdrop-blur-xl text-black rounded-full shadow-lg active:scale-90 transition-all border border-white/50 pointer-events-auto">
+                        <button onClick={() => router.push('/?focus=true')} className="p-3 bg-white/40 backdrop-blur-xl text-black rounded-full shadow-lg active:scale-90 transition-all border border-white/50 pointer-events-auto">
                             <Search size={20} strokeWidth={3} />
                         </button>
                     </div>

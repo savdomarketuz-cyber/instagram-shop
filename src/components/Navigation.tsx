@@ -6,7 +6,8 @@ import Logo from "./Logo";
 import { useStore } from "@/store/store";
 import { usePathname, useRouter } from "next/navigation";
 import { translations } from "@/lib/translations";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
 export default function Navigation() {
     const user = useStore(state => state.user);
@@ -18,11 +19,22 @@ export default function Navigation() {
     const router = useRouter();
     const t = translations[language];
     
+    const searchParams = useSearchParams();
+    const inputRef = useRef<HTMLInputElement>(null);
     const [search, setSearch] = useState("");
     const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
     const isHomePage = pathname === "/";
     const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+
+    // Handle Search Focus from other pages
+    useEffect(() => {
+        if (isHomePage && searchParams?.get('focus') === 'true' && inputRef.current) {
+            inputRef.current.focus();
+            // Optional: push to clean URL without params
+            router.replace('/', { scroll: false });
+        }
+    }, [isHomePage, searchParams, router]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -63,7 +75,7 @@ export default function Navigation() {
                         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                             <Search className="text-gray-400 group-focus-within:text-black transition-colors" size={16} />
                         </div>
-                        <input
+                            ref={inputRef}
                             type="text"
                             placeholder={t.common.search}
                             value={search}
