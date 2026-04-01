@@ -5,7 +5,7 @@ import Navigation from "@/components/Navigation";
 import Link from "next/link";
 import { MessageSquare, CheckCircle, AlertCircle, Info } from "lucide-react";
 import { useStore } from "@/store/store";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import NotificationHandler from "@/components/NotificationHandler";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
@@ -197,7 +197,11 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
             ${showNav ? (pathname === '/' ? 'pt-16 md:pt-28' : 'md:pt-28') : ''}
             ${isSplashActive ? 'overflow-hidden h-screen' : ''}
         `}>
-            {showNav && <Navigation />}
+            {showNav && (
+                <Suspense fallback={<div className="h-16 md:h-28 bg-white" />}>
+                    <Navigation />
+                </Suspense>
+            )}
 
             <ErrorBoundary>
                 <PWAInstallPrompt />
