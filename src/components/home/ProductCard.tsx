@@ -93,7 +93,7 @@ export const ProductCard = ({
     return (
         <div 
             ref={cardRef}
-            className={`group relative flex flex-col h-full bg-white rounded-xl overflow-hidden shadow-sm border border-gray-50 active:scale-[0.98] transition-all duration-400 ${isNavigating ? 'scale-[1.08] z-[100] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] ring-2 ring-black/5' : 'hover:shadow-md'}`}
+            className={`group relative flex flex-col h-full bg-white rounded-xl overflow-hidden shadow-sm border border-gray-50 active:scale-[0.98] transition-all duration-300 ${isNavigating ? 'scale-[1.05] z-[100] shadow-2xl relative' : 'hover:shadow-md'}`}
             style={{ overflowAnchor: 'none' }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
@@ -113,13 +113,6 @@ export const ProductCard = ({
                 {/* Global Top Loading Bar */}
                 {isNavigating && (
                     <div className="fixed top-0 left-0 right-0 h-1 bg-[#7000FF] z-[1000] origin-left animate-loading-bar" />
-                )}
-
-                {/* Strong Modal-like Feedback Overlay */}
-                {isNavigating && (
-                        <div className="absolute inset-0 z-50 bg-white/20 backdrop-blur-[1px] flex items-center justify-center animate-in fade-in zoom-in-90 duration-300">
-                             <div className="w-10 h-10 border-4 border-[#7000FF] border-t-transparent rounded-full animate-spin" />
-                        </div>
                 )}
                 <div className="relative aspect-[3/4] overflow-hidden bg-gray-50 border-b border-gray-50">
                     {(() => {
