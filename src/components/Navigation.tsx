@@ -151,28 +151,28 @@ export default function Navigation() {
                 </div>
             </header>
 
-            {/* Mobile Bottom Bar (Independent Layer) - Always Visible */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-3xl border-t border-gray-100 flex justify-between items-center z-[110] px-4 py-2 pb-8 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
-                <Link href="/" className={`flex flex-col items-center py-2 px-3 gap-1 ${pathname === '/' ? 'text-black' : 'text-gray-400'}`}>
-                    <LayoutGrid size={22} strokeWidth={pathname === '/' ? 3 : 2} />
-                    <span className="text-[8px] font-bold uppercase tracking-tight">Asosiy</span>
+            {/* iOS-style Bottom Tab Bar */}
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-gray-200/50 flex justify-around items-center z-[110]" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 8px), 8px)' }}>
+                <Link href="/" className={`flex flex-col items-center pt-2 pb-1 px-3 gap-0.5 transition-colors ${pathname === '/' ? 'text-[#7000FF]' : 'text-gray-400'}`}>
+                    <LayoutGrid size={24} strokeWidth={pathname === '/' ? 2.5 : 1.8} />
+                    <span className="text-[10px] font-semibold">Asosiy</span>
                 </Link>
-                <Link href="/reels" className={`flex flex-col items-center py-2 px-3 gap-1 ${pathname === '/reels' ? 'text-black' : 'text-gray-400'}`}>
-                    <Clapperboard size={22} strokeWidth={pathname === '/reels' ? 3 : 2} />
-                    <span className="text-[8px] font-bold uppercase tracking-tight">Reels</span>
+                <Link href="/reels" className={`flex flex-col items-center pt-2 pb-1 px-3 gap-0.5 transition-colors ${pathname === '/reels' ? 'text-[#7000FF]' : 'text-gray-400'}`}>
+                    <Clapperboard size={24} strokeWidth={pathname === '/reels' ? 2.5 : 1.8} />
+                    <span className="text-[10px] font-semibold">Reels</span>
                 </Link>
-                <Link href="/cart" className={`relative flex flex-col items-center py-2 px-3 gap-1 ${pathname === '/cart' ? 'text-black' : 'text-gray-400'}`}>
-                    <ShoppingCart size={22} strokeWidth={pathname === '/cart' ? 3 : 2} />
-                    {cartCount > 0 && <span className="absolute top-1 right-1 bg-red-600 w-4 h-4 flex items-center justify-center rounded-full border border-white text-white text-[8px] font-black">{cartCount}</span>}
-                    <span className="text-[8px] font-bold uppercase tracking-tight">Savat</span>
+                <Link href="/cart" className={`relative flex flex-col items-center pt-2 pb-1 px-3 gap-0.5 transition-colors ${pathname === '/cart' ? 'text-[#7000FF]' : 'text-gray-400'}`}>
+                    <ShoppingCart size={24} strokeWidth={pathname === '/cart' ? 2.5 : 1.8} />
+                    {cartCount > 0 && <span className="absolute top-1 right-1 bg-red-500 w-4 h-4 flex items-center justify-center rounded-full text-white text-[9px] font-bold">{cartCount}</span>}
+                    <span className="text-[10px] font-semibold">Savat</span>
                 </Link>
-                <Link href="/wishlist" className={`flex flex-col items-center py-2 px-3 gap-1 ${pathname === '/wishlist' ? 'text-black' : 'text-gray-400'}`}>
-                    <Heart size={22} strokeWidth={pathname === '/wishlist' ? 3 : 2} />
-                    <span className="text-[8px] font-bold uppercase tracking-tight">Saralar</span>
+                <Link href="/wishlist" className={`flex flex-col items-center pt-2 pb-1 px-3 gap-0.5 transition-colors ${pathname === '/wishlist' ? 'text-[#7000FF]' : 'text-gray-400'}`}>
+                    <Heart size={24} strokeWidth={pathname === '/wishlist' ? 2.5 : 1.8} fill={pathname === '/wishlist' ? 'currentColor' : 'none'} />
+                    <span className="text-[10px] font-semibold">Saralar</span>
                 </Link>
-                <Link href={user ? "/account" : "/login"} className={`flex flex-col items-center py-2 px-3 gap-1 ${pathname?.includes('/account') ? 'text-black' : 'text-gray-400'}`}>
-                    <User size={22} strokeWidth={pathname?.includes('/account') ? 3 : 2} />
-                    <span className="text-[8px] font-bold uppercase tracking-tight">Profil</span>
+                <Link href={user ? "/account" : "/login"} className={`flex flex-col items-center pt-2 pb-1 px-3 gap-0.5 transition-colors ${pathname?.includes('/account') ? 'text-[#7000FF]' : 'text-gray-400'}`}>
+                    <User size={24} strokeWidth={pathname?.includes('/account') ? 2.5 : 1.8} />
+                    <span className="text-[10px] font-semibold">Profil</span>
                 </Link>
             </nav>
         </>
