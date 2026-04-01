@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/store/store";
-import { ArrowRight, User as UserIcon, Camera, Package, Heart, LogOut, Save, Loader2, CheckCircle2, Phone, Headset } from "lucide-react";
+import { ArrowRight, User as UserIcon, Camera, Package, Heart, LogOut, Save, Loader2, CheckCircle2, Phone, Headset, MessageSquare } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { translations } from "@/lib/translations";
 import { mapUser } from "@/lib/mappers";
@@ -241,6 +241,21 @@ export default function AccountPage() {
                                 <span className="font-black text-sm italic uppercase tracking-tighter block">{t.nav.wishlist}</span>
                                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
                                     {language === 'uz' ? 'Sizga yoqqanlar' : 'То, что вам понравилось'}
+                                </span>
+                            </div>
+                        </div>
+                        <ArrowRight size={20} className="text-gray-300 group-hover:text-black transition-colors" />
+                    </Link>
+
+                    <Link href="/messages" className="flex items-center justify-between p-6 bg-white border border-gray-100 rounded-[32px] shadow-sm hover:translate-x-2 transition-all group">
+                        <div className="flex items-center gap-5">
+                            <div className="w-12 h-12 bg-purple-50 text-purple-500 rounded-2xl flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white transition-colors">
+                                <MessageSquare size={22} />
+                            </div>
+                            <div>
+                                <span className="font-black text-sm italic uppercase tracking-tighter block">{language === 'uz' ? 'Xabarlar' : 'Сообщения'}</span>
+                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                                    {language === 'uz' ? 'Shaxsiy chatlar' : 'Личные чаты'}
                                 </span>
                             </div>
                         </div>
