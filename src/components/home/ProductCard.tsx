@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Star, Heart, Check, Minus, Plus, Truck, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -27,6 +28,7 @@ interface ProductCardProps {
 export const ProductCard = ({
     item, language, t, cart, wishlist, toggleWishlist, addToCart, updateQuantity, removeFromCart, priority = false
 }: ProductCardProps) => {
+    const router = useRouter();
     const { setPrefetchedProduct } = useStore();
     const videoRef = useRef<HTMLVideoElement>(null);
     const cardRef = useRef<HTMLDivElement>(null);
@@ -99,7 +101,14 @@ export const ProductCard = ({
             <Link 
                 href={`/products/${item.id}`} 
                 className="flex flex-col flex-1 outline-none relative"
-                onClick={() => setIsNavigating(true)}
+                onClick={(e) => {
+                    e.preventDefault();
+                    setIsNavigating(true);
+                    // Delayed navigation to let the animation "breathe" and distraction work
+                    setTimeout(() => {
+                        router.push(`/products/${item.id}`);
+                    }, 400); 
+                }}
             >
                 {/* Global Top Loading Bar */}
                 {isNavigating && (
