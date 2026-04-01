@@ -75,6 +75,7 @@ export default function Navigation() {
                         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                             <Search className="text-gray-400 group-focus-within:text-black transition-colors" size={16} />
                         </div>
+                        <input
                             ref={inputRef}
                             type="text"
                             placeholder={t.common.search}
