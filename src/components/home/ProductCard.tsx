@@ -91,7 +91,7 @@ export const ProductCard = ({
     return (
         <div 
             ref={cardRef}
-            className="group relative flex flex-col h-full bg-white rounded-xl overflow-hidden shadow-sm border border-gray-50 active:scale-[0.98] transition-all"
+            className={`group relative flex flex-col h-full bg-white rounded-xl overflow-hidden shadow-sm border border-gray-50 active:scale-[0.98] transition-all duration-300 ${isNavigating ? 'scale-[1.03] z-[40] shadow-2xl ring-1 ring-black/5' : ''}`}
             style={{ overflowAnchor: 'none' }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
@@ -101,13 +101,10 @@ export const ProductCard = ({
                 className="flex flex-col flex-1 outline-none relative"
                 onClick={() => setIsNavigating(true)}
             >
-                {/* Instant Feedback Overlay */}
+                {/* Zoom-in Modal-like Feedback Overlay */}
                 {isNavigating && (
-                    <div className="absolute inset-0 z-50 bg-white/40 backdrop-blur-[2px] flex items-center justify-center animate-in fade-in duration-200">
-                        <div className="flex flex-col items-center gap-2 scale-75">
-                            <div className="w-10 h-10 border-4 border-[#7000FF]/20 border-t-[#7000FF] rounded-full animate-spin" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-[#7000FF] drop-shadow-sm">Ochilmoqda</span>
-                        </div>
+                    <div className="absolute inset-0 z-50 bg-white/20 backdrop-blur-[1px] flex items-center justify-center animate-in fade-in duration-300">
+                        <div className="w-8 h-8 border-2 border-black/20 border-t-black rounded-full animate-spin" />
                     </div>
                 )}
                 <div className="relative aspect-[3/4] overflow-hidden bg-gray-50 border-b border-gray-50">
