@@ -66,7 +66,7 @@ export default function CartPage() {
                                                     sizes="(max-width: 768px) 96px, 128px"
                                                 />
                                             </div>
-                                            <div className="flex-1">
+                                            <div className="flex-1 min-w-0">
                                                 <h3 className="font-black text-xs md:text-sm text-gray-900 leading-tight uppercase tracking-tight mb-2 line-clamp-2">
                                                     {item[`name_${language}`] || item.name}
                                                 </h3>
@@ -128,10 +128,11 @@ export default function CartPage() {
                                     </div>
                                 </div>
 
-                                <div className="mb-8 md:mb-10">
+                                <div className="mb-8 md:mb-10 w-full">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">{t.common.total}</p>
-                                    <div className="text-3xl md:text-4xl lg:text-5xl font-black italic tracking-tighter text-black break-words leading-[1.1]">
-                                        {total.toLocaleString()} <span className="text-xl lg:text-2xl not-italic opacity-80">so'm</span>
+                                    <div className="text-3xl md:text-4xl lg:text-5xl font-black italic tracking-tighter text-black flex flex-wrap items-baseline gap-1 leading-[1.1]">
+                                        <span>{total.toLocaleString().replace(/\u00A0/g, ' ')}</span>
+                                        <span className="text-xl lg:text-2xl not-italic opacity-80">so'm</span>
                                     </div>
                                 </div>
 

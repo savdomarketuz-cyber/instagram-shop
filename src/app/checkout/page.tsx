@@ -214,7 +214,7 @@ export default function CheckoutPage() {
                             value={address}
                             onChange={e => setAddress(e.target.value)}
                             placeholder={language === 'uz' ? "Toshkent sh., Yunusobod tumani..." : "г. Ташкент, Юнусабадский район..."}
-                            className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all pr-12"
+                            className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-base font-bold focus:ring-2 focus:ring-black outline-none transition-all pr-12"
                         />
                         {coords && <Globe size={18} className="absolute right-6 top-1/2 -translate-y-1/2 text-green-500" />}
                     </div>
@@ -230,11 +230,12 @@ export default function CheckoutPage() {
                             <span>{t.common.delivery}</span>
                             <span className="text-green-400 font-black">{language === 'uz' ? 'Bepul' : 'Бесплатно'}</span>
                         </div>
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end font-black pt-6 md:pt-8 border-t border-white/10 px-1 gap-2 md:gap-4">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end font-black pt-6 md:pt-8 border-t border-white/10 px-1 gap-2 md:gap-4 w-full">
                             <span className="uppercase text-[10px] md:text-sm not-italic opacity-40 tracking-[0.2em]">{t.common.total}</span>
-                            <span className="leading-[1.1] text-left sm:text-right text-3xl md:text-4xl italic tracking-tighter break-words">
-                                {total.toLocaleString()} <span className="text-xl md:text-2xl not-italic opacity-80">so'm</span>
-                            </span>
+                            <div className="leading-[1.1] text-left sm:text-right text-3xl md:text-4xl italic tracking-tighter flex flex-wrap items-baseline gap-1">
+                                <span>{total.toLocaleString().replace(/\u00A0/g, ' ')}</span>
+                                <span className="text-xl md:text-2xl not-italic opacity-80">so'm</span>
+                            </div>
                         </div>
                     </div>
                 </div>
