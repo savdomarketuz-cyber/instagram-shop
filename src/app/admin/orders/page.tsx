@@ -56,15 +56,19 @@ export default function AdminOrders() {
 
     const updateStatus = async (orderId: string, newStatus: string) => {
         try {
-            const { error } = await supabase
-                .from("orders")
-                .update({ status: newStatus })
-                .eq("id", orderId);
+            const res = await fetch("/api/admin/orders/status", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ orderId, status: newStatus }),
+            });
             
-            if (error) throw error;
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error);
+            
             setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
         } catch (error) {
             console.error("Update status error:", error);
+            alert("Holatni yangilashda xatolik yuz berdi.");
         }
     };
 
