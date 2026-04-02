@@ -14,14 +14,14 @@ export default function CartPage() {
 
     return (
         <div className="bg-white min-h-screen text-black w-full max-w-full">
-            <div className="w-full max-w-full lg:max-w-[1440px] mx-auto p-4 md:p-10 pb-32">
+            <div className="w-full max-w-full lg:max-w-[1440px] mx-auto px-4 md:px-10 pb-32 overflow-x-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8 md:mb-16 pt-8 md:pt-0">
                     <div className="flex items-center gap-4 min-w-0">
                         <Link href="/" className="md:hidden p-3 bg-gray-50 rounded-2xl shrink-0">
                             <ChevronLeft size={20} />
                         </Link>
-                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter italic uppercase break-words truncate pr-4">{t.cart.title}</h1>
+                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter italic uppercase break-words leading-tight">{t.cart.title}</h1>
                     </div>
                     <div className="flex items-center gap-3">
                         <Link href="/orders" className="p-4 bg-gray-50 rounded-[28px] text-gray-400 hover:text-black hover:bg-gray-100 transition-all flex items-center gap-2 group">
@@ -54,9 +54,9 @@ export default function CartPage() {
                                 <div className="col-span-3 text-right">Narxi</div>
                             </div>
                             {cart.map((item) => (
-                                <div key={item.id} className="bg-white border border-gray-100 rounded-[32px] md:rounded-[40px] p-4 md:p-6 group hover:shadow-2xl hover:shadow-black/5 transition-all">
-                                    <div className="grid grid-cols-12 gap-4 md:gap-6 items-center">
-                                        <div className="col-span-12 lg:col-span-6 flex gap-4 md:gap-6 items-center">
+                                <div key={item.id} className="bg-white border border-gray-100 rounded-[32px] md:rounded-[40px] p-4 md:p-6 overflow-hidden group hover:shadow-2xl hover:shadow-black/5 transition-all">
+                                    <div className="grid grid-cols-12 gap-3 items-center">
+                                        <div className="col-span-12 lg:col-span-6 flex gap-3 items-center min-w-0 overflow-hidden">
                                             <div className="w-20 h-20 md:w-32 md:h-32 bg-gray-50 rounded-[24px] md:rounded-[32px] overflow-hidden flex-shrink-0 border border-gray-50 relative">
                                                 <Image 
                                                     src={item.imageUrl || item.image || ''} 
