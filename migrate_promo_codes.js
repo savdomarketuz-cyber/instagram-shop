@@ -28,6 +28,10 @@ BEGIN
 END $$;
 
 -- 3. Update place_order function to handle promo codes
+-- First, drop existing functions to avoid overloading issues
+DROP FUNCTION IF EXISTS place_order(text, jsonb, numeric, text, numeric[], text);
+DROP FUNCTION IF EXISTS place_order(text, jsonb, numeric, text, numeric[], text, text, numeric);
+
 CREATE OR REPLACE FUNCTION place_order(
   p_user_phone text,
   p_items jsonb,
