@@ -46,6 +46,7 @@ export default function AccountPage() {
     const [usernameError, setUsernameError] = useState("");
     const [showSuccess, setShowSuccess] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [pendingCashback, setPendingCashback] = useState(0);
 
     useEffect(() => {
         if (!user) {
@@ -69,6 +70,25 @@ export default function AccountPage() {
                 }
             } catch (e) {
                 console.error("Error fetching user data:", e);
+            }
+
+            // Fetch Pending Cashback
+            try {
+                const { data: pOrders } = await supabase
+                    .from("orders")
+                    .select("potential_cashback")
+                    .eq("user_phone", user.phone)
+                    .neq("status", "delivered")
+                    .neq("status", "cancelled")
+                    .neq("status", "returned")
+                    .gt("potential_cashback", 0);
+                
+                if (pOrders) {
+                    const total = pOrders.reduce((sum, o) => sum + Number(o.potential_cashback), 0);
+                    setPendingCashback(total);
+                }
+            } catch (e) {
+                console.error("Error fetching pending cashback:", e);
             } finally {
                 setLoading(false);
             }
@@ -301,7 +321,17 @@ export default function AccountPage() {
                     <div className="space-y-3">
                         <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">{t.account.sections.benefits}</h3>
                         <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-100/50">
-                            <MenuItem onClick={() => setView("wallet")} icon={<Wallet size={20} />} label={language === 'uz' ? 'Mening hamyonim' : 'Мой кошелек'} />
+                            <div className="relative">
+                                <MenuItem onClick={() => setView("wallet")} icon={<Wallet size={20} />} label={language === 'uz' ? 'Mening hamyonim' : 'Мой кошелек'} />
+                                {pendingCashback > 0 && (
+                                    <div className="absolute top-1/2 -translate-y-1/2 right-12 flex items-center gap-1.5 animate-pulse">
+                                        <div className="w-1.5 h-1.5 bg-orange-500 rounded-full" />
+                                        <span className="text-[8px] font-black italic text-orange-500 uppercase tracking-tighter">
+                                            {pendingCashback.toLocaleString()}...
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
                             <MenuItem href="#" icon={<Ticket size={20} />} label={t.account.sections.promoCodes} divider={false} />
                         </div>
                     </div>
@@ -512,6 +542,7 @@ function ReturnsView({ user, t, language, onBack }: any) {
 function WalletView({ user, t, language, onBack }: any) {
     const [wallet, setWallet] = useState<any>(null);
     const [transactions, setTransactions] = useState<any[]>([]);
+    const [pendingOrders, setPendingOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -530,10 +561,24 @@ function WalletView({ user, t, language, onBack }: any) {
 
             if (wData) setWallet(wData);
             if (tData) setTransactions(tData);
+
+            // Fetch Pending details
+            const { data: pOrders } = await supabase
+                .from("orders")
+                .select("id, potential_cashback, items")
+                .eq("user_phone", user.phone)
+                .neq("status", "delivered")
+                .neq("status", "cancelled")
+                .neq("status", "returned")
+                .gt("potential_cashback", 0);
+            
+            setPendingOrders(pOrders || []);
             setLoading(false);
         };
         fetchWallet();
     }, [user]);
+
+    const totalPending = pendingOrders.reduce((sum: number, o: any) => sum + Number(o.potential_cashback), 0);
 
     if (loading) {
         return <div className="min-h-screen flex items-center justify-center bg-[#F2F3F5]"><Loader2 className="animate-spin" /></div>;
@@ -564,12 +609,39 @@ function WalletView({ user, t, language, onBack }: any) {
 
                         <div>
                             <p className="text-[10px] font-black opacity-40 uppercase tracking-widest mb-1 italic">Mavjud balans</p>
-                            <p className="text-5xl font-black italic tracking-tighter">
+                             <p className="text-5xl font-black italic tracking-tighter">
                                 {Number(wallet?.balance || 0).toLocaleString()} <span className="text-2xl not-italic opacity-60">so'm</span>
                             </p>
                         </div>
                     </div>
                 </div>
+
+                {/* Processing/Pending Cashback Section */}
+                {totalPending > 0 && (
+                    <div className="bg-orange-50/50 p-6 rounded-[32px] border border-orange-100 mb-10 flex flex-col gap-4 animate-in slide-in-from-top-4 duration-500">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-orange-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20">
+                                    <Loader2 size={18} className="animate-spin" />
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-black italic tracking-tighter uppercase text-orange-600">Ishlanmoqda...</h4>
+                                    <p className="text-[8px] font-black text-orange-400 uppercase tracking-widest">{language === 'uz' ? 'Kutilayotgan cashback' : 'Ожидаемый кэшбэк'}</p>
+                                </div>
+                            </div>
+                            <p className="text-xl font-black italic tracking-tighter text-orange-600">
+                                +{totalPending.toLocaleString()} so'm
+                            </p>
+                        </div>
+                        <div className="p-3 bg-white/50 rounded-2xl border border-orange-100/50">
+                            <p className="text-[9px] font-bold text-orange-700/70 leading-relaxed italic">
+                                ✨ {language === 'uz' 
+                                    ? "Ushbu summa buyurtma yetkazib berilgach avtomatik ravishda asosiy hamyonga tushadi." 
+                                    : "Эта сумма автоматически поступит в основной кошелек после доставки заказа."}
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 {/* History */}
                 <div className="space-y-6">
