@@ -78,9 +78,8 @@ export default function AccountPage() {
                     .from("orders")
                     .select("potential_cashback")
                     .eq("user_phone", user.phone)
-                    .neq("status", "delivered")
-                    .neq("status", "cancelled")
-                    .neq("status", "returned")
+                    .neq("status", "Yetkazildi")
+                    .neq("status", "Bekor qilingan")
                     .gt("potential_cashback", 0);
                 
                 if (pOrders) {
@@ -567,9 +566,8 @@ function WalletView({ user, t, language, onBack }: any) {
                 .from("orders")
                 .select("id, potential_cashback, items")
                 .eq("user_phone", user.phone)
-                .neq("status", "delivered")
-                .neq("status", "cancelled")
-                .neq("status", "returned")
+                .neq("status", "Yetkazildi")
+                .neq("status", "Bekor qilingan")
                 .gt("potential_cashback", 0);
             
             setPendingOrders(pOrders || []);
