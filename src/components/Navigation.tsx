@@ -137,13 +137,13 @@ export default function Navigation() {
 
                         <div className="pl-4 md:pl-6 border-l border-gray-100 items-center gap-4 hidden lg:flex">
                             {user ? (
-                                <Link href="/messages" className="flex items-center gap-3 bg-[#F2F3F5] hover:bg-black hover:text-white px-6 py-3.5 rounded-2xl transition-all group shadow-sm hover:shadow-xl">
-                                    <MessageSquare size={18} className="group-hover:rotate-[360deg] transition-transform duration-700" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">Chat</span>
+                                <Link href="/account" className={`flex items-center gap-3 bg-[#F2F3F5] hover:bg-black hover:text-white px-6 py-3.5 rounded-2xl transition-all group shadow-sm hover:shadow-xl ${pathname?.includes('/account') ? 'bg-black text-white' : ''}`}>
+                                    <User size={18} className="group-hover:scale-110 transition-transform duration-300" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">{t.nav.profile}</span>
                                 </Link>
                             ) : (
                                 <Link href="/login" className="bg-[#F2F3F5] hover:bg-black hover:text-white px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-xl">
-                                    Kirish
+                                    {language === 'uz' ? 'Kirish' : 'Войти'}
                                 </Link>
                             )}
                         </div>
