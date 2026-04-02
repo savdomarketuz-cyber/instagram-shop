@@ -279,8 +279,7 @@ export default function AccountPage() {
                     <div className="space-y-3">
                         <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">{t.account.sections.shopping}</h3>
                         <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-100/50">
-                            <MenuItem href="/orders" icon={<Package size={20} />} label={t.account.sections.purchased} />
-                            <MenuItem href="/orders" icon={<ShoppingBag size={20} />} label={t.account.sections.purchased} />
+                            <MenuItem href="/orders" icon={<Package size={20} />} label={t.account.orders} />
                             <MenuItem onClick={() => setView("returns")} icon={<RotateCcw size={20} />} label={t.account.sections.returns} divider={false} />
                         </div>
                     </div>
