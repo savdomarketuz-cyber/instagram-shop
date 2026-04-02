@@ -59,7 +59,20 @@ export const translations = {
             login: "Kirish",
             name: "Ism",
             phone: "Telefon raqami",
-            history: "Xaridlar tarixi"
+            history: "Xaridlar tarixi",
+            sections: {
+                shopping: "Xarid qilish",
+                benefits: "Foyda",
+                settings: "Sozlamalar",
+                others: "Boshqalar",
+                purchased: "Sotib olinganlar",
+                returns: "Qaytish",
+                promoCodes: "Reklama kodlari",
+                reviews: "Sharhlar va savollar",
+                theme: "Dizayn mavzusi",
+                compare: "Taqqoslash",
+                support: "Yordam markazi"
+            }
         },
         reels: {
             title: "Reels",
@@ -231,7 +244,20 @@ export const translations = {
             login: "Войти",
             name: "Имя",
             phone: "Номер телефона",
-            history: "История покупок"
+            history: "История покупок",
+            sections: {
+                shopping: "Покупки",
+                benefits: "Выгода",
+                settings: "Настройки",
+                others: "Прочее",
+                purchased: "Купленные товары",
+                returns: "Возвраты",
+                promoCodes: "Промокоды",
+                reviews: "Отзывы и вопросы",
+                theme: "Тема оформления",
+                compare: "Сравнение",
+                support: "Служба поддержки"
+            }
         },
         reels: {
             title: "Reels",
