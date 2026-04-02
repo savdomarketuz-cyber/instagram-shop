@@ -19,7 +19,12 @@ export async function POST(req: Request) {
 
         if (error) throw error;
 
-        // 2. Notify customer via Telegram
+        // 2. Handle Cashback Penalty if approved
+        if (status === "approved" && returnReq?.order_id) {
+            await supabaseAdmin.rpc('handle_return_cashback_penalty', { p_order_id: returnReq.order_id });
+        }
+
+        // 3. Notify customer via Telegram
         if (returnReq?.user_phone) {
             await notifyCustomerReturnStatus(returnReq.user_phone, returnReq.order_id, status);
         }

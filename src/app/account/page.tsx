@@ -24,7 +24,11 @@ import {
     Save,
     CheckCircle2,
     Settings,
-    Tag
+    Tag,
+    Wallet,
+    ArrowUpCircle,
+    ArrowDownCircle,
+    History as HistoryIcon
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { translations } from "@/lib/translations";
@@ -35,7 +39,7 @@ export default function AccountPage() {
     const { user, setUser, logout, language, setLanguage } = useStore();
     const t = translations[language];
 
-    const [view, setView] = useState<"menu" | "edit-profile" | "language" | "returns" | "promo-codes">("menu");
+    const [view, setView] = useState<"menu" | "edit-profile" | "language" | "returns" | "promo-codes" | "wallet">("menu");
     const [name, setName] = useState(user?.name || "");
     const [username, setUsername] = useState(user?.username || "");
     const [isSaving, setIsSaving] = useState(false);
@@ -231,6 +235,10 @@ export default function AccountPage() {
         return <PromoCodesView t={t} language={language} onBack={() => setView("menu")} />;
     }
 
+    if (view === "wallet") {
+        return <WalletView user={user} t={t} language={language} onBack={() => setView("menu")} />;
+    }
+
     // --- Main Menu View ---
 
     return (
@@ -289,10 +297,11 @@ export default function AccountPage() {
                         </div>
                     </div>
 
-                    {/* Benefit */}
+                    {/* Benefits */}
                     <div className="space-y-3">
                         <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">{t.account.sections.benefits}</h3>
                         <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-100/50">
+                            <MenuItem onClick={() => setView("wallet")} icon={<Wallet size={20} />} label={language === 'uz' ? 'Mening hamyonim' : 'Мой кошелек'} />
                             <MenuItem href="#" icon={<Ticket size={20} />} label={t.account.sections.promoCodes} divider={false} />
                         </div>
                     </div>
@@ -495,6 +504,110 @@ function ReturnsView({ user, t, language, onBack }: any) {
                         </div>
                     </div>
                 )}
+            </div>
+        </div>
+    );
+}
+
+function WalletView({ user, t, language, onBack }: any) {
+    const [wallet, setWallet] = useState<any>(null);
+    const [transactions, setTransactions] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchWallet = async () => {
+            const { data: wData } = await supabase
+                .from("user_wallets")
+                .select("*")
+                .eq("user_phone", user.phone)
+                .single();
+            
+            const { data: tData } = await supabase
+                .from("cashback_transactions")
+                .select("*")
+                .eq("user_phone", user.phone)
+                .order("created_at", { ascending: false });
+
+            if (wData) setWallet(wData);
+            if (tData) setTransactions(tData);
+            setLoading(false);
+        };
+        fetchWallet();
+    }, [user]);
+
+    if (loading) {
+        return <div className="min-h-screen flex items-center justify-center bg-[#F2F3F5]"><Loader2 className="animate-spin" /></div>;
+    }
+
+    return (
+        <div className="bg-[#F2F3F5] min-h-screen pb-24 px-4 md:px-10">
+            <div className="max-w-xl mx-auto pt-10">
+                <button onClick={onBack} className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8 hover:text-black transition-all">
+                    <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Profil'}
+                </button>
+
+                {/* Main Card */}
+                <div className="bg-black text-white p-10 rounded-[50px] shadow-2xl relative overflow-hidden mb-10">
+                    <div className="absolute top-0 right-0 p-10 opacity-10">
+                        <Wallet size={120} />
+                    </div>
+                    <div className="relative z-10">
+                        <div className="flex justify-between items-start mb-12">
+                            <div>
+                                <p className="text-[10px] font-black opacity-40 uppercase tracking-widest mb-1 italic">Tizim hamyoni</p>
+                                <h2 className="text-xl font-bold tracking-tighter sm:truncate">{wallet?.wallet_number.replace(/(.{4})/g, '$1 ')}</h2>
+                            </div>
+                            <div className="px-4 py-2 bg-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-white/5">
+                                Active
+                            </div>
+                        </div>
+
+                        <div>
+                            <p className="text-[10px] font-black opacity-40 uppercase tracking-widest mb-1 italic">Mavjud balans</p>
+                            <p className="text-5xl font-black italic tracking-tighter">
+                                {Number(wallet?.balance || 0).toLocaleString()} <span className="text-2xl not-italic opacity-60">so'm</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* History */}
+                <div className="space-y-6">
+                    <div className="flex items-center justify-between px-4">
+                        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-relaxed flex items-center gap-2">
+                             <HistoryIcon size={14} /> {language === 'uz' ? 'OPERTASIYALAR TARIXI' : 'ИСТОРИЯ ОПЕРАЦИЙ'}
+                        </h3>
+                    </div>
+
+                    {transactions.length === 0 ? (
+                        <div className="bg-white p-12 rounded-[40px] text-center italic font-bold text-gray-300">
+                             {language === 'uz' ? 'Hozircha operatsiyalar mavjud emas' : 'Операций пока нет'}
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {transactions.map(t => (
+                                <div key={t.id} className="bg-white p-6 rounded-[32px] border border-gray-100 flex items-center justify-between">
+                                    <div className="flex items-center gap-4 min-w-0">
+                                        <div className={`p-4 rounded-2xl shrink-0 ${t.amount >= 0 ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'}`}>
+                                            {t.amount >= 0 ? <ArrowUpCircle size={20} /> : <ArrowDownCircle size={20} />}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-xs font-black italic uppercase tracking-tight truncate">
+                                                {t.description || (t.amount >= 0 ? (language === 'uz' ? 'Hisob toldirildi' : 'Пополнение') : (language === 'uz' ? 'Hisobdan yechildi' : 'Списание'))}
+                                            </p>
+                                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tight italic">
+                                                {new Date(t.created_at).toLocaleDateString()}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <p className={`text-sm font-black italic tracking-tighter ${t.amount >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                                        {t.amount >= 0 ? '+' : ''}{Number(t.amount).toLocaleString()}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
