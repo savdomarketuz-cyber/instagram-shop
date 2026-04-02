@@ -82,7 +82,7 @@ BEGIN
   -- 3. Order placement
   v_order_id := nextval('order_id_seq')::text;
   insert into orders (id, user_phone, items, total, address, coords, status, promo_code, discount_amount, created_at)
-  values (v_order_id, p_user_phone, p_items, p_total, p_address, p_coords, p_status, p_promo_code, p_discount_amount, now());
+  values (v_order_id, p_user_phone, p_items, p_total, p_address, to_jsonb(p_coords), p_status, p_promo_code, p_discount_amount, now());
 
   return jsonb_build_object('success', true, 'orderId', v_order_id);
 END;
