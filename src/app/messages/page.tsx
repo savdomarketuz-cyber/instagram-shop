@@ -90,7 +90,7 @@ export default function MessagesPage() {
     // Global User Search Logic
     useEffect(() => {
         const cleanQuery = searchQuery.trim().toLowerCase();
-        if (cleanQuery.length < 2) {
+        if (cleanQuery.length < 1) {
             setUserResults([]);
             return;
         }
@@ -114,7 +114,7 @@ export default function MessagesPage() {
             } finally {
                 setIsSearching(false);
             }
-        }, 500);
+        }, 300);
 
         return () => clearTimeout(delayDebounceFn);
     }, [searchQuery, user?.phone]);
