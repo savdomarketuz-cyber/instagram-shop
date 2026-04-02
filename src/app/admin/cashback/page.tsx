@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Plus, Trash2, Edit2, Check, X, Tag, Calculator, Calendar, Hash, ToggleLeft, ToggleRight, Loader2, DollarSign, Wallet, ArrowUpCircle, ArrowDownCircle, History, User, Banknote } from "lucide-react";
+import { Search, Plus, Trash2, Edit2, Check, X, Tag, Calculator, Calendar, Hash, ToggleLeft, ToggleRight, Loader2, DollarSign, Wallet, ArrowUpCircle, ArrowDownCircle, History, User, Banknote, Settings } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 export default function AdminCashback() {
     const [wallets, setWallets] = useState<any[]>([]);
     const [transactions, setTransactions] = useState<any[]>([]);
+    const [globalSettings, setGlobalSettings] = useState({ rate: 0.02, enabled: true });
     const [loading, setLoading] = useState(true);
+    const [isSavingSettings, setIsSavingSettings] = useState(false);
     const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
     const [selectedWallet, setSelectedWallet] = useState<any>(null);
     const [adjustment, setAdjustment] = useState({
@@ -27,11 +29,31 @@ export default function AdminCashback() {
             if (data.success) {
                 setWallets(data.wallets);
                 setTransactions(data.transactions);
+                if (data.settings) setGlobalSettings(data.settings);
             }
         } catch (error) {
             console.error("Fetch cashback data error:", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleUpdateSettings = async () => {
+        setIsSavingSettings(true);
+        try {
+            const res = await fetch("/api/admin/cashback", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ type: 'update_settings', settings: globalSettings })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert("Sozlamalar yangilandi!");
+            }
+        } catch (error) {
+            console.error("Update settings error:", error);
+        } finally {
+            setIsSavingSettings(false);
         }
     };
 
@@ -74,6 +96,52 @@ export default function AdminCashback() {
                 <div>
                     <h1 className="text-5xl font-black tracking-tighter mb-4 text-emerald-600 italic">Cashback Tizimi</h1>
                     <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px]">Ichki pul tizimi • {wallets.length} ta hamyon • {transactions.length} ta operatsiya</p>
+                </div>
+            </div>
+
+            {/* Global Settings Control */}
+            <div className="bg-white p-10 rounded-[50px] shadow-2xl border-2 border-gray-50 flex flex-col md:flex-row items-center gap-10">
+                <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-[32px] flex items-center justify-center shrink-0">
+                    <Settings className="w-10 h-10" />
+                </div>
+                <div className="flex-1 space-y-2">
+                    <h3 className="text-2xl font-black italic tracking-tighter uppercase">Global Sozlamalar</h3>
+                    <p className="text-gray-400 text-xs font-bold uppercase tracking-widest leading-relaxed max-w-md">
+                        Har bir xariddan beriladigan cashback foizini va tizimning umumiy holatini boshqaring.
+                    </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-6 bg-gray-50 p-6 rounded-[35px] border border-gray-100">
+                    <div className="flex items-center gap-3 space-x-2">
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest pr-4 border-r border-gray-200 shrink-0">Foiz</span>
+                        <div className="relative">
+                            <input 
+                                type="number" 
+                                step="0.5"
+                                value={globalSettings.rate * 100}
+                                onChange={(e) => setGlobalSettings({ ...globalSettings, rate: Number(e.target.value) / 100 })}
+                                className="w-28 bg-white border-2 border-transparent focus:border-emerald-500 rounded-2xl p-4 text-xl font-black italic outline-none transition-all pr-8"
+                            />
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-emerald-500 italic">%</span>
+                        </div>
+                    </div>
+                    
+                    <button 
+                        onClick={() => setGlobalSettings({ ...globalSettings, enabled: !globalSettings.enabled })}
+                        className={`flex items-center gap-3 px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${
+                            globalSettings.enabled ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-500/20' : 'bg-gray-200 text-gray-500'
+                        }`}
+                    >
+                        {globalSettings.enabled ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
+                        {globalSettings.enabled ? 'Yoqilgan' : 'O\'chirilgan'}
+                    </button>
+
+                    <button 
+                        onClick={handleUpdateSettings}
+                        disabled={isSavingSettings}
+                        className="px-8 py-4 bg-black text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl disabled:opacity-50"
+                    >
+                        {isSavingSettings ? <Loader2 className="animate-spin" size={16} /> : 'Saqlash'}
+                    </button>
                 </div>
             </div>
 

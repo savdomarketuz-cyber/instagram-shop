@@ -13,8 +13,14 @@ export async function GET() {
             .select("*")
             .order("balance", { ascending: false });
 
+        const { data: settings, error: sErr } = await supabaseAdmin
+            .from("site_settings")
+            .select("*")
+            .eq("key", "cashback_settings")
+            .single();
+
         if (tErr || wErr) throw tErr || wErr;
-        return NextResponse.json({ success: true, transactions, wallets });
+        return NextResponse.json({ success: true, transactions, wallets, settings: settings?.value || { rate: 0.02, enabled: true } });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
@@ -22,7 +28,17 @@ export async function GET() {
 
 export async function POST(req: Request) {
     try {
-        const { user_phone, amount, type, description } = await req.json();
+        const body = await req.json();
+
+        if (body.type === 'update_settings') {
+            const { error } = await supabaseAdmin
+                .from("site_settings")
+                .upsert({ key: 'cashback_settings', value: body.settings, updated_at: new Date().toISOString() });
+            if (error) throw error;
+            return NextResponse.json({ success: true });
+        }
+
+        const { user_phone, amount, type, description } = body;
 
         // High security adjustment
         const { data: wallet, error: wErr } = await supabaseAdmin
