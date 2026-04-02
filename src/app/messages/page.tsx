@@ -222,7 +222,9 @@ export default function MessagesPage() {
 
             {/* Chat List */}
             <div className="flex-1 overflow-y-auto px-4 pb-20 no-scrollbar">
-                {filteredChats.length === 0 && (!supportChat || !`admin support qo'llab quvvatlash`.includes(searchQuery.toLowerCase())) ? (
+                {filteredChats.length === 0 && 
+                 searchQuery.trim().length === 0 && 
+                 (!supportChat || !`admin support qo'llab quvvatlash`.includes(searchQuery.toLowerCase())) ? (
                     <div className="h-full flex flex-col items-center justify-center text-center opacity-20 py-20">
                         <MessageSquare size={80} strokeWidth={1} />
                         <p className="mt-4 font-black uppercase tracking-widest text-xs italic">No messages found</p>
