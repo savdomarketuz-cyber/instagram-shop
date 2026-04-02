@@ -54,10 +54,10 @@ export default function CartPage() {
                                 <div className="col-span-3 text-right">Narxi</div>
                             </div>
                             {cart.map((item) => (
-                                <div key={item.id} className="bg-white border md:border-gray-100 rounded-[40px] p-6 group hover:shadow-2xl hover:shadow-black/5 transition-all">
-                                    <div className="grid grid-cols-12 gap-6 items-center">
-                                        <div className="col-span-12 lg:col-span-6 flex gap-6 items-center">
-                                            <div className="w-24 h-24 md:w-32 md:h-32 bg-gray-50 rounded-[32px] overflow-hidden flex-shrink-0 border border-gray-50 relative">
+                                <div key={item.id} className="bg-white border border-gray-100 rounded-[32px] md:rounded-[40px] p-4 md:p-6 group hover:shadow-2xl hover:shadow-black/5 transition-all">
+                                    <div className="grid grid-cols-12 gap-4 md:gap-6 items-center">
+                                        <div className="col-span-12 lg:col-span-6 flex gap-4 md:gap-6 items-center">
+                                            <div className="w-20 h-20 md:w-32 md:h-32 bg-gray-50 rounded-[24px] md:rounded-[32px] overflow-hidden flex-shrink-0 border border-gray-50 relative">
                                                 <Image 
                                                     src={item.imageUrl || item.image || ''} 
                                                     alt={item[`name_${language}`] || item.name} 
@@ -81,17 +81,17 @@ export default function CartPage() {
                                         
                                         {/* Mobile Optimized Grid */}
                                         <div className="col-span-12 lg:col-span-3 flex items-center justify-between lg:justify-center mt-4 lg:mt-0 pt-4 lg:pt-0 border-t border-gray-50 lg:border-none">
-                                            <div className="flex items-center gap-6 bg-gray-50 border border-gray-100 px-5 py-3 rounded-2xl shadow-sm scale-90 md:scale-100 origin-left lg:origin-center">
+                                            <div className="flex items-center gap-4 md:gap-6 bg-gray-50 border border-gray-100 px-4 md:px-5 py-2 md:py-3 rounded-[20px] md:rounded-2xl shadow-sm scale-90 md:scale-100 origin-left lg:origin-center">
                                                 <button
                                                     onClick={() => item.quantity > 1 ? updateQuantity(item.id, item.quantity - 1) : removeFromCart(item.id)}
-                                                    className="text-gray-400 hover:text-black transition-colors"
+                                                    className="text-gray-400 hover:text-black transition-colors p-1"
                                                 >
                                                     <Minus size={16} strokeWidth={3} />
                                                 </button>
                                                 <span className="text-sm font-black w-4 text-center">{item.quantity}</span>
                                                 <button
                                                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                                    className="text-gray-400 hover:text-black transition-colors"
+                                                    className="text-gray-400 hover:text-black transition-colors p-1"
                                                 >
                                                     <Plus size={16} strokeWidth={3} />
                                                 </button>
