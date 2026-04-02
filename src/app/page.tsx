@@ -4,10 +4,9 @@ import { supabase } from "@/lib/supabase";
 import { mapProduct, mapCategory, mapBanner } from "@/lib/mappers";
 import type { Product, Category, Banner } from "@/types";
 
-// This ensures the page always fetches the freshest data on every request
-// Preventing stale prices or cashback information.
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+// This makes the page dynamic as it fetches data from Supabase on every request
+// ISR with 5 minute revalidation for fast response times while staying fresh
+export const revalidate = 300; 
 
 async function getInitialData() {
     try {
