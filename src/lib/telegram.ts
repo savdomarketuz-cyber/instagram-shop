@@ -1,7 +1,7 @@
 import { supabaseAdmin } from "./supabase";
 
-const ADMIN_BOT_TOKEN = process.env.TELEGRAM_ADMIN_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
-const CUSTOMER_BOT_TOKEN = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
+const ADMIN_BOT_TOKEN = process.env.TELEGRAM_ADMIN_BOT_TOKEN;
+const CUSTOMER_BOT_TOKEN = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN;
 const ADMIN_ID = process.env.TELEGRAM_ADMIN_ID;
 
 export async function sendOrderNotification(orderId: string, method: string) {

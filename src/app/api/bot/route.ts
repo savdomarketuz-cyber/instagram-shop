@@ -3,7 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { hashPassword } from "@/lib/auth-utils";
 import crypto from "crypto";
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const BOT_TOKEN = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN;
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 async function sendTelegramMessage(chatId: number, text: string, replyMarkup?: any) {

@@ -38,7 +38,7 @@ async function notifyCustomerStatusUpdate(phone: string, orderId: string, status
 
         if (!user || !user.telegram_id) return;
 
-        const CUSTOMER_BOT_TOKEN = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
+        const CUSTOMER_BOT_TOKEN = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN;
         if (!CUSTOMER_BOT_TOKEN) return;
 
         let statusText = status;
