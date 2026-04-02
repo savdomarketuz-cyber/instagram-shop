@@ -99,6 +99,31 @@ export const translations = {
             bestsellers: "Eng ko'p sotilyotganlar",
             addToCart: "SAVATGA QO'SHISH",
             gotoCart: "O'TISH"
+        },
+        footer: {
+            about: "Biz haqimizda",
+            deliveryPoints: "Topshirish punktlari",
+            vacancies: "Vakansiyalar",
+            forUsers: "Foydalanuvchilarga",
+            contactUs: "Biz bilan bog'lanish",
+            faq: "Savol-Javob",
+            forEntrepreneurs: "Tadbirkorlarga",
+            sellOnVelari: "Velari-da soting",
+            sellerCabinet: "Sotuvchi kabinetiga kirish",
+            openDeliveryPoint: "Topshirish punkti ochish",
+            downloadApp: "Ilovada xarid qilish qulayroq.",
+            scanToDownload: "Kamerani yo'naltiring va ilovani App Store va Google Play orqali bepul yuklab oling.",
+            socials: "Velari ijtimoiy tarmoqlarda",
+            privacy: "Maxfiylik kelishuvi",
+            userAgreement: "Foydalanuvchi kelishuvi",
+            personalData: "SHAXSIY MA'LUMOTLARNI QAYTA ISHLASH NIZOMI «VELARI MARKET» MCHJ XK",
+            copyright: "2026 © XK MCHJ «VELARI MARKET». STIR 309376127. Barcha huquqlar himoyalangan"
+        },
+        aboutUs: {
+            title: "Biz haqimizda",
+            p1: "Velari — O'zbekistondagi zamonaviy va tez rivojlanayotgan elektron tijorat platformasi. Bizning maqsadimiz iste'molchilarga keng turdagi sifatli mahsulotlarni qulay va hamyonbop narxlarda yetkazib berishdir.",
+            p2: "Biz har bir mijoz uchun yuqori darajadagi servis va tezkor yetkazib berish xizmatini ta'minlaymiz. Velari-da siz maishiy texnika, kiyim-kechak, elektronika va kundalik ehtiyojlar uchun zarur bo'lgan minglab tovarlarni topishingiz mumkin.",
+            p3: "Biz bilan birga bo'lganingiz uchun tashakkur!"
         }
     },
     ru: {
@@ -201,6 +226,31 @@ export const translations = {
             bestsellers: "Бестселлеры",
             addToCart: "В КОРЗИНУ",
             gotoCart: "ПЕРЕЙТИ"
+        },
+        footer: {
+            about: "О нас",
+            deliveryPoints: "Пункты выдачи",
+            vacancies: "Вакансии",
+            forUsers: "Пользователям",
+            contactUs: "Связаться с нами",
+            faq: "Вопрос-Ответ",
+            forEntrepreneurs: "Предпринимателям",
+            sellOnVelari: "Продавайте на Velari",
+            sellerCabinet: "Вход в кабинет продавца",
+            openDeliveryPoint: "Открыть пункт выдачи",
+            downloadApp: "Покупать в приложении удобнее.",
+            scanToDownload: "Наведите камеру и скачайте приложение бесплатно через App Store и Google Play.",
+            socials: "Velari в соцсетях",
+            privacy: "Соглашение о конфиденциальности",
+            userAgreement: "Пользовательское соглашение",
+            personalData: "ПОЛОЖЕНИЕ ОБ ОБРАБОТКЕ ПЕРСОНАЛЬНЫХ ДАННЫХ ООО ИП «VELARI MARKET»",
+            copyright: "2026 © ООО ИП «VELARI MARKET». ИНН 309376127. Все права защищены"
+        },
+        aboutUs: {
+            title: "О нас",
+            p1: "Velari — это современная и быстрорастущая платформа электронной коммерции в Узбекистане. Наша цель — предоставлять потребителям широкий ассортимент качественной продукции по доступным и выгодным ценам.",
+            p2: "Мы обеспечиваем высокий уровень сервиса и быструю доставку для каждого клиента. На Velari вы найдете тысячи товаров для дома, одежды, электроники и повседневных нужд.",
+            p3: "Благодарим вас за то, что вы с нами!"
         }
     }
 };

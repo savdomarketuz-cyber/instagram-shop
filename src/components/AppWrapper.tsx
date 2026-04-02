@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
 import Link from "next/link";
 import { MessageSquare, CheckCircle, AlertCircle, Info } from "lucide-react";
 import { useStore } from "@/store/store";
@@ -209,6 +210,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
                 {children}
             </ErrorBoundary>
 
+            {showNav && <Footer />}
 
             {/* Animated Toast Notification — to'g'ri subscribe qilingan */}
             {toast && !toast.message.toLowerCase().includes('failed to fetch') && (
