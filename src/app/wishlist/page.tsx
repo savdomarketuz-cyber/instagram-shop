@@ -34,9 +34,9 @@ export default function WishlistPage() {
     }
 
     return (
-        <div className="p-6 bg-white min-h-screen pb-24">
-            <div className="flex items-center justify-between mb-8 mt-4">
-                <h1 className="text-3xl font-black tracking-tighter uppercase italic">{t.nav.wishlist}</h1>
+        <div className="p-4 md:p-6 bg-white min-h-screen pb-24 overflow-x-hidden w-full">
+            <div className="flex items-center justify-between gap-4 mb-8 mt-4">
+                <h1 className="text-2xl md:text-3xl font-black tracking-tighter uppercase italic truncate">{t.nav.wishlist}</h1>
                 <Link href="/orders" className="flex items-center gap-2 px-6 py-3 bg-gray-50 rounded-full text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-black hover:bg-gray-100 transition-all border border-gray-100 shadow-sm active:scale-95 group">
                     <Package size={14} strokeWidth={3} className="group-hover:scale-110 transition-transform" />
                     {language === 'uz' ? 'Buyurtmalar' : 'Заказы'}
@@ -56,13 +56,19 @@ export default function WishlistPage() {
                     {wishlist.map((item) => (
                         <div key={item.id} className="relative group">
                             <Link href={`/products/${item.id}`} className="block">
-                                <div className="aspect-[3/4] overflow-hidden rounded-[28px] bg-gray-50 mb-3 shadow-sm">
-                                    <img src={item.imageUrl || item.image || ''} alt={item[`name_${language}`] || item.name} className="object-cover w-full h-full" />
+                                <div className="aspect-[3/4] overflow-hidden rounded-[24px] md:rounded-[28px] bg-gray-50 mb-3 shadow-sm relative">
+                                    <img 
+                                        src={item.imageUrl || item.image || ''} 
+                                        alt={item[`name_${language}`] || item.name} 
+                                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" 
+                                    />
                                 </div>
-                                <h3 className="text-[13px] font-bold text-gray-900 leading-tight line-clamp-2">
+                                <h3 className="text-[12px] md:text-[13px] font-bold text-gray-900 leading-tight line-clamp-2 min-h-[2.5em]">
                                     {item[`name_${language}`] || item.name}
                                 </h3>
-                                <p className="text-sm font-black text-black mt-1">{item.price?.toLocaleString()} so'm</p>
+                                <p className="text-sm font-black text-black mt-1 break-words">
+                                    {item.price?.toLocaleString().replace(/\u00A0/g, ' ')} so'm
+                                </p>
                             </Link>
                             <button
                                 onClick={() => toggleWishlist(item)}

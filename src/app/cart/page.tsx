@@ -13,7 +13,7 @@ export default function CartPage() {
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     return (
-        <div className="bg-white min-h-screen text-black">
+        <div className="bg-white min-h-screen text-black overflow-x-hidden w-full">
             <div className="max-w-[1440px] mx-auto p-4 md:p-10 pb-32">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8 md:mb-16 pt-8 md:pt-0">
@@ -21,7 +21,7 @@ export default function CartPage() {
                         <Link href="/" className="md:hidden p-3 bg-gray-50 rounded-2xl">
                             <ChevronLeft size={20} />
                         </Link>
-                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter italic uppercase">{t.cart.title}</h1>
+                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter italic uppercase truncate pr-4">{t.cart.title}</h1>
                     </div>
                     <div className="flex items-center gap-3">
                         <Link href="/orders" className="p-4 bg-gray-50 rounded-[28px] text-gray-400 hover:text-black hover:bg-gray-100 transition-all flex items-center gap-2 group">
@@ -98,14 +98,14 @@ export default function CartPage() {
                                             </div>
                                             
                                             {/* Price only visible on right for mobile if we want, or side-by-side */}
-                                            <div className="text-right lg:hidden">
-                                                <p className="text-xl font-black italic tracking-tighter">{(item.price * item.quantity).toLocaleString()} so'm</p>
+                                            <div className="text-right lg:hidden min-w-0">
+                                                <p className="text-lg font-black italic tracking-tighter break-words leading-tight">{item.price?.toLocaleString().replace(/\u00A0/g, ' ')} so'm</p>
                                             </div>
                                         </div>
 
                                         {/* Desktop Price */}
-                                        <div className="hidden lg:block lg:col-span-3 text-right">
-                                            <p className="text-2xl font-black italic tracking-tighter">{(item.price * item.quantity).toLocaleString()} so'm</p>
+                                        <div className="hidden lg:block lg:col-span-3 text-right min-w-0">
+                                            <p className="text-2xl font-black italic tracking-tighter break-words">{(item.price * item.quantity).toLocaleString().replace(/\u00A0/g, ' ')} so'm</p>
                                         </div>
                                     </div>
                                 </div>
