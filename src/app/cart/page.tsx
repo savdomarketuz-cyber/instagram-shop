@@ -130,7 +130,7 @@ export default function CartPage() {
 
                                 <div className="mb-10">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">{t.common.total}</p>
-                                    <div className="text-3xl md:text-4xl lg:text-5xl font-black italic tracking-tighter text-black whitespace-nowrap">
+                                    <div className="text-3xl md:text-4xl lg:text-5xl font-black italic tracking-tighter text-black break-words leading-[1.1]">
                                         {total.toLocaleString()} <span className="text-xl lg:text-2xl not-italic opacity-80">so'm</span>
                                     </div>
                                 </div>
