@@ -66,15 +66,15 @@ export default function P2PChatPage() {
         };
         fetchMessages();
 
-        // Real-time (Bullet-proof: Listen to all INSERTs and filter client-side)
+        // Real-time (Robust: Using unique room channel and client-side check)
         const channel = supabase
-            .channel(`all_p2p_messages`)
+            .channel(`p2p_${roomId}`)
             .on('postgres_changes', { 
                 event: 'INSERT', 
                 schema: 'public', 
                 table: 'private_messages'
             }, (payload) => {
-                // Manually Filter for THIS ROOM only
+                console.log("⚡️ Live message event:", payload.new);
                 if (payload.new.chat_id === roomId) {
                     setMessages(prev => {
                         const exists = prev.some(m => m.id === payload.new.id);
@@ -84,7 +84,9 @@ export default function P2PChatPage() {
                     scrollToBottom();
                 }
             })
-            .subscribe();
+            .subscribe((status) => {
+                console.log("📡 Subscription status:", status);
+            });
 
         return () => {
             supabase.removeChannel(channel);
