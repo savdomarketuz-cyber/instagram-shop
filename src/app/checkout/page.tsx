@@ -4,7 +4,7 @@ import { useStore } from "@/store/store";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { AlertCircle, ArrowLeft, Loader2, PackageX, MapPin, Globe, Tag, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, PackageX, MapPin, Globe, Tag, X, Wallet, Check } from "lucide-react";
 import dynamic from "next/dynamic";
 const YandexMapPicker = dynamic(() => import("@/components/YandexMapPicker"), {
     loading: () => <div className="h-64 animate-pulse bg-gray-50 rounded-3xl" />,
@@ -25,6 +25,8 @@ export default function CheckoutPage() {
     const [isMapOpen, setIsMapOpen] = useState(false);
     const [address, setAddress] = useState("");
     const [coords, setCoords] = useState<[number, number] | null>(null);
+    const [walletBalance, setWalletBalance] = useState(0);
+    const [useWallet, setUseWallet] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -50,6 +52,25 @@ export default function CheckoutPage() {
             }
         }
     }, [cart, isSubmitting, mounted]);
+
+    useEffect(() => {
+        if (user?.phone) {
+            fetchWalletBalance();
+        }
+    }, [user]);
+
+    const fetchWalletBalance = async () => {
+        try {
+            const { data } = await supabase
+                .from("user_wallets")
+                .select("balance")
+                .eq("user_phone", user?.phone)
+                .single();
+            if (data) setWalletBalance(data.balance);
+        } catch (e) {
+            console.error("Fetch wallet balance error:", e);
+        }
+    };
 
     useEffect(() => {
         if (displayProducts.length > 0) {
@@ -147,12 +168,11 @@ export default function CheckoutPage() {
                     quantity: item.quantity,
                     image: item.imageUrl || item.image
                 })),
-                p_total: total,
                 p_address: address,
                 p_coords: coords,
                 p_status: language === 'uz' ? "To'lov kutilmoqda" : "Ожидание оплаты",
                 p_promo_code: promoData?.code || null,
-                p_discount_amount: promoData?.discount || 0
+                p_wallet_usage: useWallet ? Math.min(walletBalance, total) : 0
             });
 
             if (error) throw error;
@@ -284,6 +304,34 @@ export default function CheckoutPage() {
                         )}
                     </div>
                 </div>
+
+                {/* Wallet Balance Usage - NEW */}
+                {walletBalance > 0 && !promoData && (
+                    <div className={`p-6 rounded-[32px] border-2 transition-all cursor-pointer ${useWallet ? 'border-emerald-500 bg-emerald-50' : 'border-gray-100 bg-gray-50'}`} 
+                         onClick={() => setUseWallet(!useWallet)}>
+                        <div className="flex justify-between items-center mb-2">
+                             <div className="flex items-center gap-4">
+                                <div className={`p-3 rounded-2xl ${useWallet ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                                    <Wallet size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-sm uppercase italic tracking-tighter">Hamyondan to'lash</h3>
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                                        Mavjud: {walletBalance.toLocaleString()} so'm
+                                    </p>
+                                </div>
+                             </div>
+                             <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${useWallet ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300'}`}>
+                                {useWallet && <Check size={14} className="text-white" strokeWidth={4} />}
+                             </div>
+                        </div>
+                        {useWallet && (
+                            <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest pl-14 mt-2 animate-in slide-in-from-top-2">
+                                - {Math.min(walletBalance, total).toLocaleString()} so'm kashbek ishlatiladi
+                            </p>
+                        )}
+                    </div>
+                )}
 
                 <div className="mt-8 md:mt-12 p-5 md:p-10 bg-black text-white rounded-[32px] md:rounded-[40px] shadow-2xl relative overflow-hidden">
                     <div className="relative z-10">
