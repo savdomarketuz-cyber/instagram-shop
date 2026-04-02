@@ -152,7 +152,7 @@ export default function Navigation() {
             </header>
 
             {/* iOS-style Bottom Tab Bar */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-gray-200/50 flex justify-around items-center z-[110]" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 8px), 8px)' }}>
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 w-screen max-w-full bg-white/80 backdrop-blur-xl border-t border-gray-200/50 flex justify-around items-center z-[110]" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 8px), 8px)' }}>
                 <Link href="/" className={`flex flex-col items-center pt-2 pb-1 px-3 gap-0.5 transition-colors ${pathname === '/' ? 'text-[#2d6e3e]' : 'text-gray-400'}`}>
                     <LayoutGrid size={24} strokeWidth={pathname === '/' ? 2.5 : 1.8} />
                     <span className="text-[10px] font-semibold">Asosiy</span>

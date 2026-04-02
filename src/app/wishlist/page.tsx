@@ -34,9 +34,9 @@ export default function WishlistPage() {
     }
 
     return (
-        <div className="p-4 md:p-6 bg-white min-h-screen pb-24 overflow-x-hidden w-full">
-            <div className="flex items-center justify-between gap-4 mb-8 mt-4">
-                <h1 className="text-2xl md:text-3xl font-black tracking-tighter uppercase italic truncate">{t.nav.wishlist}</h1>
+        <div className="p-4 md:p-6 bg-white min-h-screen pb-24 w-full">
+            <div className="flex items-center justify-between gap-4 mb-8 mt-4 w-full min-w-0">
+                <h1 className="text-2xl md:text-3xl font-black tracking-tighter uppercase italic truncate min-w-0 flex-1">{t.nav.wishlist}</h1>
                 <Link href="/orders" className="flex items-center gap-2 px-6 py-3 bg-gray-50 rounded-full text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-black hover:bg-gray-100 transition-all border border-gray-100 shadow-sm active:scale-95 group">
                     <Package size={14} strokeWidth={3} className="group-hover:scale-110 transition-transform" />
                     {language === 'uz' ? 'Buyurtmalar' : 'Заказы'}
