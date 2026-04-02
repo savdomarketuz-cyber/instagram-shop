@@ -98,16 +98,16 @@ export default function MessagesPage() {
         const delayDebounceFn = setTimeout(async () => {
             setIsSearching(true);
             try {
-                // Search in user_status or users table
+                // Global search in USERS table (Name, Username, Phone)
                 const { data, error } = await supabase
-                    .from("user_status")
-                    .select("*")
-                    .or(`username.ilike.%${cleanQuery}%,name.ilike.%${cleanQuery}%`)
-                    .neq("id", user?.phone)
+                    .from("users")
+                    .select("id, name, phone, username")
+                    .or(`username.ilike.%${cleanQuery}%,name.ilike.%${cleanQuery}%,phone.ilike.%${cleanQuery}%`)
+                    .neq("phone", user?.phone)
                     .limit(15);
 
                 if (!error && data) {
-                    setUserResults(data.map(u => ({ phone: u.id, ...u })));
+                    setUserResults(data);
                 }
             } catch (e) {
                 console.error("Search error:", e);
@@ -320,12 +320,12 @@ export default function MessagesPage() {
                                                     className="flex items-center gap-4 p-4 rounded-3xl hover:bg-gray-50 active:scale-[0.98] transition-all group"
                                                 >
                                                     <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center font-black text-xs shrink-0 shadow-lg shadow-black/10 group-hover:scale-105 transition-all">
-                                                        {u.username?.charAt(0).toUpperCase()}
+                                                        {u.username?.charAt(0).toUpperCase() || u.name?.charAt(0).toUpperCase()}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <h3 className="font-black italic text-sm truncate uppercase tracking-tighter">@{u.username}</h3>
-                                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                                            {u.isOnline ? <span className="text-green-500">Online</span> : "Instagram User"}
+                                                        <h3 className="font-black italic text-sm truncate uppercase tracking-tighter">@{u.username || u.name}</h3>
+                                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate">
+                                                            {u.name} • {u.phone}
                                                         </p>
                                                     </div>
                                                 </Link>
