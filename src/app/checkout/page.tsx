@@ -249,12 +249,54 @@ export default function CheckoutPage() {
                     </div>
                 </div>
 
+                {/* Promo Code Input */}
+                <div className="bg-gray-50 p-6 rounded-[32px] space-y-4 shadow-sm border border-gray-100/50">
+                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest pl-2 flex items-center gap-2">
+                        <Tag size={12} className="text-purple-500" />
+                        {language === 'uz' ? 'Promo kod bormi?' : 'Есть промокод?'}
+                    </label>
+                    <div className="flex gap-3">
+                        <input
+                            type="text"
+                            value={promoCode}
+                            onChange={e => setPromoCode(e.target.value.toUpperCase())}
+                            placeholder="VELARI2026"
+                            disabled={!!promoData}
+                            className="flex-1 bg-white border-2 border-transparent focus:border-black rounded-2xl py-4 px-6 text-base font-black italic outline-none transition-all uppercase tracking-tighter disabled:opacity-50"
+                        />
+                        {promoData ? (
+                            <button
+                                type="button"
+                                onClick={() => { setPromoData(null); setPromoCode(""); }}
+                                className="px-6 bg-red-50 text-red-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all"
+                            >
+                                <X size={18} />
+                            </button>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={handleApplyPromo}
+                                disabled={isApplyingPromo || !promoCode.trim()}
+                                className="px-8 bg-black text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:scale-100"
+                            >
+                                {isApplyingPromo ? <Loader2 size={18} className="animate-spin" /> : (language === 'uz' ? 'QO\'LLASH' : 'ПРИМЕНИТЬ')}
+                            </button>
+                        )}
+                    </div>
+                </div>
+
                 <div className="mt-8 md:mt-12 p-5 md:p-10 bg-black text-white rounded-[32px] md:rounded-[40px] shadow-2xl relative overflow-hidden">
                     <div className="relative z-10">
                         <div className="flex justify-between mb-4 opacity-60 text-[10px] font-black uppercase tracking-[0.2em] px-1">
-                            <span className="shrink-0">{t.cart.items}</span>
-                            <span className="font-mono">{total.toLocaleString()} so'm</span>
+                            <span>{language === 'uz' ? 'Mahsulotlar' : 'Товары'}</span>
+                            <span className="font-mono">{subtotal.toLocaleString()} so'm</span>
                         </div>
+                        {promoData && (
+                            <div className="flex justify-between mb-4 text-[10px] font-black uppercase tracking-[0.2em] px-1 text-green-400">
+                                <span className="flex items-center gap-2"><Tag size={12} /> {promoData.code}</span>
+                                <span className="font-mono">-{promoData.discount.toLocaleString()} so'm</span>
+                            </div>
+                        )}
                         <div className="flex justify-between mb-8 opacity-60 text-[10px] font-black uppercase tracking-[0.2em] px-1">
                             <span>{t.common.delivery}</span>
                             <span className="text-green-400 font-black">{language === 'uz' ? 'Bepul' : 'Бесплатно'}</span>
