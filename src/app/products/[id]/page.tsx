@@ -8,11 +8,11 @@ export const revalidate = 3600; // ISR configuration: revalidate every hour
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
     try {
-        const productId = getProductIdFromSlug(params.id);
+        const productIdOrArticle = getProductIdFromSlug(params.id);
         const { data: productData } = await supabase
             .from("products")
             .select("*")
-            .eq("id", productId)
+            .or(`id.eq.${productIdOrArticle},article.eq.${productIdOrArticle}`)
             .single();
         
         if (!productData) {
@@ -71,19 +71,19 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     }
 }
 
-async function getProductData(id: string) {
+async function getProductData(identifier: string) {
     const { data } = await supabase
         .from("products")
         .select("*")
-        .eq("id", id)
+        .or(`id.eq.${identifier},article.eq.${identifier}`)
         .single();
     
     return data ? mapProduct(data) : null;
 }
 
 export default async function Page({ params }: { params: { id: string } }) {
-    const productId = getProductIdFromSlug(params.id);
-    const product: any = await getProductData(productId);
+    const productIdOrArticle = getProductIdFromSlug(params.id);
+    const product: any = await getProductData(productIdOrArticle);
     
     if (!product) return <div className="p-10 text-center">Mahsulot topilmadi</div>;
 

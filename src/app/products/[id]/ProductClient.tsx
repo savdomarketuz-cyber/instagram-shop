@@ -10,7 +10,7 @@ import { Loader2, Plus, Minus, ShoppingBag, Heart, Star, Check, Truck, Clock, Sh
 import Link from "next/link";
 import { getDeliveryDateText } from "@/lib/date-utils";
 import Image from "next/image";
-import { getProductIdFromSlug } from "@/lib/slugify";
+import { getProductIdFromSlug, getProductSlug } from "@/lib/slugify";
 
 // Components
 import { ProductMedia } from "@/components/product/ProductMedia";
@@ -27,7 +27,7 @@ import type { Product } from "@/types";
 
 export default function ProductClient({ params, initialProduct }: { params: { id: string }, initialProduct?: Product | null }) {
     const router = useRouter();
-    const productId = getProductIdFromSlug(params.id);
+    const productIdentifier = getProductIdFromSlug(params.id);
     const { 
         addToCart, toggleWishlist, wishlist, cart, updateQuantity, 
         removeFromCart, user, language, showToast, prefetchedProducts 
@@ -35,7 +35,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
     const t = translations[language];
 
     // Core Data State
-    const prefetched = prefetchedProducts[productId];
+    const prefetched = prefetchedProducts[productIdentifier];
     const [product, setProduct] = useState<Product | null>(initialProduct || prefetched || null);
     const [loading, setLoading] = useState<boolean>(!initialProduct && !prefetched);
     const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
@@ -66,7 +66,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
 
     // Initial Fetch
     useEffect(() => {
-        if (!initialProduct || initialProduct.id !== productId) {
+        if (!initialProduct || (initialProduct.id !== productIdentifier && initialProduct.article !== productIdentifier)) {
             fetchProduct();
         } else {
             // Background revalidation or parallel fetch of secondary data
@@ -80,7 +80,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
             ]);
         }
         fetchComments();
-    }, [productId]);
+    }, [productIdentifier]);
 
     const fetchProduct = async () => {
         if (!product) setLoading(true);
@@ -88,7 +88,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
             const { data: productData, error } = await supabase
                 .from("products")
                 .select("*")
-                .eq("id", productId)
+                .or(`id.eq.${productIdentifier},article.eq.${productIdentifier}`)
                 .single();
 
             if (productData) {
@@ -100,7 +100,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                    // We could use an RPC or just update user_interests table
                    supabase.rpc('track_product_view', { 
                        p_user_phone: user.phone, 
-                       p_product_id: productId,
+                       p_product_id: productData.id, 
                        p_category_id: data.category
                    }).then(({ error }) => {
                        if (error) console.warn("Interest tracking failed:", error);
@@ -165,7 +165,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
             .from("products")
             .select("*")
             .eq("is_deleted", false)
-            .neq("id", params.id)
+            .neq("id", initialProduct?.id || productIdentifier)
             .limit(10);
         
         if (data) setBoughtTogether(data.map(mapProduct));
@@ -200,10 +200,12 @@ export default function ProductClient({ params, initialProduct }: { params: { id
     };
 
     const fetchComments = async () => {
+        if (!product && !initialProduct) return;
+        const targetId = product?.id || initialProduct?.id || productIdentifier;
         const { data } = await supabase
             .from("comments")
             .select("*")
-            .eq("product_id", productId)
+            .eq("product_id", targetId)
             .order("created_at", { ascending: false });
         
         if (data) setComments(data.map(mapComment));
@@ -502,7 +504,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                             <div className="grid grid-cols-2 gap-4 mb-10">
                                 <div className="space-y-1">
                                     <p className="text-[9px] text-gray-400 font-black uppercase">Mahsulot kodi</p>
-                                    <p className="text-xs font-bold text-gray-800">#{product.article || product.sku || params.id.slice(0, 1) + '0329'}</p>
+                                    <p className="text-xs font-bold text-gray-800">#{product.article || product.sku || product.id.slice(0, 8)}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-[9px] text-gray-400 font-black uppercase">Asosiy</p>
@@ -521,7 +523,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                             <Link 
                                                 replace 
                                                 key={v.id} 
-                                                href={`/products/${v.id}`} 
+                                                href={`/products/${getProductSlug(v)}`} 
                                                 className={`aspect-[3/4] rounded-3xl overflow-hidden border-2 transition-all flex-shrink-0 shadow-sm relative group/v ${v.id === product.id ? "border-black scale-105 shadow-xl z-10" : "border-white opacity-60 hover:opacity-100 hover:border-gray-200"}`}
                                             >
                                                 <Image 
@@ -624,7 +626,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
             </div>
 
             <ReviewsSection 
-                productId={params.id}
+                productId={product.id}
                 product={product}
                 user={user}
                 language={language}

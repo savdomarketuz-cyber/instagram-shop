@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { getProductSlug } from "@/lib/slugify";
 import { Star, Check, Truck, Clock } from "lucide-react";
 
 interface ProductInfoProps {
@@ -62,7 +63,7 @@ export const ProductInfo = ({
                                 <Link 
                                     replace 
                                     key={v.id} 
-                                    href={`/products/${v.id}`} 
+                                    href={`/products/${getProductSlug(v)}`} 
                                     className={`w-16 h-20 rounded-2xl overflow-hidden border-2 transition-all flex-shrink-0 shadow-sm ${v.id === product.id ? "border-black scale-110 shadow-xl" : "border-gray-100 opacity-60 hover:opacity-100"}`}
                                 >
                                     <img src={v.image} className="w-full h-full object-cover" alt={v.colorName} />

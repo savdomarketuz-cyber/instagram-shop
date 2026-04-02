@@ -7,6 +7,7 @@ import { useStore } from "@/store/store";
 import { translations } from "@/lib/translations";
 import { supabase } from "@/lib/supabase";
 import { mapProduct } from "@/lib/mappers";
+import { getProductSlug } from "@/lib/slugify";
 
 import type { Product } from "@/types";
 
@@ -77,7 +78,7 @@ export default function ProductsPage() {
             <div className="grid grid-cols-2 gap-x-5 gap-y-10">
                 {filtered.map((item) => (
                     <div key={item.id} className="block group relative">
-                        <Link href={`/products/${item.id}`}>
+                        <Link href={`/products/${getProductSlug(item)}`}>
                             <div className="relative aspect-[3/4] overflow-hidden rounded-[32px] bg-gray-50 mb-3 shadow-sm group-hover:shadow-xl transition-all duration-700">
                                 <img src={item.image} alt={item[`name_${language}`] || item.name} className="object-cover w-full h-full transition-transform duration-1000 group-hover:scale-110" />
                                 {item.stock === 0 && (
@@ -103,7 +104,7 @@ export default function ProductsPage() {
                             </button>
                         )}
 
-                        <Link href={`/products/${item.id}`}>
+                        <Link href={`/products/${getProductSlug(item)}`}>
                             <h3 className="text-[13px] font-black text-gray-900 leading-tight truncate px-1">
                                 {item[`name_${language}`] || item.name}
                             </h3>
