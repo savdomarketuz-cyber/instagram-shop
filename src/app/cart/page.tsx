@@ -79,9 +79,9 @@ export default function CartPage() {
                                             </div>
                                         </div>
                                         
-                                        {/* Desktop Counter */}
-                                        <div className="col-span-6 lg:col-span-3 flex justify-center">
-                                            <div className="flex items-center gap-6 bg-gray-50 border border-gray-100 px-5 py-3 rounded-2xl shadow-sm">
+                                        {/* Mobile Optimized Grid */}
+                                        <div className="col-span-12 lg:col-span-3 flex items-center justify-between lg:justify-center mt-4 lg:mt-0 pt-4 lg:pt-0 border-t border-gray-50 lg:border-none">
+                                            <div className="flex items-center gap-6 bg-gray-50 border border-gray-100 px-5 py-3 rounded-2xl shadow-sm scale-90 md:scale-100 origin-left lg:origin-center">
                                                 <button
                                                     onClick={() => item.quantity > 1 ? updateQuantity(item.id, item.quantity - 1) : removeFromCart(item.id)}
                                                     className="text-gray-400 hover:text-black transition-colors"
@@ -96,10 +96,16 @@ export default function CartPage() {
                                                     <Plus size={16} strokeWidth={3} />
                                                 </button>
                                             </div>
+                                            
+                                            {/* Price only visible on right for mobile if we want, or side-by-side */}
+                                            <div className="text-right lg:hidden">
+                                                <p className="text-xl font-black italic tracking-tighter">{(item.price * item.quantity).toLocaleString()} so'm</p>
+                                            </div>
                                         </div>
 
-                                        <div className="col-span-6 lg:col-span-3 text-right">
-                                            <p className="text-xl md:text-2xl font-black italic tracking-tighter">{(item.price * item.quantity).toLocaleString()} so'm</p>
+                                        {/* Desktop Price */}
+                                        <div className="hidden lg:block lg:col-span-3 text-right">
+                                            <p className="text-2xl font-black italic tracking-tighter">{(item.price * item.quantity).toLocaleString()} so'm</p>
                                         </div>
                                     </div>
                                 </div>
@@ -108,7 +114,7 @@ export default function CartPage() {
 
                         {/* Right: Summary Panel */}
                         <div className="col-span-12 lg:col-span-4 lg:sticky lg:top-32">
-                            <div className="bg-gray-50 p-10 rounded-[50px] border border-gray-100">
+                            <div className="bg-gray-50 p-6 md:p-10 rounded-[50px] border border-gray-100">
                                 <h2 className="text-xl font-black italic tracking-tighter uppercase mb-8">Buyurtma xulosasi</h2>
                                 
                                 <div className="space-y-4 mb-10 pb-10 border-b border-gray-200">
