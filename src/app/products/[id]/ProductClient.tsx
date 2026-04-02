@@ -10,6 +10,7 @@ import { Loader2, Plus, Minus, ShoppingBag, Heart, Star, Check, Truck, Clock, Sh
 import Link from "next/link";
 import { getDeliveryDateText } from "@/lib/date-utils";
 import Image from "next/image";
+import { getProductIdFromSlug } from "@/lib/slugify";
 
 // Components
 import { ProductMedia } from "@/components/product/ProductMedia";
@@ -26,6 +27,7 @@ import type { Product } from "@/types";
 
 export default function ProductClient({ params, initialProduct }: { params: { id: string }, initialProduct?: Product | null }) {
     const router = useRouter();
+    const productId = getProductIdFromSlug(params.id);
     const { 
         addToCart, toggleWishlist, wishlist, cart, updateQuantity, 
         removeFromCart, user, language, showToast, prefetchedProducts 
@@ -33,7 +35,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
     const t = translations[language];
 
     // Core Data State
-    const prefetched = prefetchedProducts[params.id];
+    const prefetched = prefetchedProducts[productId];
     const [product, setProduct] = useState<Product | null>(initialProduct || prefetched || null);
     const [loading, setLoading] = useState<boolean>(!initialProduct && !prefetched);
     const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
@@ -64,7 +66,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
 
     // Initial Fetch
     useEffect(() => {
-        if (!initialProduct || initialProduct.id !== params.id) {
+        if (!initialProduct || initialProduct.id !== productId) {
             fetchProduct();
         } else {
             // Background revalidation or parallel fetch of secondary data
@@ -78,7 +80,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
             ]);
         }
         fetchComments();
-    }, [params.id]);
+    }, [productId]);
 
     const fetchProduct = async () => {
         if (!product) setLoading(true);
@@ -86,7 +88,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
             const { data: productData, error } = await supabase
                 .from("products")
                 .select("*")
-                .eq("id", params.id)
+                .eq("id", productId)
                 .single();
 
             if (productData) {
@@ -98,7 +100,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                    // We could use an RPC or just update user_interests table
                    supabase.rpc('track_product_view', { 
                        p_user_phone: user.phone, 
-                       p_product_id: params.id,
+                       p_product_id: productId,
                        p_category_id: data.category
                    }).then(({ error }) => {
                        if (error) console.warn("Interest tracking failed:", error);
@@ -201,7 +203,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
         const { data } = await supabase
             .from("comments")
             .select("*")
-            .eq("product_id", params.id)
+            .eq("product_id", productId)
             .order("created_at", { ascending: false });
         
         if (data) setComments(data.map(mapComment));

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Trash2, Heart, Package } from "lucide-react";
 import { useEffect, useState } from "react";
 import { translations } from "@/lib/translations";
+import { getProductSlug } from "@/lib/slugify";
 
 export default function WishlistPage() {
     const { wishlist, toggleWishlist, user, language } = useStore();
@@ -55,7 +56,7 @@ export default function WishlistPage() {
                 <div className="grid grid-cols-2 gap-x-4 gap-y-8">
                     {wishlist.map((item) => (
                         <div key={item.id} className="relative group">
-                            <Link href={`/products/${item.id}`} className="block">
+                            <Link href={`/products/${getProductSlug(item)}`} className="block">
                                 <div className="aspect-[3/4] overflow-hidden rounded-[24px] md:rounded-[28px] bg-gray-50 mb-3 shadow-sm relative">
                                     <img 
                                         src={item.imageUrl || item.image || ''} 

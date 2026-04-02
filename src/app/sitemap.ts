@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getProductSlug } from '@/lib/slugify';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const baseUrl = 'https://velari.uz';
@@ -23,11 +24,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         // Dynamic product routes
         const { data: products } = await supabaseAdmin
             .from('products')
-            .select('id, updated_at')
+            .select('id, name, name_uz, updated_at')
             .eq('is_deleted', false);
 
         const productRoutes = (products || []).map((product) => ({
-            url: `${baseUrl}/products/${product.id}`,
+            url: `${baseUrl}/products/${getProductSlug(product)}`,
             lastModified: product.updated_at ? new Date(product.updated_at) : new Date(),
             changeFrequency: 'weekly' as const,
             priority: 0.7,

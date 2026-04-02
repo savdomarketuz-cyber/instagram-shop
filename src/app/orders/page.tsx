@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/store/store";
 import { supabase } from "@/lib/supabase";
+import { getProductSlug } from "@/lib/slugify";
 import { Package, ChevronRight, Clock, CheckCircle, Truck, XCircle, Loader2, Star, Camera, Video, MessageCircle, Play } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -345,7 +346,7 @@ export default function OrdersPage() {
 
                                         <div className="flex gap-2 w-full">
                                             <Link
-                                                href={`/products/${item.id}`}
+                                                href={`/products/${getProductSlug(item)}`}
                                                 className="flex-1 py-3 bg-white border border-gray-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-2 hover:bg-gray-50 transition-all active:scale-95"
                                             >
                                                 {language === 'uz' ? 'Marketda' : 'В маркет'}

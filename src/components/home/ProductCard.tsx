@@ -7,6 +7,7 @@ import { Star, Heart, Check, Minus, Plus, Truck } from "lucide-react";
 
 import { Product, CartItem } from "@/types";
 import { TranslationKeys } from "@/lib/translations";
+import { getProductSlug } from "@/lib/slugify";
 
 interface ProductCardProps {
     item: Product;
@@ -58,7 +59,7 @@ export const ProductCard = ({
             className="group relative flex flex-col h-full bg-white rounded-xl overflow-hidden shadow-sm border border-gray-50 active:scale-[0.97] transition-transform duration-150"
             style={{ overflowAnchor: 'none' }}
         >
-            <Link href={`/products/${item.id}`} className="flex flex-col flex-1 outline-none" prefetch={true}>
+            <Link href={`/products/${getProductSlug(item)}`} className="flex flex-col flex-1 outline-none" prefetch={true}>
                 <div className="relative aspect-[3/4] overflow-hidden bg-gray-50 border-b border-gray-50">
                     {isVideo ? (
                         <video

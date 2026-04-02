@@ -2,15 +2,17 @@ import { Metadata } from 'next';
 import ProductClient from './ProductClient';
 import { supabase } from "@/lib/supabase";
 import { mapProduct } from "@/lib/mappers";
+import { getProductIdFromSlug } from "@/lib/slugify";
 
 export const revalidate = 3600; // ISR configuration: revalidate every hour
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
     try {
+        const productId = getProductIdFromSlug(params.id);
         const { data: productData } = await supabase
             .from("products")
             .select("*")
-            .eq("id", params.id)
+            .eq("id", productId)
             .single();
         
         if (!productData) {
@@ -80,7 +82,8 @@ async function getProductData(id: string) {
 }
 
 export default async function Page({ params }: { params: { id: string } }) {
-    const product: any = await getProductData(params.id);
+    const productId = getProductIdFromSlug(params.id);
+    const product: any = await getProductData(productId);
     
     if (!product) return <div className="p-10 text-center">Mahsulot topilmadi</div>;
 
