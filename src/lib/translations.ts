@@ -67,7 +67,7 @@ export const translations = {
                 others: "Boshqalar",
                 purchased: "Sotib olinganlar",
                 returns: "Qaytish",
-                promoCodes: "Reklama kodlari",
+                promoCodes: "Promokodlar",
                 reviews: "Sharhlar va savollar",
                 theme: "Dizayn mavzusi",
                 compare: "Taqqoslash",

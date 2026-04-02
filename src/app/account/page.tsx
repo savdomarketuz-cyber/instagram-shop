@@ -23,7 +23,8 @@ import {
     Phone,
     Save,
     CheckCircle2,
-    Settings
+    Settings,
+    Tag
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { translations } from "@/lib/translations";
@@ -34,7 +35,7 @@ export default function AccountPage() {
     const { user, setUser, logout, language, setLanguage } = useStore();
     const t = translations[language];
 
-    const [view, setView] = useState<"menu" | "edit-profile" | "language" | "returns">("menu");
+    const [view, setView] = useState<"menu" | "edit-profile" | "language" | "returns" | "promo-codes">("menu");
     const [name, setName] = useState(user?.name || "");
     const [username, setUsername] = useState(user?.username || "");
     const [isSaving, setIsSaving] = useState(false);
@@ -224,6 +225,10 @@ export default function AccountPage() {
 
     if (view === "returns") {
         return <ReturnsView user={user} t={t} language={language} onBack={() => setView("menu")} />;
+    }
+
+    if (view === "promo-codes") {
+        return <PromoCodesView t={t} language={language} onBack={() => setView("menu")} />;
     }
 
     // --- Main Menu View ---
@@ -490,6 +495,84 @@ function ReturnsView({ user, t, language, onBack }: any) {
                         </div>
                     </div>
                 )}
+            </div>
+        </div>
+    );
+}
+
+function PromoCodesView({ t, language, onBack }: any) {
+    const [promos, setPromos] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchPromos = async () => {
+            const { data } = await supabase
+                .from("promo_codes")
+                .select("*")
+                .eq("active", true)
+                .order("created_at", { ascending: false });
+            
+            if (data) {
+                // Filter expired ones on client side for extra safety
+                const now = new Date().getTime();
+                const filtered = data.filter(p => !p.expires_at || new Date(p.expires_at).getTime() > now);
+                setPromos(filtered);
+            }
+            setLoading(false);
+        };
+        fetchPromos();
+    }, []);
+
+    return (
+        <div className="bg-[#F2F3F5] min-h-screen pb-24 px-4 md:px-10">
+            <div className="max-w-xl mx-auto pt-10">
+                <button onClick={onBack} className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8 hover:text-black transition-all">
+                    <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
+                </button>
+
+                <div className="space-y-6">
+                    <h1 className="text-3xl font-black tracking-tighter italic uppercase">{t.account.sections.promoCodes}</h1>
+                    <p className="text-gray-400 text-xs font-bold uppercase tracking-widest leading-relaxed">
+                        {language === 'uz' ? 'Xaridlar uchun maxsus chegirmali kodlarimizdan foydalaning.' : 'Используйте наши специальные скидочные коды для покупок.'}
+                    </p>
+
+                    {loading ? (
+                        <div className="flex justify-center py-20"><Loader2 className="animate-spin text-black" /></div>
+                    ) : promos.length === 0 ? (
+                        <div className="bg-white p-12 rounded-[40px] text-center border border-gray-100 italic font-bold text-gray-400">
+                            {language === 'uz' ? 'Hozircha faol promo kodlar yo\'q.' : 'Пока нет активных промокодов.'}
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {promos.map(promo => (
+                                <div key={promo.id} className="bg-white p-8 rounded-[40px] border-2 border-dashed border-gray-100 flex flex-col items-center text-center relative overflow-hidden group">
+                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-6 bg-[#F2F3F5] rounded-b-full border-x border-b border-gray-100"></div>
+                                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-6 bg-[#F2F3F5] rounded-t-full border-x border-t border-gray-100"></div>
+                                    
+                                    <div className="w-16 h-16 bg-purple-50 text-purple-500 rounded-[28px] flex items-center justify-center mb-6">
+                                        <Tag size={32} />
+                                    </div>
+
+                                    <h3 className="text-4xl font-black italic tracking-tighter uppercase mb-2 group-hover:scale-110 transition-transform">{promo.code}</h3>
+                                    <p className="text-gray-400 font-black text-[10px] uppercase tracking-widest mb-6">
+                                        {promo.discount_type === 'percent' ? `${promo.discount_value}% Chegirma` : `${promo.discount_value.toLocaleString()} so'm Chegirma`}
+                                    </p>
+
+                                    <div className="w-full pt-6 border-t border-gray-50 flex items-center justify-between">
+                                        <div className="text-left">
+                                            <p className="text-[8px] font-black text-gray-300 uppercase tracking-widest mb-0.5">{language === 'uz' ? 'Minimal buyurtma' : 'Мин. заказ'}</p>
+                                            <p className="text-xs font-black italic">{promo.min_order_amount.toLocaleString()} so'm</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[8px] font-black text-gray-300 uppercase tracking-widest mb-0.5">{language === 'uz' ? 'Muddati' : 'Срок'}</p>
+                                            <p className="text-xs font-black italic text-purple-500 uppercase">{promo.expires_at ? new Date(promo.expires_at).toLocaleDateString() : 'Cheksiz'}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

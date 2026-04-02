@@ -4,7 +4,7 @@ import { useStore } from "@/store/store";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { AlertCircle, ArrowLeft, Loader2, PackageX, MapPin, Globe } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, PackageX, MapPin, Globe, Tag, X } from "lucide-react";
 import dynamic from "next/dynamic";
 const YandexMapPicker = dynamic(() => import("@/components/YandexMapPicker"), {
     loading: () => <div className="h-64 animate-pulse bg-gray-50 rounded-3xl" />,
@@ -97,7 +97,35 @@ export default function CheckoutPage() {
         return errors;
     };
 
-    const total = displayProducts.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const subtotal = displayProducts.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const [promoCode, setPromoCode] = useState("");
+    const [promoData, setPromoData] = useState<any>(null);
+    const [isApplyingPromo, setIsApplyingPromo] = useState(false);
+    const total = Math.max(0, subtotal - (promoData?.discount || 0));
+
+    const handleApplyPromo = async () => {
+        if (!promoCode.trim()) return;
+        setIsApplyingPromo(true);
+        try {
+            const res = await fetch("/api/promo-codes/validate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ code: promoCode, totalAmount: subtotal })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setPromoData(data);
+                showToast(language === 'uz' ? "Promo kod qo'llanildi!" : "Промокод применен!", 'success');
+            } else {
+                showToast(data.error, 'error');
+                setPromoData(null);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsApplyingPromo(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -110,7 +138,6 @@ export default function CheckoutPage() {
 
         setIsSubmitting(true);
         try {
-            // Atomic Order Submission via Supabase RPC
             const { data, error } = await supabase.rpc('place_order', {
                 p_user_phone: user.phone,
                 p_items: displayProducts.map(item => ({
@@ -123,7 +150,9 @@ export default function CheckoutPage() {
                 p_total: total,
                 p_address: address,
                 p_coords: coords,
-                p_status: language === 'uz' ? "To'lov kutilmoqda" : "Ожидание оплаты"
+                p_status: language === 'uz' ? "To'lov kutilmoqda" : "Ожидание оплаты",
+                p_promo_code: promoData?.code || null,
+                p_discount_amount: promoData?.discount || 0
             });
 
             if (error) throw error;
