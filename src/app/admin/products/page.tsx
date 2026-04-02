@@ -22,7 +22,8 @@ import {
     Download,
     ChevronLeft,
     ChevronRight,
-    Video
+    Video,
+    DollarSign
 } from "lucide-react";
 
 interface Category {
@@ -63,6 +64,8 @@ interface Product {
     weight?: string;
     barcode?: string;
     videoUrl?: string;
+    cashback_type?: "global" | "percent" | "fixed";
+    cashback_value?: number;
 }
 
 import { uploadToYandexS3, uploadFromUrlToYandexS3 } from "@/lib/yandex-s3";
@@ -165,7 +168,9 @@ export default function AdminProducts() {
         length: "",
         weight: "",
         barcode: "",
-        videoUrl: ""
+        videoUrl: "",
+        cashback_type: "global",
+        cashback_value: 0
     });
 
     useEffect(() => {
@@ -431,7 +436,9 @@ export default function AdminProducts() {
                 video_url: newProduct.videoUrl?.trim() || "",
                 article: newProduct.article || generateArticle(),
                 is_deleted: newProduct.isDeleted || false,
-                is_original: newProduct.isOriginal || false
+                is_original: newProduct.isOriginal || false,
+                cashback_type: newProduct.cashback_type || 'global',
+                cashback_value: newProduct.cashback_value || 0
             };
 
             if (newProduct.id) {
@@ -447,7 +454,7 @@ export default function AdminProducts() {
             }
             setIsModalOpen(false);
             setProductSelectionPath([]);
-            setNewProduct({ name: "", name_uz: "", name_ru: "", price: 0, oldPrice: 0, category: "", image: "", images: [], description: "", description_uz: "", description_ru: "", tag: "", sku: "", groupId: "", colorName: "", article: "", isDeleted: false, isOriginal: false, images_string: "", brand: "", height: "", width: "", length: "", weight: "", barcode: "", videoUrl: "" });
+            setNewProduct({ name: "", name_uz: "", name_ru: "", price: 0, oldPrice: 0, category: "", image: "", images: [], description: "", description_uz: "", description_ru: "", tag: "", sku: "", groupId: "", colorName: "", article: "", isDeleted: false, isOriginal: false, images_string: "", brand: "", height: "", width: "", length: "", weight: "", barcode: "", videoUrl: "", cashback_type: "global", cashback_value: 0 });
             fetchData();
         } catch (error) {
             console.error("Error saving product:", error);
@@ -1175,6 +1182,50 @@ export default function AdminProducts() {
                                             />
                                         </div>
                                     </div>
+
+                                    {/* Cashback Sub-Section */}
+                                    <div className="bg-emerald-50/40 p-8 rounded-[40px] border border-emerald-100 space-y-6">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="w-8 h-8 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                                                <DollarSign size={16} />
+                                            </div>
+                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Cashback Sozlamalari</h4>
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Hisoblash turi</label>
+                                                <select
+                                                    value={newProduct.cashback_type || "global"}
+                                                    onChange={e => setNewProduct({ ...newProduct, cashback_type: e.target.value as any })}
+                                                    className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm text-black"
+                                                >
+                                                    <option value="global">Global (% )</option>
+                                                    <option value="percent">Maxsus % (Foiz)</option>
+                                                    <option value="fixed">Maxsus Summa (Fixed)</option>
+                                                </select>
+                                            </div>
+                                            {newProduct.cashback_type !== 'global' && (
+                                                <div className="space-y-2 animate-in zoom-in-95 duration-300">
+                                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">
+                                                        {newProduct.cashback_type === 'percent' ? 'Foiz (%)' : 'Summa (so\'m)'}
+                                                    </label>
+                                                    <div className="relative">
+                                                        <input
+                                                            type="number"
+                                                            value={newProduct.cashback_value || ""}
+                                                            onChange={e => setNewProduct({ ...newProduct, cashback_value: Number(e.target.value) })}
+                                                            className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm text-black pr-10"
+                                                            placeholder="0"
+                                                        />
+                                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-black">
+                                                            {newProduct.cashback_type === 'percent' ? '%' : '∑'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                     <div className="space-y-4">
                                         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 italic">Tovar Toifasi (Uzum Market uslubida)</label>
 
@@ -1396,7 +1447,7 @@ export default function AdminProducts() {
                             <div className="mt-12 flex justify-end gap-4">
                                 <button
                                     type="button"
-                                    onClick={() => setIsModalOpen(false)}
+                                    onClick={() => { setIsModalOpen(false); setProductSelectionPath([]); }}
                                     className="px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] text-gray-400 hover:text-black hover:bg-gray-50 transition-all"
                                 >
                                     Bekor qilish
