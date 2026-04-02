@@ -12,7 +12,9 @@ export default function AdminCashback() {
     const [loading, setLoading] = useState(true);
     const [isSavingSettings, setIsSavingSettings] = useState(false);
     const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
+    const [isExceptionModalOpen, setIsExceptionModalOpen] = useState(false);
     const [selectedWallet, setSelectedWallet] = useState<any>(null);
+    const [selectedProduct, setSelectedProduct] = useState<any>(null);
     const [adjustment, setAdjustment] = useState({
         amount: 0,
         type: "earned",
@@ -56,6 +58,28 @@ export default function AdminCashback() {
             console.error("Update settings error:", error);
         } finally {
             setIsSavingSettings(false);
+        }
+    };
+
+    const handleUpdateProductCashback = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            const { error } = await supabase
+                .from("products")
+                .update({ 
+                    cashback_type: selectedProduct.cashback_type, 
+                    cashback_value: selectedProduct.cashback_value 
+                })
+                .eq("id", selectedProduct.id);
+            
+            if (error) throw error;
+            fetchData();
+            setIsExceptionModalOpen(false);
+        } catch (error) {
+            console.error("Update product cashback error:", error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -160,7 +184,13 @@ export default function AdminCashback() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {exceptions.map(prod => (
-                            <div key={prod.id} className="bg-white p-5 rounded-[40px] shadow-xl border border-orange-100 flex items-center gap-5 group hover:border-orange-500 transition-all duration-500">
+                            <div key={prod.id} className="bg-white p-5 rounded-[40px] shadow-xl border border-orange-100 flex items-center gap-5 group hover:border-orange-500 transition-all duration-500 relative">
+                                <button 
+                                    onClick={() => { setSelectedProduct(prod); setIsExceptionModalOpen(true); }}
+                                    className="absolute top-4 right-4 p-2 bg-gray-50 text-gray-400 rounded-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-black hover:text-white"
+                                >
+                                    <Edit2 size={14} />
+                                </button>
                                 <div className="w-16 h-20 bg-gray-50 rounded-[24px] overflow-hidden relative shrink-0">
                                     <img src={prod.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" referrerPolicy="no-referrer" />
                                 </div>
@@ -329,6 +359,73 @@ export default function AdminCashback() {
                                 className="w-full bg-black text-white py-6 rounded-[32px] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-black/20 hover:scale-[1.02] active:scale-95 transition-all"
                             >
                                 BALANSNI YANGILASH
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Product Exception Modal */}
+            {isExceptionModalOpen && selectedProduct && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+                    <div className="bg-white w-full max-w-xl rounded-[50px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-500">
+                        <div className="p-10 border-b border-gray-50 flex justify-between items-center bg-orange-50/30">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-16 bg-white rounded-xl overflow-hidden shadow-sm">
+                                    <img src={selectedProduct.image} className="w-full h-full object-cover" />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-black italic tracking-tighter uppercase mb-1 line-clamp-1">{selectedProduct.name}</h2>
+                                    <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest italic">Maxsus Cashback Sozlamasi</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setIsExceptionModalOpen(false)} className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center hover:bg-black hover:text-white transition-all shadow-sm"><X size={24} /></button>
+                        </div>
+                        
+                        <form onSubmit={handleUpdateProductCashback} className="p-10 space-y-8">
+                            <div className="grid grid-cols-2 gap-8">
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Hisoblash Turi</label>
+                                    <select 
+                                        value={selectedProduct.cashback_type}
+                                        onChange={(e) => setSelectedProduct({ ...selectedProduct, cashback_type: e.target.value })}
+                                        className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-3xl p-5 text-sm font-black outline-none transition-all"
+                                    >
+                                        <option value="global">Global (% )</option>
+                                        <option value="percent">Maxsus % (Foiz)</option>
+                                        <option value="fixed">Maxsus Summa (Fixed)</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">
+                                        {selectedProduct.cashback_type === 'percent' ? 'Foiz (%)' : 'Summa (so\'m)'}
+                                    </label>
+                                    <input 
+                                        disabled={selectedProduct.cashback_type === 'global'}
+                                        required
+                                        type="number"
+                                        value={selectedProduct.cashback_value}
+                                        onChange={(e) => setSelectedProduct({ ...selectedProduct, cashback_value: Number(e.target.value) })}
+                                        className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-3xl p-5 text-xl font-black outline-none transition-all italic tracking-tighter disabled:opacity-30"
+                                    />
+                                </div>
+                            </div>
+
+                            <button 
+                                type="submit"
+                                className="w-full bg-black text-white py-6 rounded-[32px] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-orange-500/20 hover:scale-[1.02] active:scale-95 transition-all"
+                            >
+                                ISTISNONI SAQLASH
+                            </button>
+                            
+                            <button 
+                                type="button"
+                                onClick={() => { 
+                                    setSelectedProduct({ ...selectedProduct, cashback_type: 'global', cashback_value: 0 });
+                                }}
+                                className="w-full bg-red-50 text-red-500 py-4 rounded-[24px] font-black text-[9px] uppercase tracking-widest hover:bg-red-100 transition-all border border-red-100"
+                            >
+                                ISTISNONI O'CHIRISH (GLOBAL QILISH)
                             </button>
                         </form>
                     </div>
