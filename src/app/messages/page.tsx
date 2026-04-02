@@ -322,12 +322,12 @@ export default function MessagesPage() {
                                                     className="flex items-center gap-4 p-4 rounded-3xl hover:bg-gray-50 active:scale-[0.98] transition-all group"
                                                 >
                                                     <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center font-black text-xs shrink-0 shadow-lg shadow-black/10 group-hover:scale-105 transition-all">
-                                                        {u.username?.charAt(0).toUpperCase() || u.name?.charAt(0).toUpperCase()}
+                                                        {u.name?.charAt(0).toUpperCase() || u.username?.charAt(0).toUpperCase()}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <h3 className="font-black italic text-sm truncate uppercase tracking-tighter">@{u.username || u.name}</h3>
+                                                        <h3 className="font-black italic text-sm truncate uppercase tracking-tighter">{u.name}</h3>
                                                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate">
-                                                            {u.name} • {u.phone}
+                                                            {u.username ? `@${u.username}` : u.phone}
                                                         </p>
                                                     </div>
                                                 </Link>

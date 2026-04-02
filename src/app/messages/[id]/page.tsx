@@ -102,15 +102,32 @@ export default function P2PChatPage() {
 
         const { uploadToYandexS3 } = require("@/lib/yandex-s3");
         setIsSending(true);
+        const tempId = crypto.randomUUID();
+        const msgText = inputText;
+
         try {
+            // Optimistic update: Show message immediately
+            const optimisticMsg = {
+                id: tempId,
+                chat_id: roomId,
+                text: msgText,
+                sender_id: user.phone,
+                created_at: new Date().toISOString(),
+                isPending: true
+            };
+            setMessages(prev => [...prev, optimisticMsg]);
+            setInputText("");
+            scrollToBottom();
+
             let uploadedUrl = "";
             let fileType = "";
 
             if (selectedFile) {
-                setIsUploadingMedia(true);
                 uploadedUrl = await uploadToYandexS3(selectedFile);
                 fileType = selectedFile.type.startsWith('image/') ? 'image' : 'video';
-                setIsUploadingMedia(false);
+                
+                // Update optimistic message with media
+                setMessages(prev => prev.map(m => m.id === tempId ? { ...m, image: fileType === 'image' ? uploadedUrl : null, video: fileType === 'video' ? uploadedUrl : null } : m));
             }
 
             const { data: existingChat } = await supabase.from("private_chats").select("id, unread_count").eq("id", roomId).single();
@@ -128,20 +145,22 @@ export default function P2PChatPage() {
                 }]);
             }
 
-            const msgId = crypto.randomUUID();
-            const newMessage = {
-                id: msgId,
+            // Real DB Insert
+            const { data: realMsg, error } = await supabase.from("private_messages").insert([{
+                id: crypto.randomUUID(),
                 chat_id: roomId,
-                text: inputText,
+                text: msgText,
                 image: fileType === 'image' ? uploadedUrl : null,
                 video: fileType === 'video' ? uploadedUrl : null,
-                sender_id: user.phone,
-                created_at: new Date().toISOString()
-            };
+                sender_id: user.phone
+            }]).select().single();
 
-            await supabase.from("private_messages").insert([newMessage]);
+            if (realMsg) {
+                // Replace optimistic with real
+                setMessages(prev => prev.map(m => m.id === tempId ? realMsg : m));
+            }
 
-            const lastMsg = uploadedUrl ? (fileType === 'image' ? "🖼️ Foto" : "🎥 Video") : inputText;
+            const lastMsg = uploadedUrl ? (fileType === 'image' ? "🖼️ Foto" : "🎥 Video") : msgText;
             const currentOtherUnread = existingChat?.unread_count?.[otherPhone] || 0;
             
             await supabase.from("private_chats").update({
@@ -150,12 +169,13 @@ export default function P2PChatPage() {
                 unread_count: { ...existingChat?.unread_count, [otherPhone]: currentOtherUnread + 1 }
             }).eq("id", roomId);
 
-            setInputText("");
             setSelectedFile(null);
             setMediaPreview(null);
             scrollToBottom();
         } catch (error) {
             console.error("Error sending message:", error);
+            // Rollback optimistic on error
+            setMessages(prev => prev.filter(m => m.id !== tempId));
         } finally {
             setIsSending(false);
             setIsUploadingMedia(false);
