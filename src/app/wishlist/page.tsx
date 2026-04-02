@@ -59,7 +59,7 @@ export default function WishlistPage() {
                                 <div className="aspect-[3/4] overflow-hidden rounded-[28px] bg-gray-50 mb-3 shadow-sm">
                                     <img src={item.imageUrl || item.image || ''} alt={item[`name_${language}`] || item.name} className="object-cover w-full h-full" />
                                 </div>
-                                <h3 className="text-[13px] font-bold text-gray-900 leading-tight">
+                                <h3 className="text-[13px] font-bold text-gray-900 leading-tight line-clamp-2">
                                     {item[`name_${language}`] || item.name}
                                 </h3>
                                 <p className="text-sm font-black text-black mt-1">{item.price?.toLocaleString()} so'm</p>

@@ -230,9 +230,9 @@ export default function CheckoutPage() {
                             <span>{t.common.delivery}</span>
                             <span className="text-green-400 font-black">{language === 'uz' ? 'Bepul' : 'Бесплатно'}</span>
                         </div>
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end font-black text-2xl md:text-4xl italic tracking-tighter pt-8 border-t border-white/10 px-1 gap-2">
-                            <span className="uppercase text-[10px] md:text-sm not-italic opacity-40 tracking-[0.2em]">{t.common.total}</span>
-                            <span className="leading-none">{total.toLocaleString()} <span className="text-sm md:text-xl not-italic">so'm</span></span>
+                        <div className="flex justify-between items-center sm:items-end font-black text-2xl md:text-4xl italic tracking-tighter pt-8 border-t border-white/10 px-1 gap-2">
+                            <span className="uppercase text-[10px] md:text-sm not-italic opacity-40 tracking-[0.2em] shrink-0">{t.common.total}</span>
+                            <span className="leading-none text-right whitespace-nowrap">{total.toLocaleString()} <span className="text-sm md:text-xl not-italic opacity-80">so'm</span></span>
                         </div>
                     </div>
                 </div>

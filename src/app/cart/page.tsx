@@ -67,7 +67,7 @@ export default function CartPage() {
                                                 />
                                             </div>
                                             <div className="flex-1">
-                                                <h3 className="font-black text-xs md:text-sm text-gray-900 leading-tight uppercase tracking-tight mb-2">
+                                                <h3 className="font-black text-xs md:text-sm text-gray-900 leading-tight uppercase tracking-tight mb-2 line-clamp-2">
                                                     {item[`name_${language}`] || item.name}
                                                 </h3>
                                                 <button 
@@ -130,8 +130,8 @@ export default function CartPage() {
 
                                 <div className="mb-10">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">{t.common.total}</p>
-                                    <div className="text-5xl font-black italic tracking-tighter text-black">
-                                        {total.toLocaleString()} <span className="text-2xl not-italic">so'm</span>
+                                    <div className="text-3xl md:text-4xl lg:text-5xl font-black italic tracking-tighter text-black whitespace-nowrap">
+                                        {total.toLocaleString()} <span className="text-xl lg:text-2xl not-italic opacity-80">so'm</span>
                                     </div>
                                 </div>
 
