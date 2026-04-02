@@ -66,21 +66,23 @@ export default function P2PChatPage() {
         };
         fetchMessages();
 
-        // Real-time
+        // Real-time (Bullet-proof: Listen to all INSERTs and filter client-side)
         const channel = supabase
-            .channel(`room_${roomId}`)
+            .channel(`all_p2p_messages`)
             .on('postgres_changes', { 
                 event: 'INSERT', 
                 schema: 'public', 
-                table: 'private_messages',
-                filter: `chat_id=eq."${roomId}"`
+                table: 'private_messages'
             }, (payload) => {
-                setMessages(prev => {
-                    const exists = prev.some(m => m.id === payload.new.id);
-                    if (exists) return prev;
-                    return [...prev, payload.new];
-                });
-                scrollToBottom();
+                // Manually Filter for THIS ROOM only
+                if (payload.new.chat_id === roomId) {
+                    setMessages(prev => {
+                        const exists = prev.some(m => m.id === payload.new.id);
+                        if (exists) return prev;
+                        return [...prev, payload.new];
+                    });
+                    scrollToBottom();
+                }
             })
             .subscribe();
 
