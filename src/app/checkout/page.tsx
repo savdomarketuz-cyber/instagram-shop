@@ -240,7 +240,7 @@ export default function CheckoutPage() {
                 <button
                     type="submit"
                     disabled={isSubmitting || displayProducts.length === 0 || stockErrors.length > 0 || isValidating}
-                    className="w-full bg-black text-white py-6 rounded-full font-black text-xl shadow-2xl mt-8 active:scale-95 transition-all disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none flex items-center justify-center gap-4"
+                    className="w-full bg-[#2d6e3e] text-white py-6 rounded-full font-black text-xl shadow-2xl mt-8 active:scale-95 transition-all disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none flex items-center justify-center gap-4"
                 >
                     {isValidating ? <Loader2 className="animate-spin" size={24} /> : (isSubmitting ? (language === 'uz' ? "Yuborilmoqda..." : "Отправка...") : (language === 'uz' ? "To'lovga o'tish" : "Перейти к оплате"))}
                 </button>
