@@ -19,8 +19,20 @@ export async function GET() {
             .eq("key", "cashback_settings")
             .single();
 
-        if (tErr || wErr) throw tErr || wErr;
-        return NextResponse.json({ success: true, transactions, wallets, settings: settings?.value || { rate: 0.02, enabled: true } });
+        const { data: exceptions, error: eErr } = await supabaseAdmin
+            .from("products")
+            .select("id, name, image, price, cashback_type, cashback_value")
+            .neq("cashback_type", "global")
+            .eq("is_deleted", false);
+
+        if (tErr || wErr || eErr) throw tErr || wErr || eErr;
+        return NextResponse.json({ 
+            success: true, 
+            transactions, 
+            wallets, 
+            exceptions: exceptions || [],
+            settings: settings?.value || { rate: 0.02, enabled: true } 
+        });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }

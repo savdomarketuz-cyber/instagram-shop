@@ -8,6 +8,7 @@ export default function AdminCashback() {
     const [wallets, setWallets] = useState<any[]>([]);
     const [transactions, setTransactions] = useState<any[]>([]);
     const [globalSettings, setGlobalSettings] = useState({ rate: 0.02, enabled: true });
+    const [exceptions, setExceptions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSavingSettings, setIsSavingSettings] = useState(false);
     const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
@@ -29,6 +30,7 @@ export default function AdminCashback() {
             if (data.success) {
                 setWallets(data.wallets);
                 setTransactions(data.transactions);
+                setExceptions(data.exceptions || []);
                 if (data.settings) setGlobalSettings(data.settings);
             }
         } catch (error) {
@@ -94,7 +96,7 @@ export default function AdminCashback() {
         <div className="space-y-12">
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
                 <div>
-                    <h1 className="text-5xl font-black tracking-tighter mb-4 text-emerald-600 italic">Cashback Tizimi</h1>
+                    <h1 className="text-5xl font-black tracking-tighter mb-4 text-emerald-600 italic uppercase">Cashback Dashboard</h1>
                     <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px]">Ichki pul tizimi • {wallets.length} ta hamyon • {transactions.length} ta operatsiya</p>
                 </div>
             </div>
@@ -119,7 +121,7 @@ export default function AdminCashback() {
                                 step="0.5"
                                 value={globalSettings.rate * 100}
                                 onChange={(e) => setGlobalSettings({ ...globalSettings, rate: Number(e.target.value) / 100 })}
-                                className="w-28 bg-white border-2 border-transparent focus:border-emerald-500 rounded-2xl p-4 text-xl font-black italic outline-none transition-all pr-8"
+                                className="w-28 bg-white border-2 border-transparent focus:border-emerald-500 rounded-2xl p-4 text-xl font-black italic outline-none transition-all pr-8 text-black"
                             />
                             <span className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-emerald-500 italic">%</span>
                         </div>
@@ -144,6 +146,40 @@ export default function AdminCashback() {
                     </button>
                 </div>
             </div>
+
+            {/* Exceptions Section */}
+            {exceptions.length > 0 && (
+                <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <Calculator className="text-orange-500" size={24} />
+                            <h2 className="text-2xl font-black italic tracking-tighter uppercase">Mahsulot Istisnolari</h2>
+                        </div>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest italic">{exceptions.length} ta mahsulotda maxsus sozlama bor</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {exceptions.map(prod => (
+                            <div key={prod.id} className="bg-white p-5 rounded-[40px] shadow-xl border border-orange-100 flex items-center gap-5 group hover:border-orange-500 transition-all duration-500">
+                                <div className="w-16 h-20 bg-gray-50 rounded-[24px] overflow-hidden relative shrink-0">
+                                    <img src={prod.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" referrerPolicy="no-referrer" />
+                                </div>
+                                <div className="flex-1 space-y-1">
+                                    <h4 className="text-[11px] font-black uppercase text-gray-900 group-hover:text-orange-600 transition-colors line-clamp-1">{prod.name}</h4>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest ${prod.cashback_type === 'percent' ? 'bg-orange-50 text-orange-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                            {prod.cashback_type === 'percent' ? 'Foiz' : 'Fixed'}
+                                        </span>
+                                        <p className="text-sm font-black italic tracking-tighter">
+                                            {prod.cashback_type === 'percent' ? `${prod.cashback_value}%` : `${prod.cashback_value.toLocaleString()} so'm`}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 
