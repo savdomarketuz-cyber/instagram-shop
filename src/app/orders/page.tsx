@@ -224,19 +224,9 @@ export default function OrdersPage() {
                             onClick={() => setSelectedOrder(order)}
                             className="bg-gray-50 rounded-[32px] p-6 shadow-sm border border-gray-100 active:scale-[0.98] transition-all cursor-pointer group"
                         >
-                            <div className="flex justify-between items-start mb-6">
-                                <div>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{language === 'uz' ? 'Buyurtma ID' : 'ID заказа'}</p>
-                                    <div className="font-bold text-gray-900 text-sm">#{order.id}</div>
-                                </div>
-                                <div className={`text-[10px] px-3 py-1.5 rounded-full font-black uppercase tracking-tighter ${order.status === 'Yetkazildi' || order.status === 'Доставлено' ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' :
-                                    order.status === 'To\'landi' || order.status === 'Оплачено' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' :
-                                        order.status.includes('To\'lov') || order.status.includes('Оплат') ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/20' :
-                                            order.status === 'Bekor qilingan' || order.status === 'Отменен' ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' :
-                                                'bg-black text-white shadow-lg shadow-black/10'
-                                    }`}>
-                                    {order.status}
-                                </div>
+                            <div className="mb-6">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{language === 'uz' ? 'Buyurtma ID' : 'ID заказа'}</p>
+                                <div className="font-bold text-gray-900 text-sm break-all">#{order.id}</div>
                             </div>
 
                             <div className="flex items-center gap-3 text-xs font-bold text-gray-500 mb-6">
@@ -244,6 +234,17 @@ export default function OrdersPage() {
                                 <span>
                                     {order.createdAt?.toDate?.().toLocaleDateString(language === 'uz' ? 'uz-UZ' : 'ru-RU') || (language === 'uz' ? "Hozirgina" : "Только что")} • {order.items?.length || 0} {t.cart.items}
                                 </span>
+                            </div>
+
+                            <div className="mb-5">
+                                <div className={`inline-block text-[10px] px-3 py-1.5 rounded-full font-black uppercase tracking-tighter ${order.status === 'Yetkazildi' || order.status === 'Доставлено' ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' :
+                                    order.status === 'To\'landi' || order.status === 'Оплачено' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' :
+                                        order.status.includes('To\'lov') || order.status.includes('Оплат') ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/20' :
+                                            order.status === 'Bekor qilingan' || order.status === 'Отменен' ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' :
+                                                'bg-black text-white shadow-lg shadow-black/10'
+                                    }`}>
+                                    {order.status}
+                                </div>
                             </div>
 
                             <div className="flex justify-between items-center pt-5 border-t border-gray-200/50">
