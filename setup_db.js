@@ -96,6 +96,9 @@ create table users (
   created_at timestamp with time zone default now()
 );
 
+-- 1. Create a sequence starting at 100000000000000 (15 digits)
+CREATE SEQUENCE IF NOT EXISTS order_id_seq START WITH 100000000000000;
+
 -- Orders table
 create table orders (
   id text primary key,
@@ -378,7 +381,7 @@ begin
   if jsonb_array_length(v_errors) > 0 then
     return jsonb_build_object('success', false, 'errors', v_errors);
   end if;
-  v_order_id := 'ORD-' || floor(random() * 1000000)::text;
+  v_order_id := nextval('order_id_seq')::text;
   insert into orders (id, user_phone, items, total, address, coords, status, created_at)
   values (v_order_id, p_user_phone, p_items, p_total, p_address, p_coords, p_status, now());
   return jsonb_build_object('success', true, 'orderId', v_order_id);

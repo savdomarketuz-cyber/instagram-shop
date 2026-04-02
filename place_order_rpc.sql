@@ -1,3 +1,6 @@
+-- 1. Create a sequence starting at 100000000000000 (15 digits)
+CREATE SEQUENCE IF NOT EXISTS order_id_seq START WITH 100000000000000;
+
 -- Function to place an order atomically
 CREATE OR REPLACE FUNCTION place_order(
   p_user_phone text,
@@ -80,8 +83,8 @@ BEGIN
     WHERE id = v_product_id;
   END LOOP;
 
-  -- 4. Create Order
-  v_order_id := floor(random() * (999999-100000+1) + 100000)::text || substr(extract(epoch from now())::text, -4);
+  -- 4. Create Order using the sequence (15-digit)
+  v_order_id := nextval('order_id_seq')::text;
   
   INSERT INTO orders (id, user_phone, items, total, address, coords, status, created_at)
   VALUES (v_order_id, p_user_phone, p_items, p_total, p_address, p_coords, p_status, now());
