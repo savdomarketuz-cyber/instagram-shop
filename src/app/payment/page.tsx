@@ -3,7 +3,7 @@
 import { useStore } from "@/store/store";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
-import { CheckCircle, QrCode, Banknote, Clock, Info, AlertCircle } from "lucide-react";
+import { CheckCircle, QrCode, Banknote, Clock, Info, AlertCircle, ArrowLeft } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { translations } from "@/lib/translations";
@@ -113,9 +113,17 @@ function PaymentContent() {
 
     return (
         <div className="p-6 bg-white min-h-screen pt-12 pb-24">
-            <h1 className="text-2xl font-black italic tracking-tighter uppercase mb-8">
-                {language === 'uz' ? 'To\'lov usuli' : 'Способ оплаты'}
-            </h1>
+            <div className="flex items-center gap-4 mb-10">
+                <button 
+                    onClick={() => router.back()} 
+                    className="p-3 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all active:scale-95"
+                >
+                    <ArrowLeft size={20} />
+                </button>
+                <h1 className="text-2xl font-black italic tracking-tighter uppercase">
+                    {language === 'uz' ? 'To\'lov usuli' : 'Способ оплаты'}
+                </h1>
+            </div>
 
             <div className="space-y-4 mb-8">
                 {/* Click Option */}
