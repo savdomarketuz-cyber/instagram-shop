@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Search, User, Phone, ShoppingBag, DollarSign, Calendar, Loader2, Globe, Monitor, MapPin, X, Heart, Eye, TrendingUp, Sparkles, Clock, ShoppingCart } from "lucide-react";
+import { Search, User, Phone, ShoppingBag, DollarSign, Calendar, Loader2, Globe, Monitor, MapPin, X, Heart, Eye, TrendingUp, Sparkles, Clock, ShoppingCart, History } from "lucide-react";
 
 interface Customer {
     id: string;
@@ -17,6 +17,9 @@ interface Customer {
     isOnline?: boolean;
     lastSeen?: any;
     currentPath?: string;
+    username?: string;
+    walletBalance?: number;
+    ordersList?: any[];
 }
 
 export default function AdminCustomers() {
@@ -33,7 +36,7 @@ export default function AdminCustomers() {
             try {
                 const [usersRes, ordersRes, statusRes, productsRes] = await Promise.all([
                     supabase.from("users").select("*"),
-                    supabase.from("orders").select("user_phone, total"),
+                    supabase.from("orders").select("user_phone, total, id, created_at, items, status"),
                     supabase.from("user_status").select("*"),
                     supabase.from("products").select("id, name")
                 ]);
@@ -66,7 +69,8 @@ export default function AdminCustomers() {
                         lastSeen: activity.last_seen || null,
                         currentPath: activity.current_path || "/",
                         totalOrders: userOrders.length,
-                        totalSpent: userOrders.reduce((sum, order) => sum + (order.total || 0), 0)
+                        totalSpent: userOrders.reduce((sum, order) => sum + (order.total || 0), 0),
+                        username: user.username || null
                     };
                 });
 
@@ -87,19 +91,20 @@ export default function AdminCustomers() {
         setSelectedCustomer(customer);
         setLoadingDetails(true);
         try {
-            const { data, error } = await supabase
-                .from("user_interests")
-                .select("*")
-                .eq("id", customer.phone)
-                .single();
+            const [interestsRes, walletRes, ordersRes] = await Promise.all([
+                supabase.from("user_interests").select("*").eq("id", customer.phone).single(),
+                supabase.from("user_wallets").select("balance").eq("user_phone", customer.phone).single(),
+                supabase.from("orders").select("*").eq("user_phone", customer.phone).order('created_at', { ascending: false })
+            ]);
             
-            if (error && error.code !== "PGRST116") throw error; // PGRST116 is "no rows found"
+            if (interestsRes.data) setCustomerInterests(interestsRes.data);
+            
+            setSelectedCustomer(prev => prev ? ({
+                ...prev,
+                walletBalance: walletRes.data?.balance || 0,
+                ordersList: ordersRes.data || []
+            }) : null);
 
-            if (data) {
-                setCustomerInterests(data);
-            } else {
-                setCustomerInterests(null);
-            }
         } catch (e) {
             console.error("Error fetching customer details:", e);
         } finally {
@@ -162,18 +167,20 @@ export default function AdminCustomers() {
                             <div className="flex items-center gap-5 mb-8">
                                 <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center shadow-xl shadow-black/20 group-hover:rotate-12 transition-transform">
                                     <User size={28} strokeWidth={2.5} />
-                                </div>
+                                </div>                                 
                                 <div>
                                     <h3 className="text-xl font-black tracking-tight uppercase italic">{customer.name}</h3>
-                                    <div className="flex items-center gap-2 mt-1">
+                                    <div className="flex items-center gap-3 mt-1">
+                                        <p className="text-[10px] font-black text-blue-500 lowercase tracking-tight">@{customer.username || 'nomas'}</p>
+                                        <div className="w-1 h-1 bg-gray-300 rounded-full" />
                                         {customer.isOnline ? (
                                             <p className="text-[10px] font-black text-green-500 uppercase tracking-widest flex items-center gap-1.5">
-                                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                                                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
                                                 Online
                                             </p>
                                         ) : (
                                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
-                                                <div className="w-2 h-2 bg-gray-300 rounded-full" />
+                                                <div className="w-1.5 h-1.5 bg-gray-300 rounded-full" />
                                                 Oflayn
                                             </p>
                                         )}
@@ -223,12 +230,18 @@ export default function AdminCustomers() {
                                         {selectedCustomer.name.charAt(0).toUpperCase()}
                                     </div>
                                     <div>
-                                        <h3 className="text-2xl font-black italic uppercase tracking-tight mb-2">{selectedCustomer.name}</h3>
-                                        <p className="text-white/60 font-bold tracking-widest flex items-center gap-2">
-                                            <Phone size={14} /> {selectedCustomer.phone}
-                                        </p>
-                                        <div className="inline-block mt-4 px-4 py-1.5 bg-white/10 rounded-full text-[9px] font-black uppercase tracking-widest border border-white/5">
-                                            {selectedCustomer.totalSpent > 500 ? "VIP Mijoz" : "Sodiq Mijoz"}
+                                        <h3 className="text-2xl font-black italic uppercase tracking-tight mb-1">{selectedCustomer.name}</h3>
+                                        <div className="flex items-center gap-4 text-white/50 mb-3">
+                                            <p className="text-[11px] font-black tracking-widest text-[#7000FF] lowercase bg-white/10 px-3 py-1 rounded-lg">@{selectedCustomer.username || 'nomas'}</p>
+                                            <p className="text-[12px] font-bold flex items-center gap-2"><Phone size={12} /> {selectedCustomer.phone}</p>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <div className="px-4 py-1.5 bg-emerald-500 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20">
+                                                Balans: {selectedCustomer.walletBalance?.toLocaleString()} so'm
+                                            </div>
+                                            <div className="px-4 py-1.5 bg-white/10 rounded-full text-[9px] font-black uppercase tracking-widest border border-white/5">
+                                                {selectedCustomer.totalSpent > 1000000 ? "VIP Mijoz" : "Sodiq Mijoz"}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -282,7 +295,6 @@ export default function AdminCustomers() {
                                     </div>
                                 ) : customerInterests ? (
                                     <div className="space-y-10">
-                                        {/* Activity Bars */}
                                         <div>
                                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Sevimli Kategoriyalar</p>
                                             <div className="space-y-4">
@@ -303,7 +315,6 @@ export default function AdminCustomers() {
                                             </div>
                                         </div>
 
-                                        {/* Recently Viewed Tags */}
                                         <div className="grid grid-cols-1 gap-6">
                                             <div>
                                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -344,8 +355,56 @@ export default function AdminCustomers() {
                                 </div>
                                 <div className="bg-gray-50 p-8 rounded-[40px] text-center border border-gray-100">
                                     <ShoppingCart className="mx-auto mb-4 text-blue-500" />
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Savatlar</p>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Buyurtmalar</p>
                                     <p className="text-2xl font-black italic">{selectedCustomer.totalOrders} ta</p>
+                                </div>
+                            </div>
+
+                            {/* ORDER HISTORY SECTION */}
+                            <div className="space-y-6">
+                                <h3 className="text-xl font-black italic uppercase tracking-tighter flex items-center gap-3">
+                                    <History size={20} />
+                                    Buyurtmalar Tarixi
+                                </h3>
+                                
+                                <div className="space-y-4">
+                                    {loadingDetails ? (
+                                        <div className="flex justify-center p-10"><Loader2 className="animate-spin text-gray-200" /></div>
+                                    ) : selectedCustomer.ordersList && selectedCustomer.ordersList.length > 0 ? (
+                                        selectedCustomer.ordersList.map((order: any) => (
+                                            <div key={order.id} className="bg-white border border-gray-100 p-6 rounded-[32px] flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-xl transition-all group">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center font-black text-gray-400 group-hover:bg-black group-hover:text-white transition-all">
+                                                        #{order.id.slice(-4)}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{new Date(order.created_at).toLocaleString('uz-UZ')}</p>
+                                                        <div className="flex flex-wrap gap-2 mt-1">
+                                                            {order.items?.map((item: any, i: number) => (
+                                                                <span key={i} className="text-[9px] font-bold bg-gray-50 px-2 py-0.5 rounded-lg text-gray-600 border border-gray-100">
+                                                                    {item.quantity}x {item.name.slice(0, 15)}...
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-lg font-black italic tracking-tighter">{order.total?.toLocaleString()} so'm</p>
+                                                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${
+                                                        order.status === 'Yetkazildi' ? 'bg-green-50 text-green-600' : 
+                                                        order.status === 'Bekor qilingan' ? 'bg-red-50 text-red-600' : 
+                                                        'bg-orange-50 text-orange-600'
+                                                    }`}>
+                                                        {order.status}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-10 bg-gray-50 rounded-[40px] border-2 border-dashed border-gray-100">
+                                            <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Buyurtmalar mavjud emas</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
