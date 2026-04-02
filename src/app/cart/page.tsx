@@ -13,8 +13,8 @@ export default function CartPage() {
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     return (
-        <div className="bg-white min-h-screen text-black w-full max-w-full">
-            <div className="w-full max-w-full lg:max-w-[1440px] mx-auto px-4 md:px-10 pb-32 overflow-x-hidden">
+        <div className="bg-white min-h-screen text-black w-full max-w-full overflow-x-hidden">
+            <div className="w-full px-4 md:px-10 pb-32 overflow-x-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8 md:mb-16 pt-8 md:pt-0">
                     <div className="flex items-center gap-4 min-w-0">
@@ -66,8 +66,8 @@ export default function CartPage() {
                                                     sizes="(max-width: 768px) 96px, 128px"
                                                 />
                                             </div>
-                                            <div className="flex-1 min-w-0">
-                                                <h3 className="font-black text-xs md:text-sm text-gray-900 leading-tight uppercase tracking-tight mb-2 line-clamp-2">
+                                            <div className="flex-1 min-w-0 overflow-hidden">
+                                                <h3 className="font-black text-xs md:text-sm text-gray-900 leading-tight uppercase tracking-tight mb-2 line-clamp-2 break-all">
                                                     {item[`name_${language}`] || item.name}
                                                 </h3>
                                                 <button 
@@ -138,7 +138,7 @@ export default function CartPage() {
 
                                 <Link
                                     href="/checkout"
-                                    className="w-full bg-black text-white py-5 md:py-6 rounded-full font-black text-base md:text-lg hover:bg-gray-900 transition-all shadow-2xl flex justify-center items-center gap-3 md:gap-4 active:scale-95 group uppercase tracking-widest"
+                                    className="block w-full bg-black text-white py-5 md:py-6 rounded-full font-black text-base md:text-lg hover:bg-gray-900 transition-all shadow-2xl flex justify-center items-center gap-3 md:gap-4 active:scale-95 group uppercase tracking-widest overflow-hidden"
                                 >
                                     <span>{t.common.checkout}</span>
                                     <ArrowRight size={24} strokeWidth={3} className="group-hover:translate-x-2 transition-transform" />
