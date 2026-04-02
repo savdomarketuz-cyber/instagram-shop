@@ -81,7 +81,7 @@ export default function CartPage() {
                                         
                                         {/* Mobile Optimized Grid */}
                                         <div className="col-span-12 lg:col-span-3 flex items-center justify-between lg:justify-center mt-4 lg:mt-0 pt-4 lg:pt-0 border-t border-gray-50 lg:border-none">
-                                            <div className="flex items-center gap-4 md:gap-6 bg-gray-50 border border-gray-100 px-4 md:px-5 py-2 md:py-3 rounded-[20px] md:rounded-2xl shadow-sm scale-90 md:scale-100 origin-left lg:origin-center">
+                                            <div className="flex items-center gap-4 md:gap-6 bg-gray-50 border border-gray-100 px-4 md:px-5 py-2 md:py-3 rounded-[20px] md:rounded-2xl shadow-sm">
                                                 <button
                                                     onClick={() => item.quantity > 1 ? updateQuantity(item.id, item.quantity - 1) : removeFromCart(item.id)}
                                                     className="text-gray-400 hover:text-black transition-colors p-1"
