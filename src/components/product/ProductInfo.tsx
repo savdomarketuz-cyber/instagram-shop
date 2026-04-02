@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { getProductSlug } from "@/lib/slugify";
-import { Star, Check, Truck, Clock } from "lucide-react";
+import { Star, Check, Truck, Clock, RefreshCw } from "lucide-react";
 
 interface ProductInfoProps {
     product: any;
@@ -95,6 +95,18 @@ export const ProductInfo = ({
                                     <Clock size={12} strokeWidth={3} />
                                     <span>{language === 'uz' ? 'Tezkor' : 'Быстро'}</span>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-6 bg-gray-50 rounded-[32px] border border-gray-100 flex items-center gap-5 transition-all hover:bg-white hover:shadow-xl hover:shadow-black/5 group">
+                        <div className="w-14 h-14 bg-blue-500 text-white rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-blue-500/10 group-hover:scale-110 transition-transform">
+                            <RefreshCw size={24} strokeWidth={2.5} />
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{language === 'uz' ? 'Qaytarib berish' : 'Возврат товара'}</p>
+                            <div className="flex items-center gap-2">
+                                <span className="text-lg font-black italic uppercase tracking-tighter">14 kun ichida oson va tez</span>
                             </div>
                         </div>
                     </div>

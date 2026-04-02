@@ -603,6 +603,16 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                             </div>
                             <div className="flex items-start gap-4">
                                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                                    <RefreshCw size={24} className="text-blue-500" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{language === 'uz' ? 'Qaytarib berish' : 'Возврат товара'}</p>
+                                    <p className="text-base font-black italic">14 kun ichida oson va tez</p>
+                                    <p className="text-[11px] text-gray-500 font-medium">Shartlar asosida qaytarish</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-4">
+                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
                                     <ShieldCheck size={24} className="text-green-500" />
                                 </div>
                                 <div>
