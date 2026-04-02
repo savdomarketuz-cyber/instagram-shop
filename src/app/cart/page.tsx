@@ -114,21 +114,21 @@ export default function CartPage() {
 
                         {/* Right: Summary Panel */}
                         <div className="col-span-12 lg:col-span-4 lg:sticky lg:top-32">
-                            <div className="bg-gray-50 p-6 md:p-10 rounded-[50px] border border-gray-100">
-                                <h2 className="text-xl font-black italic tracking-tighter uppercase mb-8">Buyurtma xulosasi</h2>
+                            <div className="bg-gray-50 p-5 md:p-10 rounded-[32px] md:rounded-[50px] border border-gray-100">
+                                <h2 className="text-lg md:text-xl font-black italic tracking-tighter uppercase mb-6 md:mb-8">Buyurtma xulosasi</h2>
                                 
-                                <div className="space-y-4 mb-10 pb-10 border-b border-gray-200">
-                                    <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-gray-400">
+                                <div className="space-y-4 mb-8 md:mb-10 pb-8 md:pb-10 border-b border-gray-200">
+                                    <div className="flex justify-between text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-400">
                                         <span>Mahsulotlar soni</span>
                                         <span className="text-black">{cart.length} ta</span>
                                     </div>
-                                    <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-gray-400">
+                                    <div className="flex justify-between text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-400">
                                         <span>Yetkazib berish</span>
                                         <span className="text-green-600">Bepul</span>
                                     </div>
                                 </div>
 
-                                <div className="mb-10">
+                                <div className="mb-8 md:mb-10">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">{t.common.total}</p>
                                     <div className="text-3xl md:text-4xl lg:text-5xl font-black italic tracking-tighter text-black break-words leading-[1.1]">
                                         {total.toLocaleString()} <span className="text-xl lg:text-2xl not-italic opacity-80">so'm</span>
@@ -137,7 +137,7 @@ export default function CartPage() {
 
                                 <Link
                                     href="/checkout"
-                                    className="w-full bg-black text-white py-6 rounded-full font-black text-lg hover:bg-gray-900 transition-all shadow-2xl flex justify-center items-center gap-4 active:scale-95 group uppercase tracking-widest"
+                                    className="w-full bg-black text-white py-5 md:py-6 rounded-full font-black text-base md:text-lg hover:bg-gray-900 transition-all shadow-2xl flex justify-center items-center gap-3 md:gap-4 active:scale-95 group uppercase tracking-widest"
                                 >
                                     <span>{t.common.checkout}</span>
                                     <ArrowRight size={24} strokeWidth={3} className="group-hover:translate-x-2 transition-transform" />

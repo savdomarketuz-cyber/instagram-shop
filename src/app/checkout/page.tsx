@@ -151,10 +151,10 @@ export default function CheckoutPage() {
     if (!mounted) return null;
 
     return (
-        <div className="p-6 bg-white min-h-screen pt-12 pb-32">
-            <div className="flex items-center gap-4 mb-10">
+        <div className="p-4 md:p-6 bg-white min-h-screen pt-8 md:pt-12 pb-32">
+            <div className="flex items-center gap-4 mb-8 md:mb-10">
                 <button onClick={() => router.back()} className="p-3 bg-gray-50 rounded-2xl"><ArrowLeft size={20} /></button>
-                <h1 className="text-3xl font-black tracking-tighter">{t.common.checkout}</h1>
+                <h1 className="text-2xl md:text-3xl font-black tracking-tighter sm:truncate">{t.common.checkout}</h1>
             </div>
 
             {stockErrors.length > 0 && (
@@ -220,7 +220,7 @@ export default function CheckoutPage() {
                     </div>
                 </div>
 
-                <div className="mt-12 p-6 md:p-10 bg-black text-white rounded-[40px] shadow-2xl relative overflow-hidden">
+                <div className="mt-8 md:mt-12 p-5 md:p-10 bg-black text-white rounded-[32px] md:rounded-[40px] shadow-2xl relative overflow-hidden">
                     <div className="relative z-10">
                         <div className="flex justify-between mb-4 opacity-60 text-[10px] font-black uppercase tracking-[0.2em] px-1">
                             <span className="shrink-0">{t.cart.items}</span>
