@@ -73,7 +73,7 @@ export default function P2PChatPage() {
                 event: 'INSERT', 
                 schema: 'public', 
                 table: 'private_messages',
-                filter: `chat_id=eq.${roomId}`
+                filter: `chat_id=eq."${roomId}"`
             }, (payload) => {
                 setMessages(prev => {
                     const exists = prev.some(m => m.id === payload.new.id);
