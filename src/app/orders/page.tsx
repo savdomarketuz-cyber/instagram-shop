@@ -180,6 +180,37 @@ export default function OrdersPage() {
         }
     };
 
+    const formatDate = (date: any) => {
+        if (!date) return language === 'uz' ? "Hozirgina" : "Только что";
+        const d = new Date(date);
+        const now = new Date();
+        const diffInMs = now.getTime() - d.getTime();
+        const diffInMins = Math.floor(diffInMs / (1000 * 60));
+        const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+        const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+        if (diffInMins < 1) {
+            return language === 'uz' ? "Hozirgina" : "Только что";
+        }
+        if (diffInMins < 60) {
+            return language === 'uz' ? `${diffInMins} daqiqa avval` : `${diffInMins} мин. назад`;
+        }
+        if (diffInHours < 24) {
+            return language === 'uz' ? `${diffInHours} soat avval` : `${diffInHours} час. назад`;
+        }
+        if (diffInDays <= 3) {
+            return language === 'uz' ? `${diffInDays} kun avval` : `${diffInDays} дн. назад`;
+        }
+
+        return d.toLocaleString(language === 'uz' ? 'uz-UZ' : 'ru-RU', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
     if (!mounted) return null;
 
     if (!user) {
@@ -232,7 +263,7 @@ export default function OrdersPage() {
                             <div className="flex items-center gap-3 text-xs font-bold text-gray-500 mb-6">
                                 <Clock size={14} />
                                 <span>
-                                    {order.createdAt?.toDate?.().toLocaleDateString(language === 'uz' ? 'uz-UZ' : 'ru-RU') || (language === 'uz' ? "Hozirgina" : "Только что")} • {order.items?.length || 0} {t.cart.items}
+                                    {formatDate(order.createdAt)} • {order.items?.length || 0} {t.cart.items}
                                 </span>
                             </div>
 
