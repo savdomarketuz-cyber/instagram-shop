@@ -193,7 +193,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
 
     return (
         <div className={`
-            mx-auto bg-white min-h-screen relative shadow-2xl w-full max-w-[1440px] overflow-x-hidden
+            mx-auto bg-white min-h-screen relative shadow-2xl w-full max-w-full lg:max-w-[1440px]
             ${showNav ? (pathname === '/' ? 'pt-16 md:pt-28' : 'md:pt-28') : ''}
             ${isSplashActive ? 'overflow-hidden h-screen' : ''}
         `}>

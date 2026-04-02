@@ -13,15 +13,15 @@ export default function CartPage() {
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     return (
-        <div className="bg-white min-h-screen text-black overflow-x-hidden w-full">
-            <div className="max-w-[1440px] mx-auto p-4 md:p-10 pb-32">
+        <div className="bg-white min-h-screen text-black w-full max-w-full">
+            <div className="w-full max-w-full lg:max-w-[1440px] mx-auto p-4 md:p-10 pb-32">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8 md:mb-16 pt-8 md:pt-0">
-                    <div className="flex items-center gap-4">
-                        <Link href="/" className="md:hidden p-3 bg-gray-50 rounded-2xl">
+                    <div className="flex items-center gap-4 min-w-0">
+                        <Link href="/" className="md:hidden p-3 bg-gray-50 rounded-2xl shrink-0">
                             <ChevronLeft size={20} />
                         </Link>
-                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter italic uppercase truncate pr-4">{t.cart.title}</h1>
+                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter italic uppercase break-words truncate pr-4">{t.cart.title}</h1>
                     </div>
                     <div className="flex items-center gap-3">
                         <Link href="/orders" className="p-4 bg-gray-50 rounded-[28px] text-gray-400 hover:text-black hover:bg-gray-100 transition-all flex items-center gap-2 group">
@@ -128,9 +128,9 @@ export default function CartPage() {
                                     </div>
                                 </div>
 
-                                <div className="mb-8 md:mb-10 w-full">
+                                <div className="mb-8 md:mb-10 w-full min-w-0">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">{t.common.total}</p>
-                                    <div className="text-3xl md:text-4xl lg:text-5xl font-black italic tracking-tighter text-black flex flex-wrap items-baseline gap-1 leading-[1.1]">
+                                    <div className="text-3xl md:text-4xl lg:text-5xl font-black italic tracking-tighter text-black flex flex-wrap items-baseline gap-1 leading-[1.1] break-all">
                                         <span>{total.toLocaleString().replace(/\u00A0/g, ' ')}</span>
                                         <span className="text-xl lg:text-2xl not-italic opacity-80">so'm</span>
                                     </div>
