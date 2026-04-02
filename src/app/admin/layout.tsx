@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutDashboard, ShoppingCart, Package, Layers, LogOut, Menu, X, Users, Image as ImageIcon, Database, Settings, Sparkles, Activity, Zap, MessageSquare, ShieldAlert, Truck, Warehouse } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Package, Layers, LogOut, Menu, X, Users, Image as ImageIcon, Database, Settings, Sparkles, Activity, Zap, MessageSquare, ShieldAlert, Truck, Warehouse, RotateCcw } from "lucide-react";
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/store/store";
@@ -39,6 +39,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
         { name: "Live", href: "/admin/live", icon: Zap },
         { name: "Buyurtmalar", href: "/admin/orders", icon: ShoppingCart },
+        { name: "Qaytarishlar", href: "/admin/returns", icon: RotateCcw },
         { name: "Mahsulotlar", href: "/admin/products", icon: Package },
         { name: "Kategoriyalar", href: "/admin/categories", icon: Layers },
         { name: "Brendlar", href: "/admin/brands", icon: Activity },

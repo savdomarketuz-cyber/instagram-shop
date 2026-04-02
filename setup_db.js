@@ -2,7 +2,7 @@ require('dotenv').config({ path: '.env.local' });
 const { Client } = require('pg');
 
 const sql = `
--- Drop existing tables if they exist
+DROP TABLE IF EXISTS order_returns CASCADE;
 DROP TABLE IF EXISTS ai_logs CASCADE;
 DROP TABLE IF EXISTS support_messages CASCADE;
 DROP TABLE IF EXISTS support_chats CASCADE;
@@ -108,7 +108,20 @@ create table orders (
   address text,
   coords jsonb,
   status text,
+  delivered_at timestamp with time zone,
   created_at timestamp with time zone default now()
+);
+
+-- Order Returns table
+create table order_returns (
+  id uuid primary key default gen_random_uuid(),
+  order_id text references orders(id),
+  user_phone text,
+  items jsonb not null,
+  reason text,
+  status text default 'pending',
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now()
 );
 
 -- Comments table

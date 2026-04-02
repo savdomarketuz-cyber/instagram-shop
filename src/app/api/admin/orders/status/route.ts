@@ -6,10 +6,15 @@ export async function POST(req: Request) {
     try {
         const { orderId, status } = await req.json();
 
+        const updateData: any = { status };
+        if (status === "Yetkazildi") {
+            updateData.delivered_at = new Date().toISOString();
+        }
+
         // 1. Update order status
         const { data: order, error } = await supabaseAdmin
             .from("orders")
-            .update({ status })
+            .update(updateData)
             .eq("id", orderId)
             .select("user_phone")
             .single();

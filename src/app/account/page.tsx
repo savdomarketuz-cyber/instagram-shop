@@ -34,7 +34,7 @@ export default function AccountPage() {
     const { user, setUser, logout, language, setLanguage } = useStore();
     const t = translations[language];
 
-    const [view, setView] = useState<"menu" | "edit-profile" | "language">("menu");
+    const [view, setView] = useState<"menu" | "edit-profile" | "language" | "returns">("menu");
     const [name, setName] = useState(user?.name || "");
     const [username, setUsername] = useState(user?.username || "");
     const [isSaving, setIsSaving] = useState(false);
@@ -222,6 +222,10 @@ export default function AccountPage() {
         );
     }
 
+    if (view === "returns") {
+        return <ReturnsView user={user} t={t} language={language} onBack={() => setView("menu")} />;
+    }
+
     // --- Main Menu View ---
 
     return (
@@ -276,8 +280,8 @@ export default function AccountPage() {
                         <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">{t.account.sections.shopping}</h3>
                         <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-100/50">
                             <MenuItem href="/orders" icon={<Package size={20} />} label={t.account.sections.purchased} />
-                            <MenuItem href="/orders" icon={<ShoppingBag size={20} />} label={t.account.sections.purchased} divider={false} />
-                            <MenuItem href="/chat" icon={<RotateCcw size={20} />} label={t.account.sections.returns} divider={false} />
+                            <MenuItem href="/orders" icon={<ShoppingBag size={20} />} label={t.account.sections.purchased} />
+                            <MenuItem onClick={() => setView("returns")} icon={<RotateCcw size={20} />} label={t.account.sections.returns} divider={false} />
                         </div>
                     </div>
 
@@ -316,6 +320,177 @@ export default function AccountPage() {
                     Velari v1.2.0
                 </div>
 
+            </div>
+        </div>
+    );
+}
+
+function ReturnsView({ user, t, language, onBack }: any) {
+    const [orders, setOrders] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedOrder, setSelectedOrder] = useState<any>(null);
+    const [selectedItems, setSelectedItems] = useState<any[]>([]);
+    const [reason, setReason] = useState("");
+    const [submitting, setSubmitting] = useState(false);
+    const [success, setSuccess] = useState(false);
+
+    useEffect(() => {
+        const fetchOrders = async () => {
+            const { data, error } = await supabase
+                .from("orders")
+                .select("*")
+                .eq("user_phone", user.phone)
+                .eq("status", "Yetkazildi")
+                .order("created_at", { ascending: false });
+
+            if (data) {
+                // Filter by 14 days
+                const now = new Date().getTime();
+                const fourteenDays = 14 * 24 * 60 * 60 * 1000;
+                const eligible = data.filter(o => {
+                    const deliveredAt = new Date(o.delivered_at || o.created_at).getTime();
+                    return (now - deliveredAt) <= fourteenDays;
+                });
+                setOrders(eligible);
+            }
+            setLoading(false);
+        };
+        fetchOrders();
+    }, [user.phone]);
+
+    const handleSubmit = async () => {
+        if (selectedItems.length === 0 || !reason.trim()) return;
+        setSubmitting(true);
+        try {
+            const res = await fetch("/api/returns", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    orderId: selectedOrder.id,
+                    userPhone: user.phone,
+                    items: selectedItems,
+                    reason: reason.trim()
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setSuccess(true);
+                setTimeout(() => onBack(), 2000);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    if (success) return (
+        <div className="min-h-screen bg-[#F2F3F5] flex items-center justify-center p-8">
+            <div className="bg-white p-10 rounded-[48px] text-center shadow-xl flex flex-col items-center max-w-sm">
+                <div className="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-6">
+                    <CheckCircle2 size={40} />
+                </div>
+                <h2 className="text-2xl font-black italic tracking-tighter mb-4">{language === 'uz' ? 'So\'rov yuborildi!' : 'Заявка отправлена!'}</h2>
+                <p className="text-gray-400 font-medium text-sm leading-relaxed">{language === 'uz' ? "Sizning qaytarish so'rovingiz ko'rib chiqiladi. Tez orada adminlarimiz siz bilan bog'lanishadi." : "Ваша заявка будет рассмотрена. Наши админы свяжутся с вами в ближайшее время."}</p>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="bg-[#F2F3F5] min-h-screen pb-24 px-4 md:px-10">
+            <div className="max-w-xl mx-auto pt-10">
+                <button onClick={selectedOrder ? () => setSelectedOrder(null) : onBack} className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8 hover:text-black transition-all">
+                    <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
+                </button>
+
+                {!selectedOrder ? (
+                    <div className="space-y-6">
+                        <h1 className="text-3xl font-black tracking-tighter italic uppercase">{t.account.sections.returns}</h1>
+                        <p className="text-gray-400 text-xs font-bold uppercase tracking-widest leading-relaxed">
+                            {language === 'uz' ? 'Yetkazib berilganidan so\'ng 14 kun ichida mahsulotlarni qaytarishingiz mumkin.' : 'Вы можете вернуть товары в течение 14 дней после доставки.'}
+                        </p>
+
+                        {loading ? (
+                            <div className="flex justify-center py-20"><Loader2 className="animate-spin text-black" /></div>
+                        ) : orders.length === 0 ? (
+                            <div className="bg-white p-12 rounded-[40px] text-center border border-gray-100 italic font-bold text-gray-400">
+                                {language === 'uz' ? 'Hozircha qaytarish uchun buyurtmalar yo\'q.' : 'Нет заказов для возврата.'}
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {orders.map(order => (
+                                    <div 
+                                        key={order.id} 
+                                        onClick={() => setSelectedOrder(order)}
+                                        className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer group"
+                                    >
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div>
+                                                <p className="text-[10px] font-black text-gray-400 uppercase">#{order.id.slice(0,8)}</p>
+                                                <p className="font-black text-lg italic tracking-tighter">{order.total.toLocaleString()} so'm</p>
+                                            </div>
+                                            <ChevronRight className="text-gray-300 group-hover:text-black transition-all" />
+                                        </div>
+                                        <div className="flex -space-x-2">
+                                            {order.items.map((item: any, i: number) => (
+                                                <div key={i} className="w-8 h-8 rounded-full bg-gray-50 border-2 border-white flex items-center justify-center text-[8px] font-black">{item.name[0]}</div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-right-10">
+                        <h1 className="text-2xl font-black tracking-tighter italic uppercase">{language === 'uz' ? 'Qaytarish tafsilotlari' : 'Детали возврата'}</h1>
+                        
+                        <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 space-y-8">
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">{language === 'uz' ? 'Qaysi mahsulotlarni qaytarmoqchisiz?' : 'Какие товары хотите вернуть?'}</label>
+                                <div className="space-y-3">
+                                    {selectedOrder.items.map((item: any, i: number) => {
+                                        const isSelected = selectedItems.find(si => si.id === item.id);
+                                        return (
+                                            <div 
+                                                key={i} 
+                                                onClick={() => {
+                                                    if (isSelected) setSelectedItems(selectedItems.filter(si => si.id !== item.id));
+                                                    else setSelectedItems([...selectedItems, item]);
+                                                }}
+                                                className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between ${isSelected ? 'border-black bg-gray-50' : 'border-gray-50 hover:border-gray-200'}`}
+                                            >
+                                                <div className="font-bold text-sm tracking-tighter italic uppercase">{item.name}</div>
+                                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 ${isSelected ? 'bg-black border-black text-white' : 'border-gray-100'}`}>
+                                                    {isSelected && <CheckCircle2 size={12} />}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">{language === 'uz' ? 'Qaytarish sababi' : 'Причина возврата'}</label>
+                                <textarea 
+                                    value={reason}
+                                    onChange={(e) => setReason(e.target.value)}
+                                    placeholder={language === 'uz' ? 'Mahsulot kutilganidek emas, nuqsoni bor va h.k.' : 'Товар не соответствует, есть дефекты и т.д.'}
+                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-3xl p-6 text-sm font-medium outline-none transition-all h-32 resize-none"
+                                />
+                            </div>
+
+                            <button 
+                                onClick={handleSubmit}
+                                disabled={submitting || selectedItems.length === 0 || !reason.trim()}
+                                className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-20"
+                            >
+                                {submitting ? <Loader2 className="animate-spin" size={18} /> : <RotateCcw size={18} />}
+                                {language === 'uz' ? 'TASDIQLASH' : 'ПОДТВЕРДИТЬ'}
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
