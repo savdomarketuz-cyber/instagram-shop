@@ -58,58 +58,43 @@ export async function middleware(request: NextRequest) {
 
     // --- IRON BANK VAULT PROTECTION ---
     if (pathname.startsWith('/admin')) {
+        const adminToken = request.cookies.get('admin_token')?.value;
         const adminVaultToken = request.cookies.get('admin_vault_token')?.value;
         const vaultSecret = request.nextUrl.searchParams.get('vault')?.trim();
         const GLOBAL_VAULT_KEY = process.env.ADMIN_VAULT_KEY || 'Abdulaziz2244';
 
+        const ADMIN_SECRET = process.env.ADMIN_SECRET || "velari-admin-secret-2024";
+
+        // 1. If we have a valid admin token, ALLOW EVERYTHING in /admin
+        if (adminToken) {
+            const payload = await verifyTokenEdge(adminToken, ADMIN_SECRET);
+            if (payload && payload.role === 'admin') {
+                const response = NextResponse.next();
+                response.headers.set('X-Iron-Bank-Status', 'AUTHENTICATED');
+                return response;
+            }
+        }
+
+        // 2. Secret Entry logic (If not yet authenticated)
         let hasVaultAccess = !!adminVaultToken;
         if (vaultSecret === GLOBAL_VAULT_KEY) {
             hasVaultAccess = true;
         }
 
-        // 1. Vault Shield: Reject if no key access
         if (!hasVaultAccess) {
             return NextResponse.redirect(new URL('/', request.url));
         }
 
-        // 2. Auth Shield: Verify JWT
-        const adminToken = request.cookies.get('admin_token')?.value;
-        if (!adminToken) {
-            const loginUrl = new URL('/login', request.url);
-            loginUrl.searchParams.set('redirect', pathname);
-            const res = NextResponse.redirect(loginUrl);
-            // Persistent Vault session
-            if (vaultSecret === GLOBAL_VAULT_KEY) {
-                res.cookies.set('admin_vault_token', 'VAULT_ACTIVE', { 
-                    httpOnly: true, secure: true, sameSite: 'lax', maxAge: 86400, path: '/'
-                });
-            }
-            return res;
-        }
-
-        // 3. Signature Verification
-        const ADMIN_SECRET = process.env.ADMIN_SECRET || "velari-admin-secret-2024";
-        const payload = await verifyTokenEdge(adminToken, ADMIN_SECRET);
-
-        if (!payload || payload.role !== 'admin') {
-            const res = NextResponse.redirect(new URL('/login', request.url));
-            res.cookies.delete('admin_token');
-            res.headers.set('X-Iron-Bank-Error', 'INVALID_SIGNATURE');
-            return res;
-        }
-
-        // ALL CLEAR! Allow Page and persist Vault
-        const response = NextResponse.next();
+        // 3. Not authenticated but has vault access? Redirect to login
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('redirect', pathname);
+        const res = NextResponse.redirect(loginUrl);
         if (vaultSecret === GLOBAL_VAULT_KEY) {
-            response.cookies.set('admin_vault_token', 'VAULT_ACTIVE', { 
+            res.cookies.set('admin_vault_token', 'VAULT_ACTIVE', { 
                 httpOnly: true, secure: true, sameSite: 'lax', maxAge: 86400, path: '/'
             });
         }
-        
-        // Security headers
-        response.headers.set('X-Iron-Bank-Status', 'AUTHENTICATED');
-        response.headers.set('X-Frame-Options', 'DENY');
-        return response;
+        return res;
     }
 
     // Security headers for all routes
