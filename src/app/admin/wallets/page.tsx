@@ -15,7 +15,10 @@ import {
     Loader2,
     CheckCircle2,
     DollarSign,
-    RefreshCw
+    RefreshCw,
+    ShieldAlert,
+    ShieldCheck as ShieldCheckIcon,
+    AlertTriangle
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -29,6 +32,11 @@ export default function AdminWalletsPage() {
     const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
     const [selectedWallet, setSelectedWallet] = useState<any>(null);
     const [adjustment, setAdjustment] = useState({ amount: "", description: "", type: "earned" });
+
+    // Global Audit States
+    const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
+    const [auditResults, setAuditResults] = useState<any>(null);
+    const [isAuditing, setIsAuditing] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -69,15 +77,28 @@ export default function AdminWalletsPage() {
                 p_type: adjustment.type
             });
 
-            if (error) throw error;
-            
-            setIsAdjustModalOpen(false);
-            setAdjustment({ amount: "", description: "", type: "earned" });
-            fetchData();
-            alert("Muvaffaqiyatli bajarildi!");
         } catch (e) {
             console.error(e);
             alert("Xatolik yuz berdi");
+        } finally {
+            setIsAdjustModalOpen(false);
+            setAdjustment({ amount: "", description: "", type: "earned" });
+            fetchData();
+        }
+    };
+
+    const handleGlobalAudit = async () => {
+        setIsAuditing(true);
+        setIsAuditModalOpen(true);
+        try {
+            const { data, error } = await supabase.rpc('get_global_wallet_audit');
+            if (error) throw error;
+            setAuditResults(data);
+        } catch (e) {
+            console.error(e);
+            alert("Audit vaqtida xatolik yuz berdi");
+        } finally {
+            setIsAuditing(false);
         }
     };
 
@@ -102,12 +123,20 @@ export default function AdminWalletsPage() {
                         <Wallet size={14} className="text-black" /> Foydalanuvchilar balansini boshqarish
                     </p>
                 </div>
-                <button 
-                    onClick={fetchData}
-                    className="p-4 bg-white rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 group"
-                >
-                    <RefreshCw size={20} className="group-active:rotate-180 transition-transform duration-500" />
-                </button>
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={handleGlobalAudit}
+                        className="p-4 bg-black text-rose-500 rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3 font-black text-xs uppercase tracking-widest border-2 border-rose-500/20"
+                    >
+                        <ShieldAlert size={20} /> GLOBAL AUDIT
+                    </button>
+                    <button 
+                        onClick={fetchData}
+                        className="p-4 bg-white rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 group"
+                    >
+                        <RefreshCw size={20} className="group-active:rotate-180 transition-transform duration-500" />
+                    </button>
+                </div>
             </div>
 
             {/* Stats Dashboard */}
@@ -283,6 +312,103 @@ export default function AdminWalletsPage() {
                                 BALANSNI YANGILASH
                             </button>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Global Financial Audit Modal */}
+            {isAuditModalOpen && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-3xl z-[150] flex items-center justify-center p-6 animate-in fade-in duration-500">
+                    <div className="bg-white w-full max-w-4xl rounded-[60px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border-4 border-black animate-in zoom-in-95 duration-500">
+                        <div className="p-10 border-b-2 border-gray-100 flex justify-between items-center bg-gray-50/50">
+                            <div className="flex items-center gap-4">
+                                <div className={`w-14 h-14 rounded-3xl flex items-center justify-center ${isAuditing ? 'bg-gray-100 animate-pulse' : (auditResults?.is_system_balanced ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-500')}`}>
+                                    {isAuditing ? <RefreshCw size={28} className="animate-spin" /> : (auditResults?.is_system_balanced ? <ShieldCheckIcon size={28} /> : <AlertTriangle size={28} />)}
+                                </div>
+                                <div>
+                                    <h1 className="text-3xl font-black italic tracking-tighter uppercase mb-0.5">Finansal Audit</h1>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{isAuditing ? 'HISOB-KITOB QILINMOQDA...' : 'TIZIMNING BARCHA HISOBI TEKSHIRILDI'}</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setIsAuditModalOpen(false)} className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center hover:bg-black hover:text-white transition-all shadow-sm"><X size={24} /></button>
+                        </div>
+
+                        <div className="p-10 overflow-y-auto custom-scrollbar space-y-12">
+                            {isAuditing ? (
+                                <div className="py-20 text-center space-y-6">
+                                    <div className="flex justify-center"><Loader2 size={64} className="animate-spin text-black" /></div>
+                                    <p className="text-sm font-black text-gray-400 uppercase tracking-widest animate-pulse">Platformadagi barcha hamyonlar va loglar solishtirilmoqda...</p>
+                                </div>
+                            ) : (
+                                <>
+                                    {/* Global Health Map */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className={`p-10 rounded-[48px] border-2 ${auditResults?.is_system_balanced ? 'border-emerald-100 bg-emerald-50/20' : 'border-rose-100 bg-rose-50/20'}`}>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 italic">Hamyonlar Balansi</p>
+                                            <h2 className="text-4xl font-black italic tracking-tighter mb-4">{auditResults?.total_wallets_balance?.toLocaleString()} <span className="text-lg opacity-40">SO'M</span></h2>
+                                            <div className="flex items-center gap-2 text-xs font-black uppercase text-emerald-600">
+                                                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" /> Current Liability
+                                            </div>
+                                        </div>
+                                        <div className={`p-10 rounded-[48px] border-2 ${auditResults?.is_system_balanced ? 'border-emerald-100 bg-emerald-50/20' : 'border-rose-100 bg-rose-50/20'}`}>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 italic">Audit Loglari Yig'indisi</p>
+                                            <h2 className="text-4xl font-black italic tracking-tighter mb-4">{auditResults?.total_transactions_sum?.toLocaleString()} <span className="text-lg opacity-40">SO'M</span></h2>
+                                            <div className="flex items-center gap-2 text-xs font-black uppercase text-rose-400">
+                                                <div className="w-2 h-2 bg-rose-400 rounded-full" /> Verified History
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Verification Status */}
+                                    <div className={`p-8 rounded-[40px] flex items-center justify-between px-10 ${auditResults?.is_system_balanced ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
+                                        <div>
+                                            <p className="text-[11px] font-black uppercase tracking-widest mb-1 italic opacity-60">Status</p>
+                                            <h3 className="text-2xl font-black italic tracking-tighter uppercase">{auditResults?.is_system_balanced ? 'BARCHA HISOB-KITOB TO\'G\'RI (NOMINAL)' : 'TAFOVUT ANIQLANDI!'}</h3>
+                                        </div>
+                                        <p className="text-3xl font-black italic tracking-tighter">
+                                            {auditResults?.global_discrepancy === 0 ? '± 0.00' : `${Math.abs(auditResults?.global_discrepancy).toLocaleString()}`}
+                                        </p>
+                                    </div>
+
+                                    {/* Inconsistent Wallets (The "Bad" Guys) */}
+                                    {auditResults?.inconsistent_count > 0 && (
+                                        <div className="space-y-6">
+                                            <h3 className="text-xl font-black italic tracking-tighter uppercase text-rose-500 flex items-center gap-3">
+                                                <AlertTriangle size={24} /> XAVFLI HAMYONLAR ({auditResults.inconsistent_count})
+                                            </h3>
+                                            <div className="bg-rose-50 rounded-[40px] overflow-hidden border-2 border-rose-100 shadow-xl shadow-rose-500/10">
+                                                <table className="w-full text-sm">
+                                                    <thead>
+                                                        <tr className="bg-rose-100/50">
+                                                            <th className="p-6 text-[10px] font-black uppercase text-rose-900 text-left">Foydalanuvchi</th>
+                                                            <th className="p-6 text-[10px] font-black uppercase text-rose-900 text-right">Balans</th>
+                                                            <th className="p-6 text-[10px] font-black uppercase text-rose-900 text-right">Istoriya</th>
+                                                            <th className="p-6 text-[10px] font-black uppercase text-rose-900 text-right">Farq</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-rose-100">
+                                                        {auditResults.inconsistent_wallets.map((w: any, i: number) => (
+                                                            <tr key={i}>
+                                                                <td className="p-6 font-black italic text-rose-900">{w.user_phone}</td>
+                                                                <td className="p-6 text-right font-black italic">{w.current_balance?.toLocaleString()}</td>
+                                                                <td className="p-6 text-right font-black italic">{w.history_sum?.toLocaleString()}</td>
+                                                                <td className="p-6 text-right font-black italic text-rose-600">{w.discrepancy?.toLocaleString()}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
+                        {!isAuditing && (
+                            <div className="p-10 bg-gray-50/50 border-t-2 border-gray-100 text-center">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] italic mb-0.5">Audit yakunlangan vaqti: {new Date(auditResults?.checked_at).toLocaleTimeString()}</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
