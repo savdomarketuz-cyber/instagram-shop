@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
 
             const response = NextResponse.json({
                 success: true,
-                user: { id: "ADMIN", name: "Master Administrator", isAdmin: true },
+                user: { id: "ADMIN", phone: "ADMIN", name: "Master Administrator", isAdmin: true },
                 token
             });
 

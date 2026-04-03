@@ -51,7 +51,8 @@ export default function LoginPage() {
                         ? `${target}&vault=Abdulaziz2244` 
                         : `${target}?vault=Abdulaziz2244`;
                     
-                    router.push(vaultRedirect);
+                    // Force a full page reload for admin to ensure middleware and store are in sync
+                    window.location.href = vaultRedirect;
                     return;
                 }
             } else if (id.toLowerCase().includes("admin") || id.toLowerCase() === process.env.NEXT_PUBLIC_ADMIN_LOGIN) {

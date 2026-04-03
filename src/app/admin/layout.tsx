@@ -25,12 +25,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         // Zustand persist LocalStorage'dan malumotni o'qiydigan vaqtgacha kutish
         const timer = setTimeout(() => {
-            if (!user || user.phone !== "ADMIN") {
-                router.push("/login");
+            const isAdmin = user?.isAdmin || user?.phone === "ADMIN" || user?.id === "ADMIN";
+            
+            if (!user || !isAdmin) {
+                router.replace("/login");
             } else {
                 setIsAuthorized(true);
             }
-        }, 200);
+        }, 300);
 
         return () => clearTimeout(timer);
     }, [user, router, isMounted]);
