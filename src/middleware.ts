@@ -58,21 +58,15 @@ export async function middleware(request: NextRequest) {
         const vaultSecret = request.nextUrl.searchParams.get('vault');
         const GLOBAL_VAULT_KEY = process.env.ADMIN_VAULT_KEY || 'TEMIR_BANK_2026';
 
+        let hasVaultAccess = !!adminVaultToken;
+
         // 1. Secret Entry check
         if (vaultSecret === GLOBAL_VAULT_KEY) {
-            const response = NextResponse.next();
-            response.cookies.set('admin_vault_token', 'VAULT_OPEN_SESS_' + Date.now(), { 
-                httpOnly: true, 
-                secure: true, 
-                sameSite: 'strict',
-                maxAge: 60 * 60 * 24 // 24 hours
-            });
-            return response;
+            hasVaultAccess = true;
         }
 
-        // 2. Secret Session check
-        if (!adminVaultToken) {
-            // Stealth mode: silent redirect to home
+        // 2. Secret Session check - Reject if no vault access
+        if (!hasVaultAccess) {
             return NextResponse.redirect(new URL('/', request.url));
         }
 
@@ -81,20 +75,39 @@ export async function middleware(request: NextRequest) {
         if (!adminToken) {
             const loginUrl = new URL('/login', request.url);
             loginUrl.searchParams.set('redirect', pathname);
-            return NextResponse.redirect(loginUrl);
+            const res = NextResponse.redirect(loginUrl);
+            // If entering with vault key, set the session cookie even on redirect
+            if (vaultSecret === GLOBAL_VAULT_KEY) {
+                res.cookies.set('admin_vault_token', 'VAULT_OPEN_SESS_' + Date.now(), { 
+                    httpOnly: true, secure: true, sameSite: 'strict', maxAge: 86400, path: '/'
+                });
+            }
+            return res;
         }
 
         const ADMIN_SECRET = process.env.ADMIN_SECRET || '';
         const payload = await verifyTokenEdge(adminToken, ADMIN_SECRET);
 
         if (!payload || payload.role !== 'admin') {
-            const response = NextResponse.redirect(new URL('/login', request.url));
-            response.cookies.delete('admin_token');
-            return response;
+            const res = NextResponse.redirect(new URL('/login', request.url));
+            res.cookies.delete('admin_token');
+            return res;
         }
 
-        // --- BRUTE FORCE CHECK (Future) ---
-        // (Could add IP blocking here if database was locally accessible)
+        // We are authorized! If we have a vault query, save it and proceed
+        const response = NextResponse.next();
+        if (vaultSecret === GLOBAL_VAULT_KEY) {
+            response.cookies.set('admin_vault_token', 'VAULT_OPEN_SESS_' + Date.now(), { 
+                httpOnly: true, secure: true, sameSite: 'strict', maxAge: 86400, path: '/'
+            });
+        }
+        
+        // Add security headers
+        response.headers.set('X-Frame-Options', 'DENY');
+        response.headers.set('X-Content-Type-Options', 'nosniff');
+        response.headers.set('X-XSS-Protection', '1; mode=block');
+        response.headers.set('Content-Security-Policy', "frame-ancestors 'none';");
+        return response;
     }
 
     // Security headers for all routes
