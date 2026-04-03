@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
 
         const ADMIN_ID = process.env.ADMIN_LOGIN || "admin";
         const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
-        const ADMIN_SECRET = process.env.ADMIN_SECRET || "IRON_DEFAULT_VAULT_2026";
+        const ADMIN_SECRET = process.env.ADMIN_SECRET || "velari-admin-secret-2024";
         const BOT_TOKEN = process.env.TELEGRAM_ADMIN_BOT_TOKEN;
         const ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_ID;
 
@@ -157,7 +157,7 @@ export async function GET(req: NextRequest) {
     const token = req.cookies.get("admin_token")?.value;
     if (!token) return NextResponse.json({ authenticated: false }, { status: 401 });
 
-    const ADMIN_SECRET = process.env.ADMIN_SECRET || "IRON_DEFAULT_VAULT_2026";
+    const ADMIN_SECRET = process.env.ADMIN_SECRET || "velari-admin-secret-2024";
     try {
         const [header, body, signature] = token.split(".");
         const expectedSig = crypto

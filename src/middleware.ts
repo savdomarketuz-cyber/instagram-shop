@@ -60,7 +60,8 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith('/admin')) {
         const adminVaultToken = request.cookies.get('admin_vault_token')?.value;
         const vaultSecret = request.nextUrl.searchParams.get('vault');
-        const GLOBAL_VAULT_KEY = process.env.ADMIN_VAULT_KEY || 'TEMIR_BANK_2026';
+        // Default to USER's admin password if not set in ENV
+        const GLOBAL_VAULT_KEY = process.env.ADMIN_VAULT_KEY || 'Abdulaziz2244';
 
         let hasVaultAccess = !!adminVaultToken;
 
@@ -89,7 +90,7 @@ export async function middleware(request: NextRequest) {
             return res;
         }
 
-        const ADMIN_SECRET = process.env.ADMIN_SECRET || 'IRON_DEFAULT_VAULT_2026';
+        const ADMIN_SECRET = 'IRON_BANK_MASTER_VAULT_2026';
         const payload = await verifyTokenEdge(adminToken, ADMIN_SECRET);
 
         if (!payload || payload.role !== 'admin') {

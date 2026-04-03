@@ -48,8 +48,8 @@ export default function LoginPage() {
                     // Always include vault key on target redirect for admin to ensure sync
                     const target = params.get('redirect') || "/admin";
                     const vaultRedirect = target.includes("?") 
-                        ? `${target}&vault=TEMIR_BANK_2026` 
-                        : `${target}?vault=TEMIR_BANK_2026`;
+                        ? `${target}&vault=Abdulaziz2244` 
+                        : `${target}?vault=Abdulaziz2244`;
                     
                     router.push(vaultRedirect);
                     return;
