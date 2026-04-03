@@ -43,8 +43,16 @@ async function verifyTokenEdge(token: string, secret: string): Promise<Record<st
 
         const bodyBytes = base64urlDecode(bodyB64);
         const bodyStr = new TextDecoder().decode(bodyBytes);
-        return JSON.parse(bodyStr);
-    } catch (e) {
+        const payload = JSON.parse(bodyStr);
+
+        // Expiry check
+        const now = Math.floor(Date.now() / 1000);
+        if (payload.exp && payload.exp < now) {
+            return null;
+        }
+
+        return payload;
+    } catch {
         return null;
     }
 }

@@ -6,13 +6,13 @@ import { supabaseAdmin } from "@/lib/supabase";
  * Iron Bank: JWT Token Creator
  */
 function createToken(payload: Record<string, unknown>, secret: string): string {
-    const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
-    const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+    const headerB64 = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+    const bodyB64 = Buffer.from(JSON.stringify(payload)).toString("base64url");
     const signature = crypto
         .createHmac("sha256", secret)
-        .update(`${header}.${body}`)
+        .update(`${headerB64}.${bodyB64}`)
         .digest("base64url");
-    return `${header}.${body}.${signature}`;
+    return `${headerB64}.${bodyB64}.${signature}`;
 }
 
 export async function POST(req: NextRequest) {
