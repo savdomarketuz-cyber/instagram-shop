@@ -87,16 +87,26 @@ function PaymentContent() {
                 // Standard parameters for Click
                 const params = `service_id=${serviceId}&merchant_id=${merchantId}&amount=${order.total}&transaction_param=${orderId}&return_url=${returnUrl}`;
                 const clickUrl = `https://my.click.uz/services/pay?${params}`;
+                const clickDeepLink = `clickuz://payment?${params}`;
 
                 // Detection
-                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                const ua = navigator.userAgent;
+                const isAndroid = /Android/i.test(ua);
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(ua);
 
-                if (isMobile) {
-                    // Try to open in a new context to "break out" of PWA standalone mode
-                    // This is the most universal way to trigger the "Open in App" prompt
-                    const newWindow = window.open(clickUrl, '_blank');
+                if (isAndroid) {
+                    // Force open Click App for Android
+                    window.location.href = clickDeepLink;
                     
-                    // If window.open was blocked or failed, use location.href as fallback
+                    // Fallback to Web after a short delay
+                    setTimeout(() => {
+                        if (document.hasFocus()) {
+                            window.location.href = clickUrl;
+                        }
+                    }, 1000);
+                } else if (isMobile) {
+                    // iOS and others: New window context to break out of PWA
+                    const newWindow = window.open(clickUrl, '_blank');
                     if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
                         window.location.href = clickUrl;
                     }
