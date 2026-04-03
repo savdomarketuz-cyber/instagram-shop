@@ -67,9 +67,11 @@ export async function middleware(request: NextRequest) {
         const adminToken = request.cookies.get('admin_token')?.value;
         const adminVaultToken = request.cookies.get('admin_vault_token')?.value;
         const vaultSecret = request.nextUrl.searchParams.get('vault')?.trim();
+        
+        // Multi-key support for seamless transition
         const GLOBAL_VAULT_KEY = process.env.ADMIN_VAULT_KEY || 'Abdulaziz2244';
+        const LEGACY_VAULT_KEY = 'TEMIR_BANK_2026';
 
-        // Master Secret for all verification
         const ADMIN_SECRET = "Abdulaziz2244";
 
         // 1. If we have a valid admin token, ALLOW EVERYTHING in /admin
@@ -84,7 +86,7 @@ export async function middleware(request: NextRequest) {
 
         // 2. Secret Entry logic (If not yet authenticated)
         let hasVaultAccess = !!adminVaultToken;
-        if (vaultSecret === GLOBAL_VAULT_KEY) {
+        if (vaultSecret === GLOBAL_VAULT_KEY || vaultSecret === LEGACY_VAULT_KEY) {
             hasVaultAccess = true;
         }
 
@@ -98,7 +100,7 @@ export async function middleware(request: NextRequest) {
         const res = NextResponse.redirect(loginUrl);
         
         // Persistent Vault session
-        if (vaultSecret === GLOBAL_VAULT_KEY) {
+        if (vaultSecret === GLOBAL_VAULT_KEY || vaultSecret === LEGACY_VAULT_KEY) {
             res.cookies.set('admin_vault_token', 'VAULT_ACTIVE', { 
                 httpOnly: true, secure: true, sameSite: 'lax', maxAge: 86400, path: '/', domain: 'velari.uz'
             });
