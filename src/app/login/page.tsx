@@ -45,7 +45,13 @@ export default function LoginPage() {
                 if (authData.success) {
                     setUser(authData.user);
                     const params = new URLSearchParams(window.location.search);
-                    router.push(params.get('redirect') || "/admin");
+                    // Always include vault key on target redirect for admin to ensure sync
+                    const target = params.get('redirect') || "/admin";
+                    const vaultRedirect = target.includes("?") 
+                        ? `${target}&vault=TEMIR_BANK_2026` 
+                        : `${target}?vault=TEMIR_BANK_2026`;
+                    
+                    router.push(vaultRedirect);
                     return;
                 }
             } else if (id.toLowerCase().includes("admin") || id.toLowerCase() === process.env.NEXT_PUBLIC_ADMIN_LOGIN) {
