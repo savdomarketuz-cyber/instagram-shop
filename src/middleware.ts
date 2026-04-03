@@ -71,7 +71,7 @@ export async function middleware(request: NextRequest) {
         const vaultSecret = request.nextUrl.searchParams.get('vault')?.trim();
         const GLOBAL_VAULT_KEY = process.env.ADMIN_VAULT_KEY || 'Abdulaziz2244';
 
-        const ADMIN_SECRET = process.env.ADMIN_SECRET || "velari-admin-secret-2024";
+        const ADMIN_SECRET = "Abdulaziz2244";
 
         // 1. If we have a valid admin token, ALLOW EVERYTHING in /admin
         if (adminToken) {
