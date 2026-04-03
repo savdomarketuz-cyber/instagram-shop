@@ -52,54 +52,61 @@ async function verifyTokenEdge(token: string, secret: string): Promise<Record<st
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
-    // Admin sahifalarini himoyalash
+    // --- IRON BANK VAULT PROTECTION ---
     if (pathname.startsWith('/admin')) {
-        const adminToken = request.cookies.get('admin_token')?.value;
+        const adminVaultToken = request.cookies.get('admin_vault_token')?.value;
+        const vaultSecret = request.nextUrl.searchParams.get('vault');
+        const GLOBAL_VAULT_KEY = process.env.ADMIN_VAULT_KEY || 'TEMIR_BANK_2026';
 
+        // 1. Secret Entry check
+        if (vaultSecret === GLOBAL_VAULT_KEY) {
+            const response = NextResponse.next();
+            response.cookies.set('admin_vault_token', 'VAULT_OPEN_SESS_' + Date.now(), { 
+                httpOnly: true, 
+                secure: true, 
+                sameSite: 'strict',
+                maxAge: 60 * 60 * 24 // 24 hours
+            });
+            return response;
+        }
+
+        // 2. Secret Session check
+        if (!adminVaultToken) {
+            // Stealth mode: silent redirect to home
+            return NextResponse.redirect(new URL('/', request.url));
+        }
+
+        // 3. Original Admin JWT check
+        const adminToken = request.cookies.get('admin_token')?.value;
         if (!adminToken) {
             const loginUrl = new URL('/login', request.url);
             loginUrl.searchParams.set('redirect', pathname);
             return NextResponse.redirect(loginUrl);
         }
 
-        // JWT tokenni tekshirish (Edge Runtime mos)
         const ADMIN_SECRET = process.env.ADMIN_SECRET || '';
-        if (!ADMIN_SECRET) {
-            const response = NextResponse.redirect(new URL('/login', request.url));
-            response.cookies.delete('admin_token');
-            return response;
-        }
-
         const payload = await verifyTokenEdge(adminToken, ADMIN_SECRET);
 
-        if (!payload) {
+        if (!payload || payload.role !== 'admin') {
             const response = NextResponse.redirect(new URL('/login', request.url));
             response.cookies.delete('admin_token');
             return response;
         }
 
-        // Token muddatini tekshirish
-        const now = Math.floor(Date.now() / 1000);
-        if (typeof payload.exp === 'number' && payload.exp < now) {
-            const response = NextResponse.redirect(new URL('/login', request.url));
-            response.cookies.delete('admin_token');
-            return response;
-        }
-
-        // Role tekshirish
-        if (payload.role !== 'admin') {
-            const response = NextResponse.redirect(new URL('/login', request.url));
-            response.cookies.delete('admin_token');
-            return response;
-        }
+        // --- BRUTE FORCE CHECK (Future) ---
+        // (Could add IP blocking here if database was locally accessible)
     }
 
     // Security headers for all routes
     const response = NextResponse.next();
     response.headers.set('X-Frame-Options', 'DENY');
     response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('X-XSS-Protection', '1; mode=block');
+    response.headers.set('Content-Security-Policy', "frame-ancestors 'none';");
     response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
+
+    return response;
 
     return response;
 }

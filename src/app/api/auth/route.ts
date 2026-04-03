@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { supabase } from "@/lib/supabase";
 
 /**
- * HMAC-SHA256 asosida JWT-ga o'xshash token yaratish
- * Tashqi kutubxonalarsiz ishlaydi
+ * Iron Bank: JWT Token Creator
  */
 function createToken(payload: Record<string, unknown>, secret: string): string {
     const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
@@ -15,126 +15,163 @@ function createToken(payload: Record<string, unknown>, secret: string): string {
     return `${header}.${body}.${signature}`;
 }
 
-function verifyToken(token: string, secret: string): Record<string, unknown> | null {
-    try {
-        const [header, body, signature] = token.split(".");
-        if (!header || !body || !signature) return null;
-
-        const expectedSig = crypto
-            .createHmac("sha256", secret)
-            .update(`${header}.${body}`)
-            .digest("base64url");
-
-        if (signature !== expectedSig) return null;
-
-        return JSON.parse(Buffer.from(body, "base64url").toString());
-    } catch {
-        return null;
-    }
-}
-
-/**
- * Parolni hash qilish (SHA-256 + salt)
- */
-function hashPassword(password: string, salt: string): string {
-    return crypto.createHash("sha256").update(password + salt).digest("hex");
-}
-
-/**
- * Server-side Admin Authentication
- * JWT token + parol hashlash bilan himoyalangan
- */
 export async function POST(req: NextRequest) {
-    try {
-        const { id, password } = await req.json();
+    const ip = req.headers.get("x-forwarded-for") || "unknown";
+    const userAgent = req.headers.get("user-agent") || "unknown";
 
-        if (!id || !password) {
-            return NextResponse.json({ error: "Credentials required" }, { status: 400 });
+    try {
+        const { id, password, code, step = "password" } = await req.json();
+
+        // 1. IRON BANK: Brute Force & Vault Lock Shield
+        const { data: userData } = await supabase.from("users").select("is_vault_locked").eq("phone", id).single();
+        if (userData?.is_vault_locked) {
+            return NextResponse.json({ error: "VAULT LOCK: Admin panel favqulodda holat tufayli yopilgan." }, { status: 403 });
+        }
+
+        const { data: trap } = await supabase.from("security_traps").select("*").eq("ip_address", ip).single();
+        if (trap?.is_blocked) {
+            return NextResponse.json({ error: "XAVFSIZLIK: IP-manzilingiz shubhali harakat tufayli bloklangan." }, { status: 403 });
         }
 
         const ADMIN_ID = process.env.ADMIN_LOGIN || "admin";
         const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
         const ADMIN_SECRET = process.env.ADMIN_SECRET || "";
+        const BOT_TOKEN = process.env.TELEGRAM_ADMIN_BOT_TOKEN;
+        const ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_ID;
 
-        if (!ADMIN_PASSWORD || !ADMIN_SECRET) {
-            console.error("ADMIN_PASSWORD or ADMIN_SECRET environment variable is not set!");
-            return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+        // STEP 1: PASSWORD VERIFICATION
+        if (step === "password") {
+            if (!id || !password) return NextResponse.json({ error: "Ma'lumotlar to'liq emas" }, { status: 400 });
+
+            if (id.toLowerCase() !== ADMIN_ID.toLowerCase() || password !== ADMIN_PASSWORD) {
+                // Security Trap Logic
+                const currentAttempts = (trap?.attempts || 0) + 1;
+                await supabase.from("security_traps").upsert({
+                    ip_address: ip,
+                    attempts: currentAttempts,
+                    is_blocked: currentAttempts >= 3,
+                    last_attempt: new Date().toISOString()
+                });
+
+                // Audit Log
+                await supabase.from("admin_audit_logs").insert([{
+                    admin_phone: id,
+                    action: "FAILED_LOGIN_ATTEMPT",
+                    target: "Vault Entry",
+                    ip_address: ip,
+                    user_agent: userAgent
+                }]);
+
+                return NextResponse.json({ error: "Xatolik! Qolgan urinishlar: " + (3 - currentAttempts) }, { status: 401 });
+            }
+
+            // Correct Password -> Generate 2FA
+            const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+            const expires = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+
+            // Save OTP to DB (reusing wallet_otps or dedicated table)
+            await supabase.from("wallet_otps").delete().eq("phone", "ADMIN_VAULT");
+            await supabase.from("wallet_otps").insert([{
+                phone: "ADMIN_VAULT",
+                code: otpCode,
+                expires_at: expires
+            }]);
+
+            // Notify via Telegram
+            if (BOT_TOKEN && ADMIN_CHAT_ID) {
+                const text = `🏦 *IRON BANK SECURITY*\n\nAdmin panelga kirishga urinish.\n🔐 Tasdiqlash kodi: \`${otpCode}\`\n📍 IP: ${ip}\n📱 Qurilma: ${userAgent}\n\n🕒 Amal qilish muddati: 5 daqiqa.`;
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text: text, parse_mode: "Markdown" })
+                });
+            }
+
+            return NextResponse.json({ success: true, step: "2fa" });
         }
 
-        // Parolni tekshirish
-        if (id.toLowerCase() !== ADMIN_ID.toLowerCase() || password !== ADMIN_PASSWORD) {
-            // Brute-force oldini olish uchun kichik delay
-            await new Promise(resolve => setTimeout(resolve, 500));
-            return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+        // STEP 2: 2FA VERIFICATION
+        if (step === "2fa") {
+            if (!code) return NextResponse.json({ error: "Kod kiriting" }, { status: 400 });
+
+            const { data: otp } = await supabase
+                .from("wallet_otps")
+                .select("*")
+                .eq("phone", "ADMIN_VAULT")
+                .eq("code", code)
+                .gt("expires_at", new Date().toISOString())
+                .single();
+
+            if (!otp) {
+                return NextResponse.json({ error: "Kod noto'g'ri yoki muddati tugagan" }, { status: 401 });
+            }
+
+            // SUCCESS! Create Token
+            const now = Math.floor(Date.now() / 1000);
+            const token = createToken({
+                sub: ADMIN_ID,
+                role: "admin",
+                iat: now,
+                exp: now + 86400, // 24h
+                vault_level: 5
+            }, ADMIN_SECRET);
+
+            // Audit
+            await supabase.from("admin_audit_logs").insert([{
+                admin_phone: ADMIN_ID,
+                action: "SUCCESSFUL_VAULT_ENTRY",
+                target: "Dashboard",
+                ip_address: ip,
+                user_agent: userAgent
+            }]);
+
+            // Clear Traps
+            await supabase.from("security_traps").delete().eq("ip_address", ip);
+            await supabase.from("wallet_otps").delete().eq("phone", "ADMIN_VAULT");
+
+            const response = NextResponse.json({
+                success: true,
+                user: { id: "ADMIN", name: "Master Administrator", isAdmin: true },
+                token
+            });
+
+            response.cookies.set("admin_token", token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "strict",
+                maxAge: 86400,
+                path: "/",
+            });
+
+            return response;
         }
 
-        // JWT token yaratish
-        const now = Math.floor(Date.now() / 1000);
-        const token = createToken({
-            sub: ADMIN_ID,
-            role: "admin",
-            iat: now,
-            exp: now + 86400, // 24 soat
-        }, ADMIN_SECRET);
-
-        const response = NextResponse.json({
-            success: true,
-            user: { id: "ADMIN", phone: "ADMIN", name: "Administrator", isAdmin: true },
-            token
-        });
-
-        // Xavfsiz httpOnly cookie
-        response.cookies.set("admin_token", token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-            maxAge: 86400, // 24 soat
-            path: "/",
-        });
-
-        return response;
+        return NextResponse.json({ error: "Invalid Step" }, { status: 400 });
     } catch (error) {
-        console.error("Auth error:", error);
-        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+        console.error("Iron Bank Auth Error:", error);
+        return NextResponse.json({ error: "Tizim xatoligi" }, { status: 500 });
     }
 }
 
-/**
- * Admin session verification
- */
 export async function GET(req: NextRequest) {
+    // Session check logic (keep similar but with vault level check)
+    const token = req.cookies.get("admin_token")?.value;
+    if (!token) return NextResponse.json({ authenticated: false }, { status: 401 });
+
+    const ADMIN_SECRET = process.env.ADMIN_SECRET || "";
     try {
-        const token = req.cookies.get("admin_token")?.value;
+        const [header, body, signature] = token.split(".");
+        const expectedSig = crypto
+            .createHmac("sha256", ADMIN_SECRET)
+            .update(`${header}.${body}`)
+            .digest("base64url");
+        if (signature !== expectedSig) return NextResponse.json({ authenticated: false }, { status: 401 });
 
-        if (!token) {
-            return NextResponse.json({ authenticated: false }, { status: 401 });
-        }
-
-        const ADMIN_SECRET = process.env.ADMIN_SECRET || "";
-        if (!ADMIN_SECRET) {
-            return NextResponse.json({ authenticated: false }, { status: 500 });
-        }
-
-        const payload = verifyToken(token, ADMIN_SECRET);
-
-        if (!payload) {
-            return NextResponse.json({ authenticated: false, error: "Invalid token" }, { status: 401 });
-        }
-
-        // Token muddatini tekshirish
+        const payload = JSON.parse(Buffer.from(body, "base64url").toString());
         const now = Math.floor(Date.now() / 1000);
-        if (typeof payload.exp === "number" && payload.exp < now) {
-            return NextResponse.json({ authenticated: false, error: "Token expired" }, { status: 401 });
-        }
+        if (payload.exp < now || payload.role !== "admin") return NextResponse.json({ authenticated: false }, { status: 401 });
 
-        if (payload.role !== "admin") {
-            return NextResponse.json({ authenticated: false }, { status: 401 });
-        }
-
-        return NextResponse.json({
-            authenticated: true,
-            user: { id: "ADMIN", name: "Administrator", isAdmin: true }
-        });
+        return NextResponse.json({ authenticated: true, user: { id: "ADMIN", name: "Master Administrator" } });
     } catch {
         return NextResponse.json({ authenticated: false }, { status: 401 });
     }
