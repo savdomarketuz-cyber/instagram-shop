@@ -59,59 +59,56 @@ export async function middleware(request: NextRequest) {
     // --- IRON BANK VAULT PROTECTION ---
     if (pathname.startsWith('/admin')) {
         const adminVaultToken = request.cookies.get('admin_vault_token')?.value;
-        const vaultSecret = request.nextUrl.searchParams.get('vault');
-        // Default to USER's admin password if not set in ENV
+        const vaultSecret = request.nextUrl.searchParams.get('vault')?.trim();
         const GLOBAL_VAULT_KEY = process.env.ADMIN_VAULT_KEY || 'Abdulaziz2244';
 
         let hasVaultAccess = !!adminVaultToken;
-
-        // 1. Secret Entry check
         if (vaultSecret === GLOBAL_VAULT_KEY) {
             hasVaultAccess = true;
         }
 
-        // 2. Secret Session check - Reject if no vault access
+        // 1. Vault Shield: Reject if no key access
         if (!hasVaultAccess) {
             return NextResponse.redirect(new URL('/', request.url));
         }
 
-        // 3. Original Admin JWT check
+        // 2. Auth Shield: Verify JWT
         const adminToken = request.cookies.get('admin_token')?.value;
         if (!adminToken) {
             const loginUrl = new URL('/login', request.url);
             loginUrl.searchParams.set('redirect', pathname);
             const res = NextResponse.redirect(loginUrl);
-            // If entering with vault key, set the session cookie even on redirect
+            // Persistent Vault session
             if (vaultSecret === GLOBAL_VAULT_KEY) {
-                res.cookies.set('admin_vault_token', 'VAULT_OPEN_SESS_' + Date.now(), { 
+                res.cookies.set('admin_vault_token', 'VAULT_ACTIVE', { 
                     httpOnly: true, secure: true, sameSite: 'lax', maxAge: 86400, path: '/'
                 });
             }
             return res;
         }
 
+        // 3. Signature Verification
         const ADMIN_SECRET = process.env.ADMIN_SECRET || "velari-admin-secret-2024";
         const payload = await verifyTokenEdge(adminToken, ADMIN_SECRET);
 
         if (!payload || payload.role !== 'admin') {
             const res = NextResponse.redirect(new URL('/login', request.url));
             res.cookies.delete('admin_token');
+            res.headers.set('X-Iron-Bank-Error', 'INVALID_SIGNATURE');
             return res;
         }
 
-        // We are authorized! If we have a vault query, save it and proceed
+        // ALL CLEAR! Allow Page and persist Vault
         const response = NextResponse.next();
         if (vaultSecret === GLOBAL_VAULT_KEY) {
-            response.cookies.set('admin_vault_token', 'VAULT_OPEN_SESS_' + Date.now(), { 
+            response.cookies.set('admin_vault_token', 'VAULT_ACTIVE', { 
                 httpOnly: true, secure: true, sameSite: 'lax', maxAge: 86400, path: '/'
             });
         }
         
-        // Add security headers
+        // Security headers
+        response.headers.set('X-Iron-Bank-Status', 'AUTHENTICATED');
         response.headers.set('X-Frame-Options', 'DENY');
-        response.headers.set('X-Content-Type-Options', 'nosniff');
-        response.headers.set('X-XSS-Protection', '1; mode=block');
-        response.headers.set('Content-Security-Policy', "frame-ancestors 'none';");
         return response;
     }
 
