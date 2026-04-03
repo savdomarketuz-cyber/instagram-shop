@@ -550,6 +550,7 @@ function WalletView({ user, t, language, onBack }: any) {
     const [showTransfer, setShowTransfer] = useState(false);
     const [receiverPhone, setReceiverPhone] = useState("");
     const [amount, setAmount] = useState("");
+    const [isGift, setIsGift] = useState(false);
     const [otpCode, setOtpCode] = useState("");
     const [transferStep, setTransferStep] = useState(1); // 1: Input, 2: OTP
     const [isProcessing, setIsProcessing] = useState(false);
@@ -599,7 +600,7 @@ function WalletView({ user, t, language, onBack }: any) {
             const res = await fetch("/api/wallet/transfer/request", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ senderPhone: user.phone, receiverPhone, amount: Number(amount) })
+                body: JSON.stringify({ senderPhone: user.phone, receiverPhone, amount: Number(amount), isGift })
             });
             const data = await res.json();
             if (data.success) setTransferStep(2);
@@ -621,6 +622,7 @@ function WalletView({ user, t, language, onBack }: any) {
             if (data.success) {
                 setShowTransfer(false);
                 setTransferStep(1);
+                setIsGift(false);
                 fetchWalletData();
             } else setError(data.message);
         } catch (e) { setError("Xatolik yuz berdi"); }
@@ -698,12 +700,14 @@ function WalletView({ user, t, language, onBack }: any) {
                                     </div>
                                     <div>
                                         <p className="font-black italic uppercase text-[12px] tracking-tight">
-                                            {t.type === 'cashback' ? "Keshbek to'plandi" : (t.isOutgoing ? `To: ${t.receiver_phone}` : `From: ${t.sender_phone}`)}
+                                            {t.type === 'cashback' ? "Keshbek to'plandi" : 
+                                             t.type.includes('gift') ? `🎁 Sovg'a: ${t.isOutgoing ? t.receiver_phone : t.sender_phone}` :
+                                             (t.isOutgoing ? `To: ${t.receiver_phone}` : `From: ${t.sender_phone}`)}
                                         </p>
                                         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{new Date(t.date).toLocaleDateString()}</p>
                                     </div>
                                 </div>
-                                <p className={`font-black italic text-sm tracking-tighter ${t.val > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                <p className={`font-black italic text-sm tracking-tighter ${t.val > 0 ? (t.type.includes('gift') ? 'text-amber-500' : 'text-green-500') : 'text-red-500'}`}>
                                     {Math.abs(t.val).toLocaleString()} <span className="text-[9px] opacity-40 italic">som</span>
                                 </p>
                             </div>
@@ -731,7 +735,23 @@ function WalletView({ user, t, language, onBack }: any) {
                             <div className="space-y-4">
                                 <input type="tel" placeholder="Qabul qiluvchi tel..." value={receiverPhone} onChange={e => setReceiverPhone(e.target.value)} className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-2xl p-4 text-sm font-bold outline-none" />
                                 <input type="number" placeholder="Summa..." value={amount} onChange={e => setAmount(e.target.value)} className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-2xl p-4 text-sm font-bold outline-none" />
-                                <button onClick={handleTransferRequest} disabled={isProcessing} className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
+                                
+                                <button 
+                                    onClick={() => setIsGift(!isGift)}
+                                    className={`w-full p-4 rounded-2xl border-2 transition-all flex items-center justify-between ${isGift ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-gray-50 text-gray-400 hover:border-gray-200'}`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isGift ? 'bg-amber-400 text-white' : 'bg-gray-100'}`}>
+                                            <Star size={16} fill={isGift ? "currentColor" : "none"} />
+                                        </div>
+                                        <span className="text-[10px] font-black uppercase tracking-widest">🎁 Sovg'a sifatida yuborish</span>
+                                    </div>
+                                    <div className={`w-10 h-5 rounded-full relative transition-all ${isGift ? 'bg-amber-400' : 'bg-gray-200'}`}>
+                                        <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${isGift ? 'left-6' : 'left-1'}`} />
+                                    </div>
+                                </button>
+
+                                <button onClick={handleTransferRequest} disabled={isProcessing} className={`w-full ${isGift ? 'bg-amber-500' : 'bg-black'} text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl ${isGift ? 'shadow-amber-500/20' : 'shadow-black/20'}`}>
                                     {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <ChevronRight size={16} />} DAVOM ETISH
                                 </button>
                             </div>

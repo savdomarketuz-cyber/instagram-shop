@@ -66,3 +66,29 @@ export async function notifyCustomerOrder(phone: string, orderId: string) {
         console.error("Customer Telegram notification error:", e);
     }
 }
+
+export async function sendTransferOTP(phone: string, amount: number, receiverPhone: string, code: string) {
+    try {
+        const { data: user } = await supabaseAdmin
+            .from('users')
+            .select('telegram_id')
+            .eq('phone', phone)
+            .single();
+
+        if (!user || !user.telegram_id || !CUSTOMER_BOT_TOKEN) return;
+
+        let text = `💳 <b>P2P O'tkazma so'rovi!</b>\n\n`;
+        text += `💰 Summa: <b>${amount.toLocaleString()} so'm</b>\n`;
+        text += `👤 Qabul qiluvchi: <b>${receiverPhone}</b>\n\n`;
+        text += `🔑 Tasdiqlash kodi: <code>${code}</code>\n\n`;
+        text += `⚠️ <i>Agar ushbu so'rovni siz yubormagan bo'lsangiz, kodni hech kimga bermang!</i>`;
+
+        await fetch(`https://api.telegram.org/bot${CUSTOMER_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: user.telegram_id, text, parse_mode: 'HTML' })
+        });
+    } catch(e) {
+        console.error("OTP Telegram notification error:", e);
+    }
+}
