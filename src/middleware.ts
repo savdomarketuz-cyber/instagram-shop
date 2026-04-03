@@ -7,10 +7,9 @@ import type { NextRequest } from 'next/server';
  */
 async function verifyTokenEdge(token: string, secret: string): Promise<Record<string, unknown> | null> {
     try {
-        const [header, body, signature] = token.split('.');
-        if (!header || !body || !signature) return null;
+        const [headerB64, bodyB64, sigB64] = token.split('.');
+        if (!headerB64 || !bodyB64 || !sigB64) return null;
 
-        // Web Crypto API — Edge Runtime uchun mos
         const encoder = new TextEncoder();
         const keyData = encoder.encode(secret);
         const key = await crypto.subtle.importKey(
@@ -18,29 +17,26 @@ async function verifyTokenEdge(token: string, secret: string): Promise<Record<st
             keyData,
             { name: 'HMAC', hash: 'SHA-256' },
             false,
-            ['sign']
+            ['verify']
         );
 
-        const data = encoder.encode(`${header}.${body}`);
-        const sig = await crypto.subtle.sign('HMAC', key, data);
-        const sigArray = new Uint8Array(sig);
-        let binary = '';
-        for (let i = 0; i < sigArray.byteLength; i++) {
-            binary += String.fromCharCode(sigArray[i]);
-        }
+        const data = encoder.encode(`${headerB64}.${bodyB64}`);
         
-        // Base64url formatga aylantirish
-        const expectedSig = btoa(binary)
-            .replace(/\+/g, '-')
-            .replace(/\//g, '_')
-            .replace(/=+$/, '');
+        // Base64url to Uint8Array for signature
+        const sigBinary = atob(sigB64.replace(/-/g, '+').replace(/_/g, '/'));
+        const sigArray = new Uint8Array(sigBinary.length);
+        for (let i = 0; i < sigBinary.length; i++) {
+            sigArray[i] = sigBinary.charCodeAt(i);
+        }
 
-        if (signature !== expectedSig) return null;
+        const isValid = await crypto.subtle.verify('HMAC', key, sigArray, data);
+        if (!isValid) return null;
 
-        // Body'ni decode qilish
-        const bodyStr = atob(body.replace(/-/g, '+').replace(/_/g, '/'));
+        // Decode Body
+        const bodyStr = atob(bodyB64.replace(/-/g, '+').replace(/_/g, '/'));
         return JSON.parse(bodyStr);
-    } catch {
+    } catch (e) {
+        console.error("Token verification error:", e);
         return null;
     }
 }
