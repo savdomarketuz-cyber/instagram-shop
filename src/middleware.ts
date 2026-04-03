@@ -47,9 +47,7 @@ async function verifyTokenEdge(token: string, secret: string): Promise<Record<st
 
         // Expiry check
         const now = Math.floor(Date.now() / 1000);
-        if (payload.exp && payload.exp < now) {
-            return null;
-        }
+        if (payload.exp && payload.exp < now) return null;
 
         return payload;
     } catch {
@@ -71,6 +69,7 @@ export async function middleware(request: NextRequest) {
         const vaultSecret = request.nextUrl.searchParams.get('vault')?.trim();
         const GLOBAL_VAULT_KEY = process.env.ADMIN_VAULT_KEY || 'Abdulaziz2244';
 
+        // Master Secret for all verification
         const ADMIN_SECRET = "Abdulaziz2244";
 
         // 1. If we have a valid admin token, ALLOW EVERYTHING in /admin
@@ -97,11 +96,15 @@ export async function middleware(request: NextRequest) {
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);
         const res = NextResponse.redirect(loginUrl);
+        
+        // Persistent Vault session
         if (vaultSecret === GLOBAL_VAULT_KEY) {
             res.cookies.set('admin_vault_token', 'VAULT_ACTIVE', { 
-                httpOnly: true, secure: true, sameSite: 'lax', maxAge: 86400, path: '/'
+                httpOnly: true, secure: true, sameSite: 'lax', maxAge: 86400, path: '/', domain: 'velari.uz'
             });
         }
+        
+        res.headers.set('X-Iron-Bank-Status', 'VAULT_ONLY');
         return res;
     }
 

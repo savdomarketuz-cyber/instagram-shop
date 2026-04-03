@@ -3,15 +3,18 @@ import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabase";
 
 /**
- * Iron Bank: JWT Token Creator
+ * Iron Bank: JWT Token Creator (Edge-compatible)
  */
 function createToken(payload: Record<string, unknown>, secret: string): string {
-    const headerB64 = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+    const header = { alg: "HS256", typ: "JWT" };
+    const headerB64 = Buffer.from(JSON.stringify(header)).toString("base64url");
     const bodyB64 = Buffer.from(JSON.stringify(payload)).toString("base64url");
+    
     const signature = crypto
         .createHmac("sha256", secret)
         .update(`${headerB64}.${bodyB64}`)
         .digest("base64url");
+        
     return `${headerB64}.${bodyB64}.${signature}`;
 }
 
@@ -136,12 +139,14 @@ export async function POST(req: NextRequest) {
             });
 
             // Set cookie with maximum compatibility
+            // Set cookie with maximum compatibility
             response.cookies.set("admin_token", token, {
                 httpOnly: true,
-                secure: true, // Velari.uz is HTTPS
+                secure: true, 
                 sameSite: "lax",
                 maxAge: 86400,
                 path: "/",
+                domain: "velari.uz"
             });
 
             return response;
