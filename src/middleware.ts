@@ -9,8 +9,10 @@ import type { NextRequest } from 'next/server';
  * Standard-compliant Base64url Decoder for Edge Runtime
  */
 function base64urlDecode(str: string): Uint8Array {
+    // Remove padding if present
+    str = str.split('=')[0];
     const pad = (str.length % 4 === 0) ? '' : '='.repeat(4 - (str.length % 4));
-    const base64 = (str + pad).replace(/-/g, '+').replace(/_/g, '/');
+    const base64 = str.replace(/-/g, '+').replace(/_/g, '/') + pad;
     const binary = atob(base64);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) {
@@ -50,7 +52,7 @@ async function verifyTokenEdge(token: string, secret: string): Promise<Record<st
         if (payload.exp && payload.exp < now) return null;
 
         return payload;
-    } catch {
+    } catch (e) {
         return null;
     }
 }
@@ -69,10 +71,10 @@ export async function middleware(request: NextRequest) {
         const vaultSecret = request.nextUrl.searchParams.get('vault')?.trim();
         
         // Multi-key support for seamless transition
-        const GLOBAL_VAULT_KEY = process.env.ADMIN_VAULT_KEY || 'Abdulaziz2244';
+        const GLOBAL_VAULT_KEY = (process.env.ADMIN_VAULT_KEY || 'Abdulaziz2244').trim();
         const LEGACY_VAULT_KEY = 'TEMIR_BANK_2026';
 
-        const ADMIN_SECRET = "Abdulaziz2244";
+        const ADMIN_SECRET = (process.env.ADMIN_SECRET || "Abdulaziz2244").trim();
 
         // 1. If we have a valid admin token, ALLOW EVERYTHING in /admin
         if (adminToken) {
@@ -102,7 +104,7 @@ export async function middleware(request: NextRequest) {
         // Persistent Vault session
         if (vaultSecret === GLOBAL_VAULT_KEY || vaultSecret === LEGACY_VAULT_KEY) {
             res.cookies.set('admin_vault_token', 'VAULT_ACTIVE', { 
-                httpOnly: true, secure: true, sameSite: 'lax', maxAge: 86400, path: '/', domain: 'velari.uz'
+                httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 86400, path: '/'
             });
         }
         

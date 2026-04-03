@@ -36,9 +36,9 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "XAVFSIZLIK: IP-manzilingiz shubhali harakat tufayli bloklangan." }, { status: 403 });
         }
 
-        const ADMIN_ID = process.env.ADMIN_LOGIN || "admin";
-        const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Abdulaziz2244";
-        const ADMIN_SECRET = "Abdulaziz2244"; // Master Sync Secret
+        const ADMIN_ID = (process.env.ADMIN_LOGIN || "admin").trim();
+        const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || "Abdulaziz2244").trim();
+        const ADMIN_SECRET = (process.env.ADMIN_SECRET || "Abdulaziz2244").trim(); // Master Sync Secret
         const BOT_TOKEN = process.env.TELEGRAM_ADMIN_BOT_TOKEN;
         const ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_ID;
 
@@ -139,14 +139,12 @@ export async function POST(req: NextRequest) {
             });
 
             // Set cookie with maximum compatibility
-            // Set cookie with maximum compatibility
             response.cookies.set("admin_token", token, {
                 httpOnly: true,
-                secure: true, 
+                secure: process.env.NODE_ENV === "production", 
                 sameSite: "lax",
                 maxAge: 86400,
-                path: "/",
-                domain: "velari.uz"
+                path: "/"
             });
 
             return response;
@@ -163,7 +161,7 @@ export async function GET(req: NextRequest) {
     const token = req.cookies.get("admin_token")?.value;
     if (!token) return NextResponse.json({ authenticated: false }, { status: 401 });
 
-    const ADMIN_SECRET = "Abdulaziz2244";
+    const ADMIN_SECRET = (process.env.ADMIN_SECRET || "Abdulaziz2244").trim();
     try {
         const [header, body, signature] = token.split(".");
         const expectedSig = crypto
