@@ -84,33 +84,25 @@ function PaymentContent() {
                 }
                 const returnUrl = encodeURIComponent(`${window.location.origin}/order-success`);
                 
-                // Standard web and deep link params
+                // Standard parameters for Click
                 const params = `service_id=${serviceId}&merchant_id=${merchantId}&amount=${order.total}&transaction_param=${orderId}&return_url=${returnUrl}`;
-                const clickWebUrl = `https://my.click.uz/services/pay?${params}`;
-                const clickDeepLink = `clickuz://payment?${params}`;
+                const clickUrl = `https://my.click.uz/services/pay?${params}`;
 
-                // Detection logic
-                const ua = navigator.userAgent;
-                const isAndroid = /Android/i.test(ua);
-                const isIOS = /iPhone|iPad|iPod/i.test(ua);
-                
-                if (isAndroid) {
-                    // Android Intent: Best for opening specific apps correctly
-                    const intentUrl = `intent://my.click.uz/services/pay?${params}#Intent;scheme=https;package=uz.click.uz;end`;
-                    window.location.href = intentUrl;
-                } else if (isIOS) {
-                    // iOS Deep Link setup
-                    window.location.href = clickDeepLink;
+                // Detection
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+                if (isMobile) {
+                    // Try to open in a new context to "break out" of PWA standalone mode
+                    // This is the most universal way to trigger the "Open in App" prompt
+                    const newWindow = window.open(clickUrl, '_blank');
                     
-                    // Fallback to web for iOS if app doesn't open within 1.5s
-                    setTimeout(() => {
-                        if (document.hasFocus()) {
-                            window.location.href = clickWebUrl;
-                        }
-                    }, 1500);
+                    // If window.open was blocked or failed, use location.href as fallback
+                    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                        window.location.href = clickUrl;
+                    }
                 } else {
-                    // Desktop or other
-                    window.location.href = clickWebUrl;
+                    // Desktop behavior
+                    window.location.href = clickUrl;
                 }
                 return;
             }
