@@ -84,27 +84,32 @@ function PaymentContent() {
                 }
                 const returnUrl = encodeURIComponent(`${window.location.origin}/order-success`);
                 
-                // standard web url
-                const clickWebUrl = `https://my.click.uz/services/pay?service_id=${serviceId}&merchant_id=${merchantId}&amount=${order.total}&transaction_param=${orderId}&return_url=${returnUrl}`;
-                
-                // Deep Link for mobile app
-                const clickDeepLink = `clickuz://payment?merchant_id=${merchantId}&service_id=${serviceId}&transaction_param=${orderId}&amount=${order.total}`;
+                // Standard web and deep link params
+                const params = `service_id=${serviceId}&merchant_id=${merchantId}&amount=${order.total}&transaction_param=${orderId}&return_url=${returnUrl}`;
+                const clickWebUrl = `https://my.click.uz/services/pay?${params}`;
+                const clickDeepLink = `clickuz://payment?${params}`;
 
-                // Detection logic: If mobile, try opening app first
-                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                // Detection logic
+                const ua = navigator.userAgent;
+                const isAndroid = /Android/i.test(ua);
+                const isIOS = /iPhone|iPad|iPod/i.test(ua);
                 
-                if (isMobile) {
-                    // Try to open deep link
+                if (isAndroid) {
+                    // Android Intent: Best for opening specific apps correctly
+                    const intentUrl = `intent://my.click.uz/services/pay?${params}#Intent;scheme=https;package=uz.click.uz;end`;
+                    window.location.href = intentUrl;
+                } else if (isIOS) {
+                    // iOS Deep Link setup
                     window.location.href = clickDeepLink;
                     
-                    // Fallback to web after 1 second if app didn't open
+                    // Fallback to web for iOS if app doesn't open within 1.5s
                     setTimeout(() => {
                         if (document.hasFocus()) {
                             window.location.href = clickWebUrl;
                         }
-                    }, 1200);
+                    }, 1500);
                 } else {
-                    // Desktop browser
+                    // Desktop or other
                     window.location.href = clickWebUrl;
                 }
                 return;
