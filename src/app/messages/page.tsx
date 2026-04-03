@@ -29,6 +29,7 @@ export default function MessagesPage() {
             router.push("/login");
             return;
         }
+        const myPhoneClean = user.phone.replace(/\D/g, '');
 
         const fetchChats = async () => {
             try {
@@ -36,7 +37,7 @@ export default function MessagesPage() {
                 const { data: sessions, error } = await supabase
                     .from("private_chats")
                     .select("*")
-                    .contains("participants", [user.phone])
+                    .contains("participants", [myPhoneClean])
                     .order("last_timestamp", { ascending: false });
                 
                 if (error) throw error;
@@ -267,31 +268,30 @@ export default function MessagesPage() {
                         {filteredChats.map((chat: any) => {
                             const myPhoneClean = user?.phone?.replace(/\D/g, '') || "";
                             const otherPhone = chat.participants.find((p: string) => p.replace(/\D/g, '') !== myPhoneClean) || "";
-                            const otherData = chat.participantData?.[otherPhone] || { name: "User", username: otherPhone };
-                            const unread = chat.unreadCount?.[user?.phone || ""] || 0;
+                            const otherData = chat.participant_data?.[otherPhone] || { name: "User", username: otherPhone };
+                            const unread = chat.unread_count?.[myPhoneClean] || 0;
+
+                            const lastMsg = chat.last_message || "Start a conversation";
+                            const timestamp = chat.last_timestamp ? new Date(chat.last_timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "";
 
                             return (
                                 <Link
                                     key={chat.id}
                                     href={`/messages/${otherPhone}`}
-                                    className="flex items-center gap-4 p-4 rounded-3xl hover:bg-gray-50 active:scale-[0.98] transition-all group border border-transparent hover:border-gray-100"
+                                    className="flex items-center gap-4 p-4 rounded-3xl hover:bg-gray-50 active:scale-[0.98] transition-all group"
                                 >
-                                    <div className="w-14 h-14 bg-gray-100 text-black rounded-2xl flex items-center justify-center font-black text-sm shrink-0 shadow-lg shadow-black/5 group-hover:scale-105 transition-all">
-                                        {otherData.username?.charAt(0).toUpperCase() || otherData.name?.charAt(0).toUpperCase()}
+                                    <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center font-black text-xs shrink-0 shadow-lg shadow-black/10 group-hover:scale-105 transition-all">
+                                        {otherData.name?.charAt(0).toUpperCase()}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between mb-1">
-                                            <h3 className="font-black italic text-sm truncate uppercase tracking-tighter">@{otherData.username}</h3>
-                                            <span className="text-[10px] text-gray-400 font-bold uppercase">
-                                                {chat.lastTimestamp?.toDate ? chat.lastTimestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}
-                                            </span>
+                                        <div className="flex items-center justify-between gap-2 mb-1">
+                                            <h3 className="font-black italic text-sm truncate uppercase tracking-tighter shrink-0">{otherData.name}</h3>
+                                            <span className="text-[10px] font-bold text-gray-400">{timestamp}</span>
                                         </div>
-                                        <div className="flex items-center justify-between gap-4">
-                                            <p className={`text-[11px] font-medium truncate ${unread > 0 ? "text-black font-black" : "text-gray-400"}`}>
-                                                {chat.lastMessage || "Start a conversation"}
-                                            </p>
+                                        <div className="flex items-center justify-between gap-2">
+                                            <p className="text-[11px] font-bold text-gray-500 truncate leading-none mb-0.5 opacity-60 uppercase tracking-widest">{lastMsg}</p>
                                             {unread > 0 && (
-                                                <div className="min-w-[18px] h-[18px] bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] font-black px-1 shadow-lg shadow-red-200">
+                                                <div className="px-2 py-0.5 bg-black text-white rounded-full text-[9px] font-black italic shadow-lg shadow-black/20 shrink-0">
                                                     {unread}
                                                 </div>
                                             )}

@@ -66,6 +66,17 @@ export default function P2PChatPage() {
         };
         fetchMessages();
 
+        // Mark as Read
+        const markAsRead = async () => {
+            const myPhoneClean = user.phone.replace(/\D/g, '');
+            const { data: chat } = await supabase.from("private_chats").select("unread_count").eq("id", roomId).single();
+            if (chat) {
+                const newUnread = { ...(chat.unread_count || {}), [myPhoneClean]: 0 };
+                await supabase.from("private_chats").update({ unread_count: newUnread }).eq("id", roomId);
+            }
+        };
+        markAsRead();
+
         // Real-time (Robust: Using unique room channel and client-side check)
         const channel = supabase
             .channel(`p2p_${roomId}`)
@@ -187,6 +198,34 @@ export default function P2PChatPage() {
         }
     };
 
+    const handleDeleteMessage = async (msgId: string, forEveryone: boolean) => {
+        try {
+            if (forEveryone) {
+                // Delete from DB permanently
+                await supabase.from("private_messages").delete().eq("id", msgId);
+                setMessages(prev => prev.filter(m => m.id !== msgId));
+            } else {
+                // For "Delete for me", we just hide it locally for now 
+                // (In a full prod app this would be a row in a delete_flags table)
+                setMessages(prev => prev.filter(m => m.id !== msgId));
+            }
+        } catch (error) {
+            console.error("Error deleting message:", error);
+        }
+    };
+
+    const handleDeleteChat = async () => {
+        const confirm = window.confirm("Haqiqatdan ham ushbu suhbatni butunlay o'chirmoqchimisiz?");
+        if (!confirm) return;
+        try {
+            await supabase.from("private_messages").delete().eq("chat_id", roomId);
+            await supabase.from("private_chats").delete().eq("id", roomId);
+            router.push("/messages");
+        } catch (error) {
+            console.error("Error deleting chat:", error);
+        }
+    };
+
     if (!mounted || (loading && !messages.length)) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-white">
@@ -215,7 +254,14 @@ export default function P2PChatPage() {
                         </p>
                     </div>
                 </div>
-                <button className="w-10 h-10 hover:bg-gray-100 rounded-full flex items-center justify-center text-gray-400"><MoreVertical size={20} /></button>
+                <div className="relative group/menu">
+                    <button className="w-10 h-10 hover:bg-gray-100 rounded-full flex items-center justify-center text-gray-400"><MoreVertical size={20} /></button>
+                    <div className="absolute right-0 top-full mt-1 bg-white border border-gray-100 shadow-xl rounded-2xl py-2 w-48 opacity-0 group-hover/menu:opacity-100 pointer-events-none group-hover/menu:pointer-events-auto transition-all z-20">
+                        <button onClick={handleDeleteChat} className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-500 font-bold text-xs uppercase flex items-center gap-2">
+                            <span>Suhbatni o'chirish</span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {/* Chat Area - Telegram Style Background */}
@@ -227,8 +273,8 @@ export default function P2PChatPage() {
                     const isMe = msg.sender_id === user?.phone;
                     const hasMedia = msg.image || msg.video;
                     return (
-                        <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"} mb-1 animate-in fade-in slide-in-from-bottom-1 duration-200`}>
-                            <div className={`max-w-[80%] rounded-[20px] shadow-sm relative group ${isMe ? "bg-black text-white rounded-br-none" : "bg-white text-black rounded-bl-none border border-gray-100"}`}>
+                        <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"} mb-1 animate-in fade-in slide-in-from-bottom-1 duration-200 group/msg`}>
+                            <div className={`max-w-[80%] rounded-[20px] shadow-sm relative ${isMe ? "bg-black text-white rounded-br-none" : "bg-white text-black rounded-bl-none border border-gray-100"}`}>
                                 {msg.image && (
                                     <div className="p-1 pb-0">
                                         <img src={msg.image} className="rounded-[16px] w-full max-h-80 object-cover" alt="Media" onClick={() => window.open(msg.image, '_blank')} />
@@ -245,7 +291,20 @@ export default function P2PChatPage() {
                                         <span className={`text-[8px] font-bold uppercase tracking-tighter ${isMe ? "text-white/60" : "text-gray-400"}`}>
                                             {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </span>
-                                        {isMe && <div className="w-3 h-3 flex items-center justify-center opacity-60">✓✓</div>}
+                                        {isMe && <div className="w-3 h-3 flex items-center justify-center opacity-60 text-[8px]">✓✓</div>}
+                                    </div>
+                                </div>
+
+                                {/* Message Context Action */}
+                                <div className={`absolute -top-2 ${isMe ? "-left-8" : "-right-8"} opacity-0 group-hover/msg:opacity-100 transition-all`}>
+                                    <div className="relative group/opt">
+                                        <button className="w-8 h-8 rounded-full bg-white/80 backdrop-blur-md shadow-sm flex items-center justify-center text-gray-400 hover:text-black transition-all">
+                                            <MoreVertical size={14} />
+                                        </button>
+                                        <div className={`absolute ${isMe ? "right-0" : "left-0"} top-full mt-1 bg-white border border-gray-100 shadow-xl rounded-xl py-1 w-32 opacity-0 group-hover/opt:opacity-100 pointer-events-none group-hover/opt:pointer-events-auto transition-all z-20`}>
+                                            <button onClick={() => handleDeleteMessage(msg.id, false)} className="w-full text-left px-3 py-1.5 hover:bg-gray-50 text-[10px] font-bold uppercase">Mendan</button>
+                                            {isMe && <button onClick={() => handleDeleteMessage(msg.id, true)} className="w-full text-left px-3 py-1.5 hover:bg-red-50 text-red-500 text-[10px] font-bold uppercase">Hamma uchun</button>}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
