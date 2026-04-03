@@ -5,10 +5,25 @@ import type { NextRequest } from 'next/server';
  * Edge Runtime mos JWT verification
  * Web Crypto API orqali HMAC-SHA256 tekshirish
  */
+/**
+ * Standard-compliant Base64url Decoder for Edge Runtime
+ */
+function base64urlDecode(str: string): Uint8Array {
+    const pad = (str.length % 4 === 0) ? '' : '='.repeat(4 - (str.length % 4));
+    const base64 = (str + pad).replace(/-/g, '+').replace(/_/g, '/');
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+}
+
 async function verifyTokenEdge(token: string, secret: string): Promise<Record<string, unknown> | null> {
     try {
-        const [headerB64, bodyB64, sigB64] = token.split('.');
-        if (!headerB64 || !bodyB64 || !sigB64) return null;
+        const parts = token.split('.');
+        if (parts.length !== 3) return null;
+        const [headerB64, bodyB64, sigB64] = parts;
 
         const encoder = new TextEncoder();
         const keyData = encoder.encode(secret);
@@ -21,22 +36,15 @@ async function verifyTokenEdge(token: string, secret: string): Promise<Record<st
         );
 
         const data = encoder.encode(`${headerB64}.${bodyB64}`);
-        
-        // Base64url to Uint8Array for signature
-        const sigBinary = atob(sigB64.replace(/-/g, '+').replace(/_/g, '/'));
-        const sigArray = new Uint8Array(sigBinary.length);
-        for (let i = 0; i < sigBinary.length; i++) {
-            sigArray[i] = sigBinary.charCodeAt(i);
-        }
+        const sigArray = base64urlDecode(sigB64);
 
         const isValid = await crypto.subtle.verify('HMAC', key, sigArray, data);
         if (!isValid) return null;
 
-        // Decode Body
-        const bodyStr = atob(bodyB64.replace(/-/g, '+').replace(/_/g, '/'));
+        const bodyBytes = base64urlDecode(bodyB64);
+        const bodyStr = new TextDecoder().decode(bodyBytes);
         return JSON.parse(bodyStr);
     } catch (e) {
-        console.error("Token verification error:", e);
         return null;
     }
 }
