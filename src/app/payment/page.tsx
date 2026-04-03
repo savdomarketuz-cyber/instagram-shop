@@ -83,8 +83,30 @@ function PaymentContent() {
                     throw new Error("Click tizimi hozircha sozlanmagan.");
                 }
                 const returnUrl = encodeURIComponent(`${window.location.origin}/order-success`);
-                const clickUrl = `https://my.click.uz/services/pay?service_id=${serviceId}&merchant_id=${merchantId}&amount=${order.total}&transaction_param=${orderId}&return_url=${returnUrl}`;
-                window.location.href = clickUrl;
+                
+                // standard web url
+                const clickWebUrl = `https://my.click.uz/services/pay?service_id=${serviceId}&merchant_id=${merchantId}&amount=${order.total}&transaction_param=${orderId}&return_url=${returnUrl}`;
+                
+                // Deep Link for mobile app
+                const clickDeepLink = `clickuz://payment?merchant_id=${merchantId}&service_id=${serviceId}&transaction_param=${orderId}&amount=${order.total}`;
+
+                // Detection logic: If mobile, try opening app first
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                
+                if (isMobile) {
+                    // Try to open deep link
+                    window.location.href = clickDeepLink;
+                    
+                    // Fallback to web after 1 second if app didn't open
+                    setTimeout(() => {
+                        if (document.hasFocus()) {
+                            window.location.href = clickWebUrl;
+                        }
+                    }, 1200);
+                } else {
+                    // Desktop browser
+                    window.location.href = clickWebUrl;
+                }
                 return;
             }
 

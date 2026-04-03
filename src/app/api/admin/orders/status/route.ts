@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import { notifyCustomerOrder } from "@/lib/telegram";
+import { ClickAPI } from "@/lib/click";
 
 export async function POST(req: Request) {
     try {
@@ -11,7 +11,37 @@ export async function POST(req: Request) {
             updateData.delivered_at = new Date().toISOString();
         }
 
-        // 1. Update order status
+        // 1. If order is cancelled, check for Click payment to refund
+        if (status === "Bekor qilingan") {
+            try {
+                const { data: tx } = await supabaseAdmin
+                    .from("click_transactions")
+                    .select("click_trans_id, status")
+                    .eq("order_id", orderId)
+                    .eq("status", "completed")
+                    .single();
+                
+                if (tx && tx.click_trans_id) {
+                    console.log(`🔄 Attempting to reverse Click payment for order #${orderId}...`);
+                    const result = await ClickAPI.reversePayment(tx.click_trans_id, orderId);
+                    
+                    if (result.success) {
+                        console.log(`✅ Refund successful for order #${orderId}`);
+                        await supabaseAdmin
+                            .from("click_transactions")
+                            .update({ status: "refunded", error_note: "Refunded by Admin" })
+                            .eq("click_trans_id", tx.click_trans_id);
+                    } else {
+                        console.error(`❌ Refund failed: ${result.error}`);
+                        // Optionally: notify admin about failed refund
+                    }
+                }
+            } catch (refundError) {
+                console.error("Refund side-effect error:", refundError);
+            }
+        }
+
+        // 2. Update order status
         const { data: order, error } = await supabaseAdmin
             .from("orders")
             .update(updateData)
