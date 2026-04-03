@@ -265,7 +265,8 @@ export default function MessagesPage() {
                         )}
 
                         {filteredChats.map((chat: any) => {
-                            const otherPhone = chat.participants.find((p: string) => p !== user?.phone) || "";
+                            const myPhoneClean = user.phone.replace(/\D/g, '');
+                            const otherPhone = chat.participants.find((p: string) => p.replace(/\D/g, '') !== myPhoneClean) || "";
                             const otherData = chat.participantData?.[otherPhone] || { name: "User", username: otherPhone };
                             const unread = chat.unreadCount?.[user?.phone || ""] || 0;
 

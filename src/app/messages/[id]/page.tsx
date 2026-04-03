@@ -29,7 +29,7 @@ export default function P2PChatPage() {
         setMounted(true);
     }, []);
 
-    const roomId = user && targetPhone ? [user.phone, targetPhone].sort().join("_") : "";
+    const roomId = user && targetPhone ? [user.phone.replace(/\D/g, ''), targetPhone.replace(/\D/g, '')].sort().join("_") : "";
 
     useEffect(() => {
         if (!mounted) return;
@@ -135,17 +135,18 @@ export default function P2PChatPage() {
             }
 
             const { data: existingChat } = await supabase.from("private_chats").select("id, unread_count").eq("id", roomId).single();
-            const otherPhone = targetPhone;
+            const otherPhoneClean = targetPhone.replace(/\D/g, '');
+            const myPhoneClean = user.phone.replace(/\D/g, '');
             
             if (!existingChat) {
                 await supabase.from("private_chats").insert([{
                     id: roomId,
-                    participants: [user.phone, otherPhone],
+                    participants: [myPhoneClean, otherPhoneClean],
                     participant_data: {
-                        [user.phone]: { name: user.name || "User", username: user.username || user.phone },
-                        [otherPhone]: { name: targetUserData?.name || "User", username: targetUserData?.username || otherPhone }
+                        [myPhoneClean]: { name: user.name || "User", username: user.username || user.phone },
+                        [otherPhoneClean]: { name: targetUserData?.name || "User", username: targetUserData?.username || otherPhoneClean }
                     },
-                    unread_count: { [otherPhone]: 1, [user.phone]: 0 }
+                    unread_count: { [otherPhoneClean]: 1, [myPhoneClean]: 0 }
                 }]);
             }
 
@@ -165,12 +166,12 @@ export default function P2PChatPage() {
             }
 
             const lastMsg = uploadedUrl ? (fileType === 'image' ? "🖼️ Foto" : "🎥 Video") : msgText;
-            const currentOtherUnread = existingChat?.unread_count?.[otherPhone] || 0;
+            const currentOtherUnread = existingChat?.unread_count?.[otherPhoneClean] || 0;
             
             await supabase.from("private_chats").update({
                 last_message: lastMsg,
                 last_timestamp: new Date().toISOString(),
-                unread_count: { ...existingChat?.unread_count, [otherPhone]: currentOtherUnread + 1 }
+                unread_count: { ...existingChat?.unread_count, [otherPhoneClean]: currentOtherUnread + 1 }
             }).eq("id", roomId);
 
             setSelectedFile(null);
