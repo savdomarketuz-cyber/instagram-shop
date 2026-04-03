@@ -84,13 +84,13 @@ export async function middleware(request: NextRequest) {
             // If entering with vault key, set the session cookie even on redirect
             if (vaultSecret === GLOBAL_VAULT_KEY) {
                 res.cookies.set('admin_vault_token', 'VAULT_OPEN_SESS_' + Date.now(), { 
-                    httpOnly: true, secure: true, sameSite: 'strict', maxAge: 86400, path: '/'
+                    httpOnly: true, secure: true, sameSite: 'lax', maxAge: 86400, path: '/'
                 });
             }
             return res;
         }
 
-        const ADMIN_SECRET = 'IRON_BANK_MASTER_VAULT_2026';
+        const ADMIN_SECRET = process.env.ADMIN_SECRET || "velari-admin-secret-2024";
         const payload = await verifyTokenEdge(adminToken, ADMIN_SECRET);
 
         if (!payload || payload.role !== 'admin') {
@@ -103,7 +103,7 @@ export async function middleware(request: NextRequest) {
         const response = NextResponse.next();
         if (vaultSecret === GLOBAL_VAULT_KEY) {
             response.cookies.set('admin_vault_token', 'VAULT_OPEN_SESS_' + Date.now(), { 
-                httpOnly: true, secure: true, sameSite: 'strict', maxAge: 86400, path: '/'
+                httpOnly: true, secure: true, sameSite: 'lax', maxAge: 86400, path: '/'
             });
         }
         

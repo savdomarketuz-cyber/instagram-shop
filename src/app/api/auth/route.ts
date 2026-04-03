@@ -135,10 +135,11 @@ export async function POST(req: NextRequest) {
                 token
             });
 
+            // Set cookie with maximum compatibility
             response.cookies.set("admin_token", token, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "strict",
+                secure: true, // Velari.uz is HTTPS
+                sameSite: "lax",
                 maxAge: 86400,
                 path: "/",
             });
