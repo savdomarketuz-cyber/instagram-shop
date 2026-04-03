@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 
 /**
  * Iron Bank: JWT Token Creator
@@ -23,12 +23,12 @@ export async function POST(req: NextRequest) {
         const { id, password, code, step = "password" } = await req.json();
 
         // 1. IRON BANK: Brute Force & Vault Lock Shield
-        const { data: userData } = await supabase.from("users").select("is_vault_locked").eq("phone", id).single();
+        const { data: userData } = await supabaseAdmin.from("users").select("is_vault_locked").eq("phone", id).single();
         if (userData?.is_vault_locked) {
             return NextResponse.json({ error: "VAULT LOCK: Admin panel favqulodda holat tufayli yopilgan." }, { status: 403 });
         }
 
-        const { data: trap } = await supabase.from("security_traps").select("*").eq("ip_address", ip).single();
+        const { data: trap } = await supabaseAdmin.from("security_traps").select("*").eq("ip_address", ip).single();
         if (trap?.is_blocked) {
             return NextResponse.json({ error: "XAVFSIZLIK: IP-manzilingiz shubhali harakat tufayli bloklangan." }, { status: 403 });
         }
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
             if (id.toLowerCase() !== ADMIN_ID.toLowerCase() || password !== ADMIN_PASSWORD) {
                 // Security Trap Logic
                 const currentAttempts = (trap?.attempts || 0) + 1;
-                await supabase.from("security_traps").upsert({
+                await supabaseAdmin.from("security_traps").upsert({
                     ip_address: ip,
                     attempts: currentAttempts,
                     is_blocked: currentAttempts >= 3,
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
                 });
 
                 // Audit Log
-                await supabase.from("admin_audit_logs").insert([{
+                await supabaseAdmin.from("admin_audit_logs").insert([{
                     admin_phone: id,
                     action: "FAILED_LOGIN_ATTEMPT",
                     target: "Vault Entry",
@@ -69,9 +69,9 @@ export async function POST(req: NextRequest) {
             const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
             const expires = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
-            // Save OTP to DB (reusing wallet_otps or dedicated table)
-            await supabase.from("wallet_otps").delete().eq("phone", "ADMIN_VAULT");
-            await supabase.from("wallet_otps").insert([{
+            // Save OTP to DB (bypass RLS)
+            await supabaseAdmin.from("wallet_otps").delete().eq("phone", "ADMIN_VAULT");
+            await supabaseAdmin.from("wallet_otps").insert([{
                 phone: "ADMIN_VAULT",
                 code: otpCode,
                 expires_at: expires
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
         if (step === "2fa") {
             if (!code) return NextResponse.json({ error: "Kod kiriting" }, { status: 400 });
 
-            const { data: otp } = await supabase
+            const { data: otp } = await supabaseAdmin
                 .from("wallet_otps")
                 .select("*")
                 .eq("phone", "ADMIN_VAULT")
@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
             }, ADMIN_SECRET);
 
             // Audit
-            await supabase.from("admin_audit_logs").insert([{
+            await supabaseAdmin.from("admin_audit_logs").insert([{
                 admin_phone: ADMIN_ID,
                 action: "SUCCESSFUL_VAULT_ENTRY",
                 target: "Dashboard",
@@ -126,8 +126,8 @@ export async function POST(req: NextRequest) {
             }]);
 
             // Clear Traps
-            await supabase.from("security_traps").delete().eq("ip_address", ip);
-            await supabase.from("wallet_otps").delete().eq("phone", "ADMIN_VAULT");
+            await supabaseAdmin.from("security_traps").delete().eq("ip_address", ip);
+            await supabaseAdmin.from("wallet_otps").delete().eq("phone", "ADMIN_VAULT");
 
             const response = NextResponse.json({
                 success: true,
@@ -154,7 +154,6 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-    // Session check logic (keep similar but with vault level check)
     const token = req.cookies.get("admin_token")?.value;
     if (!token) return NextResponse.json({ authenticated: false }, { status: 401 });
 
