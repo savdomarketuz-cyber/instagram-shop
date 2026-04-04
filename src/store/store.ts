@@ -111,8 +111,6 @@ export const useStore = create<StoreState>()(
                 wishlist: state.wishlist,
                 user: state.user,
                 language: state.language,
-                cachedProducts: state.cachedProducts,
-                cachedCategories: state.cachedCategories,
                 homeActiveFilter: state.homeActiveFilter,
                 homeActiveTab: state.homeActiveTab,
             }),

@@ -42,10 +42,16 @@ export async function getAiRecommendations(userInterests: any, allProducts: Prod
         if (interests && !error) {
             const lastUpdate = interests.ai_recommendations_updated_at ? new Date(interests.ai_recommendations_updated_at) : null;
             const now = new Date();
-            
-            // If recommendations exist and are less than 24h old, return them
-            if (interests.ai_recommendations && lastUpdate && (now.getTime() - lastUpdate.getTime() < 24 * 60 * 60 * 1000)) {
-                return interests.ai_recommendations;
+
+            // If recommendations exist and are less than 12h old, return them after filtering for existing products
+            if (interests.ai_recommendations && Array.isArray(interests.ai_recommendations) && lastUpdate && (now.getTime() - lastUpdate.getTime() < 12 * 60 * 60 * 1000)) {
+                const existingIds = allProducts.map(p => p.id);
+                const validatedIds = interests.ai_recommendations.filter((id: string) => existingIds.includes(id));
+                
+                // If it filtered out too many (e.g. they were all from old database), force a refresh
+                if (validatedIds.length >= 3) {
+                    return validatedIds;
+                }
             }
         }
     } catch (e) {
@@ -80,9 +86,13 @@ export async function getAiRecommendations(userInterests: any, allProducts: Prod
         ]);
 
         const jsonMatch = res.match(/\[[\s\S]*\]/);
-        const recommendedIds = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+        let recommendedIds = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
 
-        // 3. Save to Cache in Supabase (Background)
+        // 3. Filter to ensure IDs still exist in 'allProducts'
+        const existingIds = allProducts.map(p => p.id);
+        recommendedIds = recommendedIds.filter((id: string) => existingIds.includes(id));
+
+        // 4. Save to Cache in Supabase (Background)
         if (recommendedIds.length > 0) {
             supabase.from("user_interests").upsert({
                 id: userPhone,
