@@ -172,7 +172,18 @@ export default function HomeClient({
             if (activeFilter !== 'all') {
                 const targetCategory = allCategories.find(c => c.id === activeFilter || c.name === activeFilter);
                 if (targetCategory) {
-                    query = query.eq("category_id", targetCategory.id);
+                    // Recursive function to get all subcategory IDs
+                    const getAllCategoryIds = (catId: string): string[] => {
+                        const children = allCategories.filter(c => c.parentId === catId);
+                        let ids = [catId];
+                        for (const child of children) {
+                            ids = [...ids, ...getAllCategoryIds(child.id)];
+                        }
+                        return ids;
+                    };
+                    
+                    const categoryIds = getAllCategoryIds(targetCategory.id);
+                    query = query.in("category_id", categoryIds);
                 }
             }
 
