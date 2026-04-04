@@ -248,7 +248,7 @@ export default function LoginPage() {
                         
                         <div className="flex justify-center scale-110 md:scale-125 origin-center py-2">
                              <TelegramLoginButton 
-                                botName="style_gadgetuz_bot" 
+                                botName="velari_uz_xabarnoma_bot" 
                                 onAuth={handleTelegramAuth} 
                                 buttonSize="large"
                                 cornerRadius={20}
