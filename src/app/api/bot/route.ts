@@ -34,11 +34,11 @@ export async function POST(req: Request) {
             .eq("chat_id", chatId.toString())
             .single();
 
-        // 1. /start buyrug'i
-        if (text === "/start") {
+        // 1. /start buyrug'i (with or without params)
+        if (text?.startsWith("/start")) {
             await supabaseAdmin.from("bot_sessions").delete().eq("chat_id", chatId.toString());
             await sendTelegramMessage(chatId, 
-                "Assalomu alaykum! <b>Velari</b> do'konimizdan ro'yxatdan o'tish uchun quyidagi tugmani bosib telefon raqamingizni yuboring:",
+                "Assalomu alaykum! <b>Velari</b> do'konimizdan ro'yxatdan o'tish yoki parolni tiklash uchun quyidagi tugmani bosib telefon raqamingizni yuboring:",
                 {
                     keyboard: [[{ text: "📱 Kontaktni yuborish", request_contact: true }]],
                     resize_keyboard: true,
