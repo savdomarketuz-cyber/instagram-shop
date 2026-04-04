@@ -88,11 +88,7 @@ export const BannerSection = ({ banners, bannerSettings, currentBanner, setCurre
                             </div>
                         )}
                     </>
-                ) : (
-                    <div className="w-full h-full bg-gray-100 animate-pulse flex items-center justify-center">
-                        <div className="w-1/4 h-8 bg-gray-200/50 rounded-full" />
-                    </div>
-                )}
+                ) : null}
             </div>
         </div>
     );

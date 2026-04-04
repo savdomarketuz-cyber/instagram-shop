@@ -243,13 +243,15 @@ export default function HomeClient({
             
 
 
-            <BannerSection 
-                banners={banners} 
-                bannerSettings={bannerSettings} 
-                currentBanner={currentBanner} 
-                setCurrentBanner={setCurrentBanner} 
-                language={language} 
-            />
+            {banners.length > 0 && (
+                <BannerSection 
+                    banners={banners} 
+                    bannerSettings={bannerSettings} 
+                    currentBanner={currentBanner} 
+                    setCurrentBanner={setCurrentBanner} 
+                    language={language} 
+                />
+            )}
 
             <div className="md:px-10">
                 <CategoryFilter 
