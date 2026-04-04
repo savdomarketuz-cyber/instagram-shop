@@ -2,14 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogIn, ExternalLink, ShieldCheck } from "lucide-react";
+import { LogIn, ShieldCheck } from "lucide-react";
 import { useStore } from "@/store/store";
 import { translations } from "@/lib/translations";
+import { TelegramLoginButton } from "@/components/auth/TelegramLoginButton";
 
 export default function LoginPage() {
     const router = useRouter();
     const setUser = useStore((state) => state.setUser);
-    const { language } = useStore();
+    const { language, showToast } = useStore();
     const t = translations[language];
 
     // Form States
@@ -26,7 +27,7 @@ export default function LoginPage() {
         setError("");
 
         try {
-            // 1. Admin login logic (API /api/auth handles both steps)
+            // 1. Admin login logic
             const authRes = await fetch("/api/auth", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -45,18 +46,15 @@ export default function LoginPage() {
                 if (authData.success) {
                     setUser(authData.user);
                     const params = new URLSearchParams(window.location.search);
-                    // Always include vault key on target redirect for admin to ensure sync
                     const target = params.get('redirect') || "/admin";
                     const vaultRedirect = target.includes("?") 
                         ? `${target}&vault=Abdulaziz2244` 
                         : `${target}?vault=Abdulaziz2244`;
                     
-                    // Force a full page reload for admin to ensure middleware and store are in sync
                     window.location.href = vaultRedirect;
                     return;
                 }
             } else if (id.toLowerCase().includes("admin") || id.toLowerCase() === process.env.NEXT_PUBLIC_ADMIN_LOGIN) {
-                // If it looks like an admin, show the API error
                 setError(authData.error);
                 setLoading(false);
                 return;
@@ -79,6 +77,7 @@ export default function LoginPage() {
 
             if (userAuthRes.ok && userAuthData.success) {
                 setUser(userAuthData.user);
+                showToast(language === 'uz' ? "Xush kelibsiz!" : "Добро пожаловать!");
                 router.push("/");
             } else {
                 const errorMsg = userAuthData.error;
@@ -91,14 +90,39 @@ export default function LoginPage() {
                 }
             }
         } catch (err) {
-            setError(language === 'uz' ? "Xatolik yuz berdi. Iltimos qayta urining." : "Произошла ошибка. Пожалуйста, попробуйте еще раз.");
+            setError(language === 'uz' ? "Xatolik yuz berdi" : "Произошла ошибка");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleTelegramAuth = async (user: any) => {
+        setLoading(true);
+        setError("");
+        try {
+            const res = await fetch("/api/auth/telegram", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(user)
+            });
+
+            const data = await res.json();
+            if (res.ok && data.success) {
+                setUser(data.user);
+                showToast(language === 'uz' ? "Muvaffaqiyatli kirdingiz!" : "Успешный вход!");
+                router.push("/");
+            } else {
+                setError(data.error || "Telegram Auth failed");
+            }
+        } catch (err) {
+            setError("Auth error");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="p-6 bg-white min-h-screen flex flex-col pt-20 font-sans">
+        <div className="p-6 bg-white min-h-screen flex flex-col pt-20 font-sans selection:bg-black selection:text-white">
             <div className="mb-12">
                 <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 bg-black text-white rounded-2xl flex items-center justify-center shadow-lg">
@@ -108,7 +132,7 @@ export default function LoginPage() {
                         <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest animate-pulse">2FA Active</span>
                     )}
                 </div>
-                <h1 className="text-3xl font-black mb-2 tracking-tighter italic uppercase">
+                <h1 className="text-3xl font-black mb-2 tracking-tighter italic uppercase text-black">
                     {step === "password" 
                         ? (language === 'uz' ? 'Xush kelibsiz!' : 'Добро пожаловать!')
                         : (language === 'uz' ? 'Xavfsizlik' : 'Безопасность')
@@ -141,7 +165,7 @@ export default function LoginPage() {
                                 type="text"
                                 value={id}
                                 onChange={(e) => setId(e.target.value)}
-                                className="w-full bg-gray-50 rounded-[28px] py-6 px-8 focus:outline-none focus:ring-4 focus:ring-black/5 transition-all font-black text-lg"
+                                className="w-full bg-gray-50 rounded-[28px] py-6 px-8 focus:outline-none focus:ring-4 focus:ring-black/5 transition-all font-black text-lg text-black"
                                 placeholder={language === 'uz' ? 'Telefon yoki ID' : 'Телефон или ID'}
                             />
                         </div>
@@ -155,7 +179,7 @@ export default function LoginPage() {
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full bg-gray-50 rounded-[28px] py-6 px-8 focus:outline-none focus:ring-4 focus:ring-black/5 transition-all font-black text-lg"
+                                className="w-full bg-gray-50 rounded-[28px] py-6 px-8 focus:outline-none focus:ring-4 focus:ring-black/5 transition-all font-black text-lg text-black"
                                 placeholder="••••••••"
                             />
                         </div>
@@ -173,7 +197,7 @@ export default function LoginPage() {
                                 maxLength={6}
                                 value={otp}
                                 onChange={(e) => setOtp(e.target.value)}
-                                className="w-full bg-gray-50 rounded-[32px] py-8 px-8 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-black text-4xl text-center tracking-[0.6em] placeholder:text-gray-200"
+                                className="w-full bg-gray-50 rounded-[32px] py-8 px-8 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-black text-4xl text-center tracking-[0.6em] placeholder:text-gray-200 text-black"
                                 placeholder="000000"
                             />
                         </div>
@@ -197,7 +221,7 @@ export default function LoginPage() {
                     ) : (
                         <>
                             <span className="uppercase tracking-[0.1em]">
-                                {step === "password" ? t.account.login : (language === 'uz' ? 'Kodni tasdiqlash' : 'Подтвердить код')}
+                                {step === "password" ? t.account.login : (language === 'uz' ? 'Kodni tasdiqlash' : 'Подтвердить kod')}
                             </span>
                             <LogIn size={22} strokeWidth={4} />
                         </>
@@ -206,26 +230,43 @@ export default function LoginPage() {
             </form>
 
             {step === "password" && (
-                <div className="mt-12 space-y-4">
-                    <p className="text-center text-[10px] font-black uppercase tracking-widest text-gray-400">
-                        {language === 'uz' ? 'Profilingiz yo\'qmi?' : 'Нет профиля?'}
-                    </p>
-                    <a
-                        href="https://t.me/style_gadgetuz_bot"
-                        target="_blank"
-                        className="w-full bg-blue-50 text-blue-600 py-5 rounded-[28px] font-black flex justify-center items-center gap-3 hover:bg-blue-100 transition-colors tracking-tight"
-                    >
-                        <ExternalLink size={20} strokeWidth={4} />
-                        <span className="uppercase text-xs tracking-widest">
-                            {language === 'uz' ? 'Telegram orqali' : 'Через Telegram'}
+                <div className="mt-16 space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-700">
+                    <div className="items-center gap-4 hidden sm:flex">
+                        <div className="flex-1 h-px bg-gray-100" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.5em] text-gray-300">
+                            {language === 'uz' ? 'Tezkor kirish' : 'Быстрый вход'}
                         </span>
-                    </a>
+                        <div className="flex-1 h-px bg-gray-100" />
+                    </div>
+
+                    <div className="bg-blue-50/50 p-10 rounded-[44px] border border-blue-100/50 text-center space-y-6">
+                        <h3 className="text-sm font-black uppercase tracking-tight text-blue-900 italic leading-snug">
+                            {language === 'uz' 
+                                ? 'Yangi foydalanuvchimisiz? Bir zumda kirishni tanlang' 
+                                : 'Новый пользователь? Выберите мгновенный вход'}
+                        </h3>
+                        
+                        <div className="flex justify-center scale-110 md:scale-125 origin-center py-2">
+                             <TelegramLoginButton 
+                                botName="style_gadgetuz_bot" 
+                                onAuth={handleTelegramAuth} 
+                                buttonSize="large"
+                                cornerRadius={20}
+                             />
+                        </div>
+
+                        <p className="text-[10px] font-bold text-blue-600/60 uppercase tracking-widest">
+                            {language === 'uz' 
+                                ? 'Bot orqali avtomatik ro‘yxatdan o‘tish' 
+                                : 'Автоматическая регистрация через бота'}
+                        </p>
+                    </div>
                 </div>
             )}
 
-            <div className="mt-auto pt-10 flex items-center justify-center gap-2 opacity-10 grayscale hover:opacity-100 hover:grayscale-0 transition-all">
+            <div className="mt-auto pt-10 flex items-center justify-center gap-2 opacity-10 grayscale hover:opacity-100 hover:grayscale-0 transition-all cursor-default">
                 <ShieldCheck size={14} />
-                <span className="text-[9px] font-black uppercase tracking-[0.3em] italic">Iron Bank Vault v5.2</span>
+                <span className="text-[9px] font-black uppercase tracking-[0.3em] italic text-black">Iron Bank Vault v5.2</span>
             </div>
         </div>
     );
