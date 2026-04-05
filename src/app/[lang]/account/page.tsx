@@ -26,16 +26,21 @@ import {
     Wallet,
     HelpCircle,
     Info,
-    Camera
+    Camera,
+    X,
+    Video,
+    Play,
+    Check
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { translations } from "@/lib/translations";
 import { mapUser, mapComment } from "@/lib/mappers";
 import Image from "next/image";
+import { uploadToYandexS3 } from "@/lib/yandex-s3";
 
 export default function AccountPage() {
     const router = useRouter();
-    const { user, setUser, logout, language, setLanguage } = useStore();
+    const { user, setUser, logout, language, setLanguage, showToast } = useStore();
     const t = translations[language];
 
     const [view, setView] = useState<"menu" | "edit-profile" | "language" | "returns" | "promo-codes" | "reviews">("menu");
@@ -277,7 +282,7 @@ export default function AccountPage() {
     }
 
     if (view === "reviews") {
-        return <ReviewsView user={user} language={language} onBack={() => setView("menu")} />;
+        return <ReviewsView user={user} language={language} t={t} showToast={showToast} onBack={() => setView("menu")} />;
     }
 
     // --- Main Menu View ---
@@ -376,34 +381,101 @@ export default function AccountPage() {
     );
 }
 
-function ReviewsView({ user, language, onBack }: any) {
+function ReviewsView({ user, language, showToast, onBack }: any) {
     const [orders, setOrders] = useState<any[]>([]);
     const [comments, setComments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchReviewsData = async () => {
-            // 1. Fetch all orders (delivered)
-            const { data: oData } = await supabase
-                .from("orders")
-                .select("*")
-                .eq("user_phone", user.phone)
-                .eq("status", "Yetkazildi")
-                .order("created_at", { ascending: false });
-            
-            // 2. Fetch all user comments
-            const { data: cData } = await supabase
-                .from("comments")
-                .select("*, products(*)")
-                .eq("user_phone", user.phone)
-                .order("created_at", { ascending: false });
+    // Review states
+    const [reviewProduct, setReviewProduct] = useState<any>(null);
+    const [reviewRating, setReviewRating] = useState(5);
+    const [reviewText, setReviewText] = useState("");
+    const [reviewImages, setReviewImages] = useState<string[]>([]);
+    const [reviewVideo, setReviewVideo] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
 
-            if (oData) setOrders(oData);
-            if (cData) setComments(cData);
-            setLoading(false);
-        };
+    useEffect(() => {
         fetchReviewsData();
-    }, [user.phone]);
+    }, [user.phone, user.id]);
+
+    const fetchReviewsData = async () => {
+        if (!user) return;
+        setLoading(true);
+        const myId = user.id || user.phone;
+        
+        // 1. Fetch all orders (delivered)
+        const { data: oData } = await supabase
+            .from("orders")
+            .select("*")
+            .eq("user_phone", user.phone)
+            .in("status", ["Yetkazildi", "Доставлено", "yetkazib berildi ✅"])
+            .order("created_at", { ascending: false });
+        
+        // 2. Fetch all user comments
+        const { data: cData } = await supabase
+            .from("comments")
+            .select("*, products(*)")
+            .or(`user_id.eq.${myId},user_phone.eq.${user.phone}`)
+            .order("created_at", { ascending: false });
+
+        if (oData) setOrders(oData);
+        if (cData) setComments(cData);
+        setLoading(false);
+    };
+
+    const handleSubmitReview = async () => {
+        if (!user || !reviewProduct || !reviewText.trim()) return;
+        if (!user.username) {
+            showToast(language === 'uz' ? "Username kiritilmagan!" : "Имя пользователя не введено!", 'info');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const newComment = {
+                product_id: reviewProduct.id,
+                user_id: user.id || user.phone,
+                user_phone: user.phone,
+                username: user.username,
+                text: reviewText,
+                rating: reviewRating,
+                type: 'review',
+                data: {
+                    images: reviewImages,
+                    video: reviewVideo
+                }
+            };
+
+            const { error } = await supabase.from("comments").insert([newComment]);
+            if (error) throw error;
+
+            // Update product rating (optional but recommended)
+            try {
+                const { data: prod } = await supabase.from("products").select("rating, review_count").eq("id", reviewProduct.id).single();
+                if (prod) {
+                    const currentCount = prod.review_count || 0;
+                    const currentRating = prod.rating || 0;
+                    const newCount = currentCount + 1;
+                    const newRating = ((currentRating * currentCount) + reviewRating) / newCount;
+                    await supabase.from("products").update({ rating: newRating, review_count: newCount }).eq("id", reviewProduct.id);
+                }
+            } catch (rErr) { console.warn("Rating update failed", rErr); }
+
+            showToast(language === 'uz' ? "Muvaffaqiyatli saqlandi!" : "Успешно сохранено!", 'success');
+            setReviewProduct(null);
+            setReviewText("");
+            setReviewRating(5);
+            setReviewImages([]);
+            setReviewVideo("");
+            fetchReviewsData(); // Refresh list
+        } catch (e: any) {
+            console.error(e);
+            showToast(e.message, 'error');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     // Extract products that need reviews
     const commentedProductIds = new Set(comments.map(c => c.product_id));
@@ -411,7 +483,6 @@ function ReviewsView({ user, language, onBack }: any) {
     orders.forEach(order => {
         order.items.forEach((item: any) => {
             if (!commentedProductIds.has(item.id)) {
-                // To avoid duplicates if same product bought in different orders
                 if (!pendingProducts.find(p => p.id === item.id)) {
                     pendingProducts.push(item);
                 }
@@ -443,16 +514,20 @@ function ReviewsView({ user, language, onBack }: any) {
                             </h2>
                             <div className="grid grid-cols-1 gap-4">
                                 {pendingProducts.map(p => (
-                                    <Link key={p.id} href={`/${language}/products/${p.id}`} className="bg-white p-4 rounded-3xl flex items-center gap-4 border border-emerald-100 shadow-xl shadow-emerald-500/5 group hover:scale-[1.02] transition-all">
+                                    <div 
+                                        key={p.id} 
+                                        onClick={() => setReviewProduct(p)}
+                                        className="bg-white p-4 rounded-3xl flex items-center gap-4 border border-emerald-100 shadow-xl shadow-emerald-500/5 group hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+                                    >
                                         <div className="w-16 h-16 rounded-2xl bg-gray-100 overflow-hidden shrink-0"><img src={p.image} className="w-full h-full object-cover" alt={p.name} /></div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-xs font-black italic uppercase truncate">{p.name}</p>
                                             <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-1">{language === 'uz' ? 'Mahsulotni baholang' : 'Оцените товар'}</p>
                                         </div>
                                         <div className="w-10 h-10 rounded-full flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-all">
-                                            <ChevronRight size={20} />
+                                            <Star size={18} fill="currentColor" />
                                         </div>
-                                    </Link>
+                                    </div>
                                 ))}
                             </div>
                         </div>
@@ -471,13 +546,24 @@ function ReviewsView({ user, language, onBack }: any) {
                                     <div key={c.id} className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100">
                                         <div className="flex items-center gap-3 mb-4">
                                             <div className="w-8 h-8 rounded-lg bg-gray-50 overflow-hidden"><img src={c.products?.image} className="w-full h-full object-cover" alt="" /></div>
-                                            <Link href={`/products/${c.product_id}`} className="text-[10px] font-black italic uppercase truncate hover:text-blue-500">{c.products?.name_uz || c.products?.name}</Link>
+                                            <Link href={`/${language}/products/${c.product_id}`} className="text-[10px] font-black italic uppercase truncate hover:text-blue-500">{c.products?.name_uz || c.products?.name}</Link>
                                         </div>
                                         <div className="flex items-center gap-1 text-yellow-400 mb-2">
                                             {[...Array(5)].map((_, i) => <Star key={i} size={12} fill={i < c.rating ? "currentColor" : "none"} />)}
                                         </div>
-                                        <p className="text-sm font-medium text-gray-700 leading-relaxed mb-4">{c.content}</p>
+                                        <p className="text-sm font-medium text-gray-700 leading-relaxed mb-4">{c.content || c.text}</p>
                                         
+                                        {/* Media in Comment */}
+                                        {c.data?.images && c.data.images.length > 0 && (
+                                            <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
+                                                {c.data.images.map((img: string, i: number) => (
+                                                    <div key={i} className="w-20 h-24 rounded-2xl overflow-hidden shrink-0 border border-gray-100">
+                                                        <Image src={img} width={80} height={100} className="w-full h-full object-cover" alt="" />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
                                         {/* Reply from Admin */}
                                         {c.reply && (
                                             <div className="bg-gray-50 p-4 rounded-2xl border-l-4 border-black mt-4 ml-2">
@@ -491,7 +577,7 @@ function ReviewsView({ user, language, onBack }: any) {
 
                                         <div className="mt-4 flex justify-between items-center opacity-40 text-[8px] font-black uppercase tracking-widest">
                                             <span>{new Date(c.created_at).toLocaleDateString()}</span>
-                                            {c.is_approved ? <span className="text-green-600">Tasdiqlangan</span> : <span>Tekshiruvda</span>}
+                                            {c.is_approved ? <span className="text-green-600">Tasdiqlangan</span> : <span className="italic">Moderatsiyada</span>}
                                         </div>
                                     </div>
                                 ))}
@@ -500,6 +586,106 @@ function ReviewsView({ user, language, onBack }: any) {
                     </div>
                 </div>
             </div>
+
+            {/* Review Modal */}
+            {reviewProduct && (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+                    <div className="bg-white w-full max-w-sm rounded-[48px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in duration-500">
+                        <div className="p-8 pb-4 flex justify-between items-center">
+                            <h3 className="text-xl font-black italic tracking-tighter uppercase">{language === 'uz' ? 'Baholash' : 'Оценка'}</h3>
+                            <button onClick={() => setReviewProduct(null)} className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center"><X size={20} /></button>
+                        </div>
+                        <div className="px-8 pb-10 space-y-6 overflow-y-auto no-scrollbar">
+                           <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-3xl">
+                               <div className="w-12 h-12 rounded-xl bg-white overflow-hidden shrink-0"><img src={reviewProduct.image} className="w-full h-full object-cover" /></div>
+                               <p className="text-[10px] font-black uppercase italic truncate">{reviewProduct.name}</p>
+                           </div>
+
+                           <div className="flex justify-center gap-2">
+                               {[1,2,3,4,5].map(star => (
+                                   <button key={star} onClick={() => setReviewRating(star)} className="p-1 transition-transform active:scale-90">
+                                       <Star size={36} fill={reviewRating >= star ? "#EAB308" : "none"} className={reviewRating >= star ? "text-yellow-500" : "text-gray-200"} />
+                                   </button>
+                               ))}
+                           </div>
+
+                           <textarea 
+                                value={reviewText}
+                                onChange={e => setReviewText(e.target.value)}
+                                placeholder={language === 'uz' ? "Fikringiz..." : "Ваш отзыв..."}
+                                className="w-full bg-gray-50 border-none rounded-3xl p-6 text-sm font-bold h-32 resize-none outline-none focus:ring-2 focus:ring-black transition-all"
+                           />
+
+                           {/* Media Upload */}
+                           <div className="flex gap-2">
+                               <label className="flex-1 h-14 bg-gray-50 rounded-2xl flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-gray-100 hover:border-gray-300">
+                                   <input 
+                                        type="file" accept="image/*" className="hidden" 
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                setIsUploading(true);
+                                                try {
+                                                    const url = await uploadToYandexS3(file);
+                                                    setReviewImages([...reviewImages, url]);
+                                                } finally { setIsUploading(false); }
+                                            }
+                                        }} 
+                                   />
+                                   <Camera size={20} className="text-gray-400" />
+                               </label>
+                               <label className="flex-1 h-14 bg-gray-50 rounded-2xl flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-gray-100 hover:border-gray-300">
+                                   <input 
+                                        type="file" accept="video/*" className="hidden"
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                setIsUploading(true);
+                                                try {
+                                                    const url = await uploadToYandexS3(file);
+                                                    setReviewVideo(url);
+                                                } finally { setIsUploading(false); }
+                                            }
+                                        }}
+                                   />
+                                   <Video size={20} className="text-gray-400" />
+                               </label>
+                           </div>
+
+                           {/* Media Preview */}
+                           {(reviewImages.length > 0 || reviewVideo) && (
+                               <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                                   {reviewImages.map((img, i) => (
+                                       <div key={i} className="w-14 h-14 rounded-xl overflow-hidden relative group">
+                                           <img src={img} className="w-full h-full object-cover" />
+                                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer" onClick={() => setReviewImages(reviewImages.filter((_, idx) => idx !== i))}>
+                                               <X size={12} className="text-white" />
+                                           </div>
+                                       </div>
+                                   ))}
+                                   {reviewVideo && (
+                                       <div className="w-14 h-14 bg-black rounded-xl overflow-hidden relative group">
+                                           <video src={reviewVideo} className="w-full h-full object-cover opacity-60" />
+                                           <div className="absolute inset-0 flex items-center justify-center"><Play size={14} className="text-white" /></div>
+                                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer" onClick={() => setReviewVideo("")}>
+                                               <X size={12} className="text-white" />
+                                           </div>
+                                       </div>
+                                   )}
+                               </div>
+                           )}
+
+                           <button 
+                                onClick={handleSubmitReview}
+                                disabled={isSubmitting || isUploading || !reviewText.trim()}
+                                className="w-full py-5 bg-black text-white rounded-[28px] font-black text-xs uppercase tracking-widest active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+                           >
+                               {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <><Check size={18} /> {language === 'uz' ? 'Tasdiqlash' : 'Подтвердить'}</>}
+                           </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
