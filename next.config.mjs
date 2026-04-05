@@ -53,7 +53,18 @@ const nextConfig = {
             { protocol: 'https', hostname: '**.supabase.co' },
         ],
     },
+    webpack: (config) => {
+        // Exclude native binaries from build
+        config.module.rules.push({
+            test: /\.node$/,
+            use: 'raw-loader',
+        });
+
+        // Resolve onnxruntime-node issues by falling back
+        config.resolve.fallback = { server: false, fs: false, path: false };
+
+        return config;
+    }
 };
 
 export default withPWA(nextConfig);
-
