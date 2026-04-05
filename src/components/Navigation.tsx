@@ -136,13 +136,6 @@ export default function Navigation() {
                             className="w-full bg-[#F5F9F6] border-2 border-transparent rounded-xl md:rounded-2xl py-2 md:py-4 pl-10 md:pl-14 pr-12 md:pr-16 text-xs md:text-base font-bold placeholder:text-gray-400 focus:bg-white focus:border-[#2d6e3e]/30 focus:ring-4 focus:ring-[#2d6e3e]/5 outline-none transition-all shadow-sm"
                         />
                         <div className="absolute inset-y-0 right-2 flex items-center gap-1 md:gap-2">
-                            <input 
-                                type="file" 
-                                ref={fileInputRef} 
-                                onChange={handleVisualSearch} 
-                                accept="image/*" 
-                                className="hidden" 
-                            />
                             {search && (
                                 <button
                                     type="button"
@@ -153,11 +146,10 @@ export default function Navigation() {
                                 </button>
                             )}
                             <button
-                                type="button"
-                                onClick={() => fileInputRef.current?.click()}
+                                type="submit"
                                 className={`p-2 md:p-3 rounded-lg md:rounded-xl transition-all ${isSearchLoading ? 'bg-black text-white' : 'text-gray-400 hover:text-[#2d6e3e] hover:bg-white shadow-sm'}`}
                             >
-                                {isSearchLoading ? <Loader2 size={18} className="animate-spin" /> : <Camera size={20} />}
+                                {isSearchLoading ? <Loader2 size={18} className="animate-spin" /> : <Search size={20} />}
                             </button>
                         </div>
                     </form>
