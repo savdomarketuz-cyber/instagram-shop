@@ -449,6 +449,9 @@ export default function AdminProducts() {
             setAiStatus(prev => ({ ...prev, [productId]: { processed: 0, total: 0, active: true } }));
             
             let remaining = 1;
+            let retryCount = 0;
+            const MAX_RETRIES = 3;
+
             while (remaining > 0) {
                 const response = await fetch('/api/admin/ai/analyze-images', {
                     method: 'POST',
@@ -457,25 +460,46 @@ export default function AdminProducts() {
                     keepalive: true
                 });
 
+                if (response.status === 429) {
+                    console.warn("AI Rate limit hit, waiting 10s...");
+                    await new Promise(r => setTimeout(r, 10000));
+                    continue; 
+                }
+
+                if (!response.ok) {
+                    retryCount++;
+                    if (retryCount <= MAX_RETRIES) {
+                        console.log(`Retry attempt ${retryCount} for product ${productId}...`);
+                        await new Promise(r => setTimeout(r, 2000 * retryCount));
+                        continue;
+                    }
+                    console.error("AI Analysis failed after max retries.");
+                    break;
+                }
+
                 const data = await response.json();
-                if (!data.success) break;
+                if (!data.success) {
+                    console.error("Single image AI fail:", data.error);
+                    break;
+                }
                 
+                retryCount = 0; 
                 remaining = data.remaining || 0;
                 setAiStatus(prev => ({
                     ...prev,
                     [productId]: { 
-                        processed: data.total - remaining, 
+                        processed: data.total - (data.remaining || 0), 
                         total: data.total, 
-                        active: remaining > 0 
+                        active: (data.remaining || 0) > 0 
                     }
                 }));
 
                 if (remaining === 0) break;
-                // Small delay to be kind to API rate limits
                 await new Promise(r => setTimeout(r, 1000));
             }
         } catch (err) {
             console.error("AI Auto Trigger failed", err);
+        } finally {
             setAiStatus(prev => ({ ...prev, [productId]: { ...prev[productId], active: false } }));
         }
     };
