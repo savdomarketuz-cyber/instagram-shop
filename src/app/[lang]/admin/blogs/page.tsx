@@ -27,7 +27,7 @@ export default function AdminBlogs() {
         excerpt_uz: "", excerpt_ru: "",
         content_uz: "", content_ru: "",
         image: "", category: "Insights", slug: "",
-        read_time: 5, linked_product_ids: []
+        readTime: 5, linkedProductIds: []
     });
 
     useEffect(() => {
@@ -51,8 +51,8 @@ export default function AdminBlogs() {
         }
 
         setIsSaving(true);
-        const blogData = {
-            ...editingBlog,
+        // Map camelCase UI state back to snake_case for Database
+        const blogDataForDB: any = {
             title_uz: editingBlog.title_uz,
             title_ru: editingBlog.title_ru || editingBlog.title_uz,
             excerpt_uz: editingBlog.excerpt_uz,
@@ -60,20 +60,31 @@ export default function AdminBlogs() {
             content_uz: editingBlog.content_uz,
             content_ru: editingBlog.content_ru || editingBlog.content_uz,
             slug: editingBlog.slug.toLowerCase().replace(/\s+/g, '-'),
-            linked_product_ids: editingBlog.linked_product_ids || [],
+            image: editingBlog.image,
+            category: editingBlog.category,
+            read_time: editingBlog.readTime || 5,
+            linked_product_ids: editingBlog.linkedProductIds || [],
             updated_at: new Date().toISOString()
         };
 
         try {
             if (editingBlog.id) {
-                await supabase.from("blogs").update(blogData).eq("id", editingBlog.id);
+                const { error } = await supabase.from("blogs").update(blogDataForDB).eq("id", editingBlog.id);
+                if (error) throw error;
             } else {
-                await supabase.from("blogs").insert([{ ...blogData, views: 0, is_deleted: false }]);
+                const { error } = await supabase.from("blogs").insert([{ 
+                    ...blogDataForDB, 
+                    views: 0, 
+                    is_deleted: false,
+                    created_at: new Date().toISOString()
+                }]);
+                if (error) throw error;
             }
             setIsModalOpen(false);
             fetchData();
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
+            alert("Xatolik: " + err.message);
         } finally {
             setIsSaving(false);
         }
@@ -93,7 +104,7 @@ export default function AdminBlogs() {
     };
 
     const filteredBlogs = blogs.filter(b => 
-        (activeTab === "active" ? !b.is_deleted : b.is_deleted) &&
+        (activeTab === "active" ? !b.is_deleted : (b.is_deleted === true)) &&
         (b.title_uz.toLowerCase().includes(searchTerm.toLowerCase()) || 
          b.slug.toLowerCase().includes(searchTerm.toLowerCase()))
     );
@@ -125,7 +136,7 @@ export default function AdminBlogs() {
                     </div>
                     <button 
                         onClick={() => {
-                            setEditingBlog({ title_uz: "", title_ru: "", excerpt_uz: "", excerpt_ru: "", content_uz: "", content_ru: "", image: "", category: "Insights", slug: "", read_time: 5, linked_product_ids: [] });
+                            setEditingBlog({ title_uz: "", title_ru: "", excerpt_uz: "", excerpt_ru: "", content_uz: "", content_ru: "", image: "", category: "Insights", slug: "", readTime: 5, linkedProductIds: [] });
                             setIsModalOpen(true);
                         }}
                         className="bg-emerald-600 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-emerald-600/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
@@ -253,8 +264,8 @@ export default function AdminBlogs() {
                                         <input 
                                             type="number" 
                                             className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 font-bold"
-                                            value={editingBlog.read_time}
-                                            onChange={(e) => setEditingBlog({...editingBlog, read_time: Number(e.target.value)})}
+                                            value={editingBlog.readTime}
+                                            onChange={(e) => setEditingBlog({...editingBlog, readTime: Number(e.target.value)})}
                                         />
                                     </div>
                                 </div>
@@ -263,15 +274,15 @@ export default function AdminBlogs() {
                                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-4">Bog'langan mahsulotlar</label>
                                     <div className="max-h-[300px] overflow-y-auto p-4 bg-gray-50 rounded-[32px] space-y-2 scrollbar-hide">
                                         {products.map(p => {
-                                            const isSelected = editingBlog.linked_product_ids?.includes(p.id);
+                                            const isSelected = editingBlog.linkedProductIds?.includes(p.id);
                                             return (
                                                 <button 
                                                     key={p.id}
                                                     onClick={() => {
-                                                        const current = editingBlog.linked_product_ids || [];
+                                                        const current = editingBlog.linkedProductIds || [];
                                                         setEditingBlog({
                                                             ...editingBlog,
-                                                            linked_product_ids: isSelected ? current.filter(id => id !== p.id) : [...current, p.id]
+                                                            linkedProductIds: isSelected ? current.filter(id => id !== p.id) : [...current, p.id]
                                                         });
                                                     }}
                                                     className={`w-full p-4 rounded-2xl flex items-center gap-4 transition-all ${isSelected ? 'bg-emerald-600 text-white shadow-lg' : 'bg-white text-black hover:bg-gray-100'}`}

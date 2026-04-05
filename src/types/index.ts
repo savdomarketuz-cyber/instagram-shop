@@ -156,9 +156,9 @@ export interface Blog {
     content_ru: string;
     image?: string;
     category?: string;
-    read_time?: number;
+    readTime?: number;
     views?: number;
-    linked_product_ids?: string[];
+    linkedProductIds?: string[];
     is_deleted?: boolean;
     created_at: string;
     updated_at: string;

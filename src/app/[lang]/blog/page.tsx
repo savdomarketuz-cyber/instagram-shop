@@ -77,7 +77,7 @@ export default async function BlogPage({ params: { lang } }: any) {
                                 <div className="p-10">
                                     <div className="flex items-center gap-6 text-gray-400 text-[9px] font-black uppercase tracking-widest mb-6 opacity-60">
                                         <div className="flex items-center gap-2"><Calendar size={14} className="text-emerald-500" /> {new Date(blog.created_at).toLocaleDateString()}</div>
-                                        <div className="flex items-center gap-2"><Clock size={14} className="text-emerald-500" /> {blog.read_time} {t.blog.readTime}</div>
+                                        <div className="flex items-center gap-2"><Clock size={14} className="text-emerald-500" /> {blog.readTime} {t.blog.readTime}</div>
                                     </div>
                                     <h2 className="text-2xl font-black tracking-tighter italic leading-tight mb-5 group-hover:text-emerald-600 transition-colors duration-300">
                                         {lang === 'uz' ? blog.title_uz : blog.title_ru}
