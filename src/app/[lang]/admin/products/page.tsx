@@ -89,6 +89,7 @@ export default function AdminProducts() {
     const [rawCategories, setRawCategories] = useState<any[]>([]);
     const [categoryLabels, setCategoryLabels] = useState<{ [key: string]: string }>({});
     const [productSelectionPath, setProductSelectionPath] = useState<string[]>([]);
+    const [aiStatus, setAiStatus] = useState<Record<string, { processed: number, total: number, active: boolean }>>({});
     const [brands, setBrands] = useState<any[]>([]);
     const [brandLabels, setBrandLabels] = useState<{ [key: string]: string }>({});
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -441,6 +442,44 @@ export default function AdminProducts() {
         }
     };
 
+    const triggerAiAnalysis = async (productId: string) => {
+        if (!productId) return;
+        
+        try {
+            setAiStatus(prev => ({ ...prev, [productId]: { processed: 0, total: 0, active: true } }));
+            
+            let remaining = 1;
+            while (remaining > 0) {
+                const response = await fetch('/api/admin/ai/analyze-images', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId }),
+                    keepalive: true
+                });
+
+                const data = await response.json();
+                if (!data.success) break;
+                
+                remaining = data.remaining || 0;
+                setAiStatus(prev => ({
+                    ...prev,
+                    [productId]: { 
+                        processed: data.total - remaining, 
+                        total: data.total, 
+                        active: remaining > 0 
+                    }
+                }));
+
+                if (remaining === 0) break;
+                // Small delay to be kind to API rate limits
+                await new Promise(r => setTimeout(r, 1000));
+            }
+        } catch (err) {
+            console.error("AI Auto Trigger failed", err);
+            setAiStatus(prev => ({ ...prev, [productId]: { ...prev[productId], active: false } }));
+        }
+    };
+
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSaving(true);
@@ -498,14 +537,9 @@ export default function AdminProducts() {
                 if (error) throw error;
             }
 
-            // AI Background Worker for Image SEO
+            // Trigger Recursive AI Background Worker for Image SEO
             if (finalId) {
-                fetch('/api/admin/ai/analyze-images', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ productId: finalId }),
-                    keepalive: true
-                }).catch(err => console.error("Auto AI failed trigger:", err));
+                triggerAiAnalysis(finalId).catch(err => console.error("Auto AI trigger failed:", err));
             }
 
             setIsModalOpen(false);
@@ -957,6 +991,14 @@ export default function AdminProducts() {
                                                 <div className="flex justify-end gap-3">
                                                     {activeTab === "active" ? (
                                                         <>
+                                                            <button 
+                                                                onClick={(e) => { e.stopPropagation(); triggerAiAnalysis(p.id); }} 
+                                                                disabled={aiStatus[p.id]?.active}
+                                                                className={`p-3 rounded-xl hover:shadow-lg transition-all ${aiStatus[p.id]?.active ? 'bg-black text-white animate-pulse' : 'text-gray-400 hover:text-black hover:bg-white'}`}
+                                                                title="AI Tahlil"
+                                                            >
+                                                                <Sparkles size={18} />
+                                                            </button>
                                                             <button onClick={() => {
                                                                 const imagesStr = p.images ? p.images.join('; ') : p.image;
                                                                 setNewProduct({ ...p, images_string: imagesStr });
@@ -1116,9 +1158,19 @@ export default function AdminProducts() {
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-[40px] shadow-2xl animate-in zoom-in duration-300">
                         <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 text-black">
-                            <div>
-                                <h2 className="text-2xl font-black italic tracking-tighter uppercase">{newProduct.id ? "Tahrirlash" : "Yangi mahsulot"}</h2>
-                                <p className="text-gray-400 text-xs font-black uppercase tracking-widest">Barcha ma'lumotlarni kiriting</p>
+                            <div className="flex items-center gap-4">
+                                <div>
+                                    <h2 className="text-2xl font-black italic tracking-tighter uppercase">{newProduct.id ? "Tahrirlash" : "Yangi mahsulot"}</h2>
+                                    <p className="text-gray-400 text-xs font-black uppercase tracking-widest">Barcha ma'lumotlarni kiriting</p>
+                                </div>
+                                {newProduct.id && aiStatus[newProduct.id]?.active && (
+                                    <div className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-2xl animate-pulse">
+                                        <Sparkles size={14} />
+                                        <span className="text-[10px] font-black uppercase tracking-widest">
+                                            AI Tahlil: {aiStatus[newProduct.id].processed} / {aiStatus[newProduct.id].total}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                             <button onClick={() => { setIsModalOpen(false); setProductSelectionPath([]); }} className="p-4 hover:bg-white rounded-full transition-all shadow-sm"><X size={20} /></button>
                         </div>

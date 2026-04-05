@@ -64,40 +64,74 @@ export async function POST(req: NextRequest) {
         ])).filter(Boolean) as string[];
 
         const currentMeta = product.image_metadata || {};
-        const newMeta = { ...currentMeta };
-        let updatedCount = 0;
+        
+        // 2. Find THE NEXT image to process
+        const nextUrl = allImages.find(url => !currentMeta[url]);
 
-        // 2. Loop through missing ones
-        for (const url of allImages) {
-            if (newMeta[url]) continue; // Already exists
+        if (!nextUrl) {
+            return NextResponse.json({ 
+                success: true, 
+                message: "No images left to analyze", 
+                remaining: 0,
+                total: allImages.length 
+            });
+        }
 
-            console.log("Analyzing image:", url);
-            const res = await analyzeVisionImg(url, product.name_uz || product.name);
-            if (res) {
-                newMeta[url] = {
+        console.log(`Analyzing single image for Vercel safety: ${nextUrl}`);
+        
+        // 3. Analyze ONE image
+        const res = await analyzeVisionImg(nextUrl, product.name_uz || product.name);
+        
+        if (res) {
+            const updatedMeta = {
+                ...currentMeta,
+                [nextUrl]: {
                     alt_uz: res.uz || res.alt_uz,
                     alt_ru: res.ru || res.alt_ru
-                };
-                updatedCount++;
-            }
-        }
+                }
+            };
 
-        // 3. Update Product if changed
-        if (updatedCount > 0) {
+            // 4. Update Product Metadata
             await supabase
                 .from("products")
-                .update({ image_metadata: newMeta })
+                .update({ image_metadata: updatedMeta })
                 .eq("id", productId);
+
+            // 5. Log Success
+            await supabase.from("ai_logs").insert([{
+                id: crypto.randomUUID(),
+                action: "vision_auto_analyze",
+                model: "meta-llama/llama-4-scout-17b-16e-instruct",
+                product_id: productId,
+                image_url: nextUrl,
+                status: "completed",
+                output: [JSON.stringify(res)]
+            }]);
+
+            const remaining = allImages.filter(url => !updatedMeta[url]).length;
+
+            return NextResponse.json({ 
+                success: true, 
+                processed: nextUrl, 
+                remaining,
+                total: allImages.length 
+            });
+        } else {
+            // Log Failure
+            await supabase.from("ai_logs").insert([{
+                id: crypto.randomUUID(),
+                action: "vision_auto_analyze_failed",
+                product_id: productId,
+                image_url: nextUrl,
+                status: "failed",
+                error_message: "AI analysis returned no valid JSON"
+            }]);
+            
+            throw new Error("AI analysis failed");
         }
 
-        return NextResponse.json({ 
-            success: true, 
-            updated: updatedCount, 
-            total: allImages.length 
-        });
-
-    } catch (error) {
-        console.error("Auto Vision Worker failed:", error);
-        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    } catch (error: any) {
+        console.error("Auto Vision Worker failed slice:", error);
+        return NextResponse.json({ error: "Internal server error: " + error.message }, { status: 500 });
     }
 }
