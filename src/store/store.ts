@@ -33,6 +33,9 @@ interface StoreState {
     setHomeActiveTab: (tab: string) => void;
     toast: Toast | null;
     showToast: (message: string, type?: Toast['type']) => void;
+    searchResults: Product[] | null;
+    isSearchLoading: boolean;
+    setSearchResults: (results: Product[] | null) => void;
     prefetchedProducts: Record<string, Product>;
     setPrefetchedProduct: (product: Product) => void;
 }
@@ -103,6 +106,9 @@ export const useStore = create<StoreState>()(
             setPrefetchedProduct: (product) => set((state) => ({
                 prefetchedProducts: { ...state.prefetchedProducts, [product.id]: product }
             })),
+            searchResults: null,
+            isSearchLoading: false,
+            setSearchResults: (results) => set({ searchResults: results }),
         }),
         {
             name: "instagram-shop-storage",

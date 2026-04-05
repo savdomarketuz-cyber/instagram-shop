@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
-import { Search, Loader2, Heart } from "lucide-react";
+import { Search, Loader2, Heart, Sparkles } from "lucide-react";
 import Logo from "@/components/Logo";
 import { useStore } from "@/store/store";
 import { supabase } from "@/lib/supabase";
@@ -51,6 +51,9 @@ export default function HomeClient({
     const setHomeActiveFilter = useStore(state => state.setHomeActiveFilter);
     const homeActiveTab = useStore(state => state.homeActiveTab);
     const setHomeActiveTab = useStore(state => state.setHomeActiveTab);
+    const searchResults = useStore(state => state.searchResults);
+    const isSearchLoading = useStore(state => state.isSearchLoading);
+    const setSearchResults = useStore(state => state.setSearchResults);
 
     const t = translations[language];
     
@@ -241,9 +244,7 @@ export default function HomeClient({
         <main className="min-h-screen bg-white pb-24 max-w-[1440px] mx-auto">
             <h1 className="sr-only">Velari - Premium Electronics Store in Uzbekistan. Gadgets, Smartphones and Accessories.</h1>
             
-
-
-            {banners.length > 0 && (
+            {banners.length > 0 && !searchResults && (
                 <BannerSection 
                     banners={banners} 
                     bannerSettings={bannerSettings} 
@@ -253,45 +254,70 @@ export default function HomeClient({
                 />
             )}
 
-            <div className="md:px-10">
-                <CategoryFilter 
-                    allCategories={allCategories}
-                    activeFilter={activeFilter}
-                    setActiveFilter={setActiveFilter}
-                    activeParent={activeParent}
-                    setActiveParent={setActiveParent}
-                    language={language}
-                    translations={t}
-                    setHomeActiveFilter={setHomeActiveFilter}
-                />
-            </div>
+            {!searchResults && (
+                <div className="md:px-10">
+                    <CategoryFilter 
+                        allCategories={allCategories}
+                        activeFilter={activeFilter}
+                        setActiveFilter={setActiveFilter}
+                        activeParent={activeParent}
+                        setActiveParent={setActiveParent}
+                        language={language}
+                        translations={t}
+                        setHomeActiveFilter={setHomeActiveFilter}
+                    />
+                </div>
+            )}
 
             <div className="px-2 md:px-10 mt-4">
-                <div className="flex items-center justify-around relative mx-2 mb-6 border-b border-gray-50">
-                    {["for_you", "popular"].map(tab => (
-                        <button
-                            key={tab}
-                            onClick={() => { setActiveTab(tab); setHomeActiveTab(tab); }}
-                            className={`flex-1 py-3 text-center transition-all relative ${activeTab === tab ? "text-black font-black" : "text-gray-400 font-bold"}`}
-                        >
-                            <div className="flex items-center justify-center gap-1.5">
-                                <span className="text-xs uppercase tracking-tight">
-                                    {tab === "for_you" ? (language === 'uz' ? 'Siz uchun' : 'Для вас') : (language === 'uz' ? 'Ommabop' : 'Популярное')}
+                {searchResults && (
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 animate-in slide-in-from-top-4 duration-500 gap-4 px-2">
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-4">
+                                <h2 className="text-3xl font-black italic tracking-tighter uppercase text-black">Qidiruv Natijalari</h2>
+                                <span className="bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full flex items-center gap-1.5 shadow-lg shadow-emerald-500/20">
+                                    <Sparkles size={12} className="fill-current" />
+                                    AI-Powered
                                 </span>
-                                {tab === "for_you" && aiProductIds.length > 0 && (
-                                    <span className="bg-purple-600 text-white text-[7px] px-1.5 py-0.5 rounded-full font-bold animate-pulse">AI</span>
-                                )}
                             </div>
-                            {activeTab === tab && (
-                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2d6e3e] rounded-t-full" />
-                            )}
+                            <p className="text-gray-400 text-xs font-black uppercase tracking-widest">Sizning qidiruvingiz bo&apos;yicha topilgan mahsulotlar</p>
+                        </div>
+                        <button 
+                            onClick={() => setSearchResults(null)}
+                            className="bg-gray-100 hover:bg-black hover:text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-sm"
+                        >
+                            {language === 'uz' ? 'Tozalash' : 'Очистить'}
                         </button>
-                    ))}
-                </div>
+                    </div>
+                )}
+
+                {!searchResults && (
+                    <div className="flex items-center justify-around relative mx-2 mb-6 border-b border-gray-50">
+                        {["for_you", "popular"].map(tab => (
+                            <button
+                                key={tab}
+                                onClick={() => { setActiveTab(tab); setHomeActiveTab(tab); }}
+                                className={`flex-1 py-3 text-center transition-all relative ${activeTab === tab ? "text-black font-black" : "text-gray-400 font-bold"}`}
+                            >
+                                <div className="flex items-center justify-center gap-1.5">
+                                    <span className="text-xs uppercase tracking-tight">
+                                        {tab === "for_you" ? (language === 'uz' ? 'Siz uchun' : 'Для вас') : (language === 'uz' ? 'Ommabop' : 'Популярное')}
+                                    </span>
+                                    {tab === "for_you" && aiProductIds.length > 0 && (
+                                        <span className="bg-purple-600 text-white text-[7px] px-1.5 py-0.5 rounded-full font-bold animate-pulse">AI</span>
+                                    )}
+                                </div>
+                                {activeTab === tab && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2d6e3e] rounded-t-full" />
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                )}
 
                 <ProductGrid 
-                    products={allProducts}
-                    loading={loading && allProducts.length === 0}
+                    products={searchResults || allProducts}
+                    loading={isSearchLoading || (loading && allProducts.length === 0)}
                     language={language}
                     t={t}
                     cart={cart}
@@ -305,13 +331,13 @@ export default function HomeClient({
             </div>
 
             <div ref={observerTarget} className="h-40 flex flex-col items-center justify-center gap-4">
-                {isFetchingMore && (
+                {(isFetchingMore || isSearchLoading) && (
                     <>
                         <Loader2 className="animate-spin text-black/20" size={32} />
                         <span className="text-[10px] font-black uppercase tracking-widest text-black/20">Yuklanmoqda...</span>
                     </>
                 )}
-                {!hasMore && allProducts.length > 0 && (
+                {!hasMore && !searchResults && allProducts.length > 0 && (
                     <span className="text-[10px] font-black uppercase tracking-widest text-black/10">Barcha mahsulotlar ko&apos;rsatildi</span>
                 )}
             </div>

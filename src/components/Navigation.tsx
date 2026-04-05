@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Heart, ShoppingBag, MessageSquare, Clapperboard, LayoutGrid, User, ShoppingCart, BookOpen } from "lucide-react";
+import { Search, Heart, ShoppingBag, MessageSquare, Clapperboard, LayoutGrid, User, ShoppingCart, BookOpen, Camera, Loader2, Sparkles, X } from "lucide-react";
 // ... (wait, I need to edit imports and the block)
 import Logo from "./Logo";
 import { useStore } from "@/store/store";
@@ -36,10 +36,63 @@ export default function Navigation() {
         }
     }, [isHomePage, searchParams, router, language]);
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        setHomeSearchQuery(search);
+    const { setSearchResults, isSearchLoading, setHomeSearchQuery: setStoreGlobalQuery } = useStore();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleSearch = async (e?: React.FormEvent, forceQuery?: string) => {
+        if (e) e.preventDefault();
+        const activeQuery = forceQuery || search;
+        
+        if (!activeQuery.trim()) {
+            setSearchResults(null);
+            return;
+        }
+
+        useStore.setState({ isSearchLoading: true });
+        try {
+            const res = await fetch('/api/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: activeQuery })
+            });
+            const data = res.ok ? await res.json() : { results: [] };
+            setSearchResults(data.results || []);
+            setStoreGlobalQuery(activeQuery);
+            if (!isHomePage) router.push(`/${language}`);
+        } catch (err) {
+            console.error("Semantic search failed", err);
+        } finally {
+            useStore.setState({ isSearchLoading: false });
+        }
+    };
+
+    const handleVisualSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        useStore.setState({ isSearchLoading: true });
         if (!isHomePage) router.push(`/${language}`);
+
+        try {
+            // 1. Upload to S3 proxy or send as base64 (for speed we send base64 to search API)
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                const base64 = reader.result as string;
+                const res = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64 })
+                });
+                const data = await res.json();
+                setSearchResults(data.results || []);
+                setSearch(""); // clear text
+                useStore.setState({ isSearchLoading: false });
+            };
+        } catch (err) {
+            console.error("Visual search failed", err);
+            useStore.setState({ isSearchLoading: false });
+        }
     };
 
     const l = (path: string) => `/${language}${path === '/' ? '' : path}`;
@@ -78,12 +131,35 @@ export default function Navigation() {
                             type="text"
                             placeholder={t.common.search}
                             value={search}
-                            onChange={(e) => {
-                                setSearch(e.target.value);
-                                setHomeSearchQuery(e.target.value);
-                            }}
-                            className="w-full bg-[#F5F9F6] border-2 border-transparent rounded-xl md:rounded-2xl py-2 md:py-4 pl-10 md:pl-14 pr-4 md:pr-6 text-xs md:text-base font-bold placeholder:text-gray-400 focus:bg-white focus:border-[#2d6e3e]/30 focus:ring-4 focus:ring-[#2d6e3e]/5 outline-none transition-all"
+                            onChange={(e) => setSearch(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                            className="w-full bg-[#F5F9F6] border-2 border-transparent rounded-xl md:rounded-2xl py-2 md:py-4 pl-10 md:pl-14 pr-12 md:pr-16 text-xs md:text-base font-bold placeholder:text-gray-400 focus:bg-white focus:border-[#2d6e3e]/30 focus:ring-4 focus:ring-[#2d6e3e]/5 outline-none transition-all shadow-sm"
                         />
+                        <div className="absolute inset-y-0 right-2 flex items-center gap-1 md:gap-2">
+                            <input 
+                                type="file" 
+                                ref={fileInputRef} 
+                                onChange={handleVisualSearch} 
+                                accept="image/*" 
+                                className="hidden" 
+                            />
+                            {search && (
+                                <button
+                                    type="button"
+                                    onClick={() => { setSearch(""); setSearchResults(null); }}
+                                    className="p-2 text-gray-400 hover:text-black transition-colors"
+                                >
+                                    <X size={18} />
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className={`p-2 md:p-3 rounded-lg md:rounded-xl transition-all ${isSearchLoading ? 'bg-black text-white' : 'text-gray-400 hover:text-[#2d6e3e] hover:bg-white shadow-sm'}`}
+                            >
+                                {isSearchLoading ? <Loader2 size={18} className="animate-spin" /> : <Camera size={20} />}
+                            </button>
+                        </div>
                     </form>
 
                     <div className="hidden md:flex items-center gap-2 md:gap-6 shrink-0 h-full">
