@@ -280,7 +280,7 @@ export default function CheckoutPage() {
                             type="text"
                             value={promoCode}
                             onChange={e => setPromoCode(e.target.value.toUpperCase())}
-                            placeholder="VELARI2026"
+                            placeholder={language === 'uz' ? "PROMOKODINGIZNI KIRITING" : "ВВЕДИТЕ ПРОМОКОД"}
                             disabled={!!promoData}
                             className="flex-1 bg-white border-2 border-transparent focus:border-black rounded-2xl py-4 px-6 text-base font-black italic outline-none transition-all uppercase tracking-tighter disabled:opacity-50"
                         />

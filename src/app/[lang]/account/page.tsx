@@ -11,7 +11,7 @@ import {
     Ticket, 
     Star, 
     Heart, 
-    Moon, 
+    Globe, 
     Layers, 
     User, 
     MessageSquare, 
@@ -23,18 +23,22 @@ import {
     CheckCircle2,
     Settings,
     Tag,
-    Wallet
+    Wallet,
+    HelpCircle,
+    Info,
+    Camera
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { translations } from "@/lib/translations";
-import { mapUser } from "@/lib/mappers";
+import { mapUser, mapComment } from "@/lib/mappers";
+import Image from "next/image";
 
 export default function AccountPage() {
     const router = useRouter();
     const { user, setUser, logout, language, setLanguage } = useStore();
     const t = translations[language];
 
-    const [view, setView] = useState<"menu" | "edit-profile" | "language" | "returns" | "promo-codes">("menu");
+    const [view, setView] = useState<"menu" | "edit-profile" | "language" | "returns" | "promo-codes" | "reviews">("menu");
     const [name, setName] = useState(user?.name || "");
     const [username, setUsername] = useState(user?.username || "");
     const [isSaving, setIsSaving] = useState(false);
@@ -104,7 +108,7 @@ export default function AccountPage() {
         };
 
         fetchUserData();
-    }, [user?.phone]);
+    }, [user?.phone, setUser]);
 
     const handleSave = async () => {
         if (!user) return;
@@ -180,12 +184,12 @@ export default function AccountPage() {
         return (
             <div className="bg-[#F2F3F5] min-h-screen pb-24 px-4 md:px-10">
                 <div className="max-w-xl mx-auto pt-10">
-                    <button onClick={() => setView("menu")} className="flex items-center gap-2 text-gray-500 font-bold mb-8 hover:text-black transition-colors">
+                    <button onClick={() => setView("menu")} className="flex items-center gap-2 text-gray-400 font-bold mb-8 hover:text-black transition-colors">
                         <ChevronLeft size={20} />
                         {language === 'uz' ? 'Orqaga' : 'Назад'}
                     </button>
                     
-                    <h1 className="text-3xl font-black tracking-tighter mb-10 italic uppercase">{t.account.sections.settings}</h1>
+                    <h1 className="text-3xl font-black tracking-tighter mb-10 italic uppercase">{(t.account as any).myInfo}</h1>
                     
                     <div className="bg-white p-8 rounded-[40px] shadow-sm space-y-6">
                         <div>
@@ -231,11 +235,11 @@ export default function AccountPage() {
         return (
             <div className="bg-[#F2F3F5] min-h-screen px-4 md:px-10">
                 <div className="max-w-xl mx-auto pt-10">
-                    <button onClick={() => setView("menu")} className="flex items-center gap-2 text-gray-500 font-bold mb-8 transition-colors">
+                    <button onClick={() => setView("menu")} className="flex items-center gap-2 text-gray-400 font-bold mb-8 transition-colors">
                         <ChevronLeft size={20} />
                         {language === 'uz' ? 'Orqaga' : 'Назад'}
                     </button>
-                    <h1 className="text-3xl font-black tracking-tighter mb-10 italic uppercase">{language === 'uz' ? 'Tilni tanlash' : 'Выбор языка'}</h1>
+                    <h1 className="text-3xl font-black tracking-tighter mb-10 italic uppercase">{(t.account.sections as any).language}</h1>
                     
                     <div className="space-y-4">
                         <button 
@@ -272,6 +276,10 @@ export default function AccountPage() {
         return <PromoCodesView t={t} language={language} onBack={() => setView("menu")} />;
     }
 
+    if (view === "reviews") {
+        return <ReviewsView user={user} language={language} onBack={() => setView("menu")} />;
+    }
+
     // --- Main Menu View ---
 
     return (
@@ -291,7 +299,7 @@ export default function AccountPage() {
                             <div className="min-w-0">
                                 <h2 className="text-xl font-black tracking-tighter truncate">{name || user.phone}</h2>
                                 <button onClick={() => setView("edit-profile")} className="text-gray-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-1 hover:text-black transition-colors mt-0.5">
-                                    {language === 'uz' ? 'Profilni oching' : 'Открыть профиль'} <ChevronRight size={12} />
+                                    {(t.account as any).myInfo} <ChevronRight size={12} />
                                 </button>
                             </div>
                         </div>
@@ -334,17 +342,6 @@ export default function AccountPage() {
                     <div className="space-y-3">
                         <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">{t.account.sections.benefits}</h3>
                         <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-100/50">
-                            <div className="relative">
-                                <MenuItem href="/wallet" icon={<Wallet size={20} />} label={language === 'uz' ? 'Mening hamyonim' : 'Мой кошелек'} language={language} />
-                                {pendingCashback > 0 && (
-                                    <div className="absolute top-1/2 -translate-y-1/2 right-12 flex items-center gap-1.5 animate-pulse pointer-events-none">
-                                        <div className="w-1.5 h-1.5 bg-orange-500 rounded-full" />
-                                        <span className="text-[8px] font-black italic text-orange-500 uppercase tracking-tighter">
-                                            {pendingCashback.toLocaleString()}...
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
                             <MenuItem onClick={() => setView("promo-codes")} icon={<Ticket size={20} />} label={t.account.sections.promoCodes} divider={false} language={language} />
                         </div>
                     </div>
@@ -353,11 +350,9 @@ export default function AccountPage() {
                     <div className="space-y-3">
                         <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">{language === 'uz' ? 'Mening Bozorim' : 'Мой Маркет'}</h3>
                         <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-100/50">
-                            <MenuItem href="/chat" icon={<Star size={20} />} label={t.account.sections.reviews} language={language} />
+                            <MenuItem onClick={() => setView("reviews")} icon={<Star size={20} />} label={t.account.sections.reviews} language={language} />
                             <MenuItem href="/wishlist" icon={<Heart size={20} />} label={t.nav.wishlist} language={language} />
-                            <MenuItem onClick={() => setView("language")} icon={<Moon size={20} />} label={t.account.sections.theme} language={language} />
-                            <MenuItem href="#" icon={<Layers size={20} />} label={t.account.sections.compare} language={language} />
-                            <MenuItem onClick={() => setView("edit-profile")} icon={<User size={20} />} label={t.account.sections.settings} divider={false} language={language} />
+                            <MenuItem onClick={() => setView("language")} icon={<Globe size={20} />} label={(t.account.sections as any).language} divider={false} language={language} />
                         </div>
                     </div>
 
@@ -373,9 +368,137 @@ export default function AccountPage() {
                 </div>
 
                 <div className="mt-12 text-center text-gray-300 text-[10px] font-bold uppercase tracking-[0.2em]">
-                    Velari v1.2.0
+                    Velari v1.2.5
                 </div>
 
+            </div>
+        </div>
+    );
+}
+
+function ReviewsView({ user, language, onBack }: any) {
+    const [orders, setOrders] = useState<any[]>([]);
+    const [comments, setComments] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchReviewsData = async () => {
+            // 1. Fetch all orders (delivered)
+            const { data: oData } = await supabase
+                .from("orders")
+                .select("*")
+                .eq("user_phone", user.phone)
+                .eq("status", "Yetkazildi")
+                .order("created_at", { ascending: false });
+            
+            // 2. Fetch all user comments
+            const { data: cData } = await supabase
+                .from("comments")
+                .select("*, products(*)")
+                .eq("user_phone", user.phone)
+                .order("created_at", { ascending: false });
+
+            if (oData) setOrders(oData);
+            if (cData) setComments(cData);
+            setLoading(false);
+        };
+        fetchReviewsData();
+    }, [user.phone]);
+
+    // Extract products that need reviews
+    const commentedProductIds = new Set(comments.map(c => c.product_id));
+    const pendingProducts: any[] = [];
+    orders.forEach(order => {
+        order.items.forEach((item: any) => {
+            if (!commentedProductIds.has(item.id)) {
+                // To avoid duplicates if same product bought in different orders
+                if (!pendingProducts.find(p => p.id === item.id)) {
+                    pendingProducts.push(item);
+                }
+            }
+        });
+    });
+
+    if (loading) return <div className="min-h-screen bg-[#F2F3F5] flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
+
+    return (
+        <div className="bg-[#F2F3F5] min-h-screen pb-24 px-4 md:px-10">
+            <div className="max-w-xl mx-auto pt-10">
+                <button onClick={onBack} className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8 hover:text-black transition-all">
+                    <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
+                </button>
+
+                <div className="space-y-10">
+                    <div>
+                        <h1 className="text-3xl font-black tracking-tighter italic uppercase">{language === 'uz' ? 'Sharhlar va savollar' : 'Отзывы и вопросы'}</h1>
+                        <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-2">{language === 'uz' ? 'Sizning fikringiz biz uchun muhim' : 'Ваше мнение важно для нас'}</p>
+                    </div>
+
+                    {/* Pending Reviews */}
+                    {pendingProducts.length > 0 && (
+                        <div className="space-y-4">
+                            <h2 className="text-[10px] font-black uppercase tracking-widest text-emerald-600 flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                                {language === 'uz' ? 'Baholashni kutyapti' : 'Ожидают оценки'}
+                            </h2>
+                            <div className="grid grid-cols-1 gap-4">
+                                {pendingProducts.map(p => (
+                                    <Link key={p.id} href={`/${language}/products/${p.id}`} className="bg-white p-4 rounded-3xl flex items-center gap-4 border border-emerald-100 shadow-xl shadow-emerald-500/5 group hover:scale-[1.02] transition-all">
+                                        <div className="w-16 h-16 rounded-2xl bg-gray-100 overflow-hidden shrink-0"><img src={p.image} className="w-full h-full object-cover" alt={p.name} /></div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-black italic uppercase truncate">{p.name}</p>
+                                            <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-1">{language === 'uz' ? 'Mahsulotni baholang' : 'Оцените товар'}</p>
+                                        </div>
+                                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                                            <ChevronRight size={20} />
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Past Reviews & Answers */}
+                    <div className="space-y-4">
+                        <h2 className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">{language === 'uz' ? 'Mening sharhlarim' : 'Мои отзывы'}</h2>
+                        {comments.length === 0 ? (
+                            <div className="bg-white p-12 rounded-[40px] text-center border-2 border-dashed border-gray-100 opacity-50 italic font-medium text-gray-400">
+                                {language === 'uz' ? 'Hozircha sharhlar yo\'q' : 'Пока нет отзывов'}
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                {comments.map(c => (
+                                    <div key={c.id} className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="w-8 h-8 rounded-lg bg-gray-50 overflow-hidden"><img src={c.products?.image} className="w-full h-full object-cover" alt="" /></div>
+                                            <Link href={`/products/${c.product_id}`} className="text-[10px] font-black italic uppercase truncate hover:text-blue-500">{c.products?.name_uz || c.products?.name}</Link>
+                                        </div>
+                                        <div className="flex items-center gap-1 text-yellow-400 mb-2">
+                                            {[...Array(5)].map((_, i) => <Star key={i} size={12} fill={i < c.rating ? "currentColor" : "none"} />)}
+                                        </div>
+                                        <p className="text-sm font-medium text-gray-700 leading-relaxed mb-4">{c.content}</p>
+                                        
+                                        {/* Reply from Admin */}
+                                        {c.reply && (
+                                            <div className="bg-gray-50 p-4 rounded-2xl border-l-4 border-black mt-4 ml-2">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <div className="w-4 h-4 bg-black rounded flex items-center justify-center text-[8px] text-white font-black italic">V</div>
+                                                    <span className="text-[8px] font-black uppercase tracking-widest">VELARI ADMIN</span>
+                                                </div>
+                                                <p className="text-xs font-bold text-gray-600 leading-relaxed italic">{c.reply}</p>
+                                            </div>
+                                        )}
+
+                                        <div className="mt-4 flex justify-between items-center opacity-40 text-[8px] font-black uppercase tracking-widest">
+                                            <span>{new Date(c.created_at).toLocaleDateString()}</span>
+                                            {c.is_approved ? <span className="text-green-600">Tasdiqlangan</span> : <span>Tekshiruvda</span>}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );
@@ -392,7 +515,7 @@ function ReturnsView({ user, t, language, onBack }: any) {
 
     useEffect(() => {
         const fetchOrders = async () => {
-            const { data, error } = await supabase
+            const { data } = await supabase
                 .from("orders")
                 .select("*")
                 .eq("user_phone", user.phone)
@@ -400,7 +523,6 @@ function ReturnsView({ user, t, language, onBack }: any) {
                 .order("created_at", { ascending: false });
 
             if (data) {
-                // Filter by 14 days
                 const now = new Date().getTime();
                 const fourteenDays = 14 * 24 * 60 * 60 * 1000;
                 const eligible = data.filter(o => {
@@ -418,21 +540,16 @@ function ReturnsView({ user, t, language, onBack }: any) {
         if (selectedItems.length === 0 || !reason.trim()) return;
         setSubmitting(true);
         try {
-            const res = await fetch("/api/returns", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    orderId: selectedOrder.id,
-                    userPhone: user.phone,
-                    items: selectedItems,
-                    reason: reason.trim()
-                })
+            const { error } = await supabase.from("returns").insert({
+                order_id: selectedOrder.id,
+                user_phone: user.phone,
+                items: selectedItems,
+                reason: reason.trim(),
+                status: "Kutilmoqda"
             });
-            const data = await res.json();
-            if (data.success) {
-                setSuccess(true);
-                setTimeout(() => onBack(), 2000);
-            }
+            if (error) throw error;
+            setSuccess(true);
+            setTimeout(() => onBack(), 2000);
         } catch (e) {
             console.error(e);
         } finally {
@@ -487,20 +604,14 @@ function ReturnsView({ user, t, language, onBack }: any) {
                                             </div>
                                             <ChevronRight className="text-gray-300 group-hover:text-black transition-all" />
                                         </div>
-                                        <div className="flex -space-x-2">
-                                            {order.items.map((item: any, i: number) => (
-                                                <div key={i} className="w-8 h-8 rounded-full bg-gray-50 border-2 border-white flex items-center justify-center text-[8px] font-black">{item.name[0]}</div>
-                                            ))}
-                                        </div>
                                     </div>
                                 ))}
                             </div>
                         )}
                     </div>
                 ) : (
-                    <div className="space-y-8 animate-in fade-in slide-in-from-right-10">
+                    <div className="space-y-8">
                         <h1 className="text-2xl font-black tracking-tighter italic uppercase">{language === 'uz' ? 'Qaytarish tafsilotlari' : 'Детали возврата'}</h1>
-                        
                         <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 space-y-8">
                             <div className="space-y-4">
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">{language === 'uz' ? 'Qaysi mahsulotlarni qaytarmoqchisiz?' : 'Какие товары хотите вернуть?'}</label>
@@ -525,25 +636,11 @@ function ReturnsView({ user, t, language, onBack }: any) {
                                     })}
                                 </div>
                             </div>
-
                             <div className="space-y-4">
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">{language === 'uz' ? 'Qaytarish sababi' : 'Причина возврата'}</label>
-                                <textarea 
-                                    value={reason}
-                                    onChange={(e) => setReason(e.target.value)}
-                                    placeholder={language === 'uz' ? 'Mahsulot kutilganidek emas, nuqsoni bor va h.k.' : 'Товар не соответствует, есть дефекты и т.д.'}
-                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-3xl p-6 text-sm font-medium outline-none transition-all h-32 resize-none"
-                                />
+                                <textarea value={reason} onChange={e => setReason(e.target.value)} className="w-full bg-gray-50 border-none rounded-3xl p-6 text-sm font-medium h-32 resize-none" />
                             </div>
-
-                            <button 
-                                onClick={handleSubmit}
-                                disabled={submitting || selectedItems.length === 0 || !reason.trim()}
-                                className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-20"
-                            >
-                                {submitting ? <Loader2 className="animate-spin" size={18} /> : <RotateCcw size={18} />}
-                                {language === 'uz' ? 'TASDIQLASH' : 'ПОДТВЕРДИТЬ'}
-                            </button>
+                            <button onClick={handleSubmit} disabled={submitting || selectedItems.length === 0 || !reason.trim()} className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 disabled:opacity-20 transition-all">TASDIQLASH</button>
                         </div>
                     </div>
                 )}
@@ -558,18 +655,8 @@ function PromoCodesView({ t, language, onBack }: any) {
 
     useEffect(() => {
         const fetchPromos = async () => {
-            const { data } = await supabase
-                .from("promo_codes")
-                .select("*")
-                .eq("active", true)
-                .order("created_at", { ascending: false });
-            
-            if (data) {
-                // Filter expired ones on client side for extra safety
-                const now = new Date().getTime();
-                const filtered = data.filter(p => !p.expires_at || new Date(p.expires_at).getTime() > now);
-                setPromos(filtered);
-            }
+            const { data } = await supabase.from("promo_codes").select("*").eq("active", true).order("created_at", { ascending: false });
+            if (data) setPromos(data.filter(p => !p.expires_at || new Date(p.expires_at).getTime() > new Date().getTime()));
             setLoading(false);
         };
         fetchPromos();
@@ -581,49 +668,18 @@ function PromoCodesView({ t, language, onBack }: any) {
                 <button onClick={onBack} className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8 hover:text-black transition-all">
                     <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
                 </button>
-
                 <div className="space-y-6">
                     <h1 className="text-3xl font-black tracking-tighter italic uppercase">{t.account.sections.promoCodes}</h1>
-                    <p className="text-gray-400 text-xs font-bold uppercase tracking-widest leading-relaxed">
-                        {language === 'uz' ? 'Xaridlar uchun maxsus chegirmali kodlarimizdan foydalaning.' : 'Используйте наши специальные скидочные коды для покупок.'}
-                    </p>
-
-                    {loading ? (
-                        <div className="flex justify-center py-20"><Loader2 className="animate-spin text-black" /></div>
-                    ) : promos.length === 0 ? (
-                        <div className="bg-white p-12 rounded-[40px] text-center border border-gray-100 italic font-bold text-gray-400">
-                            {language === 'uz' ? 'Hozircha faol promo kodlar yo\'q.' : 'Пока нет активных промокодов.'}
-                        </div>
-                    ) : (
-                        <div className="space-y-4">
-                            {promos.map(promo => (
-                                <div key={promo.id} className="bg-white p-8 rounded-[40px] border-2 border-dashed border-gray-100 flex flex-col items-center text-center relative overflow-hidden group">
-                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-6 bg-[#F2F3F5] rounded-b-full border-x border-b border-gray-100"></div>
-                                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-6 bg-[#F2F3F5] rounded-t-full border-x border-t border-gray-100"></div>
-                                    
-                                    <div className="w-16 h-16 bg-purple-50 text-purple-500 rounded-[28px] flex items-center justify-center mb-6">
-                                        <Tag size={32} />
-                                    </div>
-
-                                    <h3 className="text-4xl font-black italic tracking-tighter uppercase mb-2 group-hover:scale-110 transition-transform">{promo.code}</h3>
-                                    <p className="text-gray-400 font-black text-[10px] uppercase tracking-widest mb-6">
-                                        {promo.discount_type === 'percent' ? `${promo.discount_value}% Chegirma` : `${promo.discount_value.toLocaleString()} so'm Chegirma`}
-                                    </p>
-
-                                    <div className="w-full pt-6 border-t border-gray-50 flex items-center justify-between">
-                                        <div className="text-left">
-                                            <p className="text-[8px] font-black text-gray-300 uppercase tracking-widest mb-0.5">{language === 'uz' ? 'Minimal buyurtma' : 'Мин. заказ'}</p>
-                                            <p className="text-xs font-black italic">{promo.min_order_amount.toLocaleString()} so'm</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-[8px] font-black text-gray-300 uppercase tracking-widest mb-0.5">{language === 'uz' ? 'Muddati' : 'Срок'}</p>
-                                            <p className="text-xs font-black italic text-purple-500 uppercase">{promo.expires_at ? new Date(promo.expires_at).toLocaleDateString() : 'Cheksiz'}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                    <div className="grid grid-cols-1 gap-4">
+                        {promos.map(p => (
+                            <div key={p.id} className="bg-white p-8 rounded-[40px] border-2 border-dashed border-gray-100 text-center relative overflow-hidden group">
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-6 bg-[#F2F3F5] rounded-b-full border-x border-b border-gray-100" />
+                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-6 bg-[#F2F3F5] rounded-t-full border-x border-t border-gray-100" />
+                                <h3 className="text-4xl font-black italic tracking-tighter uppercase mb-2 group-hover:scale-110 transition-transform">{p.code}</h3>
+                                <p className="text-[10px] font-black text-purple-500 uppercase tracking-widest">{p.discount_type === 'percent' ? `${p.discount_value}%` : `${p.discount_value.toLocaleString()} so'm`} Chegirma</p>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>
@@ -632,7 +688,7 @@ function PromoCodesView({ t, language, onBack }: any) {
 
 function MenuItem({ href, icon, label, language, divider = true, onClick, variant = "default" }: any) {
     const Content = (
-        <div className={`flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer group`}>
+        <div className="flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer group">
             <div className="flex items-center gap-4">
                 <div className={`text-gray-400 group-hover:text-black transition-colors ${variant === 'danger' ? 'group-hover:text-red-500' : ''}`}>
                     {icon}

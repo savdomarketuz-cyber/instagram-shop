@@ -500,6 +500,16 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                 </div>
                             </div>
 
+                            {/* Stock Indicator (Desktop) */}
+                            {totalStock > 0 && (
+                                <div className="flex items-center gap-3 bg-green-50 p-4 rounded-3xl border border-green-100 mb-8 animate-in fade-in duration-500">
+                                    <div className="p-2 bg-green-100 text-green-600 rounded-2xl"><Check size={18} strokeWidth={3} /></div>
+                                    <p className="text-xs font-black text-gray-700 uppercase tracking-tighter">
+                                        {language === 'uz' ? 'Qoldiq' : 'В наличии'}: <span className="text-black">{Number(totalStock)} {language === 'uz' ? 'ta mavjud' : 'шт'}</span>
+                                    </p>
+                                </div>
+                            )}
+
                             {/* Short Specs Summary */}
                             <div className="grid grid-cols-2 gap-4 mb-10">
                                 <div className="space-y-1">

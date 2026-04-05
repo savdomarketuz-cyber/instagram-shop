@@ -78,7 +78,7 @@ export const ProductInfo = ({
                         <div className="flex items-center gap-3 bg-green-50 p-4 rounded-3xl border border-green-100 animate-in fade-in slide-in-from-left duration-500">
                             <div className="p-2 bg-green-100 text-green-600 rounded-2xl"><Check size={18} strokeWidth={3} /></div>
                             <p className="text-xs font-black text-gray-700 uppercase tracking-tighter transition-all">
-                                {language === 'uz' ? 'Qoldiq' : 'В наличии'}: <span className="text-black">{totalStock} {language === 'uz' ? 'ta mavjud' : 'шт'}</span>
+                                {language === 'uz' ? 'Qoldiq' : 'В наличии'}: <span className="text-black">{Number(totalStock)} {language === 'uz' ? 'ta mavjud' : 'шт'}</span>
                             </p>
                         </div>
                     )}

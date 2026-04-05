@@ -69,10 +69,10 @@ export const translations = {
                 returns: "Qaytish",
                 promoCodes: "Promokodlar",
                 reviews: "Sharhlar va savollar",
-                theme: "Dizayn mavzusi",
-                compare: "Taqqoslash",
+                language: "Tilni tanlash",
                 support: "Yordam markazi"
-            }
+            },
+            myInfo: "Mening ma'lumotlarim"
         },
         reels: {
             title: "Reels",
@@ -264,10 +264,10 @@ export const translations = {
                 returns: "Возвраты",
                 promoCodes: "Промокоды",
                 reviews: "Отзывы и вопросы",
-                theme: "Тема оформления",
-                compare: "Сравнение",
+                language: "Выбор языка",
                 support: "Служба поддержки"
-            }
+            },
+            myInfo: "Мои данные"
         },
         reels: {
             title: "Reels",
