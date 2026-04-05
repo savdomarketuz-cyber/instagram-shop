@@ -73,7 +73,7 @@ export const ProductCard = ({
                     ) : (
                         <Image
                             src={mainMedia}
-                            alt={item[`name_${language}`] || item.name}
+                            alt={(item.image_metadata?.[mainMedia]?.[`alt_${language}` as keyof typeof item.image_metadata[string]] as string) || (item[`name_${language}` as keyof typeof item] as string) || item.name}
                             fill
                             sizes="(max-width: 768px) 50vw, 33vw"
                             className="object-cover"

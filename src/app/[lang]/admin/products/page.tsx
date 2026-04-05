@@ -484,17 +484,30 @@ export default function AdminProducts() {
                 cashback_value: newProduct.cashback_value || 0
             };
 
+            let finalId = newProduct.id;
             if (newProduct.id) {
                 const { error } = await supabase.from("products").update(finalData).eq("id", newProduct.id);
                 if (error) throw error;
             } else {
+                finalId = crypto.randomUUID();
                 const { error } = await supabase.from("products").insert([{
                     ...finalData,
-                    id: crypto.randomUUID(),
+                    id: finalId,
                     sales: 0
                 }]);
                 if (error) throw error;
             }
+
+            // AI Background Worker for Image SEO
+            if (finalId) {
+                fetch('/api/admin/ai/analyze-images', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId: finalId }),
+                    keepalive: true
+                }).catch(err => console.error("Auto AI failed trigger:", err));
+            }
+
             setIsModalOpen(false);
             setProductSelectionPath([]);
             setNewProduct({ name: "", name_uz: "", name_ru: "", price: 0, oldPrice: 0, category: "", image: "", images: [], description: "", description_uz: "", description_ru: "", tag: "", sku: "", groupId: "", colorName: "", article: "", isDeleted: false, isOriginal: false, images_string: "", brand: "", height: "", width: "", length: "", weight: "", barcode: "", videoUrl: "", cashback_type: "global", cashback_value: 0 });

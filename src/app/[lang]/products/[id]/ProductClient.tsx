@@ -330,7 +330,12 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                 <div className="max-w-[1440px] mx-auto px-10 flex items-center justify-between w-full h-16">
                     <div className="flex items-center gap-6 flex-1 min-w-0">
                         <div className="relative w-14 h-14 rounded-2xl overflow-hidden shrink-0 border border-gray-100 shadow-sm">
-                            <Image src={product.image} fill className="object-cover" alt={product.name} />
+                            <Image 
+                                src={product.image} 
+                                fill 
+                                className="object-cover" 
+                                alt={(product.image_metadata?.[product.image]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || (product[`name_${language}` as keyof typeof product] as string) || product.name} 
+                            />
                         </div>
                         <div className="min-w-0">
                             <h2 className="text-sm font-black italic uppercase truncate tracking-tight">{product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name}</h2>
@@ -431,13 +436,13 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                 >
                                     {media.type === 'image' ? (
                                         <div className="relative w-full h-full">
-                                            <Image 
-                                                src={media.url} 
-                                                fill
-                                                className="object-cover group-hover:scale-110 transition-transform" 
-                                                alt={`${product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name} - ${i + 1}`}
-                                                sizes="160px"
-                                            />
+                                                <Image 
+                                                    src={media.url} 
+                                                    fill
+                                                    className="object-cover group-hover:scale-110 transition-transform" 
+                                                    alt={(product.image_metadata?.[media.url]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || `${(product[`name_${language}` as keyof typeof product] as string) || product.name} - ${i + 1}`}
+                                                    sizes="160px"
+                                                />
                                         </div>
                                     ) : (
                                         <div className="relative w-full h-full bg-black">
@@ -462,7 +467,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                 src={allMedia[activeImage]?.url} 
                                 fill
                                 className="object-contain p-10 animate-in fade-in zoom-in-95 duration-500" 
-                                alt={`${product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name} - Asosiy rasm`} 
+                                alt={(product.image_metadata?.[allMedia[activeImage]?.url]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || `${(product[`name_${language}` as keyof typeof product] as string) || product.name} - Asosiy rasm`} 
                                 priority
                                 sizes="(max-width: 1024px) 100vw, 60vw"
                             />
