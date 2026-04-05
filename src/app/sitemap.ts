@@ -12,6 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         '',
         '/catalog',
         '/reels',
+        '/blog',
         '/cart',
         '/wishlist',
         '/login',
@@ -26,13 +27,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
                 url: `${baseUrl}/${locale}${path === '/' ? '' : path}`,
                 lastModified: new Date(),
                 changeFrequency: 'daily' as const,
-                priority: path === '' ? 1 : 0.8,
+                priority: (path === '' || path === '/blog') ? 1 : 0.8,
             });
         }
     }
 
     try {
-        // Dynamic product routes
+        // 1. Dynamic product routes
         const { data: products } = await supabaseAdmin
             .from('products')
             .select('id, name, name_uz, updated_at')
@@ -51,7 +52,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             }
         }
 
-        // Dynamic category routes
+        // 2. Dynamic category routes
         const { data: categories } = await supabaseAdmin
             .from('categories')
             .select('id, updated_at');
@@ -64,6 +65,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
                         lastModified: cat.updated_at ? new Date(cat.updated_at) : new Date(),
                         changeFrequency: 'monthly' as const,
                         priority: 0.6,
+                    });
+                });
+            }
+        }
+
+        // 3. Dynamic blog routes
+        const { data: blogs } = await supabaseAdmin
+            .from('blogs')
+            .select('slug, updated_at')
+            .eq('is_deleted', false);
+
+        if (blogs) {
+            for (const locale of locales) {
+                blogs.forEach((blog) => {
+                    routes.push({
+                        url: `${baseUrl}/${locale}/blog/${blog.slug}`,
+                        lastModified: blog.updated_at ? new Date(blog.updated_at) : new Date(),
+                        changeFrequency: 'weekly' as const,
+                        priority: 0.7,
                     });
                 });
             }

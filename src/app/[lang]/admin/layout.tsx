@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutDashboard, ShoppingCart, Package, Layers, LogOut, Menu, X, Users, Image as ImageIcon, Database, Settings, Sparkles, Activity, Zap, MessageSquare, ShieldAlert, Truck, Warehouse, RotateCcw, Tag, Banknote, Wallet } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Package, Layers, LogOut, Menu, X, Users, Image as ImageIcon, Database, Settings, Sparkles, Activity, Zap, MessageSquare, ShieldAlert, Truck, Warehouse, RotateCcw, Tag, Banknote, Wallet, BookOpen } from "lucide-react";
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/store/store";
@@ -23,7 +23,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     useEffect(() => {
         if (!isMounted) return;
 
-        // Zustand persist LocalStorage'dan malumotni o'qiydigan vaqtgacha kutish
         const timer = setTimeout(() => {
             const isAdmin = user?.isAdmin || user?.phone === "ADMIN" || user?.id === "ADMIN";
             
@@ -37,23 +36,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return () => clearTimeout(timer);
     }, [user, router, isMounted]);
 
+    const language = pathname.split('/')[1] || 'uz';
+    const l = (path: string) => `/${language}${path}`;
+
     const menuItems = [
-        { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-        { name: "Live", href: "/admin/live", icon: Zap },
-        { name: "Buyurtmalar", href: "/admin/orders", icon: ShoppingCart },
-        { name: "Qaytarishlar", href: "/admin/returns", icon: RotateCcw },
-        { name: "Promo Kodlar", href: "/admin/promo-codes", icon: Tag },
-        { name: "Hamyon", href: "/admin/wallets", icon: Wallet },
-        { name: "Cashback", href: "/admin/cashback", icon: Banknote },
-        { name: "Mahsulotlar", href: "/admin/products", icon: Package },
-        { name: "Kategoriyalar", href: "/admin/categories", icon: Layers },
-        { name: "Brendlar", href: "/admin/brands", icon: Activity },
-        { name: "Mijozlar", href: "/admin/customers", icon: Users },
-        { name: "Bannerlar", href: "/admin/banners", icon: ImageIcon },
-        { name: "Qoldiqlar", href: "/admin/inventory", icon: Database },
-        { name: "Omborlar", href: "/admin/warehouses", icon: Warehouse },
-        { name: "Chat", href: "/admin/chats", icon: MessageSquare },
-        { name: "Sozlamalar", href: "/admin/settings", icon: Settings },
+        { name: "Dashboard", href: l("/admin"), icon: LayoutDashboard },
+        { name: "Live", href: l("/admin/live"), icon: Zap },
+        { name: "Buyurtmalar", href: l("/admin/orders"), icon: ShoppingCart },
+        { name: "Qaytarishlar", href: l("/admin/returns"), icon: RotateCcw },
+        { name: "Promo Kodlar", href: l("/admin/promo-codes"), icon: Tag },
+        { name: "Hamyon", href: l("/admin/wallets"), icon: Wallet },
+        { name: "Cashback", href: l("/admin/cashback"), icon: Banknote },
+        { name: "Mahsulotlar", href: l("/admin/products"), icon: Package },
+        { name: "Kategoriyalar", href: l("/admin/categories"), icon: Layers },
+        { name: "Brendlar", href: l("/admin/brands"), icon: Activity },
+        { name: "Mijozlar", href: l("/admin/customers"), icon: Users },
+        { name: "Bannerlar", href: l("/admin/banners"), icon: ImageIcon },
+        { name: "Maqolalar", href: l("/admin/blogs"), icon: BookOpen },
+        { name: "Qoldiqlar", href: l("/admin/inventory"), icon: Database },
+        { name: "Omborlar", href: l("/admin/warehouses"), icon: Warehouse },
+        { name: "Chat", href: l("/admin/chats"), icon: MessageSquare },
+        { name: "Sozlamalar", href: l("/admin/settings"), icon: Settings },
     ];
 
     // Agar avtorizatsiya tekshirilmagan bo'lsa, loading ko'rsatish

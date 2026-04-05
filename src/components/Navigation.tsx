@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Heart, ShoppingBag, MessageSquare, Clapperboard, LayoutGrid, User, ShoppingCart } from "lucide-react";
+import { Search, Heart, ShoppingBag, MessageSquare, Clapperboard, LayoutGrid, User, ShoppingCart, BookOpen } from "lucide-react";
+// ... (wait, I need to edit imports and the block)
 import Logo from "./Logo";
 import { useStore } from "@/store/store";
 import { usePathname, useRouter } from "next/navigation";
@@ -91,6 +92,13 @@ export default function Navigation() {
                                 <Clapperboard size={22} strokeWidth={pathname === l('/reels') ? 3 : 2} className="group-hover:scale-110 group-hover:-rotate-12 group-hover:text-black transition-all duration-300" />
                             </div>
                             <span className="text-[9px] font-black uppercase tracking-tighter hidden xl:block">Reels</span>
+                        </Link>
+
+                        <Link href={l("/blog")} className={`flex flex-col items-center gap-1 group transition-all ${pathname === l('/blog') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
+                            <div className="relative p-2 rounded-xl group-hover:bg-gray-50 transition-colors">
+                                <BookOpen size={22} strokeWidth={pathname === l('/blog') ? 3 : 2} className="group-hover:scale-110 group-hover:text-black transition-all duration-300" />
+                            </div>
+                            <span className="text-[9px] font-black uppercase tracking-tighter hidden xl:block">Blog</span>
                         </Link>
 
                         <Link href={`${l("/account")}?tab=orders`} className={`flex flex-col items-center gap-1 group transition-all ${pathname?.includes('/account') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>

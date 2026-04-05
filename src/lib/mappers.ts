@@ -1,4 +1,4 @@
-import type { Product, Category, Banner } from "@/types";
+import type { Product, Category, Banner, Blog } from "@/types";
 
 export const mapProduct = (p: any): Product => ({
     ...p,
@@ -63,4 +63,13 @@ export const mapMessage = (m: any) => ({
     senderId: m.sender_id,
     senderType: m.sender_type,
     timestamp: m.created_at
+});
+
+export const mapBlog = (b: any): Blog => ({
+    ...b,
+    linkedProductIds: b.linked_product_ids,
+    readTime: b.read_time,
+    isDeleted: b.is_deleted,
+    createdAt: b.created_at || b.createdAt,
+    updatedAt: b.updated_at || b.updatedAt
 });

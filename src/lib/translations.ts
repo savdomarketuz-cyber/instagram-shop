@@ -182,6 +182,16 @@ export const translations = {
                 { label: "Instagram", value: "velari_uz_", link: "https://instagram.com/velari_uz_" },
                 { label: "Call center", value: "+998 95 082 11 88", link: "tel:+998950821188" }
             ]
+        },
+        blog: {
+            title: "Velari Insights",
+            subtitle: "Texnologiya, gadjetlar va zamonaviy yechimlar olami",
+            readMore: "Batafsil o'qish",
+            readTime: "daqiqa",
+            views: "ko'rishlar",
+            noPosts: "Maqolalar topilmadi",
+            relatedProducts: "Maqolaga oid mahsulotlar",
+            backToList: "Barcha maqolalarga qaytish"
         }
     },
     ru: {
@@ -367,6 +377,16 @@ export const translations = {
                 { label: "Instagram", value: "velari_uz_", link: "https://instagram.com/velari_uz_" },
                 { label: "Call center", value: "+998 95 082 11 88", link: "tel:+998950821188" }
             ]
+        },
+        blog: {
+            title: "Velari Insights",
+            subtitle: "Мир технологий, гаджетов и современных решений",
+            readMore: "Читать далее",
+            readTime: "мин",
+            views: "просмотров",
+            noPosts: "Статьи не найдены",
+            relatedProducts: "Товары из статьи",
+            backToList: "Назад ко всем статьям"
         }
     }
 };

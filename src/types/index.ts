@@ -144,3 +144,22 @@ export function getTotalStock(product: Product): number {
     if (!product.stockDetails) return product.stock ?? 0;
     return Object.values(product.stockDetails).reduce((sum, val) => sum + (Number(val) || 0), 0);
 }
+
+export interface Blog {
+    id: string;
+    slug: string;
+    title_uz: string;
+    title_ru: string;
+    excerpt_uz?: string;
+    excerpt_ru?: string;
+    content_uz: string;
+    content_ru: string;
+    image?: string;
+    category?: string;
+    read_time?: number;
+    views?: number;
+    linked_product_ids?: string[];
+    is_deleted?: boolean;
+    created_at: string;
+    updated_at: string;
+}
