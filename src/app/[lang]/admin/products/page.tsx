@@ -23,7 +23,8 @@ import {
     ChevronLeft,
     ChevronRight,
     Video,
-    DollarSign
+    DollarSign,
+    Sparkles
 } from "lucide-react";
 
 interface Category {
@@ -396,6 +397,48 @@ export default function AdminProducts() {
             }
         };
         reader.readAsBinaryString(file);
+    };
+
+    const handleAiVision = async () => {
+        const imageUrl = newProduct.image || (newProduct.images && newProduct.images[0]);
+        if (!imageUrl) {
+            alert("AI tahlili uchun kamida bitta rasm yuklang!");
+            return;
+        }
+
+        setIsActionLoading(true);
+        try {
+            const response = await fetch("/api/ai", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "generate_from_image",
+                    context: { image: imageUrl }
+                })
+            });
+
+            const data = await response.json();
+            if (data.error) throw new Error(data.error);
+
+            const res = data.result;
+            if (res) {
+                setNewProduct(prev => ({
+                    ...prev,
+                    name_uz: res.name_uz || prev.name_uz,
+                    name_ru: res.name_ru || prev.name_ru,
+                    name: res.name_uz || prev.name,
+                    description_uz: res.description_uz || prev.description_uz,
+                    description_ru: res.description_ru || prev.description_ru,
+                    brand: res.brand || prev.brand
+                }));
+                alert("AI tahlili muvaffaqiyatli yakunlandi!");
+            }
+        } catch (error: any) {
+            console.error("AI Vision error:", error);
+            alert("AI xatoligi: " + error.message);
+        } finally {
+            setIsActionLoading(false);
+        }
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -1071,8 +1114,19 @@ export default function AdminProducts() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-6">
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Nomi (UZ)</label>
+                                        <div className="space-y-2 relative">
+                                            <div className="flex justify-between items-center mr-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Nomi (UZ)</label>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleAiVision}
+                                                    disabled={isActionLoading || !newProduct.image}
+                                                    className="flex items-center gap-1.5 px-2.5 py-1 bg-black text-white rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-gray-800 transition-all disabled:opacity-30 shadow-xl shadow-black/10"
+                                                >
+                                                    {isActionLoading ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
+                                                    Vision AI
+                                                </button>
+                                            </div>
                                             <input
                                                 required
                                                 value={newProduct.name_uz}
