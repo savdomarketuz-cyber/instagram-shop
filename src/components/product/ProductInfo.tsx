@@ -117,11 +117,11 @@ export const ProductInfo = ({
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{t.common.price}</p>
                 <div className="flex items-end gap-3 flex-wrap">
                     <div className={`text-4xl font-black italic tracking-tighter ${product.oldPrice && product.oldPrice > product.price ? 'text-red-500' : 'text-black'}`}>
-                        {product.price.toLocaleString()} <span className="text-xl not-italic">so'm</span>
+                        {Number(product.price || 0).toLocaleString()} <span className="text-xl not-italic">so'm</span>
                     </div>
                     {product.oldPrice && product.oldPrice > product.price && (
                         <div className="flex items-center gap-2 mb-1">
-                            <span className="text-gray-400 line-through font-bold text-lg">{product.oldPrice.toLocaleString()} so'm</span>
+                            <span className="text-gray-400 line-through font-bold text-lg">{Number(product.oldPrice || 0).toLocaleString()} so'm</span>
                             <span className="bg-red-500 text-white px-2 py-0.5 rounded-lg text-[10px] font-black tracking-tighter shadow-lg shadow-red-200">
                                 -{Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)}%
                             </span>

@@ -224,18 +224,28 @@ export const ReviewsSection = ({
                     .filter(c => c.type === activeCommentTab && !c.parentId)
                     .slice(0, visibleCommentsCount)
                     .map(comment => (
-                        <div key={comment.id} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div key={comment?.id} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <div className="flex items-start gap-4">
-                                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center font-black text-xs shrink-0">{comment.username.charAt(0).toUpperCase()}</div>
+                                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center font-black text-xs shrink-0">
+                                    {(comment?.username || comment?.userId || "?").charAt(0).toUpperCase()}
+                                </div>
                                 <div className="flex-1">
                                     <div className="flex items-center justify-between mb-1">
                                         <div className="flex items-center gap-2">
-                                            <h4 className="text-xs font-black italic flex items-center gap-2">@{comment.username} {comment.isAdmin && <span className="bg-black text-white text-[8px] px-1.5 py-0.5 rounded uppercase not-italic tracking-tighter">Admin</span>}</h4>
+                                            <h4 className="text-xs font-black italic flex items-center gap-2">
+                                                @{comment?.username || comment?.userId || "user"} {comment?.isAdmin && <span className="bg-black text-white text-[8px] px-1.5 py-0.5 rounded uppercase not-italic tracking-tighter">Admin</span>}
+                                            </h4>
                                         </div>
-                                        <span className="text-[10px] text-gray-400 font-bold">{new Date(comment.timestamp).toLocaleDateString()}</span>
+                                        <span className="text-[10px] text-gray-400 font-bold">
+                                            {comment?.timestamp || comment?.created_at ? new Date(comment.timestamp || comment.created_at).toLocaleDateString() : ""}
+                                        </span>
                                     </div>
-                                    {comment.rating && <div className="flex text-yellow-400 mb-2">{[...Array(comment.rating)].map((_, i) => <Star key={i} size={10} fill="currentColor" />)}</div>}
-                                    <p className="text-sm text-gray-600 font-medium leading-relaxed mb-4">{comment.text}</p>
+                                    {comment?.rating && (
+                                        <div className="flex text-yellow-400 mb-2">
+                                            {[...Array(Number(comment.rating || 0))].map((_, i) => <Star key={i} size={10} fill="currentColor" />)}
+                                        </div>
+                                    )}
+                                    <p className="text-sm text-gray-600 font-medium leading-relaxed mb-4">{comment?.text || comment?.content || ""}</p>
                                     
                                     <div className="flex items-center gap-4">
                                         <button onClick={() => { setReplyTo(comment); setCommentText(`@${comment.username} `); document.getElementById('comment-textarea')?.focus(); }} className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-black flex items-center gap-1"><Reply size={12} /> Javob berish</button>

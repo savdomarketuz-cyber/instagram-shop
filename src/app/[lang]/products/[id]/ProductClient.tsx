@@ -212,7 +212,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
     };
 
     const totalStock = useMemo(() => 
-        product?.stockDetails ? Object.values(product.stockDetails).reduce((a: number, b: number) => a + b, 0) : 0
+        product ? (product.stockDetails ? Object.values(product.stockDetails).reduce((a: any, b: any) => Number(a || 0) + Number(b || 0), 0) : (product.stock || 0)) : 0
     , [product]);
 
     const handleFastBuy = () => {
@@ -335,9 +335,9 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                         <div className="min-w-0">
                             <h2 className="text-sm font-black italic uppercase truncate tracking-tight">{product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name}</h2>
                             <div className="flex items-center gap-3">
-                                <span className="text-lg font-black italic">{product.price.toLocaleString()} <span className="text-[10px] not-italic">so&apos;m</span></span>
+                                <span className="text-lg font-black italic">{Number(product.price || 0).toLocaleString()} <span className="text-[10px] not-italic">so&apos;m</span></span>
                                 {product.oldPrice && product.oldPrice > product.price && (
-                                    <span className="text-xs text-gray-300 line-through font-bold">{product.oldPrice.toLocaleString()}</span>
+                                    <span className="text-xs text-gray-300 line-through font-bold">{Number(product.oldPrice || 0).toLocaleString()}</span>
                                 )}
                             </div>
                         </div>
@@ -492,10 +492,10 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{t.common.price}</p>
                                 <div className="flex items-baseline gap-4">
                                     <div className="text-6xl font-black italic tracking-tighter text-black">
-                                        {product.price.toLocaleString()} <span className="text-2xl not-italic">so'm</span>
+                                        {Number(product.price || 0).toLocaleString()} <span className="text-2xl not-italic">so'm</span>
                                     </div>
                                     {product.oldPrice && product.oldPrice > product.price && (
-                                        <span className="text-gray-300 line-through font-bold text-2xl">{product.oldPrice.toLocaleString()}</span>
+                                        <span className="text-gray-300 line-through font-bold text-2xl">{Number(product.oldPrice || 0).toLocaleString()}</span>
                                     )}
                                 </div>
                             </div>
