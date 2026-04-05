@@ -239,13 +239,21 @@ export default function AccountPage() {
                     
                     <div className="space-y-4">
                         <button 
-                            onClick={() => { setLanguage("uz"); setView("menu"); }}
+                            onClick={() => { 
+                                setLanguage("uz"); 
+                                router.push("/uz/account");
+                                setView("menu"); 
+                            }}
                             className={`w-full p-6 bg-white rounded-3xl flex items-center justify-between font-black italic tracking-tighter text-xl ${language === 'uz' ? 'ring-2 ring-black' : ''}`}
                         >
                             O'zbekcha {language === 'uz' && <CheckCircle2 size={24} />}
                         </button>
                         <button 
-                            onClick={() => { setLanguage("ru"); setView("menu"); }}
+                            onClick={() => { 
+                                setLanguage("ru"); 
+                                router.push("/ru/account");
+                                setView("menu"); 
+                            }}
                             className={`w-full p-6 bg-white rounded-3xl flex items-center justify-between font-black italic tracking-tighter text-xl ${language === 'ru' ? 'ring-2 ring-black' : ''}`}
                         >
                             Русский {language === 'ru' && <CheckCircle2 size={24} />}
@@ -287,7 +295,7 @@ export default function AccountPage() {
                                 </button>
                             </div>
                         </div>
-                        <Link href="/messages" className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center hover:bg-black hover:text-white transition-all">
+                        <Link href={`/${language}/messages`} className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center hover:bg-black hover:text-white transition-all">
                             <MessageSquare size={20} />
                         </Link>
                     </div>
@@ -295,7 +303,7 @@ export default function AccountPage() {
 
                 {/* 2. Balance Card (Bonus Balansi) */}
                 <div className="mb-8">
-                    <Link href="/wallet" className="block bg-white p-6 rounded-[32px] shadow-sm border border-gray-100/50 hover:scale-[1.02] active:scale-95 transition-all">
+                    <Link href={`/${language}/wallet`} className="block bg-white p-6 rounded-[32px] shadow-sm border border-gray-100/50 hover:scale-[1.02] active:scale-95 transition-all">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-green-50 rounded-xl">
@@ -317,8 +325,8 @@ export default function AccountPage() {
                     <div className="space-y-3">
                         <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">{t.account.sections.shopping}</h3>
                         <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-100/50">
-                            <MenuItem href="/orders" icon={<Package size={20} />} label={t.account.orders} />
-                            <MenuItem onClick={() => setView("returns")} icon={<RotateCcw size={20} />} label={t.account.sections.returns} divider={false} />
+                            <MenuItem href="/orders" icon={<Package size={20} />} label={t.account.orders} language={language} />
+                            <MenuItem onClick={() => setView("returns")} icon={<RotateCcw size={20} />} label={t.account.sections.returns} divider={false} language={language} />
                         </div>
                     </div>
 
@@ -327,7 +335,7 @@ export default function AccountPage() {
                         <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">{t.account.sections.benefits}</h3>
                         <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-100/50">
                             <div className="relative">
-                                <MenuItem href="/wallet" icon={<Wallet size={20} />} label={language === 'uz' ? 'Mening hamyonim' : 'Мой кошелек'} />
+                                <MenuItem href="/wallet" icon={<Wallet size={20} />} label={language === 'uz' ? 'Mening hamyonim' : 'Мой кошелек'} language={language} />
                                 {pendingCashback > 0 && (
                                     <div className="absolute top-1/2 -translate-y-1/2 right-12 flex items-center gap-1.5 animate-pulse pointer-events-none">
                                         <div className="w-1.5 h-1.5 bg-orange-500 rounded-full" />
@@ -337,7 +345,7 @@ export default function AccountPage() {
                                     </div>
                                 )}
                             </div>
-                            <MenuItem onClick={() => setView("promo-codes")} icon={<Ticket size={20} />} label={t.account.sections.promoCodes} divider={false} />
+                            <MenuItem onClick={() => setView("promo-codes")} icon={<Ticket size={20} />} label={t.account.sections.promoCodes} divider={false} language={language} />
                         </div>
                     </div>
 
@@ -345,11 +353,11 @@ export default function AccountPage() {
                     <div className="space-y-3">
                         <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">{language === 'uz' ? 'Mening Bozorim' : 'Мой Маркет'}</h3>
                         <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-100/50">
-                            <MenuItem href="/chat" icon={<Star size={20} />} label={t.account.sections.reviews} />
-                            <MenuItem href="/wishlist" icon={<Heart size={20} />} label={t.nav.wishlist} />
-                            <MenuItem onClick={() => setView("language")} icon={<Moon size={20} />} label={t.account.sections.theme} />
-                            <MenuItem href="#" icon={<Layers size={20} />} label={t.account.sections.compare} />
-                            <MenuItem onClick={() => setView("edit-profile")} icon={<User size={20} />} label={t.account.sections.settings} divider={false} />
+                            <MenuItem href="/chat" icon={<Star size={20} />} label={t.account.sections.reviews} language={language} />
+                            <MenuItem href="/wishlist" icon={<Heart size={20} />} label={t.nav.wishlist} language={language} />
+                            <MenuItem onClick={() => setView("language")} icon={<Moon size={20} />} label={t.account.sections.theme} language={language} />
+                            <MenuItem href="#" icon={<Layers size={20} />} label={t.account.sections.compare} language={language} />
+                            <MenuItem onClick={() => setView("edit-profile")} icon={<User size={20} />} label={t.account.sections.settings} divider={false} language={language} />
                         </div>
                     </div>
 
@@ -357,9 +365,9 @@ export default function AccountPage() {
                     <div className="space-y-3">
                         <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">{t.account.sections.others}</h3>
                         <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-100/50">
-                            <MenuItem href="/messages" icon={<MessageSquare size={20} />} label={language === 'uz' ? 'Suhbatlar' : 'Беседы'} />
-                            <MenuItem href="/chat" icon={<Headset size={20} />} label={t.account.sections.support} />
-                            <MenuItem onClick={logout} icon={<LogOut size={20} />} label={t.account.logout} variant="danger" divider={false} />
+                            <MenuItem href="/messages" icon={<MessageSquare size={20} />} label={language === 'uz' ? 'Suhbatlar' : 'Беседы'} language={language} />
+                            <MenuItem href="/chat" icon={<Headset size={20} />} label={t.account.sections.support} language={language} />
+                            <MenuItem onClick={logout} icon={<LogOut size={20} />} label={t.account.logout} variant="danger" divider={false} language={language} />
                         </div>
                     </div>
                 </div>
@@ -622,7 +630,7 @@ function PromoCodesView({ t, language, onBack }: any) {
     );
 }
 
-function MenuItem({ href, icon, label, divider = true, onClick, variant = "default" }: any) {
+function MenuItem({ href, icon, label, language, divider = true, onClick, variant = "default" }: any) {
     const Content = (
         <div className={`flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer group`}>
             <div className="flex items-center gap-4">
@@ -640,7 +648,7 @@ function MenuItem({ href, icon, label, divider = true, onClick, variant = "defau
     return (
         <>
             {href && href !== "#" ? (
-                <Link href={href}>{Content}</Link>
+                <Link href={`/${language}${href}`}>{Content}</Link>
             ) : (
                 <div onClick={onClick}>{Content}</div>
             )}
