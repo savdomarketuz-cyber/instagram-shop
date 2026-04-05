@@ -1,5 +1,10 @@
-import "./globals.css";
+import "../globals.css";
 import { Inter } from "next/font/google";
+import { i18n } from "@/lib/i18n-config";
+
+export async function generateStaticParams() {
+    return i18n.locales.map((locale) => ({ lang: locale }));
+}
 
 const inter = Inter({
     subsets: ["latin", "cyrillic"],
@@ -33,6 +38,10 @@ export const metadata = {
     metadataBase: new URL("https://velari.uz"),
     alternates: {
         canonical: "/",
+        languages: {
+            'uz-UZ': '/uz',
+            'ru-RU': '/ru',
+        },
     },
     robots: {
         index: true,
@@ -92,8 +101,10 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export default function RootLayout({
     children,
+    params,
 }: {
     children: React.ReactNode;
+    params: { lang: string };
 }) {
     const jsonLd = {
         "@context": "https://schema.org",
@@ -119,8 +130,10 @@ export default function RootLayout({
         ]
     };
 
+    const displayLang = ['uz', 'ru'].includes(params.lang) ? params.lang : 'uz';
+
     return (
-        <html lang="uz" className={inter.variable}>
+        <html lang={displayLang} className={inter.variable}>
             <head>
                 <script
                     type="application/ld+json"
@@ -183,7 +196,7 @@ export default function RootLayout({
                     </div>
                 </div>
                 <div id="main-content" className="w-full max-w-full">
-                    <AppWrapper>
+                    <AppWrapper lang={displayLang}>
                         {children}
                     </AppWrapper>
                 </div>
@@ -194,3 +207,4 @@ export default function RootLayout({
         </html>
     );
 }
+

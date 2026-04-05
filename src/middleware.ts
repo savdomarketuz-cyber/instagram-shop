@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { i18n } from '@/lib/i18n-config';
+import { match as matchLocale } from '@formatjs/intl-localematcher';
+import Negotiator from 'negotiator';
 
 /**
  * Edge Runtime mos JWT verification
@@ -58,25 +61,65 @@ async function verifyTokenEdge(token: string, secret: string): Promise<Record<st
 }
 
 /**
- * Next.js Middleware — Admin sahifalarni JWT bilan himoyalash
- * Edge Runtime compatible (Web Crypto API)
+ * Locale detection
+ */
+function getLocale(request: NextRequest): string | undefined {
+    const negotiatorHeaders: Record<string, string> = {};
+    request.headers.forEach((value, key) => (negotiatorHeaders[key] = value));
+
+    const locales: string[] = i18n.locales as any;
+    let languages = new Negotiator({ headers: negotiatorHeaders }).languages();
+
+    try {
+        return matchLocale(languages, locales, i18n.defaultLocale);
+    } catch (e) {
+        return i18n.defaultLocale;
+    }
+}
+
+/**
+ * Next.js Middleware — Admin protection & i18n redirection
  */
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
-    // --- IRON BANK VAULT PROTECTION ---
-    if (pathname.startsWith('/admin')) {
+    // 1. Check if the pathname is missing a locale
+    const pathnameIsMissingLocale = i18n.locales.every(
+        (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
+    );
+
+    // 2. Redirect to locale if missing (skip API and public files)
+    if (pathnameIsMissingLocale) {
+        const locale = getLocale(request);
+        return NextResponse.redirect(
+            new URL(`/${locale}${pathname === '/' ? '' : pathname}`, request.url)
+        );
+    }
+
+    // 3. i18n aware Admin protection
+    let pathWithoutLocale = pathname;
+    let localePart = 'uz'; // Default
+    for (const locale of i18n.locales) {
+        if (pathname.startsWith(`/${locale}/`)) {
+            pathWithoutLocale = pathname.replace(`/${locale}`, '');
+            localePart = locale;
+            break;
+        } else if (pathname === `/${locale}`) {
+            pathWithoutLocale = '/';
+            localePart = locale;
+            break;
+        }
+    }
+
+    if (pathWithoutLocale.startsWith('/admin')) {
         const adminToken = request.cookies.get('admin_token')?.value;
         const adminVaultToken = request.cookies.get('admin_vault_token')?.value;
         const vaultSecret = request.nextUrl.searchParams.get('vault')?.trim();
         
-        // Multi-key support for seamless transition
         const GLOBAL_VAULT_KEY = (process.env.ADMIN_VAULT_KEY || 'Abdulaziz2244').trim();
         const LEGACY_VAULT_KEY = 'TEMIR_BANK_2026';
-
         const ADMIN_SECRET = (process.env.ADMIN_SECRET || "Abdulaziz2244").trim();
 
-        // 1. If we have a valid admin token, ALLOW EVERYTHING in /admin
         if (adminToken) {
             const payload = await verifyTokenEdge(adminToken, ADMIN_SECRET);
             if (payload && payload.role === 'admin') {
@@ -86,22 +129,19 @@ export async function middleware(request: NextRequest) {
             }
         }
 
-        // 2. Secret Entry logic (If not yet authenticated)
         let hasVaultAccess = !!adminVaultToken;
         if (vaultSecret === GLOBAL_VAULT_KEY || vaultSecret === LEGACY_VAULT_KEY) {
             hasVaultAccess = true;
         }
 
         if (!hasVaultAccess) {
-            return NextResponse.redirect(new URL('/', request.url));
+            return NextResponse.redirect(new URL(`/${localePart}`, request.url));
         }
 
-        // 3. Not authenticated but has vault access? Redirect to login
-        const loginUrl = new URL('/login', request.url);
+        const loginUrl = new URL(`/${localePart}/login`, request.url);
         loginUrl.searchParams.set('redirect', pathname);
         const res = NextResponse.redirect(loginUrl);
         
-        // Persistent Vault session
         if (vaultSecret === GLOBAL_VAULT_KEY || vaultSecret === LEGACY_VAULT_KEY) {
             res.cookies.set('admin_vault_token', 'VAULT_ACTIVE', { 
                 httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 86400, path: '/'
@@ -112,7 +152,7 @@ export async function middleware(request: NextRequest) {
         return res;
     }
 
-    // Security headers for all routes
+    // Default: Add security headers
     const response = NextResponse.next();
     response.headers.set('X-Frame-Options', 'DENY');
     response.headers.set('X-Content-Type-Options', 'nosniff');
@@ -120,8 +160,6 @@ export async function middleware(request: NextRequest) {
     response.headers.set('Content-Security-Policy', "frame-ancestors 'none';");
     response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
-
-    return response;
 
     return response;
 }

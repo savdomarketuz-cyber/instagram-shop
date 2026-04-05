@@ -73,7 +73,7 @@ export default function CatalogClient() {
         if (hasSubs) {
             setSelectedCategory(category);
         } else {
-            router.push(`/?category=${category.id}`);
+            router.push(`/${language}/?category=${category.id}`);
         }
     };
 
@@ -156,7 +156,7 @@ export default function CatalogClient() {
                     ) : (
                         <div className="space-y-12">
                             <button 
-                                onClick={() => router.push(`/?category=${selectedCategory.id}`)}
+                                onClick={() => router.push(`/${language}/?category=${selectedCategory.id}`)}
                                 className="inline-flex items-center gap-3 px-8 py-4 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-black/20 hover:scale-105 active:scale-95 transition-all"
                             >
                                 <Grid3X3 size={18} />

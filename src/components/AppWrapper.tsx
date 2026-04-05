@@ -13,12 +13,22 @@ import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 
-export default function AppWrapper({ children }: { children: React.ReactNode }) {
+import { Language } from "@/types";
+
+export default function AppWrapper({ children, lang }: { children: React.ReactNode, lang?: string }) {
     const cart = useStore(state => state.cart);
     const user = useStore(state => state.user);
     const toast = useStore(state => state.toast);
+    const setLanguage = useStore(state => state.setLanguage);
     const [isSplashActive, setIsSplashActive] = useState(false);
     const pathname = usePathname();
+
+    // Sync language from URL to Store
+    useEffect(() => {
+        if (lang && (lang === 'uz' || lang === 'ru')) {
+            setLanguage(lang as Language);
+        }
+    }, [lang, setLanguage]);
 
     // Real-time Activity & Action Tracking
     useEffect(() => {
