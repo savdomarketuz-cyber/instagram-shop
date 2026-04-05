@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        model: 'llama-3.2-11b-vision-preview',
+                        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
                         messages: [
                             {
                                 role: 'user',
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
                 if (!visualDescription) throw new Error("Vision AI failed to analyze");
 
                 // Step 2: Reasoning & Content Generation
-                finalModel = "llama-3.3-70b-versatile";
+                finalModel = "openai/gpt-oss-120b";
                 finalMessages = [
                     { role: 'system', content: 'Siz professional marketing tahlilchisiz. JAVOB FAQAT TOZA JSON BO\'LSIN.' },
                     { 
