@@ -30,15 +30,15 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
         ogUrl.searchParams.set('price', product.price.toString());
         ogUrl.searchParams.set('image', product.image);
 
-        const title = `${product.name_uz || product.name} - Muddatli to'lov va Arzon Narx | Velari`;
-        const description = product.description_uz || product.description || `Velari do'konida ${product.name} hamyonbop narxlarda. Rasmiy kafolat va Toshkent bo'ylab tezkor yetkazib berish.`;
+        const title = `${product.name_uz || product.name} - Narxi, Muddatli to'lov va Kafolat | Velari`;
+        const description = `${product.name_uz || product.name} O'zbekistonda eng hamyonbop narxlarda. ${product.description_uz || product.description || ""}`.substring(0, 160);
 
         return {
             title: title,
-            description: description.substring(0, 160),
+            description: description,
             openGraph: {
                 title: title,
-                description: description.substring(0, 160),
+                description: description,
                 url: `${baseUrl}/products/${params.id}`,
                 siteName: 'Velari',
                 images: [{ url: ogUrl.toString(), width: 1200, height: 630, alt: title }],
@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
             twitter: {
                 card: 'summary_large_image',
                 title: title,
-                description: description.substring(0, 160),
+                description: description,
                 images: [ogUrl.toString()],
             },
             alternates: { canonical: `/products/${params.id}` },
@@ -57,9 +57,10 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
                 product.name_uz || "", 
                 "Velari", 
                 "muddatli to'lov", 
-                "skidka", 
-                "arzon narx", 
-                "kafolat",
+                "bo'lib to'lash",
+                "muddatli tolov",
+                "narxi",
+                "sotib olish",
                 "Toshkent",
                 "Uzbekistan",
                 product.category as string
@@ -106,11 +107,69 @@ export default async function Page({ params }: { params: { id: string } }) {
         }
     };
 
+    const language = 'uz'; // Default language for SEO indexing
+
+    const breadcrumbJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Bosh sahifa",
+                "item": "https://velari.uz"
+            },
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Katalog",
+                "item": "https://velari.uz/catalog"
+            },
+            {
+                "@type": "ListItem",
+                "position": 3,
+                "name": product.name_uz || product.name,
+                "item": `https://velari.uz/products/${params.id}`
+            }
+        ]
+    };
+
+    const faqJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": language === 'uz' ? `Bu ${product.name_uz || product.name} originalmi?` : `Это оригинал ${product.name_ru || product.name}?`,
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": language === 'uz' ? "Ha, Velari do'konida barcha mahsulotlar 100% original va rasmiy kafolatga ega." : "Да, в магазине Velari все товары на 100% оригинальные и имеют официальную гарантию."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": language === 'uz' ? "Yetkazib berish qancha vaqt oladi?" : "Сколько времени занимает доставка?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": language === 'uz' ? "Toshkent bo'ylab yetkazib berish 24 soat ichida mutlaqo tekin amalga oshiriladi." : "Доставка по Ташкенту осуществляется бесплатно в течение 24 часов."
+                }
+            }
+        ]
+    };
+
     return (
         <>
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
             />
             <ProductClient params={params} initialProduct={product} />
         </>

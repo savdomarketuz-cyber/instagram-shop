@@ -3,6 +3,16 @@ import HomeClient from "./HomeClient";
 import { supabase } from "@/lib/supabase";
 import { mapProduct, mapCategory, mapBanner } from "@/lib/mappers";
 import type { Product, Category, Banner } from "@/types";
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: "Velari | O'zbekistonda №1 Premium Elektronika Do'koni",
+    description: "iPhone, Samsung, Xiaomi va boshqa global brendlarni muddatli to'lovga sotib oling. Toshkent bo'ylab tekin yetkazib berish va rasmiy kafolat.",
+    keywords: ["Velari", "elektronika do'koni", "Toshkent", "muddatli to'lov", "iphone narxi", "samsung narxi", "O'zbekiston"],
+    alternates: {
+        canonical: "/",
+    }
+};
 
 // This makes the page dynamic as it fetches data from Supabase on every request
 // ISR with 5 minute revalidation for fast response times while staying fresh

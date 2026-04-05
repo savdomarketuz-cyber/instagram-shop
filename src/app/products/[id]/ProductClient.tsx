@@ -435,7 +435,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                                 src={media.url} 
                                                 fill
                                                 className="object-cover group-hover:scale-110 transition-transform" 
-                                                alt={`Thumbnail ${i}`}
+                                                alt={`${product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name} - ${i + 1}`}
                                                 sizes="160px"
                                             />
                                         </div>
@@ -462,7 +462,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                 src={allMedia[activeImage]?.url} 
                                 fill
                                 className="object-contain p-10 animate-in fade-in zoom-in-95 duration-500" 
-                                alt={product.name} 
+                                alt={`${product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name} - Asosiy rasm`} 
                                 priority
                                 sizes="(max-width: 1024px) 100vw, 60vw"
                             />

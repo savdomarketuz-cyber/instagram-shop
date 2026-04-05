@@ -9,11 +9,15 @@ const inter = Inter({
 
 export const metadata = {
     title: {
-        default: "Velari | Global Electronics",
+        default: "Velari | Elektronika va Gadjetlar Do'koni O'zbekistonda",
         template: "%s | Velari"
     },
-    description: "Premium tech store in Uzbekistan. Global brands, official warranty, and fast delivery. Velari - Your connection to the future.",
-    keywords: ["electronics", "tech store", "Uzbekistan", "Velari", "smartphones", "laptops", "accessories", "gadgets", "online shop", "muddatli to'lov", "muddatli tolov", "bo'lib to'lash"],
+    description: "Premium gadjetlar va elektronika do'koni. Apple, Samsung, Xiaomi mahsulotlari hamyonbop narxlarda. Muddatli to'lov, rasmiy kafolat va Toshkent bo'ylab tekin yetkazib berish.",
+    keywords: [
+        "Velari", "velari.uz", "elektronika do'koni", "gadjetlar", "iphone narxi", "samsung narxi", 
+        "Toshkent", "O'zbekistan", "muddatli to'lov", "bo'lib to'lash", "kreditga telefon", 
+        "online shop", "internet do'kon", "arzon narxlar", "kafolatli texnika"
+    ],
     authors: [{ name: "Velari Team" }],
     creator: "Velari",
     publisher: "Velari",
@@ -42,8 +46,8 @@ export const metadata = {
         },
     },
     openGraph: {
-        title: "Velari | Global Electronics",
-        description: "Premium tech store in Uzbekistan. Global brands, official warranty, and fast delivery.",
+        title: "Velari | Global Electronics & Gadgets Uzbekistan",
+        description: "Premium tech store in Uzbekistan. Global brands, official warranty, and fast delivery. Buy iPhones, Samsung and Xiaomi with installments.",
         url: "https://velari.uz",
         siteName: "Velari",
         images: [
@@ -51,7 +55,7 @@ export const metadata = {
                 url: "/og-image.png",
                 width: 1200,
                 height: 630,
-                alt: "Velari Premium Electronics",
+                alt: "Velari Premium Electronics Store",
             },
         ],
         locale: "uz_UZ",
