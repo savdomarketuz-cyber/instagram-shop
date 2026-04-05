@@ -57,7 +57,7 @@ const nextConfig = {
         // Exclude native binaries from build
         config.module.rules.push({
             test: /\.node$/,
-            use: 'raw-loader',
+            use: 'next-loader',
         });
 
         // Resolve onnxruntime-node issues by falling back
