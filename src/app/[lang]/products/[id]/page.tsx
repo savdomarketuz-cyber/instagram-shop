@@ -3,6 +3,7 @@ import ProductClient from './ProductClient';
 import { supabase } from "@/lib/supabase";
 import { mapProduct } from "@/lib/mappers";
 import { getProductIdFromSlug } from "@/lib/slugify";
+import BrandedEmptyState from "@/components/common/BrandedEmptyState";
 
 export const revalidate = 3600; // ISR configuration: revalidate every hour
 
@@ -86,7 +87,7 @@ export default async function Page({ params }: { params: { id: string } }) {
     const productIdOrArticle = getProductIdFromSlug(params.id);
     const product: any = await getProductData(productIdOrArticle);
     
-    if (!product) return <div className="p-10 text-center">Mahsulot topilmadi</div>;
+    if (!product) return <BrandedEmptyState type="not-found" showPopular={true} />;
 
     // Structured Data (Schema.org) for Google to understand this is a PRODUCT
     const jsonLd = {
