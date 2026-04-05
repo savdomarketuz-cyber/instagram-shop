@@ -13,26 +13,12 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ results: [] });
         }
 
-        console.log(`Hybrid Search: ${searchQuery}`);
+        console.log(`Algorithmic Search: ${searchQuery}`);
 
-        // 1. Vector Search (AI Boost)
-        let vectorResults = [];
-        try {
-            const embedding = await generateEmbedding(searchQuery);
-            const { data: vHits } = await supabase.rpc('match_products', {
-                query_embedding: embedding,
-                match_threshold: 0.2, // slightly stricter
-                match_count: 20
-            });
-            vectorResults = vHits || [];
-        } catch (vErr) {
-            console.error("Vector search sub-step failed", vErr);
-        }
-
-        // 2. Keyword Search (Legacy/Multi-language fallback)
+        // 1. Keyword Search (Strict Algorithm)
         // Ensure we search across all language fields name_uz/name_ru/desc/tags
-        const terms = searchQuery.split(' ').filter((t: string) => t.length > 2);
         const searchPattern = `%${searchQuery.trim()}%`;
+        const words = searchQuery.trim().split(/\s+/).filter((w: string) => w.length > 1);
         
         let keywordQuery = supabase
             .from('products')
@@ -40,23 +26,27 @@ export async function POST(req: NextRequest) {
             .eq('is_deleted', false);
 
         // Build a robust OR filter for multi-language and SEO
-        keywordQuery = keywordQuery.or(`name_uz.ilike.${searchPattern},name_ru.ilike.${searchPattern},description_uz.ilike.${searchPattern},description_ru.ilike.${searchPattern},category_uz.ilike.${searchPattern},category_ru.ilike.${searchPattern},article.ilike.${searchPattern},sku.ilike.${searchPattern}`);
-
-        const { data: keywordHits } = await keywordQuery.limit(50);
+        // This is pure algorithmic SQL matching
+        let orFilter = `name_uz.ilike.${searchPattern},name_ru.ilike.${searchPattern},description_uz.ilike.${searchPattern},description_ru.ilike.${searchPattern},category_uz.ilike.${searchPattern},category_ru.ilike.${searchPattern},article.ilike.${searchPattern},sku.ilike.${searchPattern}`;
         
-        // 3. Combine and De-duplicate
-        const combined = [...vectorResults, ...(keywordHits || [])];
-        const uniqueByIdContext: Record<string, any> = {};
-        combined.forEach(p => {
-            if (!uniqueByIdContext[p.id]) uniqueByIdContext[p.id] = p;
-        });
+        // Add individual word matching for better 'Google-like' results without AI
+        if (words.length > 1) {
+            words.forEach((word: string) => {
+                const wordPattern = `%${word}%`;
+                orFilter += `,name_uz.ilike.${wordPattern},name_ru.ilike.${wordPattern}`;
+            });
+        }
 
-        const results = Object.values(uniqueByIdContext);
+        keywordQuery = keywordQuery.or(orFilter);
+
+        const { data: results, error } = await keywordQuery.order('sales', { ascending: false }).limit(50);
+        
+        if (error) throw error;
 
         return NextResponse.json({ 
             success: true, 
-            results,
-            count: results.length
+            results: results || [],
+            count: (results || []).length
         });
 
     } catch (error: any) {

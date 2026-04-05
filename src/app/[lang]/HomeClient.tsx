@@ -273,13 +273,7 @@ export default function HomeClient({
                 {searchResults && (
                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 animate-in slide-in-from-top-4 duration-500 gap-4 px-2">
                         <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-4">
-                                <h2 className="text-3xl font-black italic tracking-tighter uppercase text-black">Qidiruv Natijalari</h2>
-                                <span className="bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full flex items-center gap-1.5 shadow-lg shadow-emerald-500/20">
-                                    <Sparkles size={12} className="fill-current" />
-                                    AI-Powered
-                                </span>
-                            </div>
+                            <h2 className="text-3xl font-black italic tracking-tighter uppercase text-black">Qidiruv Natijalari</h2>
                             <p className="text-gray-400 text-xs font-black uppercase tracking-widest">Sizning qidiruvingiz bo&apos;yicha topilgan mahsulotlar</p>
                         </div>
                         <button 
