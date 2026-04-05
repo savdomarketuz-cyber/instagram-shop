@@ -3,7 +3,10 @@ import { pipeline, env } from '@xenova/transformers';
 // Optimization for Vercel/Serverless: Use WASM and remote models
 env.allowLocalModels = false; // Fetch from HF (remote)
 if (env.backends && env.backends.onnx) {
-    env.backends.onnx.wasm.numThreads = 1;
+    if (env.backends.onnx.wasm) {
+        env.backends.onnx.wasm.numThreads = 1;
+        env.backends.onnx.wasm.proxy = false; // keep it local-wasm
+    }
 }
 
 class EmbeddingPipeline {

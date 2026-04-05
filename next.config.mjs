@@ -53,15 +53,24 @@ const nextConfig = {
             { protocol: 'https', hostname: '**.supabase.co' },
         ],
     },
-    webpack: (config) => {
-        // Exclude native binaries from build
-        config.module.rules.push({
-            test: /\.node$/,
-            use: 'next-loader',
-        });
+    webpack: (config, { isServer }) => {
+        // Fix for Transformers.js on Vercel
+        // Tell webpack to NOT include onnxruntime-node as it is not needed with WASM
+        config.resolve.alias = {
+            ...config.resolve.alias,
+            'onnxruntime-node': false,
+        };
 
-        // Resolve onnxruntime-node issues by falling back
-        config.resolve.fallback = { server: false, fs: false, path: false };
+        // Fallback for node built-ins
+        if (isServer) {
+            config.resolve.fallback = { 
+                ...config.resolve.fallback,
+                'onnxruntime-node': false,
+                'fs': false,
+                'path': false,
+                'child_process': false,
+            };
+        }
 
         return config;
     }

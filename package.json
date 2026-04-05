@@ -20,7 +20,6 @@
         "lucide-react": "^0.378.0",
         "negotiator": "^1.0.0",
         "next": "14.2.3",
-        "onnxruntime-node": "^1.24.3",
         "pg": "^8.20.0",
         "react": "^18",
         "react-dom": "^18",
