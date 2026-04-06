@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { Search, Heart, ShoppingBag, MessageSquare, Clapperboard, LayoutGrid, User, ShoppingCart, BookOpen, Camera, Loader2, Sparkles, X } from "lucide-react";
-// ... (wait, I need to edit imports and the block)
+import Image from "next/image";
 import Logo from "./Logo";
+import { getProductSlug } from "@/lib/slugify";
 import { useStore } from "@/store/store";
 import { usePathname, useRouter } from "next/navigation";
 import { translations } from "@/lib/translations";
@@ -23,6 +24,10 @@ export default function Navigation() {
     const searchParams = useSearchParams();
     const inputRef = useRef<HTMLInputElement>(null);
     const [search, setSearch] = useState("");
+    const [suggestions, setSuggestions] = useState<any[]>([]);
+    const [isSuggesting, setIsSuggesting] = useState(false);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const debounceTimer = useRef<NodeJS.Timeout | null>(null);
     const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
     const isHomePage = pathname === `/${language}` || pathname === `/`;
@@ -36,6 +41,17 @@ export default function Navigation() {
         }
     }, [isHomePage, searchParams, router, language]);
 
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            const formObj = inputRef.current?.closest('form');
+            if (formObj && !formObj.contains(e.target as Node)) {
+                setShowSuggestions(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
     const { setSearchResults, isSearchLoading, setHomeSearchQuery: setStoreGlobalQuery } = useStore();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -43,6 +59,7 @@ export default function Navigation() {
         if (e) e.preventDefault();
         const activeQuery = forceQuery || search;
         
+        setShowSuggestions(false);
         if (!activeQuery.trim()) {
             setSearchResults(null);
             return;
@@ -64,6 +81,38 @@ export default function Navigation() {
         } finally {
             useStore.setState({ isSearchLoading: false });
         }
+    };
+
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setSearch(val);
+        
+        if (!val.trim()) {
+            setSuggestions([]);
+            setShowSuggestions(false);
+            if (debounceTimer.current) clearTimeout(debounceTimer.current);
+            return;
+        }
+
+        setShowSuggestions(true);
+        if (debounceTimer.current) clearTimeout(debounceTimer.current);
+        
+        debounceTimer.current = setTimeout(async () => {
+            setIsSuggesting(true);
+            try {
+                const res = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: val, suggest: true })
+                });
+                const data = await res.json();
+                if (data.results) setSuggestions(data.results);
+            } catch (err) {
+                console.error("Live suggest failed: ", err);
+            } finally {
+                setIsSuggesting(false);
+            }
+        }, 300);
     };
 
     const handleVisualSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,7 +180,8 @@ export default function Navigation() {
                             type="text"
                             placeholder={t.common.search}
                             value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            onChange={handleSearchChange}
+                            onFocus={() => { if (search.trim()) setShowSuggestions(true); }}
                             className="w-full bg-[#F5F9F6] border-2 border-transparent rounded-xl md:rounded-2xl py-2 md:py-4 pl-10 md:pl-14 pr-12 md:pr-16 text-xs md:text-base font-bold placeholder:text-gray-400 focus:bg-white focus:border-[#2d6e3e]/30 focus:ring-4 focus:ring-[#2d6e3e]/5 outline-none transition-all shadow-sm"
                         />
                         <div className="absolute inset-y-0 right-2 flex items-center gap-1 md:gap-2">
@@ -140,8 +190,11 @@ export default function Navigation() {
                                     type="button"
                                     onClick={() => { 
                                         setSearch(""); 
+                                        setSuggestions([]);
+                                        setShowSuggestions(false);
                                         setSearchResults(null); 
                                         setStoreGlobalQuery("");
+                                        if (debounceTimer.current) clearTimeout(debounceTimer.current);
                                     }}
                                     className="p-2 text-gray-400 hover:text-black transition-colors"
                                 >
@@ -155,6 +208,55 @@ export default function Navigation() {
                                 {isSearchLoading ? <Loader2 size={18} className="animate-spin" /> : <Search size={20} />}
                             </button>
                         </div>
+
+                        {/* Live Suggestions Dropdown */}
+                        {showSuggestions && (search.trim().length > 0) && (
+                            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[120]">
+                                {isSuggesting ? (
+                                    <div className="flex items-center justify-center p-6 bg-gray-50/50">
+                                        <Loader2 size={24} className="animate-spin text-black/20" />
+                                    </div>
+                                ) : suggestions.length > 0 ? (
+                                    <div className="flex flex-col max-h-[60vh] overflow-y-auto">
+                                        {suggestions.map((item, idx) => (
+                                            <Link 
+                                                key={item.id} 
+                                                href={`/${language}/products/${getProductSlug(item)}`}
+                                                onClick={() => { setShowSuggestions(false); }}
+                                                className={`flex items-center gap-4 p-3 hover:bg-gray-50 transition-colors ${idx !== 0 ? 'border-t border-gray-50' : ''}`}
+                                            >
+                                                <div className="w-12 h-12 bg-gray-100 rounded-xl overflow-hidden shrink-0 relative">
+                                                    <Image 
+                                                        src={item.image || item.images?.[0] || '/placeholder.png'} 
+                                                        alt={item[`name_${language}`] || item.name} 
+                                                        fill 
+                                                        className="object-cover"
+                                                    />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="text-xs font-bold text-black truncate">{item[`name_${language}`] || item.name}</h4>
+                                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">{item[`category_${language}`] || item.category}</p>
+                                                </div>
+                                                <div className="shrink-0 text-right">
+                                                    <p className="text-xs font-black italic">{item.price?.toLocaleString()} so'm</p>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                        <button 
+                                            type="submit" 
+                                            onClick={() => handleSearch()}
+                                            className="w-full p-4 bg-gray-50 hover:bg-gray-100 text-xs font-black text-black uppercase tracking-widest transition-colors"
+                                        >
+                                            Barcha natijalarni ko'rish
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="p-6 text-center bg-gray-50/50">
+                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{language === 'uz' ? 'Hech narsa topilmadi' : 'Ничего не найдено'}</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </form>
 
                     <div className="hidden md:flex items-center gap-2 md:gap-6 shrink-0 h-full">
