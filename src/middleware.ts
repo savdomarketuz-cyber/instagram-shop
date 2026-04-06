@@ -88,7 +88,15 @@ export async function middleware(request: NextRequest) {
         (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
     );
 
-    // 2. Redirect to locale if missing (skip API and public files)
+    // 2. Bypass API routes from locale redirection
+    if (pathname.startsWith('/api')) {
+        const response = NextResponse.next();
+        response.headers.set('X-Frame-Options', 'DENY');
+        response.headers.set('X-Content-Type-Options', 'nosniff');
+        return response;
+    }
+
+    // 3. Redirect to locale if missing (skip API and public files)
     if (pathnameIsMissingLocale) {
         const locale = getLocale(request);
         return NextResponse.redirect(
