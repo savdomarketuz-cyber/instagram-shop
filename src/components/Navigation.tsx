@@ -70,10 +70,10 @@ export default function Navigation() {
             const res = await fetch('/api/search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: activeQuery })
+                body: JSON.stringify({ query: activeQuery, userPhone: user?.phone })
             });
-            const data = res.ok ? await res.json() : { results: [] };
-            setSearchResults(data.results || []);
+            const data = res.ok ? await res.json() : { results: [], facets: null, didYouMean: null };
+            setSearchResults(data.results || [], data.facets || null, data.didYouMean || null);
             setStoreGlobalQuery(activeQuery);
             if (!isHomePage) router.push(`/${language}`);
         } catch (err) {
@@ -103,7 +103,7 @@ export default function Navigation() {
                 const res = await fetch('/api/search', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: val, suggest: true })
+                    body: JSON.stringify({ query: val, suggest: true, userPhone: user?.phone })
                 });
                 const data = await res.json();
                 if (data.results) setSuggestions(data.results);

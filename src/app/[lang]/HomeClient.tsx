@@ -52,6 +52,8 @@ export default function HomeClient({
     const homeActiveTab = useStore(state => state.homeActiveTab);
     const setHomeActiveTab = useStore(state => state.setHomeActiveTab);
     const searchResults = useStore(state => state.searchResults);
+    const searchFacets = useStore(state => state.searchFacets);
+    const didYouMean = useStore(state => state.didYouMean);
     const isSearchLoading = useStore(state => state.isSearchLoading);
     const setSearchResults = useStore(state => state.setSearchResults);
 
@@ -287,17 +289,64 @@ export default function HomeClient({
 
             <div className="px-2 md:px-10 mt-4">
                 {searchResults && (
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 animate-in slide-in-from-top-4 duration-500 gap-4 px-2">
-                        <div className="flex flex-col gap-1">
-                            <h2 className="text-3xl font-black italic tracking-tighter uppercase text-black">Qidiruv Natijalari</h2>
-                            <p className="text-gray-400 text-xs font-black uppercase tracking-widest">Sizning qidiruvingiz bo&apos;yicha topilgan mahsulotlar</p>
+                    <div className="flex flex-col mb-8 animate-in slide-in-from-top-4 duration-500 gap-6 px-2">
+                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                            <div className="flex flex-col gap-1">
+                                <h2 className="text-3xl font-black italic tracking-tighter uppercase text-black">Qidiruv Natijalari</h2>
+                                <p className="text-gray-400 text-xs font-black uppercase tracking-widest">Sizning qidiruvingiz bo&apos;yicha topilgan mahsulotlar</p>
+                                {didYouMean && searchResults.length > 0 && (
+                                    <p className="mt-2 text-sm font-bold text-gray-500">
+                                        {language === 'uz' ? 'Balki buni qidirgandirsiz: ' : 'Возможно вы искали: '}
+                                        <button 
+                                            onClick={async () => {
+                                                useStore.setState({ isSearchLoading: true, homeSearchQuery: didYouMean });
+                                                setSearch(didYouMean);
+                                                try {
+                                                    const res = await fetch('/api/search', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ query: didYouMean })
+                                                    });
+                                                    const data = await res.json();
+                                                    setSearchResults(data.results || [], data.facets || null, data.didYouMean || null);
+                                                } catch (e) {
+                                                    console.error("Did you mean search failed", e);
+                                                } finally {
+                                                    useStore.setState({ isSearchLoading: false });
+                                                }
+                                            }}
+                                            className="text-blue-600 hover:text-blue-800 underline italic font-black transition-colors"
+                                        >
+                                            {didYouMean}
+                                        </button>
+                                    </p>
+                                )}
+                            </div>
+                            <button 
+                                onClick={() => { setSearchResults(null); setHomeSearchQuery(""); }}
+                                className="bg-gray-100 hover:bg-black hover:text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-sm whitespace-nowrap"
+                            >
+                                {language === 'uz' ? 'Tozalash' : 'Очистить'}
+                            </button>
                         </div>
-                        <button 
-                            onClick={() => setSearchResults(null)}
-                            className="bg-gray-100 hover:bg-black hover:text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-sm"
-                        >
-                            {language === 'uz' ? 'Tozalash' : 'Очистить'}
-                        </button>
+                        
+                        {searchFacets && searchFacets.categories && Object.keys(searchFacets.categories).length > 0 && (
+                            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                                {Object.entries(searchFacets.categories).map(([cat, count]) => (
+                                    <button 
+                                        key={cat} 
+                                        onClick={() => {
+                                            // Simply jump to the category if possible or just visual
+                                            // For a real facet filter, we'd adjust the searchResults in state
+                                            // Leaving it as a visual badge for now that can be expanded later
+                                        }}
+                                        className="px-4 py-2 bg-[#F5F9F6] border border-[#2d6e3e]/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-[#2d6e3e] whitespace-nowrap hover:bg-[#2d6e3e] hover:text-white transition-colors"
+                                    >
+                                        {cat} <span className="opacity-50 ml-1">({count as number})</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
 

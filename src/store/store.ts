@@ -34,8 +34,10 @@ interface StoreState {
     toast: Toast | null;
     showToast: (message: string, type?: Toast['type']) => void;
     searchResults: Product[] | null;
+    searchFacets: any | null;
+    didYouMean: string | null;
     isSearchLoading: boolean;
-    setSearchResults: (results: Product[] | null) => void;
+    setSearchResults: (results: Product[] | null, facets?: any, didYouMean?: string | null) => void;
     prefetchedProducts: Record<string, Product>;
     setPrefetchedProduct: (product: Product) => void;
 }
@@ -107,8 +109,10 @@ export const useStore = create<StoreState>()(
                 prefetchedProducts: { ...state.prefetchedProducts, [product.id]: product }
             })),
             searchResults: null,
+            searchFacets: null,
+            didYouMean: null,
             isSearchLoading: false,
-            setSearchResults: (results) => set({ searchResults: results }),
+            setSearchResults: (results, facets = null, didYouMean = null) => set({ searchResults: results, searchFacets: facets, didYouMean: didYouMean }),
         }),
         {
             name: "instagram-shop-storage",
