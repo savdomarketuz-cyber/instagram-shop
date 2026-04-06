@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
         const { data: results, error } = await supabase.rpc('advanced_smart_search', {
             search_query: searchQuery,
             query_embedding: queryEmbedding ? `[${queryEmbedding.join(',')}]` : null,
-            match_threshold: 0.25, // allow slightly broader semantic matches
+            match_threshold: 0.15, // lowered from 0.25 to catch broader Uzbek semantics
             match_count: suggest ? 5 : 50
         });
         
