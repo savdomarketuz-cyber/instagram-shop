@@ -222,7 +222,12 @@ export default function Navigation() {
                                             <Link 
                                                 key={item.id} 
                                                 href={`/${language}/products/${getProductSlug(item)}`}
-                                                onClick={() => { setShowSuggestions(false); }}
+                                                onClick={() => { 
+                                                    setShowSuggestions(false); 
+                                                    if (search.trim().length >= 2) {
+                                                        fetch('/api/analytics/search-click', { method: 'POST', body: JSON.stringify({ productId: item.id, query: search.trim() }) }).catch(e => console.error("Click track error", e));
+                                                    }
+                                                }}
                                                 className={`flex items-center gap-4 p-3 hover:bg-gray-50 transition-colors ${idx !== 0 ? 'border-t border-gray-50' : ''}`}
                                             >
                                                 <div className="w-12 h-12 bg-gray-100 rounded-xl overflow-hidden shrink-0 relative">

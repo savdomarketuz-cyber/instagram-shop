@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Star, Heart, Check, Minus, Plus, Truck } from "lucide-react";
+import { useStore } from "@/store/store";
 
 import { Product, CartItem } from "@/types";
 import { TranslationKeys } from "@/lib/translations";
@@ -59,7 +60,20 @@ export const ProductCard = ({
             className="group relative flex flex-col h-full bg-white rounded-xl overflow-hidden shadow-sm border border-gray-50 active:scale-[0.97] transition-transform duration-150"
             style={{ overflowAnchor: 'none' }}
         >
-            <Link href={`/${language}/products/${getProductSlug(item)}`} className="flex flex-col flex-1 outline-none" prefetch={true}>
+            <Link 
+                href={`/${language}/products/${getProductSlug(item)}`} 
+                className="flex flex-col flex-1 outline-none" 
+                prefetch={true}
+                onClick={() => {
+                    const query = useStore.getState().homeSearchQuery;
+                    if (query && query.trim().length >= 2) {
+                        fetch('/api/analytics/search-click', {
+                            method: 'POST',
+                            body: JSON.stringify({ productId: item.id, query: query.trim() })
+                        }).catch(e => console.error("Click track error", e));
+                    }
+                }}
+            >
                 <div className="relative aspect-[3/4] overflow-hidden bg-gray-50 border-b border-gray-50">
                     {isVideo ? (
                         <video
