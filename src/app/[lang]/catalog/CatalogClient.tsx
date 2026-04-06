@@ -106,6 +106,19 @@ export default function CatalogClient() {
                                 placeholder={language === 'uz' ? "Turkumlarni izlash" : "Поиск категорий"}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && searchQuery.trim()) {
+                                        const globalForm = document.querySelector('form') as HTMLFormElement;
+                                        if (globalForm) {
+                                            const globalInput = globalForm.querySelector('input');
+                                            if (globalInput) {
+                                                globalInput.value = searchQuery;
+                                                globalInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                                globalForm.requestSubmit();
+                                            }
+                                        }
+                                    }
+                                }}
                                 className="w-full bg-gray-50 border-none rounded-2xl py-4 pl-12 pr-4 text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-black/5 outline-none transition-all"
                             />
                         </div>
@@ -118,12 +131,60 @@ export default function CatalogClient() {
                             placeholder={language === 'uz' ? "Katalogdan izlash" : "Поиск по каталогу"}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && searchQuery.trim()) {
+                                    // Trigger global search for products
+                                    const searchTrigger = document.querySelector('form') as HTMLFormElement;
+                                    if (searchTrigger) {
+                                        const globalInput = searchTrigger.querySelector('input');
+                                        if (globalInput) {
+                                            globalInput.value = searchQuery;
+                                            globalInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                            searchTrigger.requestSubmit();
+                                        }
+                                    } else {
+                                        // Fallback: router push with sync
+                                        router.push(`/${language}/?search=${encodeURIComponent(searchQuery)}`);
+                                    }
+                                }
+                            }}
                             className="w-full bg-gray-100 rounded-[20px] py-4 pl-12 pr-4 text-sm font-bold border-none outline-none"
                         />
                     </div>
                 </div>
 
                 <div className="mt-8">
+                    {searchQuery.trim() && mainCategories.filter(c => (c[`name_${language}`] || c.name).toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+                        <div className="mb-12 p-8 bg-black text-white rounded-[32px] flex flex-col md:flex-row items-center justify-between gap-6">
+                            <div className="flex flex-col gap-2 text-center md:text-left">
+                                <h3 className="text-xl font-black uppercase tracking-tighter italic">Kategoriyalar topilmadi</h3>
+                                <p className="text-gray-400 text-sm font-bold">"{searchQuery}" bo'yicha mahsulotlarni izlab ko'rasizmi?</p>
+                            </div>
+                            <button 
+                                onClick={async () => {
+                                    useStore.setState({ isSearchLoading: true });
+                                    router.push(`/${language}`);
+                                    try {
+                                        const res = await fetch('/api/search', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ query: searchQuery })
+                                        });
+                                        const data = await res.json();
+                                        useStore.getState().setSearchResults(data.results || []);
+                                        useStore.getState().setHomeSearchQuery(searchQuery);
+                                    } catch (e) {
+                                        console.error("Catalog global search failed", e);
+                                    } finally {
+                                        useStore.setState({ isSearchLoading: false });
+                                    }
+                                }}
+                                className="bg-white text-black px-10 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-white/10"
+                            >
+                                Mahsulotlarni izlash
+                            </button>
+                        </div>
+                    )}
                     {!selectedCategory ? (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-8">
                             {mainCategories.filter(c => (c[`name_${language}`] || c.name).toLowerCase().includes(searchQuery.toLowerCase())).map((cat) => (

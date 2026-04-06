@@ -83,6 +83,11 @@ export default function HomeClient({
         }
     }, [urlCategory, setHomeActiveFilter]);
 
+    // Sync local search with store
+    useEffect(() => {
+        setSearch(homeSearchQuery);
+    }, [homeSearchQuery]);
+
     // AI Recommendations logic
     useEffect(() => {
         if (user?.phone && user.phone !== 'ADMIN' && allProducts.length > 0) {
@@ -191,7 +196,18 @@ export default function HomeClient({
             }
 
             if (search.trim()) {
-                query = query.ilike("name", `%${search}%`);
+                const searchPattern = `%${search.trim()}%`;
+                const orFilter = [
+                    `name.ilike.${searchPattern}`,
+                    `name_uz.ilike.${searchPattern}`,
+                    `name_ru.ilike.${searchPattern}`,
+                    `description.ilike.${searchPattern}`,
+                    `description_uz.ilike.${searchPattern}`,
+                    `description_ru.ilike.${searchPattern}`,
+                    `article.ilike.${searchPattern}`,
+                    `sku.ilike.${searchPattern}`
+                ].join(',');
+                query = query.or(orFilter);
             }
 
             if (activeTab === "popular") {

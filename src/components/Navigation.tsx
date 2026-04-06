@@ -132,14 +132,17 @@ export default function Navigation() {
                             placeholder={t.common.search}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                             className="w-full bg-[#F5F9F6] border-2 border-transparent rounded-xl md:rounded-2xl py-2 md:py-4 pl-10 md:pl-14 pr-12 md:pr-16 text-xs md:text-base font-bold placeholder:text-gray-400 focus:bg-white focus:border-[#2d6e3e]/30 focus:ring-4 focus:ring-[#2d6e3e]/5 outline-none transition-all shadow-sm"
                         />
                         <div className="absolute inset-y-0 right-2 flex items-center gap-1 md:gap-2">
                             {search && (
                                 <button
                                     type="button"
-                                    onClick={() => { setSearch(""); setSearchResults(null); }}
+                                    onClick={() => { 
+                                        setSearch(""); 
+                                        setSearchResults(null); 
+                                        setStoreGlobalQuery("");
+                                    }}
                                     className="p-2 text-gray-400 hover:text-black transition-colors"
                                 >
                                     <X size={18} />
