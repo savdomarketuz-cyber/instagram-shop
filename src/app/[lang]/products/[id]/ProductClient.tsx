@@ -11,6 +11,7 @@ import Link from "next/link";
 import { getDeliveryDateText } from "@/lib/date-utils";
 import Image from "next/image";
 import { getProductIdFromSlug, getProductSlug } from "@/lib/slugify";
+import { useTelemetry } from "@/hooks/useTelemetry";
 
 // Components
 import { ProductMedia } from "@/components/product/ProductMedia";
@@ -50,6 +51,16 @@ export default function ProductClient({ params, initialProduct }: { params: { id
     const [isScrolledPast, setIsScrolledPast] = useState(false);
     const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
     const [popularLoading, setPopularLoading] = useState(false);
+
+    // Call Telemetry Tracker Hook
+    useTelemetry({
+        productId: product?.id || productIdentifier,
+        categoryId: categoryData?.id || product?.category,
+        metadata: {
+            price: product?.price,
+            isOriginal: product?.isOriginal
+        }
+    });
 
     useEffect(() => {
         const handleScroll = () => {
