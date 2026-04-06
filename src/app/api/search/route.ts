@@ -18,6 +18,11 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ results: [] });
         }
 
+        // 1.5 Identify User for Affinity Profiling
+        const userPhoneCookie = req.cookies.get('user_phone')?.value;
+        const fallbackSession = req.headers.get('x-forwarded-for') || req.ip || 'anonymous_session';
+        const userIdentifier = userPhone || userPhoneCookie || fallbackSession;
+
         // 2. Compute Embedding for Semantic Search (Fail-safe)
         let queryEmbedding = null;
         if (!suggest) {
@@ -31,12 +36,13 @@ export async function POST(req: NextRequest) {
             console.log(`Live Suggestion Search Executing: ${searchQuery}`);
         }
 
-        // 3. Call Advanced Smart Search RPC (Fuzzy + Weighted + Semantic)
+        // 3. Call Advanced Smart Search RPC (Fuzzy + Weighted + Semantic + Affinity)
         const { data: results, error } = await supabase.rpc('advanced_smart_search', {
             search_query: searchQuery,
             query_embedding: queryEmbedding ? `[${queryEmbedding.join(',')}]` : null,
             match_threshold: 0.15, // lowered from 0.25 to catch broader Uzbek semantics
-            match_count: suggest ? 5 : 50
+            match_count: suggest ? 5 : 50,
+            p_user_identifier: userIdentifier // Pass Phase 3 Identity
         });
         
         if (error) {
