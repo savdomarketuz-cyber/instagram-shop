@@ -33,6 +33,7 @@ export default function AdminCategories() {
     const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
     const [bulkJson, setBulkJson] = useState("");
     const [importLoading, setImportLoading] = useState(false);
+    const [isDragOver, setIsDragOver] = useState(false);
 
     const handleCancelEdit = () => {
         setEditingId(null);
@@ -44,12 +45,19 @@ export default function AdminCategories() {
         setIconUrl("");
     };
 
-    const handleIconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
+    const handleIconUpload = async (file: File | undefined) => {
         if (!file) return;
 
         setIsUploading(true);
         try {
+            // Agar avvalgi rasm bo'lsa va u Yandex-da bo'lsa, o'chirib tashlaymiz
+            if (iconUrl && iconUrl.includes("yandexcloud.net")) {
+                 fetch('/api/upload', {
+                    method: 'DELETE',
+                    body: JSON.stringify({ fileUrl: iconUrl }),
+                    headers: { 'Content-Type': 'application/json' }
+                 }).catch(e => console.error("Eski rasmni o'chirishda xatolik:", e));
+            }
             const url = await uploadToYandexS3(file);
             setIconUrl(url);
         } catch (error: any) {
@@ -57,6 +65,7 @@ export default function AdminCategories() {
             alert("Ikonka yuklashda xatolik: " + (error.message || "Noma'lum xato"));
         } finally {
             setIsUploading(false);
+            setIsDragOver(false);
         }
     };
 
@@ -497,38 +506,67 @@ export default function AdminCategories() {
                         </div>
 
                         <div className="space-y-4">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Ikonka (100x100px)</label>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Ikonka (100x100px) - Sudrab tashlash (Drag & Drop) mavjud</label>
                             <div className="flex items-center gap-4">
-                                {iconUrl ? (
-                                    <div className="relative group w-20 h-20 rounded-2xl overflow-hidden border-2 border-gray-100 flex-shrink-0 shadow-sm bg-gray-100">
-                                        <img src={iconUrl} className="w-full h-full object-contain p-4" />
-                                        <button
-                                            type="button"
-                                            onClick={() => setIconUrl("")}
-                                            className="absolute inset-0 bg-red-500/80 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm"
-                                        >
-                                            <Trash2 size={24} />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="relative w-20 h-20 rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center bg-gray-50 hover:border-black transition-all group overflow-hidden">
-                                        {isUploading ? (
-                                            <div className="flex flex-col items-center gap-1">
-                                                <Loader2 className="animate-spin text-black" size={24} />
+                                <div 
+                                    className={`relative group w-24 h-24 rounded-2xl border-2 border-dashed transition-all overflow-hidden flex-shrink-0 ${isDragOver ? "border-blue-500 bg-blue-50 shadow-xl scale-105" : (iconUrl ? "border-gray-100 bg-gray-100 shadow-sm" : "border-gray-200 bg-gray-50 hover:border-black")} flex flex-col items-center justify-center`}
+                                    onDragOver={(e) => {
+                                        e.preventDefault();
+                                        setIsDragOver(true);
+                                    }}
+                                    onDragLeave={(e) => {
+                                        e.preventDefault();
+                                        setIsDragOver(false);
+                                    }}
+                                    onDrop={async (e) => {
+                                        e.preventDefault();
+                                        setIsDragOver(false);
+                                        const file = e.dataTransfer.files?.[0];
+                                        if(file) await handleIconUpload(file);
+                                    }}
+                                >
+                                    {isUploading ? (
+                                        <Loader2 className="animate-spin text-black" size={24} />
+                                    ) : iconUrl ? (
+                                        <>
+                                            <img src={iconUrl} className="w-full h-full object-contain p-4 transition-opacity group-hover:opacity-30" />
+                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm bg-black/20 gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setIconUrl("");
+                                                    }}
+                                                    className="p-1.5 bg-red-500 text-white rounded-lg hover:scale-110 transition-transform relative z-20"
+                                                    title="Rasmni o'chirish"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                                <div className="p-1.5 bg-blue-500 text-white rounded-lg hover:scale-110 transition-transform flex items-center justify-center pointer-events-none relative z-10" title="Yangi yuklash ustiga bosish orqali">
+                                                    <Plus size={16} />
+                                                </div>
                                             </div>
-                                        ) : (
-                                            <>
-                                                <Plus size={24} className="text-gray-300 group-hover:text-black transition-colors" />
-                                                <input
-                                                    type="file"
-                                                    className="absolute inset-0 opacity-0 cursor-pointer"
-                                                    onChange={handleIconUpload}
-                                                    accept="image/*"
-                                                />
-                                            </>
-                                        )}
-                                    </div>
-                                )}
+                                            <input
+                                                type="file"
+                                                title="Ustiga bosib yoki rasmni sudrab tashlab yangilash"
+                                                className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                                onChange={(e) => handleIconUpload(e.target.files?.[0])}
+                                                accept="image/*"
+                                            />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Plus size={24} className={`${isDragOver ? "text-blue-500" : "text-gray-300 group-hover:text-black"} transition-colors`} />
+                                            <input
+                                                type="file"
+                                                title="Rasmni yuklash uchun bosing yoki shu yerga tashlang"
+                                                className="absolute inset-0 opacity-0 cursor-pointer"
+                                                onChange={(e) => handleIconUpload(e.target.files?.[0])}
+                                                accept="image/*"
+                                            />
+                                        </>
+                                    )}
+                                </div>
                                 <div className="flex-1">
                                     <p className="text-[9px] font-bold text-gray-300 leading-tight mb-2 uppercase tracking-tight">Yandex Cloudga yuklash va URL manzilini olish</p>
                                     <input
