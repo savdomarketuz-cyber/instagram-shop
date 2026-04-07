@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { Suspense } from 'react';
 import ProductClient from './ProductClient';
 import { supabase } from "@/lib/supabase";
 import { mapProduct } from "@/lib/mappers";
@@ -84,7 +85,7 @@ async function getProductData(identifier: string) {
     return data ? mapProduct(data) : null;
 }
 
-export default async function Page({ params }: { params: { id: string } }) {
+async function ProductDataWrapper({ params }: { params: { id: string } }) {
     const productIdOrArticle = getProductIdFromSlug(params.id);
     const product: any = await getProductData(productIdOrArticle);
     
@@ -175,5 +176,29 @@ export default async function Page({ params }: { params: { id: string } }) {
             />
             <ProductClient params={params} initialProduct={product} />
         </>
+    );
+}
+
+export default function Page({ params }: { params: { id: string } }) {
+    return (
+        <Suspense fallback={<ProductSkeleton />}>
+            <ProductDataWrapper params={params} />
+        </Suspense>
+    );
+}
+
+function ProductSkeleton() {
+    return (
+        <div className="min-h-screen bg-white animate-pulse">
+            <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div className="aspect-[1080/1440] bg-gray-50 rounded-3xl" />
+                <div className="space-y-6">
+                    <div className="h-10 w-3/4 bg-gray-50 rounded-xl" />
+                    <div className="h-6 w-1/4 bg-gray-50 rounded-lg" />
+                    <div className="h-24 w-full bg-gray-50 rounded-2xl" />
+                    <div className="h-16 w-full bg-gray-50 rounded-2xl" />
+                </div>
+            </div>
+        </div>
     );
 }

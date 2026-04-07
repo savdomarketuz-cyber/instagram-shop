@@ -45,17 +45,23 @@ async function getInitialData() {
     }
 }
 
-export default async function Home() {
+async function HomeDataWrapper() {
     const { products, categories, banners, bannerSettings } = await getInitialData();
+    
+    return (
+        <HomeClient 
+            initialProducts={products}
+            initialCategories={categories}
+            initialBanners={banners}
+            initialBannerSettings={bannerSettings}
+        />
+    );
+}
 
+export default function Home() {
     return (
         <Suspense fallback={<HomeSkeleton />}>
-            <HomeClient 
-                initialProducts={products}
-                initialCategories={categories}
-                initialBanners={banners}
-                initialBannerSettings={bannerSettings}
-            />
+            <HomeDataWrapper />
         </Suspense>
     );
 }
