@@ -137,6 +137,9 @@ export default function RootLayout({
             <head>
                 <link rel="preconnect" href="https://storage.yandexcloud.net" />
                 <link rel="dns-prefetch" href="https://storage.yandexcloud.net" />
+                <link rel="preconnect" href="https://slmbethqqqugnktxwzdz.supabase.co" />
+                <link rel="dns-prefetch" href="https://slmbethqqqugnktxwzdz.supabase.co" />
+
                 <script
                     type="application/ld+json"
                     dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
