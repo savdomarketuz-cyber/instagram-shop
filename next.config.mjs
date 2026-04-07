@@ -54,27 +54,17 @@ const nextConfig = {
             { protocol: 'https', hostname: 'cdn-icons-png.flaticon.com' },
         ],
     },
-    webpack: (config, { isServer }) => {
-        // Fix for Transformers.js on Vercel
-        // Tell webpack to NOT include onnxruntime-node as it is not needed with WASM
+    experimental: {
+        serverExternalPackages: ['sharp', 'onnxruntime-node'],
+    },
+    webpack: (config) => {
         config.resolve.alias = {
             ...config.resolve.alias,
             'onnxruntime-node': false,
         };
-
-        // Fallback for node built-ins
-        if (isServer) {
-            config.resolve.fallback = { 
-                ...config.resolve.fallback,
-                'onnxruntime-node': false,
-                'fs': false,
-                'path': false,
-                'child_process': false,
-            };
-        }
-
         return config;
     }
+
 };
 
 export default withPWA(nextConfig);
