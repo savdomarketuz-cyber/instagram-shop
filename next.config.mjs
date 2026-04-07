@@ -37,7 +37,9 @@ const nextConfig = {
     reactStrictMode: true,
     poweredByHeader: false,
     compress: true,
-    serverExternalPackages: ['sharp', 'onnxruntime-node'],
+    experimental: {
+        serverComponentsExternalPackages: ['@xenova/transformers', 'sharp'],
+    },
     images: {
         unoptimized: false,
         formats: ['image/avif', 'image/webp'],
@@ -55,7 +57,15 @@ const nextConfig = {
             { protocol: 'https', hostname: 'cdn-icons-png.flaticon.com' },
         ],
     },
-    webpack: (config) => {
+    webpack: (config, { isServer }) => {
+        if (isServer) {
+            config.externals.push('@xenova/transformers', 'sharp');
+        }
+        
+        config.module.rules.push({
+            test: /\.node$/,
+            use: 'node-loader',
+        });
 
         config.resolve.alias = {
             ...config.resolve.alias,
