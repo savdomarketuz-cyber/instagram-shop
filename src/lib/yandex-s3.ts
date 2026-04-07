@@ -16,24 +16,24 @@ export async function uploadToYandexS3(file: File | Blob, fileName?: string): Pr
         body: formData
     });
 
+    const rawText = await response.text();
+
     if (!response.ok) {
         let errorMsg = "Upload failed";
         try {
-            const error = await response.json();
+            const error = JSON.parse(rawText);
             errorMsg = error.error || errorMsg;
         } catch {
-            const text = await response.text();
-            errorMsg = text.slice(0, 100) || errorMsg;
+            errorMsg = rawText.slice(0, 100) || errorMsg;
         }
         throw new Error(errorMsg);
     }
 
     try {
-        const data = await response.json();
+        const data = JSON.parse(rawText);
         return data.url;
     } catch {
-        const text = await response.text();
-        console.error("Non-JSON response from upload API:", text);
+        console.error("Non-JSON response from upload API:", rawText);
         throw new Error("Server returned invalid response. Please try again or check file size.");
     }
 }
