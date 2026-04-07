@@ -54,6 +54,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
     const [isScrolledPast, setIsScrolledPast] = useState(false);
     const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
     const [popularLoading, setPopularLoading] = useState(false);
+    const [maxDesktopLoadIndex, setMaxDesktopLoadIndex] = useState(0);
 
     // Call Telemetry Tracker Hook
     useTelemetry({
@@ -456,14 +457,20 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                 >
                                     {media.type === 'image' ? (
                                         <div className="relative w-full h-full bg-gray-50">
-                                                 <Image 
-                                                     src={product.image_metadata?.[media.url]?.lowResUrl || media.url} 
-                                                     fill
-                                                     className="object-cover group-hover:scale-110 transition-transform" 
-                                                     alt={(product.image_metadata?.[media.url]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || `${(product[`name_${language}` as keyof typeof product] as string) || product.name} - ${i + 1}`}
-                                                     sizes="160px"
-                                                     unoptimized={true}
-                                                 />
+                                            {/* Zanjirli yuklanish: Faqat o'z navbati kelgan rasm yuklanadi */}
+                                            {i <= maxDesktopLoadIndex ? (
+                                                <Image 
+                                                    src={product.image_metadata?.[media.url]?.lowResUrl || media.url} 
+                                                    fill
+                                                    className="object-cover group-hover:scale-110 transition-transform" 
+                                                    alt={(product.image_metadata?.[media.url]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || `${(product[`name_${language}` as keyof typeof product] as string) || product.name} - ${i + 1}`}
+                                                    sizes="160px"
+                                                    unoptimized={true}
+                                                    onLoad={() => setMaxDesktopLoadIndex(prev => Math.max(prev, i + 1))}
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full bg-gray-50/50 flex items-center justify-center animate-pulse" />
+                                            )}
                                         </div>
                                     ) : (
                                         <div className="relative w-full h-full bg-black">
@@ -507,6 +514,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                 quality={65}
                                 fetchPriority="high"
                                 unoptimized={true}
+                                onLoad={() => setMaxDesktopLoadIndex(prev => Math.max(prev, 1))}
                             />
                             <button 
                                 onClick={() => toggleWishlist({ ...product, imageUrl: product.image } as any)}
