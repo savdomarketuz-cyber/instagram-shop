@@ -89,10 +89,12 @@ export const ProductCard = ({
                             src={mainMedia}
                             alt={(item.image_metadata?.[mainMedia]?.[`alt_${language}` as keyof typeof item.image_metadata[string]] as string) || (item[`name_${language}` as keyof typeof item] as string) || item.name}
                             fill
-                            sizes="(max-width: 768px) 50vw, 33vw"
+                            sizes="(max-width: 639px) 50vw, (max-width: 767px) 33vw, (max-width: 1023px) 25vw, (max-width: 1279px) 20vw, 16vw"
                             className="object-cover"
                             priority={priority}
                             referrerPolicy="no-referrer"
+                            placeholder={item.image_metadata?.[mainMedia]?.blurDataURL ? "blur" : "empty"}
+                            blurDataURL={item.image_metadata?.[mainMedia]?.blurDataURL}
                         />
                     )}
 

@@ -52,7 +52,7 @@ export default function AdminBanners() {
 
         setIsUploading(true);
         try {
-            const url = await uploadToYandexS3(file);
+            const { url } = await uploadToYandexS3(file);
             setNewBanner(prev => ({
                 ...prev,
                 [lang === "uz" ? "imageUrl_uz" : "imageUrl_ru"]: url

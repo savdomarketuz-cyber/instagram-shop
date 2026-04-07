@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import sharp from "sharp";
 
 const YANDEX_CONFIG = {
     ACCESS_KEY: process.env.YANDEX_S3_ACCESS_KEY || "",
@@ -29,10 +30,46 @@ export async function POST(req: NextRequest) {
     try {
         const formData = await req.formData();
         const file = formData.get("file") as File | null;
-        const fileName = formData.get("fileName") as string | null;
+        let fileName = formData.get("fileName") as string | null;
 
         if (!file) {
             return NextResponse.json({ error: "No file provided" }, { status: 400 });
+        }
+
+        let fileBuffer: Buffer = Buffer.from(new Uint8Array(await file.arrayBuffer()));
+        let finalContentType = file.type || "image/jpeg";
+        let blurDataURL = "";
+
+        // 🟢 PRE-PROCESSING: Optimize Images with Sharp
+        if (file.type.startsWith("image/") && !file.type.includes("dynamic") && !file.type.includes("gif") && !file.type.includes("svg")) {
+            try {
+                const image = sharp(fileBuffer);
+                const metadata = await image.metadata();
+
+                // 1. Generate ultra-low res blur placeholder (10px)
+                const blurBuffer = await image
+                    .clone()
+                    .resize(20, 20, { fit: "cover" })
+                    .blur(5)
+                    .toFormat("webp", { quality: 20 })
+                    .toBuffer();
+                blurDataURL = `data:image/webp;base64,${blurBuffer.toString("base64")}`;
+
+                // 2. Optimize Main Image: Max 1200px width, convert to WebP
+                const processedImage = image
+                    .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
+                    .toFormat("webp", { quality: 85, effort: 6 });
+                
+                fileBuffer = await processedImage.toBuffer();
+                finalContentType = "image/webp";
+                
+                // Force .webp extension if not present
+                if (fileName && !fileName.toLowerCase().endsWith(".webp")) {
+                    fileName = fileName.substring(0, fileName.lastIndexOf(".")) + ".webp";
+                }
+            } catch (err) {
+                console.error("Sharp processing failed, falling back to original:", err);
+            }
         }
 
         const { ACCESS_KEY, SECRET_KEY, BUCKET, REGION } = YANDEX_CONFIG;
@@ -82,10 +119,8 @@ export async function POST(req: NextRequest) {
 
         const authorizationHeader = `${algorithm} Credential=${ACCESS_KEY}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
-        const fileBuffer = await file.arrayBuffer();
-
-        if (fileBuffer.byteLength > 4.5 * 1024 * 1024) {
-             return NextResponse.json({ error: "File too large (Max 4.5MB)" }, { status: 413 });
+        if (fileBuffer.byteLength > 8 * 1024 * 1024) {
+             return NextResponse.json({ error: "Processed file still too large (Max 8MB)" }, { status: 413 });
         }
 
         const uploadResponse = await fetch(url, {
@@ -94,9 +129,9 @@ export async function POST(req: NextRequest) {
                 "x-amz-date": amzDate,
                 "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
                 "Authorization": authorizationHeader,
-                "Content-Type": file.type || "image/jpeg"
+                "Content-Type": finalContentType
             },
-            body: fileBuffer
+            body: fileBuffer as any
         });
 
         if (!uploadResponse.ok) {
@@ -108,12 +143,13 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        return NextResponse.json({ url });
+        return NextResponse.json({ url, blurDataURL });
     } catch (error: any) {
         console.error("Upload error:", error);
         return NextResponse.json({ error: `Upload failed: ${error.message || "Unknown error"}` }, { status: 500 });
     }
 }
+
 
 export async function DELETE(req: NextRequest) {
     try {

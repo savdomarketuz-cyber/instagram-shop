@@ -58,7 +58,7 @@ export default function AdminCategories() {
                     headers: { 'Content-Type': 'application/json' }
                  }).catch(e => console.error("Eski rasmni o'chirishda xatolik:", e));
             }
-            const url = await uploadToYandexS3(file);
+            const { url } = await uploadToYandexS3(file);
             setIconUrl(url);
         } catch (error: any) {
             console.error("Upload failed:", error);

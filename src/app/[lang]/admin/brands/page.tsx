@@ -64,7 +64,7 @@ export default function AdminBrands() {
 
         setIsUploading(true);
         try {
-            const url = await uploadToYandexS3(file);
+            const { url } = await uploadToYandexS3(file);
             setLogoUrl(url);
         } catch (error: any) {
             console.error("Upload failed:", error);

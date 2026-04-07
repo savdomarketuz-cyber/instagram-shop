@@ -14,9 +14,10 @@ interface MediaItemProps {
     onClick?: () => void;
     alt?: string;
     priority?: boolean;
+    blurDataURL?: string;
 }
 
-export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority = false }: MediaItemProps) => {
+export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority = false, blurDataURL }: MediaItemProps) => {
     const videoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
@@ -101,10 +102,13 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority 
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 85vw, 60vw"
-                quality={80}
+                quality={85}
                 priority={priority}
                 referrerPolicy="no-referrer"
+                placeholder={blurDataURL ? "blur" : "empty"}
+                blurDataURL={blurDataURL}
             />
         </div>
     );
 };
+

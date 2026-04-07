@@ -116,6 +116,7 @@ export const ProductMedia = ({
                                     onClick={() => !isDragging && setIsLightboxOpen(true)} 
                                     alt={product.name}
                                     priority={i === 0}
+                                    blurDataURL={product.image_metadata?.[media.url]?.blurDataURL}
                                 />
                             </div>
                         </div>

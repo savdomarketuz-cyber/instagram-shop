@@ -68,6 +68,7 @@ interface Product {
     cashback_type?: "global" | "percent" | "fixed";
     cashback_value?: number;
     model?: string;
+    image_metadata?: Record<string, { alt_uz?: string; alt_ru?: string; blurDataURL?: string }>;
 }
 
 import { uploadToYandexS3, uploadFromUrlToYandexS3 } from "@/lib/yandex-s3";
@@ -104,18 +105,33 @@ export default function AdminProducts() {
 
         setIsUploading(true);
         try {
-            const url = await uploadToYandexS3(file);
+            const { url, blurDataURL } = await uploadToYandexS3(file);
+            
             if (isGallery) {
                 setNewProduct(prev => ({
                     ...prev,
                     images: [...(prev.images || []), url],
-                    images_string: prev.images_string ? `${prev.images_string};${url}` : url
+                    images_string: prev.images_string ? `${prev.images_string};${url}` : url,
+                    image_metadata: {
+                        ...(prev.image_metadata || {}),
+                        [url]: {
+                            ...(prev.image_metadata?.[url] || {}),
+                            blurDataURL
+                        }
+                    }
                 }));
             } else {
                 setNewProduct(prev => ({
                     ...prev,
                     image: url,
-                    images: prev.images?.length ? prev.images : [url]
+                    images: prev.images?.length ? prev.images : [url],
+                    image_metadata: {
+                        ...(prev.image_metadata || {}),
+                        [url]: {
+                            ...(prev.image_metadata?.[url] || {}),
+                            blurDataURL
+                        }
+                    }
                 }));
             }
         } catch (error: any) {
@@ -132,7 +148,7 @@ export default function AdminProducts() {
 
         setIsUploading(true);
         try {
-            const url = await uploadToYandexS3(file);
+            const { url } = await uploadToYandexS3(file);
             setNewProduct(prev => ({
                 ...prev,
                 videoUrl: url
@@ -347,9 +363,17 @@ export default function AdminProducts() {
 
                     setImportLog(prev => [...prev, `${row[0]} rasmlari yuklanmoqda...`]);
 
-                    const proxiedImages = await Promise.all(
+                    const proxiedResults = await Promise.all(
                         rawImages.map(url => uploadFromUrlToYandexS3(url))
                     );
+
+                    const proxiedImages = proxiedResults.map(r => r.url);
+                    const localMeta: any = {};
+                    proxiedResults.forEach(r => {
+                        if (r.blurDataURL) {
+                            localMeta[r.url] = { blurDataURL: r.blurDataURL };
+                        }
+                    });
 
                     const productData = {
                         id: crypto.randomUUID(),
@@ -361,6 +385,7 @@ export default function AdminProducts() {
                         category_id: String(row[4]),
                         image: proxiedImages[0] || "",
                         images: proxiedImages,
+                        image_metadata: localMeta,
                         description: String(row[7] || ""),
                         description_uz: String(row[7] || ""),
                         description_ru: String(row[8] || ""),
@@ -516,9 +541,22 @@ export default function AdminProducts() {
                 ? newProduct.images_string.split(';').map(u => u.trim()).filter(u => u !== "").slice(0, 30)
                 : (newProduct.image ? [newProduct.image] : []);
 
-            const imagesArray = await Promise.all(
+            const proxiedResults = await Promise.all(
                 imagesArrayRaw.map(url => uploadFromUrlToYandexS3(url))
             );
+
+            const imagesArray = proxiedResults.map(r => r.url);
+            
+            // Merge blurDataURLs into existing metadata
+            const updatedMeta = { ...(newProduct.image_metadata || {}) };
+            proxiedResults.forEach(r => {
+                if (r.blurDataURL) {
+                    updatedMeta[r.url] = {
+                        ...updatedMeta[r.url],
+                        blurDataURL: r.blurDataURL
+                    };
+                }
+            });
 
             const finalData: any = {
                 name: newProduct.name,
@@ -526,6 +564,7 @@ export default function AdminProducts() {
                 name_ru: newProduct.name_ru,
                 image: imagesArray[0] || "",
                 images: imagesArray,
+                image_metadata: updatedMeta,
                 price: Number(newProduct.price),
                 old_price: newProduct.oldPrice ? Number(newProduct.oldPrice) : 0,
                 stock: newProduct.stock ?? 0,

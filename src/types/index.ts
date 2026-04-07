@@ -35,7 +35,7 @@ export interface Product {
     article?: string;
     videoUrl?: string;
     model?: string;
-    image_metadata?: Record<string, { alt_uz?: string; alt_ru?: string }>;
+    image_metadata?: Record<string, { alt_uz?: string; alt_ru?: string; blurDataURL?: string }>;
     createdAt?: FirebaseTimestamp;
 }
 
