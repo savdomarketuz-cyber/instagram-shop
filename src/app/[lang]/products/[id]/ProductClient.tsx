@@ -22,7 +22,10 @@ const ReviewsSection = dynamic(() => import("@/components/product/ReviewsSection
     ssr: false,
 });
 import { ProductDescriptionModal } from "@/components/product/ProductDescriptionModal";
-import { RelatedProducts } from "@/components/product/RelatedProducts";
+const RelatedProducts = dynamic(() => import("@/components/product/RelatedProducts").then(mod => ({ default: mod.RelatedProducts })), {
+    loading: () => <div className="h-80 animate-pulse bg-gray-50 rounded-[50px] mx-10 my-20" />,
+    ssr: false,
+});
 
 import type { Product } from "@/types";
 
@@ -75,22 +78,27 @@ export default function ProductClient({ params, initialProduct }: { params: { id
     }, []);
     const [deliverySettings, setDeliverySettings] = useState<{ cutoff: number; days: number; offDays: string[]; holidays: string[] } | null>(null);
 
-    // Initial Fetch
+    // 1. Initial Data Pipeline (Hierarchical Prioritization)
     useEffect(() => {
         if (!initialProduct || (initialProduct.id !== productIdentifier && initialProduct.article !== productIdentifier)) {
             fetchProduct();
         } else {
-            // Background revalidation or parallel fetch of secondary data
-            Promise.all([
-                fetchRelated(initialProduct.category as string, initialProduct.id),
-                fetchBoughtTogether(),
-                fetchPopular(),
-                initialProduct.groupId ? fetchGroup(initialProduct.groupId) : Promise.resolve(),
-                fetchDeliverySettings(initialProduct),
-                // fetchCat secondary
-            ]);
+            // High priority: Delivery, Group & Internal logic
+            fetchDeliverySettings(initialProduct);
+            if (initialProduct.groupId) fetchGroup(initialProduct.groupId);
+            
+            // Secondary priority: Defer background sections to free up initial render thread
+            const timer = setTimeout(() => {
+                Promise.all([
+                    fetchRelated(initialProduct.category as string, initialProduct.id),
+                    fetchBoughtTogether(),
+                    fetchPopular(),
+                    fetchComments()
+                ]);
+            }, 300); // 300ms sweet spot for UI settling
+
+            return () => clearTimeout(timer);
         }
-        fetchComments();
     }, [productIdentifier]);
 
     const fetchProduct = async () => {

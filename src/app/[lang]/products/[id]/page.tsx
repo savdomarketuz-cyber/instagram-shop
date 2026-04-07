@@ -6,26 +6,50 @@ import { mapProduct } from "@/lib/mappers";
 import { getProductIdFromSlug } from "@/lib/slugify";
 import BrandedEmptyState from "@/components/common/BrandedEmptyState";
 
+import { cache } from 'react';
+
 export const runtime = "edge";
-export const revalidate = 60; // ISR configuration: revalidate every minute for edge caching
+export const revalidate = 60; 
+
+// 🚀 Memoize the database call to prevent double-fetching in Metadata & Page
+const getProductData = cache(async (identifier: string) => {
+    const { data } = await supabase
+        .from("products")
+        .select("*")
+        .or(`id.eq.${identifier},article.eq.${identifier}`)
+        .single();
+    
+    return data ? mapProduct(data) : null;
+});
+
+// ⚡ Pre-render top 50 popular products for INSTANT (0ms) loading from CDN
+export async function generateStaticParams() {
+    const { data: products } = await supabase
+        .from("products")
+        .select("id, article")
+        .eq("is_deleted", false)
+        .order("sales", { ascending: false })
+        .limit(50);
+
+    if (!products) return [];
+
+    return products.flatMap((p) => [
+        { id: p.id },
+        { id: p.article?.toString() }
+    ].filter(v => v.id));
+}
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
     try {
         const productIdOrArticle = getProductIdFromSlug(params.id);
-        const { data: productData } = await supabase
-            .from("products")
-            .select("*")
-            .or(`id.eq.${productIdOrArticle},article.eq.${productIdOrArticle}`)
-            .single();
+        const product = await getProductData(productIdOrArticle);
         
-        if (!productData) {
+        if (!product) {
             return {
                 title: 'Mahsulot topilmadi | Velari',
                 description: 'Kechirasiz, siz qidirayotgan mahsulot topilmadi.'
             };
         }
-        
-        const product = mapProduct(productData);
         const baseUrl = "https://velari.uz";
         
         const ogUrl = new URL(`${baseUrl}/api/og`);
@@ -73,16 +97,6 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     } catch (error) {
         return { title: 'Velari | Global Electronics' };
     }
-}
-
-async function getProductData(identifier: string) {
-    const { data } = await supabase
-        .from("products")
-        .select("*")
-        .or(`id.eq.${identifier},article.eq.${identifier}`)
-        .single();
-    
-    return data ? mapProduct(data) : null;
 }
 
 async function ProductDataWrapper({ params }: { params: { id: string } }) {
