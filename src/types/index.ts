@@ -34,6 +34,7 @@ export interface Product {
     sku?: string;
     article?: string;
     videoUrl?: string;
+    model?: string;
     image_metadata?: Record<string, { alt_uz?: string; alt_ru?: string }>;
     createdAt?: FirebaseTimestamp;
 }

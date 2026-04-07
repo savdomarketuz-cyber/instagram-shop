@@ -12,7 +12,8 @@ export const mapProduct = (p: any): Product => ({
     reviewCount: p.review_count,
     isOriginal: p.is_original,
     groupId: p.group_id,
-    colorName: p.color_name
+    colorName: p.color_name,
+    model: p.model
 });
 
 export const mapCategory = (c: any): Category => ({

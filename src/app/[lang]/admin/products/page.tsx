@@ -67,6 +67,7 @@ interface Product {
     videoUrl?: string;
     cashback_type?: "global" | "percent" | "fixed";
     cashback_value?: number;
+    model?: string;
 }
 
 import { uploadToYandexS3, uploadFromUrlToYandexS3 } from "@/lib/yandex-s3";
@@ -172,7 +173,8 @@ export default function AdminProducts() {
         barcode: "",
         videoUrl: "",
         cashback_type: "global",
-        cashback_value: 0
+        cashback_value: 0,
+        model: ""
     });
 
     useEffect(() => {
@@ -277,7 +279,7 @@ export default function AdminProducts() {
 
             // Sheet 1: Template Headers
             const data1 = [[
-                "Nomi (UZ)*", "Nomi (RU)*", "Narxi*", "Eski Narxi", "Kategoriya ID*", "Rasm URL 1*", "Boshqa Rasmlar (nuqta-vergul bilan ajratilgan)", "Tavsif (UZ)", "Tavsif (RU)", "SKU", "Guruh ID", "Rang", "Brend ID", "Bar-kod", "Balandlik", "Kenglik", "Uzunlik", "Og'irlik (gr)", "Video URL"
+                "Nomi (UZ)*", "Nomi (RU)*", "Narxi*", "Eski Narxi", "Kategoriya ID*", "Rasm URL 1*", "Boshqa Rasmlar (nuqta-vergul bilan ajratilgan)", "Tavsif (UZ)", "Tavsif (RU)", "SKU", "Guruh ID", "Rang", "Brend ID", "Bar-kod", "Balandlik", "Kenglik", "Uzunlik", "Og'irlik (gr)", "Video URL", "Model"
             ]];
             const ws1 = XLSX.utils.aoa_to_sheet(data1);
 
@@ -373,6 +375,7 @@ export default function AdminProducts() {
                         length: String(row[16] || ""),
                         weight: String(row[17] || ""),
                         video_url: String(row[18] || ""),
+                        model: String(row[19] || ""),
                         is_deleted: false,
                         sales: 0
                     };
@@ -544,7 +547,8 @@ export default function AdminProducts() {
                 is_deleted: newProduct.isDeleted || false,
                 is_original: newProduct.isOriginal || false,
                 cashback_type: newProduct.cashback_type || 'global',
-                cashback_value: newProduct.cashback_value || 0
+                cashback_value: newProduct.cashback_value || 0,
+                model: newProduct.model || ""
             };
 
             let finalId = newProduct.id;
@@ -568,7 +572,7 @@ export default function AdminProducts() {
 
             setIsModalOpen(false);
             setProductSelectionPath([]);
-            setNewProduct({ name: "", name_uz: "", name_ru: "", price: 0, oldPrice: 0, category: "", image: "", images: [], description: "", description_uz: "", description_ru: "", tag: "", sku: "", groupId: "", colorName: "", article: "", isDeleted: false, isOriginal: false, images_string: "", brand: "", height: "", width: "", length: "", weight: "", barcode: "", videoUrl: "", cashback_type: "global", cashback_value: 0 });
+            setNewProduct({ name: "", name_uz: "", name_ru: "", price: 0, oldPrice: 0, category: "", image: "", images: [], description: "", description_uz: "", description_ru: "", tag: "", sku: "", groupId: "", colorName: "", article: "", isDeleted: false, isOriginal: false, images_string: "", brand: "", height: "", width: "", length: "", weight: "", barcode: "", videoUrl: "", cashback_type: "global", cashback_value: 0, model: "" });
             fetchData();
         } catch (error) {
             console.error("Error saving product:", error);
@@ -758,7 +762,7 @@ export default function AdminProducts() {
                     </button>
                     <button
                         onClick={() => {
-                            setNewProduct({ name: "", name_uz: "", name_ru: "", price: 0, oldPrice: 0, category: "", image: "", images: [], description: "", description_uz: "", description_ru: "", tag: "", sku: "", groupId: "", colorName: "", article: "", isDeleted: false, isOriginal: false, images_string: "", brand: "", height: "", width: "", length: "", weight: "", barcode: "", videoUrl: "" });
+                            setNewProduct({ name: "", name_uz: "", name_ru: "", price: 0, oldPrice: 0, category: "", image: "", images: [], description: "", description_uz: "", description_ru: "", tag: "", sku: "", groupId: "", colorName: "", article: "", isDeleted: false, isOriginal: false, images_string: "", brand: "", height: "", width: "", length: "", weight: "", barcode: "", videoUrl: "", model: "" });
                             setProductSelectionPath([]);
                             setIsModalOpen(true);
                         }}
@@ -1269,6 +1273,16 @@ export default function AdminProducts() {
                                                 placeholder="Masalan: 500"
                                             />
                                         </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2 italic">Model</label>
+                                        <input
+                                            value={newProduct.model || ""}
+                                            onChange={e => setNewProduct({ ...newProduct, model: e.target.value })}
+                                            className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-black outline-none shadow-sm text-black"
+                                            placeholder="Masalan: VGR-V937"
+                                        />
                                     </div>
 
                                     <div className="bg-gray-50/50 p-6 rounded-[32px] border border-gray-100 space-y-4">
