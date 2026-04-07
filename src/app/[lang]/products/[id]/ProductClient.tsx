@@ -493,6 +493,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                 alt={(product.image_metadata?.[allMedia[activeImage]?.url]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || `${(product[`name_${language}` as keyof typeof product] as string) || product.name} - Asosiy rasm`} 
                                 priority
                                 sizes="(max-width: 1024px) 100vw, 60vw"
+                                quality={65}
                             />
                             <button 
                                 onClick={() => toggleWishlist({ ...product, imageUrl: product.image } as any)}
