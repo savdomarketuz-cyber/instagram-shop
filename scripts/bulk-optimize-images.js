@@ -3,10 +3,9 @@ const { createClient } = require('@supabase/supabase-js');
 const sharp = require('sharp');
 require('dotenv').config({ path: '.env.local' });
 
-
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY // Service role key kerak modifikatsiya qilish uchun
+    process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 async function reoptimizeAllProducts() {
@@ -16,7 +15,6 @@ async function reoptimizeAllProducts() {
         .from("products")
         .select("id, image, image_metadata, images")
         .is("is_deleted", false);
-
 
     if (error) {
         console.error("Xatolik:", error);
@@ -30,8 +28,10 @@ async function reoptimizeAllProducts() {
             const currentUrl = prod.image;
             if (!currentUrl) continue;
 
-
             const metadata = prod.image_metadata || {};
+            
+            // Faqat Blur-placeholder ni qayta generatsiya qilamiz 
+            // (Thumbnailni yuklash uchun API endpoint kerak, bu skriptda xavfsizroq)
             if (metadata[currentUrl]?.blurDataURL) {
                 console.log(`✅ Skip: ${prod.id}`);
                 continue;
@@ -43,12 +43,12 @@ async function reoptimizeAllProducts() {
             const arrayBuffer = await response.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
 
-
-            const placeholderBuffer = await sharp(buffer)
-                .resize(10)
-                .toFormat('webp')
+            const blurBuffer = await sharp(buffer)
+                .resize(20)
+                .blur(5)
+                .toFormat('webp', { quality: 20 })
                 .toBuffer();
-            const blurDataURL = `data:image/webp;base64,${placeholderBuffer.toString('base64')}`;
+            const blurDataURL = `data:image/webp;base64,${blurBuffer.toString('base64')}`;
 
             const newMetadata = {
                 ...metadata,

@@ -105,7 +105,7 @@ export default function AdminProducts() {
 
         setIsUploading(true);
         try {
-            const { url, blurDataURL } = await uploadToYandexS3(file);
+            const { url, blurDataURL, lowResUrl } = await uploadToYandexS3(file);
             
             if (isGallery) {
                 setNewProduct(prev => ({
@@ -116,9 +116,11 @@ export default function AdminProducts() {
                         ...(prev.image_metadata || {}),
                         [url]: {
                             ...(prev.image_metadata?.[url] || {}),
-                            blurDataURL
+                            blurDataURL,
+                            lowResUrl
                         }
                     }
+
                 }));
             } else {
                 setNewProduct(prev => ({
@@ -129,8 +131,10 @@ export default function AdminProducts() {
                         ...(prev.image_metadata || {}),
                         [url]: {
                             ...(prev.image_metadata?.[url] || {}),
-                            blurDataURL
+                            blurDataURL,
+                            lowResUrl
                         }
+
                     }
                 }));
             }

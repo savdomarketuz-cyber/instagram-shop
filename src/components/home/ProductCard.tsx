@@ -76,7 +76,7 @@ export const ProductCard = ({
                         />
                     ) : (
                         <Image
-                            src={mainMedia}
+                            src={item.image_metadata?.[mainMedia]?.lowResUrl || mainMedia}
                             alt={(item.image_metadata?.[mainMedia]?.[`alt_${language}` as keyof typeof item.image_metadata[string]] as string) || (item[`name_${language}` as keyof typeof item] as string) || item.name}
                             fill
                             sizes="(max-width: 639px) 50vw, (max-width: 767px) 33vw, (max-width: 1023px) 25vw, (max-width: 1279px) 20vw, 16vw"
@@ -86,6 +86,7 @@ export const ProductCard = ({
                             placeholder={item.image_metadata?.[mainMedia]?.blurDataURL ? "blur" : "empty"}
                             blurDataURL={item.image_metadata?.[mainMedia]?.blurDataURL}
                         />
+
                     )}
 
                     <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">

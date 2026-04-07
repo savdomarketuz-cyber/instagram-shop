@@ -36,17 +36,17 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "No file provided" }, { status: 400 });
         }
 
-        let fileBuffer: Buffer = Buffer.from(new Uint8Array(await file.arrayBuffer()));
-        let finalContentType = file.type || "image/jpeg";
+        let originalBuffer: Buffer = Buffer.from(new Uint8Array(await file.arrayBuffer()));
+        let lowResBuffer: Buffer | null = null;
+        let finalContentType = "image/webp";
         let blurDataURL = "";
 
         // 🟢 PRE-PROCESSING: Optimize Images with Sharp
         if (file.type.startsWith("image/") && !file.type.includes("dynamic") && !file.type.includes("gif") && !file.type.includes("svg")) {
             try {
-                const image = sharp(fileBuffer);
-                const metadata = await image.metadata();
-
-                // 1. Generate ultra-low res blur placeholder (10px)
+                const image = sharp(originalBuffer);
+                
+                // 1. Generate ultra-low res blur placeholder (base64)
                 const blurBuffer = await image
                     .clone()
                     .resize(20, 20, { fit: "cover" })
@@ -55,96 +55,98 @@ export async function POST(req: NextRequest) {
                     .toBuffer();
                 blurDataURL = `data:image/webp;base64,${blurBuffer.toString("base64")}`;
 
-                // 2. Optimize Main Image: 1080x1440px (High Quality Portrait)
-                const processedImage = image
-                    .resize(1080, 1440, { fit: "cover" }) // Fit cover to ensure exact dimensions
-                    .toFormat("webp", { quality: 85, effort: 6 });
+                // 2. Generate Original (1080x1440px, Q80)
+                originalBuffer = await image
+                    .clone()
+                    .resize(1080, 1440, { fit: "cover" })
+                    .toFormat("webp", { quality: 80, effort: 6 })
+                    .toBuffer();
 
-                
-                fileBuffer = await processedImage.toBuffer();
-                finalContentType = "image/webp";
-                
-                // Force .webp extension if not present
-                if (fileName && !fileName.toLowerCase().endsWith(".webp")) {
-                    fileName = fileName.substring(0, fileName.lastIndexOf(".")) + ".webp";
+                // 3. Generate Thumbnail (360x480px, Q40) - Maximum Compression for Grid Speed
+                lowResBuffer = await image
+                    .clone()
+                    .resize(360, 480, { fit: "cover" })
+                    .toFormat("webp", { quality: 40, effort: 6, smartSubsample: true })
+                    .toBuffer();
+
+
+                // Force .webp extension
+                if (fileName) {
+                    const dotIndex = fileName.lastIndexOf(".");
+                    fileName = (dotIndex !== -1 ? fileName.substring(0, dotIndex) : fileName) + ".webp";
+                } else {
+                    fileName = `image_${Date.now()}.webp`;
                 }
+
             } catch (err) {
-                console.error("Sharp processing failed, falling back to original:", err);
+                console.error("Sharp processing failed:", err);
             }
         }
 
         const { ACCESS_KEY, SECRET_KEY, BUCKET, REGION } = YANDEX_CONFIG;
-        const finalFileName = fileName || file.name || `file_${Date.now()}`;
-
         const now = new Date();
         const amzDate = now.toISOString().replace(/[:-]/g, "").split(".")[0] + "Z";
         const dateStamp = amzDate.slice(0, 8);
-
-        const safeFileName = `${Date.now()}-${finalFileName.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-        const fileKey = `uploads/${safeFileName}`;
         const host = "storage.yandexcloud.net";
-        const url = `https://${host}/${BUCKET}/${fileKey}`;
 
-        const method = "PUT";
-        const canonicalUri = `/${BUCKET}/${fileKey}`;
-        const canonicalQueryString = "";
+        const uploadToS3 = async (buffer: Buffer, key: string) => {
+            const method = "PUT";
+            const canonicalUri = `/${BUCKET}/${key}`;
+            const canonicalQueryString = "";
+            const headersConfig: Record<string, string> = {
+                "host": host,
+                "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
+                "x-amz-date": amzDate
+            };
+            const canonicalHeaders = Object.keys(headersConfig).sort().map(k => `${k}:${headersConfig[k]}\n`).join("");
+            const signedHeaders = Object.keys(headersConfig).sort().join(";");
+            const canonicalRequest = [method, canonicalUri, canonicalQueryString, canonicalHeaders, signedHeaders, "UNSIGNED-PAYLOAD"].join("\n");
+            const algorithm = "AWS4-HMAC-SHA256";
+            const credentialScope = `${dateStamp}/${REGION}/s3/aws4_request`;
+            const hashedCanonicalRequest = await hashSha256(canonicalRequest);
+            const stringToSign = `${algorithm}\n${amzDate}\n${credentialScope}\n${hashedCanonicalRequest}`;
+            const kDate = await hmacSha256(`AWS4${SECRET_KEY}`, dateStamp);
+            const kRegion = await hmacSha256(kDate, REGION);
+            const kService = await hmacSha256(kRegion, "s3");
+            const kSigning = await hmacSha256(kService, "aws4_request");
+            const signatureBuffer = await hmacSha256(kSigning, stringToSign);
+            const signature = Array.from(new Uint8Array(signatureBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+            const authHeader = `${algorithm} Credential=${ACCESS_KEY}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
-        const headersConfig: Record<string, string> = {
-            "host": host,
-            "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
-            "x-amz-date": amzDate
+            const res = await fetch(`https://${host}${canonicalUri}`, {
+                method,
+                headers: {
+                    "x-amz-date": amzDate,
+                    "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
+                    "Authorization": authHeader,
+                    "Content-Type": "image/webp"
+                },
+                body: buffer as any
+            });
+            if (!res.ok) throw new Error(await res.text());
+            return `https://${host}${canonicalUri}`;
         };
 
-        const canonicalHeaders = Object.keys(headersConfig)
-            .sort()
-            .map(key => `${key}:${headersConfig[key]}\n`)
-            .join("");
+        const safeBaseName = (fileName || "image.webp").replace(/[^a-zA-Z0-9.-]/g, "_");
+        const timestamp = Date.now();
+        
+        // Parallel Uploads
+        const uploadPromises = [
+            uploadToS3(originalBuffer, `uploads/${timestamp}_original_${safeBaseName}`)
+        ];
 
-        const signedHeaders = Object.keys(headersConfig).sort().join(";");
-
-        const canonicalRequest = [
-            method, canonicalUri, canonicalQueryString, canonicalHeaders, signedHeaders, "UNSIGNED-PAYLOAD"
-        ].join("\n");
-
-        const algorithm = "AWS4-HMAC-SHA256";
-        const credentialScope = `${dateStamp}/${REGION}/s3/aws4_request`;
-        const hashedCanonicalRequest = await hashSha256(canonicalRequest);
-        const stringToSign = `${algorithm}\n${amzDate}\n${credentialScope}\n${hashedCanonicalRequest}`;
-
-        const kDate = await hmacSha256(`AWS4${SECRET_KEY}`, dateStamp);
-        const kRegion = await hmacSha256(kDate, REGION);
-        const kService = await hmacSha256(kRegion, "s3");
-        const kSigning = await hmacSha256(kService, "aws4_request");
-        const signatureBuffer = await hmacSha256(kSigning, stringToSign);
-        const signature = Array.from(new Uint8Array(signatureBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
-
-        const authorizationHeader = `${algorithm} Credential=${ACCESS_KEY}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
-
-        if (fileBuffer.byteLength > 8 * 1024 * 1024) {
-             return NextResponse.json({ error: "Processed file still too large (Max 8MB)" }, { status: 413 });
+        if (lowResBuffer) {
+            uploadPromises.push(uploadToS3(lowResBuffer, `uploads/${timestamp}_thumb_${safeBaseName}`));
         }
 
-        const uploadResponse = await fetch(url, {
-            method: method,
-            headers: {
-                "x-amz-date": amzDate,
-                "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
-                "Authorization": authorizationHeader,
-                "Content-Type": finalContentType
-            },
-            body: fileBuffer as any
+        const [originalUrl, thumbUrl] = await Promise.all(uploadPromises);
+
+        return NextResponse.json({ 
+            url: originalUrl, 
+            lowResUrl: thumbUrl || originalUrl, 
+            blurDataURL 
         });
 
-        if (!uploadResponse.ok) {
-            const errorBody = await uploadResponse.text();
-            console.error("Yandex S3 Error:", errorBody);
-            return NextResponse.json(
-                { error: `S3 Error: ${uploadResponse.status} - ${errorBody.slice(0, 50)}` },
-                { status: 500 }
-            );
-        }
-
-        return NextResponse.json({ url, blurDataURL });
     } catch (error: any) {
         console.error("Upload error:", error);
         return NextResponse.json({ error: `Upload failed: ${error.message || "Unknown error"}` }, { status: 500 });

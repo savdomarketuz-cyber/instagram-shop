@@ -4,7 +4,7 @@ import { S3_UPLOAD_ENDPOINT } from "./constants";
  * Upload file to Yandex S3 via server-side API route
  * Maxfiy kalitlar endi serverda — client-da ko'rinmaydi
  */
-export async function uploadToYandexS3(file: File | Blob, fileName?: string): Promise<{ url: string; blurDataURL?: string }> {
+export async function uploadToYandexS3(file: File | Blob, fileName?: string): Promise<{ url: string; blurDataURL?: string; lowResUrl?: string }> {
     const finalFileName = fileName || (file as File).name || `file_${Date.now()}`;
 
     const formData = new FormData();
@@ -31,7 +31,7 @@ export async function uploadToYandexS3(file: File | Blob, fileName?: string): Pr
 
     try {
         const data = JSON.parse(rawText);
-        return { url: data.url, blurDataURL: data.blurDataURL };
+        return { url: data.url, blurDataURL: data.blurDataURL, lowResUrl: data.lowResUrl };
     } catch {
         console.error("Non-JSON response from upload API:", rawText);
         throw new Error("Server returned invalid response. Please try again or check file size.");
@@ -42,7 +42,7 @@ export async function uploadToYandexS3(file: File | Blob, fileName?: string): Pr
 /**
  * Downloads an image from an external URL and uploads it to Yandex S3
  */
-export async function uploadFromUrlToYandexS3(externalUrl: string): Promise<{ url: string; blurDataURL?: string }> {
+export async function uploadFromUrlToYandexS3(externalUrl: string): Promise<{ url: string; blurDataURL?: string; lowResUrl?: string }> {
     try {
         // If it's already on our S3, don't re-upload
         if (externalUrl.includes("yandexcloud.net")) {

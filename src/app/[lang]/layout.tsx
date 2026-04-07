@@ -135,10 +135,13 @@ export default function RootLayout({
     return (
         <html lang={displayLang} className={inter.variable}>
             <head>
+                <link rel="preconnect" href="https://storage.yandexcloud.net" />
+                <link rel="dns-prefetch" href="https://storage.yandexcloud.net" />
                 <script
                     type="application/ld+json"
                     dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
                 />
+
                 <script
                     type="application/ld+json"
                     dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
