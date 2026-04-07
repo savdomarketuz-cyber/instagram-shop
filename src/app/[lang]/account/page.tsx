@@ -617,7 +617,7 @@ function ReviewsView({ user, language, showToast, onBack }: any) {
                            />
 
                            {/* Media Upload */}
-                           <div className="flex gap-2">
+                            <div className="flex gap-2">
                                <label className="flex-1 h-14 bg-gray-50 rounded-2xl flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-gray-100 hover:border-gray-300">
                                    <input 
                                         type="file" accept="image/*" className="hidden" 
@@ -626,7 +626,7 @@ function ReviewsView({ user, language, showToast, onBack }: any) {
                                             if (file) {
                                                 setIsUploading(true);
                                                 try {
-                                                    const url = await uploadToYandexS3(file);
+                                                    const { url } = await uploadToYandexS3(file);
                                                     setReviewImages([...reviewImages, url]);
                                                 } finally { setIsUploading(false); }
                                             }
@@ -642,7 +642,7 @@ function ReviewsView({ user, language, showToast, onBack }: any) {
                                             if (file) {
                                                 setIsUploading(true);
                                                 try {
-                                                    const url = await uploadToYandexS3(file);
+                                                    const { url } = await uploadToYandexS3(file);
                                                     setReviewVideo(url);
                                                 } finally { setIsUploading(false); }
                                             }
@@ -650,7 +650,8 @@ function ReviewsView({ user, language, showToast, onBack }: any) {
                                    />
                                    <Video size={20} className="text-gray-400" />
                                </label>
-                           </div>
+                            </div>
+
 
                            {/* Media Preview */}
                            {(reviewImages.length > 0 || reviewVideo) && (

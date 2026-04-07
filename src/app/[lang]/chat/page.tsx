@@ -107,10 +107,12 @@ export default function ChatPage() {
 
             if (selectedFile) {
                 setIsUploadingMedia(true);
-                uploadedUrl = await uploadToYandexS3(selectedFile);
+                const { url } = await uploadToYandexS3(selectedFile);
+                uploadedUrl = url;
                 fileType = selectedFile.type.startsWith('image/') ? 'image' : 'video';
                 setIsUploadingMedia(false);
             }
+
 
             const chatId = user.phone;
             const messageId = crypto.randomUUID();

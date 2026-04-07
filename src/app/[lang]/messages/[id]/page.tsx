@@ -138,7 +138,8 @@ export default function P2PChatPage() {
             let fileType = "";
 
             if (selectedFile) {
-                uploadedUrl = await uploadToYandexS3(selectedFile);
+                const { url } = await uploadToYandexS3(selectedFile);
+                uploadedUrl = url;
                 fileType = selectedFile.type.startsWith('image/') ? 'image' : 'video';
                 
                 // Update optimistic message with media

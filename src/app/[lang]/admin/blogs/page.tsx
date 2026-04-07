@@ -64,6 +64,7 @@ export default function AdminBlogs() {
             category: editingBlog.category,
             read_time: editingBlog.readTime || 5,
             linked_product_ids: editingBlog.linkedProductIds || [],
+            blur_data_url: editingBlog.blurDataURL || null,
             updated_at: new Date().toISOString()
         };
 
@@ -99,9 +100,11 @@ export default function AdminBlogs() {
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        const url = await uploadToYandexS3(file);
-        setEditingBlog(prev => ({ ...prev, image: url }));
+        const { url, blurDataURL } = await uploadToYandexS3(file);
+        setEditingBlog(prev => ({ ...prev, image: url, blurDataURL }));
     };
+
+
 
     const filteredBlogs = blogs.filter(b => 
         (activeTab === "active" ? !b.is_deleted : (b.is_deleted === true)) &&

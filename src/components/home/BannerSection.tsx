@@ -8,6 +8,8 @@ interface Banner {
     id: string;
     imageUrl_uz: string;
     imageUrl_ru: string;
+    blurDataURL_uz?: string;
+    blurDataURL_ru?: string;
     title_uz?: string;
     title_ru?: string;
     tabName_uz?: string;
@@ -54,6 +56,7 @@ export const BannerSection = ({ banners, bannerSettings, currentBanner, setCurre
                                 .map((banner, index) => {
                                     const title = language === 'uz' ? banner.title_uz : banner.title_ru;
                                     const imageUrl = language === 'uz' ? banner.imageUrl_uz : banner.imageUrl_ru;
+                                    const blurUrl = language === 'uz' ? banner.blurDataURL_uz : banner.blurDataURL_ru;
                                     const tabName = language === 'uz' ? banner.tabName_uz : banner.tabName_ru;
 
                                     if (!imageUrl) return null;
@@ -67,6 +70,8 @@ export const BannerSection = ({ banners, bannerSettings, currentBanner, setCurre
                                                  alt={title || ""} 
                                                  priority={index === 0}
                                                  sizes="100vw"
+                                                 placeholder={blurUrl ? "blur" : "empty"}
+                                                 blurDataURL={blurUrl}
                                              />
                                             {tabName && (
                                                 <div className="absolute bottom-6 left-6 bg-white/20 backdrop-blur-xl px-6 py-2 rounded-full border border-white/30 text-white font-black text-[10px] uppercase tracking-widest shadow-2xl">

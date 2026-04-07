@@ -478,7 +478,7 @@ export default function OrdersPage() {
                                                 if (file) {
                                                     setIsUploadingMedia(true);
                                                     try {
-                                                        const url = await uploadToYandexS3(file);
+                                                        const { url } = await uploadToYandexS3(file);
                                                         setReviewImages(prev => [...prev, url]);
                                                     } catch (err) {
                                                         showToast(language === 'uz' ? "Rasm yuklashda xatolik" : "Ошибка при загрузке изображения", 'error');
@@ -504,7 +504,7 @@ export default function OrdersPage() {
                                                 if (file) {
                                                     setIsUploadingMedia(true);
                                                     try {
-                                                        const url = await uploadToYandexS3(file);
+                                                        const { url } = await uploadToYandexS3(file);
                                                         setReviewVideo(url);
                                                     } catch (err) {
                                                         showToast(language === 'uz' ? "Video yuklashda xatolik" : "Ошибка при загрузке video", 'error');
@@ -519,6 +519,7 @@ export default function OrdersPage() {
                                             {isUploadingMedia ? (language === 'uz' ? "..." : "...") : (language === 'uz' ? 'Video' : 'Видео')}
                                         </span>
                                     </label>
+
                                 </div>
 
                                 {/* Media Preview */}

@@ -140,10 +140,12 @@ export default function AdminChatPage() {
 
             if (selectedFile) {
                 setIsUploadingMedia(true);
-                uploadedUrl = await uploadToYandexS3(selectedFile);
+                const { url } = await uploadToYandexS3(selectedFile);
+                uploadedUrl = url;
                 fileType = selectedFile.type.startsWith('image/') ? 'image' : 'video';
                 setIsUploadingMedia(false);
             }
+
 
             const messageId = crypto.randomUUID();
             const { error: msgError } = await supabase

@@ -50,6 +50,7 @@ export interface Category {
     name_ru?: string;
     parentId?: string;
     icon?: string;
+    blurDataURL?: string;
     order?: number;
 }
 
@@ -57,6 +58,8 @@ export interface Banner {
     id: string;
     imageUrl_uz: string;
     imageUrl_ru: string;
+    blurDataURL_uz?: string;
+    blurDataURL_ru?: string;
     title_uz?: string;
     title_ru?: string;
     tabName_uz?: string;
@@ -157,6 +160,7 @@ export interface Blog {
     content_uz: string;
     content_ru: string;
     image?: string;
+    blurDataURL?: string;
     category?: string;
     readTime?: number;
     views?: number;

@@ -12,6 +12,8 @@ interface Banner {
     subtitle_ru: string;
     imageUrl_uz: string;
     imageUrl_ru: string;
+    blurDataURL_uz?: string;
+    blurDataURL_ru?: string;
     linkType: "product" | "category" | "none";
     linkIds: string[];
     buttonText: string;
@@ -52,10 +54,11 @@ export default function AdminBanners() {
 
         setIsUploading(true);
         try {
-            const { url } = await uploadToYandexS3(file);
+            const { url, blurDataURL } = await uploadToYandexS3(file);
             setNewBanner(prev => ({
                 ...prev,
-                [lang === "uz" ? "imageUrl_uz" : "imageUrl_ru"]: url
+                [lang === "uz" ? "imageUrl_uz" : "imageUrl_ru"]: url,
+                [lang === "uz" ? "blurDataURL_uz" : "blurDataURL_ru"]: blurDataURL
             }));
         } catch (error: any) {
             console.error("Upload failed:", error);
@@ -73,6 +76,8 @@ export default function AdminBanners() {
         subtitle_ru: "",
         imageUrl_uz: "",
         imageUrl_ru: "",
+        blurDataURL_uz: "",
+        blurDataURL_ru: "",
         linkType: "none" as "product" | "category" | "none",
         linkIds: [] as string[],
         buttonText: "Sotib olish",
@@ -107,6 +112,8 @@ export default function AdminBanners() {
                 subtitle_ru: b.subtitle_ru,
                 imageUrl_uz: b.image_url_uz,
                 imageUrl_ru: b.image_url_ru,
+                blurDataURL_uz: b.blur_data_url_uz,
+                blurDataURL_ru: b.blur_data_url_ru,
                 linkType: b.link_type,
                 linkIds: b.link_ids || [],
                 buttonText: b.button_text,
@@ -142,6 +149,8 @@ export default function AdminBanners() {
             subtitle_ru: "",
             imageUrl_uz: "",
             imageUrl_ru: "",
+            blurDataURL_uz: "",
+            blurDataURL_ru: "",
             linkType: "none",
             linkIds: [],
             buttonText: "Sotib olish",
@@ -162,6 +171,8 @@ export default function AdminBanners() {
             subtitle_ru: banner.subtitle_ru || "",
             imageUrl_uz: banner.imageUrl_uz || "",
             imageUrl_ru: banner.imageUrl_ru || "",
+            blurDataURL_uz: banner.blurDataURL_uz || "",
+            blurDataURL_ru: banner.blurDataURL_ru || "",
             linkType: banner.linkType,
             linkIds: banner.linkIds || [],
             buttonText: banner.buttonText,
@@ -187,6 +198,8 @@ export default function AdminBanners() {
                 subtitle_ru: newBanner.subtitle_ru,
                 image_url_uz: newBanner.imageUrl_uz,
                 image_url_ru: newBanner.imageUrl_ru,
+                blur_data_url_uz: newBanner.blurDataURL_uz,
+                blur_data_url_ru: newBanner.blurDataURL_ru,
                 link_type: newBanner.linkType,
                 link_ids: newBanner.linkIds,
                 button_text: newBanner.buttonText,
