@@ -5,7 +5,8 @@ import { mapProduct } from "@/lib/mappers";
 import { getProductIdFromSlug } from "@/lib/slugify";
 import BrandedEmptyState from "@/components/common/BrandedEmptyState";
 
-export const revalidate = 3600; // ISR configuration: revalidate every hour
+export const runtime = "edge";
+export const revalidate = 60; // ISR configuration: revalidate every minute for edge caching
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
     try {

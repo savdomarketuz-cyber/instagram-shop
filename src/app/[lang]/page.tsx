@@ -14,9 +14,8 @@ export const metadata: Metadata = {
     }
 };
 
-// This makes the page dynamic as it fetches data from Supabase on every request
-// ISR with 5 minute revalidation for fast response times while staying fresh
-export const revalidate = 300; 
+export const runtime = "edge";
+export const revalidate = 60; 
 
 async function getInitialData() {
     try {
