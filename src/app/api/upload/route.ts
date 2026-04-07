@@ -55,10 +55,11 @@ export async function POST(req: NextRequest) {
                     .toBuffer();
                 blurDataURL = `data:image/webp;base64,${blurBuffer.toString("base64")}`;
 
-                // 2. Optimize Main Image: Max 1200px width, convert to WebP
+                // 2. Optimize Main Image: 1080x1440px (High Quality Portrait)
                 const processedImage = image
-                    .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
+                    .resize(1080, 1440, { fit: "cover" }) // Fit cover to ensure exact dimensions
                     .toFormat("webp", { quality: 85, effort: 6 });
+
                 
                 fileBuffer = await processedImage.toBuffer();
                 finalContentType = "image/webp";

@@ -30,18 +30,8 @@ export const ProductCard = ({
     const isWished = wishlist.some(w => w.id === item.id);
     const totalStock = item.stockDetails ? Object.values(item.stockDetails).reduce((a: any, b: any) => a + (Number(b) || 0), 0) : 0;
 
-    // Preload product images into browser cache (very lightweight, no API calls)
-    useEffect(() => {
-        const images = item.images && item.images.length > 0 ? item.images : [item.image];
-        images.forEach((src) => {
-            if (src && !src.endsWith('.mp4')) {
-                const img = new window.Image();
-                img.src = src;
-            }
-        });
-    }, [item.images, item.image]);
-
     const handleToggleWishlist = (e: React.MouseEvent) => {
+
         e.preventDefault();
         e.stopPropagation();
         toggleWishlist(item);
