@@ -16,9 +16,10 @@ interface MediaItemProps {
     alt?: string;
     priority?: boolean;
     blurDataURL?: string;
+    onLoadComplete?: () => void;
 }
 
-export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority = false, blurDataURL }: MediaItemProps) => {
+export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority = false, blurDataURL, onLoadComplete }: MediaItemProps) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isLoaded, setIsLoaded] = useState(false);
 
@@ -119,7 +120,10 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority 
                 sizes="(max-width: 768px) 85vw, 60vw"
                 quality={65}
                 priority={priority}
-                onLoad={() => setIsLoaded(true)}
+                onLoad={() => {
+                    setIsLoaded(true);
+                    if (onLoadComplete) onLoadComplete();
+                }}
                 referrerPolicy="no-referrer"
             />
         </div>

@@ -27,6 +27,7 @@ export const ProductMedia = ({
     const lightboxCarouselRef = useRef<HTMLDivElement>(null);
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
+    const [maxVisibleIndex, setMaxVisibleIndex] = useState(0);
     const [startX, setStartX] = useState(0);
     const [scrollLeft, setScrollLeft] = useState(0);
 
@@ -109,17 +110,24 @@ export const ProductMedia = ({
                             className="min-w-[85vw] aspect-[3/4] rounded-[28px] overflow-hidden bg-gray-50 flex items-center justify-center relative shadow-sm border border-gray-100"
                         >
                             <div className="w-full h-full pointer-events-auto">
-                                <MediaItem 
-                                    media={{
-                                        ...media,
-                                        lowResUrl: product.image_metadata?.[media.url]?.lowResUrl
-                                    }} 
-                                    isActive={activeImage === i} 
-                                    isLightbox={false} 
-                                    onClick={() => !isDragging && setIsLightboxOpen(true)} 
-                                    alt={product.name}
-                                    priority={i === 0}
-                                />
+                                {(i <= maxVisibleIndex) ? (
+                                    <MediaItem 
+                                        media={{
+                                            ...media,
+                                            lowResUrl: product.image_metadata?.[media.url]?.lowResUrl
+                                        }} 
+                                        isActive={activeImage === i} 
+                                        isLightbox={false} 
+                                        onClick={() => !isDragging && setIsLightboxOpen(true)} 
+                                        alt={product.name}
+                                        priority={i === 0}
+                                        onLoadComplete={() => setMaxVisibleIndex(prev => Math.max(prev, i + 1))}
+                                    />
+                                ) : (
+                                    <div className="w-full h-full bg-gray-50 flex items-center justify-center animate-pulse">
+                                        <div className="w-8 h-8 border-2 border-gray-100 border-t-gray-400 rounded-full animate-spin opacity-20" />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}
