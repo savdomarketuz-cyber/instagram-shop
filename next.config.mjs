@@ -51,6 +51,7 @@ const nextConfig = {
             { protocol: 'https', hostname: '**.wb.ru' },
             { protocol: 'https', hostname: 'images.uzum.uz' },
             { protocol: 'https', hostname: '**.supabase.co' },
+            { protocol: 'https', hostname: 'cdn-icons-png.flaticon.com' },
         ],
     },
     webpack: (config, { isServer }) => {
