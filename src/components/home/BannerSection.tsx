@@ -72,6 +72,8 @@ export const BannerSection = ({ banners, bannerSettings, currentBanner, setCurre
                                                  sizes="100vw"
                                                  placeholder={blurUrl ? "blur" : "empty"}
                                                  blurDataURL={blurUrl}
+                                                 unoptimized={true}
+                                                 fetchPriority={index === 0 ? "high" : "auto"}
                                              />
                                             {tabName && (
                                                 <div className="absolute bottom-6 left-6 bg-white/20 backdrop-blur-xl px-6 py-2 rounded-full border border-white/30 text-white font-black text-[10px] uppercase tracking-widest shadow-2xl">
