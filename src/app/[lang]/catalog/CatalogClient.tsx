@@ -187,7 +187,7 @@ export default function CatalogClient() {
                     )}
                     {!selectedCategory ? (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-8">
-                            {mainCategories.filter(c => (c[`name_${language}`] || c.name).toLowerCase().includes(searchQuery.toLowerCase())).map((cat) => (
+                            {mainCategories.filter(c => (c[`name_${language}`] || c.name).toLowerCase().includes(searchQuery.toLowerCase())).map((cat, index) => (
                                 <button
                                     key={cat.id}
                                     onClick={() => handleCategoryClick(cat)}
@@ -201,6 +201,8 @@ export default function CatalogClient() {
                                                 fill
                                                 className="object-cover" 
                                                 sizes="(max-width: 768px) 80px, 128px"
+                                                priority={index < 12}
+                                                fetchPriority={index < 12 ? "high" : "auto"}
                                             />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center text-gray-100"><LayoutGrid size={40} /></div>
@@ -225,7 +227,7 @@ export default function CatalogClient() {
                             </button>
 
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-8">
-                                {subCategories.filter(c => (c[`name_${language}`] || c.name).toLowerCase().includes(searchQuery.toLowerCase())).map((sub) => (
+                                {subCategories.filter(c => (c[`name_${language}`] || c.name).toLowerCase().includes(searchQuery.toLowerCase())).map((sub, index) => (
                                     <button
                                         key={sub.id}
                                         onClick={() => handleCategoryClick(sub)}
@@ -239,6 +241,8 @@ export default function CatalogClient() {
                                                     fill
                                                     className="object-cover" 
                                                     sizes="(max-width: 768px) 64px, 96px"
+                                                    priority={index < 12}
+                                                    fetchPriority={index < 12 ? "high" : "auto"}
                                                 />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-gray-100"><ShoppingBag size={32} /></div>

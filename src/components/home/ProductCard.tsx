@@ -93,6 +93,7 @@ export const ProductCard = ({
                             sizes="(max-width: 639px) 50vw, (max-width: 767px) 33vw, (max-width: 1023px) 25vw, (max-width: 1279px) 20vw, 16vw"
                             className="object-cover"
                             priority={priority}
+                            fetchPriority={priority ? "high" : "auto"}
                             referrerPolicy="no-referrer"
                             placeholder={item.image_metadata?.[mainMedia]?.blurDataURL ? "blur" : "empty"}
                             blurDataURL={item.image_metadata?.[mainMedia]?.blurDataURL}
