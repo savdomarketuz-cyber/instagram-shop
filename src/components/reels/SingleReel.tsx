@@ -96,13 +96,22 @@ export const SingleReel = ({
         <div className="relative w-full h-full snap-start bg-black overflow-hidden flex flex-col items-center justify-center">
             {/* Video Player - Optimized for 3:4 and 9:16 */}
             <div className="relative w-full h-full bg-black flex items-center justify-center">
+                {/* 1. Static Poster Background (Instant) */}
+                <img 
+                    src={reel.image} 
+                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${isBuffering || !isPlaying ? 'opacity-50 blur-xl' : 'opacity-0'}`} 
+                    alt=""
+                />
+                
+                {/* 2. Optimized Video Layer */}
                 <video
                     ref={videoRef}
                     src={reel.videoUrl}
-                    className="max-w-full max-h-full object-contain pointer-events-auto cursor-pointer shadow-[0_0_100px_rgba(255,255,255,0.05)]"
+                    className="relative max-w-full max-h-full object-contain pointer-events-auto cursor-pointer shadow-[0_0_100px_rgba(255,255,255,0.05)]"
                     loop
                     playsInline
-                    preload={isActive || isNearby ? "auto" : "metadata"}
+                    poster={reel.image}
+                    preload={isActive ? "auto" : "metadata"}
                     onTimeUpdate={handleTimeUpdate}
                     onClick={togglePlay}
                     onWaiting={() => setIsBuffering(true)}
