@@ -55,16 +55,23 @@ export async function POST(req: NextRequest) {
                     .toBuffer();
                 blurDataURL = `data:image/webp;base64,${blurBuffer.toString("base64")}`;
 
-                // 2. Generate Original (1080x1440px, Q80) - Ultra Optimized WebP
+                // 2. Generate Original (1080x1440px, Q75) - Ultra Optimized AVIF
                 originalBuffer = await image
                     .clone()
                     .resize(1080, 1440, { fit: "cover" })
-                    .toFormat("webp", { 
-                        quality: 80, 
-                        effort: 9, 
-                        smartSubsample: true
+                    .toFormat("avif", { 
+                        quality: 75, 
+                        effort: 8
                     })
                     .toBuffer();
+ 
+                // Force .avif extension
+                if (fileName) {
+                    const dotIndex = fileName.lastIndexOf(".");
+                    fileName = (dotIndex !== -1 ? fileName.substring(0, dotIndex) : fileName) + ".avif";
+                } else {
+                    fileName = `image_${Date.now()}.avif`;
+                }
 
                 // 3. Generate Thumbnail (360x480px, Q40) - Maximum Compression
                 lowResBuffer = await image
@@ -97,7 +104,7 @@ export async function POST(req: NextRequest) {
         const dateStamp = amzDate.slice(0, 8);
         const host = "storage.yandexcloud.net";
 
-        const uploadToS3 = async (buffer: Buffer, key: string) => {
+        const uploadToS3 = async (buffer: Buffer, key: string, contentType: string = "image/webp") => {
             const method = "PUT";
             const canonicalUri = `/${BUCKET}/${key}`;
             const canonicalQueryString = "";
@@ -120,31 +127,31 @@ export async function POST(req: NextRequest) {
             const signatureBuffer = await hmacSha256(kSigning, stringToSign);
             const signature = Array.from(new Uint8Array(signatureBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
             const authHeader = `${algorithm} Credential=${ACCESS_KEY}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
-
+ 
             const res = await fetch(`https://${host}${canonicalUri}`, {
                 method,
                 headers: {
                     "x-amz-date": amzDate,
                     "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
                     "Authorization": authHeader,
-                    "Content-Type": "image/webp"
+                    "Content-Type": contentType
                 },
                 body: buffer as any
             });
             if (!res.ok) throw new Error(await res.text());
             return `https://${host}${canonicalUri}`;
         };
-
-        const safeBaseName = (fileName || "image.webp").replace(/[^a-zA-Z0-9.-]/g, "_");
+ 
+        const safeBaseName = (fileName || "image.avif").replace(/[^a-zA-Z0-9.-]/g, "_");
         const timestamp = Date.now();
         
-        // Parallel Uploads
+        // Parallel Uploads - AVIF for original, WebP for thumb
         const uploadPromises = [
-            uploadToS3(originalBuffer, `uploads/${timestamp}_original_${safeBaseName}`)
+            uploadToS3(originalBuffer, `uploads/${timestamp}_original_${safeBaseName}`, "image/avif")
         ];
-
+ 
         if (lowResBuffer) {
-            uploadPromises.push(uploadToS3(lowResBuffer, `uploads/${timestamp}_thumb_${safeBaseName}`));
+            uploadPromises.push(uploadToS3(lowResBuffer, `uploads/${timestamp}_thumb_${safeBaseName.replace('.avif', '.webp')}`, "image/webp"));
         }
 
         const [originalUrl, thumbUrl] = await Promise.all(uploadPromises);
