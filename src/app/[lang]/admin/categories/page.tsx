@@ -177,6 +177,7 @@ export default function AdminCategories() {
                         name: cat.name_uz,
                         name_uz: cat.name_uz,
                         name_ru: cat.name_ru || "",
+                        image: cat.image || null,
                         parent_id: pId === "none" ? null : pId,
                         is_deleted: false
                     });
