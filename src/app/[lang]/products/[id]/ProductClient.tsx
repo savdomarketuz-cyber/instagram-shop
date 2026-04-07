@@ -491,34 +491,51 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                             ))}
                         </div>
                         <div className="flex-1 bg-gray-50 rounded-[40px] overflow-hidden relative group/hero shadow-2xl shadow-black/5">
-                            {/* 1. Low-Res Background (Instant) */}
-                            {product.image_metadata?.[allMedia[activeImage]?.url]?.lowResUrl && (
-                                <Image 
-                                    src={product.image_metadata[allMedia[activeImage].url].lowResUrl as string} 
-                                    fill
-                                    className="object-contain p-10 blur-sm scale-110 opacity-40" 
-                                    alt="" 
-                                    priority
-                                    unoptimized={true}
-                                />
+                            {allMedia[activeImage]?.type === 'video' ? (
+                                <div className="w-full h-full bg-black relative flex items-center justify-center">
+                                    <video 
+                                        src={allMedia[activeImage].url} 
+                                        className="w-full h-full object-contain"
+                                        autoPlay
+                                        muted
+                                        loop
+                                        playsInline
+                                        controls
+                                    />
+                                </div>
+                            ) : (
+                                <>
+                                    {/* 1. Low-Res Background (Instant) */}
+                                    {product.image_metadata?.[allMedia[activeImage]?.url]?.lowResUrl && (
+                                        <Image 
+                                            src={product.image_metadata[allMedia[activeImage].url].lowResUrl as string} 
+                                            fill
+                                            className="object-contain p-10 blur-sm scale-110 opacity-40" 
+                                            alt="" 
+                                            priority
+                                            unoptimized={true}
+                                        />
+                                    )}
+                                    
+                                    {/* 2. High-Res Foreground (Gradual) */}
+                                    <Image 
+                                        src={allMedia[activeImage]?.url || ""} 
+                                        fill
+                                        className="object-contain p-10 animate-in fade-in zoom-in-95 duration-500" 
+                                        alt={(product.image_metadata?.[allMedia[activeImage]?.url]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || `${(product[`name_${language}` as keyof typeof product] as string) || product.name} - Asosiy rasm`} 
+                                        priority
+                                        sizes="(max-width: 1024px) 100vw, 60vw"
+                                        quality={65}
+                                        fetchPriority="high"
+                                        unoptimized={true}
+                                        onLoad={() => setMaxDesktopLoadIndex(prev => Math.max(prev, 1))}
+                                    />
+                                </>
                             )}
                             
-                            {/* 2. High-Res Foreground (Gradual) */}
-                            <Image 
-                                src={allMedia[activeImage]?.url || ""} 
-                                fill
-                                className="object-contain p-10 animate-in fade-in zoom-in-95 duration-500" 
-                                alt={(product.image_metadata?.[allMedia[activeImage]?.url]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || `${(product[`name_${language}` as keyof typeof product] as string) || product.name} - Asosiy rasm`} 
-                                priority
-                                sizes="(max-width: 1024px) 100vw, 60vw"
-                                quality={65}
-                                fetchPriority="high"
-                                unoptimized={true}
-                                onLoad={() => setMaxDesktopLoadIndex(prev => Math.max(prev, 1))}
-                            />
                             <button 
                                 onClick={() => toggleWishlist({ ...product, imageUrl: product.image } as any)}
-                                className="absolute top-8 right-8 p-5 bg-white/80 backdrop-blur-xl rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all text-black border border-white"
+                                className="absolute top-8 right-8 p-5 bg-white/80 backdrop-blur-xl rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all text-black border border-white z-10"
                             >
                                 <Heart size={24} fill={isWishlisted ? "black" : "none"} />
                             </button>
