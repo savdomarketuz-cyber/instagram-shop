@@ -106,7 +106,7 @@ export const SingleReel = ({
                 {/* 2. Optimized Video Layer */}
                 <video
                     ref={videoRef}
-                    src={reel.videoUrl}
+                    src={(isActive || isNearby) ? reel.videoUrl : ""}
                     className="relative max-w-full max-h-full object-contain pointer-events-auto cursor-pointer shadow-[0_0_100px_rgba(255,255,255,0.05)]"
                     loop
                     playsInline

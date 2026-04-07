@@ -100,7 +100,8 @@ export default function ReelsPage() {
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
                 {reels.map((reel, index) => {
-                    const isNearby = index === activeIndex + 1 || index === activeIndex + 2;
+                    // Nearby bubble: previous 1, and next 2
+                    const isNearby = (index >= activeIndex - 1) && (index <= activeIndex + 2);
                     return (
                         <SingleReel 
                             key={reel.id}
