@@ -37,6 +37,7 @@ const nextConfig = {
     reactStrictMode: true,
     poweredByHeader: false,
     compress: true,
+    serverExternalPackages: ['sharp', 'onnxruntime-node'],
     images: {
         unoptimized: false,
         formats: ['image/avif', 'image/webp'],
@@ -54,10 +55,8 @@ const nextConfig = {
             { protocol: 'https', hostname: 'cdn-icons-png.flaticon.com' },
         ],
     },
-    experimental: {
-        serverExternalPackages: ['sharp', 'onnxruntime-node'],
-    },
     webpack: (config) => {
+
         config.resolve.alias = {
             ...config.resolve.alias,
             'onnxruntime-node': false,
