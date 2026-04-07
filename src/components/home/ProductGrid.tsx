@@ -55,7 +55,8 @@ export const ProductGrid = ({
                         addToCart={addToCart}
                         updateQuantity={updateQuantity}
                         removeFromCart={removeFromCart}
-                        priority={index < 4}
+                        priority={index < 8}
+
                     />
                 </WatchedProduct>
             ))}

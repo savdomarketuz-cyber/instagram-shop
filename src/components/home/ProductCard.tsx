@@ -42,12 +42,23 @@ export const ProductCard = ({
         addToCart(item);
     };
 
+    const handleMouseEnter = () => {
+        // Prefetch the original full image when user hovers
+        if (mainMedia && !isVideo) {
+            const img = new window.Image();
+            img.src = mainMedia;
+        }
+    };
+
+
     const mainMedia = item.images?.[0] || item.image || "/placeholder.png";
     const isVideo = mainMedia.toLowerCase().endsWith('.mp4');
 
     return (
         <div 
+            onMouseEnter={handleMouseEnter}
             className="group relative flex flex-col h-full bg-white rounded-xl overflow-hidden shadow-sm border border-gray-50 active:scale-[0.97] transition-transform duration-150"
+
             style={{ overflowAnchor: 'none' }}
         >
             <Link 
