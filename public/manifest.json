@@ -1,41 +1,25 @@
 {
-  "id": "velari-market-uz-pwa",
-  "name": "Velari - Elektronika do'koni",
+  "id": "/",
+  "name": "Velari Market",
   "short_name": "Velari",
-  "description": "Premium elektronika va aksessuarlar O'zbekistonda",
-  "lang": "uz",
-  "dir": "ltr",
-  "start_url": "/?source=pwa",
+  "description": "Premium elektronika do'koni",
+  "start_url": "/?utm_source=pwa",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#2d6e3e",
-  "categories": ["shopping", "electronics"],
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     },
     {
       "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ],
-  "prefer_related_applications": false
+  "scope": "/"
 }
