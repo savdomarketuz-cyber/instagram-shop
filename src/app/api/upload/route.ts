@@ -134,7 +134,8 @@ export async function POST(req: NextRequest) {
                     "x-amz-date": amzDate,
                     "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
                     "Authorization": authHeader,
-                    "Content-Type": contentType
+                    "Content-Type": contentType,
+                    "Cache-Control": "public, max-age=31536000, immutable"
                 },
                 body: buffer as any
             });

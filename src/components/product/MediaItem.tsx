@@ -120,6 +120,7 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority 
                 sizes="(max-width: 768px) 85vw, 60vw"
                 quality={65}
                 priority={priority}
+                unoptimized={true}
                 onLoad={() => {
                     setIsLoaded(true);
                     if (onLoadComplete) onLoadComplete();
