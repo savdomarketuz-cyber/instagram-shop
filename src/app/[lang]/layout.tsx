@@ -135,10 +135,14 @@ export default function RootLayout({
     return (
         <html lang={displayLang} className={inter.variable}>
             <head>
-                <link rel="preconnect" href="https://storage.yandexcloud.net" />
+                {/* 🚀 VIP Magistral: Preconnect with CrossOrigin for instant data flow */}
+                <link rel="preconnect" href="https://storage.yandexcloud.net" crossOrigin="anonymous" />
                 <link rel="dns-prefetch" href="https://storage.yandexcloud.net" />
-                <link rel="preconnect" href="https://slmbethqqqugnktxwzdz.supabase.co" />
+                <link rel="preconnect" href="https://slmbethqqqugnktxwzdz.supabase.co" crossOrigin="anonymous" />
                 <link rel="dns-prefetch" href="https://slmbethqqqugnktxwzdz.supabase.co" />
+                
+                {/* ⚡ High-Priority Asset Preloading */}
+                <link rel="preload" href="/globals.css" as="style" fetchPriority="high" />
 
                 <script
                     type="application/ld+json"

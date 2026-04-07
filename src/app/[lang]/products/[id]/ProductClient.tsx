@@ -502,6 +502,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                 priority
                                 sizes="(max-width: 1024px) 100vw, 60vw"
                                 quality={65}
+                                fetchPriority="high"
                             />
                             <button 
                                 onClick={() => toggleWishlist({ ...product, imageUrl: product.image } as any)}
