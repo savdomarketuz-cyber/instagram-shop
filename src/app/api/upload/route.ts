@@ -55,18 +55,26 @@ export async function POST(req: NextRequest) {
                     .toBuffer();
                 blurDataURL = `data:image/webp;base64,${blurBuffer.toString("base64")}`;
 
-                // 2. Generate Original (1080x1440px, Q80)
+                // 2. Generate Original (1080x1440px, Q80) - Ultra Optimized WebP
                 originalBuffer = await image
                     .clone()
                     .resize(1080, 1440, { fit: "cover" })
-                    .toFormat("webp", { quality: 80, effort: 6 })
+                    .toFormat("webp", { 
+                        quality: 80, 
+                        effort: 9, 
+                        smartSubsample: true
+                    })
                     .toBuffer();
 
-                // 3. Generate Thumbnail (360x480px, Q40) - Maximum Compression for Grid Speed
+                // 3. Generate Thumbnail (360x480px, Q40) - Maximum Compression
                 lowResBuffer = await image
                     .clone()
                     .resize(360, 480, { fit: "cover" })
-                    .toFormat("webp", { quality: 40, effort: 6, smartSubsample: true })
+                    .toFormat("webp", { 
+                        quality: 40, 
+                        effort: 9, 
+                        smartSubsample: true
+                    })
                     .toBuffer();
 
 
