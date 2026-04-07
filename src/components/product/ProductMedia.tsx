@@ -110,13 +110,15 @@ export const ProductMedia = ({
                         >
                             <div className="w-full h-full pointer-events-auto">
                                 <MediaItem 
-                                    media={media} 
+                                    media={{
+                                        ...media,
+                                        lowResUrl: product.image_metadata?.[media.url]?.lowResUrl
+                                    }} 
                                     isActive={activeImage === i} 
                                     isLightbox={false} 
                                     onClick={() => !isDragging && setIsLightboxOpen(true)} 
                                     alt={product.name}
                                     priority={i === 0}
-                                    blurDataURL={product.image_metadata?.[media.url]?.blurDataURL}
                                 />
                             </div>
                         </div>

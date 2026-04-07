@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Play } from "lucide-react";
 import Image from "next/image";
 
@@ -8,6 +8,7 @@ interface MediaItemProps {
     media: {
         type: "video" | "image";
         url: string;
+        lowResUrl?: string; // High-speed thumbnail
     };
     isActive: boolean;
     isLightbox: boolean;
@@ -19,6 +20,7 @@ interface MediaItemProps {
 
 export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority = false, blurDataURL }: MediaItemProps) => {
     const videoRef = useRef<HTMLVideoElement>(null);
+    const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
         if (media.type === 'video' && videoRef.current) {
@@ -90,25 +92,38 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority 
         );
     }
 
-    // Normal carousel: use Next.js Image for auto WebP/AVIF optimization
+    // Normal carousel: Two-layer loading for maximum perception speed
     return (
         <div
-            className="w-full h-full flex items-center justify-center cursor-pointer relative overflow-hidden"
+            className="w-full h-full flex items-center justify-center cursor-pointer relative overflow-hidden bg-gray-50"
             onClick={onClick}
         >
+            {/* 1. Low-Res Background (Instant) */}
+            {media.lowResUrl && (
+                <Image
+                    src={media.lowResUrl}
+                    alt=""
+                    fill
+                    className={`object-cover blur-[5px] scale-110 transition-opacity duration-1000 ${isLoaded ? 'opacity-0' : 'opacity-100'}`}
+                    sizes="10vw"
+                    priority={priority}
+                />
+            )}
+
+            {/* 2. High-Res Foreground (Gradual) */}
             <Image
                 src={media.url}
                 alt={alt || "Velari product image"}
                 fill
-                className="object-cover"
+                className={`object-cover transition-all duration-700 ease-out ${isLoaded ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-105 blur-sm'}`}
                 sizes="(max-width: 768px) 85vw, 60vw"
                 quality={85}
                 priority={priority}
+                onLoad={() => setIsLoaded(true)}
                 referrerPolicy="no-referrer"
-                placeholder={blurDataURL ? "blur" : "empty"}
-                blurDataURL={blurDataURL}
             />
         </div>
     );
 };
+
 

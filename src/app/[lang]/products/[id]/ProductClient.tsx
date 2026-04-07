@@ -446,14 +446,14 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                     className={`aspect-[3/4] rounded-3xl overflow-hidden border-2 transition-all group ${activeImage === i ? "border-black scale-95 shadow-xl" : "border-gray-50 opacity-60 hover:opacity-100"}`}
                                 >
                                     {media.type === 'image' ? (
-                                        <div className="relative w-full h-full">
-                                                <Image 
-                                                    src={media.url} 
-                                                    fill
-                                                    className="object-cover group-hover:scale-110 transition-transform" 
-                                                    alt={(product.image_metadata?.[media.url]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || `${(product[`name_${language}` as keyof typeof product] as string) || product.name} - ${i + 1}`}
-                                                    sizes="160px"
-                                                />
+                                        <div className="relative w-full h-full bg-gray-50">
+                                                 <Image 
+                                                     src={product.image_metadata?.[media.url]?.lowResUrl || media.url} 
+                                                     fill
+                                                     className="object-cover group-hover:scale-110 transition-transform" 
+                                                     alt={(product.image_metadata?.[media.url]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || `${(product[`name_${language}` as keyof typeof product] as string) || product.name} - ${i + 1}`}
+                                                     sizes="160px"
+                                                 />
                                         </div>
                                     ) : (
                                         <div className="relative w-full h-full bg-black">
@@ -474,8 +474,20 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                             ))}
                         </div>
                         <div className="flex-1 bg-gray-50 rounded-[40px] overflow-hidden relative group/hero shadow-2xl shadow-black/5">
+                            {/* 1. Low-Res Background (Instant) */}
+                            {product.image_metadata?.[allMedia[activeImage]?.url]?.lowResUrl && (
+                                <Image 
+                                    src={product.image_metadata[allMedia[activeImage].url].lowResUrl as string} 
+                                    fill
+                                    className="object-contain p-10 blur-sm scale-102" 
+                                    alt="" 
+                                    priority
+                                />
+                            )}
+                            
+                            {/* 2. High-Res Foreground (Gradual) */}
                             <Image 
-                                src={allMedia[activeImage]?.url} 
+                                src={allMedia[activeImage]?.url || ""} 
                                 fill
                                 className="object-contain p-10 animate-in fade-in zoom-in-95 duration-500" 
                                 alt={(product.image_metadata?.[allMedia[activeImage]?.url]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || `${(product[`name_${language}` as keyof typeof product] as string) || product.name} - Asosiy rasm`} 
