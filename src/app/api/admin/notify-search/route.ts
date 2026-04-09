@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { submitToIndexNow } from "@/lib/index-now";
+import { submitToGoogleIndexing } from "@/lib/google-indexing";
 import { getProductSlug } from "@/lib/slugify";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { mapProduct } from "@/lib/mappers";
@@ -41,14 +42,17 @@ export async function POST(req: NextRequest) {
         });
 
         // Submit to IndexNow
-        const success = await submitToIndexNow(urls);
+        const indexNowSuccess = await submitToIndexNow(urls);
 
-        // TODO: Integrate Google Indexing API here once credentials are set up
+        // Submit to Google Indexing API
+        const googleSuccess = await submitToGoogleIndexing(urls);
 
         return NextResponse.json({ 
-            success, 
+            success: indexNowSuccess || googleSuccess, 
+            indexNow: indexNowSuccess,
+            google: googleSuccess,
             count: urls.length,
-            submittedUrls: urls.length > 10 ? `${urls.length} URLs` : urls 
+            submittedUrls: urls.length > 5 ? `${urls.length} URLs` : urls 
         });
     } catch (error: any) {
         console.error("Notify Search API Error:", error);
