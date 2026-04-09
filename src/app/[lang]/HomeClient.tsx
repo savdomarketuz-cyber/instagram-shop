@@ -262,7 +262,7 @@ export default function HomeClient({
 
     return (
         <main className="min-h-screen bg-white pb-24 max-w-[1440px] mx-auto">
-            <h1 className="sr-only">Velari - Premium Electronics Store in Uzbekistan. Gadgets, Smartphones and Accessories.</h1>
+            <h1 className="sr-only">{t.common.homeTitle}</h1>
             
             {banners.length > 0 && !searchResults && (
                 <BannerSection 

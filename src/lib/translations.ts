@@ -37,7 +37,8 @@ export const translations = {
             original: "Original",
             tomorrow: "Ertaga",
             justNow: "Hozirgina",
-            new: "Yangi"
+            new: "Yangi",
+            homeTitle: "Velari — O'zbekistondagi premium internet-do'kon. Gadjetlar, smartfonlar va aksessuarlar"
         },
         cart: {
             empty: "Savatingiz bo'sh",
@@ -233,7 +234,8 @@ export const translations = {
             original: "Оригинал",
             tomorrow: "Завтра",
             justNow: "Только что",
-            new: "Новый"
+            new: "Новый",
+            homeTitle: "Velari — премиум интернет-магазин в Узбекистане. Гаджеты, смартфоны и аксессуары"
         },
         cart: {
             empty: "Ваша корзина пуста",
