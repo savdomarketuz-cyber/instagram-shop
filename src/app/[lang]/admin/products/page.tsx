@@ -98,6 +98,11 @@ export default function AdminProducts() {
     const [excelFile, setExcelFile] = useState<File | null>(null);
     const [importLog, setImportLog] = useState<string[]>([]);
     const [rawCategories, setRawCategories] = useState<DBCategory[]>([]);
+    
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const itemsPerPage = 20;
     const [categoryLabels, setCategoryLabels] = useState<{ [key: string]: string }>({});
     const [productSelectionPath, setProductSelectionPath] = useState<string[]>([]);
     const [aiStatus, setAiStatus] = useState<Record<string, { processed: number, total: number, active: boolean }>>({});
@@ -207,7 +212,7 @@ export default function AdminProducts() {
     });
 
     useEffect(() => {
-        fetchData(true);
+        fetchData(1, true);
     }, []);
 
     const getPathForCategory = (catId: string): string[] => {
@@ -221,20 +226,40 @@ export default function AdminProducts() {
         return path;
     };
 
-    const fetchData = async (isInitial = false) => {
+    const fetchData = async (page = 1, isInitial = false) => {
         if (isInitial) setLoading(true);
         try {
-            console.log("Fetching products and categories...");
-            const { data: pData } = await supabase
-                .from("products")
-                .select("*")
-                .order("name");
+            console.log(`Fetching products (page ${page})...`);
             
-            if (pData) {
-                setProducts(pData.map(mapProduct) as any);
+            const from = (page - 1) * itemsPerPage;
+            const to = from + itemsPerPage - 1;
+
+            let query = supabase
+                .from("products")
+                .select("*", { count: "exact" });
+
+            // Tab filter (Trash vs Active)
+            query = query.eq("is_deleted", activeTab === "trash");
+
+            // Apply search filter on server side if possible
+            if (searchTerm) {
+                query = query.ilike("name", `%${searchTerm}%`);
             }
 
-            const { data: allCats } = await supabase.from("categories").select("*");
+            const { data: pData, count, error: pError } = await query
+                .order("created_at", { ascending: false })
+                .range(from, to);
+            
+            if (pError) throw pError;
+
+            if (pData) {
+                setProducts(pData.map(mapProduct) as any);
+                if (count !== null) setTotalCount(count);
+            }
+
+            // Categories usually aren't as many, but if you have > 1000, we'll need to paginate them too later
+            const { data: allCats, error: cError } = await supabase.from("categories").select("*");
+            if (cError) throw cError;
             if (!allCats) return;
             setRawCategories(allCats);
 
@@ -784,29 +809,25 @@ export default function AdminProducts() {
         }
     };
 
-    const filteredProducts = products.filter(p => {
-        const catLabel = categoryLabels[p.category] || "";
-        const brandLabel = brandLabels[p.brand || ""] || p.brand || "";
-        const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            catLabel.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            brandLabel.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.barcode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.groupId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.article?.toLowerCase().includes(searchTerm.toLowerCase());
-
-        const matchesTab = activeTab === "trash" ? p.isDeleted === true : (p.isDeleted === false || !p.isDeleted);
-
-        return matchesSearch && matchesTab;
-    });
-
-    const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-    const paginatedProducts = filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-    // Reset to page 1 when filters change
+    // Fetch data when page, search or tab changes
     useEffect(() => {
-        setCurrentPage(1);
-    }, [searchTerm, activeTab, itemsPerPage]);
+        fetchData(currentPage, false);
+    }, [currentPage, activeTab, itemsPerPage]);
+
+    // Reset to page 1 and fetch when search term changes
+    useEffect(() => {
+        const delayDebounceFn = setTimeout(() => {
+            if (currentPage !== 1) {
+                setCurrentPage(1);
+            } else {
+                fetchData(1, false);
+            }
+        }, 500);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchTerm]);
+
+    const totalPages = Math.ceil(totalCount / itemsPerPage);
 
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.checked) {
@@ -947,7 +968,7 @@ export default function AdminProducts() {
                         <div className="flex items-center gap-3 ml-4">
                             <input
                                 type="checkbox"
-                                checked={paginatedProducts.length > 0 && paginatedProducts.every(p => selectedIds.includes(p.id))}
+                                checked={products.length > 0 && products.every(p => selectedIds.includes(p.id))}
                                 onChange={handleSelectAll}
                                 className="w-6 h-6 rounded-lg border-2 border-gray-200 checked:bg-black checked:border-black transition-all cursor-pointer"
                             />
@@ -957,7 +978,7 @@ export default function AdminProducts() {
 
                     {view === "grid" ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                            {paginatedProducts.map((p) => (
+                            {products.map((p) => (
                                 <div key={p.id} className={`bg-white rounded-[40px] overflow-hidden group border border-gray-50 shadow-sm hover:shadow-2xl transition-all duration-500 text-black relative ${selectedIds.includes(p.id) ? 'ring-2 ring-black' : ''}`}>
                                     <div className="absolute top-4 left-4 z-40">
                                         <input
@@ -1065,7 +1086,7 @@ export default function AdminProducts() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {paginatedProducts.map((p) => (
+                                    {products.map((p) => (
                                         <tr key={p.id} className={`group hover:bg-gray-50/50 transition-colors ${selectedIds.includes(p.id) ? 'bg-gray-50' : ''}`}>
                                             <td className="px-4 py-5 w-4">
                                                 <input

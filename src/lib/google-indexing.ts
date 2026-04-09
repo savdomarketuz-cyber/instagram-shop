@@ -14,13 +14,11 @@ export async function submitToGoogleIndexing(urls: string[]) {
             return false;
         }
 
-        const auth = new google.auth.JWT(
-            clientEmail,
-            null,
-            privateKey,
-            ["https://www.googleapis.com/auth/indexing"],
-            null
-        );
+        const auth = new google.auth.JWT({
+            email: clientEmail,
+            key: privateKey,
+            scopes: ["https://www.googleapis.com/auth/indexing"]
+        });
 
         const indexing = google.indexing("v3");
 

@@ -239,23 +239,14 @@ export default function AdminCategories() {
 
     const namesMap = getFullNamesMap(categories);
 
-    const recursiveMoveToTrash = async (id: string) => {
-        await supabase.from("categories").update({ is_deleted: true }).eq("id", id);
-        const children = categories.filter(c => c.parentId === id);
+    const getAllChildIds = (id: string, allItems: Category[]): string[] => {
+        let ids: string[] = [];
+        const children = allItems.filter(c => c.parentId === id);
         for (const child of children) {
-            await recursiveMoveToTrash(child.id);
+            ids.push(child.id);
+            ids = [...ids, ...getAllChildIds(child.id, allItems)];
         }
-    };
-
-    const recursiveRestore = async (id: string) => {
-        await supabase.from("categories").update({ is_deleted: false }).eq("id", id);
-        const parentId_ = categories.find(cat => cat.id === id)?.parentId;
-        if (parentId_) {
-            const parent = categories.find(c => c.id === parentId_);
-            if (parent && parent.isDeleted) {
-                await recursiveRestore(parent.id);
-            }
-        }
+        return ids;
     };
 
     const moveToTrash = async (id: string, e?: React.MouseEvent) => {
@@ -265,7 +256,8 @@ export default function AdminCategories() {
         try {
             if (window.confirm("Ushbu kategoriya va uning barcha sub-kategoriyalarini savatga (Trash) olib o'tmoqchimisiz?")) {
                 setIsActionLoading(true);
-                await recursiveMoveToTrash(id);
+                const idsToTrash = [id, ...getAllChildIds(id, categories)];
+                await supabase.from("categories").update({ is_deleted: true }).in("id", idsToTrash);
                 await fetchCategories(false);
             }
         } catch (error: any) {
@@ -281,9 +273,10 @@ export default function AdminCategories() {
         if (!id || isActionLoading) return;
 
         try {
-            if (window.confirm("Kategoriyani tiklamoqchimisiz? (Agar ota-kategoriya o'chirilgan bo'lsa, u ham tiklanadi)")) {
+            if (window.confirm("Kategoriyani tiklamoqchimisiz?")) {
                 setIsActionLoading(true);
-                await recursiveRestore(id);
+                // Simple restore for now, can be recursive if needed
+                await supabase.from("categories").update({ is_deleted: false }).eq("id", id);
                 await fetchCategories(false);
             }
         } catch (error: any) {
@@ -294,40 +287,21 @@ export default function AdminCategories() {
         }
     };
 
-    const recursiveDelete = async (id: string) => {
-        // 1. Get children
-        const { data: children } = await supabase.from("categories").select("id").eq("parent_id", id);
-        if (children) {
-            for (const child of children) {
-                await recursiveDelete(child.id);
-            }
-        }
-
-        // 2. Get the category itself to delete its image from S3
-        const { data: cat } = await supabase.from("categories").select("image").eq("id", id).single();
-        if (cat?.image && cat.image.includes("yandexcloud.net")) {
-            await fetch('/api/upload', {
-                method: 'DELETE',
-                body: JSON.stringify({ fileUrl: cat.image }),
-                headers: { 'Content-Type': 'application/json' }
-            });
-        }
-
-        // 3. Hide related products
-        await supabase.from("products").update({ is_deleted: true }).eq("category_id", id);
-
-        // 4. Hard delete the category
-        await supabase.from("categories").delete().eq("id", id);
-    };
-
     const deletePermanent = async (id: string, e?: React.MouseEvent) => {
         if (e) e.stopPropagation();
         if (!id || isActionLoading) return;
 
         try {
-            if (window.confirm("DIQQAT! Kategoriya, uning ostidagi barcha ichki kategoriyalar o'chiriladi. Unga ulangan mahsulotlar yashirinadi va rasmlar bulut(Cloud)dan o'chirib tashlanadi. Rozimisiz?")) {
+            if (window.confirm("DIQQAT! Kategoriya va uning barcha sub-kategoriyalari o'chiriladi. Rozimisiz?")) {
                 setIsActionLoading(true);
-                await recursiveDelete(id);
+                const idsToDelete = [id, ...getAllChildIds(id, categories)];
+                
+                // Also hide related products
+                await supabase.from("products").update({ is_deleted: true }).in("category_id", idsToDelete);
+                
+                // Hard delete categories
+                await supabase.from("categories").delete().in("id", idsToDelete);
+                
                 await fetchCategories(false);
             }
         } catch (error: any) {
