@@ -253,8 +253,8 @@ export default function ProductClient({ params, initialProduct }: { params: { id
     const isWishlisted = product ? wishlist.some(item => item.id === product.id) : false;
     const cartItem = product ? cart.find((item) => item.id === product.id) : null;
     const allMedia = useMemo(() => [
-        ...(product?.images && product.images.length > 0 ? product.images : [product?.image || ""]).map(img => ({ type: 'image', url: img })),
-        ...(product?.videoUrl ? [{ type: 'video', url: product.videoUrl }] : [])
+        ...(product?.images && product.images.length > 0 ? product.images : [product?.image || ""]).map(img => ({ type: 'image' as const, url: img })),
+        ...(product?.videoUrl ? [{ type: 'video' as const, url: product.videoUrl }] : [])
     ], [product]);
 
     if (loading) return (
