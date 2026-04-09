@@ -57,7 +57,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // 3. Admin Protection
-    let localePart = i18n.defaultLocale;
+    let localePart: string = i18n.defaultLocale;
     for (const locale of i18n.locales) {
         if (pathname.startsWith(`/${locale}/`)) {
             localePart = locale;
