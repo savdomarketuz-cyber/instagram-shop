@@ -4,31 +4,52 @@ import { getProductSlug } from "@/lib/slugify";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { mapProduct } from "@/lib/mappers";
 
+/**
+ * API to notify search engines about new or updated products.
+ * Supports single ID or array of IDs.
+ */
 export async function POST(req: NextRequest) {
     try {
-        const { productId } = await req.json();
-        if (!productId) return NextResponse.json({ error: "Product ID required" }, { status: 400 });
+        const body = await req.json();
+        const { productId, productIds } = body;
+        
+        const idsToNotify: string[] = [];
+        if (productId) idsToNotify.push(productId);
+        if (productIds && Array.isArray(productIds)) idsToNotify.push(...productIds);
 
-        // Fetch product to get slugs
-        const { data: productData } = await supabaseAdmin
+        if (idsToNotify.length === 0) {
+            return NextResponse.json({ error: "No product IDs provided" }, { status: 400 });
+        }
+
+        // Fetch products to get slugs (max 1000 for safety)
+        const { data: productsData, error } = await supabaseAdmin
             .from("products")
             .select("*")
-            .eq("id", productId)
-            .single();
+            .in("id", idsToNotify.slice(0, 1000));
 
-        if (!productData) return NextResponse.json({ error: "Product not found" }, { status: 404 });
+        if (error) throw error;
+        if (!productsData || productsData.length === 0) {
+            return NextResponse.json({ error: "No products found for given IDs" }, { status: 404 });
+        }
         
-        const product = mapProduct(productData);
-        const slug = getProductSlug(product);
+        const urls: string[] = [];
+        productsData.forEach(pData => {
+            const product = mapProduct(pData);
+            const slug = getProductSlug(product);
+            urls.push(`https://velari.uz/uz/products/${slug}`);
+            urls.push(`https://velari.uz/ru/products/${slug}`);
+        });
 
-        const urls = [
-            `https://velari.uz/uz/products/${slug}`,
-            `https://velari.uz/ru/products/${slug}`
-        ];
-
+        // Submit to IndexNow
         const success = await submitToIndexNow(urls);
 
-        return NextResponse.json({ success, urls });
+        // TODO: Integrate Google Indexing API here once credentials are set up
+
+        return NextResponse.json({ 
+            success, 
+            count: urls.length,
+            submittedUrls: urls.length > 10 ? `${urls.length} URLs` : urls 
+        });
     } catch (error: any) {
         console.error("Notify Search API Error:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });

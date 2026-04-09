@@ -426,6 +426,13 @@ export default function AdminProducts() {
                     const { error } = await supabase.from("products").insert(productsToInsert);
                     if (error) throw error;
                     
+                    // Notify Search Engines in Bulk for the new products
+                    const newIds = productsToInsert.map(p => p.id);
+                    fetch('/api/admin/notify-search', {
+                        method: 'POST',
+                        body: JSON.stringify({ productIds: newIds })
+                    }).catch(err => console.error("Bulk search notification failed:", err));
+
                     setImportLog(prev => [...prev, `${count} ta mahsulot muvaffaqiyatli yuklandi!`]);
                     fetchData();
                 } else {
@@ -736,6 +743,29 @@ export default function AdminProducts() {
         }
     };
 
+    const handleReindexAll = async () => {
+        if (!window.confirm("Barcha mahsulotlarni qidiruv tizimlariga qayta yubormoqchimisiz?")) return;
+        setIsActionLoading(true);
+        try {
+            const { data } = await supabase.from("products").select("id").eq("is_deleted", false);
+            if (!data) return;
+            const ids = data.map(p => p.id);
+            // Process in chunks of 100 to avoid timeout
+            for (let i = 0; i < ids.length; i += 100) {
+                const chunk = ids.slice(i, i + 100);
+                await fetch('/api/admin/notify-search', {
+                    method: 'POST',
+                    body: JSON.stringify({ productIds: chunk })
+                });
+            }
+            alert("Barcha mahsulotlar indeksatsiyaga yuborildi!");
+        } catch (error) {
+            console.error("Reindex All failed:", error);
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
     const deletePermanent = async (id: string, e?: React.MouseEvent) => {
         if (e) e.stopPropagation();
         if (!id || isActionLoading) return;
@@ -815,6 +845,14 @@ export default function AdminProducts() {
                     >
                         <FileSpreadsheet size={20} />
                         Excel Import
+                    </button>
+                    <button
+                        onClick={handleReindexAll}
+                        disabled={isActionLoading}
+                        className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-4 rounded-2xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all hover:scale-105 active:scale-95 shadow-xl shadow-purple-900/20"
+                    >
+                        {isActionLoading ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
+                        Indekslash
                     </button>
                     <button
                         onClick={() => {
