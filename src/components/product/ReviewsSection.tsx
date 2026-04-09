@@ -6,16 +6,20 @@ import { Star, MessageSquare, Send, Reply, Pencil, Trash2, Smile, ChevronDown, C
 import { AppleEmoji } from "./AppleEmoji";
 import { supabase } from "@/lib/supabase";
 
+import { Product, User, Language, Comment } from "@/types";
+import { TranslationType } from "@/lib/translations";
+import { useRouter } from "next/navigation";
+
 interface ReviewsSectionProps {
     productId: string;
-    product: any;
-    user: any;
-    language: "uz" | "ru";
-    t: any;
-    comments: any[];
+    product: Product | null;
+    user: User | null;
+    language: Language;
+    t: TranslationType;
+    comments: any[]; // Some fields in comments are still dynamic from DB
     fetchComments: () => void;
     showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
-    router: any;
+    router: ReturnType<typeof useRouter>;
 }
 
 export const ReviewsSection = ({
@@ -24,7 +28,7 @@ export const ReviewsSection = ({
     const [activeCommentTab, setActiveCommentTab] = useState<'review' | 'question'>('review');
     const [commentText, setCommentText] = useState("");
     const [commentRating, setCommentRating] = useState(5);
-    const [replyTo, setReplyTo] = useState<any>(null);
+    const [replyTo, setReplyTo] = useState<any | null>(null);
     const [isPosting, setIsPosting] = useState(false);
     const [visibleCommentsCount, setVisibleCommentsCount] = useState(2);
     const [expandedCommentIds, setExpandedCommentIds] = useState<string[]>([]);
@@ -146,7 +150,7 @@ export const ReviewsSection = ({
         const currentReactions = { ...(comment.reactions || {}) };
         let existingEmoji: string | null = null;
         Object.entries(currentReactions).forEach(([e, users]: [string, any]) => {
-            if (users.includes(currentId)) existingEmoji = e;
+            if (Array.isArray(users) && users.includes(currentId)) existingEmoji = e;
         });
 
         if (existingEmoji === emoji) {

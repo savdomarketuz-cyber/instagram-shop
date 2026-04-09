@@ -32,6 +32,15 @@ interface Category {
     label: string;
 }
 
+interface DBCategory {
+    id: string;
+    name: string;
+    name_uz?: string;
+    name_ru?: string;
+    parent_id?: string;
+    is_deleted?: boolean;
+}
+
 interface Product {
     id: string;
     name: string;
@@ -88,11 +97,11 @@ export default function AdminProducts() {
     const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
     const [excelFile, setExcelFile] = useState<File | null>(null);
     const [importLog, setImportLog] = useState<string[]>([]);
-    const [rawCategories, setRawCategories] = useState<any[]>([]);
+    const [rawCategories, setRawCategories] = useState<DBCategory[]>([]);
     const [categoryLabels, setCategoryLabels] = useState<{ [key: string]: string }>({});
     const [productSelectionPath, setProductSelectionPath] = useState<string[]>([]);
     const [aiStatus, setAiStatus] = useState<Record<string, { processed: number, total: number, active: boolean }>>({});
-    const [brands, setBrands] = useState<any[]>([]);
+    const [brands, setBrands] = useState<{ id: string; name: string }[]>([]);
     const [brandLabels, setBrandLabels] = useState<{ [key: string]: string }>({});
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isBulkActionLoading, setIsBulkActionLoading] = useState(false);
@@ -203,11 +212,11 @@ export default function AdminProducts() {
 
     const getPathForCategory = (catId: string): string[] => {
         const path: string[] = [];
-        let curr = rawCategories.find((c: any) => c.id === catId);
+        let curr = rawCategories.find((c: DBCategory) => c.id === catId);
         while (curr) {
             path.unshift(curr.id);
-            const pId = curr.parentId || curr.parent;
-            curr = pId && pId !== "none" ? rawCategories.find((p: any) => p.id === pId) : null;
+            const pId = curr.parent_id;
+            curr = pId && pId !== "none" ? rawCategories.find((p: DBCategory) => p.id === pId) : undefined;
         }
         return path;
     };
@@ -239,7 +248,7 @@ export default function AdminProducts() {
                 return true;
             });
 
-            const getRecursiveLabel = (cat: any): string => {
+            const getRecursiveLabel = (cat: DBCategory): string => {
                 const pId = cat.parent_id;
                 if (pId && pId !== "none") {
                     const parent = allCats.find((p: any) => p.id === pId);
@@ -611,6 +620,10 @@ export default function AdminProducts() {
             // Trigger Recursive AI Background Worker for Image SEO
             if (finalId) {
                 triggerAiAnalysis(finalId).catch(err => console.error("Auto AI trigger failed:", err));
+                fetch('/api/admin/notify-search', {
+                    method: 'POST',
+                    body: JSON.stringify({ productId: finalId })
+                }).catch(err => console.error("Search notification failed:", err));
             }
 
             setIsModalOpen(false);
@@ -1443,7 +1456,7 @@ export default function AdminProducts() {
                                                 >
                                                     <option value="">Toifani tanlang...</option>
                                                     {rawCategories
-                                                        .filter(c => (!c.parentId || c.parentId === "none") && !c.isDeleted)
+                                                        .filter(c => (!c.parent_id || c.parent_id === "none") && !c.is_deleted)
                                                         .map(cat => (
                                                             <option key={cat.id} value={cat.id}>{cat.name_uz || cat.name}</option>
                                                         ))}
@@ -1453,7 +1466,7 @@ export default function AdminProducts() {
 
                                             {/* Subsequent Levels */}
                                             {productSelectionPath.map((selectedId, idx) => {
-                                                const children = rawCategories.filter(c => c.parentId === selectedId && !c.isDeleted);
+                                                const children = rawCategories.filter(c => c.parent_id === selectedId && !c.is_deleted);
                                                 if (children.length === 0) return null;
 
                                                 return (

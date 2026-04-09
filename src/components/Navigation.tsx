@@ -10,6 +10,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { translations } from "@/lib/translations";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { SearchResult } from "@/types";
 
 export default function Navigation() {
     const user = useStore(state => state.user);
@@ -24,7 +25,7 @@ export default function Navigation() {
     const searchParams = useSearchParams();
     const inputRef = useRef<HTMLInputElement>(null);
     const [search, setSearch] = useState("");
-    const [suggestions, setSuggestions] = useState<any[]>([]);
+    const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
     const [isSuggesting, setIsSuggesting] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const debounceTimer = useRef<NodeJS.Timeout | null>(null);

@@ -50,8 +50,22 @@ export async function POST(req: NextRequest) {
             throw error;
         }
 
+        // 3.5 Fallback to basic text search if smart search returns nothing
+        let finalResults = results || [];
+        if (finalResults.length === 0 && searchQuery.length >= 2) {
+            console.log("Smart search empty, trying fallback text search...");
+            const { data: textResults } = await supabase
+                .from('products')
+                .select('*')
+                .or(`name.ilike.%${searchQuery}%,name_uz.ilike.%${searchQuery}%,name_ru.ilike.%${searchQuery}%,article.ilike.%${searchQuery}%`)
+                .eq('is_deleted', false)
+                .limit(suggest ? 5 : 20);
+            
+            if (textResults) finalResults = textResults;
+        }
+
         // Map results consistently with the rest of the app
-        let mappedResults = (results || []).map(mapProduct);
+        let mappedResults = finalResults.map(mapProduct);
 
         // 3.5 Personalization logic
         if (userPhone && mappedResults.length > 0 && !suggest) {

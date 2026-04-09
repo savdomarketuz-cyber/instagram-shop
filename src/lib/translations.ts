@@ -1,3 +1,4 @@
+export type TranslationType = typeof translations.uz;
 export const translations = {
     uz: {
         nav: {
@@ -22,6 +23,7 @@ export const translations = {
             reviews: "Sharhlar",
             noProducts: "Mahsulotlar topilmadi",
             loading: "Yuklanmoqda...",
+            error: "Xatolik yuz berdi",
             confirm: "Tasdiqlash",
             cancel: "Bekor qilish",
             address: "Manzil",
@@ -217,6 +219,7 @@ export const translations = {
             reviews: "Отзывы",
             noProducts: "Товары не найдены",
             loading: "Загрузка...",
+            error: "Произошла ошибка",
             confirm: "Подтвердить",
             cancel: "Отмена",
             address: "Адрес",

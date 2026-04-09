@@ -1,14 +1,26 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { sendTransferOTP } from "@/lib/telegram";
+import { checkRateLimit } from "@/lib/rate-limiter";
+import { transferSchema } from "@/lib/validators";
 
 export async function POST(req: Request) {
-    try {
-        const { senderPhone, receiverPhone, amount, isGift } = await req.json();
+    const ip = req.headers.get("x-forwarded-for") || "unknown";
 
-        if (!senderPhone || !receiverPhone || !amount || amount < 1000) {
-            return NextResponse.json({ success: false, message: "Minimal o'tkazma: 1 000 so'm" });
+    try {
+        // 0. RATE LIMITING (3 transfers per minute)
+        if (!checkRateLimit(ip, 3, 60)) {
+            return NextResponse.json({ success: false, message: "Juda ko'p urinish. Bir daqiqadan so'ng qayta urining." }, { status: 429 });
         }
+
+        const body = await req.json();
+        const validation = transferSchema.safeParse(body);
+
+        if (!validation.success) {
+            return NextResponse.json({ success: false, message: validation.error.issues[0].message });
+        }
+
+        const { senderPhone, receiverPhone, amount, isGift } = validation.data;
 
         if (senderPhone === receiverPhone) {
             return NextResponse.json({ success: false, message: "O'zingizga o'tkazma qila olmaysiz" });

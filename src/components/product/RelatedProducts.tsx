@@ -3,26 +3,29 @@
 import { Loader2 } from "lucide-react";
 import { ProductCard } from "../home/ProductCard";
 
+import { Product, CartItem, Language } from "@/types";
+import { TranslationType } from "@/lib/translations";
+
 interface RelatedProductsProps {
-    relatedProducts: any[];
-    boughtTogether: any[];
-    popularProducts: any[];
-    language: "uz" | "ru";
-    cart: any[];
-    wishlist: any[];
-    addToCart: (p: any) => void;
-    toggleWishlist: (p: any) => void;
+    relatedProducts: Product[];
+    boughtTogether: Product[];
+    popularProducts: Product[];
+    language: Language;
+    cart: CartItem[];
+    wishlist: Product[];
+    addToCart: (p: Product) => void;
+    toggleWishlist: (p: Product) => void;
     updateQuantity: (id: string, q: number) => void;
     removeFromCart: (id: string) => void;
     popularLoading: boolean;
-    t: any;
+    t: TranslationType;
 }
 
 export const RelatedProducts = ({
     relatedProducts, boughtTogether, popularProducts, language, cart, wishlist, addToCart, toggleWishlist, updateQuantity, removeFromCart, popularLoading, t
 }: RelatedProductsProps) => {
 
-    const renderGrid = (products: any[]) => (
+    const renderGrid = (products: Product[]) => (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-2 md:gap-x-6 gap-y-6 md:gap-y-10 px-4 max-w-[1440px] mx-auto">
             {products.map(p => (
                 <ProductCard 

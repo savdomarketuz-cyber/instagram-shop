@@ -1,4 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { Metadata } from "next";
+import { cache } from "react";
 import { mapBlog, mapProduct } from "@/lib/mappers";
 import { translations } from "@/lib/translations";
 import Link from "next/link";
@@ -6,7 +8,46 @@ import { ChevronLeft, Calendar, Clock, Eye, Share2 } from "lucide-react";
 import { notFound } from "next/navigation";
 import LinkedProducts from "./LinkedProducts";
 
-export default async function BlogPostPage({ params: { lang, slug } }: any) {
+const getBlogData = cache(async (slug: string) => {
+    const { data } = await supabaseAdmin
+        .from("blogs")
+        .select("*")
+        .eq("slug", slug)
+        .eq("is_deleted", false)
+        .single();
+    
+    return data ? mapBlog(data) : null;
+});
+
+export async function generateMetadata({ params: { lang, slug } }: { params: { lang: string, slug: string } }): Promise<Metadata> {
+    const blog = await getBlogData(slug);
+    if (!blog) return { title: 'Maqola topilmadi | Velari' };
+
+    const title = lang === 'uz' ? blog.title_uz : blog.title_ru;
+    const description = (lang === 'uz' ? blog.excerpt_uz || blog.content_uz : blog.excerpt_ru || blog.content_ru).substring(0, 160);
+    const baseUrl = "https://velari.uz";
+
+    return {
+        title: `${title} | Velari Insights`,
+        description,
+        openGraph: {
+            title,
+            description,
+            url: `${baseUrl}/${lang}/blog/${slug}`,
+            images: [{ url: blog.image || "/og-image.png" }],
+            type: 'article',
+        },
+        alternates: {
+            canonical: `/blog/${slug}`,
+            languages: {
+                'uz-UZ': `/uz/blog/${slug}`,
+                'ru-RU': `/ru/blog/${slug}`,
+            },
+        },
+    };
+}
+
+export default async function BlogPostPage({ params: { lang, slug } }: { params: { lang: string, slug: string } }) {
     const t = translations[lang as 'uz' | 'ru'];
 
     // 1. Fetch Blog

@@ -5,13 +5,15 @@ import { ChevronLeft, Heart, X, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { MediaItem } from "./MediaItem";
 
+import { Product, MediaItemType } from "@/types";
+
 interface ProductMediaProps {
-    allMedia: any[];
+    allMedia: MediaItemType[];
     activeImage: number;
     setActiveImage: (index: number) => void;
     isWishlisted: boolean;
-    toggleWishlist: (p: any) => void;
-    product: any;
+    toggleWishlist: (p: Product) => void;
+    product: Product;
 }
 
 export const ProductMedia = ({
@@ -164,21 +166,16 @@ export const ProductMedia = ({
                                         text: product.description,
                                         url: window.location.href,
                                     });
-                                } catch (err) {}
+                                } catch (err) {
+                                    console.warn("Sharing failed", err);
+                                }
                             }} 
                             className="p-3 bg-white/40 backdrop-blur-xl text-black rounded-full shadow-lg active:scale-90 transition-all border border-white/50 pointer-events-auto"
                         >
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
                         </button>
                         <button 
-                            onClick={() => toggleWishlist({ 
-                                id: product.id, 
-                                name: product.name, 
-                                price: product.price, 
-                                oldPrice: product.oldPrice, 
-                                imageUrl: product.image, 
-                                category: product.category 
-                            })} 
+                            onClick={() => toggleWishlist(product)} 
                             className="p-3 bg-white/40 backdrop-blur-xl text-black rounded-full shadow-lg active:scale-90 transition-all border border-white/50 pointer-events-auto"
                         >
                             <Heart size={20} fill={isWishlisted ? "#ef4444" : "none"} className={isWishlisted ? "text-red-500" : "text-gray-400"} />

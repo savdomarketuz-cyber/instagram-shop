@@ -8,7 +8,7 @@ import { MessageSquare, CheckCircle, AlertCircle, Info } from "lucide-react";
 import { useStore } from "@/store/store";
 import { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
-import NotificationHandler from "@/components/NotificationHandler";
+// NotificationHandler removed after Firebase cleanup
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
@@ -219,7 +219,7 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
 
             <ErrorBoundary>
                 <PWAInstallPrompt />
-                <NotificationHandler />
+
                 {children}
             </ErrorBoundary>
 

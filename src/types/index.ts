@@ -36,7 +36,7 @@ export interface Product {
     videoUrl?: string;
     model?: string;
     image_metadata?: Record<string, { alt_uz?: string; alt_ru?: string; blurDataURL?: string; lowResUrl?: string }>;
-    createdAt?: FirebaseTimestamp;
+    created_at?: string;
 }
 
 export interface CartItem extends Product {
@@ -83,7 +83,7 @@ export interface Order {
     address?: string;
     coords?: [number, number];
     status: string;
-    createdAt?: FirebaseTimestamp;
+    created_at?: string;
 }
 
 export interface OrderItem {
@@ -112,20 +112,37 @@ export interface Reel {
     productName?: string;
     productPrice?: number;
     description?: string;
-    createdAt?: FirebaseTimestamp;
     likes?: number;
     views?: number;
-    // Allow for additional dynamic fields from products that double as reels
-    [key: string]: any; 
 }
 
 export type Language = "uz" | "ru";
 
-// Firebase Timestamp type (simplified)
-export interface FirebaseTimestamp {
-    seconds: number;
-    nanoseconds: number;
-    toDate: () => Date;
+export interface Comment {
+    id: string;
+    product_id?: string;
+    reel_id?: string;
+    user_phone: string;
+    user_name?: string;
+    text: string;
+    rating?: number;
+    parent_id?: string;
+    replies?: Comment[];
+    created_at: string;
+}
+
+export interface SearchResult {
+    id: string;
+    name: string;
+    name_uz?: string;
+    name_ru?: string;
+    image: string;
+    images?: string[];
+    price: number;
+    category?: string;
+    category_uz?: string;
+    category_ru?: string;
+    [key: string]: any; // Keep permissive for dynamic translation access item[`name_${language}`]
 }
 
 /**

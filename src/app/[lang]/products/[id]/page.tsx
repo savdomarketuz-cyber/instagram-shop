@@ -39,7 +39,7 @@ export async function generateStaticParams() {
     ].filter(v => v.id));
 }
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: { lang: string, id: string } }): Promise<Metadata> {
     try {
         const productIdOrArticle = getProductIdFromSlug(params.id);
         const product = await getProductData(productIdOrArticle);
@@ -78,7 +78,13 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
                 description: description,
                 images: [ogUrl.toString()],
             },
-            alternates: { canonical: `/products/${params.id}` },
+            alternates: { 
+                canonical: `/${params.lang}/products/${params.id}`,
+                languages: {
+                    'uz-UZ': `/uz/products/${params.id}`,
+                    'ru-RU': `/ru/products/${params.id}`,
+                },
+            },
             keywords: [
                 product.name, 
                 product.name_uz || "", 

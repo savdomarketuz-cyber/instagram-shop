@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Star, Heart, Check, Minus, Plus, Truck } from "lucide-react";
@@ -23,7 +23,7 @@ interface ProductCardProps {
     priority?: boolean;
 }
 
-export const ProductCard = ({
+export const ProductCard = memo(({
     item, language, t, cart, wishlist, toggleWishlist, addToCart, updateQuantity, removeFromCart, priority = false
 }: ProductCardProps) => {
     const isInCart = cart.find(ci => ci.id === item.id);
@@ -201,4 +201,6 @@ export const ProductCard = ({
             </div>
         </div>
     );
-};
+});
+
+ProductCard.displayName = "ProductCard";

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { checkRateLimit } from "@/lib/rate-limiter";
+import { authSchema } from "@/lib/validators";
 
 /**
  * Iron Bank: JWT Token Creator (Edge-compatible)
@@ -23,7 +25,19 @@ export async function POST(req: NextRequest) {
     const userAgent = req.headers.get("user-agent") || "unknown";
 
     try {
-        const { id, password, code, step = "password" } = await req.json();
+        // 0. RATE LIMITING (5 attempts per minute)
+        if (!checkRateLimit(ip, 5, 60)) {
+            return NextResponse.json({ error: "Siz juda ko'p urinish qildingiz. Birozdan so'ng qayta urining." }, { status: 429 });
+        }
+
+        const body = await req.json();
+        const validation = authSchema.safeParse(body);
+        
+        if (!validation.success) {
+            return NextResponse.json({ error: validation.error.issues[0].message }, { status: 400 });
+        }
+
+        const { id, password, code, step = "password" } = validation.data;
 
         // 1. IRON BANK: Brute Force & Vault Lock Shield
         const { data: userData } = await supabaseAdmin.from("users").select("is_vault_locked").eq("phone", id).single();

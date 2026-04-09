@@ -14,7 +14,7 @@ const inter = Inter({
 
 export const metadata = {
     title: {
-        default: "Velari | Elektronika va Gadjetlar Do'koni O'zbekistonda",
+        default: "Velari | Zamonaviy Texnologiyalar va Gadjetlar Dunyosi",
         template: "%s | Velari"
     },
     description: "Premium gadjetlar va elektronika do'koni. Apple, Samsung, Xiaomi mahsulotlari hamyonbop narxlarda. Muddatli to'lov, rasmiy kafolat va Toshkent bo'ylab tekin yetkazib berish.",
@@ -37,10 +37,9 @@ export const metadata = {
     },
     metadataBase: new URL("https://velari.uz"),
     alternates: {
-        canonical: "/",
         languages: {
-            'uz-UZ': '/uz',
-            'ru-RU': '/ru',
+            'uz-UZ': 'https://velari.uz/uz',
+            'ru-RU': 'https://velari.uz/ru',
         },
     },
     robots: {
@@ -55,7 +54,7 @@ export const metadata = {
         },
     },
     openGraph: {
-        title: "Velari | Global Electronics & Gadgets Uzbekistan",
+        title: "Velari | Zamonaviy Texnologiyalar va Gadjetlar Dunyosi",
         description: "Premium tech store in Uzbekistan. Global brands, official warranty, and fast delivery. Buy iPhones, Samsung and Xiaomi with installments.",
         url: "https://velari.uz",
         siteName: "Velari",
@@ -124,9 +123,58 @@ export default function RootLayout({
         "name": "Velari",
         "url": "https://velari.uz",
         "logo": "https://velari.uz/logo.png",
+        "contactPoint": [
+            {
+                "@type": "ContactPoint",
+                "telephone": "+998950821188",
+                "contactType": "customer service",
+                "areaServed": "UZ",
+                "availableLanguage": ["Uzbek", "Russian"]
+            },
+            {
+                "@type": "ContactPoint",
+                "telephone": "+998200144989",
+                "contactType": "sales",
+                "areaServed": "UZ",
+                "availableLanguage": ["Uzbek", "Russian"]
+            }
+        ],
         "sameAs": [
-            "https://instagram.com/velari.uz",
-            "https://t.me/velariuz"
+            "https://instagram.com/velari_uz_",
+            "https://t.me/VELARI_UZ_ADMIN"
+        ]
+    };
+
+    const storeJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "Store",
+        "name": "Velari",
+        "url": "https://velari.uz",
+        "image": "https://velari.uz/logo.png",
+        "telephone": ["+998950821188", "+998200144989"],
+        "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Tashkent",
+            "addressLocality": "Tashkent",
+            "addressRegion": "Tashkent",
+            "postalCode": "100000",
+            "addressCountry": "UZ"
+        },
+        "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": "41.2995",
+            "longitude": "69.2401"
+        },
+        "priceRange": "$$",
+        "openingHoursSpecification": [
+            {
+                "@type": "OpeningHoursSpecification",
+                "dayOfWeek": [
+                    "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+                ],
+                "opens": "00:00",
+                "closes": "23:59"
+            }
         ]
     };
 
@@ -152,6 +200,10 @@ export default function RootLayout({
                 <script
                     type="application/ld+json"
                     dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+                />
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(storeJsonLd) }}
                 />
                 <style dangerouslySetInnerHTML={{ __html: `
                     #pwa-splash {

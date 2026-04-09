@@ -1,7 +1,15 @@
 User-agent: *
 Allow: /
-Allow: /images/*
+Disallow: /api/
+Disallow: /admin/
 Disallow: /admin
-Disallow: /api
+Disallow: /*/admin
+Disallow: /*/admin/
+Disallow: /login
+Disallow: /account
+Disallow: /cart
+Disallow: /wishlist
+Disallow: /messages
+Disallow: /checkout
 
 Sitemap: https://velari.uz/sitemap.xml

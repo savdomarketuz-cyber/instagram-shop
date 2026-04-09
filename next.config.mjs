@@ -1,4 +1,5 @@
 import withPWAInit from "@ducanh2912/next-pwa";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const withPWA = withPWAInit({
     dest: "public",
@@ -14,10 +15,6 @@ const withPWA = withPWAInit({
         runtimeCaching: [
             {
                 urlPattern: /\/api\/ai.*/i,
-                handler: 'NetworkOnly',
-            },
-            {
-                urlPattern: /https:\/\/firestore\.googleapis\.com\/.*$/i,
                 handler: 'NetworkOnly',
             },
             {
@@ -76,4 +73,18 @@ const nextConfig = {
 
 };
 
-export default withPWA(nextConfig);
+export default withSentryConfig(
+    withPWA(nextConfig),
+    {
+        silent: true,
+        org: "velari",
+        project: "velari-market",
+    },
+    {
+        widenClientFileUpload: true,
+        transpileClientSDK: true,
+        tunnelRoute: "/monitoring",
+        hideSourceMaps: true,
+        disableLogger: true,
+    }
+);
