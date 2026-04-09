@@ -5,33 +5,33 @@ import { match as matchLocale } from '@formatjs/intl-localematcher';
 import Negotiator from 'negotiator';
 
 /**
- * Edge Runtime mos JWT verification
- * Web Crypto API orqali HMAC-SHA256 tekshirish
+ * Edge Runtime compatible JWT Header/Payload decoder
  */
-/**
- * Standard-compliant Base64url Decoder for Edge Runtime
- */
-function base64urlDecode(str: string): Uint8Array {
-    // Remove padding if present
-    str = str.split('=')[0];
-    const pad = (str.length % 4 === 0) ? '' : '='.repeat(4 - (str.length % 4));
-    const base64 = str.replace(/-/g, '+').replace(/_/g, '/') + pad;
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-    }
-    return bytes;
-}
-
-async function verifyTokenEdge(token: string, secret: string): Promise<Record<string, unknown> | null> {
+function decodeJwt(token: string) {
     try {
         const parts = token.split('.');
         if (parts.length !== 3) return null;
-        const [headerB64, bodyB64, sigB64] = parts;
+        
+        const payloadB64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        const payloadStr = atob(payloadB64);
+        return JSON.parse(payloadStr);
+    } catch (e) {
+        return null;
+    }
+}
+
+/**
+ * Simple signature verification for Edge (HMAC-SHA256)
+ */
+async function verifySignature(token: string, secret: string): Promise<boolean> {
+    try {
+        const [headerB64, bodyB64, sigB64] = token.split('.');
+        if (!headerB64 || !bodyB64 || !sigB64) return false;
 
         const encoder = new TextEncoder();
+        const data = encoder.encode(`${headerB64}.${bodyB64}`);
         const keyData = encoder.encode(secret);
+        
         const key = await crypto.subtle.importKey(
             'raw',
             keyData,
@@ -40,23 +40,14 @@ async function verifyTokenEdge(token: string, secret: string): Promise<Record<st
             ['verify']
         );
 
-        const data = encoder.encode(`${headerB64}.${bodyB64}`);
-        const sigArray = base64urlDecode(sigB64);
+        // Standard Base64Url to Base64
+        const sig = sigB64.replace(/-/g, '+').replace(/_/g, '/');
+        const pad = sig.length % 4 === 0 ? '' : '='.repeat(4 - (sig.length % 4));
+        const sigArray = Uint8Array.from(atob(sig + pad), c => c.charCodeAt(0));
 
-        const isValid = await crypto.subtle.verify('HMAC', key, sigArray as any, data as any);
-        if (!isValid) return null;
-
-        const bodyBytes = base64urlDecode(bodyB64);
-        const bodyStr = new TextDecoder().decode(bodyBytes);
-        const payload = JSON.parse(bodyStr);
-
-        // Expiry check
-        const now = Math.floor(Date.now() / 1000);
-        if (payload.exp && payload.exp < now) return null;
-
-        return payload;
+        return await crypto.subtle.verify('HMAC', key, sigArray, data);
     } catch (e) {
-        return null;
+        return false;
     }
 }
 
@@ -77,36 +68,28 @@ function getLocale(request: NextRequest): string | undefined {
     }
 }
 
-/**
- * Next.js Middleware — Admin protection & i18n redirection
- */
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
-    // 1. Check if the pathname is missing a locale
+    // 1. Bypass static & public files
+    const isPublicFile = pathname.match(/\.(.*)$/) && !pathname.includes('/api/');
+    if (isPublicFile) return NextResponse.next();
+
+    // 2. Check if the pathname is missing a locale
     const pathnameIsMissingLocale = i18n.locales.every(
         (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
     );
 
-    // 2. Bypass API routes from locale redirection
-    if (pathname.startsWith('/api')) {
-        const response = NextResponse.next();
-        response.headers.set('X-Frame-Options', 'DENY');
-        response.headers.set('X-Content-Type-Options', 'nosniff');
-        return response;
-    }
-
-    // 3. Redirect to locale if missing (skip API and public files)
-    if (pathnameIsMissingLocale) {
+    if (pathnameIsMissingLocale && !pathname.startsWith('/api/')) {
         const locale = getLocale(request);
-        return NextResponse.redirect(
-            new URL(`/${locale}${pathname === '/' ? '' : pathname}`, request.url)
-        );
+        const url = new URL(`/${locale}${pathname === '/' ? '' : pathname}`, request.url);
+        url.search = request.nextUrl.search; // Preserve query params (IMPORTANT for vault key)
+        return NextResponse.redirect(url);
     }
 
-    // 3. i18n aware Admin protection
+    // 3. Admin Route Protection
+    let localePart = i18n.defaultLocale;
     let pathWithoutLocale = pathname;
-    let localePart = 'uz'; // Default
     for (const locale of i18n.locales) {
         if (pathname.startsWith(`/${locale}/`)) {
             pathWithoutLocale = pathname.replace(`/${locale}`, '');
@@ -121,65 +104,64 @@ export async function middleware(request: NextRequest) {
 
     if (pathWithoutLocale.startsWith('/admin')) {
         const adminToken = request.cookies.get('admin_token')?.value;
-        const adminVaultToken = request.cookies.get('admin_vault_token')?.value;
-        const vaultSecret = request.nextUrl.searchParams.get('vault')?.trim();
+        const vaultKey = request.nextUrl.searchParams.get('vault')?.trim();
+        const vaultCookie = request.cookies.get('admin_vault_token')?.value;
         
-        const GLOBAL_VAULT_KEY = process.env.ADMIN_VAULT_KEY?.trim();
-        const LEGACY_VAULT_KEY = process.env.ADMIN_LEGACY_VAULT_KEY?.trim();
+        const ADMIN_VAULT_KEY = process.env.ADMIN_VAULT_KEY?.trim();
         const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim();
 
-        // Agar env variable lar o'rnatilmagan bo'lsa, admin panelga ruxsat bermang
-        if (!GLOBAL_VAULT_KEY || !ADMIN_SECRET) {
+        // Security check for environment
+        if (!ADMIN_VAULT_KEY || !ADMIN_SECRET) {
             return NextResponse.redirect(new URL(`/${localePart}`, request.url));
         }
 
+        // A. If already authenticated via JWT
         if (adminToken) {
-            const payload = await verifyTokenEdge(adminToken, ADMIN_SECRET);
-            if (payload && payload.role === 'admin') {
-                const response = NextResponse.next();
-                response.headers.set('X-Iron-Bank-Status', 'AUTHENTICATED');
-                return response;
+            const isValid = await verifySignature(adminToken, ADMIN_SECRET);
+            if (isValid) {
+                const payload = decodeJwt(adminToken);
+                if (payload && payload.role === 'admin') {
+                    const response = NextResponse.next();
+                    response.headers.set('X-Iron-Bank-Status', 'AUTHENTICATED');
+                    return response;
+                }
             }
         }
 
-        let hasVaultAccess = !!adminVaultToken;
-        if (vaultSecret === GLOBAL_VAULT_KEY || vaultSecret === LEGACY_VAULT_KEY) {
-            hasVaultAccess = true;
+        // B. If not authenticated, check Vault Access
+        const hasVaultAccess = vaultKey === ADMIN_VAULT_KEY || vaultCookie === 'VAULT_ACTIVE';
+        
+        if (hasVaultAccess) {
+            // If they have vault key but no valid token, they MUST be on the login page or we redirect them there
+            // But we must NOT loop. If they are already in /[lang]/admin, and have vault access, 
+            // but token is missing, redirect to login.
+            const loginUrl = new URL(`/${localePart}/login`, request.url);
+            loginUrl.searchParams.set('redirect', pathname);
+            
+            const response = NextResponse.redirect(loginUrl);
+            
+            // Set vault cookie to remember access
+            if (vaultKey === ADMIN_VAULT_KEY) {
+                response.cookies.set('admin_vault_token', 'VAULT_ACTIVE', {
+                    httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 86400, path: '/'
+                });
+            }
+            return response;
         }
 
-        if (!hasVaultAccess) {
-            return NextResponse.redirect(new URL(`/${localePart}`, request.url));
-        }
-
-        const loginUrl = new URL(`/${localePart}/login`, request.url);
-        loginUrl.searchParams.set('redirect', pathname);
-        const res = NextResponse.redirect(loginUrl);
-        
-        if (vaultSecret === GLOBAL_VAULT_KEY || vaultSecret === LEGACY_VAULT_KEY) {
-            res.cookies.set('admin_vault_token', 'VAULT_ACTIVE', { 
-                httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 86400, path: '/'
-            });
-        }
-        
-        res.headers.set('X-Iron-Bank-Status', 'VAULT_ONLY');
-        return res;
+        // C. No access at all
+        return NextResponse.redirect(new URL(`/${localePart}`, request.url));
     }
 
-    // Default: Add security headers
+    // Default response
     const response = NextResponse.next();
     response.headers.set('X-Frame-Options', 'DENY');
     response.headers.set('X-Content-Type-Options', 'nosniff');
-    response.headers.set('X-XSS-Protection', '1; mode=block');
-    response.headers.set('Content-Security-Policy', "frame-ancestors 'none';");
-    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-    response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
-
     return response;
 }
 
 export const config = {
     matcher: [
-        '/admin/:path*',
-        '/((?!_next/static|_next/image|favicon.ico|icons|images|manifest.json|robots.txt|sitemap.xml|firebase-messaging-sw.js|yandex_).*)',
+        '/((?!api|_next/static|_next/image|favicon.ico|icons|images|manifest.json|robots.txt|sitemap.xml|yandex_).*)',
     ],
 };

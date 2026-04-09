@@ -54,7 +54,7 @@ export default function LoginPage() {
                 if (authData.success) {
                     setUser(authData.user);
                     const params = new URLSearchParams(window.location.search);
-                    const target = params.get('redirect') || "/admin";
+                    const target = params.get('redirect') || `/${language}/admin`;
                     const vaultRedirect = target.includes("?") 
                         ? `${target}&vault=Abdulaziz2244` 
                         : `${target}?vault=Abdulaziz2244`;
