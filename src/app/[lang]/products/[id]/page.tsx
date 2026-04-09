@@ -105,7 +105,7 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
     }
 }
 
-async function ProductDataWrapper({ params }: { params: { id: string } }) {
+async function ProductDataWrapper({ params }: { params: { lang: string, id: string } }) {
     const productIdOrArticle = getProductIdFromSlug(params.id);
     const product: any = await getProductData(productIdOrArticle);
     
@@ -130,7 +130,7 @@ async function ProductDataWrapper({ params }: { params: { id: string } }) {
         }
     };
 
-    const language = 'uz'; // Default language for SEO indexing
+    const language = params.lang || 'uz'; // Dynamic language for SEO indexing
 
     const breadcrumbJsonLd = {
         "@context": "https://schema.org",
@@ -199,7 +199,7 @@ async function ProductDataWrapper({ params }: { params: { id: string } }) {
     );
 }
 
-export default function Page({ params }: { params: { id: string } }) {
+export default function Page({ params }: { params: { lang: string, id: string } }) {
     return (
         <Suspense fallback={<ProductSkeleton />}>
             <ProductDataWrapper params={params} />
