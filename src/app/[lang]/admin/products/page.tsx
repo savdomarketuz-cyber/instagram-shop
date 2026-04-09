@@ -659,7 +659,7 @@ export default function AdminProducts() {
             setIsModalOpen(false);
             setProductSelectionPath([]);
             setNewProduct({ name: "", name_uz: "", name_ru: "", price: 0, oldPrice: 0, category: "", image: "", images: [], description: "", description_uz: "", description_ru: "", tag: "", sku: "", groupId: "", colorName: "", article: "", isDeleted: false, isOriginal: false, images_string: "", brand: "", height: "", width: "", length: "", weight: "", barcode: "", videoUrl: "", cashback_type: "global", cashback_value: 0, model: "" });
-            fetchData();
+            fetchData(currentPage);
         } catch (error) {
             console.error("Error saving product:", error);
         } finally {
@@ -690,7 +690,7 @@ export default function AdminProducts() {
                 if (error) throw error;
             }
             setSelectedIds([]);
-            await fetchData(false);
+            await fetchData(currentPage);
         } catch (error: any) {
             console.error("Bulk delete error:", error);
             alert("Xatolik: " + error.message);
@@ -720,7 +720,7 @@ export default function AdminProducts() {
                 }).eq("id", id);
             }
             setSelectedIds([]);
-            await fetchData(false);
+            await fetchData(currentPage);
             alert("Muvaffaqiyatli yakunlandi!");
         } catch (error: any) {
             console.error("Bulk proxy error:", error);
@@ -738,7 +738,7 @@ export default function AdminProducts() {
             if (window.confirm("Mahsulotni savatga (Trash) olib o'tmoqchimisiz?")) {
                 setIsActionLoading(true);
                 await supabase.from("products").update({ is_deleted: true }).eq("id", id);
-                await fetchData(false);
+                await fetchData(currentPage);
             }
         } catch (error: any) {
             console.error("Error moving to trash:", error);
@@ -756,7 +756,7 @@ export default function AdminProducts() {
             if (window.confirm("Mahsulotni tiklamoqchimisiz?")) {
                 setIsActionLoading(true);
                 await supabase.from("products").update({ is_deleted: false }).eq("id", id);
-                await fetchData(false);
+                await fetchData(currentPage);
             }
         } catch (error: any) {
             console.error("Error restoring product:", error);
@@ -797,7 +797,7 @@ export default function AdminProducts() {
             if (window.confirm("DIQQAT! Mahsulot butunlay o'chiriladi. Ushbu amalni qaytarib bo'lmaydi. Rozimisiz?")) {
                 setIsActionLoading(true);
                 await supabase.from("products").delete().eq("id", id);
-                await fetchData(false);
+                await fetchData(currentPage);
             }
         } catch (error: any) {
             console.error("Error deleting permanently:", error);
@@ -829,7 +829,7 @@ export default function AdminProducts() {
 
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.checked) {
-            setSelectedIds(paginatedProducts.map(p => p.id));
+            setSelectedIds(products.map(p => p.id));
         } else {
             setSelectedIds([]);
         }
