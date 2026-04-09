@@ -23,11 +23,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Generate static routes for all locales
     for (const locale of locales) {
         for (const path of staticPaths) {
+            const languages = locales.reduce((acc, loc) => ({
+                ...acc,
+                [loc]: `${baseUrl}/${loc}${path === '/' ? '' : path}`
+            }), {});
+
             routes.push({
                 url: `${baseUrl}/${locale}${path === '/' ? '' : path}`,
                 lastModified: new Date(),
                 changeFrequency: 'daily' as const,
                 priority: (path === '' || path === '/blog') ? 1 : 0.8,
+                alternates: {
+                    languages,
+                }
             });
         }
     }
@@ -42,11 +50,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         if (products) {
             for (const locale of locales) {
                 products.forEach((product) => {
+                    const slug = getProductSlug(product);
+                    const languages = locales.reduce((acc, loc) => ({
+                        ...acc,
+                        [loc]: `${baseUrl}/${loc}/products/${slug}`
+                    }), {});
+
                     routes.push({
-                        url: `${baseUrl}/${locale}/products/${getProductSlug(product)}`,
+                        url: `${baseUrl}/${locale}/products/${slug}`,
                         lastModified: product.updated_at ? new Date(product.updated_at) : new Date(),
                         changeFrequency: 'weekly' as const,
                         priority: 0.7,
+                        alternates: {
+                            languages,
+                        }
                     });
                 });
             }
@@ -60,11 +77,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         if (categories) {
             for (const locale of locales) {
                 categories.forEach((cat) => {
+                    const languages = locales.reduce((acc, loc) => ({
+                        ...acc,
+                        [loc]: `${baseUrl}/${loc}/catalog?category=${cat.id}`
+                    }), {});
+
                     routes.push({
                         url: `${baseUrl}/${locale}/catalog?category=${cat.id}`,
                         lastModified: cat.updated_at ? new Date(cat.updated_at) : new Date(),
                         changeFrequency: 'monthly' as const,
                         priority: 0.6,
+                        alternates: {
+                            languages,
+                        }
                     });
                 });
             }
@@ -79,11 +104,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         if (blogs) {
             for (const locale of locales) {
                 blogs.forEach((blog) => {
+                    const languages = locales.reduce((acc, loc) => ({
+                        ...acc,
+                        [loc]: `${baseUrl}/${loc}/blog/${blog.slug}`
+                    }), {});
+
                     routes.push({
                         url: `${baseUrl}/${locale}/blog/${blog.slug}`,
                         lastModified: blog.updated_at ? new Date(blog.updated_at) : new Date(),
                         changeFrequency: 'weekly' as const,
                         priority: 0.7,
+                        alternates: {
+                            languages,
+                        }
                     });
                 });
             }
