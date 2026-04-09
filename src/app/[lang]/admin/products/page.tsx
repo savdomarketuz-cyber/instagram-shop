@@ -102,7 +102,7 @@ export default function AdminProducts() {
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
-    const itemsPerPage = 20;
+    const [itemsPerPage, setItemsPerPage] = useState(20);
     const [categoryLabels, setCategoryLabels] = useState<{ [key: string]: string }>({});
     const [productSelectionPath, setProductSelectionPath] = useState<string[]>([]);
     const [aiStatus, setAiStatus] = useState<Record<string, { processed: number, total: number, active: boolean }>>({});
@@ -110,8 +110,6 @@ export default function AdminProducts() {
     const [brandLabels, setBrandLabels] = useState<{ [key: string]: string }>({});
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isBulkActionLoading, setIsBulkActionLoading] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(20);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isGallery = false) => {
         const file = e.target.files?.[0];
