@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getProductSlug } from '@/lib/slugify';
 import { i18n } from '@/lib/i18n-config';
 

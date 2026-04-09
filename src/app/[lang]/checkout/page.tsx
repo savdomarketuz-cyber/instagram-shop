@@ -30,6 +30,13 @@ export default function CheckoutPage() {
 
     useEffect(() => {
         setMounted(true);
+
+        // Auth check — foydalanuvchi login qilmagan bo'lsa, darhol redirect
+        if (!user) {
+            router.push(`/${language}/login?redirect=/${language}/checkout`);
+            return;
+        }
+
         if (isSubmitting) return;
 
         const searchParams = new URLSearchParams(window.location.search);
@@ -42,16 +49,16 @@ export default function CheckoutPage() {
                 setDisplayProducts([item]);
                 setIsFastBuy(true);
             } else {
-                router.push('/');
+                router.push(`/${language}`);
             }
         } else {
             if (cart.length > 0) {
                 setDisplayProducts(cart);
             } else if (mounted) {
-                router.push('/');
+                router.push(`/${language}`);
             }
         }
-    }, [cart, isSubmitting, mounted]);
+    }, [cart, isSubmitting, mounted, user, language]);
 
     useEffect(() => {
         if (user?.phone) {
@@ -91,25 +98,30 @@ export default function CheckoutPage() {
     const getStockErrors = async () => {
         const errors: { id: string, name: string, available: number }[] = [];
         try {
+            const ids = displayProducts.map(item => item.id).filter(Boolean);
+            if (ids.length === 0) return errors;
+
+            // Bitta batch query — N+1 o'rniga
+            const { data: products } = await supabase
+                .from("products")
+                .select("id, stock_details")
+                .in("id", ids);
+
+            if (!products) return errors;
+
+            const stockMap = new Map(products.map(p => [p.id, p.stock_details || {}]));
+
             for (const item of displayProducts) {
                 if (!item.id) continue;
-                const { data: product } = await supabase
-                    .from("products")
-                    .select("*")
-                    .eq("id", item.id)
-                    .single();
-                
-                if (product) {
-                    const stockDetails = product.stock_details || {};
-                    const actualStock = Object.values(stockDetails).reduce((a: number, b: any) => a + (Number(b) || 0), 0);
+                const stockDetails = stockMap.get(item.id) || {};
+                const actualStock = Object.values(stockDetails).reduce((a: number, b: unknown) => a + (Number(b) || 0), 0);
 
-                    if (item.quantity > actualStock) {
-                        errors.push({ 
-                            id: item.id, 
-                            name: item[`name_${language}`] || item.name, 
-                            available: actualStock as number 
-                        });
-                    }
+                if (item.quantity > actualStock) {
+                    errors.push({
+                        id: item.id,
+                        name: item[`name_${language}`] || item.name,
+                        available: actualStock as number
+                    });
                 }
             }
         } catch (e) {
@@ -151,7 +163,7 @@ export default function CheckoutPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user) {
-            router.push("/login");
+            router.push(`/${language}/login`);
             return;
         }
 
@@ -186,7 +198,7 @@ export default function CheckoutPage() {
 
             if (data.success && data.orderId) {
                 // Do NOT call clearCart here because it triggers the useEffect that redirects to '/'
-                router.push(`/payment?orderId=${data.orderId}`);
+                router.push(`/${language}/payment?orderId=${data.orderId}`);
             }
 
         } catch (error: any) {
@@ -225,7 +237,7 @@ export default function CheckoutPage() {
                         ))}
                     </div>
                     <button
-                        onClick={() => router.push('/cart')}
+                        onClick={() => router.push(`/${language}/cart`)}
                         className="w-full mt-6 py-4 bg-red-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-red-200"
                     >
                         {language === 'uz' ? 'Savatni tahrirlash' : 'Редактировать корзину'}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { supabaseAdmin } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 /**
  * Iron Bank: JWT Token Creator (Edge-compatible)
@@ -36,11 +36,18 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "XAVFSIZLIK: IP-manzilingiz shubhali harakat tufayli bloklangan." }, { status: 403 });
         }
 
-        const ADMIN_ID = (process.env.ADMIN_LOGIN || "admin").trim();
-        const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || "Abdulaziz2244").trim();
-        const ADMIN_SECRET = (process.env.ADMIN_SECRET || "Abdulaziz2244").trim(); // Master Sync Secret
+        const ADMIN_ID = process.env.ADMIN_LOGIN?.trim();
+        const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD?.trim();
+        const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim();
         const BOT_TOKEN = process.env.TELEGRAM_ADMIN_BOT_TOKEN;
         const ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_ID;
+
+        if (!ADMIN_ID || !ADMIN_PASSWORD || !ADMIN_SECRET) {
+            return NextResponse.json(
+                { error: "Server konfiguratsiyasi noto'g'ri. Admin muhit o'zgaruvchilari o'rnatilmagan." },
+                { status: 500 }
+            );
+        }
 
         // STEP 1: PASSWORD VERIFICATION
         if (step === "password") {
@@ -161,7 +168,8 @@ export async function GET(req: NextRequest) {
     const token = req.cookies.get("admin_token")?.value;
     if (!token) return NextResponse.json({ authenticated: false }, { status: 401 });
 
-    const ADMIN_SECRET = (process.env.ADMIN_SECRET || "Abdulaziz2244").trim();
+    const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim();
+    if (!ADMIN_SECRET) return NextResponse.json({ authenticated: false }, { status: 500 });
     try {
         const [header, body, signature] = token.split(".");
         const expectedSig = crypto

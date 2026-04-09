@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Plus, Trash2, Edit2, Save, X, Image as ImageIcon, Link as LinkIcon, Loader2, Search, Check } from "lucide-react";
+import Image from "next/image";
 
 interface Banner {
     id: string;

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { Product, CartItem, User, Category, Toast, Language } from "@/types";
+import type { Product, CartItem, User, Category, Toast, Language, SearchFacets } from "@/types";
 
 // Re-export for backward compatibility
 export type { Product, CartItem };
@@ -34,10 +34,10 @@ interface StoreState {
     toast: Toast | null;
     showToast: (message: string, type?: Toast['type']) => void;
     searchResults: Product[] | null;
-    searchFacets: any | null;
+    searchFacets: SearchFacets | null;
     didYouMean: string | null;
     isSearchLoading: boolean;
-    setSearchResults: (results: Product[] | null, facets?: any, didYouMean?: string | null) => void;
+    setSearchResults: (results: Product[] | null, facets?: SearchFacets | null, didYouMean?: string | null) => void;
     prefetchedProducts: Record<string, Product>;
     setPrefetchedProduct: (product: Product) => void;
 }
@@ -115,7 +115,7 @@ export const useStore = create<StoreState>()(
             setSearchResults: (results, facets = null, didYouMean = null) => set({ searchResults: results, searchFacets: facets, didYouMean: didYouMean }),
         }),
         {
-            name: "instagram-shop-storage",
+            name: "velari-store",
             partialize: (state) => ({
                 cart: state.cart,
                 wishlist: state.wishlist,
@@ -124,6 +124,25 @@ export const useStore = create<StoreState>()(
                 homeActiveFilter: state.homeActiveFilter,
                 homeActiveTab: state.homeActiveTab,
             }),
+            // Eski 'instagram-shop-storage' dan ma'lumotlarni ko'chirish
+            onRehydrateStorage: () => (state) => {
+                if (typeof window === 'undefined') return;
+                try {
+                    const oldKey = 'instagram-shop-storage';
+                    const oldRaw = localStorage.getItem(oldKey);
+                    const newRaw = localStorage.getItem('velari-store');
+                    if (oldRaw && !newRaw && state) {
+                        const old = JSON.parse(oldRaw);
+                        if (old?.state) {
+                            state.cart = old.state.cart || [];
+                            state.wishlist = old.state.wishlist || [];
+                            state.user = old.state.user || null;
+                            state.language = old.state.language || 'uz';
+                        }
+                        localStorage.removeItem(oldKey);
+                    }
+                } catch {}
+            },
         }
     )
 );

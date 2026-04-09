@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense, useCallback } from "react";
 import Link from "next/link";
 import { Search, Loader2, Heart, Sparkles } from "lucide-react";
 import Logo from "@/components/Logo";
@@ -150,7 +150,7 @@ export default function HomeClient({
             supabase.removeChannel(settingsChannel);
             window.removeEventListener('scroll', handleScrollEvent);
         };
-    }, []);
+    }, [homeScrollPosition, setHomeScrollPosition]);
 
     // Re-fetch when filters change (reset pagination)
     useEffect(() => {
@@ -158,6 +158,8 @@ export default function HomeClient({
         if (!isDefault || allProducts.length === 0) {
             fetchProducts(false);
         }
+        // fetchProducts is intentionally omitted — it's defined below and stable enough
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeFilter, activeTab, search]);
 
     const fetchProducts = async (isLoadMore = false) => {

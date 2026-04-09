@@ -169,3 +169,31 @@ export interface Blog {
     created_at: string;
     updated_at: string;
 }
+
+// Search tizimi uchun tiplar
+export interface SearchFacets {
+    categories: Record<string, number>;
+    tags: Record<string, number>;
+}
+
+// Promo kod uchun tip
+export interface PromoData {
+    code: string;
+    discount: number;
+    type: 'percentage' | 'fixed';
+    minAmount?: number;
+}
+
+// Media element tipi (product gallery)
+export interface MediaItemType {
+    url: string;
+    type: 'image' | 'video';
+    lowResUrl?: string;
+}
+
+// Savat elementi uchun kengaytirilgan tip
+export interface CartItem extends Product {
+    quantity: number;
+    selectedColor?: string;
+    selectedSize?: string;
+}

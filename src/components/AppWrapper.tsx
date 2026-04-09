@@ -83,7 +83,10 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
                     type: user?.phone ? "user" : "visitor"
                 }, { onConflict: 'id' });
             } catch (error) {
-                // Do nothing silenty
+                // Activity tracking xatosi — production-da yashirish, dev-da log qilish
+                if (process.env.NODE_ENV === 'development') {
+                    console.warn("[Activity Tracking]", error);
+                }
             }
         };
 

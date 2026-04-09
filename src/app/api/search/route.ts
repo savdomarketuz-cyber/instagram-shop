@@ -63,15 +63,19 @@ export async function POST(req: NextRequest) {
                 
             if (interests && interests.categories) {
                 const catWeights = interests.categories as Record<string, number>;
-                // Sort by injecting a personal score
-                mappedResults = mappedResults.sort((a: any, b: any) => {
-                    const aCat = a.category || a.category_id || a.category_uz || "";
-                    const bCat = b.category || b.category_id || b.category_uz || "";
-                    const aScore = catWeights[aCat] || 0;
-                    const bScore = catWeights[bCat] || 0;
-                    // Bump the items with higher personal history score if they matched the query
-                    return bScore - aScore; // Descending
-                });
+                const maxWeight = Math.max(...Object.values(catWeights).map(Number), 1);
+
+                // Personalization bonusi qo'shish (20%), relevance order-ni buzmaslik uchun
+                const totalItems = mappedResults.length;
+                mappedResults = mappedResults
+                    .map((item: any, index: number) => {
+                        const cat = item.category || item.category_id || item.category_uz || '';
+                        const personalScore = (Number(catWeights[cat]) || 0) / maxWeight; // 0..1
+                        const relevanceScore = totalItems > 1 ? 1 - (index / (totalItems - 1)) : 1; // 1..0
+                        return { ...item, _blendedScore: relevanceScore * 0.8 + personalScore * 0.2 };
+                    })
+                    .sort((a: any, b: any) => b._blendedScore - a._blendedScore)
+                    .map(({ _blendedScore, ...rest }: any) => rest);
             }
         }
 

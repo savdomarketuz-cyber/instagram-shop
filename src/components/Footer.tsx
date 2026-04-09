@@ -92,16 +92,16 @@ export default function Footer() {
                         <div className="space-y-3">
                             <h4 className="font-bold text-gray-900 text-xs">{t.footer.socials}</h4>
                             <div className="flex gap-4">
-                                <a href="#" className="p-2.5 bg-gray-50 rounded-xl text-gray-600 hover:bg-black hover:text-white transition-all scale-95 hover:scale-105">
+                                <a href="https://instagram.com/velari_uz_" target="_blank" rel="noopener noreferrer" className="p-2.5 bg-gray-50 rounded-xl text-gray-600 hover:bg-black hover:text-white transition-all scale-95 hover:scale-105">
                                     <Instagram size={20} />
                                 </a>
-                                <a href="#" className="p-2.5 bg-gray-50 rounded-xl text-gray-600 hover:bg-black hover:text-white transition-all scale-95 hover:scale-105">
+                                <a href="https://t.me/velariuz" target="_blank" rel="noopener noreferrer" className="p-2.5 bg-gray-50 rounded-xl text-gray-600 hover:bg-black hover:text-white transition-all scale-95 hover:scale-105">
                                     <Send size={20} />
                                 </a>
-                                <a href="#" className="p-2.5 bg-gray-50 rounded-xl text-gray-600 hover:bg-black hover:text-white transition-all scale-95 hover:scale-105">
+                                <a href="https://facebook.com/velari.uz" target="_blank" rel="noopener noreferrer" className="p-2.5 bg-gray-50 rounded-xl text-gray-600 hover:bg-black hover:text-white transition-all scale-95 hover:scale-105">
                                     <Facebook size={20} />
                                 </a>
-                                <a href="#" className="p-2.5 bg-gray-50 rounded-xl text-gray-600 hover:bg-black hover:text-white transition-all scale-95 hover:scale-105">
+                                <a href="https://youtube.com/@velariuz" target="_blank" rel="noopener noreferrer" className="p-2.5 bg-gray-50 rounded-xl text-gray-600 hover:bg-black hover:text-white transition-all scale-95 hover:scale-105">
                                     <Youtube size={20} />
                                 </a>
                             </div>

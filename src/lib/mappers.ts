@@ -1,20 +1,29 @@
 import type { Product, Category, Banner, Blog } from "@/types";
 
-export const mapProduct = (p: any): Product => ({
-    ...p,
-    isDeleted: p.is_deleted,
-    createdAt: p.created_at,
-    category: p.category_id,
-    brand: p.brand_id,
-    oldPrice: p.old_price,
-    stockDetails: p.stock_details,
-    videoUrl: p.video_url,
-    reviewCount: p.review_count,
-    isOriginal: p.is_original,
-    groupId: p.group_id,
-    colorName: p.color_name,
-    model: p.model
-});
+export const mapProduct = (p: any): Product => {
+    // Destructure snake_case fields out so they don't duplicate with camelCase
+    const {
+        is_deleted, created_at, category_id, brand_id, old_price,
+        stock_details, video_url, review_count, is_original,
+        group_id, color_name, ...rest
+    } = p;
+
+    return {
+        ...rest,
+        isDeleted: is_deleted,
+        createdAt: created_at,
+        category: category_id,
+        brand: brand_id,
+        oldPrice: old_price,
+        stockDetails: stock_details,
+        videoUrl: video_url,
+        reviewCount: review_count,
+        isOriginal: is_original,
+        groupId: group_id,
+        colorName: color_name,
+        model: p.model
+    };
+};
 
 export const mapCategory = (c: any): Category => ({
     ...c,

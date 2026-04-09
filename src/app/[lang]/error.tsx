@@ -1,7 +1,5 @@
 "use client";
 
-'use client'
-
 import { useEffect } from 'react'
 import { AlertCircle, RotateCcw, Home } from 'lucide-react'
 import Link from 'next/link'

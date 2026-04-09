@@ -124,9 +124,14 @@ export async function middleware(request: NextRequest) {
         const adminVaultToken = request.cookies.get('admin_vault_token')?.value;
         const vaultSecret = request.nextUrl.searchParams.get('vault')?.trim();
         
-        const GLOBAL_VAULT_KEY = (process.env.ADMIN_VAULT_KEY || 'Abdulaziz2244').trim();
-        const LEGACY_VAULT_KEY = 'TEMIR_BANK_2026';
-        const ADMIN_SECRET = (process.env.ADMIN_SECRET || "Abdulaziz2244").trim();
+        const GLOBAL_VAULT_KEY = process.env.ADMIN_VAULT_KEY?.trim();
+        const LEGACY_VAULT_KEY = process.env.ADMIN_LEGACY_VAULT_KEY?.trim();
+        const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim();
+
+        // Agar env variable lar o'rnatilmagan bo'lsa, admin panelga ruxsat bermang
+        if (!GLOBAL_VAULT_KEY || !ADMIN_SECRET) {
+            return NextResponse.redirect(new URL(`/${localePart}`, request.url));
+        }
 
         if (adminToken) {
             const payload = await verifyTokenEdge(adminToken, ADMIN_SECRET);

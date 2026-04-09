@@ -5,15 +5,6 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// supabaseAdmin faqat server-side (API routes, Server Components) da ishlatiladi
-// Client-side bundle-ga kirmaydi chunki SUPABASE_SERVICE_ROLE_KEY NEXT_PUBLIC_ emas
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+// supabaseAdmin endi alohida faylda: src/lib/supabase-admin.ts
+// Faqat server-side (API routes, Server Components) da import qiling
 
-export const supabaseAdmin = supabaseServiceKey
-    ? createClient(supabaseUrl, supabaseServiceKey, {
-        auth: {
-            autoRefreshToken: false,
-            persistSession: false
-        }
-    })
-    : supabase; // Client-side fallback: regular client

@@ -30,8 +30,8 @@ export default function Navigation() {
     const debounceTimer = useRef<NodeJS.Timeout | null>(null);
     const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+
     const isHomePage = pathname === `/${language}` || pathname === `/`;
-    const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
 
     // Handle Search Focus from other pages
     useEffect(() => {

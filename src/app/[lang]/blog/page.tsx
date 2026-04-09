@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import { mapBlog } from "@/lib/mappers";
 import { translations } from "@/lib/translations";
 import Link from "next/link";
