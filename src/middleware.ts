@@ -88,7 +88,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // 3. Admin Route Protection
-    let localePart = i18n.defaultLocale;
+    let localePart: string = i18n.defaultLocale;
     let pathWithoutLocale = pathname;
     for (const locale of i18n.locales) {
         if (pathname.startsWith(`/${locale}/`)) {
