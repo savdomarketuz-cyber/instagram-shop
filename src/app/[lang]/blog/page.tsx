@@ -7,9 +7,19 @@ import { Metadata } from "next";
 
 export async function generateMetadata({ params: { lang } }: any): Promise<Metadata> {
     const t = translations[lang as 'uz' | 'ru'];
+    const baseUrl = 'https://velari.uz';
+    
     return {
         title: `${t.blog.title} | Velari`,
         description: t.blog.subtitle,
+        alternates: {
+            canonical: `${baseUrl}/${lang}/blog`,
+            languages: {
+                'uz-UZ': `${baseUrl}/uz/blog`,
+                'ru-RU': `${baseUrl}/ru/blog`,
+                'x-default': `${baseUrl}/uz/blog`,
+            },
+        },
     };
 }
 

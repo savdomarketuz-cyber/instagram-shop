@@ -12,47 +12,52 @@ import { mapProduct } from "@/lib/mappers";
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { productId, productIds } = body;
-        
-        const idsToNotify: string[] = [];
-        if (productId) idsToNotify.push(productId);
-        if (productIds && Array.isArray(productIds)) idsToNotify.push(...productIds);
-
-        if (idsToNotify.length === 0) {
-            return NextResponse.json({ error: "No product IDs provided" }, { status: 400 });
-        }
-
-        // Fetch products to get slugs (max 1000 for safety)
-        const { data: productsData, error } = await supabaseAdmin
-            .from("products")
-            .select("*")
-            .in("id", idsToNotify.slice(0, 1000));
-
-        if (error) throw error;
-        if (!productsData || productsData.length === 0) {
-            return NextResponse.json({ error: "No products found for given IDs" }, { status: 404 });
-        }
-        
+        const { productId, productIds, blogId, blogIds, categoryId, categoryIds } = body;
+        const baseUrl = 'https://velari.uz';
         const urls: string[] = [];
-        productsData.forEach(pData => {
-            const product = mapProduct(pData);
-            const slug = getProductSlug(product);
-            urls.push(`https://velari.uz/uz/products/${slug}`);
-            urls.push(`https://velari.uz/ru/products/${slug}`);
-        });
 
-        // Submit to IndexNow
+        // 1. Handle Products
+        const pIds = [...(productId ? [productId] : []), ...(productIds || [])];
+        if (pIds.length > 0) {
+            const { data: pData } = await supabaseAdmin.from("products").select("name, article").in("id", pIds.slice(0, 1000));
+            pData?.forEach(p => {
+                const slug = getProductSlug(mapProduct(p));
+                urls.push(`${baseUrl}/uz/products/${slug}`);
+                urls.push(`${baseUrl}/ru/products/${slug}`);
+            });
+        }
+
+        // 2. Handle Blogs
+        const bIds = [...(blogId ? [blogId] : []), ...(blogIds || [])];
+        if (bIds.length > 0) {
+            const { data: bData } = await supabaseAdmin.from("blogs").select("slug").in("id", bIds.slice(0, 1000));
+            bData?.forEach(b => {
+                urls.push(`${baseUrl}/uz/blog/${b.slug}`);
+                urls.push(`${baseUrl}/ru/blog/${b.slug}`);
+            });
+        }
+
+        // 3. Handle Categories
+        const cIds = [...(categoryId ? [categoryId] : []), ...(categoryIds || [])];
+        if (cIds.length > 0) {
+            cIds.forEach(id => {
+                urls.push(`${baseUrl}/uz/catalog?category=${id}`);
+                urls.push(`${baseUrl}/ru/catalog?category=${id}`);
+            });
+        }
+
+        if (urls.length === 0) {
+            return NextResponse.json({ error: "Hech qanday ID topilmadi" }, { status: 400 });
+        }
+
         const indexNowSuccess = await submitToIndexNow(urls);
-
-        // Submit to Google Indexing API
         const googleSuccess = await submitToGoogleIndexing(urls);
 
         return NextResponse.json({ 
             success: indexNowSuccess || googleSuccess, 
             indexNow: indexNowSuccess,
             google: googleSuccess,
-            count: urls.length,
-            submittedUrls: urls.length > 5 ? `${urls.length} URLs` : urls 
+            urlsCount: urls.length
         });
     } catch (error: any) {
         console.error("Notify Search API Error:", error);

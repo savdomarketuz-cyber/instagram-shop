@@ -74,19 +74,42 @@ export default function Home() {
 function HomeSkeleton() {
     return (
         <div className="min-h-screen bg-white animate-pulse">
-            {/* Header Skeleton */}
-            <div className="h-20 border-b border-gray-100 flex items-center px-10 gap-8">
-                <div className="w-32 h-8 bg-gray-50 rounded-full" />
-                <div className="flex-1 max-w-2xl h-12 bg-gray-50 rounded-2xl mx-auto" />
-                <div className="w-12 h-12 bg-gray-50 rounded-2xl" />
+            {/* 1. Header Navigation Skeleton (matches height of real site) */}
+            <div className="h-16 border-b border-gray-50 flex items-center px-4 md:px-10 gap-8">
+                <div className="w-24 h-6 bg-gray-100 rounded-full" />
+                <div className="hidden md:block flex-1 max-w-xl h-10 bg-gray-100 rounded-2xl mx-auto" />
+                <div className="w-10 h-10 bg-gray-100 rounded-xl" />
             </div>
-            {/* Banner Skeleton */}
-            <div className="mt-4 px-4 h-[210px]">
-                <div className="w-full h-full bg-gray-50 rounded-[32px]" />
+
+            {/* 2. Banner Section Skeleton (matches logic of real banner) */}
+            <div className="mt-8 px-4 md:px-10">
+                <div className="w-full h-[210px] md:h-[420px] bg-gray-50 rounded-[32px] md:rounded-[48px]" />
             </div>
-            {/* Filter Skeleton */}
-            <div className="mt-8 px-10 flex gap-3 overflow-hidden">
-                {[...Array(6)].map((_, i) => <div key={i} className="w-24 h-10 bg-gray-50 rounded-2xl shrink-0" />)}
+
+            {/* 3. Category Filter Skeleton */}
+            <div className="mt-12 px-4 md:px-10 space-y-4">
+                <div className="flex gap-4 overflow-hidden">
+                    {[...Array(8)].map((_, i) => (
+                        <div key={i} className="w-20 md:w-28 h-8 md:h-12 bg-gray-50 rounded-2xl shrink-0" />
+                    ))}
+                </div>
+            </div>
+
+            {/* 4. Product Tab Skeleton */}
+            <div className="mt-10 px-4 md:px-10 border-b border-gray-50 flex gap-12">
+                <div className="w-24 h-8 bg-gray-50 rounded-t-lg" />
+                <div className="w-24 h-8 bg-gray-50 rounded-t-lg" />
+            </div>
+
+            {/* 5. Product Grid Skeleton */}
+            <div className="mt-8 px-4 md:px-10 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-8">
+                {[...Array(10)].map((_, i) => (
+                    <div key={i} className="flex flex-col gap-4">
+                        <div className="aspect-[1080/1440] bg-gray-50 rounded-3xl" />
+                        <div className="h-4 w-3/4 bg-gray-50 rounded-lg" />
+                        <div className="h-6 w-1/4 bg-gray-50 rounded-lg" />
+                    </div>
+                ))}
             </div>
         </div>
     );

@@ -114,17 +114,18 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority 
             {/* 2. High-Res Foreground (Gradual) */}
             <Image
                 src={media.url}
-                alt={alt || "Velari product image"}
+                alt={alt || "Velari mahsulotlari - Sifatli elektronika va maishiy texnika"}
                 fill
                 className={`object-cover transition-all duration-700 ease-out ${isLoaded ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-105 blur-sm'}`}
-                sizes="(max-width: 768px) 85vw, 60vw"
-                quality={65}
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 priority={priority}
                 unoptimized={true}
+                fetchPriority={priority ? "high" : "auto"}
                 onLoad={() => {
                     setIsLoaded(true);
                     if (onLoadComplete) onLoadComplete();
                 }}
+                itemProp="image"
                 referrerPolicy="no-referrer"
             />
         </div>

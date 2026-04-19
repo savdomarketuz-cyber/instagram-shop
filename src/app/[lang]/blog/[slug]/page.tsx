@@ -38,10 +38,11 @@ export async function generateMetadata({ params: { lang, slug } }: { params: { l
             type: 'article',
         },
         alternates: {
-            canonical: `/blog/${slug}`,
+            canonical: `${baseUrl}/${lang}/blog/${slug}`,
             languages: {
-                'uz-UZ': `/uz/blog/${slug}`,
-                'ru-RU': `/ru/blog/${slug}`,
+                'uz-UZ': `${baseUrl}/uz/blog/${slug}`,
+                'ru-RU': `${baseUrl}/ru/blog/${slug}`,
+                'x-default': `${baseUrl}/uz/blog/${slug}`,
             },
         },
     };

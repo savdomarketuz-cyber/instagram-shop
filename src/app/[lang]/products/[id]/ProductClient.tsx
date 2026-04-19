@@ -414,6 +414,13 @@ export default function ProductClient({ params, initialProduct }: { params: { id
 
             {/* Mobile View (Social Style) */}
             <div className="md:hidden" style={{ overscrollBehavior: 'none', touchAction: 'pan-x pan-y' }}>
+                <div className="px-5 pt-4 flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-widest overflow-x-auto no-scrollbar whitespace-nowrap">
+                    <Link href="/" className="hover:text-black transition-colors">MAHSULOTLAR</Link>
+                    <span>/</span>
+                    <Link href={`/catalog?category=${product.category}`} className="hover:text-black transition-colors">
+                        {categoryData ? (categoryData[language === 'uz' ? 'name_uz' : 'name_ru'] || categoryData.name) : (product[language === 'uz' ? 'category_uz' : 'category_ru'] || product.category)}
+                    </Link>
+                </div>
                 <ProductMedia 
                     allMedia={allMedia}
                     activeImage={activeImage}
