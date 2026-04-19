@@ -24,11 +24,13 @@ function SuccessContent() {
     }, [orderId]);
 
     const fetchOrderReward = async () => {
+        const { user } = useStore.getState();
         try {
             const { data, error } = await supabase
                 .from("orders")
                 .select("potential_cashback")
                 .eq("id", orderId!)
+                .eq("user_phone", user?.phone || "NONE")
                 .single();
             
             if (data?.potential_cashback) {

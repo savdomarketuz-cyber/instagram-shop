@@ -46,6 +46,7 @@ export default function AccountPage() {
     const [view, setView] = useState<"menu" | "edit-profile" | "language" | "returns" | "promo-codes" | "reviews">("menu");
     const [name, setName] = useState(user?.name || "");
     const [username, setUsername] = useState(user?.username || "");
+    const [password, setPassword] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [usernameError, setUsernameError] = useState("");
     const [showSuccess, setShowSuccess] = useState(false);
@@ -136,7 +137,12 @@ export default function AccountPage() {
             const response = await fetch('/api/auth/update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: user.phone, name, username: trimmedUsername })
+                body: JSON.stringify({ 
+                    phone: user.phone, 
+                    password,
+                    name, 
+                    username: trimmedUsername 
+                })
             });
 
             const data = await response.json();
@@ -147,6 +153,7 @@ export default function AccountPage() {
             }
 
             setUser({ ...user, name, username: trimmedUsername });
+            setPassword("");
             setShowSuccess(true);
             setTimeout(() => {
                 setShowSuccess(false);
@@ -217,6 +224,17 @@ export default function AccountPage() {
                                 className={`w-full bg-gray-50 border-2 ${usernameError ? 'border-red-500' : 'border-transparent focus:border-black'} rounded-2xl px-6 py-4 font-bold outline-none transition-all`}
                             />
                             {usernameError && <p className="text-red-500 text-[10px] font-bold mt-2 ml-4">{usernameError}</p>}
+                        </div>
+
+                        <div>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4 mb-2 block">{language === 'uz' ? 'Tasdiqlash uchun parolingiz' : 'Пароль для подтверждения'}</label>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="******"
+                                className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-2xl px-6 py-4 font-bold outline-none transition-all"
+                            />
                         </div>
 
                         <button

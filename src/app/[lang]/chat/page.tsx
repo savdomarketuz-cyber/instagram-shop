@@ -46,13 +46,9 @@ export default function ChatPage() {
         }
 
         const fetchMessages = async () => {
-            const { data, error } = await supabase
-                .from("support_messages")
-                .select("*")
-                .eq("chat_id", user.phone)
-                .order("created_at", { ascending: true });
-            
-            if (data) setMessages(data.map(mapMessage));
+            const response = await fetch(`/api/chat?chat_id=${user.phone}`);
+            const data = await response.json();
+            if (data.success) setMessages(data.messages.map(mapMessage));
             setLoading(false);
             scrollToBottom();
         };
@@ -114,35 +110,20 @@ export default function ChatPage() {
             }
 
 
-            const chatId = user.phone;
-            const messageId = crypto.randomUUID();
-
-            // 1. Add message
-            const { error: msgErr } = await supabase.from("support_messages").insert([{
-                id: messageId,
-                chat_id: chatId,
-                text: inputText,
-                image: fileType === 'image' ? uploadedUrl : null,
-                video: fileType === 'video' ? uploadedUrl : null,
-                sender_id: user.phone,
-                sender_type: "user",
-                is_admin: false
-            }]);
-
-            if (msgErr) throw msgErr;
-
-            // 2. Update session
-            const lastMsg = uploadedUrl ? (fileType === 'image' ? "🖼️ Rasm" : "🎥 Video") : inputText;
-            const { error: chatErr } = await supabase.from("support_chats").upsert({
-                id: chatId,
-                username: user.username || user.phone,
-                last_message: lastMsg,
-                last_timestamp: new Date().toISOString(),
-                status: 'active',
-                unread_by_admin: 1
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: user.phone,
+                    text: inputText,
+                    image: fileType === 'image' ? uploadedUrl : null,
+                    video: fileType === 'video' ? uploadedUrl : null,
+                    sender_id: user.phone,
+                    sender_type: "user"
+                })
             });
 
-            if (chatErr) throw chatErr;
+            if (!response.ok) throw new Error("Xabar yuborishda xatolik");
 
             setInputText("");
             setSelectedFile(null);

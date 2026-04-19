@@ -100,11 +100,19 @@ export default function OrdersPage() {
         setIsCancelling(true);
         try {
             const statusLabel = language === 'uz' ? "Bekor qilingan" : "Отменен";
-            // Secure: only update if the ID matches AND it belongs to this user
-            await supabase.from("orders")
-                .update({ status: statusLabel })
-                .eq("id", orderId)
-                .eq("user_phone", user?.phone);
+            
+            const response = await fetch('/api/orders/update-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    order_id: orderId,
+                    new_status: statusLabel,
+                    user_phone: user?.phone
+                })
+            });
+
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "Xatolik");
 
             // Update local state
             setOrders(orders.map(o => o.id === orderId ? { ...o, status: statusLabel } : o));
@@ -136,22 +144,28 @@ export default function OrdersPage() {
 
         setIsSubmittingReview(true);
         try {
-            const newComment = {
-                product_id: reviewProduct.id,
-                user_id: user?.id || user?.phone,
-                username: user?.username || user?.phone,
-                text: reviewText,
-                rating: reviewRating,
-                type: 'review',
-                parent_id: null,
-                is_admin: !!user.isAdmin,
-                data: {
-                    images: reviewImages,
-                    video: reviewVideo
-                }
-            };
+            const response = await fetch('/api/comments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'insert',
+                    p_user_phone: user?.phone || user?.id,
+                    p_comment_data: {
+                        product_id: reviewProduct.id,
+                        username: user?.username || user?.phone,
+                        text: reviewText,
+                        rating: reviewRating,
+                        type: 'review',
+                        data: {
+                            images: reviewImages,
+                            video: reviewVideo
+                        }
+                    }
+                })
+            });
 
-            await supabase.from("comments").insert([newComment]);
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "Xatolik yuz berdi");
 
             // Update product rating
             // Rating update is now handled by the server-side DB trigger for security.

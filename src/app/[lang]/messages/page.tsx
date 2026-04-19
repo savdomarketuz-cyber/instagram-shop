@@ -99,16 +99,10 @@ export default function MessagesPage() {
         const delayDebounceFn = setTimeout(async () => {
             setIsSearching(true);
             try {
-                // Global search in USERS table (Name, Username, Phone)
-                const { data, error } = await supabase
-                    .from("users")
-                    .select("id, name, phone, username")
-                    .or(`username.ilike.%${cleanQuery}%,name.ilike.%${cleanQuery}%,phone.ilike.%${cleanQuery}%`)
-                    .neq("phone", user?.phone)
-                    .limit(15);
-
-                if (!error && data) {
-                    setUserResults(data);
+                const response = await fetch(`/api/users/search?q=${cleanQuery}`);
+                const data = await response.json();
+                if (data.success) {
+                    setUserResults(data.users);
                 }
             } catch (e) {
                 console.error("Search error:", e);

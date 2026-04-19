@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { hashPassword } from "@/lib/auth-utils";
 
 export async function POST(req: Request) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
@@ -10,10 +11,27 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, message: "Juda ko'p urinish." }, { status: 429 });
         }
 
-        const { phone, name, username } = await req.json();
+        const { phone, password, name, username } = await req.json();
 
-        if (!phone) {
-            return NextResponse.json({ success: false, message: "Telefon raqami kerek." }, { status: 400 });
+        if (!phone || !password) {
+            return NextResponse.json({ success: false, message: "Telefon raqami va parol zarur." }, { status: 400 });
+        }
+
+        // 🛡 SECURITY: Verify Identity
+        const { data: user, error: findError } = await supabaseAdmin
+            .from("users")
+            .select("password")
+            .eq("phone", phone)
+            .single();
+
+        if (findError || !user) {
+            return NextResponse.json({ success: false, message: "Foydalanuvchi topilmadi." }, { status: 404 });
+        }
+
+        // Check if password is correct (supporting migration)
+        const isAuth = user.password === password || user.password === hashPassword(password);
+        if (!isAuth) {
+            return NextResponse.json({ success: false, message: "Tasdiqlash xatosi (Ruxsat yo'q)." }, { status: 401 });
         }
 
         // 🛡 SECURITY: Verify Username Availability (server-side)

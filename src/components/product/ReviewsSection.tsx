@@ -39,6 +39,13 @@ export const ReviewsSection = ({
 
     const EMOJIS = ["😂", "👍", "👎", "❤️", "🔥", "💯", "⚡", "🍌", "🏆", "💔"];
 
+    const maskPhone = (phone: string) => {
+        if (!phone) return "user";
+        if (phone.length < 7) return phone;
+        // e.g. +998901234567 -> +99890***4567
+        return phone.slice(0, 7) + "***" + phone.slice(-4);
+    };
+
     const submitComment = async () => {
         if (!user) { router.push("/login"); return; }
         if (!user.username) {
@@ -248,7 +255,7 @@ export const ReviewsSection = ({
                                     <div className="flex items-center justify-between mb-1">
                                         <div className="flex items-center gap-2">
                                             <h4 className="text-xs font-black italic flex items-center gap-2">
-                                                @{comment?.username || comment?.userId || "user"} {comment?.isAdmin && <span className="bg-black text-white text-[8px] px-1.5 py-0.5 rounded uppercase not-italic tracking-tighter">Admin</span>}
+                                                @{comment?.username || maskPhone(comment?.userId || "user")} {comment?.isAdmin && <span className="bg-black text-white text-[8px] px-1.5 py-0.5 rounded uppercase not-italic tracking-tighter">Admin</span>}
                                             </h4>
                                         </div>
                                         <span className="text-[10px] text-gray-400 font-bold">
@@ -312,7 +319,7 @@ export const ReviewsSection = ({
                                     <div className="mt-4 space-y-4">
                                         {comments.filter(r => r.parentId === comment.id).map(reply => (
                                             <div key={reply.id} className="ml-8 pt-4 border-l-2 border-gray-50 pl-6">
-                                                <div className="flex items-center gap-2 mb-1"><h4 className="text-[11px] font-black italic">@{reply.username}</h4><span className="text-[9px] text-gray-400 font-bold ml-auto">{new Date(reply.timestamp).toLocaleDateString()}</span></div>
+                                                <div className="flex items-center gap-2 mb-1"><h4 className="text-[11px] font-black italic">@{reply.username || maskPhone(reply.userId || "user")}</h4><span className="text-[9px] text-gray-400 font-bold ml-auto">{new Date(reply.timestamp).toLocaleDateString()}</span></div>
                                                 <p className="text-sm text-gray-500 font-medium">{reply.text}</p>
                                                 <div className="flex items-center gap-3 mt-2">
                                                     <button onClick={() => { setReplyTo(comment); setCommentText(`@${reply.username} `); document.getElementById('comment-textarea')?.focus(); }} className="text-[9px] font-black uppercase text-gray-300">Javob berish</button>
