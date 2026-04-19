@@ -58,37 +58,27 @@ export const ReviewsSection = ({
                     return;
                 }
 
-                // Supabase query for orders
-                const { data: orders } = await supabase
-                    .from("orders")
-                    .select("items")
-                    .eq("user_phone", user.phone || "");
-                
-                let hasPurchased = false;
-                orders?.forEach(order => {
-                    if (order.items?.some((item: any) => item.id === productId)) hasPurchased = true;
-                });
+            // Use secure API for comment insertion
+            const response = await fetch('/api/comments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'insert',
+                    p_user_phone: user.phone || user.id,
+                    p_comment_data: {
+                        product_id: productId,
+                        username: user.username,
+                        text: commentText,
+                        type: replyTo ? replyTo.type : activeCommentTab,
+                        parent_id: replyTo?.id || null,
+                        is_admin: !!(user.isAdmin || user.phone === "ADMIN" || user.is_admin),
+                        rating: (!replyTo && activeCommentTab === 'review') ? commentRating : null,
+                    }
+                })
+            });
 
-                if (!hasPurchased) {
-                    showToast(language === 'uz' ? "Sharh qoldirish uchun mahsulotni sotib olgan bo'lishingiz kerak" : "Для того чтобы оставить отзыв вы должны купить этот товар", 'info');
-                    setIsPosting(false);
-                    return;
-                }
-            }
-
-            const newComment = {
-                product_id: productId,
-                user_id: user.id || user.phone,
-                username: user.username,
-                text: commentText,
-                type: replyTo ? replyTo.type : activeCommentTab,
-                parent_id: replyTo?.id || null,
-                is_admin: !!(user.isAdmin || user.phone === "ADMIN"),
-                rating: (!replyTo && activeCommentTab === 'review') ? commentRating : null,
-            };
-
-            const { error } = await supabase.from("comments").insert([newComment]);
-            if (error) throw error;
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "Xatolik yuz berdi");
 
             setCommentText("");
             setReplyTo(null);
@@ -96,7 +86,7 @@ export const ReviewsSection = ({
             fetchComments();
         } catch (e: any) {
             console.error("Comment error:", e);
-            showToast(t.common.error, 'error');
+            showToast(e.message || t.common.error, 'error');
         } finally {
             setIsPosting(false);
         }
@@ -105,10 +95,21 @@ export const ReviewsSection = ({
     const handleUpdateComment = async (commentId: string) => {
         if (!editingText.trim()) return;
         try {
-            await supabase.from("comments").update({
-                text: editingText,
-                is_edited: true,
-            }).eq("id", commentId);
+            const response = await fetch('/api/comments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'update',
+                    p_user_phone: user.phone || user.id,
+                    p_comment_id: commentId,
+                    p_comment_data: { text: editingText }
+                })
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || "Xatolik");
+            }
             
             setEditingCommentId(null);
             setEditingText("");
@@ -122,7 +123,16 @@ export const ReviewsSection = ({
     const confirmDelete = async () => {
         if (!commentToDelete) return;
         try {
-            await supabase.from("comments").delete().eq("id", commentToDelete);
+            const response = await fetch('/api/comments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'delete',
+                    p_user_phone: user.phone || user.id,
+                    p_comment_id: commentToDelete
+                })
+            });
+            if (!response.ok) throw new Error("O'chirishda xatolik");
             showToast(language === 'uz' ? "O'chirildi!" : "Удалено!");
             fetchComments();
             setCommentToDelete(null);
@@ -156,7 +166,17 @@ export const ReviewsSection = ({
         }
 
         try {
-            await supabase.from("comments").update({ reactions: currentReactions }).eq("id", commentId);
+            const response = await fetch('/api/comments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'react',
+                    p_user_phone: currentId,
+                    p_comment_id: commentId,
+                    p_comment_data: { reactions: currentReactions }
+                })
+            });
+            if (!response.ok) throw new Error("Reaksiyada xatolik");
             fetchComments();
             setActiveReactionPicker(null);
         } catch (e) { console.error(e); }

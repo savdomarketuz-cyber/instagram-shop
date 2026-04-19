@@ -133,17 +133,18 @@ export default function AccountPage() {
 
         setIsSaving(true);
         try {
-            if (trimmedUsername && trimmedUsername !== user.username) {
-                const { data: existing } = await supabase.from("users").select("phone").eq("username", trimmedUsername).neq("phone", user.phone).maybeSingle();
-                if (existing) {
-                    setUsernameError(language === 'uz' ? "Username band" : "Занято");
-                    setIsSaving(false);
-                    return;
-                }
-            }
+            const response = await fetch('/api/auth/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: user.phone, name, username: trimmedUsername })
+            });
 
-            const { error } = await supabase.from("users").update({ name, username: trimmedUsername }).eq("phone", user.phone);
-            if (error) throw error;
+            const data = await response.json();
+            if (!response.ok) {
+                if (data.message === "Ushbu username band.") setUsernameError(language === 'uz' ? "Username band" : "Занято");
+                else throw new Error(data.message);
+                return;
+            }
 
             setUser({ ...user, name, username: trimmedUsername });
             setShowSuccess(true);
@@ -151,8 +152,9 @@ export default function AccountPage() {
                 setShowSuccess(false);
                 setView("menu");
             }, 1500);
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
+            showToast(e.message || "Xatolik yuz berdi", 'error');
         } finally {
             setIsSaving(false);
         }
@@ -433,34 +435,28 @@ function ReviewsView({ user, language, showToast, onBack }: any) {
 
         setIsSubmitting(true);
         try {
-            const newComment = {
-                product_id: reviewProduct.id,
-                user_id: user.id || user.phone,
-                user_phone: user.phone,
-                username: user.username,
-                text: reviewText,
-                rating: reviewRating,
-                type: 'review',
-                data: {
-                    images: reviewImages,
-                    video: reviewVideo
-                }
-            };
+            const response = await fetch('/api/comments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'insert',
+                    p_user_phone: user.phone || user.id,
+                    p_comment_data: {
+                        product_id: reviewProduct.id,
+                        username: user.username,
+                        text: reviewText,
+                        rating: reviewRating,
+                        type: 'review',
+                        data: {
+                            images: reviewImages,
+                            video: reviewVideo
+                        }
+                    }
+                })
+            });
 
-            const { error } = await supabase.from("comments").insert([newComment]);
-            if (error) throw error;
-
-            // Update product rating (optional but recommended)
-            try {
-                const { data: prod } = await supabase.from("products").select("rating, review_count").eq("id", reviewProduct.id).single();
-                if (prod) {
-                    const currentCount = prod.review_count || 0;
-                    const currentRating = prod.rating || 0;
-                    const newCount = currentCount + 1;
-                    const newRating = ((currentRating * currentCount) + reviewRating) / newCount;
-                    await supabase.from("products").update({ rating: newRating, review_count: newCount }).eq("id", reviewProduct.id);
-                }
-            } catch (rErr) { console.warn("Rating update failed", rErr); }
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "Xatolik yuz berdi");
 
             showToast(language === 'uz' ? "Muvaffaqiyatli saqlandi!" : "Успешно сохранено!", 'success');
             setReviewProduct(null);
@@ -727,14 +723,20 @@ function ReturnsView({ user, t, language, onBack }: any) {
         if (selectedItems.length === 0 || !reason.trim()) return;
         setSubmitting(true);
         try {
-            const { error } = await supabase.from("returns").insert({
-                order_id: selectedOrder.id,
-                user_phone: user.phone,
-                items: selectedItems,
-                reason: reason.trim(),
-                status: "Kutilmoqda"
+            const response = await fetch('/api/orders/return', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    order_id: selectedOrder.id,
+                    user_phone: user.phone,
+                    items: selectedItems,
+                    reason: reason.trim()
+                })
             });
-            if (error) throw error;
+
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "Xatolik");
+
             setSuccess(true);
             setTimeout(() => onBack(), 2000);
         } catch (e) {
