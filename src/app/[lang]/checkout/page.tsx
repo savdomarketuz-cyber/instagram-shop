@@ -171,23 +171,32 @@ export default function CheckoutPage() {
 
         setIsSubmitting(true);
         try {
-            const { data, error } = await supabase.rpc('place_order', {
-                p_user_phone: user.phone,
-                p_items: displayProducts.map(item => ({
-                    id: item.id,
-                    name: item[`name_${language}`] || item.name,
-                    price: item.price,
-                    quantity: item.quantity,
-                    image: item.imageUrl || item.image
-                })),
-                p_address: address,
-                p_coords: coords,
-                p_status: language === 'uz' ? "To'lov kutilmoqda" : "Ожидание оплаты",
-                p_promo_code: promoData?.code || null,
-                p_wallet_usage: useWallet ? Math.min(walletBalance, total) : 0
+            // Using secure API instead of direct RPC
+            const response = await fetch(`/api/orders/place`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    p_user_phone: user.phone,
+                    p_items: displayProducts.map(item => ({
+                        id: item.id,
+                        name: item[`name_${language}`] || item.name,
+                        price: item.price,
+                        quantity: item.quantity,
+                        image: item.imageUrl || item.image
+                    })),
+                    p_address: address,
+                    p_coords: coords,
+                    p_status: language === 'uz' ? "To'lov kutilmoqda" : "Ожидание оплаты",
+                    p_promo_code: promoData?.code || null,
+                    p_wallet_usage: useWallet ? Math.min(walletBalance, total) : 0
+                })
             });
 
-            if (error) throw error;
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || "Xatolik yuz berdi");
+            }
 
             if (!data.success && data.errors) {
                 setStockErrors(data.errors);

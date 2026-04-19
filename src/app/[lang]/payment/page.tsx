@@ -12,7 +12,7 @@ function PaymentContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const orderId = searchParams.get("orderId");
-    const { clearCart, language, showToast } = useStore();
+    const { user, clearCart, language, showToast } = useStore();
     const t = translations[language];
     const [order, setOrder] = useState<any>(null);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -65,13 +65,22 @@ function PaymentContent() {
                 ? (language === 'uz' ? "Qabul qilindi" : "Принят")
                 : (language === 'uz' ? "To'lov kutilmoqda" : "Ожидание оплаты");
 
-            await supabase
-                .from("orders")
-                .update({
+            // 3. Update order status via secure API
+            const updateResponse = await fetch('/api/orders/update-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    orderId: orderId,
                     status: finalStatus,
-                    payment_method: paymentMethod
+                    paymentMethod: paymentMethod,
+                    userPhone: user.phone // Added for verification
                 })
-                .eq("id", orderId);
+            });
+
+            const updateData = await updateResponse.json();
+            if (!updateResponse.ok) {
+                throw new Error(updateData.message || "Buyurtmani yangilashda xatolik yuz berdi.");
+            }
 
             clearCart();
             sessionStorage.removeItem('fast_buy_item');
