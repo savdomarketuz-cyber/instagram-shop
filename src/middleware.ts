@@ -5,15 +5,29 @@ import { match as matchLocale } from '@formatjs/intl-localematcher';
 import Negotiator from 'negotiator';
 
 /**
- * Simplified JWT decoder for Edge
+ * Secure JWT Verification for Edge
  */
-function decodeJwt(token: string) {
+async function verifyJwt(token: string, secret: string) {
     try {
-        const parts = token.split('.');
-        if (parts.length !== 3) return null;
-        const payloadB64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-        const payloadStr = atob(payloadB64);
-        return JSON.parse(payloadStr);
+        const [headerB64, payloadB64, signatureB64] = token.split('.');
+        
+        const encoder = new TextEncoder();
+        const data = encoder.encode(`${headerB64}.${payloadB64}`);
+        const secretKey = await crypto.subtle.importKey(
+            'raw',
+            encoder.encode(secret),
+            { name: 'HMAC', hash: 'SHA-256' },
+            false,
+            ['verify']
+        );
+        
+        // Convert base64url to Uint8Array
+        const signature = Uint8Array.from(atob(signatureB64.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+        
+        const isValid = await crypto.subtle.verify('HMAC', secretKey, signature, data);
+        if (!isValid) return null;
+
+        return JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')));
     } catch (e) {
         return null;
     }
@@ -70,9 +84,9 @@ export async function middleware(request: NextRequest) {
     // 3. Admin Protection (Pages & API)
     if (pathWithoutLocale.startsWith('/admin') || pathname.startsWith('/api/admin')) {
         const adminToken = request.cookies.get('admin_token')?.value;
-        const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim();
+        const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim() || "default-secret";
 
-        const payload = adminToken ? decodeJwt(adminToken) : null;
+        const payload = adminToken ? await verifyJwt(adminToken, ADMIN_SECRET) : null;
         const isAdmin = payload && payload.role === 'admin';
 
         if (!isAdmin) {

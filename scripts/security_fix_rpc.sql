@@ -83,7 +83,13 @@ BEGIN
 
   -- 2. SECURE PROMO CODE VALIDATION
   IF p_promo_code IS NOT NULL AND p_promo_code != '' THEN
-    SELECT * INTO v_promo FROM promo_codes WHERE code = p_promo_code AND active = true AND (expires_at IS NULL OR expires_at > now()) AND (usage_limit IS NULL OR usage_count < usage_limit);
+    -- ADDED: FOR UPDATE to prevent race conditions on usage_limit
+    SELECT * INTO v_promo FROM promo_codes 
+    WHERE code = p_promo_code 
+    AND active = true 
+    AND (expires_at IS NULL OR expires_at > now()) 
+    AND (usage_limit IS NULL OR usage_count < usage_limit)
+    FOR UPDATE;
     
     IF FOUND THEN
       -- Validate min amount
