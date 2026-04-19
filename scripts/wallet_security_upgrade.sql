@@ -18,6 +18,11 @@ DECLARE
     v_sender_balance NUMERIC;
     v_receiver_exists BOOLEAN;
 BEGIN
+    -- 0. USER VALIDATION: Check if sender or receiver is banned
+    IF EXISTS (SELECT 1 FROM users WHERE phone IN (p_sender_phone, p_receiver_phone) AND (banned_until > now() OR deleted_at IS NOT NULL)) THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Ushbu operatsiyada ishtirok etayotgan foydalanuvchilardan biri bloklangan.');
+    END IF;
+
     -- 1. Fetch the OTP record for this specific sender
     SELECT * INTO v_otp 
     FROM p2p_otps 

@@ -36,6 +36,11 @@ DECLARE
   v_stock_errors jsonb := '[]'::jsonb;
   v_promo RECORD;
 BEGIN
+  -- 0. USER VALIDATION: Check if user is banned or deleted
+  IF EXISTS (SELECT 1 FROM users WHERE phone = p_user_phone AND (banned_until > now() OR deleted_at IS NOT NULL)) THEN
+    RAISE EXCEPTION 'Ushbu raqam bloklangan yoki o''''chirilgan. Buyurtma berish imkoniyati yo''''qligi sababli admin bilan bog''''laning.';
+  END IF;
+
   -- 1. TRANSACTION SAFETY: Lock product rows
   -- We loop twice: first to lock and check price/stock, second to deduct.
   FOR v_item IN SELECT * FROM jsonb_array_elements(p_items)

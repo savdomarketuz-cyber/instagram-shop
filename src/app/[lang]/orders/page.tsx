@@ -100,7 +100,11 @@ export default function OrdersPage() {
         setIsCancelling(true);
         try {
             const statusLabel = language === 'uz' ? "Bekor qilingan" : "Отменен";
-            await supabase.from("orders").update({ status: statusLabel }).eq("id", orderId);
+            // Secure: only update if the ID matches AND it belongs to this user
+            await supabase.from("orders")
+                .update({ status: statusLabel })
+                .eq("id", orderId)
+                .eq("user_phone", user?.phone);
 
             // Update local state
             setOrders(orders.map(o => o.id === orderId ? { ...o, status: statusLabel } : o));
@@ -150,22 +154,7 @@ export default function OrdersPage() {
             await supabase.from("comments").insert([newComment]);
 
             // Update product rating
-            try {
-                const { data: prod } = await supabase.from("products").select("rating, review_count").eq("id", reviewProduct.id).single();
-                if (prod) {
-                    const currentCount = prod.review_count || 0;
-                    const currentRating = prod.rating || 0;
-                    const newCount = currentCount + 1;
-                    const newRating = ((currentRating * currentCount) + reviewRating) / newCount;
-
-                    await supabase.from("products").update({
-                        rating: newRating,
-                        review_count: newCount
-                    }).eq("id", reviewProduct.id);
-                }
-            } catch (ratingError) {
-                console.warn("Rating update failed:", ratingError);
-            }
+            // Rating update is now handled by the server-side DB trigger for security.
 
             setReviewProduct(null);
             setReviewText("");
