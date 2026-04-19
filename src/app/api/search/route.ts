@@ -2,9 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { mapProduct } from '@/lib/mappers';
 import { generateEmbedding } from '@/lib/embeddings';
+import { checkRateLimit } from '@/lib/rate-limiter';
 
 export async function POST(req: NextRequest) {
+    const ip = req.headers.get("x-forwarded-for") || "unknown";
+
     try {
+        // 0. RATE LIMITING (10 searches per minute)
+        if (!checkRateLimit(ip, 10, 60)) {
+            return NextResponse.json({ success: false, message: "Juda ko'p urinish." }, { status: 429 });
+        }
+
         const { query, image, suggest, userPhone } = await req.json();
 
         // 1. Handle Visual Search (if image is provided)

@@ -50,6 +50,12 @@ export async function POST(req: Request) {
 
         // 2. Kontakt kelganda
         if (contact) {
+            // 🛡 SECURITY CHECK: Verify that the contact belongs to the sender
+            if (contact.user_id !== chatId) {
+                await sendTelegramMessage(chatId, "Xatolik! ❌ Iltimos, o'z raqamingizni '📱 Kontaktni yuborish' tugmasi orqali yuboring.");
+                return NextResponse.json({ ok: true });
+            }
+
             let phone = contact.phone_number;
             if (!phone.startsWith("+")) phone = "+" + phone;
 
