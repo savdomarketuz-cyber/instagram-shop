@@ -22,7 +22,9 @@ export async function POST(req: NextRequest) {
             .single();
 
         if (findError || !user) {
-            return NextResponse.json({ error: "User not found" }, { status: 404 });
+            // Secure delay and generic error message
+            await new Promise(resolve => setTimeout(resolve, 800));
+            return NextResponse.json({ error: "Telefon raqami yoki parol noto'g'ri" }, { status: 401 });
         }
 
         const storedPassword = user.password;
@@ -31,20 +33,17 @@ export async function POST(req: NextRequest) {
         let needsMigration = false;
 
         // 2. Parolni tekshirish
-        // a) Ochiq matnli eski parol (Auto-migration uchun)
         if (storedPassword === password) {
             isAuthenticated = true;
             needsMigration = true;
         } 
-        // b) Hash qilingan yangi parol
         else if (storedPassword === hashPassword(password)) {
             isAuthenticated = true;
         }
 
         if (!isAuthenticated) {
-            // Brute-force oldini olish
-            await new Promise(resolve => setTimeout(resolve, 500));
-            return NextResponse.json({ error: "Invalid password" }, { status: 401 });
+            await new Promise(resolve => setTimeout(resolve, 800));
+            return NextResponse.json({ error: "Telefon raqami yoki parol noto'g'ri" }, { status: 401 });
         }
 
         // 3. Auto-migration: Parolni hash-ga o'tkazish
