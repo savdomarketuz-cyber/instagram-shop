@@ -73,7 +73,7 @@ function PaymentContent() {
                     orderId: orderId,
                     status: finalStatus,
                     paymentMethod: paymentMethod,
-                    userPhone: user.phone // Added for verification
+                    userPhone: user?.phone || "" // Added for verification
                 })
             });
 

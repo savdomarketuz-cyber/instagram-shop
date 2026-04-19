@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { checkRateLimit } from "@/lib/rate-limiter";
-import { verifyJwt } from "@/lib/auth-utils";
+
 
 /**
  * Global User Search for Messaging (Secure)

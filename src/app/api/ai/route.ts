@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyJwt } from "@/lib/auth-utils";
+import { verifyJwt } from "@/lib/jwt-utils";
 import { checkRateLimit } from "@/lib/rate-limiter";
 
 const GROQ_API_KEYS = [

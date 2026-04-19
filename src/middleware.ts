@@ -7,7 +7,7 @@ import Negotiator from 'negotiator';
 /**
  * Secure JWT Verification for Edge
  */
-import { verifyJwt } from '@/lib/auth-utils';
+import { verifyJwt } from '@/lib/jwt-utils';
 
 /**
  * Locale detection

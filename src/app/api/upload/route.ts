@@ -9,7 +9,7 @@ const YANDEX_CONFIG = {
     REGION: process.env.YANDEX_S3_REGION || "ru-central1",
 };
 
-import { verifyJwt } from "@/lib/auth-utils";
+import { verifyJwt } from "@/lib/jwt-utils";
 
 async function hmacSha256(key: ArrayBuffer | string, data: string): Promise<ArrayBuffer> {
     const encoder = new TextEncoder();

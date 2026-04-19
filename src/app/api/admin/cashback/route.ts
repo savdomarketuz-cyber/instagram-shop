@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { verifyJwt } from "@/lib/auth-utils";
+import { verifyJwt } from "@/lib/jwt-utils";
 import { checkRateLimit } from "@/lib/rate-limiter";
 
 export async function GET(req: Request) {
