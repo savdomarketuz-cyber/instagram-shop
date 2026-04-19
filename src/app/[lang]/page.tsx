@@ -10,7 +10,11 @@ export const metadata: Metadata = {
     description: "iPhone, Samsung, Xiaomi va boshqa global brendlarni muddatli to'lovga sotib oling. Toshkent bo'ylab tekin yetkazib berish va rasmiy kafolat.",
     keywords: ["Velari", "elektronika do'koni", "Toshkent", "muddatli to'lov", "iphone narxi", "samsung narxi", "O'zbekiston"],
     alternates: {
-        canonical: "/",
+        canonical: "https://velari.uz/uz",
+        languages: {
+            'uz-UZ': 'https://velari.uz/uz',
+            'ru-RU': 'https://velari.uz/ru',
+        },
     }
 };
 

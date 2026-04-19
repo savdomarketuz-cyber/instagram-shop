@@ -607,7 +607,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                                     src={v.image} 
                                                     fill
                                                     className="object-cover transition-transform duration-500 group-hover/v:scale-110" 
-                                                    alt={v.colorName || "Variant"} 
+                                                    alt={`${(v[`name_${language}` as keyof typeof v] as string) || v.name} - ${v.colorName || "variant"}`} 
                                                     sizes="100px"
                                                 />
                                                 {v.id === product.id && (

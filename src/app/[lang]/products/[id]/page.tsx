@@ -57,8 +57,10 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
         ogUrl.searchParams.set('price', product.price.toString());
         ogUrl.searchParams.set('image', product.image);
 
-        const title = `${product.name_uz || product.name} - Narxi, Muddatli to'lov va Kafolat | Velari`;
-        const description = `${product.name_uz || product.name} O'zbekistonda eng hamyonbop narxlarda. ${product.description_uz || product.description || ""}`.substring(0, 160);
+        // Title template in layout.tsx already adds "| Velari", so don't add it here
+        const productName = product.name_uz || product.name;
+        const title = `${productName} - Narxi, Muddatli to'lov va Kafolat`;
+        const description = `${productName} O'zbekistonda eng hamyonbop narxlarda. Muddatli to'lov, rasmiy kafolat va tekin yetkazib berish. ${product.description_uz || product.description || ""}`.substring(0, 160);
 
         return {
             title: title,
@@ -66,11 +68,11 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
             openGraph: {
                 title: title,
                 description: description,
-                url: `${baseUrl}/products/${params.id}`,
+                url: `${baseUrl}/${params.lang}/products/${params.id}`,
                 siteName: 'Velari',
-                images: [{ url: ogUrl.toString(), width: 1200, height: 630, alt: title }],
-                locale: 'uz_UZ',
-                type: 'website',
+                images: [{ url: ogUrl.toString(), width: 1200, height: 630, alt: productName }],
+                locale: params.lang === 'ru' ? 'ru_RU' : 'uz_UZ',
+                type: 'article',
             },
             twitter: {
                 card: 'summary_large_image',
@@ -79,10 +81,10 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
                 images: [ogUrl.toString()],
             },
             alternates: { 
-                canonical: `/${params.lang}/products/${params.id}`,
+                canonical: `${baseUrl}/${params.lang}/products/${params.id}`,
                 languages: {
-                    'uz-UZ': `/uz/products/${params.id}`,
-                    'ru-RU': `/ru/products/${params.id}`,
+                    'uz-UZ': `${baseUrl}/uz/products/${params.id}`,
+                    'ru-RU': `${baseUrl}/ru/products/${params.id}`,
                 },
             },
             keywords: [
@@ -112,20 +114,36 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
     if (!product) return <BrandedEmptyState type="not-found" showPopular={true} />;
 
     // Structured Data (Schema.org) for Google to understand this is a PRODUCT
+    const productName = product.name_uz || product.name;
+    
+    // Extract brand name from product name (first word is usually the brand)
+    const brandName = product.brand || (productName.split(' ')[0]) || "Velari";
+    
+    // Ensure images are absolute URLs
+    const productImages = (product.images && product.images.length > 0) 
+        ? product.images.map((img: string) => img.startsWith('http') ? img : `https://velari.uz${img}`)
+        : [product.image?.startsWith('http') ? product.image : `https://velari.uz${product.image}`];
+
+    // Price valid until (30 days from now for freshness)
+    const priceValidDate = new Date();
+    priceValidDate.setDate(priceValidDate.getDate() + 30);
+
     const jsonLd = {
         "@context": "https://schema.org",
         "@type": "Product",
-        "name": product.name_uz || product.name,
-        "image": product.images || [product.image],
-        "description": product.description_uz || product.description,
-        "sku": product.sku || product.id,
-        "brand": { "@type": "Brand", "name": "Velari" },
+        "name": productName,
+        "image": productImages,
+        "description": (product.description_uz || product.description || '').substring(0, 500),
+        "sku": product.sku || product.article || product.id,
+        "brand": { "@type": "Brand", "name": brandName },
         "offers": {
             "@type": "Offer",
-            "url": `https://velari.uz/products/${product.id}`,
+            "url": `https://velari.uz/${params.lang}/products/${params.id}`,
             "priceCurrency": "UZS",
             "price": product.price,
-            "availability": "https://schema.org/InStock",
+            "priceValidUntil": priceValidDate.toISOString().split('T')[0],
+            "itemCondition": "https://schema.org/NewCondition",
+            "availability": product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
             "seller": { "@type": "Organization", "name": "Velari" }
         }
     };
@@ -139,20 +157,20 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
             {
                 "@type": "ListItem",
                 "position": 1,
-                "name": "Bosh sahifa",
-                "item": "https://velari.uz"
+                "name": language === 'uz' ? "Bosh sahifa" : "Главная",
+                "item": `https://velari.uz/${language}`
             },
             {
                 "@type": "ListItem",
                 "position": 2,
-                "name": "Katalog",
-                "item": "https://velari.uz/catalog"
+                "name": language === 'uz' ? "Katalog" : "Каталог",
+                "item": `https://velari.uz/${language}/catalog`
             },
             {
                 "@type": "ListItem",
                 "position": 3,
-                "name": product.name_uz || product.name,
-                "item": `https://velari.uz/products/${params.id}`
+                "name": productName,
+                "item": `https://velari.uz/${language}/products/${params.id}`
             }
         ]
     };

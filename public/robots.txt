@@ -1,15 +1,47 @@
+# Velari.uz Robots.txt
+# Updated: 2026-04-19
+
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+Disallow: /*/admin
+Disallow: /*/admin/
+Disallow: /*/login
+Disallow: /*/account
+Disallow: /*/cart
+Disallow: /*/wishlist
+Disallow: /*/messages
+Disallow: /*/checkout
+Disallow: /*/orders
+Disallow: /*/wallet
+
+User-agent: Yandex
+Allow: /
+Disallow: /api/
+Disallow: /*/admin
+Disallow: /*/admin/
+Disallow: /*/login
+Disallow: /*/account
+Disallow: /*/cart
+Disallow: /*/wishlist
+Disallow: /*/messages
+Disallow: /*/checkout
+Disallow: /*/orders
+Disallow: /*/wallet
+Host: https://velari.uz
+
 User-agent: *
 Allow: /
 Disallow: /api/
-Disallow: /admin/
-Disallow: /admin
 Disallow: /*/admin
 Disallow: /*/admin/
-Disallow: /login
-Disallow: /account
-Disallow: /cart
-Disallow: /wishlist
-Disallow: /messages
-Disallow: /checkout
+Disallow: /*/login
+Disallow: /*/account
+Disallow: /*/cart
+Disallow: /*/wishlist
+Disallow: /*/messages
+Disallow: /*/checkout
+Disallow: /*/orders
+Disallow: /*/wallet
 
 Sitemap: https://velari.uz/sitemap.xml

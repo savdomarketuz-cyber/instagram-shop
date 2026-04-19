@@ -3,19 +3,19 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getProductSlug } from '@/lib/slugify';
 import { i18n } from '@/lib/i18n-config';
 
+export const revalidate = 3600; // Regenerate sitemap every hour
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const baseUrl = 'https://velari.uz';
     const locales = i18n.locales;
 
-    // Static routes
+    // Static routes — ONLY pages that should be indexed
+    // Removed: /cart, /wishlist, /login (these are blocked in robots.txt)
     const staticPaths = [
         '',
         '/catalog',
         '/reels',
         '/blog',
-        '/cart',
-        '/wishlist',
-        '/login',
     ];
 
     const routes: MetadataRoute.Sitemap = [];
@@ -41,13 +41,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
 
     try {
-        // 1. Dynamic product routes
-        const { data: products } = await supabaseAdmin
+        // 1. Dynamic product routes — THE MOST IMPORTANT PART
+        const { data: products, error: productsError } = await supabaseAdmin
             .from('products')
-            .select('id, name, name_uz, updated_at')
+            .select('id, name, name_uz, article, created_at')
             .eq('is_deleted', false);
 
-        if (products) {
+        if (productsError) {
+            console.error('Sitemap: Failed to fetch products:', productsError.message);
+        }
+
+        if (products && products.length > 0) {
+            console.log(`Sitemap: Adding ${products.length} products`);
             for (const locale of locales) {
                 products.forEach((product) => {
                     const slug = getProductSlug(product);
@@ -58,23 +63,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
                     routes.push({
                         url: `${baseUrl}/${locale}/products/${slug}`,
-                        lastModified: product.updated_at ? new Date(product.updated_at) : new Date(),
+                        lastModified: product.created_at ? new Date(product.created_at) : new Date(),
                         changeFrequency: 'weekly' as const,
-                        priority: 0.7,
+                        priority: 0.9,
                         alternates: {
                             languages,
                         }
                     });
                 });
             }
+        } else {
+            console.warn('Sitemap: No products found! Check supabaseAdmin connection.');
         }
 
         // 2. Dynamic category routes
-        const { data: categories } = await supabaseAdmin
+        const { data: categories, error: categoriesError } = await supabaseAdmin
             .from('categories')
-            .select('id, updated_at');
+            .select('id')
+            .eq('is_deleted', false);
 
-        if (categories) {
+        if (categoriesError) {
+            console.error('Sitemap: Failed to fetch categories:', categoriesError.message);
+        }
+
+        if (categories && categories.length > 0) {
             for (const locale of locales) {
                 categories.forEach((cat) => {
                     const languages = locales.reduce((acc, loc) => ({
@@ -84,7 +96,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
                     routes.push({
                         url: `${baseUrl}/${locale}/catalog?category=${cat.id}`,
-                        lastModified: cat.updated_at ? new Date(cat.updated_at) : new Date(),
+                        lastModified: new Date(),
                         changeFrequency: 'monthly' as const,
                         priority: 0.6,
                         alternates: {
@@ -95,36 +107,46 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             }
         }
 
-        // 3. Dynamic blog routes
-        const { data: blogs } = await supabaseAdmin
-            .from('blogs')
-            .select('slug, updated_at')
-            .eq('is_deleted', false);
+        // 3. Dynamic blog routes (table might not exist)
+        try {
+            const { data: blogs, error: blogsError } = await supabaseAdmin
+                .from('blogs')
+                .select('slug, created_at')
+                .eq('is_deleted', false);
 
-        if (blogs) {
-            for (const locale of locales) {
-                blogs.forEach((blog) => {
-                    const languages = locales.reduce((acc, loc) => ({
-                        ...acc,
-                        [loc]: `${baseUrl}/${loc}/blog/${blog.slug}`
-                    }), {});
-
-                    routes.push({
-                        url: `${baseUrl}/${locale}/blog/${blog.slug}`,
-                        lastModified: blog.updated_at ? new Date(blog.updated_at) : new Date(),
-                        changeFrequency: 'weekly' as const,
-                        priority: 0.7,
-                        alternates: {
-                            languages,
-                        }
-                    });
-                });
+            if (blogsError) {
+                console.error('Sitemap: Failed to fetch blogs:', blogsError.message);
             }
+
+            if (blogs && blogs.length > 0) {
+                for (const locale of locales) {
+                    blogs.forEach((blog) => {
+                        const languages = locales.reduce((acc, loc) => ({
+                            ...acc,
+                            [loc]: `${baseUrl}/${loc}/blog/${blog.slug}`
+                        }), {});
+
+                        routes.push({
+                            url: `${baseUrl}/${locale}/blog/${blog.slug}`,
+                            lastModified: blog.created_at ? new Date(blog.created_at) : new Date(),
+                            changeFrequency: 'weekly' as const,
+                            priority: 0.7,
+                            alternates: {
+                                languages,
+                            }
+                        });
+                    });
+                }
+            }
+        } catch (blogError) {
+            console.warn('Sitemap: Blogs table not available:', blogError);
         }
 
+        console.log(`Sitemap: Total ${routes.length} URLs generated`);
         return routes;
     } catch (error) {
         console.error('Sitemap generation failed:', error);
+        // Still return static routes even if dynamic generation fails
         return routes;
     }
 }

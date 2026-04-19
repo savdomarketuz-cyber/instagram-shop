@@ -954,7 +954,7 @@ export default function AdminProducts() {
                     <Loader2 className="animate-spin mb-4" size={32} />
                     <p className="font-black uppercase tracking-widest text-xs">Yuklanmoqda...</p>
                 </div>
-            ) : filteredProducts.length === 0 ? (
+            ) : products.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-32 text-gray-400 border-2 border-dashed border-gray-100 rounded-[40px]">
                     <AlertCircle className="mb-4" size={48} strokeWidth={1} />
                     <p className="font-black uppercase tracking-widest text-xs">Mahsulotlar topilmadi</p>

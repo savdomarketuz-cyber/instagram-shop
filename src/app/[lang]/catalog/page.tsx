@@ -15,7 +15,11 @@ export const metadata: Metadata = {
         type: "website",
     },
     alternates: {
-        canonical: "/catalog",
+        canonical: "https://velari.uz/uz/catalog",
+        languages: {
+            'uz-UZ': 'https://velari.uz/uz/catalog',
+            'ru-RU': 'https://velari.uz/ru/catalog',
+        },
     }
 };
 
