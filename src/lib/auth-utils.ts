@@ -9,18 +9,6 @@ export function hashPassword(password: string): string {
     return crypto.createHash("sha256").update(password + salt).digest("hex");
 }
 
-import crypto from "crypto";
-
-/**
- * Oddiy SHA-256 hashing (Server-side uchun)
- */
-export function hashPassword(password: string): string {
-    return crypto
-        .createHash("sha256")
-        .update(password)
-        .digest("hex");
-}
-
 /**
  * Cryptographically verify JWT signature (Edge compatible)
  */

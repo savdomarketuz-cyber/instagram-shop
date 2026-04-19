@@ -60,10 +60,11 @@ export const ReviewsSection = ({
             if (!replyTo && activeCommentTab === 'review' && !user.isAdmin) {
                 const hasReview = comments.some(c => c.userId === (user.id || user.phone) && !c.parentId && c.type === 'review');
                 if (hasReview) {
-                    showToast(language === 'uz' ? "Siz ushbu mahsulotga allaqachon sharh qoldirgansiz" : "Вы уже оставили отзыв об этом товаре", 'error');
+                    showToast(language === 'uz' ? "Siz ushbu mahsulotga allaqachon sharh qoldirgansiz" : "Вы уже оставили отзыв", 'error');
                     setIsPosting(false);
                     return;
                 }
+            }
 
             // Use secure API for comment insertion
             const response = await fetch('/api/comments', {
