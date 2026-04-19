@@ -7,31 +7,7 @@ import Negotiator from 'negotiator';
 /**
  * Secure JWT Verification for Edge
  */
-async function verifyJwt(token: string, secret: string) {
-    try {
-        const [headerB64, payloadB64, signatureB64] = token.split('.');
-        
-        const encoder = new TextEncoder();
-        const data = encoder.encode(`${headerB64}.${payloadB64}`);
-        const secretKey = await crypto.subtle.importKey(
-            'raw',
-            encoder.encode(secret),
-            { name: 'HMAC', hash: 'SHA-256' },
-            false,
-            ['verify']
-        );
-        
-        // Convert base64url to Uint8Array
-        const signature = Uint8Array.from(atob(signatureB64.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
-        
-        const isValid = await crypto.subtle.verify('HMAC', secretKey, signature, data);
-        if (!isValid) return null;
-
-        return JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')));
-    } catch (e) {
-        return null;
-    }
-}
+import { verifyJwt } from '@/lib/auth-utils';
 
 /**
  * Locale detection

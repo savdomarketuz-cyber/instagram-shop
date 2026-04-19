@@ -9,20 +9,7 @@ const YANDEX_CONFIG = {
     REGION: process.env.YANDEX_S3_REGION || "ru-central1",
 };
 
-/**
- * Simplified JWT decoder for Edge/Middleware protection
- */
-function decodeJwt(token: string) {
-    try {
-        const parts = token.split('.');
-        if (parts.length !== 3) return null;
-        const payloadB64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-        const payloadStr = Buffer.from(payloadB64, 'base64').toString();
-        return JSON.parse(payloadStr);
-    } catch (e) {
-        return null;
-    }
-}
+import { verifyJwt } from "@/lib/auth-utils";
 
 async function hmacSha256(key: ArrayBuffer | string, data: string): Promise<ArrayBuffer> {
     const encoder = new TextEncoder();
@@ -50,6 +37,9 @@ export async function POST(req: NextRequest) {
         if (!checkRateLimit(ip, 3, 60)) {
             return NextResponse.json({ error: "Juda ko'p urinish. Bir daqiqadan so'ng qayta urining." }, { status: 429 });
         }
+
+        // 🛡 OPTIONAL AUTH: For uploads, we could check for a user session
+        // For now, let's keep it open for reviews but rate limited by IP
 
         const formData = await req.formData();
         const file = formData.get("file") as File | null;
@@ -175,11 +165,14 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
     try {
-        // 🔒 AUTH CHECK: Only Admins can delete
+        // 🔒 SECURE AUTH CHECK: Cryptographically verify Admin Token
         const adminToken = req.cookies.get('admin_token')?.value;
-        const payload = adminToken ? decodeJwt(adminToken) : null;
+        const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim() || "default-secret";
+        
+        const payload = adminToken ? await verifyJwt(adminToken, ADMIN_SECRET) : null;
+        
         if (!payload || payload.role !== 'admin') {
-            return NextResponse.json({ error: "Ruxsat etilmadi (Admin ruxsati zarur)" }, { status: 401 });
+            return NextResponse.json({ error: "Ruxsat etilmadi (Faqat Admin o'chira oladi)" }, { status: 401 });
         }
 
         const { fileUrl } = await req.json();

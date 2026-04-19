@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifyJwt } from "@/lib/auth-utils";
+import { checkRateLimit } from "@/lib/rate-limiter";
 
 const GROQ_API_KEYS = [
     process.env.GROQ_API_KEY_1 || "",
@@ -8,9 +10,20 @@ const GROQ_API_KEYS = [
 let currentKeyIndex = 0;
 
 export async function POST(req: NextRequest) {
+    const ip = req.headers.get("x-forwarded-for") || "unknown";
+    
     try {
+        // 0. SECURITY & RATE LIMITING
+        if (!checkRateLimit(ip, 5, 60)) return NextResponse.json({ error: "Rate limit" }, { status: 429 });
+
+        const adminToken = req.cookies.get('admin_token')?.value;
+        const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim() || "default-secret";
+        const payload = adminToken ? await verifyJwt(adminToken, ADMIN_SECRET) : null;
+        if (!payload || payload.role !== 'admin') {
+            return NextResponse.json({ error: "Unauthorized (Admin only)" }, { status: 401 });
+        }
+
         if (GROQ_API_KEYS.length === 0) {
-            console.error("AI API Error: GROQ_API_KEYS are missing in environment variables.");
             return NextResponse.json({ error: "AI configuration missing" }, { status: 503 });
         }
 
@@ -27,12 +40,21 @@ export async function POST(req: NextRequest) {
             const imageUrl = context?.image || context?.imageUrl || (context?.images && context.images[0]);
             if (!imageUrl) return NextResponse.json({ error: "Rasm topilmadi" }, { status: 400 });
 
+            // 🛡 SSRF PROTECTION: No internal IPs or localhost
+            if (imageUrl.includes("localhost") || imageUrl.includes("127.0.0.1") || imageUrl.includes("192.168.") || imageUrl.includes("10.0.")) {
+                return NextResponse.json({ error: "Invalid image URL" }, { status: 400 });
+            }
+
             try {
                 // Step 1: Vision analysis
                 const imgResponse = await fetch(imageUrl);
+                if (!imgResponse.ok) throw new Error("Could not fetch image");
+                
                 const arrayBuffer = await imgResponse.arrayBuffer();
                 const base64Image = Buffer.from(arrayBuffer).toString('base64');
                 const contentType = imgResponse.headers.get('content-type') || 'image/jpeg';
+                
+                if (!contentType.startsWith('image/')) throw new Error("Invalid content type");
 
                 const visionApiKey = GROQ_API_KEYS[currentKeyIndex];
                 const visionResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -58,28 +80,15 @@ export async function POST(req: NextRequest) {
 
                 const visionData = await visionResponse.json();
                 visualDescription = visionData.choices?.[0]?.message?.content || "";
-
                 if (!visualDescription) throw new Error("Vision AI failed to analyze");
 
-                // Step 2: Reasoning & Content Generation
+                // Step 2: Content Generation
                 finalModel = "openai/gpt-oss-120b";
                 finalMessages = [
                     { role: 'system', content: 'Siz professional marketing tahlilchisiz. JAVOB FAQAT TOZA JSON BO\'LSIN.' },
                     { 
                         role: 'user', 
-                        content: `Mana bu mahsulotning vizual tahlili: ${visualDescription}. 
-                        Ushbu ma'lumotlar asosida mahsulot uchun nom, qisqa va to'liq tavsif, brend va kategoriyani aniqlang.
-                        JAVOB FAQAT USHBU FORMATDA BO'LSIN (JSON):
-                        {
-                            "name_uz": "...",
-                            "name_ru": "...",
-                            "description_uz": "...",
-                            "description_ru": "...",
-                            "short_uz": "...",
-                            "short_ru": "...",
-                            "brand": "...",
-                            "category_guess": "..."
-                        }` 
+                        content: `Mahsulot tahlili: ${visualDescription}. JSON formatda qaytaring (name_uz, name_ru, description_uz, description_ru, short_uz, short_ru, brand, category_guess).` 
                     }
                 ];
                 responseFormat = { type: 'json_object' };
@@ -124,27 +133,18 @@ export async function POST(req: NextRequest) {
                 const data = await response.json();
                 const content = data.choices[0].message.content;
 
-                if (responseFormat?.type === 'json_object') {
-                    try {
-                        const parsed = JSON.parse(content.replace(/```json|```/g, '').trim());
-                        return NextResponse.json({ result: parsed, visualDescription });
-                    } catch (e) {
-                        return NextResponse.json({ result: content, visualDescription });
-                    }
-                }
-
-                return NextResponse.json({ content, visualDescription });
+                return NextResponse.json({ 
+                    content: responseFormat?.type === 'json_object' ? JSON.parse(content.replace(/```json|```/g, '').trim()) : content,
+                    visualDescription 
+                });
 
             } catch (error: any) {
-                console.error(`AI Attempt ${attempts + 1} failed:`, error.message);
                 currentKeyIndex = (currentKeyIndex + 1) % GROQ_API_KEYS.length;
                 attempts++;
-                if (attempts >= maxRetries) {
-                    return NextResponse.json({ error: "AI service unavailable: " + error.message }, { status: 503 });
-                }
+                if (attempts >= maxRetries) throw error;
             }
         }
-    } catch (error) {
-        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
     }
 }

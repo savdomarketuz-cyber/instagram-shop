@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { verifyJwt } from "@/lib/auth-utils";
+import { checkRateLimit } from "@/lib/rate-limiter";
 
-export async function GET() {
+export async function GET(req: Request) {
+    const ip = req.headers.get("x-forwarded-for") || "unknown";
     try {
+        if (!checkRateLimit(ip, 20, 60)) return NextResponse.json({ error: "Rate limit" }, { status: 429 });
+
+        const adminToken = (req as any).cookies?.get('admin_token')?.value || req.headers.get('cookie')?.split('admin_token=')[1]?.split(';')[0];
+        const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim() || "default-secret";
+        const payload = adminToken ? await verifyJwt(adminToken, ADMIN_SECRET) : null;
+        if (!payload || payload.role !== 'admin') return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
         const { data: transactions, error: tErr } = await supabaseAdmin
             .from("cashback_transactions")
             .select("*")
@@ -39,7 +49,15 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+    const ip = req.headers.get("x-forwarded-for") || "unknown";
     try {
+        if (!checkRateLimit(ip, 10, 60)) return NextResponse.json({ error: "Rate limit" }, { status: 429 });
+
+        const adminToken = (req as any).cookies?.get('admin_token')?.value || req.headers.get('cookie')?.split('admin_token=')[1]?.split(';')[0];
+        const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim() || "default-secret";
+        const payload = adminToken ? await verifyJwt(adminToken, ADMIN_SECRET) : null;
+        if (!payload || payload.role !== 'admin') return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
         const body = await req.json();
 
         if (body.type === 'update_settings') {
@@ -52,6 +70,11 @@ export async function POST(req: Request) {
 
         const { user_phone, amount, type, description } = body;
 
+        // 🛡 SECURITY: amount must be a number and positive (unless it's a specific deduction type)
+        if (isNaN(amount) || amount === 0) {
+            return NextResponse.json({ success: false, message: "Noto'g'ri miqdor" }, { status: 400 });
+        }
+
         // High security adjustment
         const { data: wallet, error: wErr } = await supabaseAdmin
             .from("user_wallets")
@@ -62,6 +85,11 @@ export async function POST(req: Request) {
         if (wErr) throw wErr;
 
         const newBalance = Number(wallet.balance) + Number(amount);
+        
+        // 🛡 SECURITY: Balance cannot go negative via manual admin work unless intended
+        if (newBalance < 0) {
+            return NextResponse.json({ success: false, message: "Balans manfiy bo'la olmaydi" }, { status: 400 });
+        }
 
         // Transactional update
         const { error: upErr } = await supabaseAdmin
