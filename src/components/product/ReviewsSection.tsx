@@ -90,15 +90,6 @@ export const ReviewsSection = ({
             const { error } = await supabase.from("comments").insert([newComment]);
             if (error) throw error;
 
-            if (!replyTo && activeCommentTab === 'review' && product) {
-                const currentCount = product.reviewCount || 0;
-                const currentRating = product.rating || 0;
-                const newCount = currentCount + 1;
-                const newRating = ((currentRating * currentCount) + commentRating) / newCount;
-                
-                await supabase.from("products").update({ rating: newRating, review_count: newCount }).eq("id", productId);
-            }
-
             setCommentText("");
             setReplyTo(null);
             showToast(language === 'uz' ? "Muvaffaqiyatli yuborildi!" : "Успешно отправлено!");
