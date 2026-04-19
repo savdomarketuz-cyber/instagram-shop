@@ -44,7 +44,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         // 1. Dynamic product routes — THE MOST IMPORTANT PART
         const { data: products, error: productsError } = await supabaseAdmin
             .from('products')
-            .select('id, name, name_uz, article, created_at')
+            .select('id, name, name_uz, article, updated_at')
             .eq('is_deleted', false);
 
         if (productsError) {
@@ -63,7 +63,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
                     routes.push({
                         url: `${baseUrl}/${locale}/products/${slug}`,
-                        lastModified: product.created_at ? new Date(product.created_at) : new Date(),
+                        lastModified: product.updated_at ? new Date(product.updated_at) : new Date(),
                         changeFrequency: 'weekly' as const,
                         priority: 0.9,
                         alternates: {
@@ -79,7 +79,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         // 2. Dynamic category routes
         const { data: categories, error: categoriesError } = await supabaseAdmin
             .from('categories')
-            .select('id')
+            .select('id, updated_at')
             .eq('is_deleted', false);
 
         if (categoriesError) {
@@ -96,7 +96,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
                     routes.push({
                         url: `${baseUrl}/${locale}/catalog?category=${cat.id}`,
-                        lastModified: new Date(),
+                        lastModified: cat.updated_at ? new Date(cat.updated_at) : new Date(),
                         changeFrequency: 'monthly' as const,
                         priority: 0.6,
                         alternates: {
