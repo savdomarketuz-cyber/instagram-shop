@@ -72,7 +72,7 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
                 siteName: 'Velari',
                 images: [{ url: ogUrl.toString(), width: 1200, height: 630, alt: productName }],
                 locale: params.lang === 'ru' ? 'ru_RU' : 'uz_UZ',
-                type: 'article',
+                type: 'website',
             },
             twitter: {
                 card: 'summary_large_image',
@@ -85,6 +85,7 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
                 languages: {
                     'uz-UZ': `${baseUrl}/uz/products/${params.id}`,
                     'ru-RU': `${baseUrl}/ru/products/${params.id}`,
+                    'x-default': `${baseUrl}/uz/products/${params.id}`,
                 },
             },
             keywords: [
@@ -198,6 +199,10 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
         ]
     };
 
+    // Get description for server-side rendering (critical for SEO)
+    const description = product[language === 'uz' ? 'description_uz' : 'description_ru'] || product.description || '';
+    const descriptionText = typeof description === 'string' ? description : '';
+
     return (
         <>
             <script
@@ -212,6 +217,32 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
             />
+            {/* SEO: Server-side rendered content for search engine crawlers */}
+            {/* This hidden article ensures Googlebot can read the full product description */}
+            <article
+                className="sr-only"
+                itemScope
+                itemType="https://schema.org/Product"
+            >
+                <h1 itemProp="name">{productName}</h1>
+                <nav aria-label="Breadcrumb">
+                    <ol>
+                        <li><a href={`https://velari.uz/${language}`}>{language === 'uz' ? 'Bosh sahifa' : 'Главная'}</a></li>
+                        <li><a href={`https://velari.uz/${language}/catalog`}>{language === 'uz' ? 'Katalog' : 'Каталог'}</a></li>
+                        <li>{productName}</li>
+                    </ol>
+                </nav>
+                <span itemProp="brand">{brandName}</span>
+                <img itemProp="image" src={productImages[0]} alt={productName} width={1} height={1} />
+                <div itemProp="offers" itemScope itemType="https://schema.org/Offer">
+                    <span itemProp="price" content={String(product.price)}>{product.price?.toLocaleString()} so'm</span>
+                    <span itemProp="priceCurrency" content="UZS">UZS</span>
+                    <link itemProp="availability" href={product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'} />
+                </div>
+                <div itemProp="description">
+                    {descriptionText}
+                </div>
+            </article>
             <ProductClient params={params} initialProduct={product} />
         </>
     );

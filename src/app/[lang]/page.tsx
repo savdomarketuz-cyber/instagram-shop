@@ -14,6 +14,7 @@ export const metadata: Metadata = {
         languages: {
             'uz-UZ': 'https://velari.uz/uz',
             'ru-RU': 'https://velari.uz/ru',
+            'x-default': 'https://velari.uz/uz',
         },
     }
 };
