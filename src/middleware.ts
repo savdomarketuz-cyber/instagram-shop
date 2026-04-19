@@ -67,23 +67,27 @@ export async function middleware(request: NextRequest) {
 
     const pathWithoutLocale = pathname.replace(`/${localePart}`, '');
 
-    if (pathWithoutLocale.startsWith('/admin')) {
+    // 3. Admin Protection (Pages & API)
+    if (pathWithoutLocale.startsWith('/admin') || pathname.startsWith('/api/admin')) {
         const adminToken = request.cookies.get('admin_token')?.value;
         const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim();
 
-        // If we have a token, at least try to let the user in
-        if (adminToken) {
-            const payload = decodeJwt(adminToken);
-            if (payload && payload.role === 'admin') {
-                return NextResponse.next();
+        const payload = adminToken ? decodeJwt(adminToken) : null;
+        const isAdmin = payload && payload.role === 'admin';
+
+        if (!isAdmin) {
+            // IF it's an API request, return 401
+            if (pathname.startsWith('/api/')) {
+                return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
             }
+            
+            // If it's a page request, redirect to login
+            const loginUrl = new URL(`/${localePart}/login`, request.url);
+            loginUrl.searchParams.set('redirect', pathname);
+            return NextResponse.redirect(loginUrl);
         }
 
-        // If no token or invalid token, redirect to login
-        // WE REMOVED THE STRICT VAULT CHECK HERE TO UNBLOCK YOU
-        const loginUrl = new URL(`/${localePart}/login`, request.url);
-        loginUrl.searchParams.set('redirect', pathname);
-        return NextResponse.redirect(loginUrl);
+        return NextResponse.next();
     }
 
     return NextResponse.next();
@@ -91,6 +95,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
     matcher: [
-        '/((?!api|_next/static|_next/image|favicon.ico|icons|images|manifest.json|robots.txt|sitemap.xml|yandex_).*)',
+        '/((?!_next/static|_next/image|favicon.ico|icons|images|manifest.json|robots.txt|sitemap.xml|yandex_).*)',
     ],
 };
