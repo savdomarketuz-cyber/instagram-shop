@@ -79,7 +79,7 @@ export const ReviewsSection = ({
                         text: commentText,
                         type: replyTo ? replyTo.type : activeCommentTab,
                         parent_id: replyTo?.id || null,
-                        is_admin: !!(user.isAdmin || user.phone === "ADMIN" || user.is_admin),
+                        is_admin: !!(user?.isAdmin || user?.phone === "ADMIN"),
                         rating: (!replyTo && activeCommentTab === 'review') ? commentRating : null,
                     }
                 })
