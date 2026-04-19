@@ -1,12 +1,20 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { checkRateLimit } from "@/lib/rate-limiter";
 
 export async function POST(req: Request) {
+    const ip = req.headers.get("x-forwarded-for") || "unknown";
+
     try {
+        // 0. RATE LIMITING (5 attempts per minute to prevent brute-force)
+        if (!checkRateLimit(ip, 5, 60)) {
+            return NextResponse.json({ success: false, message: "Juda ko'p urinish. Bir daqiqadan so'ng qayta urining." }, { status: 429 });
+        }
+
         const { senderPhone, receiverPhone, amount, code } = await req.json();
 
-        // 1. Execute Atomic DB Transaction (Locked RPC)
-        const { data, error } = await supabaseAdmin.rpc('process_p2p_transfer_v3', {
+        // 1. Execute Atomic DB Transaction (Locked RPC V4 with Attempt Limits)
+        const { data, error } = await supabaseAdmin.rpc('process_p2p_transfer_v4', {
             p_sender_phone: senderPhone,
             p_receiver_phone: receiverPhone,
             p_amount: amount,
@@ -20,6 +28,7 @@ export async function POST(req: Request) {
         }
 
         const isGift = data.is_gift;
+        const newBalance = data.new_balance;
 
         // 2. Notify Participants via Telegram (Async)
         const BOT_TOKEN = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN;
@@ -28,8 +37,8 @@ export async function POST(req: Request) {
             supabaseAdmin.from("users").select("telegram_id").eq("phone", senderPhone).single().then(({ data: s }) => {
                 if (s?.telegram_id) {
                     const text = isGift 
-                        ? `🎁 <b>Sovg'angiz muvaffaqiyatli yuborildi!</b>\n\n💰 Summa: -${amount.toLocaleString()} so'm\n👤 Kimga: ${receiverPhone}\n📉 Yangi balans: ${data.new_balance.toLocaleString()} so'm`
-                        : `✅ <b>O'tkazma bajarildi!</b>\n\n💰 Summa: -${amount.toLocaleString()} so'm\n👤 Kimga: ${receiverPhone}\n📉 Yangi balans: ${data.new_balance.toLocaleString()} so'm`;
+                        ? `🎁 <b>Sovg'angiz muvaffaqiyatli yuborildi!</b>\n\n💰 Summa: -${amount.toLocaleString()} so'm\n👤 Kimga: ${receiverPhone}\n📉 Yangi balans: ${newBalance.toLocaleString()} so'm`
+                        : `✅ <b>O'tkazma bajarildi!</b>\n\n💰 Summa: -${amount.toLocaleString()} so'm\n👤 Kimga: ${receiverPhone}\n📉 Yangi balans: ${newBalance.toLocaleString()} so'm`;
                     fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
