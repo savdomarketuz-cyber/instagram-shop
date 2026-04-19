@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
+import { checkRateLimit } from "@/lib/rate-limiter";
 
 const YANDEX_CONFIG = {
     ACCESS_KEY: process.env.YANDEX_S3_ACCESS_KEY || "",
@@ -7,6 +8,21 @@ const YANDEX_CONFIG = {
     BUCKET: process.env.YANDEX_S3_BUCKET || "savdomarketimag",
     REGION: process.env.YANDEX_S3_REGION || "ru-central1",
 };
+
+/**
+ * Simplified JWT decoder for Edge/Middleware protection
+ */
+function decodeJwt(token: string) {
+    try {
+        const parts = token.split('.');
+        if (parts.length !== 3) return null;
+        const payloadB64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        const payloadStr = Buffer.from(payloadB64, 'base64').toString();
+        return JSON.parse(payloadStr);
+    } catch (e) {
+        return null;
+    }
+}
 
 async function hmacSha256(key: ArrayBuffer | string, data: string): Promise<ArrayBuffer> {
     const encoder = new TextEncoder();
@@ -27,7 +43,14 @@ async function hashSha256(data: string | ArrayBuffer): Promise<string> {
 }
 
 export async function POST(req: NextRequest) {
+    const ip = req.headers.get("x-forwarded-for") || "unknown";
+
     try {
+        // 0. RATE LIMITING (3 uploads per minute)
+        if (!checkRateLimit(ip, 3, 60)) {
+            return NextResponse.json({ error: "Juda ko'p urinish. Bir daqiqadan so'ng qayta urining." }, { status: 429 });
+        }
+
         const formData = await req.formData();
         const file = formData.get("file") as File | null;
         let fileName = formData.get("fileName") as string | null;
@@ -36,9 +59,13 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "No file provided" }, { status: 400 });
         }
 
+        // 🟢 SIZE LIMIT: 10MB
+        if (file.size > 10 * 1024 * 1024) {
+            return NextResponse.json({ error: "Fayl hajmi juda katta (Max: 10MB)" }, { status: 400 });
+        }
+
         let originalBuffer: Buffer = Buffer.from(new Uint8Array(await file.arrayBuffer()));
         let lowResBuffer: Buffer | null = null;
-        let finalContentType = "image/webp";
         let blurDataURL = "";
 
         // 🟢 PRE-PROCESSING: Optimize Images with Sharp
@@ -59,39 +86,17 @@ export async function POST(req: NextRequest) {
                 originalBuffer = await image
                     .clone()
                     .resize(1080, 1440, { fit: "cover" })
-                    .toFormat("avif", { 
-                        quality: 75, 
-                        effort: 8
-                    })
+                    .toFormat("avif", { quality: 75, effort: 8 })
                     .toBuffer();
  
-                // Force .avif extension
-                if (fileName) {
-                    const dotIndex = fileName.lastIndexOf(".");
-                    fileName = (dotIndex !== -1 ? fileName.substring(0, dotIndex) : fileName) + ".avif";
-                } else {
-                    fileName = `image_${Date.now()}.avif`;
-                }
+                 // 3. Generate Thumbnail (360x480px, Q40) - Maximum Compression
+                 lowResBuffer = await image
+                     .clone()
+                     .resize(360, 480, { fit: "cover" })
+                     .toFormat("webp", { quality: 40, effort: 9, smartSubsample: true })
+                     .toBuffer();
 
-                // 3. Generate Thumbnail (360x480px, Q40) - Maximum Compression
-                lowResBuffer = await image
-                    .clone()
-                    .resize(360, 480, { fit: "cover" })
-                    .toFormat("webp", { 
-                        quality: 40, 
-                        effort: 9, 
-                        smartSubsample: true
-                    })
-                    .toBuffer();
-
-
-                // Force .webp extension
-                if (fileName) {
-                    const dotIndex = fileName.lastIndexOf(".");
-                    fileName = (dotIndex !== -1 ? fileName.substring(0, dotIndex) : fileName) + ".webp";
-                } else {
-                    fileName = `image_${Date.now()}.webp`;
-                }
+                 fileName = (fileName || `img_${Date.now()}`).split('.')[0] + '.avif';
 
             } catch (err) {
                 console.error("Sharp processing failed:", err);
@@ -146,7 +151,6 @@ export async function POST(req: NextRequest) {
         const safeBaseName = (fileName || "image.avif").replace(/[^a-zA-Z0-9.-]/g, "_");
         const timestamp = Date.now();
         
-        // Parallel Uploads - AVIF for original, WebP for thumb
         const uploadPromises = [
             uploadToS3(originalBuffer, `uploads/${timestamp}_original_${safeBaseName}`, "image/avif")
         ];
@@ -169,9 +173,15 @@ export async function POST(req: NextRequest) {
     }
 }
 
-
 export async function DELETE(req: NextRequest) {
     try {
+        // 🔒 AUTH CHECK: Only Admins can delete
+        const adminToken = req.cookies.get('admin_token')?.value;
+        const payload = adminToken ? decodeJwt(adminToken) : null;
+        if (!payload || payload.role !== 'admin') {
+            return NextResponse.json({ error: "Ruxsat etilmadi (Admin ruxsati zarur)" }, { status: 401 });
+        }
+
         const { fileUrl } = await req.json();
 
         if (!fileUrl || !fileUrl.includes("yandexcloud.net")) {
@@ -192,23 +202,10 @@ export async function DELETE(req: NextRequest) {
         const canonicalUri = `/${BUCKET}/${fileKey}`;
         const canonicalQueryString = "";
 
-        const headersConfig: Record<string, string> = {
-            "host": host,
-            "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
-            "x-amz-date": amzDate
-        };
-
-        const canonicalHeaders = Object.keys(headersConfig)
-            .sort()
-            .map(key => `${key}:${headersConfig[key]}\n`)
-            .join("");
-
+        const headersConfig: Record<string, string> = { "host": host, "x-amz-date": amzDate, "x-amz-content-sha256": "UNSIGNED-PAYLOAD" };
+        const canonicalHeaders = Object.keys(headersConfig).sort().map(k => `${k}:${headersConfig[k]}\n`).join("");
         const signedHeaders = Object.keys(headersConfig).sort().join(";");
-
-        const canonicalRequest = [
-            method, canonicalUri, canonicalQueryString, canonicalHeaders, signedHeaders, "UNSIGNED-PAYLOAD"
-        ].join("\n");
-
+        const canonicalRequest = [method, canonicalUri, canonicalQueryString, canonicalHeaders, signedHeaders, "UNSIGNED-PAYLOAD"].join("\n");
         const algorithm = "AWS4-HMAC-SHA256";
         const credentialScope = `${dateStamp}/${REGION}/s3/aws4_request`;
         const hashedCanonicalRequest = await hashSha256(canonicalRequest);
@@ -223,9 +220,7 @@ export async function DELETE(req: NextRequest) {
 
         const authorizationHeader = `${algorithm} Credential=${ACCESS_KEY}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
-        const deleteUrl = `https://${host}/${BUCKET}/${fileKey}`;
-
-        const deleteResponse = await fetch(deleteUrl, {
+        const deleteResponse = await fetch(`https://${host}/${BUCKET}/${fileKey}`, {
             method: method,
             headers: {
                 "x-amz-date": amzDate,
@@ -234,11 +229,7 @@ export async function DELETE(req: NextRequest) {
             }
         });
 
-        if (!deleteResponse.ok) {
-            const errorBody = await deleteResponse.text();
-            console.error("Yandex S3 Delete Error:", deleteResponse.status, errorBody);
-            return NextResponse.json({ success: false, error: "Failed to delete from S3" }, { status: 500 });
-        }
+        if (!deleteResponse.ok) throw new Error(await deleteResponse.text());
 
         return NextResponse.json({ success: true });
     } catch (error: any) {
@@ -246,4 +237,3 @@ export async function DELETE(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
-
