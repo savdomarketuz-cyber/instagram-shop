@@ -119,6 +119,8 @@ BEGIN
       UPDATE user_wallets SET balance = balance - p_wallet_usage WHERE user_phone = p_user_phone;
       v_calculated_total := v_calculated_total - p_wallet_usage;
     END IF;
+  ELSIF p_wallet_usage < 0 THEN
+    RAISE EXCEPTION 'Hamyon summasi manfiy bo''lishi mumkin emas.';
   END IF;
 
   -- Ensure total is never negative

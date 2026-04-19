@@ -23,6 +23,11 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'error', 'Ushbu operatsiyada ishtirok etayotgan foydalanuvchilardan biri bloklangan.');
     END IF;
 
+    -- NEW: Positive amount check
+    IF p_amount <= 0 THEN
+        RETURN jsonb_build_object('success', false, 'error', 'O''tkazma summasi noldan katta bo''lishi kerak.');
+    END IF;
+
     -- 1. Fetch the OTP record for this specific sender
     SELECT * INTO v_otp 
     FROM p2p_otps 
