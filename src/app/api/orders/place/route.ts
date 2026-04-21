@@ -6,8 +6,8 @@ export async function POST(req: Request) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
 
     try {
-        // 0. RATE LIMITING (3 orders per minute per IP)
-        if (!checkRateLimit(ip, 3, 60)) {
+        // 0. RATE LIMITING (15 orders per minute per IP)
+        if (!checkRateLimit(ip, 15, 60)) {
             return NextResponse.json({ success: false, message: "Juda ko'p urinish. Bir ozdan so'ng qayta urinib ko'ring." }, { status: 429 });
         }
 
