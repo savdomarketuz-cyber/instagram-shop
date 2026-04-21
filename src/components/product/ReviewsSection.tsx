@@ -101,6 +101,7 @@ export const ReviewsSection = ({
     };
 
     const handleUpdateComment = async (commentId: string) => {
+        if (!user) { router.push("/login"); return; }
         if (!editingText.trim()) return;
         try {
             const response = await fetch('/api/comments', {
@@ -129,6 +130,7 @@ export const ReviewsSection = ({
     };
 
     const confirmDelete = async () => {
+        if (!user) { router.push("/login"); return; }
         if (!commentToDelete) return;
         try {
             const response = await fetch('/api/comments', {
