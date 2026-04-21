@@ -72,14 +72,11 @@ export default function OrdersPage() {
 
     const fetchOrders = async () => {
         try {
-            const { data: fetchedOrders, error } = await supabase
-                .from("orders")
-                .select("*")
-                .eq("user_phone", user?.phone)
-                .order("created_at", { ascending: false });
+            const response = await fetch(`/api/orders/user?phone=${encodeURIComponent(user?.phone || '')}`);
+            const data = await response.json();
             
-            if (fetchedOrders) {
-                setOrders(fetchedOrders.map(mapOrder));
+            if (data.success && data.orders) {
+                setOrders(data.orders.map(mapOrder));
             }
         } catch (error) {
             console.error("Fetch orders error:", error);
