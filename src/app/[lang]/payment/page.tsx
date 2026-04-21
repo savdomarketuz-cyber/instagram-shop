@@ -31,16 +31,13 @@ function PaymentContent() {
 
     const fetchOrder = async () => {
         try {
-            const { data, error } = await supabase
-                .from("orders")
-                .select("*")
-                .eq("id", orderId!)
-                .single();
+            const response = await fetch(`/api/orders/get?orderId=${orderId}&phone=${user?.phone || ''}`);
+            const data = await response.json();
             
-            if (error || !data) {
+            if (!response.ok || !data.success) {
                 setError(language === 'uz' ? "Buyurtma topilmadi." : "Заказ не найден.");
             } else {
-                setOrder(data);
+                setOrder(data.order);
             }
         } catch (e) {
             console.error("Fetch order error:", e);

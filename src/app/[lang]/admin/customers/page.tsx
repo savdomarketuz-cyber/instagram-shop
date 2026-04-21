@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Search, User, Phone, ShoppingBag, DollarSign, Calendar, Loader2, Globe, Monitor, MapPin, X, Heart, Eye, TrendingUp, Sparkles, Clock, ShoppingCart, History } from "lucide-react";
+import { Search, User, Phone, ShoppingBag, DollarSign, Calendar, Loader2, Globe, Monitor, MapPin, X, Heart, Eye, TrendingUp, Sparkles, Clock, ShoppingCart, History, Ban, Unlock } from "lucide-react";
 
 interface Customer {
     id: string;
@@ -20,6 +20,7 @@ interface Customer {
     username?: string;
     walletBalance?: number;
     ordersList?: any[];
+    bannedUntil?: any;
 }
 
 export default function AdminCustomers() {
@@ -70,7 +71,8 @@ export default function AdminCustomers() {
                         currentPath: activity.current_path || "/",
                         totalOrders: userOrders.length,
                         totalSpent: userOrders.reduce((sum, order) => sum + (order.total || 0), 0),
-                        username: user.username || null
+                        username: user.username || null,
+                        bannedUntil: user.banned_until || null
                     };
                 });
 
@@ -109,6 +111,34 @@ export default function AdminCustomers() {
             console.error("Error fetching customer details:", e);
         } finally {
             setLoadingDetails(false);
+        }
+    };
+
+    const handleToggleBan = async (customer: Customer) => {
+        const isBanned = !!customer.bannedUntil;
+        const confirmMsg = isBanned ? "Mijozni blokdan chiqarasizmi?" : "Mijozni bloklaysizmi? U orqali xarid qila olmaydi.";
+        if (!window.confirm(confirmMsg)) return;
+
+        try {
+            const res = await fetch("/api/admin/users/ban", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userPhone: customer.phone, ban: !isBanned })
+            });
+            const data = await res.json();
+            if (data.success) {
+                // Update local state
+                const updatedBannedUntil = data.banned_until;
+                setCustomers(prev => prev.map(c => c.id === customer.id ? { ...c, bannedUntil: updatedBannedUntil } : c));
+                if (selectedCustomer?.id === customer.id) {
+                    setSelectedCustomer(prev => prev ? { ...prev, bannedUntil: updatedBannedUntil } : null);
+                }
+                alert(isBanned ? "Mijoz blokdan chiqarildi." : "Mijoz bloklandi.");
+            } else {
+                alert("Xatolik: " + data.error);
+            }
+        } catch (e) {
+            console.error("Ban action error:", e);
         }
     };
 
@@ -242,6 +272,17 @@ export default function AdminCustomers() {
                                             <div className="px-4 py-1.5 bg-white/10 rounded-full text-[9px] font-black uppercase tracking-widest border border-white/5">
                                                 {selectedCustomer.totalSpent > 1000000 ? "VIP Mijoz" : "Sodiq Mijoz"}
                                             </div>
+                                            <button
+                                                onClick={() => handleToggleBan(selectedCustomer)}
+                                                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${
+                                                    selectedCustomer.bannedUntil 
+                                                        ? 'bg-red-500/20 text-red-500 border-red-500/30 hover:bg-red-500/30' 
+                                                        : 'bg-white/10 text-white border-white/10 hover:bg-white/20'
+                                                }`}
+                                            >
+                                                {selectedCustomer.bannedUntil ? <Unlock size={10} /> : <Ban size={10} />}
+                                                {selectedCustomer.bannedUntil ? 'BLOKLANGAN (Ochish)' : 'BLOKLASH'}
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
