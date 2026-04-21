@@ -26,7 +26,7 @@ function SuccessContent() {
     const fetchOrderReward = async () => {
         const { user } = useStore.getState();
         try {
-            const response = await fetch(`/api/orders/get?orderId=${orderId}&phone=${user?.phone || 'NONE'}`);
+            const response = await fetch(`/api/orders/get?orderId=${orderId}&phone=${encodeURIComponent(user?.phone || 'NONE')}`);
             const data = await response.json();
             
             if (data.success && data.order?.potential_cashback) {

@@ -31,7 +31,7 @@ function PaymentContent() {
 
     const fetchOrder = async () => {
         try {
-            const response = await fetch(`/api/orders/get?orderId=${orderId}&phone=${user?.phone || ''}`);
+            const response = await fetch(`/api/orders/get?orderId=${orderId}&phone=${encodeURIComponent(user?.phone || '')}`);
             const data = await response.json();
             
             if (!response.ok || !data.success) {
