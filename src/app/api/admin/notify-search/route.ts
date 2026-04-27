@@ -52,11 +52,16 @@ export async function POST(req: NextRequest) {
 
         const indexNowSuccess = await submitToIndexNow(urls);
         const googleSuccess = await submitToGoogleIndexing(urls);
+        
+        // Har safar mahsulot yangilanganda Google sitemap ni ham ping qilish
+        const { pingSitemapToGoogle } = await import("@/lib/google-indexing");
+        const sitemapPing = await pingSitemapToGoogle();
 
         return NextResponse.json({ 
-            success: indexNowSuccess || googleSuccess, 
+            success: indexNowSuccess || googleSuccess || sitemapPing, 
             indexNow: indexNowSuccess,
             google: googleSuccess,
+            sitemapPing,
             urlsCount: urls.length
         });
     } catch (error: any) {
