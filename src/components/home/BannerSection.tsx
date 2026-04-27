@@ -72,6 +72,7 @@ export const BannerSection = ({ banners, bannerSettings, currentBanner, setCurre
                                                  sizes="100vw"
                                                  placeholder={blurUrl ? "blur" : "empty"}
                                                  blurDataURL={blurUrl}
+                                                 unoptimized={true}
                                                  fetchPriority={index === 0 ? "high" : "auto"}
                                              />
                                             {tabName && (

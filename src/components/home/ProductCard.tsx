@@ -94,6 +94,7 @@ export const ProductCard = memo(({
                             className="object-cover"
                             priority={priority}
                             fetchPriority={priority ? "high" : "auto"}
+                            unoptimized={true}
                             referrerPolicy="no-referrer"
                             placeholder={item.image_metadata?.[mainMedia]?.blurDataURL ? "blur" : "empty"}
                             blurDataURL={item.image_metadata?.[mainMedia]?.blurDataURL}
