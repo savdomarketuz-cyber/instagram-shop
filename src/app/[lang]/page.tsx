@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: { params: { lang: string } })
     };
 }
 
-export const revalidate = 60;
+export const revalidate = 3600; // 1 soatda bir marta yangilanadi (TTFB ni pasaytirish uchun)
 
 async function getInitialData() {
     try {

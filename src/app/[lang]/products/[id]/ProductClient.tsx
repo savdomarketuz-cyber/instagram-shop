@@ -355,7 +355,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                 fill 
                                 className="object-cover" 
                                 alt={(product.image_metadata?.[product.image]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || (product[`name_${language}` as keyof typeof product] as string) || product.name} 
-                                unoptimized={true}
+                                
                             />
                         </div>
                         <div className="min-w-0">
@@ -472,7 +472,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                                     className="object-cover group-hover:scale-110 transition-transform" 
                                                     alt={(product.image_metadata?.[media.url]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || `${(product[`name_${language}` as keyof typeof product] as string) || product.name} - ${i + 1}`}
                                                     sizes="160px"
-                                                    unoptimized={true}
+                                                    
                                                     onLoad={() => setMaxDesktopLoadIndex(prev => Math.max(prev, i + 1))}
                                                 />
                                             ) : (
@@ -520,7 +520,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                             className="object-contain p-10 blur-sm scale-110 opacity-40" 
                                             alt="" 
                                             priority
-                                            unoptimized={true}
+                                            
                                         />
                                     )}
                                     
@@ -534,7 +534,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                         sizes="(max-width: 1024px) 100vw, 60vw"
                                         quality={65}
                                         fetchPriority="high"
-                                        unoptimized={true}
+                                        
                                         onLoad={() => setMaxDesktopLoadIndex(prev => Math.max(prev, 1))}
                                     />
                                 </>

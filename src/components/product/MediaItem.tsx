@@ -119,7 +119,7 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority 
                 className={`object-cover transition-all duration-700 ease-out ${isLoaded ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-105 blur-sm'}`}
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 priority={priority}
-                unoptimized={true}
+                
                 fetchPriority={priority ? "high" : "auto"}
                 onLoad={() => {
                     setIsLoaded(true);
