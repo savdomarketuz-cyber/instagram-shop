@@ -21,17 +21,27 @@ interface Category {
     image?: string;
 }
 
-export default function CatalogClient() {
+interface CatalogClientProps {
+    initialCategories?: Category[];
+}
+
+export default function CatalogClient({ initialCategories }: CatalogClientProps) {
     const router = useRouter();
     const { language, cachedCategories, setCachedCategories } = useStore();
     const t = translations[language];
 
-    const [allCategories, setAllCategories] = useState<Category[]>(cachedCategories || []);
-    const [loading, setLoading] = useState(cachedCategories.length === 0);
+    const [allCategories, setAllCategories] = useState<Category[]>(initialCategories || cachedCategories || []);
+    const [loading, setLoading] = useState((initialCategories || []).length === 0 && cachedCategories.length === 0);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
 
     useEffect(() => {
+        // Only fetch client-side if no server-side data was provided
+        if (initialCategories && initialCategories.length > 0) {
+            setCachedCategories(initialCategories);
+            return;
+        }
+        
         const fetchCategories = async () => {
             try {
                 const { data, error } = await supabase

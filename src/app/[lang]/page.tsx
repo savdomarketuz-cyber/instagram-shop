@@ -1,26 +1,34 @@
 import { Suspense } from "react";
 import HomeClient from "./HomeClient";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import { mapProduct, mapCategory, mapBanner } from "@/lib/mappers";
 import type { Product, Category, Banner } from "@/types";
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-    title: "Velari | O'zbekistonda №1 Premium Elektronika Do'koni",
-    description: "iPhone, Samsung, Xiaomi va boshqa global brendlarni muddatli to'lovga sotib oling. Toshkent bo'ylab tekin yetkazib berish va rasmiy kafolat.",
-    keywords: ["Velari", "elektronika do'koni", "Toshkent", "muddatli to'lov", "iphone narxi", "samsung narxi", "O'zbekiston"],
-    alternates: {
-        canonical: "https://velari.uz/uz",
-        languages: {
-            'uz-UZ': 'https://velari.uz/uz',
-            'ru-RU': 'https://velari.uz/ru',
-            'x-default': 'https://velari.uz/uz',
-        },
-    }
-};
+export async function generateMetadata({ params }: { params: { lang: string } }): Promise<Metadata> {
+    const lang = params.lang || 'uz';
+    const baseUrl = 'https://velari.uz';
+    
+    return {
+        title: lang === 'uz' 
+            ? "Velari | O'zbekistonda №1 Premium Elektronika Do'koni" 
+            : "Velari | Премиум магазин электроники №1 в Узбекистане",
+        description: lang === 'uz'
+            ? "iPhone, Samsung, Xiaomi va boshqa global brendlarni muddatli to'lovga sotib oling. Toshkent bo'ylab tekin yetkazib berish va rasmiy kafolat."
+            : "Покупайте iPhone, Samsung, Xiaomi и другие мировые бренды в рассрочку. Бесплатная доставка по Ташкенту и официальная гарантия.",
+        keywords: ["Velari", "elektronika do'koni", "Toshkent", "muddatli to'lov", "iphone narxi", "samsung narxi", "O'zbekiston"],
+        alternates: {
+            canonical: `${baseUrl}/${lang}`,
+            languages: {
+                'uz-UZ': `${baseUrl}/uz`,
+                'ru-RU': `${baseUrl}/ru`,
+                'x-default': `${baseUrl}/uz`,
+            },
+        }
+    };
+}
 
-export const runtime = "edge";
-export const revalidate = 60; 
+export const revalidate = 60;
 
 async function getInitialData() {
     try {
@@ -30,10 +38,10 @@ async function getInitialData() {
             { data: bannersData },
             { data: settingsData }
         ] = await Promise.all([
-            supabase.from("products").select("*").eq("is_deleted", false).order("created_at", { ascending: false }).limit(20),
-            supabase.from("categories").select("*").eq("is_deleted", false).order("name", { ascending: true }),
-            supabase.from("banners").select("*").eq("active", true).order("order_index", { ascending: true }),
-            supabase.from("settings").select("*").eq("id", "banners").single()
+            supabaseAdmin.from("products").select("*").eq("is_deleted", false).order("created_at", { ascending: false }).limit(20),
+            supabaseAdmin.from("categories").select("*").eq("is_deleted", false).order("name", { ascending: true }),
+            supabaseAdmin.from("banners").select("*").eq("active", true).order("order_index", { ascending: true }),
+            supabaseAdmin.from("settings").select("*").eq("id", "banners").single()
         ]);
         
         const products = (productsData || []).map(mapProduct);

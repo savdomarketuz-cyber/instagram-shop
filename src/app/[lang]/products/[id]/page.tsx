@@ -1,19 +1,18 @@
 import { Metadata } from 'next';
 import { Suspense } from 'react';
 import ProductClient from './ProductClient';
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import { mapProduct } from "@/lib/mappers";
 import { getProductIdFromSlug } from "@/lib/slugify";
 import BrandedEmptyState from "@/components/common/BrandedEmptyState";
 
 import { cache } from 'react';
 
-export const runtime = "edge";
-export const revalidate = 60; 
+export const revalidate = 60;
 
 // 🚀 Memoize the database call to prevent double-fetching in Metadata & Page
 const getProductData = cache(async (identifier: string) => {
-    const { data } = await supabase
+    const { data } = await supabaseAdmin
         .from("products")
         .select("*")
         .or(`id.eq.${identifier},article.eq.${identifier}`)
@@ -24,12 +23,12 @@ const getProductData = cache(async (identifier: string) => {
 
 // ⚡ Pre-render top 50 popular products for INSTANT (0ms) loading from CDN
 export async function generateStaticParams() {
-    const { data: products } = await supabase
+    const { data: products } = await supabaseAdmin
         .from("products")
         .select("id, article")
         .eq("is_deleted", false)
         .order("sales", { ascending: false })
-        .limit(50);
+        .limit(200);
 
     if (!products) return [];
 
