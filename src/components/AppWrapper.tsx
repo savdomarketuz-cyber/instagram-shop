@@ -20,7 +20,7 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
     const user = useStore(state => state.user);
     const toast = useStore(state => state.toast);
     const setLanguage = useStore(state => state.setLanguage);
-    const [isSplashActive, setIsSplashActive] = useState(false);
+
     const pathname = usePathname();
 
     // Sync language from URL to Store
@@ -150,26 +150,7 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
         return () => clearTimeout(timer);
     }, [cart, user?.phone]);
 
-    // Cleanup Native PWA Splash
-    useEffect(() => {
-        const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-        const splash = document.getElementById('pwa-splash');
 
-        if (isPWA && splash) {
-            setIsSplashActive(true);
-            const timer = setTimeout(() => {
-                splash.style.transition = 'opacity 0.5s ease-out, visibility 0.5s';
-                splash.style.opacity = '0';
-                splash.style.visibility = 'hidden';
-                setIsSplashActive(false);
-                setTimeout(() => splash.remove(), 500);
-            }, 1200);
-            return () => clearTimeout(timer);
-        } else {
-            if (splash) splash.style.display = 'none';
-            setIsSplashActive(false);
-        }
-    }, []);
 
     const isAdmin = pathname?.startsWith("/admin");
     const isProductDetail = pathname?.startsWith("/products/") && pathname.split("/").length > 2;
@@ -209,7 +190,6 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
         <div className={`
             mx-auto bg-white min-h-screen relative w-full max-w-full lg:max-w-[1440px] overflow-x-clip
             ${showNav ? (pathname === '/' ? 'pt-16 md:pt-28' : 'md:pt-28') : ''}
-            ${isSplashActive ? 'overflow-hidden h-screen' : ''}
         `}>
             {showNav && (
                 <Suspense fallback={<div className="h-16 md:h-28 bg-white" />}>

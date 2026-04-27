@@ -210,27 +210,7 @@ export default function RootLayout({
                 <a href="#main-content" className="skip-to-main">
                     Asosiy kontentga o&apos;tish
                 </a>
-                <div id="pwa-splash">
-                    <div className="logo-container">
-                        <div className="glow"></div>
-                        <div className="logo-text">
-                            <span className="letter" style={{animationDelay:'0.05s'}}>V</span>
-                            <span className="letter" style={{animationDelay:'0.13s'}}>E</span>
-                            <span className="letter" style={{animationDelay:'0.21s'}}>L</span>
-                            <span className="letter" style={{animationDelay:'0.29s'}}>A</span>
-                            <span className="letter" style={{animationDelay:'0.37s'}}>R</span>
-                            <span className="letter" style={{animationDelay:'0.45s'}}>I</span>
-                            <span className="logo-dot">.</span>
-                        </div>
-                        <div className="smile-line">
-                            <div className="arc-wrap">
-                                <svg width="560" height="210" viewBox="0 0 560 210" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                    <path d="M 0 20 Q 280 240 560 20 Q 280 180 0 20 Z" fill="#2d6e3e" />
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
                 <div id="main-content" className="w-full max-w-full">
                     <AppWrapper lang={displayLang}>
                         {children}
