@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         else if (action === "update") {
             if (!matchConfig && !inConfig) return NextResponse.json({ error: "Match config required for update" }, { status: 400 });
             
-            let updateQuery = query.update(payload);
+            let updateQuery: any = query.update(payload);
             
             if (matchConfig) {
                 // simple equal match: { column: "id", value: "123" }
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
         else if (action === "delete") {
             if (!matchConfig && !inConfig) return NextResponse.json({ error: "Match config required for delete" }, { status: 400 });
             
-            let deleteQuery = query.delete();
+            let deleteQuery: any = query.delete();
             if (matchConfig) {
                 deleteQuery = deleteQuery.eq(matchConfig.column, matchConfig.value);
             }
