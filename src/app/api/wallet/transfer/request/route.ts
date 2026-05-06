@@ -9,7 +9,7 @@ export async function POST(req: Request) {
 
     try {
         // 0. RATE LIMITING (3 transfers per minute)
-        if (!checkRateLimit(ip, 3, 60)) {
+        if (!await checkRateLimit(ip, 3, 60)) {
             return NextResponse.json({ success: false, message: "Juda ko'p urinish. Bir daqiqadan so'ng qayta urining." }, { status: 429 });
         }
 

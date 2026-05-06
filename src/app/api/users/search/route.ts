@@ -14,7 +14,7 @@ export async function GET(req: Request) {
     if (!query || query.length < 2) return NextResponse.json({ users: [] });
 
     try {
-        if (!checkRateLimit(ip, 10, 60)) return NextResponse.json({ error: "Rate limit" }, { status: 429 });
+        if (!await checkRateLimit(ip, 10, 60)) return NextResponse.json({ error: "Rate limit" }, { status: 429 });
 
         // 🔍 Search users but DO NOT return full phone numbers
         const { data, error } = await supabaseAdmin

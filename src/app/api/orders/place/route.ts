@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
 
     try {
         // 0. RATE LIMITING (15 orders per minute per IP)
-        if (!checkRateLimit(ip, 15, 60)) {
+        if (!await checkRateLimit(ip, 15, 60)) {
             return NextResponse.json({ success: false, message: "Juda ko'p urinish. Bir ozdan so'ng qayta urinib ko'ring." }, { status: 429 });
         }
 

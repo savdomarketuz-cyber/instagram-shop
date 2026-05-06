@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
 
     try {
-        if (!checkRateLimit(ip, 10, 60)) {
+        if (!await checkRateLimit(ip, 10, 60)) {
             return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
         }
 

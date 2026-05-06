@@ -41,6 +41,8 @@ export interface Product {
 
 export interface CartItem extends Product {
     quantity: number;
+    selectedColor?: string;
+    selectedSize?: string;
 }
 
 export interface Category {
@@ -208,9 +210,4 @@ export interface MediaItemType {
     lowResUrl?: string;
 }
 
-// Savat elementi uchun kengaytirilgan tip
-export interface CartItem extends Product {
-    quantity: number;
-    selectedColor?: string;
-    selectedSize?: string;
-}
+

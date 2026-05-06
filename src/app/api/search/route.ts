@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
 
     try {
         // 0. RATE LIMITING (10 searches per minute)
-        if (!checkRateLimit(ip, 10, 60)) {
+        if (!await checkRateLimit(ip, 10, 60)) {
             return NextResponse.json({ success: false, message: "Juda ko'p urinish." }, { status: 429 });
         }
 

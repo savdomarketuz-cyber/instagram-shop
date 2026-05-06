@@ -1,8 +1,17 @@
+import { Redis } from "@upstash/redis";
+
 /**
- * Simple In-Memory Rate Limiter for Edge/Serverless
- * Note: Since this is in-memory, it will reset on cold starts.
- * For production-grade global limiting, use Upstash Redis or similar.
+ * Rate Limiter for Edge/Serverless
+ * Uses Upstash Redis for global persistent limiting.
+ * Falls back to in-memory Map if Redis is not configured.
  */
+
+const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    })
+    : null;
 
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
@@ -13,12 +22,33 @@ const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
  * @param windowSeconds Time window in seconds
  * @returns boolean True if allowed, False if limited
  */
-export function checkRateLimit(ip: string, limit: number, windowSeconds: number): boolean {
+export async function checkRateLimit(ip: string, limit: number, windowSeconds: number): Promise<boolean> {
     const now = Date.now();
     const windowMs = windowSeconds * 1000;
-    
-    // Clear expired entries periodically (optional, but good for memory)
-    if (rateLimitMap.size > 1000) {
+
+    // 🛡️ REDIS IMPLEMENTATION (Persistent & Global)
+    if (redis) {
+        try {
+            const key = `ratelimit:${ip}`;
+            const current: number | null = await redis.get(key);
+
+            if (current !== null && current >= limit) {
+                return false;
+            }
+
+            const multi = redis.multi();
+            multi.incr(key);
+            multi.expire(key, windowSeconds);
+            await multi.exec();
+
+            return true;
+        } catch (e) {
+            console.error("Redis Rate Limit Error (Falling back to memory):", e);
+        }
+    }
+
+    // 🛡️ IN-MEMORY FALLBACK (Resets on cold start)
+    if (rateLimitMap.size > 2000) {
         Array.from(rateLimitMap.entries()).forEach(([key, value]) => {
             if (now > value.resetTime) rateLimitMap.delete(key);
         });
@@ -30,20 +60,14 @@ export function checkRateLimit(ip: string, limit: number, windowSeconds: number)
     }
 
     const data = rateLimitMap.get(ip)!;
-    
-    // If the reset time has passed, start a new window
     if (now > data.resetTime) {
         data.count = 1;
         data.resetTime = now + windowMs;
         return true;
     }
 
-    // If limit reached
-    if (data.count >= limit) {
-        return false;
-    }
+    if (data.count >= limit) return false;
 
-    // Increment count
     data.count++;
     return true;
 }

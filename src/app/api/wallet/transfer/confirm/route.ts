@@ -7,7 +7,7 @@ export async function POST(req: Request) {
 
     try {
         // 0. RATE LIMITING (5 attempts per minute to prevent brute-force)
-        if (!checkRateLimit(ip, 5, 60)) {
+        if (!await checkRateLimit(ip, 5, 60)) {
             return NextResponse.json({ success: false, message: "Juda ko'p urinish. Bir daqiqadan so'ng qayta urining." }, { status: 429 });
         }
 

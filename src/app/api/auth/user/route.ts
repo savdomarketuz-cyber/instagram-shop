@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
     try {
         // 🛡 Brute-force protection: 5 attempts per minute
-        if (!checkRateLimit(ip, 5, 60)) {
+        if (!await checkRateLimit(ip, 5, 60)) {
             return NextResponse.json({ error: "Juda ko'p urinish. Iltimos 1 daqiqadan so'ng qayta urining." }, { status: 429 });
         }
 

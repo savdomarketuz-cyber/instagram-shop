@@ -14,7 +14,7 @@ export async function GET(req: Request) {
     if (!chatId) return NextResponse.json({ error: "No chat ID" }, { status: 400 });
 
     try {
-        if (!checkRateLimit(ip, 30, 60)) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+        if (!await checkRateLimit(ip, 30, 60)) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
         // 🛡 SECURITY: Verify requester identity
         // In a real app, we'd check JWT. Here, since we don't have user JWT yet,
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
 
     try {
-        if (!checkRateLimit(ip, 15, 60)) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+        if (!await checkRateLimit(ip, 15, 60)) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
         const { chat_id, text, image, video, sender_id, sender_type } = await req.json();
 

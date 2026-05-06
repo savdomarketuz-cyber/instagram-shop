@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
     try {
         // 0. RATE LIMITING (5 attempts per minute)
-        if (!checkRateLimit(ip, 5, 60)) {
+        if (!await checkRateLimit(ip, 5, 60)) {
             return NextResponse.json({ error: "Siz juda ko'p urinish qildingiz. Birozdan so'ng qayta urining." }, { status: 429 });
         }
 

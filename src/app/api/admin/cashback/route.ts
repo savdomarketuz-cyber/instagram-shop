@@ -6,7 +6,7 @@ import { checkRateLimit } from "@/lib/rate-limiter";
 export async function GET(req: Request) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
     try {
-        if (!checkRateLimit(ip, 20, 60)) return NextResponse.json({ error: "Rate limit" }, { status: 429 });
+        if (!await checkRateLimit(ip, 20, 60)) return NextResponse.json({ error: "Rate limit" }, { status: 429 });
 
         const adminToken = (req as any).cookies?.get('admin_token')?.value || req.headers.get('cookie')?.split('admin_token=')[1]?.split(';')[0];
         const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim() || "default-secret";
@@ -51,7 +51,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
     try {
-        if (!checkRateLimit(ip, 10, 60)) return NextResponse.json({ error: "Rate limit" }, { status: 429 });
+        if (!await checkRateLimit(ip, 10, 60)) return NextResponse.json({ error: "Rate limit" }, { status: 429 });
 
         const adminToken = (req as any).cookies?.get('admin_token')?.value || req.headers.get('cookie')?.split('admin_token=')[1]?.split(';')[0];
         const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim() || "default-secret";

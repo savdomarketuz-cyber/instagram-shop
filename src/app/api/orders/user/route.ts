@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     if (!payload || payload.sub !== userPhone) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
 
     try {
-        if (!checkRateLimit(ip, 10, 60)) {
+        if (!await checkRateLimit(ip, 10, 60)) {
             return NextResponse.json({ success: false, message: "Juda ko'p urinish." }, { status: 429 });
         }
 

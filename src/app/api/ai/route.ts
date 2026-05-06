@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     
     try {
         // 0. SECURITY & RATE LIMITING
-        if (!checkRateLimit(ip, 5, 60)) return NextResponse.json({ error: "Rate limit" }, { status: 429 });
+        if (!await checkRateLimit(ip, 5, 60)) return NextResponse.json({ error: "Rate limit" }, { status: 429 });
 
         const adminToken = req.cookies.get('admin_token')?.value;
         const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim() || "default-secret";
