@@ -108,6 +108,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
             const { data: productData, error } = await supabase
                 .from("products")
                 .select("*")
+                .eq("is_deleted", false)
                 .or(`id.eq.${productIdentifier},article.eq.${productIdentifier}`)
                 .single();
 

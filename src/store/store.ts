@@ -121,8 +121,6 @@ export const useStore = create<StoreState>()(
                 wishlist: state.wishlist,
                 user: state.user,
                 language: state.language,
-                homeActiveFilter: state.homeActiveFilter,
-                homeActiveTab: state.homeActiveTab,
             }),
             // Eski 'instagram-shop-storage' dan ma'lumotlarni ko'chirish
             onRehydrateStorage: () => (state) => {

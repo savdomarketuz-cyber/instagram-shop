@@ -15,6 +15,7 @@ const getProductData = cache(async (identifier: string) => {
     const { data } = await supabaseAdmin
         .from("products")
         .select("*")
+        .eq("is_deleted", false)
         .or(`id.eq.${identifier},article.eq.${identifier}`)
         .single();
     

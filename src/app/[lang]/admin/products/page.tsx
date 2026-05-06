@@ -635,16 +635,33 @@ export default function AdminProducts() {
 
             let finalId = newProduct.id;
             if (newProduct.id) {
-                const { error } = await supabase.from("products").update(finalData).eq("id", newProduct.id);
-                if (error) throw error;
+                const res = await fetch('/api/admin/crud', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table: 'products',
+                        action: 'update',
+                        payload: finalData,
+                        matchConfig: { column: 'id', value: newProduct.id }
+                    })
+                });
+                if (!res.ok) throw new Error("Mahsulotni yangilashda xatolik");
             } else {
                 finalId = crypto.randomUUID();
-                const { error } = await supabase.from("products").insert([{
-                    ...finalData,
-                    id: finalId,
-                    sales: 0
-                }]);
-                if (error) throw error;
+                const res = await fetch('/api/admin/crud', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table: 'products',
+                        action: 'insert',
+                        payload: [{
+                            ...finalData,
+                            id: finalId,
+                            sales: 0
+                        }]
+                    })
+                });
+                if (!res.ok) throw new Error("Mahsulot yaratishda xatolik");
             }
 
             // Trigger Recursive AI Background Worker for Image SEO
@@ -718,10 +735,19 @@ export default function AdminProducts() {
                     imagesArrayRaw.map(url => uploadFromUrlToYandexS3(url))
                 );
 
-                await supabase.from("products").update({
-                    image: proxiedImages[0] || "",
-                    images: proxiedImages
-                }).eq("id", id);
+                await fetch('/api/admin/crud', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table: 'products',
+                        action: 'update',
+                        payload: {
+                            image: proxiedImages[0]?.url || "",
+                            images: proxiedImages.map((img: any) => img.url)
+                        },
+                        matchConfig: { column: 'id', value: id }
+                    })
+                });
             }
             setSelectedIds([]);
             await fetchData(currentPage);

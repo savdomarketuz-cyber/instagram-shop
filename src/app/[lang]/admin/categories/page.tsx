@@ -126,17 +126,25 @@ export default function AdminCategories() {
                 finalId = editingId;
             }
 
-            const { error } = await supabase.from("categories").upsert({
-                id: finalId,
-                name: name_uz.trim(),
-                name_uz: name_uz.trim(),
-                name_ru: name_ru.trim(),
-                parent_id: parentId === "none" ? null : parentId,
-                image: iconUrl.trim() || null,
-                is_deleted: false
+            const res = await fetch('/api/admin/crud', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    table: 'categories',
+                    action: 'upsert',
+                    payload: {
+                        id: finalId,
+                        name: name_uz.trim(),
+                        name_uz: name_uz.trim(),
+                        name_ru: name_ru.trim(),
+                        parent_id: parentId === "none" ? null : parentId,
+                        image: iconUrl.trim() || null,
+                        is_deleted: false
+                    }
+                })
             });
 
-            if (error) throw error;
+            if (!res.ok) throw new Error("Kategoriya saqlashda xatolik");
 
             handleCancelEdit();
             fetchCategories();
@@ -181,17 +189,25 @@ export default function AdminCategories() {
             const saveRecursive = async (cats: any[], pId: string | null = null) => {
                 for (const cat of cats) {
                     const id = cat.id ? String(cat.id) : Math.random().toString(36).substr(2, 9);
-                    const { error } = await supabase.from("categories").upsert({
-                        id,
-                        name: cat.name_uz,
-                        name_uz: cat.name_uz,
-                        name_ru: cat.name_ru || "",
-                        image: cat.image || null,
-                        parent_id: pId === "none" ? null : pId,
-                        is_deleted: false
+                    const res = await fetch('/api/admin/crud', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            table: 'categories',
+                            action: 'upsert',
+                            payload: {
+                                id,
+                                name: cat.name_uz,
+                                name_uz: cat.name_uz,
+                                name_ru: cat.name_ru || "",
+                                image: cat.image || null,
+                                parent_id: pId === "none" ? null : pId,
+                                is_deleted: false
+                            }
+                        })
                     });
 
-                    if (error) throw error;
+                    if (!res.ok) throw new Error("Kategoriya ommaviy yuklashda xatolik");
 
                     if (cat.subcategories && Array.isArray(cat.subcategories)) {
                         await saveRecursive(cat.subcategories, id);
@@ -257,7 +273,17 @@ export default function AdminCategories() {
             if (window.confirm("Ushbu kategoriya va uning barcha sub-kategoriyalarini savatga (Trash) olib o'tmoqchimisiz?")) {
                 setIsActionLoading(true);
                 const idsToTrash = [id, ...getAllChildIds(id, categories)];
-                await supabase.from("categories").update({ is_deleted: true }).in("id", idsToTrash);
+                const res = await fetch('/api/admin/crud', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table: 'categories',
+                        action: 'update',
+                        payload: { is_deleted: true },
+                        inConfig: { column: 'id', values: idsToTrash }
+                    })
+                });
+                if (!res.ok) throw new Error("Savatga o'tkazishda xatolik");
                 await fetchCategories(false);
             }
         } catch (error: any) {
@@ -276,7 +302,17 @@ export default function AdminCategories() {
             if (window.confirm("Kategoriyani tiklamoqchimisiz?")) {
                 setIsActionLoading(true);
                 // Simple restore for now, can be recursive if needed
-                await supabase.from("categories").update({ is_deleted: false }).eq("id", id);
+                const res = await fetch('/api/admin/crud', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table: 'categories',
+                        action: 'update',
+                        payload: { is_deleted: false },
+                        matchConfig: { column: 'id', value: id }
+                    })
+                });
+                if (!res.ok) throw new Error("Tiklashda xatolik");
                 await fetchCategories(false);
             }
         } catch (error: any) {
@@ -297,10 +333,28 @@ export default function AdminCategories() {
                 const idsToDelete = [id, ...getAllChildIds(id, categories)];
                 
                 // Also hide related products
-                await supabase.from("products").update({ is_deleted: true }).in("category_id", idsToDelete);
+                await fetch('/api/admin/crud', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table: 'products',
+                        action: 'update',
+                        payload: { is_deleted: true },
+                        inConfig: { column: 'category_id', values: idsToDelete }
+                    })
+                });
                 
                 // Hard delete categories
-                await supabase.from("categories").delete().in("id", idsToDelete);
+                const res = await fetch('/api/admin/crud', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table: 'categories',
+                        action: 'delete',
+                        inConfig: { column: 'id', values: idsToDelete }
+                    })
+                });
+                if (!res.ok) throw new Error("O'chirishda xatolik");
                 
                 await fetchCategories(false);
             }

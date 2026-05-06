@@ -70,16 +70,33 @@ export default function AdminBlogs() {
 
         try {
             if (editingBlog.id) {
-                const { error } = await supabase.from("blogs").update(blogDataForDB).eq("id", editingBlog.id);
-                if (error) throw error;
+                const res = await fetch('/api/admin/crud', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table: 'blogs',
+                        action: 'update',
+                        payload: blogDataForDB,
+                        matchConfig: { column: 'id', value: editingBlog.id }
+                    })
+                });
+                if (!res.ok) throw new Error("Maqolani yangilashda xatolik");
             } else {
-                const { error } = await supabase.from("blogs").insert([{ 
-                    ...blogDataForDB, 
-                    views: 0, 
-                    is_deleted: false,
-                    created_at: new Date().toISOString()
-                }]);
-                if (error) throw error;
+                const res = await fetch('/api/admin/crud', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table: 'blogs',
+                        action: 'insert',
+                        payload: [{ 
+                            ...blogDataForDB, 
+                            views: 0, 
+                            is_deleted: false,
+                            created_at: new Date().toISOString()
+                        }]
+                    })
+                });
+                if (!res.ok) throw new Error("Maqolani yaratishda xatolik");
             }
             setIsModalOpen(false);
             fetchData();
@@ -93,7 +110,16 @@ export default function AdminBlogs() {
 
     const toggleDelete = async (id: string, currentStatus: boolean) => {
         if (!window.confirm(currentStatus ? "Tiklamoqchimisiz?" : "Savatga tashlamoqchimisiz?")) return;
-        await supabase.from("blogs").update({ is_deleted: !currentStatus }).eq("id", id);
+        await fetch('/api/admin/crud', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                table: 'blogs',
+                action: 'update',
+                payload: { is_deleted: !currentStatus },
+                matchConfig: { column: 'id', value: id }
+            })
+        });
         fetchData();
     };
 

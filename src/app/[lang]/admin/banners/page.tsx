@@ -211,14 +211,28 @@ export default function AdminBanners() {
             };
 
             if (editId) {
-                const { error } = await supabase.from("banners").update(payload).eq("id", editId);
-                if (error) throw error;
+                const res = await fetch('/api/admin/crud', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table: 'banners',
+                        action: 'update',
+                        payload,
+                        matchConfig: { column: 'id', value: editId }
+                    })
+                });
+                if (!res.ok) throw new Error("Bannerni yangilashda xatolik");
             } else {
-                const { error } = await supabase.from("banners").insert([{
-                    ...payload,
-                    id: crypto.randomUUID()
-                }]);
-                if (error) throw error;
+                const res = await fetch('/api/admin/crud', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table: 'banners',
+                        action: 'insert',
+                        payload: [{ ...payload, id: crypto.randomUUID() }]
+                    })
+                });
+                if (!res.ok) throw new Error("Banner yaratishda xatolik");
             }
             resetForm();
             fetchData();
@@ -231,8 +245,16 @@ export default function AdminBanners() {
     const handleDelete = async (id: string) => {
         if (!confirm("O'chirilsinmi?")) return;
         try {
-            const { error } = await supabase.from("banners").delete().eq("id", id);
-            if (error) throw error;
+            const res = await fetch('/api/admin/crud', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    table: 'banners',
+                    action: 'delete',
+                    matchConfig: { column: 'id', value: id }
+                })
+            });
+            if (!res.ok) throw new Error("Bannerni o'chirishda xatolik");
             fetchData();
         } catch (e) {
             console.error(e);
@@ -248,19 +270,36 @@ export default function AdminBanners() {
         setIsGlobalSaving(true);
         try {
             const bannerUpdates = globalBanners.map(gb => {
-                return supabase.from("banners").update({
-                    order: Number(gb.order),
-                    tab_name_uz: gb.tabName_uz || "",
-                    tab_name_ru: gb.tabName_ru || ""
-                }).eq("id", gb.id);
+                return fetch('/api/admin/crud', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table: 'banners',
+                        action: 'update',
+                        payload: {
+                            order: Number(gb.order),
+                            tab_name_uz: gb.tabName_uz || "",
+                            tab_name_ru: gb.tabName_ru || ""
+                        },
+                        matchConfig: { column: 'id', value: gb.id }
+                    })
+                });
             });
 
-            const settingsUpdate = supabase.from("settings").upsert({
-                id: "banners",
-                value: {
-                    desktopHeight: globalHeight,
-                    borderRadius: globalRadius
-                }
+            const settingsUpdate = fetch('/api/admin/crud', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    table: 'settings',
+                    action: 'upsert',
+                    payload: {
+                        id: "banners",
+                        value: {
+                            desktopHeight: globalHeight,
+                            borderRadius: globalRadius
+                        }
+                    }
+                })
             });
 
             await Promise.all([...bannerUpdates, settingsUpdate]);

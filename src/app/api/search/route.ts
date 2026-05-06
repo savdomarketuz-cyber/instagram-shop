@@ -62,10 +62,14 @@ export async function POST(req: NextRequest) {
         let finalResults = results || [];
         if (finalResults.length === 0 && searchQuery.length >= 2) {
             console.log("Smart search empty, trying fallback text search...");
+            
+            // Sanitize query to avoid PostgREST .or() syntax errors (remove commas, quotes, backslashes)
+            const sanitizedQuery = searchQuery.replace(/[,"'\\]/g, ' ').trim();
+            
             const { data: textResults } = await supabase
                 .from('products')
                 .select('*')
-                .or(`name.ilike.%${searchQuery}%,name_uz.ilike.%${searchQuery}%,name_ru.ilike.%${searchQuery}%,article.ilike.%${searchQuery}%`)
+                .or(`name.ilike.%${sanitizedQuery}%,name_uz.ilike.%${sanitizedQuery}%,name_ru.ilike.%${sanitizedQuery}%,article.ilike.%${sanitizedQuery}%`)
                 .eq('is_deleted', false)
                 .limit(suggest ? 5 : 20);
             

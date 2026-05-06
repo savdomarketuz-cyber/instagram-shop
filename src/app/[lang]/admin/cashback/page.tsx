@@ -48,8 +48,17 @@ export default function AdminCashbackPage() {
     const handleUpdateSettings = async () => {
         setIsSavingSettings(true);
         try {
-            const { error } = await supabase.from("site_settings").update({ value: globalSettings }).eq("key", "cashback_settings");
-            if (error) throw error;
+            const res = await fetch('/api/admin/crud', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    table: 'site_settings',
+                    action: 'update',
+                    payload: { value: globalSettings },
+                    matchConfig: { column: 'key', value: 'cashback_settings' }
+                })
+            });
+            if (!res.ok) throw new Error("Sozlamalarni saqlashda xatolik");
             alert("Global sozlamalar saqlandi!");
         } catch (e) {
             console.error(e);
@@ -61,12 +70,21 @@ export default function AdminCashbackPage() {
     const handleUpdateProductCashback = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const { error } = await supabase.from("products").update({
-                cashback_type: selectedProduct.cashback_type,
-                cashback_value: selectedProduct.cashback_value
-            }).eq("id", selectedProduct.id);
+            const res = await fetch('/api/admin/crud', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    table: 'products',
+                    action: 'update',
+                    payload: {
+                        cashback_type: selectedProduct.cashback_type,
+                        cashback_value: selectedProduct.cashback_value
+                    },
+                    matchConfig: { column: 'id', value: selectedProduct.id }
+                })
+            });
 
-            if (error) throw error;
+            if (!res.ok) throw new Error("Mahsulotni yangilashda xatolik");
             setIsExceptionModalOpen(false);
             fetchData();
         } catch (e) {

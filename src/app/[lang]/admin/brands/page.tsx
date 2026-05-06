@@ -99,14 +99,22 @@ export default function AdminBrands() {
                 finalId = editingId;
             }
 
-            const { error } = await supabase.from("brands").upsert({
-                id: finalId,
-                name: name.trim(),
-                image: logoUrl.trim() || null,
-                is_deleted: false
+            const res = await fetch('/api/admin/crud', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    table: 'brands',
+                    action: 'upsert',
+                    payload: {
+                        id: finalId,
+                        name: name.trim(),
+                        image: logoUrl.trim() || null,
+                        is_deleted: false
+                    }
+                })
             });
 
-            if (error) throw error;
+            if (!res.ok) throw new Error("Brendni saqlashda xatolik");
 
             handleCancelEdit();
             fetchBrands();
@@ -120,19 +128,45 @@ export default function AdminBrands() {
 
     const moveToTrash = async (id: string) => {
         if (window.confirm("Brendni o'chirmoqchimisiz?")) {
-            await supabase.from("brands").update({ is_deleted: true }).eq("id", id);
+            await fetch('/api/admin/crud', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    table: 'brands',
+                    action: 'update',
+                    payload: { is_deleted: true },
+                    matchConfig: { column: 'id', value: id }
+                })
+            });
             fetchBrands();
         }
     };
 
     const restoreBrand = async (id: string) => {
-        await supabase.from("brands").update({ is_deleted: false }).eq("id", id);
+        await fetch('/api/admin/crud', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                table: 'brands',
+                action: 'update',
+                payload: { is_deleted: false },
+                matchConfig: { column: 'id', value: id }
+            })
+        });
         fetchBrands();
     };
 
     const deletePermanent = async (id: string) => {
         if (window.confirm("BUNYUNLAY o'chirmoqchimisiz?")) {
-            await supabase.from("brands").delete().eq("id", id);
+            await fetch('/api/admin/crud', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    table: 'brands',
+                    action: 'delete',
+                    matchConfig: { column: 'id', value: id }
+                })
+            });
             fetchBrands();
         }
     };

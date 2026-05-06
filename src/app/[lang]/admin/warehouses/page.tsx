@@ -93,14 +93,31 @@ export default function AdminWarehouses() {
             };
 
             if (editId) {
-                const { error } = await supabase.from("warehouses").update(payload).eq("id", editId);
-                if (error) throw error;
+                const res = await fetch('/api/admin/crud', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table: 'warehouses',
+                        action: 'update',
+                        payload,
+                        matchConfig: { column: 'id', value: editId }
+                    })
+                });
+                if (!res.ok) throw new Error("Omborni yangilashda xatolik");
             } else {
-                const { error } = await supabase.from("warehouses").insert([{ 
-                    ...payload,
-                    id: crypto.randomUUID()
-                }]);
-                if (error) throw error;
+                const res = await fetch('/api/admin/crud', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table: 'warehouses',
+                        action: 'insert',
+                        payload: [{ 
+                            ...payload,
+                            id: crypto.randomUUID()
+                        }]
+                    })
+                });
+                if (!res.ok) throw new Error("Omborni yaratishda xatolik");
             }
             resetForm();
             fetchWarehouses();
@@ -115,8 +132,16 @@ export default function AdminWarehouses() {
     const handleDelete = async (id: string) => {
         if (!confirm("O'chirilsinmi?")) return;
         try {
-            const { error } = await supabase.from("warehouses").delete().eq("id", id);
-            if (error) throw error;
+            const res = await fetch('/api/admin/crud', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    table: 'warehouses',
+                    action: 'delete',
+                    matchConfig: { column: 'id', value: id }
+                })
+            });
+            if (!res.ok) throw new Error("Omborni o'chirishda xatolik");
             fetchWarehouses();
         } catch (e) {
             console.error(e);
