@@ -677,17 +677,21 @@ export default function AdminProducts() {
         setIsBulkActionLoading(true);
         try {
             if (activeTab === "active") {
-                const { error } = await supabase
-                    .from("products")
-                    .update({ is_deleted: true })
-                    .in("id", selectedIds);
-                if (error) throw error;
+                const res = await fetch('/api/admin/products', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'bulk_move_to_trash', ids: selectedIds })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Bulk trash failed');
             } else {
-                const { error } = await supabase
-                    .from("products")
-                    .delete()
-                    .in("id", selectedIds);
-                if (error) throw error;
+                const res = await fetch('/api/admin/products', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: selectedIds })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Bulk delete failed');
             }
             setSelectedIds([]);
             await fetchData(currentPage);
@@ -737,7 +741,13 @@ export default function AdminProducts() {
         try {
             if (window.confirm("Mahsulotni savatga (Trash) olib o'tmoqchimisiz?")) {
                 setIsActionLoading(true);
-                await supabase.from("products").update({ is_deleted: true }).eq("id", id);
+                const res = await fetch('/api/admin/products', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'move_to_trash', id })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Trash ga o\'tkazib bo\'lmadi');
                 await fetchData(currentPage);
             }
         } catch (error: any) {
@@ -755,7 +765,13 @@ export default function AdminProducts() {
         try {
             if (window.confirm("Mahsulotni tiklamoqchimisiz?")) {
                 setIsActionLoading(true);
-                await supabase.from("products").update({ is_deleted: false }).eq("id", id);
+                const res = await fetch('/api/admin/products', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'restore', id })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Tiklab bo\'lmadi');
                 await fetchData(currentPage);
             }
         } catch (error: any) {
@@ -796,7 +812,13 @@ export default function AdminProducts() {
         try {
             if (window.confirm("DIQQAT! Mahsulot butunlay o'chiriladi. Ushbu amalni qaytarib bo'lmaydi. Rozimisiz?")) {
                 setIsActionLoading(true);
-                await supabase.from("products").delete().eq("id", id);
+                const res = await fetch('/api/admin/products', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'O\'chirib bo\'lmadi');
                 await fetchData(currentPage);
             }
         } catch (error: any) {
@@ -848,14 +870,14 @@ export default function AdminProducts() {
                             onClick={() => setActiveTab("active")}
                             className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeTab === "active" ? "bg-black text-white shadow-lg" : "text-gray-400 hover:text-black"}`}
                         >
-                            Barchasi ({products.filter(p => !p.isDeleted).length})
+                            Barchasi ({activeTab === "active" ? totalCount : ""})
                         </button>
                         <button
                             onClick={() => setActiveTab("trash")}
                             className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === "trash" ? "bg-red-500 text-white shadow-lg" : "text-gray-400 hover:text-red-500"}`}
                         >
                             <Trash2 size={14} />
-                            Trash ({products.filter(p => p.isDeleted).length})
+                            Trash ({activeTab === "trash" ? totalCount : ""})
                         </button>
                     </div>
                     <button
