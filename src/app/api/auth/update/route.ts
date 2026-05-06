@@ -11,7 +11,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, message: "Juda ko'p urinish." }, { status: 429 });
         }
 
-        const { phone, password, name, username } = await req.json();
+        const { phone, password, name, username, newPassword } = await req.json();
 
         if (!phone || !password) {
             return NextResponse.json({ success: false, message: "Telefon raqami va parol zarur." }, { status: 400 });
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
         // 🛡 SECURITY: Verify Identity
         const { data: user, error: findError } = await supabaseAdmin
             .from("users")
-            .select("password")
+            .select("password, token_version")
             .eq("phone", phone)
             .single();
 
@@ -28,34 +28,34 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, message: "Foydalanuvchi topilmadi." }, { status: 404 });
         }
 
-        // Check if password is correct (supporting migration)
+        // Check if current password is correct
         const isAuth = user.password === password || user.password === hashPassword(password);
         if (!isAuth) {
-            return NextResponse.json({ success: false, message: "Tasdiqlash xatosi (Ruxsat yo'q)." }, { status: 401 });
+            return NextResponse.json({ success: false, message: "Tasdiqlash xatosi (Hozirgi parol noto'g'ri)." }, { status: 401 });
         }
 
-        // 🛡 SECURITY: Verify Username Availability (server-side)
-        if (username) {
-            const { data: existing } = await supabaseAdmin
-                .from("users")
-                .select("phone")
-                .eq("username", username)
-                .neq("phone", phone)
-                .maybeSingle();
+        // 🛡 Prepare Update Data
+        const updateData: any = { 
+            name, 
+            username, 
+            updated_at: new Date().toISOString() 
+        };
 
-            if (existing) {
-                return NextResponse.json({ success: false, message: "Ushbu username band." }, { status: 400 });
-            }
+        // If password is being changed
+        if (newPassword) {
+            updateData.password = hashPassword(newPassword);
+            // Increment token_version to logout other devices
+            updateData.token_version = (user.token_version || 1) + 1;
         }
 
         const { error } = await supabaseAdmin
             .from("users")
-            .update({ name, username, updated_at: new Date().toISOString() })
+            .update(updateData)
             .eq("phone", phone);
 
         if (error) throw error;
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, token_version_updated: !!updateData.token_version });
 
     } catch (error: any) {
         return NextResponse.json({ success: false, message: error.message }, { status: 500 });

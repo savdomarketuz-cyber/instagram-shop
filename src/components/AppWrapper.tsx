@@ -11,6 +11,7 @@ import { supabase } from "@/lib/supabase";
 // NotificationHandler removed after Firebase cleanup
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import ConnectivityListener from "@/components/common/ConnectivityListener";
 
 
 import { Language } from "@/types";
@@ -29,6 +30,26 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
             setLanguage(lang as Language);
         }
     }, [lang, setLanguage]);
+
+    // 🛡️ GLOBAL API ERROR HANDLER
+    useEffect(() => {
+        const handlePromiseError = (event: PromiseRejectionEvent) => {
+            if (event.reason?.status === 429) {
+                useStore.getState().showToast(
+                    lang === 'uz' ? "Juda ko'p urinish! Iltimos, bir oz kutib turing." : "Too many requests! Please wait a moment.", 
+                    "error"
+                );
+            } else if (event.reason?.status === 401) {
+                useStore.getState().showToast(
+                    lang === 'uz' ? "Sessiya muddati tugadi. Iltimos, qayta kiring." : "Session expired. Please login again.", 
+                    "info"
+                );
+            }
+        };
+
+        window.addEventListener('unhandledrejection', handlePromiseError);
+        return () => window.removeEventListener('unhandledrejection', handlePromiseError);
+    }, [lang, pathname]);
 
     // Real-time Activity & Action Tracking
     useEffect(() => {
@@ -181,7 +202,12 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
     }, [pathname]);
 
     if (isAdmin) {
-        return <>{children}</>;
+        return (
+            <>
+                <ConnectivityListener />
+                {children}
+            </>
+        );
     }
 
     const showNav = !isCheckout && !isPayment && !isChat;
@@ -191,6 +217,7 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
             mx-auto bg-white min-h-screen relative w-full max-w-full lg:max-w-[1440px] overflow-x-clip
             ${showNav ? (pathname === '/' ? 'pt-16 md:pt-28' : 'md:pt-28') : ''}
         `}>
+            <ConnectivityListener />
             {showNav && (
                 <Suspense fallback={<div className="h-16 md:h-28 bg-white" />}>
                     <Navigation />

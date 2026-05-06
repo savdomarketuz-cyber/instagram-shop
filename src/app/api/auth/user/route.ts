@@ -75,6 +75,7 @@ export async function POST(req: NextRequest) {
         const token = await createJwt({
             sub: user.phone,
             role: "user",
+            token_version: user.token_version || 1, // 🛡 Sessiya versiyasi
             iat: Math.floor(Date.now() / 1000),
             exp: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60 // 30 days
         }, JWT_SECRET);
