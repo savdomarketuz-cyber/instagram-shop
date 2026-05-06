@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { hashPassword } from "@/lib/auth-utils";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { createJwt } from "@/lib/jwt-utils";
 
 /**
  * Foydalanuvchi logini (Server-side)
@@ -69,7 +70,16 @@ export async function POST(req: NextRequest) {
             .update(updateData)
             .eq("id", user.id);
 
-        return NextResponse.json({
+
+        const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+        const token = await createJwt({
+            sub: user.phone,
+            role: "user",
+            iat: Math.floor(Date.now() / 1000),
+            exp: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60 // 30 days
+        }, JWT_SECRET);
+
+        const response = NextResponse.json({
             success: true,
             user: {
                 id: user.id,
@@ -79,6 +89,16 @@ export async function POST(req: NextRequest) {
                 isAdmin: user.is_admin || false
             }
         });
+
+        response.cookies.set("user_token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 30 * 24 * 60 * 60,
+            path: "/"
+        });
+
+        return response;
 
     } catch (error) {
         console.error("User Auth Error:", error);

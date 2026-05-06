@@ -6,7 +6,6 @@ import { Search, Home, ShoppingBag, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { mapProduct } from "@/lib/mappers";
 import { useStore } from "@/store/store";
-import { getAiRecommendations } from "@/lib/ai";
 import { translations } from "@/lib/translations";
 import { ProductCard } from "@/components/home/ProductCard";
 import type { Product } from "@/types";
@@ -58,12 +57,25 @@ export default function BrandedEmptyState({
                         .single();
                     
                     if (interests) {
-                        const recIds = await getAiRecommendations(interests, finalProducts, user.phone);
-                        if (recIds && recIds.length > 0) {
-                            // Prioritize recs but keep some popular as well
-                            const recs = finalProducts.filter(p => recIds.includes(p.id));
-                            const others = finalProducts.filter(p => !recIds.includes(p.id));
-                            finalProducts = [...recs, ...others].slice(0, 12);
+                        const response = await fetch("/api/ai/recommendations", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                action: "get_recommendations",
+                                userInterests: interests,
+                                allProducts: finalProducts,
+                                userPhone: user.phone
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const { recommendations: recIds } = await response.json();
+                            if (recIds && recIds.length > 0) {
+                                // Prioritize recs but keep some popular as well
+                                const recs = finalProducts.filter(p => recIds.includes(p.id));
+                                const others = finalProducts.filter(p => !recIds.includes(p.id));
+                                finalProducts = [...recs, ...others].slice(0, 12);
+                            }
                         }
                     }
                 } catch (e) { console.error("AI Recs failed", e); }

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
-import { logAiActivity } from "@/lib/ai";
 import { Product } from "@/types";
 
 interface WatchedProductProps {
@@ -33,11 +32,18 @@ export const WatchedProduct = ({ product, userPhone, children }: WatchedProductP
 
                 if (error) throw error;
 
-                await logAiActivity({
-                    userPhone,
-                    action: `Interest Tracked (Stage ${stage})`,
-                    input: { categories: { [product.category]: weight } },
-                    output: [product.id]
+                await fetch("/api/ai/recommendations", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        action: "log_activity",
+                        logData: {
+                            userPhone,
+                            action: `Interest Tracked (Stage ${stage})`,
+                            input: { categories: { [product.category]: weight } },
+                            output: [product.id]
+                        }
+                    })
                 });
 
                 hasTrackedId.current.add(stage);

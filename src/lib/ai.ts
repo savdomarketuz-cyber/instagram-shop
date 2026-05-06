@@ -1,39 +1,14 @@
-import { supabase } from "./supabase";
+import { supabaseAdmin } from "./supabase-admin";
 import type { Product } from "@/types";
-
-/**
- * Server-side AI API orqali chat qilish
- * API kalitlari endi serverda saqlanadi
- */
-export async function chatWithGroq(messages: any[], model: string = "llama-3.1-70b-versatile") {
-    try {
-        const response = await fetch("/api/ai", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ messages, model })
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || "AI service error");
-        }
-
-        const data = await response.json();
-        return data.content;
-    } catch (error) {
-        console.error("AI API error:", error);
-        throw error;
-    }
-}
 
 /**
  * AI Recommendation logic
  * Based on user history and product tags
  */
 export async function getAiRecommendations(userInterests: any, allProducts: Product[], userPhone: string = "Unknown") {
-    // 1. Check if we have relatively fresh cached recommendations (less than 1 day old)
+    // 1. Check if we have relatively fresh cached recommendations (less than 12h old)
     try {
-        const { data: interests, error } = await supabase
+        const { data: interests, error } = await supabaseAdmin
             .from("user_interests")
             .select("*")
             .eq("id", userPhone)
@@ -43,12 +18,10 @@ export async function getAiRecommendations(userInterests: any, allProducts: Prod
             const lastUpdate = interests.ai_recommendations_updated_at ? new Date(interests.ai_recommendations_updated_at) : null;
             const now = new Date();
 
-            // If recommendations exist and are less than 12h old, return them after filtering for existing products
             if (interests.ai_recommendations && Array.isArray(interests.ai_recommendations) && lastUpdate && (now.getTime() - lastUpdate.getTime() < 12 * 60 * 60 * 1000)) {
                 const existingIds = allProducts.map(p => p.id);
                 const validatedIds = interests.ai_recommendations.filter((id: string) => existingIds.includes(id));
                 
-                // If it filtered out too many (e.g. they were all from old database), force a refresh
                 if (validatedIds.length >= 3) {
                     return validatedIds;
                 }
@@ -59,6 +32,13 @@ export async function getAiRecommendations(userInterests: any, allProducts: Prod
     }
 
     // 2. If no cache or cache old, fetch from Groq
+    // Note: Since this is server-side now, we need to call the actual Groq API or the existing /api/ai logic
+    // For simplicity, we'll keep calling the /api/ai or move that logic here.
+    // However, to keep it clean, we'll assume this function is called on the server where we have API keys.
+    
+    const GROQ_API_KEY = process.env.GROQ_API_KEY_1 || process.env.GROQ_API_KEY_2;
+    if (!GROQ_API_KEY) return [];
+
     const topCategories = Object.entries((userInterests.categories as Record<string, number>) || {})
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
@@ -80,12 +60,28 @@ export async function getAiRecommendations(userInterests: any, allProducts: Prod
     `;
 
     try {
-        const res = await chatWithGroq([
-            { role: "system", content: "Sen faqat JSON qaytaruvchi AI yordamchisan." },
-            { role: "user", content: prompt }
-        ]);
+        const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${GROQ_API_KEY}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                model: "llama-3.1-70b-versatile",
+                messages: [
+                    { role: "system", content: "Sen faqat JSON qaytaruvchi AI yordamchisan." },
+                    { role: "user", content: prompt }
+                ],
+                temperature: 0.7,
+                response_format: { type: "json_object" }
+            })
+        });
 
-        const jsonMatch = res.match(/\[[\s\S]*\]/);
+        if (!groqResponse.ok) throw new Error("Groq API error");
+        const data = await groqResponse.json();
+        const content = data.choices[0].message.content;
+        
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
         let recommendedIds = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
 
         // 3. Filter to ensure IDs still exist in 'allProducts'
@@ -94,7 +90,7 @@ export async function getAiRecommendations(userInterests: any, allProducts: Prod
 
         // 4. Save to Cache in Supabase (Background)
         if (recommendedIds.length > 0) {
-            supabase.from("user_interests").upsert({
+            await supabaseAdmin.from("user_interests").upsert({
                 id: userPhone,
                 user_phone: userPhone,
                 ai_recommendations: recommendedIds,
@@ -102,7 +98,7 @@ export async function getAiRecommendations(userInterests: any, allProducts: Prod
             });
         }
 
-        await supabase.from("ai_logs").insert([{
+        await supabaseAdmin.from("ai_logs").insert([{
             id: crypto.randomUUID(),
             user_phone: userPhone,
             input: userInterests,
@@ -126,7 +122,7 @@ export async function logAiActivity(data: {
     model?: string;
 }) {
     try {
-        await supabase.from("ai_logs").insert([{
+        await supabaseAdmin.from("ai_logs").insert([{
             id: crypto.randomUUID(),
             user_phone: data.userPhone,
             input: data.input,

@@ -3,6 +3,11 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { pingSitemapToGoogle } from "@/lib/google-indexing";
 
 export async function GET(req: Request) {
+    const authHeader = req.headers.get('authorization');
+    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     try {
         // 1. Muddati o'tgan buyurtmalarni tozalash
         const { error } = await supabaseAdmin.rpc('restore_expired_orders');

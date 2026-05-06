@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { verifyJwt } from "@/lib/jwt-utils";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const userPhone = searchParams.get("phone");
     const ip = req.headers.get("x-forwarded-for") || "unknown";
@@ -10,6 +11,12 @@ export async function GET(req: Request) {
     if (!userPhone) {
         return NextResponse.json({ success: false, message: "Missing phone" }, { status: 400 });
     }
+
+    const token = req.cookies.get("user_token")?.value;
+    if (!token) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+    const payload = await verifyJwt(token, JWT_SECRET);
+    if (!payload || payload.sub !== userPhone) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
 
     try {
         if (!checkRateLimit(ip, 10, 60)) {

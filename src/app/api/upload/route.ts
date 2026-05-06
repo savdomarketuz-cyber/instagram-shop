@@ -38,8 +38,22 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Juda ko'p urinish. Bir daqiqadan so'ng qayta urining." }, { status: 429 });
         }
 
-        // 🛡 OPTIONAL AUTH: For uploads, we could check for a user session
-        // For now, let's keep it open for reviews but rate limited by IP
+        // 🛡 AUTH: Only authenticated users or admins can upload
+        const adminToken = req.cookies.get('admin_token')?.value;
+        const userToken = req.cookies.get('user_token')?.value;
+        const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim() || "default-secret";
+        const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+
+        let payload = null;
+        if (adminToken) {
+            payload = await verifyJwt(adminToken, ADMIN_SECRET);
+        } else if (userToken) {
+            payload = await verifyJwt(userToken, JWT_SECRET);
+        }
+
+        if (!payload) {
+            return NextResponse.json({ error: "Ruxsat etilmadi. Iltimos tizimga kiring." }, { status: 401 });
+        }
 
         const formData = await req.formData();
         const file = formData.get("file") as File | null;

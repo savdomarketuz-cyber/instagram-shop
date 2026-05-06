@@ -15,6 +15,11 @@ import { getProductSlug } from "@/lib/slugify";
  * Bu cron har kuni 06:00 UTC da ishlaydi (vercel.json da sozlangan)
  */
 export async function GET(req: Request) {
+    const authHeader = req.headers.get('authorization');
+    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const startTime = Date.now();
     const results: Record<string, any> = {};
 

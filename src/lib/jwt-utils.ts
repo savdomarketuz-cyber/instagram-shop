@@ -33,3 +33,34 @@ export async function verifyJwt(token: string, secret: string) {
         return null;
     }
 }
+
+/**
+ * Cryptographically create JWT signature (Edge compatible)
+ */
+export async function createJwt(payload: Record<string, unknown>, secret: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const cryptoObj = typeof crypto !== 'undefined' ? crypto : (globalThis as any).crypto;
+    
+    const secretKey = await cryptoObj.subtle.importKey(
+        'raw',
+        encoder.encode(secret),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+    );
+
+    const header = { alg: "HS256", typ: "JWT" };
+    
+    // Node.js atob/btoa equivalent for Edge
+    const btoa = (str: string) => Buffer.from(str).toString('base64');
+    
+    const headerB64 = btoa(JSON.stringify(header)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const payloadB64 = btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    
+    const dataToSign = encoder.encode(`${headerB64}.${payloadB64}`);
+    const signatureBuffer = await cryptoObj.subtle.sign('HMAC', secretKey, dataToSign);
+    
+    const signatureB64 = Buffer.from(signatureBuffer).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    
+    return `${headerB64}.${payloadB64}.${signatureB64}`;
+}

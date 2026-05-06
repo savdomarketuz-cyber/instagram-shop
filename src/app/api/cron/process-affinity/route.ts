@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
 export async function GET(req: Request) {
-    // Determine CRON security (Can be verified via headers in production)
+    // Determine CRON security (Verified via headers from Vercel)
     const authHeader = req.headers.get('authorization');
-    if (process.env.NODE_ENV === 'production' && authHeader !== `Bearer ${process.env.ADMIN_SECRET}`) {
+    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { verifyJwt } from "@/lib/jwt-utils";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const orderId = searchParams.get("orderId");
     const userPhone = searchParams.get("phone");
@@ -9,6 +10,12 @@ export async function GET(req: Request) {
     if (!orderId || !userPhone) {
         return NextResponse.json({ success: false, message: "Missing orderId or phone" }, { status: 400 });
     }
+
+    const token = req.cookies.get("user_token")?.value;
+    if (!token) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+    const payload = await verifyJwt(token, JWT_SECRET);
+    if (!payload || payload.sub !== userPhone) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
 
     try {
         const { data, error } = await supabaseAdmin

@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { verifyJwt } from "@/lib/jwt-utils";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
 
     try {
@@ -14,11 +15,21 @@ export async function POST(req: Request) {
         const body = await req.json();
         const { p_user_phone, p_items, p_address, p_coords, p_status, p_promo_code, p_wallet_usage } = body;
 
-        // 🛡 SECURITY: IN THE ABSENCE OF AUTH TOKENS, WE MUST AT LEAST PREVENT 
-        // ANONYMOUS SCRIPT-BASED BULK ORDERING.
-        // In a real app, you would verify a JWT token here.
+        // 🛡 SECURITY: Verify JWT Token
         if (!p_user_phone) {
             return NextResponse.json({ success: false, message: "Telefon raqami talab qilinadi." }, { status: 400 });
+        }
+
+        const token = req.cookies.get("user_token")?.value;
+        if (!token) {
+            return NextResponse.json({ success: false, message: "Xavfsizlik tizimi: Hisobingiz tasdiqlanmagan. Iltimos qayta tizimga kiring." }, { status: 401 });
+        }
+
+        const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+        const payload = await verifyJwt(token, JWT_SECRET);
+        
+        if (!payload || payload.sub !== p_user_phone) {
+            return NextResponse.json({ success: false, message: "Xavfsizlik tizimi: Noto'g'ri sessiya. Iltimos qayta tizimga kiring." }, { status: 401 });
         }
 
         // 1. Execute Atomic DB Transaction via Admin Client (Secure bypass)

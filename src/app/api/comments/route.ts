@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { verifyJwt } from "@/lib/jwt-utils";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
 
     try {
@@ -14,6 +15,28 @@ export async function POST(req: Request) {
 
         if (!action || !p_user_phone) {
             return NextResponse.json({ success: false, message: "Ma'lumotlar yetarli emas." }, { status: 400 });
+        }
+
+        // 🛡 SECURITY: Verify JWT Token
+        const token = req.cookies.get("user_token")?.value;
+        const adminToken = req.cookies.get("admin_token")?.value;
+        
+        const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+        const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim() || "default-secret";
+
+        let authPayload = null;
+        if (adminToken) {
+            authPayload = await verifyJwt(adminToken, ADMIN_SECRET);
+            // Admin can act on behalf of any user phone (for moderation) or their own
+        } else if (token) {
+            authPayload = await verifyJwt(token, JWT_SECRET);
+            if (!authPayload || authPayload.sub !== p_user_phone) {
+                return NextResponse.json({ success: false, message: "Sessiya xatosi. Iltimos qayta kiring." }, { status: 401 });
+            }
+        }
+
+        if (!authPayload) {
+            return NextResponse.json({ success: false, message: "Sharh qoldirish uchun tizimga kiring." }, { status: 401 });
         }
 
         // 🛡 ACTION: ADD COMMENT

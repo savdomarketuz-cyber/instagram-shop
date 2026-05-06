@@ -7,7 +7,6 @@ import Logo from "@/components/Logo";
 import { useStore } from "@/store/store";
 import { supabase } from "@/lib/supabase";
 import { mapProduct, mapBanner } from "@/lib/mappers";
-import { getAiRecommendations } from "@/lib/ai";
 import { translations } from "@/lib/translations";
 import { useSearchParams } from "next/navigation";
 
@@ -101,8 +100,21 @@ export default function HomeClient({
                     .single();
                 
                 if (interests) {
-                    const ids = await getAiRecommendations(interests, allProducts, user.phone);
-                    if (ids && ids.length > 0) setAiProductIds(ids);
+                    const response = await fetch("/api/ai/recommendations", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            action: "get_recommendations",
+                            userInterests: interests,
+                            allProducts,
+                            userPhone: user.phone
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const { recommendations } = await response.json();
+                        if (recommendations && recommendations.length > 0) setAiProductIds(recommendations);
+                    }
                 }
             };
             fetchAiRecs();

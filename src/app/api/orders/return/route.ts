@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { verifyJwt } from "@/lib/jwt-utils";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
 
     try {
@@ -15,6 +16,12 @@ export async function POST(req: Request) {
         if (!order_id || !user_phone || !items || !reason) {
             return NextResponse.json({ success: false, message: "Barcha maydonlarni to'ldiring." }, { status: 400 });
         }
+
+        const token = req.cookies.get("user_token")?.value;
+        if (!token) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+        const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+        const payload = await verifyJwt(token, JWT_SECRET);
+        if (!payload || payload.sub !== user_phone) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
 
         // 🛡 SECURITY: Verify ownership before allowing a return request
         const { data: order } = await supabaseAdmin
