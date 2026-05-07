@@ -165,3 +165,26 @@ export async function sendCartReminder(phone: string, items: any[]) {
         return { success: false, error: e.message };
     }
 }
+
+export async function sendLowStockAlert(lowStockItems: { name: string; stock: number }[]) {
+    try {
+        if (!ADMIN_BOT_TOKEN || !ADMIN_ID || lowStockItems.length === 0) return;
+
+        let text = `⚠️ <b>DIQQAT! Mahsulot tugamoqda</b>\n\n`;
+        text += `Quyidagi mahsulotlarning ombordagi qoldig'i 5 tadan kam qoldi:\n\n`;
+        
+        lowStockItems.forEach((item, index) => {
+            text += `${index + 1}. <b>${item.name}</b> — <i>${item.stock} ta qoldi!</i>\n`;
+        });
+        
+        text += `\n<i>Sotuvlar to'xtab qolmasligi uchun zudlik bilan omborni to'ldiring.</i>`;
+
+        await fetch(`https://api.telegram.org/bot${ADMIN_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: ADMIN_ID, text, parse_mode: 'HTML' })
+        });
+    } catch(e) {
+        console.error("Low stock Telegram alert error:", e);
+    }
+}

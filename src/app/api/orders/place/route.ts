@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { verifyJwt } from "@/lib/jwt-utils";
 import { z } from "zod";
+import { sendLowStockAlert } from "@/lib/telegram";
 
 /**
  * Zod Schema for Order Validation
@@ -85,6 +86,26 @@ export async function POST(req: NextRequest) {
             console.error("Order RPC Error:", error);
             return NextResponse.json({ success: false, message: "Buyurtma berishda xatolik: " + error.message }, { status: 500 });
         }
+
+        // --- NEW: Check Low Stock Alert ---
+        try {
+            const productIds = validatedData.items.map((i: any) => i.id);
+            const { data: stockCheck } = await supabaseAdmin
+                .from("products")
+                .select("id, name, stock")
+                .in("id", productIds);
+            
+            if (stockCheck) {
+                const lowStockItems = stockCheck.filter(p => p.stock < 5);
+                if (lowStockItems.length > 0) {
+                    // Fonda (async) yuboriladi, foydalanuvchini kutttirmaydi
+                    sendLowStockAlert(lowStockItems);
+                }
+            }
+        } catch(e) {
+            console.error("Low stock check error:", e);
+        }
+        // ----------------------------------
 
         return NextResponse.json(data);
 
