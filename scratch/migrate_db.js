@@ -10,14 +10,14 @@ async function migrate() {
         await client.connect();
         console.log("Bazaga ulandi. Migratsiya boshlanmoqda...");
 
-        // 1. users jadvaliga token_version ustunini qo'shish
+        // 1. users jadvaliga token_version
         await client.query(`
             ALTER TABLE users 
             ADD COLUMN IF NOT EXISTS token_version INTEGER DEFAULT 1;
         `);
-        console.log("✅ 'token_version' ustuni (users) qo'shildi.");
+        console.log("✅ 'token_version' (users) qo'shildi.");
 
-        // 2. user_status jadvaliga yangi ustunlar qo'shish
+        // 2. user_status jadvaliga qurilma va geo ustunlari
         await client.query(`
             ALTER TABLE user_status 
             ADD COLUMN IF NOT EXISTS screen_resolution TEXT,
@@ -31,14 +31,42 @@ async function migrate() {
             ADD COLUMN IF NOT EXISTS latitude NUMERIC,
             ADD COLUMN IF NOT EXISTS longitude NUMERIC;
         `);
-        console.log("✅ 'user_status' jadvaliga yangi ustunlar qo'shildi:");
-        console.log("   - screen_resolution (Ekran o'lchami)");
-        console.log("   - device_type (Mobil/Desktop)");
-        console.log("   - device_memory (RAM)");
-        console.log("   - cpu_cores (Protsessor yadrolari)");
-        console.log("   - city, region, country (Joylashuv)");
-        console.log("   - isp (Internet provayder)");
-        console.log("   - latitude, longitude (Koordinatalar)");
+        console.log("✅ 'user_status' yangi ustunlari qo'shildi.");
+
+        // 3. visitor_logs jadvali — kirdi-chiqdi jurnali
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS visitor_logs (
+                id          BIGSERIAL PRIMARY KEY,
+                session_id  TEXT,
+                user_phone  TEXT,
+                name        TEXT DEFAULT 'Mehmon',
+                event_type  TEXT NOT NULL,   -- 'login' | 'logout' | 'visit' | 'register'
+                ip_address  TEXT,
+                city        TEXT,
+                region      TEXT,
+                country     TEXT,
+                isp         TEXT,
+                latitude    NUMERIC,
+                longitude   NUMERIC,
+                device_type TEXT,
+                screen_resolution TEXT,
+                device_memory     NUMERIC,
+                cpu_cores         INTEGER,
+                current_path      TEXT,
+                created_at  TIMESTAMPTZ DEFAULT NOW()
+            );
+        `);
+        console.log("✅ 'visitor_logs' jadvali yaratildi.");
+
+        // 4. Indeks — tez qidirish uchun
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_visitor_logs_created 
+            ON visitor_logs (created_at DESC);
+            
+            CREATE INDEX IF NOT EXISTS idx_visitor_logs_user_phone 
+            ON visitor_logs (user_phone);
+        `);
+        console.log("✅ Indekslar qo'shildi.");
 
     } catch (err) {
         console.error("❌ XATOLIK:", err.message);

@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { hashPassword } from "@/lib/auth-utils";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { createJwt } from "@/lib/jwt-utils";
+import { writeVisitorLog, getGeoByIp } from "@/lib/visitor-log";
 
 /**
  * Foydalanuvchi logini (Server-side)
@@ -97,6 +98,18 @@ export async function POST(req: NextRequest) {
             sameSite: "lax",
             maxAge: 30 * 24 * 60 * 60,
             path: "/"
+        });
+
+        // ✍️ LOGIN LOG yozish (background, natijani kutmaymiz)
+        getGeoByIp(ip).then(geo => {
+            writeVisitorLog({
+                user_phone: user.phone,
+                name: user.name || "Mijoz",
+                event_type: "login",
+                ip_address: ip,
+                ...geo,
+                current_path: "/login",
+            });
         });
 
         return response;
