@@ -3,67 +3,87 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function POST(req: Request) {
     try {
-        const { code, totalAmount } = await req.json();
+        const { code, totalAmount, userPhone } = await req.json();
 
         if (!code) {
             return NextResponse.json({ success: false, error: "Promo kodni kiriting" }, { status: 400 });
         }
 
-        const { data: promo, error } = await supabaseAdmin
+        const normalizedCode = code.trim().toUpperCase();
+
+        // 1. Check standard promo codes first
+        const { data: promo } = await supabaseAdmin
             .from("promo_codes")
             .select("*")
-            .eq("code", code.trim().toUpperCase())
+            .eq("code", normalizedCode)
             .single();
 
-        if (error || !promo) {
-            return NextResponse.json({ success: false, error: "Bunday promo kod mavjud emas" });
-        }
-
-        // 1. Activity check
-        if (!promo.active) {
-            return NextResponse.json({ success: false, error: "Ushbu promo kod hozirda faol emas" });
-        }
-
-        // 2. Expiration check
-        if (promo.expires_at) {
-            const expiresAt = new Date(promo.expires_at).getTime();
-            const now = new Date().getTime();
-            if (expiresAt < now) {
+        if (promo) {
+            // Activity check
+            if (!promo.active) return NextResponse.json({ success: false, error: "Ushbu promo kod hozirda faol emas" });
+            
+            // Expiration check
+            if (promo.expires_at && new Date(promo.expires_at).getTime() < new Date().getTime()) {
                 return NextResponse.json({ success: false, error: "Ushbu promo kodning muddati tugagan" });
             }
+
+            // Usage limit check
+            if (promo.usage_limit && promo.usage_count >= promo.usage_limit) {
+                return NextResponse.json({ success: false, error: "Ushbu promo koddan foydalanish limiti tugagan" });
+            }
+
+            // Min amount check
+            if (totalAmount && totalAmount < promo.min_order_amount) {
+                return NextResponse.json({ 
+                    success: false, 
+                    error: `Minimal buyurtma miqdori ${promo.min_order_amount.toLocaleString()} so'm bo'lishi kerak` 
+                });
+            }
+
+            let discount = promo.discount_type === 'fixed' 
+                ? promo.discount_value 
+                : (totalAmount * promo.discount_value) / 100;
+
+            if (promo.discount_type === 'percent' && promo.max_discount_amount && discount > promo.max_discount_amount) {
+                discount = promo.max_discount_amount;
+            }
+
+            return NextResponse.json({ success: true, discount, code: promo.code, isAffiliate: false });
         }
 
-        // 3. Usage limit check
-        if (promo.usage_limit && promo.usage_count >= promo.usage_limit) {
-            return NextResponse.json({ success: false, error: "Ushbu promo koddan foydalanish limiti tugagan" });
-        }
+        // 2. Check for Affiliate Promo Code (Referral)
+        const { data: affiliateUser } = await supabaseAdmin
+            .from("users")
+            .select("phone, name")
+            .eq("affiliate_code", normalizedCode)
+            .single();
 
-        // 4. Min amount check
-        if (totalAmount && totalAmount < promo.min_order_amount) {
+        if (affiliateUser) {
+            // ANTI-FRAUD: Cannot use your own referral code
+            if (userPhone && userPhone === affiliateUser.phone) {
+                return NextResponse.json({ success: false, error: "O'z referal kodingizdan foydalana olmaysiz" });
+            }
+
+            // Get affiliate settings
+            const { data: settingsRow } = await supabaseAdmin
+                .from("site_settings")
+                .select("value")
+                .eq("key", "affiliate_settings")
+                .single();
+
+            const settings = settingsRow?.value || { buyer_discount: 10000 };
+            const discount = settings.buyer_discount || 0;
+
             return NextResponse.json({ 
-                success: false, 
-                error: `Minimal buyurtma miqdori ${promo.min_order_amount.toLocaleString()} so'm bo'lishi kerak` 
+                success: true, 
+                discount, 
+                code: normalizedCode, 
+                isAffiliate: true,
+                affiliateName: affiliateUser.name 
             });
         }
 
-        // 5. Calculate discount
-        let discount = 0;
-        if (promo.discount_type === 'fixed') {
-            discount = promo.discount_value;
-        } else if (promo.discount_type === 'percent') {
-            discount = (totalAmount * promo.discount_value) / 100;
-            if (promo.max_discount_amount && discount > promo.max_discount_amount) {
-                discount = promo.max_discount_amount;
-            }
-        }
-
-        return NextResponse.json({ 
-            success: true, 
-            discount, 
-            code: promo.code,
-            type: promo.discount_type,
-            value: promo.discount_value
-        });
+        return NextResponse.json({ success: false, error: "Bunday promo kod mavjud emas" });
     } catch (error: any) {
         console.error("Promo validation error:", error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });

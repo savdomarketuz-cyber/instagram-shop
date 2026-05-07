@@ -46,12 +46,43 @@ export async function POST(req: Request) {
             .from("orders")
             .update(updateData)
             .eq("id", orderId)
-            .select("user_phone")
+            .select("user_phone, total")
             .single();
 
         if (error) throw error;
 
-        // 2. Notify customer via Telegram
+        // 3. Handle Affiliate Rewards
+        if (status === "Yetkazildi") {
+            const { data: affTx } = await supabaseAdmin
+                .from("affiliate_transactions")
+                .select("*")
+                .eq("order_id", orderId)
+                .eq("status", "pending")
+                .single();
+
+            if (affTx) {
+                // Approve transaction
+                await supabaseAdmin
+                    .from("affiliate_transactions")
+                    .update({ status: "approved" })
+                    .eq("id", affTx.id);
+                
+                // Add to user real_balance
+                await supabaseAdmin.rpc("increment_real_balance", {
+                    p_phone: affTx.affiliate_phone,
+                    p_amount: affTx.amount
+                });
+            }
+        } else if (status === "Bekor qilingan") {
+            // Reject affiliate transaction if order is cancelled
+            await supabaseAdmin
+                .from("affiliate_transactions")
+                .update({ status: "rejected" })
+                .eq("order_id", orderId)
+                .eq("status", "pending");
+        }
+
+        // 4. Notify customer via Telegram
         if (order?.user_phone) {
             await notifyCustomerStatusUpdate(order.user_phone, orderId, status);
         }

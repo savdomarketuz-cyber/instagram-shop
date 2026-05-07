@@ -50,6 +50,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { name: "Promo Kodlar", href: l("/admin/promo-codes"), icon: Tag },
         { name: "Hamyon", href: l("/admin/wallets"), icon: Wallet },
         { name: "Cashback", href: l("/admin/cashback"), icon: Banknote },
+        { name: "Hamkorlik", href: l("/admin/affiliate"), icon: Sparkles },
         { name: "Mahsulotlar", href: l("/admin/products"), icon: Package },
         { name: "Kategoriyalar", href: l("/admin/categories"), icon: Layers },
         { name: "Brendlar", href: l("/admin/brands"), icon: Activity },

@@ -43,7 +43,7 @@ export default function AccountPage() {
     const { user, setUser, logout, language, setLanguage, showToast } = useStore();
     const t = translations[language];
 
-    const [view, setView] = useState<"menu" | "edit-profile" | "language" | "returns" | "promo-codes" | "reviews">("menu");
+    const [view, setView] = useState<"menu" | "edit-profile" | "language" | "returns" | "promo-codes" | "reviews" | "affiliate">("menu");
     const [name, setName] = useState(user?.name || "");
     const [username, setUsername] = useState(user?.username || "");
     const [password, setPassword] = useState("");
@@ -52,6 +52,8 @@ export default function AccountPage() {
     const [showSuccess, setShowSuccess] = useState(false);
     const [loading, setLoading] = useState(true);
     const [balance, setBalance] = useState(0);
+    const [realBalance, setRealBalance] = useState(0);
+    const [affiliateCode, setAffiliateCode] = useState("");
     const [pendingCashback, setPendingCashback] = useState(0);
 
     useEffect(() => {
@@ -72,6 +74,8 @@ export default function AccountPage() {
                     const mappedUser = mapUser(data);
                     setName(mappedUser.name || "");
                     setUsername(mappedUser.username || "");
+                    setAffiliateCode(data.affiliate_code || "");
+                    setRealBalance(data.real_balance || 0);
                     setUser({ ...user, ...mappedUser });
                 }
             } catch (e) {
@@ -305,6 +309,10 @@ export default function AccountPage() {
         return <ReviewsView user={user} language={language} t={t} showToast={showToast} onBack={() => setView("menu")} />;
     }
 
+    if (view === "affiliate") {
+        return <AffiliateView user={user} language={language} t={t} showToast={showToast} onBack={() => setView("menu")} />;
+    }
+
     // --- Main Menu View ---
 
     return (
@@ -367,7 +375,8 @@ export default function AccountPage() {
                     <div className="space-y-3">
                         <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">{t.account.sections.benefits}</h3>
                         <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-100/50">
-                            <MenuItem onClick={() => setView("promo-codes")} icon={<Ticket size={20} />} label={t.account.sections.promoCodes} divider={false} language={language} />
+                            <MenuItem onClick={() => setView("promo-codes")} icon={<Ticket size={20} />} label={t.account.sections.promoCodes} language={language} />
+                            <MenuItem onClick={() => setView("affiliate")} icon={<Sparkles size={20} />} label={language === 'uz' ? 'Hamkorlik (Pul ishlash)' : 'Партнерство (Заработок)'} divider={false} language={language} />
                         </div>
                     </div>
 
@@ -893,7 +902,187 @@ function PromoCodesView({ t, language, onBack }: any) {
     );
 }
 
+function AffiliateView({ user, language, showToast, onBack }: any) {
+    const [data, setData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [newCode, setNewCode] = useState("");
+    const [isUpdatingCode, setIsUpdatingCode] = useState(false);
+    const [withdrawAmount, setWithdrawAmount] = useState("");
+    const [cardNumber, setCardNumber] = useState("");
+    const [isWithdrawing, setIsWithdrawing] = useState(false);
+
+    useEffect(() => {
+        fetchAffiliateData();
+    }, []);
+
+    const fetchAffiliateData = async () => {
+        try {
+            setLoading(true);
+            const res = await fetch("/api/affiliate/user");
+            const d = await res.json();
+            if (d.success) {
+                setData(d);
+                if (d.user.affiliate_code) setNewCode(d.user.affiliate_code);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleUpdateCode = async () => {
+        if (!newCode || newCode.length < 3) return;
+        setIsUpdatingCode(true);
+        try {
+            const res = await fetch("/api/affiliate/user", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "update_code", affiliate_code: newCode })
+            });
+            const d = await res.json();
+            if (d.success) {
+                showToast(language === 'uz' ? "Kod saqlandi!" : "Код сохранен!", "success");
+                fetchAffiliateData();
+            } else {
+                showToast(d.error, "error");
+            }
+        } finally {
+            setIsUpdatingCode(false);
+        }
+    };
+
+    const handleWithdraw = async () => {
+        const amount = Number(withdrawAmount);
+        if (!amount || !cardNumber) return;
+        setIsWithdrawing(true);
+        try {
+            const res = await fetch("/api/affiliate/user", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "withdraw", amount, card_number: cardNumber })
+            });
+            const d = await res.json();
+            if (d.success) {
+                showToast(language === 'uz' ? "So'rov yuborildi!" : "Запрос отправлен!", "success");
+                setWithdrawAmount("");
+                setCardNumber("");
+                fetchAffiliateData();
+            } else {
+                showToast(d.error, "error");
+            }
+        } finally {
+            setIsWithdrawing(false);
+        }
+    };
+
+    if (loading) return <div className="min-h-screen bg-[#F2F3F5] flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
+
+    return (
+        <div className="bg-[#F2F3F5] min-h-screen pb-24 px-4 md:px-10">
+            <div className="max-w-xl mx-auto pt-10">
+                <button onClick={onBack} className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8 hover:text-black transition-all">
+                    <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
+                </button>
+
+                <div className="space-y-10">
+                    <div className="flex justify-between items-end">
+                        <div>
+                            <h1 className="text-3xl font-black tracking-tighter italic uppercase">{language === 'uz' ? 'Hamkorlik' : 'Партнерство'}</h1>
+                            <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-2">{language === 'uz' ? 'Haqiqiy pul ishlang' : 'Зарабатывайте реальные деньги'}</p>
+                        </div>
+                        <div className="bg-white px-4 py-2 rounded-2xl border border-gray-100 shadow-sm">
+                             <p className="text-[8px] text-gray-400 font-black uppercase tracking-widest leading-none mb-1">Real Hamyon</p>
+                             <p className="text-lg font-black italic tracking-tighter text-emerald-600">{(data?.user?.real_balance || 0).toLocaleString()} so'm</p>
+                        </div>
+                    </div>
+
+                    {/* Promo Code Management */}
+                    <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4 mb-4 block">{language === 'uz' ? 'Sizning Promokodingiz' : 'Ваш Промокод'}</label>
+                        <div className="flex gap-3">
+                            <input 
+                                type="text"
+                                value={newCode}
+                                onChange={e => setNewCode(e.target.value.toUpperCase())}
+                                placeholder="PROMO_KOD"
+                                className="flex-1 bg-gray-50 border-none rounded-2xl px-6 py-4 font-black italic text-lg uppercase outline-none focus:ring-2 focus:ring-black transition-all"
+                            />
+                            <button 
+                                onClick={handleUpdateCode}
+                                disabled={isUpdatingCode || newCode === data?.user?.affiliate_code}
+                                className="bg-black text-white px-6 rounded-2xl font-black text-[10px] uppercase tracking-widest disabled:opacity-20 transition-all"
+                            >
+                                {isUpdatingCode ? <Loader2 size={16} className="animate-spin" /> : (language === 'uz' ? 'O\'zgartirish' : 'Изменить')}
+                            </button>
+                        </div>
+                        <div className="mt-6 p-4 bg-purple-50 rounded-2xl border border-purple-100">
+                            <p className="text-[10px] font-bold text-purple-600 leading-relaxed italic">
+                                {language === 'uz' 
+                                    ? `Ushbu kodni tarqating. Uni ishlatgan yangi mijoz ${data?.settings?.buyer_discount?.toLocaleString()} so'm chegirma oladi, sizga esa har bir xarididan ${data?.settings?.referrer_reward?.toLocaleString()} so'm naqd pul tushadi!`
+                                    : `Поделитесь этим кодом. Новый клиент получит скидку ${data?.settings?.buyer_discount?.toLocaleString()} сум, а вы получите ${data?.settings?.referrer_reward?.toLocaleString()} сум наличными с каждой его покупки!`
+                                }
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Withdrawal Section */}
+                    <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
+                        <h3 className="text-lg font-black italic tracking-tighter uppercase mb-6">{language === 'uz' ? 'Pulni Yechish' : 'Вывод Средств'}</h3>
+                        <div className="space-y-4">
+                            <input 
+                                type="number"
+                                value={withdrawAmount}
+                                onChange={e => setWithdrawAmount(e.target.value)}
+                                placeholder={language === 'uz' ? "Summa (min: 50,000)" : "Сумма (мин: 50,000)"}
+                                className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-black transition-all"
+                            />
+                            <input 
+                                type="text"
+                                value={cardNumber}
+                                onChange={e => setCardNumber(e.target.value)}
+                                placeholder="8600 **** **** ****"
+                                className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-black transition-all"
+                            />
+                            <button 
+                                onClick={handleWithdraw}
+                                disabled={isWithdrawing || !withdrawAmount || !cardNumber}
+                                className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 disabled:opacity-20 transition-all shadow-xl shadow-black/10"
+                            >
+                                {isWithdrawing ? <Loader2 size={18} className="animate-spin mx-auto" /> : (language === 'uz' ? 'SO\'ROV YUBORISH' : 'ОТПРАВИТЬ ЗАПРОС')}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* History Sections */}
+                    <div className="space-y-4">
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">{language === 'uz' ? 'Hamkorlik Tarixi' : 'История Партнерства'}</h3>
+                        <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-100">
+                            {data?.transactions?.length === 0 ? (
+                                <div className="p-10 text-center text-gray-300 font-bold italic text-sm">Hali referallar yo'q</div>
+                            ) : (
+                                data?.transactions?.map((t: any) => (
+                                    <div key={t.id} className="p-5 border-b border-gray-50 last:border-0 flex justify-between items-center">
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase">Mijoz: {t.buyer_phone.slice(0, 9)}***</p>
+                                            <p className="text-xs font-black italic uppercase mt-0.5">+{t.amount.toLocaleString()} so'm</p>
+                                        </div>
+                                        <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase ${t.status === 'approved' ? 'bg-green-50 text-green-600' : t.status === 'pending' ? 'bg-orange-50 text-orange-600' : 'bg-red-50 text-red-600'}`}>
+                                            {t.status === 'approved' ? 'Tasdiqlandi' : t.status === 'pending' ? 'Kutilmoqda' : 'Bekor qilindi'}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function MenuItem({ href, icon, label, language, divider = true, onClick, variant = "default" }: any) {
+
     const Content = (
         <div className="flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer group">
             <div className="flex items-center gap-4">
