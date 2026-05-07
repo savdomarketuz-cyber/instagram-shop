@@ -14,6 +14,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import ConnectivityListener from "@/components/common/ConnectivityListener";
 
 
+import { subscribeToPushNotifications } from "@/lib/push-notifications";
 import { Language } from "@/types";
 
 export default function AppWrapper({ children, lang }: { children: React.ReactNode, lang?: string }) {
@@ -207,6 +208,17 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
         const timer = setTimeout(syncCart, 2000);
         return () => clearTimeout(timer);
     }, [cart, user?.phone]);
+    
+    // 🔔 Push Notifications Setup
+    useEffect(() => {
+        const setupPush = async () => {
+            // Bir oz kutib keyin so'raymiz (foydalanuvchi cho'chib ketmasligi uchun)
+            setTimeout(async () => {
+                await subscribeToPushNotifications(user?.phone);
+            }, 5000);
+        };
+        setupPush();
+    }, [user?.phone]);
 
 
 

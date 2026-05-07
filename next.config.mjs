@@ -12,6 +12,7 @@ const withPWA = withPWAInit({
         disableDevLogs: true,
         skipWaiting: true,
         clientsClaim: true,
+        importScripts: ["/push-handler.js"],
         runtimeCaching: [
             {
                 urlPattern: /\/api\/ai.*/i,
