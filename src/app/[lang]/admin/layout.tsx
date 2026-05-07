@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutDashboard, ShoppingCart, Package, Layers, LogOut, Menu, X, Users, Image as ImageIcon, Database, Settings, Sparkles, Activity, Zap, MessageSquare, ShieldAlert, Truck, Warehouse, RotateCcw, Tag, Banknote, Wallet, BookOpen, ClipboardList } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Package, Layers, LogOut, Menu, X, Users, Image as ImageIcon, Database, Settings, Sparkles, Activity, Zap, MessageSquare, ShieldAlert, Truck, Warehouse, RotateCcw, Tag, Banknote, Wallet, BookOpen, ClipboardList, BookA } from "lucide-react";
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/store/store";
@@ -58,6 +58,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { name: "Omborlar", href: l("/admin/warehouses"), icon: Warehouse },
         { name: "Chat", href: l("/admin/chats"), icon: MessageSquare },
         { name: "Sozlamalar", href: l("/admin/settings"), icon: Settings },
+        { name: "Qidiruv Lug'ati", href: l("/admin/synonyms"), icon: BookA },
     ];
 
     // Agar avtorizatsiya tekshirilmagan bo'lsa, loading ko'rsatish
