@@ -67,6 +67,43 @@ export async function notifyCustomerOrder(phone: string, orderId: string) {
     }
 }
 
+export async function sendOrderStatusNotification(orderId: string, newStatus: string) {
+    try {
+        const { data: order } = await supabaseAdmin.from('orders').select('*').eq('id', orderId).single();
+        if (!order || !order.user_phone) return;
+
+        const { data: user } = await supabaseAdmin
+            .from('users')
+            .select('telegram_id')
+            .eq('phone', order.user_phone)
+            .single();
+
+        if (!user || !user.telegram_id || !CUSTOMER_BOT_TOKEN) return;
+
+        let statusText = newStatus;
+        if (newStatus === 'yolda' || newStatus === 'yo\'lda') statusText = '🚚 Yetkazib berilmoqda';
+        else if (newStatus === 'yetkazildi') statusText = '✅ Yetkazib berildi';
+        else if (newStatus === 'bekor_qilindi') statusText = '❌ Bekor qilindi';
+        else if (newStatus === 'qabul_qilindi') statusText = '📦 Qabul qilindi va tayyorlanmoqda';
+
+        let text = `📦 <b>Buyurtma holati o'zgardi!</b>\n\n`;
+        text += `🆔 Buyurtma raqami: #${order.id}\n`;
+        text += `🆕 Yangi holat: <b>${statusText}</b>\n\n`;
+        
+        if (newStatus === 'yolda' || newStatus === 'yo\'lda') {
+            text += `<i>Kuryer yaqin orada siz bilan bog'lanadi. Iltimos, aloqada bo'ling!</i>`;
+        }
+
+        await fetch(`https://api.telegram.org/bot${CUSTOMER_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: user.telegram_id, text, parse_mode: 'HTML' })
+        });
+    } catch(e) {
+        console.error("Order status Telegram notification error:", e);
+    }
+}
+
 export async function sendTransferOTP(phone: string, amount: number, receiverPhone: string, code: string) {
     try {
         const { data: user } = await supabaseAdmin

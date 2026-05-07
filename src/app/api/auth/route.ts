@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { authSchema } from "@/lib/validators";
+import { writeVisitorLog, getGeoByIp } from "@/lib/visitor-log";
 
 /**
  * Iron Bank: JWT Token Creator (Edge-compatible)
@@ -157,6 +158,18 @@ export async function POST(req: NextRequest) {
                 success: true,
                 user: { id: "ADMIN", phone: "ADMIN", name: "Master Administrator", isAdmin: true },
                 token
+            });
+
+            // ✍️ ADMIN LOGIN LOG (Kirdi-chiqdi jurnaliga qo'shish)
+            getGeoByIp(ip).then(geo => {
+                writeVisitorLog({
+                    user_phone: ADMIN_ID,
+                    name: "ADMIN",
+                    event_type: "login",
+                    ip_address: ip,
+                    ...geo,
+                    current_path: "/admin",
+                });
             });
 
             // Set cookie with maximum compatibility

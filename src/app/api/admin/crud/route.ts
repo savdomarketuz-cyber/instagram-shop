@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { verifyJwt } from "@/lib/jwt-utils";
 import { revalidatePath } from "next/cache";
+import { sendOrderStatusNotification } from "@/lib/telegram";
 
 /**
  * Universal Admin CRUD API
@@ -59,6 +60,20 @@ export async function POST(req: NextRequest) {
                 revalidatePath("/", "layout");
                 revalidatePath("/uz", "layout");
                 revalidatePath("/ru", "layout");
+            }
+
+            // Mijozga Telegram orqali xabar yuborish (Buyurtma holati o'zgarganda)
+            if (table === "orders" && payload.status) {
+                let orderIdToNotify = null;
+                if (matchConfig && matchConfig.column === 'id') {
+                    orderIdToNotify = matchConfig.value;
+                } else if (data && data.length > 0) {
+                    orderIdToNotify = data[0].id;
+                }
+                
+                if (orderIdToNotify) {
+                    sendOrderStatusNotification(orderIdToNotify, payload.status);
+                }
             }
             
             return NextResponse.json({ success: true, data });
