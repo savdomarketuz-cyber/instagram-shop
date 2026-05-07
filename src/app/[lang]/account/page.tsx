@@ -1135,12 +1135,13 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
         );
     }
 
-    const roleName = {
+    const roles: Record<string, string> = {
         top_manager: language === 'uz' ? 'Top Menejer' : 'Топ Менеджер',
         top_sales_manager: language === 'uz' ? 'Top Sotuv Menejeri' : 'Топ Менеджер Продаж',
         sales_manager: language === 'uz' ? 'Sotuv Menejeri' : 'Менеджер Продаж',
         agent: language === 'uz' ? 'Agent' : 'Агент'
-    }[data?.user?.affiliate_role as any] || (language === 'uz' ? 'A\'zo' : 'Участник');
+    };
+    const roleName = roles[data?.user?.affiliate_role as string] || (language === 'uz' ? "A'zo" : 'Участник');
 
     return (
         <div className="bg-[#F2F3F5] min-h-screen pb-24 px-4 md:px-10 overflow-x-hidden">
