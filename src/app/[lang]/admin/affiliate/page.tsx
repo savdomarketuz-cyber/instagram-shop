@@ -315,7 +315,7 @@ export default function AffiliateAdminPage() {
                                                                 'bg-red-50 text-red-600'
                                                         }`}>
                                                         {req.status === 'pending' ? 'Kutilmoqda' :
-                                                            req.status === 'paid' ? 'To''landi' : 'Rad etildi'}
+                                                            req.status === 'paid' ? 'To\'landi' : 'Rad etildi'}
                                                     </span>
                                                 </td>
                                                 <td className="px-8 py-6 text-right">
