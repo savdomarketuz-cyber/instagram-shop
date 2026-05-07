@@ -133,11 +133,11 @@ export default function AbandonedCartsPage() {
                                     <button
                                         onClick={() => handleRemind(cart)}
                                         disabled={!isConnected || sendingPhone === cart.user_phone}
-                                        className={\`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all \${
+                                        className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
                                             isConnected 
                                             ? "bg-blue-500 text-white hover:bg-blue-600 shadow-lg shadow-blue-200" 
                                             : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                        }\`}
+                                        }`}
                                     >
                                         {sendingPhone === cart.user_phone ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                                         Eslatish
