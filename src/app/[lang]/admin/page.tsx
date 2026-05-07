@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { TrendingUp, Users, ShoppingBag, DollarSign, Clock, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { mapOrder } from "@/lib/mappers";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 export default function AdminDashboard() {
     const [stats, setStats] = useState({
@@ -14,6 +15,7 @@ export default function AdminDashboard() {
         pendingOrders: 0
     });
     const [recentOrders, setRecentOrders] = useState<any[]>([]);
+    const [chartData, setChartData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -23,7 +25,7 @@ export default function AdminDashboard() {
     const fetchDashboardData = async () => {
         try {
             // Fetch all orders for stats (can be optimized with RPC later)
-            const { data: allOrders } = await supabase.from("orders").select("total, status");
+            const { data: allOrders } = await supabase.from("orders").select("total, status, created_at");
             
             const revenue = allOrders?.reduce((sum, order) => sum + (Number(order.total) || 0), 0) || 0;
             const pending = allOrders?.filter(order =>
@@ -39,6 +41,27 @@ export default function AdminDashboard() {
                 totalUsers: userCount || 0,
                 pendingOrders: pending
             });
+
+            // CHART DATA: Last 7 days revenue
+            const last7Days = Array.from({length: 7}).map((_, i) => {
+                const d = new Date();
+                d.setDate(d.getDate() - (6 - i));
+                return { 
+                    dateStr: d.toISOString().split('T')[0], 
+                    display: d.toLocaleDateString('uz-UZ', { month: 'short', day: 'numeric' }),
+                    daromad: 0 
+                };
+            });
+
+            allOrders?.forEach(o => {
+                if (!o.created_at) return;
+                const dateOnly = o.created_at.split('T')[0];
+                const dayMatch = last7Days.find(d => d.dateStr === dateOnly);
+                if (dayMatch && o.status !== 'Bekor qilindi') {
+                    dayMatch.daromad += Number(o.total) || 0;
+                }
+            });
+            setChartData(last7Days);
 
             // Get 5 most recent orders
             const { data: recent } = await supabase
@@ -92,6 +115,60 @@ export default function AdminDashboard() {
                         </div>
                     );
                 })}
+            </div>
+
+            {/* Analytics Chart */}
+            <div className="bg-white p-6 md:p-8 rounded-[40px] shadow-sm border border-gray-100">
+                <div className="mb-6 flex items-center justify-between">
+                    <div>
+                        <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
+                            <TrendingUp size={20} className="text-blue-500" />
+                            So'nggi 7 kunlik daromad
+                        </h2>
+                        <p className="text-sm text-gray-400 font-medium mt-1">Sotuvlar dinamikasini kuzatib boring</p>
+                    </div>
+                </div>
+                <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                            <defs>
+                                <linearGradient id="colorDaromad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                            <XAxis 
+                                dataKey="display" 
+                                axisLine={false} 
+                                tickLine={false} 
+                                tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }} 
+                                dy={10} 
+                            />
+                            <YAxis 
+                                axisLine={false} 
+                                tickLine={false} 
+                                tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }}
+                                tickFormatter={(val) => \`\${(val / 1000000).toFixed(1)}M\`}
+                                dx={-10}
+                            />
+                            <Tooltip 
+                                contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)', padding: '12px 16px' }}
+                                formatter={(value: number) => [\`\${value.toLocaleString()} so'm\`, "Daromad"]}
+                                labelStyle={{ fontWeight: 900, marginBottom: '8px', color: '#1e293b' }}
+                            />
+                            <Area 
+                                type="monotone" 
+                                dataKey="daromad" 
+                                stroke="#3B82F6" 
+                                strokeWidth={4}
+                                fillOpacity={1} 
+                                fill="url(#colorDaromad)" 
+                                activeDot={{ r: 8, fill: "#3B82F6", stroke: "#fff", strokeWidth: 3 }}
+                            />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                </div>
             </div>
 
             {/* Recent Orders Table */}
