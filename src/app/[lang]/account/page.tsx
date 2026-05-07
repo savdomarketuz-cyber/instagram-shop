@@ -30,7 +30,8 @@ import {
     X,
     Video,
     Play,
-    Check
+    Check,
+    Sparkles
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { translations } from "@/lib/translations";
