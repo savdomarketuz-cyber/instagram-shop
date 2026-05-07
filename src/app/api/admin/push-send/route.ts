@@ -3,12 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { verifyJwt } from "@/lib/jwt-utils";
 import webpush from "web-push";
 
-// VAPID sozlamalari
-webpush.setVapidDetails(
-    "mailto:admin@velari.uz",
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-    process.env.VAPID_PRIVATE_KEY!
-);
+// VAPID sozlamalari POST funksiyasi ichiga ko'chirildi
 
 async function verifyAdmin(req: NextRequest) {
     const adminToken = req.cookies.get("admin_token")?.value;
@@ -21,7 +16,16 @@ async function verifyAdmin(req: NextRequest) {
 export async function POST(req: NextRequest) {
     if (!(await verifyAdmin(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const pubKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+    const privKey = process.env.VAPID_PRIVATE_KEY;
+
+    if (!pubKey || !privKey) {
+        return NextResponse.json({ error: "VAPID kalitlari o'rnatilmagan (Server xatosi)" }, { status: 500 });
+    }
+
     try {
+        webpush.setVapidDetails("mailto:admin@velari.uz", pubKey, privKey);
+        
         const { title, body, url } = await req.json();
 
         if (!title || !body) {
