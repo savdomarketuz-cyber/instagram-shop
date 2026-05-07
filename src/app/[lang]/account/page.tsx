@@ -1300,7 +1300,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
                     <div className="bg-white w-full max-w-md p-10 rounded-[40px] shadow-2xl space-y-6 relative animate-in fade-in zoom-in duration-300">
                         <button onClick={() => setShowAddMember(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-all"><X size={18} /></button>
-                        <h2 className="text-2xl font-black italic tracking-tighter uppercase">{language === 'uz' ? 'A'zo Qo'shish' : 'Добавить Участника'}</h2>
+                        <h2 className="text-2xl font-black italic tracking-tighter uppercase">{language === 'uz' ? "A'zo Qo'shish" : 'Добавить Участника'}</h2>
                         <div className="space-y-4">
                             <div>
                                 <label className="text-[10px] font-black uppercase text-gray-400 ml-4 mb-2 block">Telefon Raqam</label>
@@ -1391,20 +1391,6 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                     </div>
                 </div>
             )}
-        </div>
-    );
-}.toLocaleString()} so'm</p>
-                                        </div>
-                                        <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase ${t.status === 'approved' ? 'bg-green-50 text-green-600' : t.status === 'pending' ? 'bg-orange-50 text-orange-600' : 'bg-red-50 text-red-600'}`}>
-                                            {t.status === 'approved' ? 'Tasdiqlandi' : t.status === 'pending' ? 'Kutilmoqda' : 'Bekor qilindi'}
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     );
 }
