@@ -154,7 +154,7 @@ export default function AdminDashboard() {
                             />
                             <Tooltip 
                                 contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)', padding: '12px 16px' }}
-                                formatter={(value: number) => [`${value.toLocaleString()} so'm`, "Daromad"]}
+                                formatter={(value: any) => [`${Number(value || 0).toLocaleString()} so'm`, "Daromad"]}
                                 labelStyle={{ fontWeight: 900, marginBottom: '8px', color: '#1e293b' }}
                             />
                             <Area 
