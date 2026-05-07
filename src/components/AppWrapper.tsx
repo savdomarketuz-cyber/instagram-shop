@@ -77,34 +77,71 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
         };
 
         const updateActivity = async (action: string = "Ko'rmoqda") => {
-            // Completely silent IP tracking - no toasts shown if this fails
+            // Completely silent tracking - no toasts shown if this fails
             try {
-                let currentIp = sessionStorage.getItem("tracked_ip") || "Unknown";
-                if (currentIp === "Unknown") {
-                    const ipRes = await fetch("https://api.ipify.org?format=json").catch(() => null);
-                    if (ipRes && ipRes.ok) {
-                        const ipData = await ipRes.json();
-                        currentIp = ipData.ip;
-                        sessionStorage.setItem("tracked_ip", currentIp);
+                // Skip tracking for Admin users (prevents 406 Not Acceptable)
+                if (user?.phone === 'ADMIN') return;
+
+                // ── 1. GEO (ipapi.co — shahar, ISP, koordinat hammasi birga) ──
+                let geoData: any = {};
+                const cachedGeo = sessionStorage.getItem("tracked_geo");
+                if (cachedGeo) {
+                    geoData = JSON.parse(cachedGeo);
+                } else {
+                    const geoRes = await fetch("https://ipapi.co/json/").catch(() => null);
+                    if (geoRes && geoRes.ok) {
+                        const raw = await geoRes.json();
+                        geoData = {
+                            ip: raw.ip,
+                            city: raw.city,
+                            region: raw.region,
+                            country: raw.country_name,
+                            isp: raw.org,
+                            latitude: raw.latitude,
+                            longitude: raw.longitude,
+                        };
+                        sessionStorage.setItem("tracked_geo", JSON.stringify(geoData));
                     }
                 }
 
-                // Skip tracking for Admin users (prevents 406 Not Acceptable)
-                if (user?.phone === 'ADMIN') return;
+                // ── 2. QURILMA (Device info — insta skrab usuli) ──
+                const ua = navigator.userAgent;
+                let deviceType = "Desktop";
+                if (/Android|iPhone|iPad|iPod|Mobile/i.test(ua)) {
+                    deviceType = /iPad/i.test(ua) ? "Tablet" : "Mobile";
+                }
+
+                const deviceInfo = {
+                    screen_resolution: `${window.screen.width}x${window.screen.height}`,
+                    device_type: deviceType,
+                    device_memory: (navigator as any).deviceMemory || null,
+                    cpu_cores: navigator.hardwareConcurrency || null,
+                };
 
                 await supabase.from("user_status").upsert({
                     id: sessionId,
                     user_phone: user?.phone || null,
                     name: user?.name || "Mehmon",
-                    ip_address: currentIp,
+                    ip_address: geoData.ip || "Unknown",
                     last_seen: new Date().toISOString(),
                     is_online: true,
                     current_path: getFriendlyPath(pathname),
                     last_action: action,
-                    type: user?.phone ? "user" : "visitor"
+                    type: user?.phone ? "user" : "visitor",
+                    // 🆕 Yangi maydonlar
+                    screen_resolution: deviceInfo.screen_resolution,
+                    device_type: deviceInfo.device_type,
+                    device_memory: deviceInfo.device_memory,
+                    cpu_cores: deviceInfo.cpu_cores,
+                    city: geoData.city || null,
+                    region: geoData.region || null,
+                    country: geoData.country || null,
+                    isp: geoData.isp || null,
+                    latitude: geoData.latitude || null,
+                    longitude: geoData.longitude || null,
                 }, { onConflict: 'id' });
+
             } catch (error) {
-                // Activity tracking xatosi — production-da yashirish, dev-da log qilish
                 if (process.env.NODE_ENV === 'development') {
                     console.warn("[Activity Tracking]", error);
                 }
