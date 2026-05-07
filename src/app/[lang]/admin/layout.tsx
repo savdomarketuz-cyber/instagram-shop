@@ -44,6 +44,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { name: "Live", href: l("/admin/live"), icon: Zap },
         { name: "Jurnal (Logs)", href: l("/admin/logs"), icon: ClipboardList },
         { name: "Buyurtmalar", href: l("/admin/orders"), icon: ShoppingCart },
+        { name: "Tark etilgan savat", href: l("/admin/carts"), icon: ShoppingCart },
         { name: "Qaytarishlar", href: l("/admin/returns"), icon: RotateCcw },
         { name: "Promo Kodlar", href: l("/admin/promo-codes"), icon: Tag },
         { name: "Hamyon", href: l("/admin/wallets"), icon: Wallet },

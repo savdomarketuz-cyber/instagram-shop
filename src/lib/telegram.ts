@@ -129,3 +129,39 @@ export async function sendTransferOTP(phone: string, amount: number, receiverPho
         console.error("OTP Telegram notification error:", e);
     }
 }
+
+export async function sendCartReminder(phone: string, items: any[]) {
+    try {
+        const { data: user } = await supabaseAdmin
+            .from('users')
+            .select('telegram_id, name')
+            .eq('phone', phone)
+            .single();
+
+        if (!user || !user.telegram_id || !CUSTOMER_BOT_TOKEN) return { success: false, error: "Foydalanuvchi botga ulanmagan" };
+
+        const itemsText = items.map((i: any) => `- ${i.name} (x${i.quantity} ta)`).join('\n');
+        const total = items.reduce((sum, i) => sum + (Number(i.price) * (i.quantity || 1)), 0);
+
+        let text = `🛒 <b>Savatda mahsulotlar qolib ketdi!</b>\n\n`;
+        text += `Assalomu alaykum, <b>${user.name || 'Mijoz'}</b>!\n`;
+        text += `Sizning savatingizda quyidagi mahsulotlar o'z xaridini kutmoqda:\n\n`;
+        text += `📦 <b>Siz tanlagan mahsulotlar:</b>\n${itemsText}\n\n`;
+        text += `💰 <b>Jami summa:</b> ${total.toLocaleString()} so'm\n\n`;
+        text += `🏃‍♂️ <i>Mahsulotlar soni cheklangan, ularni hoziroq xarid qiling! Saytimizga kirib buyurtmani yakunlashingiz mumkin.</i>`;
+
+        const res = await fetch(`https://api.telegram.org/bot${CUSTOMER_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: user.telegram_id, text, parse_mode: 'HTML' })
+        });
+        
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.description);
+
+        return { success: true };
+    } catch(e: any) {
+        console.error("Cart reminder Telegram notification error:", e);
+        return { success: false, error: e.message };
+    }
+}
