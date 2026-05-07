@@ -53,8 +53,8 @@ export default function AbandonedCartsPage() {
     const formatTimeAgo = (dateStr: string) => {
         const diffInHours = Math.abs(new Date().getTime() - new Date(dateStr).getTime()) / 36e5;
         if (diffInHours < 1) return "Yaqinda";
-        if (diffInHours < 24) return \`\${Math.floor(diffInHours)} soat oldin\`;
-        return \`\${Math.floor(diffInHours / 24)} kun oldin\`;
+        if (diffInHours < 24) return `${Math.floor(diffInHours)} soat oldin`;
+        return `${Math.floor(diffInHours / 24)} kun oldin`;
     };
 
     return (

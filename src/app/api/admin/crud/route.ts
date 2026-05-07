@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
                 revalidatePath("/", "layout");
                 revalidatePath("/uz", "layout");
                 revalidatePath("/ru", "layout");
+                revalidatePath("/sitemap.xml");
             }
             
             return NextResponse.json({ success: true, data });
@@ -60,6 +61,7 @@ export async function POST(req: NextRequest) {
                 revalidatePath("/", "layout");
                 revalidatePath("/uz", "layout");
                 revalidatePath("/ru", "layout");
+                revalidatePath("/sitemap.xml");
             }
 
             // Mijozga Telegram orqali xabar yuborish (Buyurtma holati o'zgarganda)
@@ -86,6 +88,7 @@ export async function POST(req: NextRequest) {
                 revalidatePath("/", "layout");
                 revalidatePath("/uz", "layout");
                 revalidatePath("/ru", "layout");
+                revalidatePath("/sitemap.xml");
             }
             
             return NextResponse.json({ success: true, data });
@@ -108,6 +111,7 @@ export async function POST(req: NextRequest) {
                 revalidatePath("/", "layout");
                 revalidatePath("/uz", "layout");
                 revalidatePath("/ru", "layout");
+                revalidatePath("/sitemap.xml");
             }
             
             return NextResponse.json({ success: true });

@@ -25,7 +25,7 @@ export default function WishlistPage() {
                     <Heart size={40} />
                 </div>
                 <p className="text-gray-500 font-medium">
-                    {language === 'uz' ? 'Saralanganlarni ko\'rish uchun tizimga kiring' : 'Войдите в систему, чтобы увидеть избранное'}
+                    {t.common.loginToSeeWishlist}
                 </p>
                 <Link href="/login" className="bg-black text-white px-8 py-3 rounded-full font-bold shadow-lg">
                     {t.account.login}
@@ -40,16 +40,16 @@ export default function WishlistPage() {
                 <h1 className="text-2xl md:text-3xl font-black tracking-tighter uppercase italic truncate min-w-0 flex-1">{t.nav.wishlist}</h1>
                 <Link href="/orders" className="flex items-center gap-2 px-6 py-3 bg-gray-50 rounded-full text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-black hover:bg-gray-100 transition-all border border-gray-100 shadow-sm active:scale-95 group">
                     <Package size={14} strokeWidth={3} className="group-hover:scale-110 transition-transform" />
-                    {language === 'uz' ? 'Buyurtmalar' : 'Заказы'}
+                    {t.account.orders}
                 </Link>
             </div>
 
             {wishlist.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-64 text-gray-400">
                     <Heart size={48} className="mb-4 opacity-20" />
-                    <p className="font-medium">{language === 'uz' ? 'Hozircha hech narsa yo\'q' : 'Пока ничего нет'}</p>
+                    <p className="font-medium">{t.common.nothingHereYet}</p>
                     <Link href="/" className="mt-4 text-black font-bold border-b-2 border-black">
-                        {language === 'uz' ? 'Mahsulotlarni ko\'rish' : 'Посмотреть товары'}
+                        {t.common.viewProducts}
                     </Link>
                 </div>
             ) : (

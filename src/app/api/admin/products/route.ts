@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { verifyJwt } from "@/lib/jwt-utils";
+import { revalidatePath } from "next/cache";
 
 /**
  * Admin Products API — Trash, Restore, Delete operations
@@ -30,6 +31,7 @@ export async function PATCH(req: NextRequest) {
                 .update({ is_deleted: true })
                 .eq("id", id);
             if (error) throw error;
+            revalidatePath("/sitemap.xml");
             return NextResponse.json({ success: true });
         }
 
@@ -39,6 +41,7 @@ export async function PATCH(req: NextRequest) {
                 .update({ is_deleted: false })
                 .eq("id", id);
             if (error) throw error;
+            revalidatePath("/sitemap.xml");
             return NextResponse.json({ success: true });
         }
 
@@ -49,6 +52,7 @@ export async function PATCH(req: NextRequest) {
                 .update({ is_deleted: true })
                 .in("id", ids);
             if (error) throw error;
+            revalidatePath("/sitemap.xml");
             return NextResponse.json({ success: true });
         }
 
@@ -58,6 +62,7 @@ export async function PATCH(req: NextRequest) {
                 .update({ is_deleted: false })
                 .in("id", ids);
             if (error) throw error;
+            revalidatePath("/sitemap.xml");
             return NextResponse.json({ success: true });
         }
 
@@ -83,6 +88,7 @@ export async function DELETE(req: NextRequest) {
                 .delete()
                 .eq("id", id);
             if (error) throw error;
+            revalidatePath("/sitemap.xml");
             return NextResponse.json({ success: true });
         }
 
@@ -93,6 +99,7 @@ export async function DELETE(req: NextRequest) {
                 .delete()
                 .in("id", ids);
             if (error) throw error;
+            revalidatePath("/sitemap.xml");
             return NextResponse.json({ success: true });
         }
 

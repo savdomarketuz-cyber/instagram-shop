@@ -7,8 +7,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
+import { translations } from "@/lib/translations";
+
 export default function MessagesPage() {
     const { user, language } = useStore();
+    const t = translations[language];
     const router = useRouter();
     const [chats, setChats] = useState<any[]>([]);
     const [supportChat, setSupportChat] = useState<any>(null);
@@ -173,14 +176,14 @@ export default function MessagesPage() {
                                     <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                                         <User size={16} />
                                     </div>
-                                    <span className="text-[11px] font-black uppercase tracking-tighter">{language === 'uz' ? 'Profil ma\'lumotlari' : 'Данные профиля'}</span>
+                                    <span className="text-[11px] font-black uppercase tracking-tighter">{t.common.profileInfo}</span>
                                 </Link>
 
                                 <Link href="/orders" className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-2xl transition-all group">
                                     <div className="w-8 h-8 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                                         <Package size={16} />
                                     </div>
-                                    <span className="text-[11px] font-black uppercase tracking-tighter">{language === 'uz' ? 'Mening buyurtmalarim' : 'Мои заказы'}</span>
+                                    <span className="text-[11px] font-black uppercase tracking-tighter">{t.common.myOrders}</span>
                                 </Link>
 
                                 <button
@@ -193,7 +196,7 @@ export default function MessagesPage() {
                                     <div className="w-8 h-8 rounded-xl bg-red-100 flex items-center justify-center group-hover:scale-110 transition-transform">
                                         <LogOut size={16} />
                                     </div>
-                                    <span className="text-[11px] font-black uppercase tracking-tighter">{language === 'uz' ? 'Tizimdan chiqish' : 'Выйти из системы'}</span>
+                                    <span className="text-[11px] font-black uppercase tracking-tighter">{t.common.logoutSystem}</span>
                                 </button>
                             </div>
                         </div>
@@ -209,7 +212,7 @@ export default function MessagesPage() {
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder={language === 'uz' ? "Qidirish..." : "Поиск..."}
+                        placeholder={t.common.search}
                         className="w-full bg-gray-50 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold border-none focus:ring-2 focus:ring-black/5 outline-none transition-all"
                     />
                 </div>
@@ -238,7 +241,7 @@ export default function MessagesPage() {
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between mb-1">
                                         <div className="flex items-center gap-2">
-                                            <h3 className="font-black italic text-sm truncate uppercase tracking-tighter">Support Service</h3>
+                                            <h3 className="font-black italic text-sm truncate uppercase tracking-tighter">{t.common.supportService}</h3>
                                             <span className="bg-white text-black text-[8px] px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">Admin</span>
                                         </div>
                                         <span className="text-[10px] text-white/40 font-bold uppercase">
@@ -247,7 +250,7 @@ export default function MessagesPage() {
                                     </div>
                                     <div className="flex items-center justify-between gap-4">
                                         <p className={`text-[11px] font-medium truncate ${supportChat.unreadByUser > 0 ? "text-white font-black" : "text-white/60"}`}>
-                                            {supportChat.lastMessage || "Click to contact support"}
+                                            {supportChat.lastMessage || t.common.clickToContact}
                                         </p>
                                         {supportChat.unreadByUser > 0 && (
                                             <div className="min-w-[18px] h-[18px] bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] font-black px-1 shadow-lg shadow-red-200">
@@ -265,7 +268,7 @@ export default function MessagesPage() {
                             const otherData = chat.participant_data?.[otherPhone] || { name: "User", username: otherPhone };
                             const unread = chat.unread_count?.[myPhoneClean] || 0;
 
-                            const lastMsg = chat.last_message || "Start a conversation";
+                            const lastMsg = chat.last_message || t.common.startConversation;
                             const timestamp = chat.last_timestamp ? new Date(chat.last_timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "";
 
                             return (
@@ -298,11 +301,11 @@ export default function MessagesPage() {
                         {/* Global Search Results (Users to start new chat with) */}
                         {searchQuery.trim().length >= 2 && (
                             <div className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
-                                <h2 className="px-4 text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4">{language === 'uz' ? 'Foydalanuvchilar' : 'Пользователи'}</h2>
+                                <h2 className="px-4 text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4">{t.common.users}</h2>
                                 {isSearching ? (
                                     <div className="flex justify-center py-6 opacity-20"><Loader2 className="animate-spin" size={24} /></div>
                                 ) : userResults.length === 0 ? (
-                                    <p className="px-4 text-[11px] font-bold italic text-gray-300 uppercase">Hech kim topilmadi</p>
+                                    <p className="px-4 text-[11px] font-bold italic text-gray-300 uppercase">{t.common.noUserFound}</p>
                                 ) : (
                                     <div className="space-y-1">
                                         {userResults.map(u => {

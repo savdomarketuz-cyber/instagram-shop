@@ -148,7 +148,7 @@ export default function CheckoutPage() {
             const data = await res.json();
             if (data.success) {
                 setPromoData(data);
-                showToast(language === 'uz' ? "Promo kod qo'llanildi!" : "Промокод применен!", 'success');
+                showToast(t.common.promoApplied, 'success');
             } else {
                 showToast(data.error, 'error');
                 setPromoData(null);
@@ -186,7 +186,7 @@ export default function CheckoutPage() {
                     })),
                     p_address: address,
                     p_coords: coords,
-                    p_status: language === 'uz' ? "To'lov kutilmoqda" : "Ожидание оплаты",
+                    p_status: t.common.statusPendingPayment,
                     p_promo_code: promoData?.code || null,
                     p_wallet_usage: useWallet ? Math.min(walletBalance, total) : 0
                 })
@@ -200,7 +200,7 @@ export default function CheckoutPage() {
 
             if (!data.success && data.errors) {
                 setStockErrors(data.errors);
-                showToast(language === 'uz' ? "Ayrim mahsulotlar qoldig'i yetarli emas" : "Недостаточное количество некоторых товаров", 'error');
+                showToast(t.common.notEnoughStock, 'error');
                 setIsSubmitting(false);
                 return;
             }
@@ -212,7 +212,7 @@ export default function CheckoutPage() {
 
         } catch (error: any) {
             console.error("Order submit error:", error);
-            showToast(language === 'uz' ? "Xatolik yuz berdi: " + error.message : "Произошла ошибка: " + error.message, 'error');
+            showToast(t.common.error + ": " + error.message, 'error');
         } finally {
             setIsSubmitting(false);
         }
@@ -232,7 +232,7 @@ export default function CheckoutPage() {
                     <div className="flex items-center gap-3 text-red-600 mb-4">
                         <AlertCircle size={24} strokeWidth={3} />
                         <h3 className="font-black uppercase text-xs tracking-widest">
-                            {language === 'uz' ? 'DIQQAT: QOLDIQ YETARLI EMAS' : 'ВНИМАНИЕ: ОСТАТОК НЕДОСТАТОЧЕН'}
+                            DIQQAT: {t.common.notEnoughStock.toUpperCase()}
                         </h3>
                     </div>
                     <div className="space-y-3">
@@ -240,7 +240,7 @@ export default function CheckoutPage() {
                             <div key={err.id} className="flex justify-between items-center bg-white/50 p-4 rounded-2xl border border-red-50">
                                 <span className="text-xs font-bold text-gray-600">{err.name}</span>
                                 <span className="text-xs font-black text-red-500 uppercase tracking-tighter">
-                                    {language === 'uz' ? `Faqat ${err.available} ta qolgan` : `Осталось только ${err.available} шт`}
+                                    {t.common.onlyLeft.replace('{count}', err.available.toString())}
                                 </span>
                             </div>
                         ))}
@@ -249,7 +249,7 @@ export default function CheckoutPage() {
                         onClick={() => router.push(`/${language}/cart`)}
                         className="w-full mt-6 py-4 bg-red-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-red-200"
                     >
-                        {language === 'uz' ? 'Savatni tahrirlash' : 'Редактировать корзину'}
+                        {t.common.editCart}
                     </button>
                 </div>
             )}
@@ -257,7 +257,7 @@ export default function CheckoutPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="bg-gray-50 p-6 rounded-[32px] space-y-4 shadow-sm">
                     <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
-                        {language === 'uz' ? 'Ma\'lumotlar' : 'Данные'}
+                        {t.account.myInfo}
                     </p>
                     <div className="flex justify-between items-center">
                         <span className="text-sm font-bold text-gray-500">{t.account.phone}:</span>
@@ -274,7 +274,7 @@ export default function CheckoutPage() {
                             className="text-[10px] font-black uppercase text-blue-500 flex items-center gap-2 hover:bg-blue-50 px-3 py-1.5 rounded-xl transition-all"
                         >
                             <MapPin size={12} />
-                            {language === 'uz' ? 'Kartadan tanlash' : 'Выбрать на карте'}
+                            {t.common.selectOnMap}
                         </button>
                     </div>
                     <div className="relative group">
@@ -283,7 +283,7 @@ export default function CheckoutPage() {
                             type="text"
                             value={address}
                             onChange={e => setAddress(e.target.value)}
-                            placeholder={language === 'uz' ? "Toshkent sh., Yunusobod tumani..." : "г. Ташкент, Юнусабадский район..."}
+                            placeholder={t.common.addressPlaceholder}
                             className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-base font-bold focus:ring-2 focus:ring-black outline-none transition-all pr-12"
                         />
                         {coords && <Globe size={18} className="absolute right-6 top-1/2 -translate-y-1/2 text-green-500" />}
@@ -294,14 +294,14 @@ export default function CheckoutPage() {
                 <div className="bg-gray-50 p-6 rounded-[32px] space-y-4 shadow-sm border border-gray-100/50">
                     <label className="text-xs font-black text-gray-400 uppercase tracking-widest pl-2 flex items-center gap-2">
                         <Tag size={12} className="text-purple-500" />
-                        {language === 'uz' ? 'Promo kod bormi?' : 'Есть промокод?'}
+                        {t.common.promoQuestion}
                     </label>
                     <div className="flex gap-3">
                         <input
                             type="text"
                             value={promoCode}
                             onChange={e => setPromoCode(e.target.value.toUpperCase())}
-                            placeholder={language === 'uz' ? "PROMOKODINGIZNI KIRITING" : "ВВЕДИТЕ ПРОМОКОД"}
+                            placeholder={t.common.promoPlaceholder}
                             disabled={!!promoData}
                             className="flex-1 bg-white border-2 border-transparent focus:border-black rounded-2xl py-4 px-6 text-base font-black italic outline-none transition-all uppercase tracking-tighter disabled:opacity-50"
                         />
@@ -320,7 +320,7 @@ export default function CheckoutPage() {
                                 disabled={isApplyingPromo || !promoCode.trim()}
                                 className="px-8 bg-black text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:scale-100"
                             >
-                                {isApplyingPromo ? <Loader2 size={18} className="animate-spin" /> : (language === 'uz' ? 'QO\'LLASH' : 'ПРИМЕНИТЬ')}
+                                {isApplyingPromo ? <Loader2 size={18} className="animate-spin" /> : t.common.apply.toUpperCase()}
                             </button>
                         )}
                     </div>
@@ -336,9 +336,9 @@ export default function CheckoutPage() {
                                     <Wallet size={20} />
                                 </div>
                                 <div>
-                                    <h3 className="font-black text-sm uppercase italic tracking-tighter">Hamyondan to'lash</h3>
+                                    <h3 className="font-black text-sm uppercase italic tracking-tighter">{t.common.payFromWallet}</h3>
                                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                                        Mavjud: {walletBalance.toLocaleString()} so'm
+                                        {t.common.availableBalance.replace('{balance}', walletBalance.toLocaleString())}
                                     </p>
                                 </div>
                              </div>
@@ -348,7 +348,7 @@ export default function CheckoutPage() {
                         </div>
                         {useWallet && (
                             <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest pl-14 mt-2 animate-in slide-in-from-top-2">
-                                - {Math.min(walletBalance, total).toLocaleString()} so'm kashbek ishlatiladi
+                                {t.common.walletUsageHint.replace('{amount}', Math.min(walletBalance, total).toLocaleString())}
                             </p>
                         )}
                     </div>
@@ -357,7 +357,7 @@ export default function CheckoutPage() {
                 <div className="mt-8 md:mt-12 p-5 md:p-10 bg-black text-white rounded-[32px] md:rounded-[40px] shadow-2xl relative overflow-hidden">
                     <div className="relative z-10">
                         <div className="flex justify-between mb-4 opacity-60 text-[10px] font-black uppercase tracking-[0.2em] px-1">
-                            <span>{language === 'uz' ? 'Mahsulotlar' : 'Товары'}</span>
+                            <span>{t.common.products}</span>
                             <span className="font-mono">{subtotal.toLocaleString()} so'm</span>
                         </div>
                         {promoData && (
@@ -368,7 +368,7 @@ export default function CheckoutPage() {
                         )}
                         <div className="flex justify-between mb-8 opacity-60 text-[10px] font-black uppercase tracking-[0.2em] px-1">
                             <span>{t.common.delivery}</span>
-                            <span className="text-green-400 font-black">{language === 'uz' ? 'Bepul' : 'Бесплатно'}</span>
+                            <span className="text-green-400 font-black">{t.cart.free}</span>
                         </div>
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end font-black pt-6 md:pt-8 border-t border-white/10 px-1 gap-2 md:gap-4 w-full">
                             <span className="uppercase text-[10px] md:text-sm not-italic opacity-40 tracking-[0.2em]">{t.common.total}</span>
@@ -385,7 +385,7 @@ export default function CheckoutPage() {
                     disabled={isSubmitting || displayProducts.length === 0 || stockErrors.length > 0 || isValidating}
                     className="w-full bg-[#2d6e3e] text-white py-6 rounded-full font-black text-xl shadow-2xl mt-8 active:scale-95 transition-all disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none flex items-center justify-center gap-4"
                 >
-                    {isValidating ? <Loader2 className="animate-spin" size={24} /> : (isSubmitting ? (language === 'uz' ? "Yuborilmoqda..." : "Отправка...") : (language === 'uz' ? "To'lovga o'tish" : "Перейти к оплате"))}
+                    {isValidating ? <Loader2 className="animate-spin" size={24} /> : (isSubmitting ? t.common.sending : t.common.goToPayment)}
                 </button>
             </form>
 

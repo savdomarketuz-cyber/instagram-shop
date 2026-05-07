@@ -96,7 +96,7 @@ export default function OrdersPage() {
 
         setIsCancelling(true);
         try {
-            const statusLabel = language === 'uz' ? "Bekor qilingan" : "Отменен";
+            const statusLabel = t.common.statusCancelled;
             
             const response = await fetch('/api/orders/update-status', {
                 method: 'POST',
@@ -109,7 +109,7 @@ export default function OrdersPage() {
             });
 
             const data = await response.json();
-            if (!response.ok) throw new Error(data.message || "Xatolik");
+            if (!response.ok) throw new Error(data.message || t.common.error);
 
             // Update local state
             setOrders(orders.map(o => o.id === orderId ? { ...o, status: statusLabel } : o));
@@ -118,9 +118,7 @@ export default function OrdersPage() {
             }
         } catch (error) {
             console.error("Cancel order error:", error);
-            const errorMsg = language === 'uz'
-                ? "Xatolik yuz berdi. Iltimos, qaytadan urinib ko'ring."
-                : "Произошла ошибка. Пожалуйста, попробуйте еще раз.";
+            const errorMsg = t.common.error + ". " + (language === 'uz' ? "Iltimos, qaytadan urinib ko'ring." : "Пожалуйста, попробуйте еще раз.");
             alert(errorMsg);
         } finally {
             setIsCancelling(false);
@@ -130,12 +128,12 @@ export default function OrdersPage() {
     const handleSubmitReview = async () => {
         if (!user) return;
         if (!user.username) {
-            showToast(language === 'uz' ? "Sharh qoldirish uchun profil sozlangan bo'lishi kerak (username kiritilmagan)" : "Для того чтобы оставить комментарий должен быть настроен профиль (не введено имя пользователя)", 'info');
+            showToast(t.common.usernameRequired, 'info');
             return;
         }
         if (!reviewProduct || !reviewText.trim()) return;
         if (isUploadingMedia) {
-            showToast(language === 'uz' ? "Media yuklanmoqda, iltimos kuting..." : "Медиа загружается, пожалуйста подождите...", 'info');
+            showToast(t.common.mediaUploading, 'info');
             return;
         }
 
@@ -172,17 +170,17 @@ export default function OrdersPage() {
             setReviewRating(5);
             setReviewImages([]);
             setReviewVideo("");
-            showToast(language === 'uz' ? "Sharh muvaffaqiyatli saqlandi!" : "Отзыв успешно сохранен!");
+            showToast(t.common.reviewSaved);
         } catch (error: any) {
             console.error("Review error:", error);
-            showToast((language === 'uz' ? "Xatolik: " : "Ошибка: ") + (error.message || ""), 'error');
+            showToast(t.common.error + ": " + (error.message || ""), 'error');
         } finally {
             setIsSubmittingReview(false);
         }
     };
 
     const formatDate = (date: any) => {
-        if (!date) return language === 'uz' ? "Hozirgina" : "Только что";
+        if (!date) return t.common.justNow;
         const d = new Date(date);
         const now = new Date();
         const diffInMs = now.getTime() - d.getTime();
@@ -191,7 +189,7 @@ export default function OrdersPage() {
         const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
 
         if (diffInMins < 1) {
-            return language === 'uz' ? "Hozirgina" : "Только что";
+            return t.common.justNow;
         }
         if (diffInMins < 60) {
             return language === 'uz' ? `${diffInMins} daqiqa avval` : `${diffInMins} мин. назад`;
@@ -221,7 +219,7 @@ export default function OrdersPage() {
                     <Package size={40} />
                 </div>
                 <p className="text-gray-500 font-medium">
-                    {language === 'uz' ? 'Buyurtmalarni ko\'rish uchun tizimga kiring' : 'Войдите в систему, чтобы просмотреть заказы'}
+                    {t.common.loginToSeeOrders}
                 </p>
                 <Link href="/login" className="bg-black text-white px-8 py-3 rounded-full font-bold shadow-lg">
                     {t.account.login}
@@ -242,10 +240,10 @@ export default function OrdersPage() {
                 <div className="flex flex-col items-center justify-center py-20 text-gray-400">
                     <Truck size={48} className="mb-4 opacity-20" />
                     <p className="font-medium text-xs uppercase tracking-widest">
-                        {language === 'uz' ? 'Sizda hali buyurtmalar yo\'q' : 'У вас пока нет заказов'}
+                        {t.common.noOrders}
                     </p>
                     <Link href="/" className="mt-4 text-black font-black border-b-2 border-black italic uppercase text-xs">
-                        {language === 'uz' ? 'Xaridni boshlash' : 'Начать покупки'}
+                        {t.cart.startShopping}
                     </Link>
                 </div>
             ) : (
@@ -257,7 +255,7 @@ export default function OrdersPage() {
                             className="bg-gray-50 rounded-[32px] p-6 shadow-sm border border-gray-100 active:scale-[0.98] transition-all cursor-pointer group"
                         >
                             <div className="mb-6">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{language === 'uz' ? 'Buyurtma ID' : 'ID заказа'}</p>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t.common.orderId}</p>
                                 <div className="font-bold text-gray-900 text-sm break-all">#{order.id}</div>
                             </div>
 
@@ -269,10 +267,10 @@ export default function OrdersPage() {
                             </div>
 
                             <div className="mb-5">
-                                <div className={`inline-block text-[10px] px-3 py-1.5 rounded-full font-black uppercase tracking-tighter ${order.status === 'Yetkazildi' || order.status === 'Доставлено' ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' :
-                                    order.status === 'To\'landi' || order.status === 'Оплачено' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' :
+                                <div className={`inline-block text-[10px] px-3 py-1.5 rounded-full font-black uppercase tracking-tighter ${order.status === t.common.statusDelivered ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' :
+                                    order.status === t.common.statusPaid ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' :
                                         order.status.includes('To\'lov') || order.status.includes('Оплат') ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/20' :
-                                            order.status === 'Bekor qilingan' || order.status === 'Отменен' ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' :
+                                            order.status === t.common.statusCancelled ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' :
                                                 'bg-black text-white shadow-lg shadow-black/10'
                                     }`}>
                                     {order.status}
@@ -282,7 +280,7 @@ export default function OrdersPage() {
                             <div className="flex justify-between items-center pt-5 border-t border-gray-200/50">
                                 <div className="text-xl font-black italic tracking-tighter">{order.total?.toLocaleString()} so'm</div>
                                 <button className="flex items-center text-[10px] font-black uppercase tracking-widest text-black/40 group-hover:text-black transition-colors">
-                                    {language === 'uz' ? 'Batafsil' : 'Подробнее'} <ChevronRight size={14} className="ml-1" />
+                                    {t.common.details} <ChevronRight size={14} className="ml-1" />
                                 </button>
                             </div>
                         </div>
@@ -297,7 +295,7 @@ export default function OrdersPage() {
                         <div className="p-8 border-b border-gray-100 flex justify-between items-center">
                             <div>
                                 <h2 className="text-2xl font-black italic tracking-tighter uppercase">
-                                    {language === 'uz' ? 'Buyurtma Tafsiloti' : 'Детали заказа'}
+                                    {t.common.orderDetail}
                                 </h2>
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ID: #{selectedOrder.id}</p>
                             </div>
@@ -349,15 +347,15 @@ export default function OrdersPage() {
                                                 href={`/products/${getProductSlug(item)}`}
                                                 className="flex-1 py-3 bg-white border border-gray-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-2 hover:bg-gray-50 transition-all active:scale-95"
                                             >
-                                                {language === 'uz' ? 'Marketda' : 'В маркет'}
+                                                {t.common.inMarket}
                                             </Link>
-                                            {(selectedOrder.status === 'Yetkazildi' || selectedOrder.status === 'Доставлено') && (
+                                            {(selectedOrder.status === t.common.statusDelivered) && (
                                                 <button
                                                     onClick={() => setReviewProduct(item)}
                                                     className="flex-1 py-3 bg-black text-white border border-black rounded-2xl text-[10px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-2 hover:bg-gray-900 transition-all active:scale-95 shadow-lg shadow-black/10"
                                                 >
                                                     <Star size={12} fill="currentColor" />
-                                                    {language === 'uz' ? 'Sharh' : 'Отзыв'}
+                                                    {t.common.review}
                                                 </button>
                                             )}
                                         </div>
@@ -372,7 +370,7 @@ export default function OrdersPage() {
                                         <CheckCircle size={18} />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{language === 'uz' ? 'Holati' : 'Статус'}</p>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t.common.status}</p>
                                         <p className="font-black text-xs italic uppercase tracking-tighter">{selectedOrder.status}</p>
                                     </div>
                                 </div>
@@ -382,7 +380,7 @@ export default function OrdersPage() {
                                     </div>
                                     <div className="flex-1">
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t.common.delivery} {language === 'uz' ? 'manzili' : 'адрес'}</p>
-                                        <p className="font-black text-xs italic uppercase tracking-tighter line-clamp-2">{(selectedOrder as any).address || (language === 'uz' ? "Manzil ko'rsatilmagan" : "Адрес не указан")}</p>
+                                        <p className="font-black text-xs italic uppercase tracking-tighter line-clamp-2">{(selectedOrder as any).address || t.common.addressNotSet}</p>
                                     </div>
                                 </div>
                             </div>
@@ -399,7 +397,7 @@ export default function OrdersPage() {
                                     ) : (
                                         <>
                                             <XCircle size={16} />
-                                            {language === 'uz' ? 'Buyurtmani bekor qilish' : 'Отменить заказ'}
+                                            {t.common.cancelOrder}
                                         </>
                                     )}
                                 </button>
@@ -420,7 +418,7 @@ export default function OrdersPage() {
                     <div className="bg-white w-full max-w-sm rounded-[48px] overflow-hidden shadow-2xl animate-in zoom-in duration-500 flex flex-col max-h-[90vh]">
                         <div className="p-10 pb-6 flex justify-between items-center">
                             <h3 className="text-2xl font-black italic tracking-tighter uppercase">
-                                {language === 'uz' ? 'Sharh qoldirish' : 'Оставить отзыв'}
+                                {t.common.leaveReviewTitle}
                             </h3>
                             <button onClick={() => setReviewProduct(null)} className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400">
                                 <XCircle size={20} />
@@ -440,7 +438,7 @@ export default function OrdersPage() {
 
                             {/* Stars */}
                             <div>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 text-center">{language === 'uz' ? 'Baholang' : 'Оцените'}</p>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 text-center">{t.product.rating}</p>
                                 <div className="flex justify-center gap-3">
                                     {[1, 2, 3, 4, 5].map((star) => (
                                         <button
@@ -456,11 +454,11 @@ export default function OrdersPage() {
 
                             {/* Text Input */}
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{language === 'uz' ? 'Fikringiz' : 'Ваш отзыв'}</label>
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.common.yourOpinion}</label>
                                 <textarea
                                     value={reviewText}
                                     onChange={(e) => setReviewText(e.target.value)}
-                                    placeholder={language === 'uz' ? "Mahsulot haqida nima deysiz?" : "Что вы думаете о товаре?"}
+                                    placeholder={t.common.productOpinionPlaceholder}
                                     className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-[32px] p-6 text-sm font-bold h-32 outline-none transition-all resize-none shadow-inner"
                                 />
                             </div>
@@ -490,7 +488,7 @@ export default function OrdersPage() {
                                         />
                                         {isUploadingMedia ? <Loader2 size={18} className="text-black animate-spin" /> : <Camera size={18} className="text-gray-400" />}
                                         <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">
-                                            {isUploadingMedia ? (language === 'uz' ? "..." : "...") : (language === 'uz' ? 'Rasm' : 'Фото')}
+                                            {isUploadingMedia ? "..." : t.common.photo}
                                         </span>
                                     </label>
 
@@ -516,7 +514,7 @@ export default function OrdersPage() {
                                         />
                                         {isUploadingMedia ? <Loader2 size={18} className="text-black animate-spin" /> : <Video size={18} className="text-gray-400" />}
                                         <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">
-                                            {isUploadingMedia ? (language === 'uz' ? "..." : "...") : (language === 'uz' ? 'Video' : 'Видео')}
+                                            {isUploadingMedia ? "..." : t.common.video}
                                         </span>
                                     </label>
 
@@ -553,7 +551,7 @@ export default function OrdersPage() {
                             >
                                 {isSubmittingReview ? <Loader2 className="animate-spin" size={18} /> : (
                                     <>
-                                        {language === 'uz' ? 'Yuborish' : 'Отправить'}
+                                        {t.common.send}
                                         <MessageCircle size={16} />
                                     </>
                                 )}
@@ -572,12 +570,10 @@ export default function OrdersPage() {
                         </div>
                         <div className="space-y-4">
                             <h3 className="text-2xl font-black italic tracking-tighter uppercase leading-tight">
-                                {language === 'uz' ? 'Buyurtmani bekor qilish' : 'Отмена заказа'}
+                                {t.common.cancelConfirmTitle}
                             </h3>
                             <p className="text-sm font-bold text-gray-400">
-                                {language === 'uz' 
-                                    ? "Haqiqatan ham ushbu buyurtmani bekor qilmoqchimisiz? Bu amalni ortga qaytarib bo'lmaydi." 
-                                    : "Вы действительно хотите отменить этот заказ? Это действие нельзя отменить."}
+                                {t.common.cancelConfirmText}
                             </p>
                         </div>
                         <div className="flex flex-col gap-3">
@@ -585,13 +581,13 @@ export default function OrdersPage() {
                                 onClick={confirmCancelOrder}
                                 className="w-full py-5 bg-red-500 text-white rounded-[28px] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-red-500/20 active:scale-95 transition-all"
                             >
-                                {language === 'uz' ? 'Tasdiqlash' : 'Подтвердить'}
+                                {t.common.confirm}
                             </button>
                             <button
                                 onClick={() => setOrderToCancel(null)}
                                 className="w-full py-5 bg-gray-50 text-gray-400 rounded-[28px] font-black text-xs uppercase tracking-[0.2em] active:scale-95 transition-all"
                             >
-                                {language === 'uz' ? 'Orqaga' : 'Назад'}
+                                {t.common.back}
                             </button>
                         </div>
                     </div>

@@ -27,7 +27,7 @@ export default function PushNotificationsPage() {
             });
             const data = await res.json();
             if (data.success) {
-                showToast(\`Xabar yuborildi! (\${data.results.success} muvaffaqiyatli, \${data.results.failed} xato)\`, "success");
+                showToast(`Xabar yuborildi! (${data.results.success} muvaffaqiyatli, ${data.results.failed} xato)`, "success");
                 setTitle("");
                 setBody("");
                 setUrl("/");
