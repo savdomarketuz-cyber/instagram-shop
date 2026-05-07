@@ -44,36 +44,29 @@ export async function POST(req: NextRequest) {
             console.log(`Live Suggestion Search Executing: ${searchQuery}`);
         }
 
-        // 3. Call Advanced Smart Search RPC (Fuzzy + Weighted + Semantic + Affinity)
-        const { data: results, error } = await supabase.rpc('advanced_smart_search', {
-            search_query: searchQuery,
-            query_embedding: queryEmbedding ? `[${queryEmbedding.join(',')}]` : null,
-            match_threshold: 0.15, // lowered from 0.25 to catch broader Uzbek semantics
-            match_count: suggest ? 5 : 50,
-            p_user_identifier: userIdentifier // Pass Phase 3 Identity
-        });
+        // 3. Call Smart Search RPC (FTS + pg_trgm + Synonyms)
+        let finalResults: any[] = [];
         
-        if (error) {
-            console.error("Supabase RPC search error:", error);
-            throw error;
-        }
+        // Use our new Postgres-native smart search
+        const { data: results, error } = await supabase.rpc('smart_search', {
+            search_query: searchQuery,
+            result_limit: suggest ? 5 : 50
+        });
 
-        // 3.5 Fallback to basic text search if smart search returns nothing
-        let finalResults = results || [];
-        if (finalResults.length === 0 && searchQuery.length >= 2) {
-            console.log("Smart search empty, trying fallback text search...");
-            
-            // Sanitize query to avoid PostgREST .or() syntax errors (remove commas, quotes, backslashes)
+        if (error) {
+            console.error("Smart search RPC error:", error);
+            // Fallback to basic text search if RPC fails
             const sanitizedQuery = searchQuery.replace(/[,"'\\]/g, ' ').trim();
-            
             const { data: textResults } = await supabase
                 .from('products')
                 .select('*')
-                .or(`name.ilike.%${sanitizedQuery}%,name_uz.ilike.%${sanitizedQuery}%,name_ru.ilike.%${sanitizedQuery}%,article.ilike.%${sanitizedQuery}%`)
+                .or(`name.ilike.%${sanitizedQuery}%,name_uz.ilike.%${sanitizedQuery}%,name_ru.ilike.%${sanitizedQuery}%,article.ilike.%${sanitizedQuery}%,model.ilike.%${sanitizedQuery}%`)
                 .eq('is_deleted', false)
                 .limit(suggest ? 5 : 20);
             
             if (textResults) finalResults = textResults;
+        } else {
+            finalResults = results || [];
         }
 
         // Map results consistently with the rest of the app
