@@ -188,7 +188,14 @@ export default function CheckoutPage() {
                     p_coords: coords,
                     p_status: t.common.statusPendingPayment,
                     p_promo_code: promoData?.code || null,
-                    p_wallet_usage: useWallet ? Math.min(walletBalance, total) : 0
+                    p_wallet_usage: useWallet ? Math.min(walletBalance, total) : 0,
+                    p_referral_data: (() => {
+                        const cookieStr = document.cookie.split('; ').find(row => row.startsWith('affiliate_data='));
+                        if (cookieStr) {
+                            try { return JSON.parse(decodeURIComponent(cookieStr.split('=')[1])); } catch(e) { return null; }
+                        }
+                        return null;
+                    })()
                 })
             });
 

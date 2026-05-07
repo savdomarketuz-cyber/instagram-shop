@@ -21,7 +21,9 @@ const orderSchema = z.object({
     address: z.string().min(5),
     coords: z.array(z.number()).length(2).optional().nullable(),
     promoCode: z.string().optional().nullable(),
-    isWalletPayment: z.boolean().optional()
+    isWalletPayment: z.boolean().optional(),
+    walletUsage: z.number().optional(),
+    referralData: z.record(z.string()).optional().nullable() // { productId: affiliateLinkSlug }
 });
 
 export async function POST(req: NextRequest) {
@@ -38,7 +40,16 @@ export async function POST(req: NextRequest) {
         const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
         const payload = userToken ? await verifyJwt(userToken, JWT_SECRET) : null;
 
-        const body = await req.json();
+        const rawBody = await req.json();
+        const body = {
+            userPhone: rawBody.p_user_phone,
+            items: rawBody.p_items,
+            address: rawBody.p_address,
+            coords: rawBody.p_coords,
+            promoCode: rawBody.p_promo_code,
+            walletUsage: rawBody.p_wallet_usage,
+            referralData: rawBody.p_referral_data
+        };
         
         // 1. DATA VALIDATION (Zod)
         const validation = orderSchema.safeParse(body);
@@ -79,7 +90,7 @@ export async function POST(req: NextRequest) {
             p_coords: validatedData.coords || null,
             p_status: 'pending',
             p_promo_code: validatedData.promoCode || null,
-            p_wallet_usage: validatedData.isWalletPayment || false
+            p_wallet_usage: validatedData.walletUsage || 0
         });
 
         if (error) {
@@ -106,6 +117,35 @@ export async function POST(req: NextRequest) {
             console.error("Low stock check error:", e);
         }
         // ----------------------------------
+
+        // --- MLM AFFILIATE TRACKING ---
+        if (validatedData.referralData && Object.keys(validatedData.referralData).length > 0) {
+            try {
+                const orderId = data.orderId;
+                for (const [prodId, slug] of Object.entries(validatedData.referralData)) {
+                    const { data: linkData } = await supabaseAdmin
+                        .from("affiliate_links")
+                        .select("user_id")
+                        .eq("slug", slug)
+                        .eq("product_id", prodId)
+                        .single();
+                    
+                    if (linkData) {
+                        await supabaseAdmin.from("affiliate_transactions").insert({
+                            user_id: linkData.user_id,
+                            order_id: orderId,
+                            product_id: prodId,
+                            status: 'pending',
+                            amount: 0,
+                            order_stage: 'Yaratildi'
+                        });
+                    }
+                }
+            } catch (mlmError) {
+                console.error("MLM Tracking Error:", mlmError);
+            }
+        }
+        // ------------------------------
 
         return NextResponse.json(data);
 

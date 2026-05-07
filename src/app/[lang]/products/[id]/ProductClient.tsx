@@ -79,6 +79,34 @@ export default function ProductClient({ params, initialProduct }: { params: { id
     }, []);
     const [deliverySettings, setDeliverySettings] = useState<{ cutoff: number; days: number; offDays: string[]; holidays: string[] } | null>(null);
 
+    // --- MLM Referral Tracking ---
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const ref = params.get('ref');
+            if (ref && product?.id) {
+                // Get existing referral data from cookie
+                let refData: Record<string, string> = {};
+                const cookieStr = document.cookie.split('; ').find(row => row.startsWith('affiliate_data='));
+                if (cookieStr) {
+                    try {
+                        refData = JSON.parse(decodeURIComponent(cookieStr.split('=')[1]));
+                    } catch(e) {}
+                }
+
+                // Add new referral mapping
+                refData[product.id] = ref;
+
+                // Store back in cookie for 30 days
+                const expires = new Date();
+                expires.setTime(expires.getTime() + (30 * 24 * 60 * 60 * 1000));
+                document.cookie = `affiliate_data=${encodeURIComponent(JSON.stringify(refData))};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+                
+                console.log("Referral tracked for product:", product.id, ref);
+            }
+        }
+    }, []);
+
     // 1. Initial Data Pipeline (Hierarchical Prioritization)
     useEffect(() => {
         if (!initialProduct || (initialProduct.id !== productIdentifier && initialProduct.article !== productIdentifier)) {

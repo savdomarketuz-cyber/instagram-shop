@@ -31,13 +31,23 @@ import {
     Video,
     Play,
     Check,
-    Sparkles
+    Sparkles,
+    Users,
+    Share2,
+    ExternalLink,
+    TrendingUp,
+    Award,
+    ShieldCheck,
+    Banknote,
+    History,
+    KeyRound
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { translations } from "@/lib/translations";
 import { mapUser, mapComment } from "@/lib/mappers";
 import Image from "next/image";
 import { uploadToYandexS3 } from "@/lib/yandex-s3";
+import { PinKeypad } from "@/components/PinKeypad";
 
 export default function AccountPage() {
     const router = useRouter();
@@ -906,24 +916,37 @@ function PromoCodesView({ t, language, onBack }: any) {
 function AffiliateView({ user, language, showToast, onBack }: any) {
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [newCode, setNewCode] = useState("");
-    const [isUpdatingCode, setIsUpdatingCode] = useState(false);
+    const [authorized, setAuthorized] = useState(false);
+    const [step, setStep] = useState<"pin" | "contract" | "dashboard">("pin");
+    const [pinError, setPinError] = useState("");
+    
+    // Modal states
+    const [showAddMember, setShowAddMember] = useState(false);
+    const [showTransfer, setShowTransfer] = useState(false);
+    const [showWithdraw, setShowWithdraw] = useState(false);
+    
+    // Form states
+    const [memberPhone, setMemberPhone] = useState("");
+    const [vCode, setVCode] = useState("");
+    const [transferAmount, setTransferAmount] = useState("");
     const [withdrawAmount, setWithdrawAmount] = useState("");
     const [cardNumber, setCardNumber] = useState("");
-    const [isWithdrawing, setIsWithdrawing] = useState(false);
+    const [isActionLoading, setIsActionLoading] = useState(false);
 
     useEffect(() => {
-        fetchAffiliateData();
+        fetchData();
     }, []);
 
-    const fetchAffiliateData = async () => {
+    const fetchData = async () => {
         try {
             setLoading(true);
             const res = await fetch("/api/affiliate/user");
             const d = await res.json();
             if (d.success) {
                 setData(d);
-                if (d.user.affiliate_code) setNewCode(d.user.affiliate_code);
+                if (!d.user.hasPin) setStep("pin");
+                else if (!d.user.affiliate_agreed) setStep("contract");
+                else if (authorized) setStep("dashboard");
             }
         } catch (e) {
             console.error(e);
@@ -932,31 +955,96 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
         }
     };
 
-    const handleUpdateCode = async () => {
-        if (!newCode || newCode.length < 3) return;
-        setIsUpdatingCode(true);
+    const handlePinComplete = async (pin: string) => {
+        setPinError("");
+        const action = data?.user?.hasPin ? "verify_pin" : "set_pin";
         try {
             const res = await fetch("/api/affiliate/user", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "update_code", affiliate_code: newCode })
+                body: JSON.stringify({ action, pin })
             });
             const d = await res.json();
             if (d.success) {
-                showToast(language === 'uz' ? "Kod saqlandi!" : "Код сохранен!", "success");
-                fetchAffiliateData();
+                setAuthorized(true);
+                if (!data?.user?.affiliate_agreed) setStep("contract");
+                else setStep("dashboard");
+                if (action === "set_pin") fetchData(); // Refresh to update hasPin
+            } else {
+                setPinError(d.error);
+            }
+        } catch (e) {
+            setPinError("Xatolik yuz berdi");
+        }
+    };
+
+    const handleAgree = async () => {
+        setIsActionLoading(true);
+        try {
+            const res = await fetch("/api/affiliate/user", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "agree_contract" })
+            });
+            const d = await res.json();
+            if (d.success) {
+                setStep("dashboard");
+                fetchData();
+            }
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
+    const handleAddMember = async () => {
+        if (!memberPhone || !vCode) return;
+        setIsActionLoading(true);
+        try {
+            const res = await fetch("/api/affiliate/user", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "add_team_member", memberPhone, verificationCode: vCode })
+            });
+            const d = await res.json();
+            if (d.success) {
+                showToast(language === 'uz' ? "A'zo qo'shildi!" : "Участник добавлен!", "success");
+                setShowAddMember(false);
+                fetchData();
             } else {
                 showToast(d.error, "error");
             }
         } finally {
-            setIsUpdatingCode(false);
+            setIsActionLoading(false);
+        }
+    };
+
+    const handleTransfer = async () => {
+        const amount = Number(transferAmount);
+        if (!amount || amount <= 0) return;
+        setIsActionLoading(true);
+        try {
+            const res = await fetch("/api/affiliate/user", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "transfer_to_cashback", amount })
+            });
+            const d = await res.json();
+            if (d.success) {
+                showToast(language === 'uz' ? "O'tkazildi!" : "Переведено!", "success");
+                setShowTransfer(false);
+                fetchData();
+            } else {
+                showToast(d.error, "error");
+            }
+        } finally {
+            setIsActionLoading(false);
         }
     };
 
     const handleWithdraw = async () => {
         const amount = Number(withdrawAmount);
         if (!amount || !cardNumber) return;
-        setIsWithdrawing(true);
+        setIsActionLoading(true);
         try {
             const res = await fetch("/api/affiliate/user", {
                 method: "POST",
@@ -966,76 +1054,322 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
             const d = await res.json();
             if (d.success) {
                 showToast(language === 'uz' ? "So'rov yuborildi!" : "Запрос отправлен!", "success");
-                setWithdrawAmount("");
-                setCardNumber("");
-                fetchAffiliateData();
+                setShowWithdraw(false);
+                fetchData();
             } else {
                 showToast(d.error, "error");
             }
         } finally {
-            setIsWithdrawing(false);
+            setIsActionLoading(false);
         }
+    };
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+        showToast(language === 'uz' ? "Nusxa olindi!" : "Скопировано!", "success");
     };
 
     if (loading) return <div className="min-h-screen bg-[#F2F3F5] flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
 
-    return (
-        <div className="bg-[#F2F3F5] min-h-screen pb-24 px-4 md:px-10">
-            <div className="max-w-xl mx-auto pt-10">
-                <button onClick={onBack} className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8 hover:text-black transition-all">
+    if (!authorized && data?.user?.hasPin) {
+        return (
+            <div className="bg-[#F2F3F5] min-h-screen p-4">
+                <button onClick={onBack} className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8">
                     <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
                 </button>
+                <PinKeypad onComplete={handlePinComplete} title={language === 'uz' ? "PIN-kodni kiriting" : "Введите PIN-код"} error={pinError} />
+            </div>
+        );
+    }
 
-                <div className="space-y-10">
-                    <div className="flex justify-between items-end">
-                        <div>
-                            <h1 className="text-3xl font-black tracking-tighter italic uppercase">{language === 'uz' ? 'Hamkorlik' : 'Партнерство'}</h1>
-                            <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-2">{language === 'uz' ? 'Haqiqiy pul ishlang' : 'Зарабатывайте реальные деньги'}</p>
-                        </div>
-                        <div className="bg-white px-4 py-2 rounded-2xl border border-gray-100 shadow-sm">
-                             <p className="text-[8px] text-gray-400 font-black uppercase tracking-widest leading-none mb-1">Real Hamyon</p>
-                             <p className="text-lg font-black italic tracking-tighter text-emerald-600">{(data?.user?.real_balance || 0).toLocaleString()} so'm</p>
-                        </div>
+    if (!data?.user?.hasPin) {
+        return (
+            <div className="bg-[#F2F3F5] min-h-screen p-4">
+                <button onClick={onBack} className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8">
+                    <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
+                </button>
+                <PinKeypad onComplete={handlePinComplete} title={language === 'uz' ? "PIN-kod o'rnating" : "Установите PIN-код"} error={pinError} />
+            </div>
+        );
+    }
+
+    if (step === "contract") {
+        return (
+            <div className="bg-[#F2F3F5] min-h-screen p-6 flex flex-col items-center justify-center">
+                <div className="max-w-md w-full bg-white p-10 rounded-[40px] shadow-2xl space-y-8">
+                    <div className="w-20 h-20 bg-emerald-50 rounded-3xl flex items-center justify-center mx-auto">
+                        <ShieldCheck className="text-emerald-500" size={40} />
                     </div>
+                    <div className="text-center space-y-2">
+                        <h2 className="text-2xl font-black italic tracking-tighter uppercase">{language === 'uz' ? 'Hamkorlik Shartnomasi' : 'Партнерское Соглашение'}</h2>
+                        <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">Tizimga qo'shilishdan oldin tanishib chiqing</p>
+                    </div>
+                    <div className="max-h-60 overflow-y-auto p-4 bg-gray-50 rounded-2xl text-[10px] text-gray-500 leading-relaxed font-bold italic border border-gray-100">
+                        {language === 'uz' ? (
+                            <>
+                                1. Hamkorlik tizimi orqali real daromad olishingiz mumkin.<br/>
+                                2. Har bir sotuvdan mahsulotga belgilangan foiz beriladi.<br/>
+                                3. Firibgarlik (o'ziga-o'zi sotish) qat'iyan taqiqlanadi.<br/>
+                                4. Mablag'lar mahsulot yetkazilgandan 14 kundan keyin yechishga ruxsat beriladi.<br/>
+                                5. Adminlar shubhali hisoblarni bloklash huquqiga ega.
+                            </>
+                        ) : (
+                            <>
+                                1. Вы можете получать реальный доход через партнерскую систему.<br/>
+                                2. С каждой продажи выплачивается установленный процент.<br/>
+                                3. Фрод (покупка у самого себя) строго запрещен.<br/>
+                                4. Вывод средств возможен через 14 дней после доставки товара.<br/>
+                                5. Админы имеют право блокировать подозрительные аккаунты.
+                            </>
+                        )}
+                    </div>
+                    <button 
+                        onClick={handleAgree}
+                        disabled={isActionLoading}
+                        className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 shadow-xl shadow-black/20"
+                    >
+                        {isActionLoading ? <Loader2 className="animate-spin mx-auto" /> : (language === 'uz' ? 'TANISHIB CHIQDIM VA ROZIMAN' : 'Я ОЗНАКОМЛЕН И СОГЛАСЕН')}
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
-                    {/* Promo Code Management */}
-                    <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4 mb-4 block">{language === 'uz' ? 'Sizning Promokodingiz' : 'Ваш Промокод'}</label>
-                        <div className="flex gap-3">
-                            <input 
-                                type="text"
-                                value={newCode}
-                                onChange={e => setNewCode(e.target.value.toUpperCase())}
-                                placeholder="PROMO_KOD"
-                                className="flex-1 bg-gray-50 border-none rounded-2xl px-6 py-4 font-black italic text-lg uppercase outline-none focus:ring-2 focus:ring-black transition-all"
-                            />
+    const roleName = {
+        top_manager: language === 'uz' ? 'Top Menejer' : 'Топ Менеджер',
+        top_sales_manager: language === 'uz' ? 'Top Sotuv Menejeri' : 'Топ Менеджер Продаж',
+        sales_manager: language === 'uz' ? 'Sotuv Menejeri' : 'Менеджер Продаж',
+        agent: language === 'uz' ? 'Agent' : 'Агент'
+    }[data?.user?.affiliate_role as keyof typeof roleName] || 'A'zo';
+
+    return (
+        <div className="bg-[#F2F3F5] min-h-screen pb-24 px-4 md:px-10 overflow-x-hidden">
+            <div className="max-w-4xl mx-auto pt-10">
+                <div className="flex justify-between items-center mb-8">
+                    <button onClick={onBack} className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] hover:text-black transition-all">
+                        <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
+                    </button>
+                    <div className="flex items-center gap-2 bg-black text-white px-4 py-1.5 rounded-full scale-90">
+                         <Award size={14} className="text-yellow-400" />
+                         <span className="text-[10px] font-black uppercase italic tracking-tighter">{roleName}</span>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Wallets */}
+                    <div className="space-y-6">
+                        <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 flex flex-col justify-between min-h-[220px]">
+                            <div>
+                                <div className="flex justify-between items-start">
+                                    <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center">
+                                        <Banknote className="text-emerald-500" size={24} />
+                                    </div>
+                                    <button onClick={() => setShowWithdraw(true)} className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1.5 rounded-xl hover:bg-emerald-100 transition-all">
+                                        {language === 'uz' ? 'Yechish' : 'Вывод'}
+                                    </button>
+                                </div>
+                                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mt-6 italic">Hamkorlik Hamyoni</h3>
+                                <p className="text-4xl font-black italic tracking-tighter text-black mt-1">{(data?.user?.real_balance || 0).toLocaleString()} <span className="text-sm">so'm</span></p>
+                            </div>
                             <button 
-                                onClick={handleUpdateCode}
-                                disabled={isUpdatingCode || newCode === data?.user?.affiliate_code}
-                                className="bg-black text-white px-6 rounded-2xl font-black text-[10px] uppercase tracking-widest disabled:opacity-20 transition-all"
+                                onClick={() => setShowTransfer(true)}
+                                className="w-full bg-gray-50 text-gray-500 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-gray-100 hover:bg-black hover:text-white transition-all flex items-center justify-center gap-2 group"
                             >
-                                {isUpdatingCode ? <Loader2 size={16} className="animate-spin" /> : (language === 'uz' ? 'O\'zgartirish' : 'Изменить')}
+                                <RotateCcw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
+                                {language === 'uz' ? "Cashback hamyonga o'tkazish" : "Перевод на кэшбэк"}
                             </button>
                         </div>
-                        <div className="mt-6 p-4 bg-purple-50 rounded-2xl border border-purple-100">
-                            <p className="text-[10px] font-bold text-purple-600 leading-relaxed italic">
-                                {language === 'uz' 
-                                    ? `Ushbu kodni tarqating. Uni ishlatgan yangi mijoz ${data?.settings?.buyer_discount?.toLocaleString()} so'm chegirma oladi, sizga esa har bir xarididan ${data?.settings?.referrer_reward?.toLocaleString()} so'm naqd pul tushadi!`
-                                    : `Поделитесь этим кодом. Новый клиент получит скидку ${data?.settings?.buyer_discount?.toLocaleString()} сум, а вы получите ${data?.settings?.referrer_reward?.toLocaleString()} сум наличными с каждой его покупки!`
-                                }
-                            </p>
+
+                        <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 flex items-center justify-between">
+                            <div>
+                                <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">Oddiy Hamyon</h3>
+                                <p className="text-2xl font-black italic tracking-tighter text-black mt-1">{(data?.user?.wallet_balance || 0).toLocaleString()} <span className="text-xs">so'm</span></p>
+                            </div>
+                            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                                <Wallet className="text-blue-500" size={20} />
+                            </div>
                         </div>
                     </div>
 
-                    {/* Withdrawal Section */}
-                    <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
-                        <h3 className="text-lg font-black italic tracking-tighter uppercase mb-6">{language === 'uz' ? 'Pulni Yechish' : 'Вывод Средств'}</h3>
+                    {/* Team & Stats */}
+                    <div className="space-y-6">
+                        <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
+                             <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-lg font-black italic tracking-tighter uppercase">{language === 'uz' ? 'Mening Jamoam' : 'Моя Команда'}</h3>
+                                {data?.user?.affiliate_role !== 'agent' && (
+                                    <button onClick={() => setShowAddMember(true)} className="p-2 bg-black text-white rounded-xl hover:scale-110 transition-all">
+                                        <Users size={18} />
+                                    </button>
+                                )}
+                             </div>
+                             <div className="space-y-3">
+                                {data?.team?.length === 0 ? (
+                                    <div className="py-8 text-center text-gray-300 font-bold italic text-xs">Jamoa a'zolari yo'q</div>
+                                ) : (
+                                    data?.team?.map((m: any) => (
+                                        <div key={m.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center font-black text-xs text-black border border-gray-200">
+                                                    {m.name?.[0] || m.phone?.[0]}
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-black italic">{m.name || m.phone}</p>
+                                                    <p className="text-[8px] font-bold uppercase text-gray-400 tracking-tighter">{m.affiliate_role}</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-emerald-500">
+                                                <TrendingUp size={14} />
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                                {data?.team?.length > 0 && (
+                                    <p className="text-[8px] text-center text-gray-400 font-bold uppercase mt-4">Maksimum: {data?.team?.length}/10 a'zo</p>
+                                )}
+                             </div>
+                        </div>
+
+                        {/* Referral Code */}
+                        <div className="bg-black p-8 rounded-[40px] shadow-2xl text-white relative overflow-hidden group">
+                             <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:scale-150 transition-transform duration-1000">
+                                <Ticket size={80} />
+                             </div>
+                             <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{language === 'uz' ? 'Mening Kodim' : 'Мой Код'}</h3>
+                             <div className="flex items-center justify-between">
+                                <span className="text-3xl font-black italic tracking-tighter">{data?.user?.affiliate_code || "KOD_YO'Q"}</span>
+                                <button onClick={() => copyToClipboard(data?.user?.affiliate_code)} className="p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-all">
+                                    <Share2 size={20} />
+                                </button>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Transactions / History */}
+                <div className="mt-10 space-y-6">
+                    <div className="flex items-center gap-2 ml-4">
+                        <History size={16} className="text-gray-400" />
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400">{language === 'uz' ? 'So'nggi harakatlar' : 'Последние действия'}</h3>
+                    </div>
+                    <div className="bg-white rounded-[40px] overflow-hidden shadow-sm border border-gray-100">
+                        {data?.transactions?.length === 0 ? (
+                            <div className="p-16 text-center text-gray-300 font-bold italic text-sm">Hali daromadlar yo'q</div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="bg-gray-50 border-b border-gray-100">
+                                            <th className="p-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Holat / Bosqich</th>
+                                            <th className="p-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Summa</th>
+                                            <th className="p-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Vaqt</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {data?.transactions?.map((t: any) => (
+                                            <tr key={t.id} className="hover:bg-gray-50/50 transition-colors">
+                                                <td className="p-6">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-2 h-2 rounded-full ${t.status === 'released' ? 'bg-emerald-500' : t.status === 'approved' ? 'bg-blue-500' : t.status === 'pending' ? 'bg-orange-500' : 'bg-red-500'} animate-pulse`} />
+                                                        <div>
+                                                            <p className="text-xs font-black italic tracking-tighter uppercase">{t.order_stage || 'Jarayonda'}</p>
+                                                            <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">
+                                                                {t.status === 'released' ? 'Hamyonda' : t.status === 'approved' ? 'Muzlatilgan' : 'Kutilmoqda'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="p-6">
+                                                    <p className="text-sm font-black italic tracking-tighter">+{t.amount.toLocaleString()} so'm</p>
+                                                </td>
+                                                <td className="p-6">
+                                                    <p className="text-[10px] text-gray-400 font-bold italic">{new Date(t.created_at).toLocaleDateString()}</p>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Modals */}
+            {showAddMember && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+                    <div className="bg-white w-full max-w-md p-10 rounded-[40px] shadow-2xl space-y-6 relative animate-in fade-in zoom-in duration-300">
+                        <button onClick={() => setShowAddMember(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-all"><X size={18} /></button>
+                        <h2 className="text-2xl font-black italic tracking-tighter uppercase">{language === 'uz' ? 'A'zo Qo'shish' : 'Добавить Участника'}</h2>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-gray-400 ml-4 mb-2 block">Telefon Raqam</label>
+                                <input 
+                                    type="text"
+                                    value={memberPhone}
+                                    onChange={e => setMemberPhone(e.target.value)}
+                                    placeholder="+998"
+                                    className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-black transition-all"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-gray-400 ml-4 mb-2 block">Telegram Kod (1234)</label>
+                                <input 
+                                    type="text"
+                                    value={vCode}
+                                    onChange={e => setVCode(e.target.value)}
+                                    placeholder="----"
+                                    className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-black transition-all text-center tracking-[1em]"
+                                />
+                            </div>
+                            <button 
+                                onClick={handleAddMember}
+                                disabled={isActionLoading || !memberPhone || !vCode}
+                                className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 shadow-xl shadow-black/10"
+                            >
+                                {isActionLoading ? <Loader2 className="animate-spin mx-auto" /> : (language === 'uz' ? 'QO\'SHISH' : 'ДОБАВИТЬ')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showTransfer && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+                    <div className="bg-white w-full max-w-md p-10 rounded-[40px] shadow-2xl space-y-6 relative animate-in fade-in zoom-in duration-300">
+                        <button onClick={() => setShowTransfer(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-all"><X size={18} /></button>
+                        <h2 className="text-2xl font-black italic tracking-tighter uppercase">{language === 'uz' ? 'Ichki O'tkazma' : 'Внутренний Перевод'}</h2>
+                        <p className="text-gray-400 text-xs font-bold italic">Sizning mablag'ingiz cashback hamyoniga o'tkaziladi va uni saytda ishlatishingiz mumkin bo'ladi.</p>
+                        <div className="space-y-4">
+                            <input 
+                                type="number"
+                                value={transferAmount}
+                                onChange={e => setTransferAmount(e.target.value)}
+                                placeholder={language === 'uz' ? "O'tkazish summasi" : "Сумма перевода"}
+                                className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-black italic text-xl outline-none focus:ring-2 focus:ring-black transition-all"
+                            />
+                            <button 
+                                onClick={handleTransfer}
+                                disabled={isActionLoading || !transferAmount}
+                                className="w-full bg-emerald-500 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 shadow-xl shadow-emerald-500/20"
+                            >
+                                {isActionLoading ? <Loader2 className="animate-spin mx-auto" /> : (language === 'uz' ? 'O\'TKAZISH' : 'ПЕРЕВЕСТИ')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showWithdraw && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+                    <div className="bg-white w-full max-w-md p-10 rounded-[40px] shadow-2xl space-y-6 relative animate-in fade-in zoom-in duration-300">
+                        <button onClick={() => setShowWithdraw(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-all"><X size={18} /></button>
+                        <h2 className="text-2xl font-black italic tracking-tighter uppercase">{language === 'uz' ? 'Kartaga Yechish' : 'Вывод на Карту'}</h2>
                         <div className="space-y-4">
                             <input 
                                 type="number"
                                 value={withdrawAmount}
                                 onChange={e => setWithdrawAmount(e.target.value)}
-                                placeholder={language === 'uz' ? "Summa (min: 50,000)" : "Сумма (мин: 50,000)"}
+                                placeholder={language === 'uz' ? "Summa (min: 50k)" : "Сумма (мин: 50к)"}
                                 className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-black transition-all"
                             />
                             <input 
@@ -1047,26 +1381,18 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                             />
                             <button 
                                 onClick={handleWithdraw}
-                                disabled={isWithdrawing || !withdrawAmount || !cardNumber}
-                                className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 disabled:opacity-20 transition-all shadow-xl shadow-black/10"
+                                disabled={isActionLoading || !withdrawAmount || !cardNumber}
+                                className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 shadow-xl shadow-black/20"
                             >
-                                {isWithdrawing ? <Loader2 size={18} className="animate-spin mx-auto" /> : (language === 'uz' ? 'SO\'ROV YUBORISH' : 'ОТПРАВИТЬ ЗАПРОС')}
+                                {isActionLoading ? <Loader2 className="animate-spin mx-auto" /> : (language === 'uz' ? 'Yuborish' : 'Отправить')}
                             </button>
                         </div>
                     </div>
-
-                    {/* History Sections */}
-                    <div className="space-y-4">
-                        <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">{language === 'uz' ? 'Hamkorlik Tarixi' : 'История Партнерства'}</h3>
-                        <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-100">
-                            {data?.transactions?.length === 0 ? (
-                                <div className="p-10 text-center text-gray-300 font-bold italic text-sm">Hali referallar yo'q</div>
-                            ) : (
-                                data?.transactions?.map((t: any) => (
-                                    <div key={t.id} className="p-5 border-b border-gray-50 last:border-0 flex justify-between items-center">
-                                        <div>
-                                            <p className="text-[10px] font-black text-gray-400 uppercase">Mijoz: {t.buyer_phone.slice(0, 9)}***</p>
-                                            <p className="text-xs font-black italic uppercase mt-0.5">+{t.amount.toLocaleString()} so'm</p>
+                </div>
+            )}
+        </div>
+    );
+}.toLocaleString()} so'm</p>
                                         </div>
                                         <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase ${t.status === 'approved' ? 'bg-green-50 text-green-600' : t.status === 'pending' ? 'bg-orange-50 text-orange-600' : 'bg-red-50 text-red-600'}`}>
                                             {t.status === 'approved' ? 'Tasdiqlandi' : t.status === 'pending' ? 'Kutilmoqda' : 'Bekor qilindi'}

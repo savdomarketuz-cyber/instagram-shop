@@ -188,3 +188,26 @@ export async function sendLowStockAlert(lowStockItems: { name: string; stock: nu
         console.error("Low stock Telegram alert error:", e);
     }
 }
+export async function sendPinResetCode(phone: string, code: string) {
+    try {
+        const { data: user } = await supabaseAdmin
+            .from('users')
+            .select('telegram_id')
+            .eq('phone', phone)
+            .single();
+
+        if (!user || !user.telegram_id || !CUSTOMER_BOT_TOKEN) return;
+
+        let text = `🔐 <b>Hamkorlik PIN-kodini tiklash!</b>\n\n`;
+        text += `Tasdiqlash kodi: <code>${code}</code>\n\n`;
+        text += `⚠️ <i>Ushbu kodni hech kimga bermang! Agar ushbu so'rovni siz yubormagan bo'lsangiz, ushbu xabarga e'tibor bermang.</i>`;
+
+        await fetch(`https://api.telegram.org/bot${CUSTOMER_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: user.telegram_id, text, parse_mode: 'HTML' })
+        });
+    } catch(e) {
+        console.error("PIN Reset Telegram notification error:", e);
+    }
+}

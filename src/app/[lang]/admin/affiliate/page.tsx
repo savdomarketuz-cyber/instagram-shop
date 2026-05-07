@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
-import { 
-    Users, 
-    Banknote, 
-    Clock, 
-    CheckCircle, 
-    XCircle, 
-    Settings, 
+import {
+    Users,
+    Banknote,
+    Clock,
+    CheckCircle,
+    XCircle,
+    Settings,
     ChevronRight,
     TrendingUp,
     ShieldCheck,
@@ -211,10 +211,10 @@ export default function AffiliateAdminPage() {
                         <form onSubmit={handleUpdateSettings} className="p-8 space-y-6">
                             <div>
                                 <label className="text-[10px] font-black text-gray-400 uppercase mb-2 block tracking-widest">Hamkor Mukofoti (So'm)</label>
-                                <input 
+                                <input
                                     type="number"
                                     value={settings.referrer_reward}
-                                    onChange={(e) => setSettings({...settings, referrer_reward: Number(e.target.value)})}
+                                    onChange={(e) => setSettings({ ...settings, referrer_reward: Number(e.target.value) })}
                                     className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-bold focus:ring-2 focus:ring-black transition-all"
                                     placeholder="Masalan: 15000"
                                 />
@@ -223,10 +223,10 @@ export default function AffiliateAdminPage() {
 
                             <div>
                                 <label className="text-[10px] font-black text-gray-400 uppercase mb-2 block tracking-widest">Xaridor Chegirmasi (So'm)</label>
-                                <input 
+                                <input
                                     type="number"
                                     value={settings.buyer_discount}
-                                    onChange={(e) => setSettings({...settings, buyer_discount: Number(e.target.value)})}
+                                    onChange={(e) => setSettings({ ...settings, buyer_discount: Number(e.target.value) })}
                                     className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-bold focus:ring-2 focus:ring-black transition-all"
                                     placeholder="Masalan: 10000"
                                 />
@@ -235,16 +235,16 @@ export default function AffiliateAdminPage() {
 
                             <div>
                                 <label className="text-[10px] font-black text-gray-400 uppercase mb-2 block tracking-widest">Minimal Yechish (So'm)</label>
-                                <input 
+                                <input
                                     type="number"
                                     value={settings.min_withdrawal}
-                                    onChange={(e) => setSettings({...settings, min_withdrawal: Number(e.target.value)})}
+                                    onChange={(e) => setSettings({ ...settings, min_withdrawal: Number(e.target.value) })}
                                     className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-bold focus:ring-2 focus:ring-black transition-all"
                                     placeholder="Masalan: 50000"
                                 />
                             </div>
 
-                            <button 
+                            <button
                                 type="submit"
                                 disabled={saving}
                                 className="w-full bg-black text-white py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/10 disabled:opacity-50"
@@ -310,26 +310,25 @@ export default function AffiliateAdminPage() {
                                                     </div>
                                                 </td>
                                                 <td className="px-8 py-6">
-                                                    <span className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                                                        req.status === 'pending' ? 'bg-orange-50 text-orange-600' :
-                                                        req.status === 'paid' ? 'bg-green-50 text-green-600' :
-                                                        'bg-red-50 text-red-600'
-                                                    }`}>
+                                                    <span className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest ${req.status === 'pending' ? 'bg-orange-50 text-orange-600' :
+                                                            req.status === 'paid' ? 'bg-green-50 text-green-600' :
+                                                                'bg-red-50 text-red-600'
+                                                        }`}>
                                                         {req.status === 'pending' ? 'Kutilmoqda' :
-                                                         req.status === 'paid' ? "To'landi" : 'Rad etildi'}
+                                                            req.status === 'paid' ? 'To''landi' : 'Rad etildi'}
                                                     </span>
                                                 </td>
                                                 <td className="px-8 py-6 text-right">
                                                     {req.status === 'pending' ? (
                                                         <div className="flex items-center justify-end gap-2">
-                                                            <button 
+                                                            <button
                                                                 onClick={() => handleWithdraw(req.id, 'rejected')}
                                                                 className="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all"
                                                                 title="Rad etish"
                                                             >
                                                                 <XCircle size={18} />
                                                             </button>
-                                                            <button 
+                                                            <button
                                                                 onClick={() => handleWithdraw(req.id, 'paid')}
                                                                 className="p-3 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all shadow-lg shadow-green-600/10"
                                                                 title="To'landi"

@@ -78,6 +78,9 @@ interface Product {
     cashback_value?: number;
     model?: string;
     image_metadata?: Record<string, { alt_uz?: string; alt_ru?: string; blurDataURL?: string }>;
+    comm_seller?: number;
+    comm_tm?: number;
+    comm_manager?: number;
 }
 
 import { uploadToYandexS3, uploadFromUrlToYandexS3 } from "@/lib/yandex-s3";
@@ -206,7 +209,10 @@ export default function AdminProducts() {
         videoUrl: "",
         cashback_type: "global",
         cashback_value: 0,
-        model: ""
+        model: "",
+        comm_seller: 0,
+        comm_tm: 0,
+        comm_manager: 0
     });
 
     useEffect(() => {
@@ -630,7 +636,10 @@ export default function AdminProducts() {
                 is_original: newProduct.isOriginal || false,
                 cashback_type: newProduct.cashback_type || 'global',
                 cashback_value: newProduct.cashback_value || 0,
-                model: newProduct.model || ""
+                model: newProduct.model || "",
+                comm_seller: newProduct.comm_seller || 0,
+                comm_tm: newProduct.comm_tm || 0,
+                comm_manager: newProduct.comm_manager || 0
             };
 
             let finalId = newProduct.id;
@@ -1543,6 +1552,52 @@ export default function AdminProducts() {
                                                 </div>
                                             )}
                                         </div>
+                                    </div>
+
+                                    {/* MLM Commission Sub-Section */}
+                                    <div className="bg-purple-50/40 p-8 rounded-[40px] border border-purple-100 space-y-6">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="w-8 h-8 bg-purple-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
+                                                <Sparkles size={16} />
+                                            </div>
+                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-purple-600">Hamkorlik Komissiyasi (%)</h4>
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Sotuvchi (%)</label>
+                                                <input
+                                                    type="number"
+                                                    value={newProduct.comm_seller || ""}
+                                                    onChange={e => setNewProduct({ ...newProduct, comm_seller: Number(e.target.value) })}
+                                                    className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-purple-500 outline-none shadow-sm text-black"
+                                                    placeholder="5"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Manager (%)</label>
+                                                <input
+                                                    type="number"
+                                                    value={newProduct.comm_manager || ""}
+                                                    onChange={e => setNewProduct({ ...newProduct, comm_manager: Number(e.target.value) })}
+                                                    className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-purple-500 outline-none shadow-sm text-black"
+                                                    placeholder="2"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Top Manager (%)</label>
+                                                <input
+                                                    type="number"
+                                                    value={newProduct.comm_tm || ""}
+                                                    onChange={e => setNewProduct({ ...newProduct, comm_tm: Number(e.target.value) })}
+                                                    className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-purple-500 outline-none shadow-sm text-black"
+                                                    placeholder="1"
+                                                />
+                                            </div>
+                                        </div>
+                                        <p className="text-[8px] font-medium text-gray-400 uppercase italic px-2">
+                                            * Foizlar mahsulot narxidan kelib chiqib hisoblanadi.
+                                        </p>
                                     </div>
                                     <div className="space-y-4">
                                         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 italic">Tovar Toifasi (Uzum Market uslubida)</label>

@@ -45,6 +45,14 @@ export async function POST(req: Request) {
 
         if (updateError) throw updateError;
 
+        // --- MLM COMMISSIONS ---
+        if (status === 'delivered') {
+            const { distributeCommissions } = await import("@/lib/mlm-utils");
+            // Run in background
+            distributeCommissions(orderId).catch(err => console.error("MLM Distribute Error:", err));
+        }
+        // -----------------------
+
         return NextResponse.json({ success: true });
 
     } catch (error: any) {
