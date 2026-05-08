@@ -23,7 +23,7 @@ const orderSchema = z.object({
     promoCode: z.string().optional().nullable(),
     isWalletPayment: z.boolean().optional(),
     walletUsage: z.number().optional(),
-    referralData: z.record(z.string()).optional().nullable() // { productId: affiliateLinkSlug }
+    referralData: z.record(z.string(), z.string()).optional().nullable() // { productId: affiliateLinkSlug }
 });
 
 export async function POST(req: NextRequest) {

@@ -933,6 +933,14 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
     const [cardNumber, setCardNumber] = useState("");
     const [isActionLoading, setIsActionLoading] = useState(false);
 
+    // Recovery states
+    const [showRecovery, setShowRecovery] = useState(false);
+    const [recoveryStep, setRecoveryStep] = useState<"password" | "telegram" | "new_pin">("password");
+    const [recoveryPassword, setRecoveryPassword] = useState("");
+    const [recoveryTelegramCode, setRecoveryTelegramCode] = useState("");
+    const [recoveryNewPin, setRecoveryNewPin] = useState("");
+    const [recoveryError, setRecoveryError] = useState("");
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -1064,6 +1072,89 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
         }
     };
 
+    const handleVerifyPassword = async () => {
+        setIsActionLoading(true);
+        setRecoveryError("");
+        try {
+            const res = await fetch("/api/affiliate/user", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "verify_password", password: recoveryPassword })
+            });
+            const d = await res.json();
+            if (d.success) setRecoveryStep("new_pin");
+            else setRecoveryError(d.error);
+        } catch (e) {
+            setRecoveryError("Xatolik");
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
+    const handleRequestTelegramCode = async () => {
+        setIsActionLoading(true);
+        try {
+            const res = await fetch("/api/affiliate/user", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "request_telegram_reset" })
+            });
+            const d = await res.json();
+            if (d.success) {
+                setRecoveryStep("telegram");
+                showToast(language === 'uz' ? "Kod yuborildi!" : "Код отправлен!", "success");
+            }
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
+    const handleVerifyTelegramAndReset = async () => {
+        if (recoveryNewPin.length !== 4) return;
+        setIsActionLoading(true);
+        setRecoveryError("");
+        try {
+            const res = await fetch("/api/affiliate/user", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    action: "verify_telegram_reset", 
+                    code: recoveryTelegramCode, 
+                    newPin: recoveryNewPin 
+                })
+            });
+            const d = await res.json();
+            if (d.success) {
+                showToast(language === 'uz' ? "PIN yangilandi!" : "PIN обновлен!", "success");
+                setShowRecovery(false);
+                fetchData();
+            } else {
+                setRecoveryError(d.error);
+            }
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
+    const handleSetNewPinDirectly = async (pin: string) => {
+        setIsActionLoading(true);
+        try {
+            const res = await fetch("/api/affiliate/user", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "set_pin", pin })
+            });
+            const d = await res.json();
+            if (d.success) {
+                showToast(language === 'uz' ? "PIN yangilandi!" : "PIN обновлен!", "success");
+                setShowRecovery(false);
+                fetchData();
+            }
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
         showToast(language === 'uz' ? "Nusxa olindi!" : "Скопировано!", "success");
@@ -1077,7 +1168,16 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                 <button onClick={onBack} className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8">
                     <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
                 </button>
-                <PinKeypad onComplete={handlePinComplete} title={language === 'uz' ? "PIN-kodni kiriting" : "Введите PIN-код"} error={pinError} />
+                <PinKeypad 
+                    onComplete={handlePinComplete} 
+                    onForgotPin={() => {
+                        setShowRecovery(true);
+                        setRecoveryStep("password");
+                        setRecoveryError("");
+                    }}
+                    title={language === 'uz' ? "PIN-kodni kiriting" : "Введите PIN-код"} 
+                    error={pinError} 
+                />
             </div>
         );
     }
@@ -1135,13 +1235,12 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
         );
     }
 
-    const roles: Record<string, string> = {
-        top_manager: language === 'uz' ? 'Top Menejer' : 'Топ Менеджер',
-        top_sales_manager: language === 'uz' ? 'Top Sotuv Menejeri' : 'Топ Менеджер Продаж',
-        sales_manager: language === 'uz' ? 'Sotuv Menejeri' : 'Менеджер Продаж',
-        agent: language === 'uz' ? 'Agent' : 'Агент'
-    };
-    const roleName = roles[data?.user?.affiliate_role as string] || (language === 'uz' ? "A'zo" : 'Участник');
+    let roleName = language === 'uz' ? "A'zo" : 'Участник';
+    const currentRole = data?.user?.affiliate_role;
+    if (currentRole === 'top_manager') roleName = language === 'uz' ? 'Top Menejer' : 'Топ Менеджер';
+    else if (currentRole === 'top_sales_manager') roleName = language === 'uz' ? 'Top Sotuv Menejeri' : 'Топ Менеджер Продаж';
+    else if (currentRole === 'sales_manager') roleName = language === 'uz' ? 'Sotuv Menejeri' : 'Менеджер Продаж';
+    else if (currentRole === 'agent') roleName = language === 'uz' ? 'Agent' : 'Агент';
 
     return (
         <div className="bg-[#F2F3F5] min-h-screen pb-24 px-4 md:px-10 overflow-x-hidden">
@@ -1250,7 +1349,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                 <div className="mt-10 space-y-6">
                     <div className="flex items-center gap-2 ml-4">
                         <History size={16} className="text-gray-400" />
-                        <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400">{language === 'uz' ? 'So'nggi harakatlar' : 'Последние действия'}</h3>
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400">{language === 'uz' ? "So'nggi harakatlar" : 'Последние действия'}</h3>
                     </div>
                     <div className="bg-white rounded-[40px] overflow-hidden shadow-sm border border-gray-100">
                         {data?.transactions?.length === 0 ? (
@@ -1338,7 +1437,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
                     <div className="bg-white w-full max-w-md p-10 rounded-[40px] shadow-2xl space-y-6 relative animate-in fade-in zoom-in duration-300">
                         <button onClick={() => setShowTransfer(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-all"><X size={18} /></button>
-                        <h2 className="text-2xl font-black italic tracking-tighter uppercase">{language === 'uz' ? 'Ichki O'tkazma' : 'Внутренний Перевод'}</h2>
+                        <h2 className="text-2xl font-black italic tracking-tighter uppercase">{language === 'uz' ? "Ichki O'tkazma" : 'Внутренний Перевод'}</h2>
                         <p className="text-gray-400 text-xs font-bold italic">Sizning mablag'ingiz cashback hamyoniga o'tkaziladi va uni saytda ishlatishingiz mumkin bo'ladi.</p>
                         <div className="space-y-4">
                             <input 
@@ -1388,6 +1487,90 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                 {isActionLoading ? <Loader2 className="animate-spin mx-auto" /> : (language === 'uz' ? 'Yuborish' : 'Отправить')}
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+            {showRecovery && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+                    <div className="bg-white w-full max-w-md p-10 rounded-[40px] shadow-2xl space-y-6 relative animate-in fade-in zoom-in duration-300">
+                        <button onClick={() => setShowRecovery(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-all"><X size={18} /></button>
+                        
+                        {recoveryStep === "password" && (
+                            <div className="space-y-6">
+                                <div className="text-center space-y-2">
+                                    <h2 className="text-2xl font-black italic tracking-tighter uppercase">{language === 'uz' ? 'PIN Tiklash' : 'Восстановление PIN'}</h2>
+                                    <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Akaunt parolingizni kiriting</p>
+                                </div>
+                                <input 
+                                    type="password"
+                                    value={recoveryPassword}
+                                    onChange={e => setRecoveryPassword(e.target.value)}
+                                    placeholder="******"
+                                    className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-black transition-all"
+                                />
+                                {recoveryError && <p className="text-red-500 text-[10px] font-bold text-center uppercase tracking-widest">{recoveryError}</p>}
+                                <button 
+                                    onClick={handleVerifyPassword}
+                                    disabled={isActionLoading || !recoveryPassword}
+                                    className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95"
+                                >
+                                    {isActionLoading ? <Loader2 className="animate-spin mx-auto" /> : (language === 'uz' ? 'DAVOM ETISH' : 'ПРОДОЛЖИТЬ')}
+                                </button>
+                                <button 
+                                    onClick={handleRequestTelegramCode}
+                                    className="w-full text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-black transition-all"
+                                >
+                                    Parolni ham unutdim (Telegram)
+                                </button>
+                            </div>
+                        )}
+
+                        {recoveryStep === "telegram" && (
+                            <div className="space-y-6">
+                                <div className="text-center space-y-2">
+                                    <h2 className="text-2xl font-black italic tracking-tighter uppercase">{language === 'uz' ? 'Telegram Tiklash' : 'Telegram Сброс'}</h2>
+                                    <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Botdan kelgan kodni kiriting</p>
+                                </div>
+                                <div className="space-y-4">
+                                    <input 
+                                        type="text"
+                                        value={recoveryTelegramCode}
+                                        onChange={e => setRecoveryTelegramCode(e.target.value)}
+                                        placeholder="----"
+                                        className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-black text-center tracking-[1em] outline-none focus:ring-2 focus:ring-black transition-all"
+                                    />
+                                    <div className="pt-4 border-t border-gray-100">
+                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-4">Yangi PIN o'rnating</p>
+                                        <input 
+                                            type="text"
+                                            maxLength={4}
+                                            value={recoveryNewPin}
+                                            onChange={e => setRecoveryNewPin(e.target.value)}
+                                            placeholder="****"
+                                            className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-black text-center tracking-[1em] outline-none focus:ring-2 focus:ring-black transition-all"
+                                        />
+                                    </div>
+                                </div>
+                                {recoveryError && <p className="text-red-500 text-[10px] font-bold text-center uppercase tracking-widest">{recoveryError}</p>}
+                                <button 
+                                    onClick={handleVerifyTelegramAndReset}
+                                    disabled={isActionLoading || recoveryTelegramCode.length < 4 || recoveryNewPin.length !== 4}
+                                    className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95"
+                                >
+                                    {isActionLoading ? <Loader2 className="animate-spin mx-auto" /> : (language === 'uz' ? 'TASDIQLASH' : 'ПОДТВЕРДИТЬ')}
+                                </button>
+                            </div>
+                        )}
+
+                        {recoveryStep === "new_pin" && (
+                            <div className="space-y-6">
+                                <div className="text-center space-y-2">
+                                    <h2 className="text-2xl font-black italic tracking-tighter uppercase">{language === 'uz' ? 'Yangi PIN' : 'Новый PIN'}</h2>
+                                    <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Yangi 4 xonali PIN kiriting</p>
+                                </div>
+                                <PinKeypad onComplete={handleSetNewPinDirectly} title="" />
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

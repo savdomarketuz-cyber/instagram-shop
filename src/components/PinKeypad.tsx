@@ -3,11 +3,12 @@ import { Delete, Lock } from 'lucide-react';
 
 interface PinKeypadProps {
     onComplete: (pin: string) => void;
+    onForgotPin?: () => void;
     title: string;
     error?: string;
 }
 
-export const PinKeypad: React.FC<PinKeypadProps> = ({ onComplete, title, error }) => {
+export const PinKeypad: React.FC<PinKeypadProps> = ({ onComplete, onForgotPin, title, error }) => {
     const [pin, setPin] = useState('');
 
     const handlePress = (num: string) => {
@@ -73,6 +74,15 @@ export const PinKeypad: React.FC<PinKeypadProps> = ({ onComplete, title, error }
                     <Delete size={24} />
                 </button>
             </div>
+            
+            {onForgotPin && (
+                <button 
+                    onClick={onForgotPin}
+                    className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-black transition-all"
+                >
+                    Esdan chiqardim / Qayta tiklash
+                </button>
+            )}
         </div>
     );
 };

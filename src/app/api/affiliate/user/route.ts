@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { verifyJwt } from "@/lib/jwt-utils";
 import crypto from "crypto";
+import { hashPassword } from "@/lib/auth-utils";
+import { sendPinResetCode } from "@/lib/telegram";
 
 function hashPin(pin: string) {
     return crypto.createHash('sha256').update(pin).digest('hex');
@@ -191,9 +193,61 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true, slug });
         }
 
+        // --- VERIFY ACCOUNT PASSWORD ---
+        if (action === "verify_password") {
+            const { password } = body;
+            const { data: user } = await supabaseAdmin.from("users").select("password").eq("phone", userPhone).single();
+            if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+            
+            const isMatch = user.password === password || user.password === hashPassword(password);
+            if (!isMatch) return NextResponse.json({ error: "Parol noto'g'ri" }, { status: 401 });
+            
+            return NextResponse.json({ success: true });
+        }
+
+        // --- REQUEST TELEGRAM RESET ---
+        if (action === "request_telegram_reset") {
+            const code = Math.floor(1000 + Math.random() * 9000).toString();
+            const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+            
+            // Save code to DB (re-use wallet_otps table or similar)
+            await supabaseAdmin.from("wallet_otps").upsert({
+                phone: `PIN_RESET_${userPhone}`,
+                code,
+                expires_at: expires
+            });
+
+            // Send via Telegram
+            await sendPinResetCode(userPhone, code);
+            
+            return NextResponse.json({ success: true });
+        }
+
+        // --- VERIFY TELEGRAM RESET ---
+        if (action === "verify_telegram_reset") {
+            const { code, newPin } = body;
+            const { data: otp } = await supabaseAdmin
+                .from("wallet_otps")
+                .select("*")
+                .eq("phone", `PIN_RESET_${userPhone}`)
+                .eq("code", code)
+                .gt("expires_at", new Date().toISOString())
+                .single();
+
+            if (!otp) return NextResponse.json({ error: "Kod noto'g'ri yoki muddati tugagan" }, { status: 401 });
+
+            // Set new PIN
+            const hashedPin = hashPin(newPin);
+            await supabaseAdmin.from("users").update({ affiliate_pin: hashedPin }).eq("phone", userPhone);
+            
+            // Clear OTP
+            await supabaseAdmin.from("wallet_otps").delete().eq("phone", `PIN_RESET_${userPhone}`);
+            
+            return NextResponse.json({ success: true });
+        }
+
         // --- WITHDRAW ---
         if (action === "withdraw") {
-             // Re-use existing withdraw logic from previous version
              const { data: user } = await supabaseAdmin.from("users").select("real_balance").eq("phone", userPhone).single();
              if (!user || user.real_balance < amount) return NextResponse.json({ error: "Mablag' yetarli emas" }, { status: 400 });
 
