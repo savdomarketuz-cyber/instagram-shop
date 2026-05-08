@@ -1717,15 +1717,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                     </div>
                 </div>
             )}
-                                disabled={isActionLoading || !memberPhone || !vCode}
-                                className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 shadow-xl shadow-black/10"
-                            >
-                                {isActionLoading ? <Loader2 className="animate-spin mx-auto" /> : (language === 'uz' ? 'QO\'SHISH' : 'ДОБАВИТЬ')}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+
 
             {showTransfer && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
