@@ -1550,14 +1550,14 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                                 <tr key={l.id} className="hover:bg-gray-50/50 transition-colors">
                                                     <td className="p-6">
                                                         <p className="text-xs font-black italic uppercase">{l.products?.name}</p>
-                                                        <p className="text-[8px] font-bold text-gray-400 font-mono">/ref/{l.slug}</p>
+                                                        <p className="text-[8px] font-bold text-gray-400 font-mono">/{language}/ref/{l.slug}</p>
                                                     </td>
                                                     <td className="p-6 text-center font-black italic">{l.clicks}</td>
                                                     <td className="p-6 text-center font-black italic">{l.views}</td>
                                                     <td className="p-6 text-center font-black italic text-emerald-500">{l.conversions}</td>
                                                     <td className="p-6 text-right">
                                                         <button 
-                                                            onClick={() => copyToClipboard(`${window.location.origin}/ref/${l.slug}`)}
+                                                            onClick={() => copyToClipboard(`${window.location.origin}/${language}/ref/${l.slug}`)}
                                                             className="p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-all"
                                                         >
                                                             <Share2 size={16} />

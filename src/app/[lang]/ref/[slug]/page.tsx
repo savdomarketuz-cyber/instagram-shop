@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { cookies } from "next/headers";
 
-export default async function ReferralRedirect({ params }: { params: { slug: string } }) {
-    const { slug } = params;
+export default async function ReferralRedirect({ params }: { params: { slug: string, lang: string } }) {
+    const { slug, lang } = params;
 
     try {
         // 1. Find the link
@@ -14,7 +14,7 @@ export default async function ReferralRedirect({ params }: { params: { slug: str
             .single();
 
         if (error || !link) {
-            redirect("/");
+            redirect(`/${lang}`);
         }
 
         // 2. Log the click
@@ -34,8 +34,8 @@ export default async function ReferralRedirect({ params }: { params: { slug: str
         cookies().set("referral_link_id", link.id, { maxAge: 60 * 60 * 24 * 30, path: "/" });
 
         // 4. Redirect to product page
-        redirect(`/uz/product/${link.product_id}`);
+        redirect(`/${lang}/product/${link.product_id}`);
     } catch (e) {
-        redirect("/");
+        redirect(`/${lang}`);
     }
 }
