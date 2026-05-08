@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { toast } from "react-hot-toast";
+import { useStore } from "@/store/store";
 import {
     Users,
     Banknote,
@@ -66,6 +66,7 @@ interface Stats {
 }
 
 export default function AffiliateAdminPage() {
+    const { showToast } = useStore();
     const [activeTab, setActiveTab] = useState<"overview" | "tariffs" | "hierarchy">("overview");
     const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
     const [tariffs, setTariffs] = useState<PromoCodeTariff[]>([]);
@@ -106,7 +107,7 @@ export default function AffiliateAdminPage() {
             if (tariffData.success) setTariffs(tariffData.data);
 
         } catch (error) {
-            toast.error("Ma'lumotlarni yuklashda xatolik");
+            showToast("Ma'lumotlarni yuklashda xatolik", "error");
         } finally {
             setLoading(false);
         }
@@ -126,14 +127,14 @@ export default function AffiliateAdminPage() {
             });
             const data = await res.json();
             if (data.success) {
-                toast.success("Tarif saqlandi");
+                showToast("Tarif saqlandi");
                 setShowTariffModal(false);
                 fetchData();
             } else {
-                toast.error(data.error);
+                showToast(data.error, "error");
             }
         } catch (error) {
-            toast.error("Xatolik");
+            showToast("Xatolik", "error");
         } finally {
             setSaving(false);
         }
@@ -149,11 +150,11 @@ export default function AffiliateAdminPage() {
             });
             const data = await res.json();
             if (data.success) {
-                toast.success("O'chirildi");
+                showToast("O'chirildi");
                 fetchData();
             }
         } catch (error) {
-            toast.error("Xatolik");
+            showToast("Xatolik", "error");
         }
     };
 
@@ -171,12 +172,12 @@ export default function AffiliateAdminPage() {
             });
             const data = await res.json();
             if (data.success) {
-                toast.success("Sozlamalar yangilandi");
+                showToast("Sozlamalar yangilandi");
             } else {
-                toast.error(data.error || "Xatolik yuz berdi");
+                showToast(data.error || "Xatolik yuz berdi", "error");
             }
         } catch (error) {
-            toast.error("Server bilan bog'lanishda xatolik");
+            showToast("Server bilan bog'lanishda xatolik", "error");
         } finally {
             setSaving(false);
         }
@@ -197,13 +198,13 @@ export default function AffiliateAdminPage() {
             });
             const data = await res.json();
             if (data.success) {
-                toast.success("Amal bajarildi");
+                showToast("Amal bajarildi");
                 fetchData();
             } else {
-                toast.error(data.error);
+                showToast(data.error, "error");
             }
         } catch (error) {
-            toast.error("Xatolik");
+            showToast("Xatolik", "error");
         }
     };
 
