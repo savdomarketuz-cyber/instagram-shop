@@ -571,7 +571,7 @@ export default function AffiliateAdminPage() {
                                 <input
                                     type="number"
                                     value={editingTariff.min_order_value}
-                                    onChange={(e) => setSettings({ ...editingTariff, min_order_value: Number(e.target.value) } as any)}
+                                    onChange={(e) => setEditingTariff({ ...editingTariff, min_order_value: Number(e.target.value) } as any)}
                                     className="w-full bg-gray-50 border-none rounded-3xl px-8 py-5 font-black outline-none"
                                 />
                             </div>
