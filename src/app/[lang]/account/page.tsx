@@ -1104,6 +1104,31 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
         }
     };
 
+    const handleSetNewPinDirectly = async (pin: string) => {
+        setIsActionLoading(true);
+        setRecoveryError("");
+        try {
+            const res = await fetch("/api/affiliate/user", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    action: "reset_pin_with_auth", 
+                    newPin: pin 
+                })
+            });
+            const d = await res.json();
+            if (d.success) {
+                showToast(language === 'uz' ? "PIN yangilandi!" : "PIN обновлен!", "success");
+                setShowRecovery(false);
+                fetchData();
+            } else {
+                setRecoveryError(d.error);
+            }
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
     const handleRequestTelegramCode = async () => {
         setIsActionLoading(true);
         try {

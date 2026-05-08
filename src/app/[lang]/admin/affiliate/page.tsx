@@ -615,5 +615,6 @@ export default function AffiliateAdminPage() {
                     </div>
                 </div>
             )}
+        </div>
     );
 }
