@@ -118,34 +118,90 @@ export async function POST(req: NextRequest) {
         }
         // ----------------------------------
 
-        // --- MLM AFFILIATE TRACKING ---
-        if (validatedData.referralData && Object.keys(validatedData.referralData).length > 0) {
-            try {
-                const orderId = data.orderId;
+        // --- NEW: MLM AFFILIATE & PROMO CODE TRACKING ---
+        try {
+            const orderId = data.orderId;
+            let promoAffiliateId = null;
+
+            // 1. Check if Promo Code belongs to an Affiliate
+            if (validatedData.promoCode) {
+                const { data: promoData } = await supabaseAdmin
+                    .from("affiliate_promo_codes")
+                    .select("*, promo_code_tariffs(*)")
+                    .eq("code", validatedData.promoCode.toUpperCase())
+                    .single();
+                
+                if (promoData) {
+                    promoAffiliateId = promoData.affiliate_id;
+                    const tariff = promoData.promo_code_tariffs;
+                    
+                    // Calculate Reward for Affiliate
+                    let rewardAmount = 0;
+                    if (tariff.affiliate_reward_type === 'fixed_per_use') {
+                        rewardAmount = tariff.affiliate_reward_value;
+                    } else if (tariff.affiliate_reward_type === 'percent_of_final_price') {
+                        rewardAmount = (validatedData.total * tariff.affiliate_reward_value) / 100;
+                    } else if (tariff.affiliate_reward_type === 'percent_of_discount') {
+                        const discount = tariff.type === 'fixed' ? tariff.discount_value : (validatedData.total * tariff.discount_value) / 100;
+                        rewardAmount = (discount * tariff.affiliate_reward_value) / 100;
+                    }
+
+                    // Create Transaction for Promo Code Owner
+                    await supabaseAdmin.from("affiliate_transactions").insert({
+                        user_id: promoAffiliateId,
+                        order_id: orderId,
+                        status: 'pending',
+                        amount: rewardAmount,
+                        order_stage: 'Promo-kod ishlatildi'
+                    });
+
+                    // Update Promo Code stats
+                    await supabaseAdmin.rpc('increment_promo_usage', { 
+                        p_promo_id: promoData.id, 
+                        p_earned: rewardAmount 
+                    });
+                }
+            }
+
+            // 2. If NO Promo Code was used, check for Referral Links (Standard MLM)
+            if (!promoAffiliateId && validatedData.referralData && Object.keys(validatedData.referralData).length > 0) {
                 for (const [prodId, slug] of Object.entries(validatedData.referralData)) {
                     const { data: linkData } = await supabaseAdmin
-                        .from("affiliate_links")
-                        .select("user_id")
+                        .from("affiliate_referral_links")
+                        .select("affiliate_id, id")
                         .eq("slug", slug)
                         .eq("product_id", prodId)
                         .single();
                     
                     if (linkData) {
+                        // Create conversion log
+                        await supabaseAdmin.from("affiliate_event_logs").insert({
+                            affiliate_id: linkData.affiliate_id,
+                            link_id: linkData.id,
+                            order_id: orderId,
+                            event_type: "promo_use" // Using this as conversion
+                        });
+
+                        // Standard MLM commission will be handled by a separate background job or another RPC
+                        // For now, let's just log the transaction as pending with 0, to be updated later
                         await supabaseAdmin.from("affiliate_transactions").insert({
-                            user_id: linkData.user_id,
+                            user_id: linkData.affiliate_id,
                             order_id: orderId,
                             product_id: prodId,
                             status: 'pending',
                             amount: 0,
-                            order_stage: 'Yaratildi'
+                            order_stage: 'Referal havola orqali'
                         });
+
+                        // Increment conversions
+                        await supabaseAdmin.rpc('increment_link_conversions', { p_link_id: linkData.id });
                     }
                 }
-            } catch (mlmError) {
-                console.error("MLM Tracking Error:", mlmError);
             }
+        } catch (mlmError) {
+            console.error("MLM/Promo Tracking Error:", mlmError);
         }
-        // ------------------------------
+        // ------------------------------------------------
 
         return NextResponse.json(data);
 

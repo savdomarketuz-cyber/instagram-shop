@@ -40,7 +40,9 @@ import {
     ShieldCheck,
     Banknote,
     History,
-    KeyRound
+    KeyRound,
+    LayoutGrid,
+    Link as LinkIcon
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { translations } from "@/lib/translations";
@@ -941,6 +943,17 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
     const [recoveryNewPin, setRecoveryNewPin] = useState("");
     const [recoveryError, setRecoveryError] = useState("");
 
+    // NEW Affiliate states
+    const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "promos" | "links">("dashboard");
+    const [affProducts, setAffProducts] = useState<any[]>([]);
+    const [affTariffs, setAffTariffs] = useState<any[]>([]);
+    const [myPromoCodes, setMyPromoCodes] = useState<any[]>([]);
+    const [myReferralLinks, setMyReferralLinks] = useState<any[]>([]);
+    const [isDataLoading, setIsDataLoading] = useState(false);
+    const [showCreatePromo, setShowCreatePromo] = useState(false);
+    const [selectedTariff, setSelectedTariff] = useState<any>(null);
+    const [customPromoCode, setCustomPromoCode] = useState("");
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -1136,19 +1149,70 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
         }
     };
 
-    const handleSetNewPinDirectly = async (pin: string) => {
+    const fetchAffiliateData = async () => {
+        setIsDataLoading(true);
+        try {
+            if (activeTab === "products") {
+                const res = await fetch("/api/affiliate/products");
+                const d = await res.json();
+                if (d.success) setAffProducts(d.products);
+            } else if (activeTab === "promos") {
+                const res = await fetch("/api/affiliate/promo-codes");
+                const d = await res.json();
+                if (d.success) {
+                    setAffTariffs(d.tariffs);
+                    setMyPromoCodes(d.myCodes);
+                }
+            } else if (activeTab === "links") {
+                const res = await fetch("/api/affiliate/links");
+                const d = await res.json();
+                if (d.success) setMyReferralLinks(d.data);
+            }
+        } finally {
+            setIsDataLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (authorized && activeTab !== "dashboard") {
+            fetchAffiliateData();
+        }
+    }, [activeTab, authorized]);
+
+    const handleCreateLink = async (productId: string) => {
         setIsActionLoading(true);
         try {
-            const res = await fetch("/api/affiliate/user", {
+            const res = await fetch("/api/affiliate/links", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "set_pin", pin })
+                body: JSON.stringify({ productId })
             });
             const d = await res.json();
             if (d.success) {
-                showToast(language === 'uz' ? "PIN yangilandi!" : "PIN обновлен!", "success");
-                setShowRecovery(false);
-                fetchData();
+                showToast(language === 'uz' ? "Referal link yaratildi!" : "Реферальная ссылка создана!", "success");
+                setActiveTab("links");
+            }
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
+    const handleCreatePromo = async () => {
+        if (!selectedTariff || !customPromoCode) return;
+        setIsActionLoading(true);
+        try {
+            const res = await fetch("/api/affiliate/promo-codes", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tariffId: selectedTariff.id, customCode: customPromoCode })
+            });
+            const d = await res.json();
+            if (d.success) {
+                showToast(language === 'uz' ? "Promo-kod yaratildi!" : "Промо-код создан!", "success");
+                setShowCreatePromo(false);
+                fetchAffiliateData();
+            } else {
+                showToast(d.error, "error");
             }
         } finally {
             setIsActionLoading(false);
@@ -1255,95 +1319,259 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Wallets */}
-                    <div className="space-y-6">
-                        <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 flex flex-col justify-between min-h-[220px]">
-                            <div>
-                                <div className="flex justify-between items-start">
-                                    <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center">
-                                        <Banknote className="text-emerald-500" size={24} />
+                <div className="flex bg-white/50 backdrop-blur-sm p-1.5 rounded-[28px] border border-gray-100 mb-8 overflow-x-auto no-scrollbar gap-1">
+                    {[
+                        { id: 'dashboard', label: language === 'uz' ? 'Asosiy' : 'Главная', icon: LayoutGrid },
+                        { id: 'products', label: language === 'uz' ? 'Mahsulotlar' : 'Товары', icon: Package },
+                        { id: 'promos', label: language === 'uz' ? 'Promo-kodlar' : 'Промо-коды', icon: Ticket },
+                        { id: 'links', label: language === 'uz' ? 'Havolalar' : 'Ссылки', icon: LinkIcon }
+                    ].map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id as any)}
+                            className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-black text-white shadow-xl shadow-black/20' : 'text-gray-400 hover:text-black hover:bg-white'}`}
+                        >
+                            <tab.icon size={14} />
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+
+                {activeTab === 'dashboard' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Wallets */}
+                        <div className="space-y-6">
+                            <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 flex flex-col justify-between min-h-[220px]">
+                                <div>
+                                    <div className="flex justify-between items-start">
+                                        <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center">
+                                            <Banknote className="text-emerald-500" size={24} />
+                                        </div>
+                                        <button onClick={() => setShowWithdraw(true)} className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1.5 rounded-xl hover:bg-emerald-100 transition-all">
+                                            {language === 'uz' ? 'Yechish' : 'Вывод'}
+                                        </button>
                                     </div>
-                                    <button onClick={() => setShowWithdraw(true)} className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1.5 rounded-xl hover:bg-emerald-100 transition-all">
-                                        {language === 'uz' ? 'Yechish' : 'Вывод'}
+                                    <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mt-6 italic">Hamkorlik Hamyoni</h3>
+                                    <p className="text-4xl font-black italic tracking-tighter text-black mt-1">{(data?.user?.real_balance || 0).toLocaleString()} <span className="text-sm">so'm</span></p>
+                                </div>
+                                <button 
+                                    onClick={() => setShowTransfer(true)}
+                                    className="w-full bg-gray-50 text-gray-500 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-gray-100 hover:bg-black hover:text-white transition-all flex items-center justify-center gap-2 group"
+                                >
+                                    <RotateCcw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
+                                    {language === 'uz' ? "Cashback hamyonga o'tkazish" : "Перевод na кэшбэк"}
+                                </button>
+                            </div>
+
+                            <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">Oddiy Hamyon</h3>
+                                    <p className="text-2xl font-black italic tracking-tighter text-black mt-1">{(data?.user?.wallet_balance || 0).toLocaleString()} <span className="text-xs">so'm</span></p>
+                                </div>
+                                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                                    <Wallet className="text-blue-500" size={20} />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Team & Stats */}
+                        <div className="space-y-6">
+                            <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h3 className="text-lg font-black italic tracking-tighter uppercase">{language === 'uz' ? 'Mening Jamoam' : 'Моя Команда'}</h3>
+                                    {data?.user?.affiliate_role !== 'agent' && (
+                                        <button onClick={() => setShowAddMember(true)} className="p-2 bg-black text-white rounded-xl hover:scale-110 transition-all">
+                                            <Users size={18} />
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="space-y-3">
+                                    {data?.team?.length === 0 ? (
+                                        <div className="py-8 text-center text-gray-300 font-bold italic text-xs">Jamoa a'zolari yo'q</div>
+                                    ) : (
+                                        data?.team?.map((m: any) => (
+                                            <div key={m.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center font-black text-xs text-black border border-gray-200">
+                                                        {m.name?.[0] || m.phone?.[0]}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-black italic">{m.name || m.phone}</p>
+                                                        <p className="text-[8px] font-bold uppercase text-gray-400 tracking-tighter">{m.affiliate_role}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-emerald-500">
+                                                    <TrendingUp size={14} />
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                    {data?.team?.length > 0 && (
+                                        <p className="text-[8px] text-center text-gray-400 font-bold uppercase mt-4">Maksimum: {data?.team?.length}/10 a'zo</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Referral Code */}
+                            <div className="bg-black p-8 rounded-[40px] shadow-2xl text-white relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:scale-150 transition-transform duration-1000">
+                                    <Ticket size={80} />
+                                </div>
+                                <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{language === 'uz' ? 'Mening Kodim' : 'Мой Код'}</h3>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-3xl font-black italic tracking-tighter">{data?.user?.affiliate_code || "KOD_YO'Q"}</span>
+                                    <button onClick={() => copyToClipboard(data?.user?.affiliate_code)} className="p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-all">
+                                        <Share2 size={20} />
                                     </button>
                                 </div>
-                                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mt-6 italic">Hamkorlik Hamyoni</h3>
-                                <p className="text-4xl font-black italic tracking-tighter text-black mt-1">{(data?.user?.real_balance || 0).toLocaleString()} <span className="text-sm">so'm</span></p>
-                            </div>
-                            <button 
-                                onClick={() => setShowTransfer(true)}
-                                className="w-full bg-gray-50 text-gray-500 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-gray-100 hover:bg-black hover:text-white transition-all flex items-center justify-center gap-2 group"
-                            >
-                                <RotateCcw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
-                                {language === 'uz' ? "Cashback hamyonga o'tkazish" : "Перевод на кэшбэк"}
-                            </button>
-                        </div>
-
-                        <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 flex items-center justify-between">
-                            <div>
-                                <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">Oddiy Hamyon</h3>
-                                <p className="text-2xl font-black italic tracking-tighter text-black mt-1">{(data?.user?.wallet_balance || 0).toLocaleString()} <span className="text-xs">so'm</span></p>
-                            </div>
-                            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                                <Wallet className="text-blue-500" size={20} />
                             </div>
                         </div>
                     </div>
+                )}
 
-                    {/* Team & Stats */}
+                {activeTab === 'products' && (
                     <div className="space-y-6">
-                        <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
-                             <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-lg font-black italic tracking-tighter uppercase">{language === 'uz' ? 'Mening Jamoam' : 'Моя Команда'}</h3>
-                                {data?.user?.affiliate_role !== 'agent' && (
-                                    <button onClick={() => setShowAddMember(true)} className="p-2 bg-black text-white rounded-xl hover:scale-110 transition-all">
-                                        <Users size={18} />
-                                    </button>
-                                )}
-                             </div>
-                             <div className="space-y-3">
-                                {data?.team?.length === 0 ? (
-                                    <div className="py-8 text-center text-gray-300 font-bold italic text-xs">Jamoa a'zolari yo'q</div>
-                                ) : (
-                                    data?.team?.map((m: any) => (
-                                        <div key={m.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center font-black text-xs text-black border border-gray-200">
-                                                    {m.name?.[0] || m.phone?.[0]}
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs font-black italic">{m.name || m.phone}</p>
-                                                    <p className="text-[8px] font-bold uppercase text-gray-400 tracking-tighter">{m.affiliate_role}</p>
-                                                </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {affProducts.map(p => (
+                                <div key={p.id} className="bg-white rounded-[40px] overflow-hidden shadow-sm border border-gray-100 group">
+                                    <div className="relative h-48 overflow-hidden">
+                                        <Image src={p.image} alt={p.name} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
+                                        <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-black uppercase italic">
+                                            {p.myCommission?.toLocaleString()} so'm foyda
+                                        </div>
+                                    </div>
+                                    <div className="p-6 space-y-4">
+                                        <h3 className="font-black italic tracking-tighter text-sm uppercase line-clamp-1">{language === 'uz' ? p.name_uz || p.name : p.name_ru || p.name}</h3>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-lg font-black italic tracking-tighter">{p.price?.toLocaleString()} so'm</span>
+                                            <button 
+                                                onClick={() => handleCreateLink(p.id)}
+                                                className="bg-black text-white p-3 rounded-2xl hover:scale-110 active:scale-95 transition-all"
+                                            >
+                                                <LinkIcon size={18} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'promos' && (
+                    <div className="space-y-10">
+                        {/* My Codes */}
+                        <div className="space-y-4">
+                            <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Mening Promo-kodlarim</h3>
+                            {myPromoCodes.length === 0 ? (
+                                <div className="bg-white p-12 rounded-[40px] text-center text-gray-300 font-bold italic text-sm border border-dashed border-gray-200">
+                                    Hali promo-kodlar yaratilmagan
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {myPromoCodes.map(c => (
+                                        <div key={c.id} className="bg-white p-6 rounded-[32px] border border-gray-100 flex justify-between items-center">
+                                            <div>
+                                                <p className="text-2xl font-black italic tracking-tighter text-black">{c.code}</p>
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{c.promo_code_tariffs?.name}</p>
                                             </div>
-                                            <div className="text-emerald-500">
-                                                <TrendingUp size={14} />
+                                            <div className="text-right">
+                                                <p className="text-xs font-black text-emerald-500">+{c.total_earned?.toLocaleString()} so'm</p>
+                                                <p className="text-[8px] font-bold text-gray-300 uppercase">{c.usage_count} marta ishlatildi</p>
                                             </div>
                                         </div>
-                                    ))
-                                )}
-                                {data?.team?.length > 0 && (
-                                    <p className="text-[8px] text-center text-gray-400 font-bold uppercase mt-4">Maksimum: {data?.team?.length}/10 a'zo</p>
-                                )}
-                             </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
-                        {/* Referral Code */}
-                        <div className="bg-black p-8 rounded-[40px] shadow-2xl text-white relative overflow-hidden group">
-                             <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:scale-150 transition-transform duration-1000">
-                                <Ticket size={80} />
-                             </div>
-                             <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{language === 'uz' ? 'Mening Kodim' : 'Мой Код'}</h3>
-                             <div className="flex items-center justify-between">
-                                <span className="text-3xl font-black italic tracking-tighter">{data?.user?.affiliate_code || "KOD_YO'Q"}</span>
-                                <button onClick={() => copyToClipboard(data?.user?.affiliate_code)} className="p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-all">
-                                    <Share2 size={20} />
-                                </button>
-                             </div>
+                        {/* Available Tariffs */}
+                        <div className="space-y-4">
+                            <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Mavjud Tariflar</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {affTariffs.map(t => (
+                                    <div key={t.id} className="bg-black p-8 rounded-[40px] text-white space-y-6 relative overflow-hidden group">
+                                        <div className="absolute -bottom-10 -right-10 opacity-5 group-hover:scale-150 transition-transform duration-1000">
+                                            <Ticket size={160} />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-xl font-black italic tracking-tighter uppercase">{t.name}</h4>
+                                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                                                Minimal buyurtma: {t.min_order_value?.toLocaleString()} so'm
+                                            </p>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-white/5 p-4 rounded-2xl">
+                                                <p className="text-[8px] font-black text-gray-500 uppercase">Mijoz uchun chegirma</p>
+                                                <p className="text-xl font-black italic">{t.discount_value}{t.type === 'percentage' ? '%' : ' so\'m'}</p>
+                                            </div>
+                                            <div className="bg-white/5 p-4 rounded-2xl">
+                                                <p className="text-[8px] font-black text-emerald-500 uppercase">Sizning foydangiz</p>
+                                                <p className="text-xl font-black italic text-emerald-400">
+                                                    {t.affiliate_reward_type === 'fixed_per_use' ? `${t.affiliate_reward_value.toLocaleString()} so'm` : `${t.affiliate_reward_value}%`}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => {
+                                                setSelectedTariff(t);
+                                                setShowCreatePromo(true);
+                                            }}
+                                            className="w-full bg-white text-black py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-400 transition-all"
+                                        >
+                                            Kod yaratish
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
+
+                {activeTab === 'links' && (
+                    <div className="space-y-6">
+                        <div className="bg-white rounded-[40px] overflow-hidden shadow-sm border border-gray-100">
+                            {myReferralLinks.length === 0 ? (
+                                <div className="p-16 text-center text-gray-300 font-bold italic text-sm">Hali havolalar yaratilmagan</div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left">
+                                        <thead>
+                                            <tr className="bg-gray-50 border-b border-gray-100">
+                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Mahsulot</th>
+                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-gray-400 text-center">Bosildi</th>
+                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-gray-400 text-center">Ko'rildi</th>
+                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-gray-400 text-center">Sotildi</th>
+                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-gray-400"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-50">
+                                            {myReferralLinks.map((l: any) => (
+                                                <tr key={l.id} className="hover:bg-gray-50/50 transition-colors">
+                                                    <td className="p-6">
+                                                        <p className="text-xs font-black italic uppercase">{l.products?.name}</p>
+                                                        <p className="text-[8px] font-bold text-gray-400 font-mono">/ref/{l.slug}</p>
+                                                    </td>
+                                                    <td className="p-6 text-center font-black italic">{l.clicks}</td>
+                                                    <td className="p-6 text-center font-black italic">{l.views}</td>
+                                                    <td className="p-6 text-center font-black italic text-emerald-500">{l.conversions}</td>
+                                                    <td className="p-6 text-right">
+                                                        <button 
+                                                            onClick={() => copyToClipboard(`${window.location.origin}/ref/${l.slug}`)}
+                                                            className="p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-all"
+                                                        >
+                                                            <Share2 size={16} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
 
                 {/* Transactions / History */}
                 <div className="mt-10 space-y-6">
@@ -1423,6 +1651,47 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                             </div>
                             <button 
                                 onClick={handleAddMember}
+                                disabled={isActionLoading || !memberPhone || !vCode}
+                                className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 shadow-xl shadow-black/10"
+                            >
+                                {isActionLoading ? <Loader2 className="animate-spin mx-auto" /> : (language === 'uz' ? 'QO\'SHISH' : 'ДОБАВИТЬ')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showCreatePromo && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+                    <div className="bg-white w-full max-w-md p-10 rounded-[40px] shadow-2xl space-y-6 relative animate-in fade-in zoom-in duration-300">
+                        <button onClick={() => setShowCreatePromo(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-all"><X size={18} /></button>
+                        <h2 className="text-2xl font-black italic tracking-tighter uppercase">Promo-kod yaratish</h2>
+                        <div className="space-y-4">
+                            <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                                <p className="text-[8px] font-black text-gray-400 uppercase">Tanlangan Tarif</p>
+                                <p className="text-sm font-black italic uppercase">{selectedTariff?.name}</p>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-gray-400 ml-4 mb-2 block">Sizning kodingiz</label>
+                                <input 
+                                    type="text"
+                                    value={customPromoCode}
+                                    onChange={e => setCustomPromoCode(e.target.value)}
+                                    placeholder="MASALAN: ALISHER20"
+                                    className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-black uppercase outline-none focus:ring-2 focus:ring-black transition-all"
+                                />
+                            </div>
+                            <button 
+                                onClick={handleCreatePromo}
+                                disabled={isActionLoading || !customPromoCode}
+                                className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 shadow-xl shadow-black/10"
+                            >
+                                {isActionLoading ? <Loader2 className="animate-spin mx-auto" /> : 'YARATISH VA TASDIQLASH'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
                                 disabled={isActionLoading || !memberPhone || !vCode}
                                 className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 shadow-xl shadow-black/10"
                             >
