@@ -280,9 +280,9 @@ export default function Navigation() {
                             <span className="text-[9px] font-black uppercase tracking-tighter hidden xl:block">Blog</span>
                         </Link>
 
-                        <Link href={`${l("/account")}?tab=orders`} className={`flex flex-col items-center gap-1 group transition-all ${pathname?.includes('/account') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
+                        <Link href={l("/orders")} className={`flex flex-col items-center gap-1 group transition-all ${pathname === l('/orders') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
                             <div className="p-2 rounded-xl group-hover:bg-gray-50 transition-colors">
-                                <ShoppingBag size={22} strokeWidth={pathname?.includes('/account') ? 3 : 2} className="group-hover:-translate-y-1.5 group-hover:scale-110 group-hover:text-black transition-all duration-300" />
+                                <ShoppingBag size={22} strokeWidth={pathname === l('/orders') ? 3 : 2} className="group-hover:-translate-y-1.5 group-hover:scale-110 group-hover:text-black transition-all duration-300" />
                             </div>
                             <span className="text-[9px] font-black uppercase tracking-tighter hidden xl:block">{language === 'uz' ? 'Buyurtmalar' : 'Заказы'}</span>
                         </Link>

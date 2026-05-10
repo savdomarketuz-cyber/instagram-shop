@@ -211,3 +211,27 @@ export async function sendPinResetCode(phone: string, code: string) {
         console.error("PIN Reset Telegram notification error:", e);
     }
 }
+export async function sendMemberVerificationCode(phone: string, senderName: string, code: string) {
+    try {
+        const { data: user } = await supabaseAdmin
+            .from('users')
+            .select('telegram_id')
+            .eq('phone', phone)
+            .single();
+
+        if (!user || !user.telegram_id || !CUSTOMER_BOT_TOKEN) return;
+
+        let text = `👥 <b>Hamkorlik jamoasiga taklif!</b>\n\n`;
+        text += `<b>${senderName}</b> sizni o'z jamoasiga qo'shmoqchi.\n`;
+        text += `Tasdiqlash kodi: <code>${code}</code>\n\n`;
+        text += `⚠️ <i>Agar siz jamoaga qo'shilishni xohlamasangiz, ushbu kodni hech kimga bermang.</i>`;
+
+        await fetch(`https://api.telegram.org/bot${CUSTOMER_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: user.telegram_id, text, parse_mode: 'HTML' })
+        });
+    } catch(e) {
+        console.error("Member verification Telegram notification error:", e);
+    }
+}

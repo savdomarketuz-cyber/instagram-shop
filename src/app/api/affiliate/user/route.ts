@@ -3,7 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { verifyJwt } from "@/lib/jwt-utils";
 import crypto from "crypto";
 import { hashPassword } from "@/lib/auth-utils";
-import { sendPinResetCode } from "@/lib/telegram";
+import { sendPinResetCode, sendMemberVerificationCode } from "@/lib/telegram";
 
 function hashPin(pin: string) {
     return crypto.createHash('sha256').update(pin).digest('hex');
@@ -141,6 +141,32 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true });
         }
 
+        // --- REQUEST MEMBER VERIFICATION ---
+        if (action === "request_member_verification") {
+            if (!memberPhone) return NextResponse.json({ error: "Telefon raqamni kiriting" }, { status: 400 });
+            
+            // 1. Check if user exists
+            const { data: targetUser } = await supabaseAdmin.from("users").select("id, telegram_id").eq("phone", memberPhone).single();
+            if (!targetUser) return NextResponse.json({ error: "Foydalanuvchi topilmadi. Avval u ro'yxatdan o'tishi kerak." }, { status: 404 });
+            if (!targetUser.telegram_id) return NextResponse.json({ error: "Foydalanuvchi botga ulanmagan. U avval botni ishga tushirishi kerak." }, { status: 400 });
+
+            // 2. Generate and save code
+            const code = Math.floor(1000 + Math.random() * 9000).toString();
+            const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+            
+            await supabaseAdmin.from("wallet_otps").upsert({
+                phone: `MEMBER_ADD_${memberPhone}`,
+                code,
+                expires_at: expires
+            });
+
+            // 3. Get sender info and send via Telegram
+            const { data: sender } = await supabaseAdmin.from("users").select("name").eq("phone", userPhone).single();
+            await sendMemberVerificationCode(memberPhone, sender?.name || userPhone, code);
+            
+            return NextResponse.json({ success: true });
+        }
+
         // --- ADD TEAM MEMBER ---
         if (action === "add_team_member") {
             // 1. Get current user's role and ID
@@ -156,11 +182,19 @@ export async function POST(req: NextRequest) {
             if (!newMember) return NextResponse.json({ error: "Foydalanuvchi topilmadi. Avval u ro'yxatdan o'tishi kerak." }, { status: 404 });
             if (newMember.upline_id) return NextResponse.json({ error: "Ushbu foydalanuvchi allaqachon jamoada" }, { status: 400 });
 
-            // 4. Verification Logic (Placeholder for Telegram code)
-            // In a real scenario, you'd check a redis/db stored code sent via bot
-            if (verificationCode !== "1234") { // Mock code for now
-                 return NextResponse.json({ error: "Noto'g'ri tasdiqlash kodi" }, { status: 400 });
-            }
+            // 4. Verification Logic
+            const { data: otp } = await supabaseAdmin
+                .from("wallet_otps")
+                .select("*")
+                .eq("phone", `MEMBER_ADD_${memberPhone}`)
+                .eq("code", verificationCode)
+                .gt("expires_at", new Date().toISOString())
+                .single();
+
+            if (!otp) return NextResponse.json({ error: "Kod noto'g'ri yoki muddati tugagan" }, { status: 401 });
+
+            // Clear OTP
+            await supabaseAdmin.from("wallet_otps").delete().eq("phone", `MEMBER_ADD_${memberPhone}`);
 
             // 5. Determine new role
             let newRole: string = 'agent';
