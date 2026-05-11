@@ -2,14 +2,15 @@
 
 import { usePathname } from "next/navigation";
 import Navigation from "@/components/Navigation";
-import Footer from "@/components/Footer";
+import dynamic from "next/dynamic";
+const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
+const PWAInstallPrompt = dynamic(() => import("@/components/PWAInstallPrompt"), { ssr: false });
+
 import Link from "next/link";
 import { MessageSquare, CheckCircle, AlertCircle, Info } from "lucide-react";
 import { useStore } from "@/store/store";
 import { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
-// NotificationHandler removed after Firebase cleanup
-import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ConnectivityListener from "@/components/common/ConnectivityListener";
 

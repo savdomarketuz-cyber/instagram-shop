@@ -76,55 +76,32 @@ export default function AccountPage() {
         }
 
         const fetchUserData = async () => {
+            const myPhoneClean = user.phone.replace(/\D/g, '');
+            
             try {
-                const { data, error } = await supabase
-                    .from("users")
-                    .select("*")
-                    .eq("phone", user.phone)
-                    .single();
+                const [userRes, walletRes, cashbackRes] = await Promise.all([
+                    supabase.from("users").select("*").eq("phone", user.phone).single(),
+                    supabase.from("user_wallets").select("balance").eq("phone", myPhoneClean).single(),
+                    supabase.from("orders").select("potential_cashback").eq("user_phone", user.phone).neq("status", "Yetkazildi").neq("status", "Bekor qilingan").gt("potential_cashback", 0)
+                ]);
 
-                if (data) {
-                    const mappedUser = mapUser(data);
+                if (userRes.data) {
+                    const mappedUser = mapUser(userRes.data);
                     setName(mappedUser.name || "");
                     setUsername(mappedUser.username || "");
-                    setAffiliateCode(data.affiliate_code || "");
-                    setRealBalance(data.real_balance || 0);
+                    setAffiliateCode(userRes.data.affiliate_code || "");
+                    setRealBalance(userRes.data.real_balance || 0);
                     setUser({ ...user, ...mappedUser });
                 }
-            } catch (e) {
-                console.error("Error fetching user data:", e);
-            }
 
-            // Fetch Wallet Balance
-            try {
-                const myPhoneClean = user.phone.replace(/\D/g, '');
-                const { data: wData } = await supabase
-                    .from("user_wallets")
-                    .select("balance")
-                    .eq("phone", myPhoneClean)
-                    .single();
-                
-                if (wData) setBalance(wData.balance);
-            } catch (e) {
-                console.error("Error fetching balance:", e);
-            }
+                if (walletRes.data) setBalance(walletRes.data.balance);
 
-            // Fetch Pending Cashback
-            try {
-                const { data: pOrders } = await supabase
-                    .from("orders")
-                    .select("potential_cashback")
-                    .eq("user_phone", user.phone)
-                    .neq("status", "Yetkazildi")
-                    .neq("status", "Bekor qilingan")
-                    .gt("potential_cashback", 0);
-                
-                if (pOrders) {
-                    const total = pOrders.reduce((sum, o) => sum + Number(o.potential_cashback), 0);
+                if (cashbackRes.data) {
+                    const total = cashbackRes.data.reduce((sum, o) => sum + Number(o.potential_cashback), 0);
                     setPendingCashback(total);
                 }
             } catch (e) {
-                console.error("Error fetching pending cashback:", e);
+                console.error("Error fetching account data:", e);
             } finally {
                 setLoading(false);
             }
@@ -185,8 +162,38 @@ export default function AccountPage() {
     };
 
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center bg-[#F2F3F5]">
-            <Loader2 className="animate-spin text-black" size={32} />
+        <div className="min-h-screen bg-[#F2F3F5] p-6 pb-32">
+            <div className="max-w-xl mx-auto space-y-8 animate-pulse">
+                {/* Header Skeleton */}
+                <div className="pt-10">
+                    <div className="bg-white p-6 rounded-[32px] border border-gray-100 flex items-center gap-4">
+                        <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
+                        <div className="flex-1 space-y-2">
+                            <div className="h-6 bg-gray-200 rounded-full w-32"></div>
+                            <div className="h-3 bg-gray-100 rounded-full w-24"></div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Balance Skeleton */}
+                <div className="bg-white p-6 rounded-[32px] border border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gray-100 rounded-xl"></div>
+                        <div className="space-y-2">
+                            <div className="h-5 bg-gray-200 rounded-full w-28"></div>
+                            <div className="h-3 bg-gray-100 rounded-full w-20"></div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Menu Skeletons */}
+                {[1, 2, 3].map(i => (
+                    <div key={i} className="space-y-3">
+                        <div className="h-3 bg-gray-200 rounded-full w-20 ml-6"></div>
+                        <div className="bg-white rounded-[32px] h-32 border border-gray-100"></div>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 

@@ -33,28 +33,36 @@ export default function HomeClient({
     const searchParams = useSearchParams();
     const urlCategory = searchParams.get("category");
 
-    const cart = useStore(state => state.cart);
-    const wishlist = useStore(state => state.wishlist);
-    const language = useStore(state => state.language);
-    const user = useStore(state => state.user);
-    const addToCart = useStore(state => state.addToCart);
-    const updateQuantity = useStore(state => state.updateQuantity);
-    const removeFromCart = useStore(state => state.removeFromCart);
-    const toggleWishlist = useStore(state => state.toggleWishlist);
-    const setCachedProducts = useStore(state => state.setCachedProducts);
-    const homeScrollPosition = useStore(state => state.homeScrollPosition);
-    const setHomeScrollPosition = useStore(state => state.setHomeScrollPosition);
-    const homeSearchQuery = useStore(state => state.homeSearchQuery);
-    const setHomeSearchQuery = useStore(state => state.setHomeSearchQuery);
-    const homeActiveFilter = useStore(state => state.homeActiveFilter);
-    const setHomeActiveFilter = useStore(state => state.setHomeActiveFilter);
-    const homeActiveTab = useStore(state => state.homeActiveTab);
-    const setHomeActiveTab = useStore(state => state.setHomeActiveTab);
-    const searchResults = useStore(state => state.searchResults);
-    const searchFacets = useStore(state => state.searchFacets);
-    const didYouMean = useStore(state => state.didYouMean);
-    const isSearchLoading = useStore(state => state.isSearchLoading);
-    const setSearchResults = useStore(state => state.setSearchResults);
+    const { 
+        cart, wishlist, language, user, addToCart, updateQuantity, removeFromCart, 
+        toggleWishlist, setCachedProducts, homeScrollPosition, setHomeScrollPosition, 
+        homeSearchQuery, setHomeSearchQuery, homeActiveFilter, setHomeActiveFilter, 
+        homeActiveTab, setHomeActiveTab, searchResults, searchFacets, didYouMean, 
+        isSearchLoading, setSearchResults 
+    } = useStore(state => ({
+        cart: state.cart,
+        wishlist: state.wishlist,
+        language: state.language,
+        user: state.user,
+        addToCart: state.addToCart,
+        updateQuantity: state.updateQuantity,
+        removeFromCart: state.removeFromCart,
+        toggleWishlist: state.toggleWishlist,
+        setCachedProducts: state.setCachedProducts,
+        homeScrollPosition: state.homeScrollPosition,
+        setHomeScrollPosition: state.setHomeScrollPosition,
+        homeSearchQuery: state.homeSearchQuery,
+        setHomeSearchQuery: state.setHomeSearchQuery,
+        homeActiveFilter: state.homeActiveFilter,
+        setHomeActiveFilter: state.setHomeActiveFilter,
+        homeActiveTab: state.homeActiveTab,
+        setHomeActiveTab: state.setHomeActiveTab,
+        searchResults: state.searchResults,
+        searchFacets: state.searchFacets,
+        didYouMean: state.didYouMean,
+        isSearchLoading: state.isSearchLoading,
+        setSearchResults: state.setSearchResults,
+    }));
 
     const t = translations[language];
     

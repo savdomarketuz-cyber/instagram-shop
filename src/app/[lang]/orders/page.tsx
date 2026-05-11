@@ -55,14 +55,22 @@ export default function OrdersPage() {
                 const items = [...(selectedOrder.items || [])];
                 setEnrichedItems(items);
 
-                for (let i = 0; i < items.length; i++) {
-                    const item = items[i];
-                    if (!item.image && !item.imageUrl) {
-                        const { data: pData } = await supabase.from("products").select("image_url").eq("id", item.id).single();
-                        if (pData) {
-                            items[i] = { ...item, image: pData.image_url };
-                            setEnrichedItems([...items]);
-                        }
+                const missingProductIds = items
+                    .filter(item => !item.image && !item.imageUrl && !item.image_url)
+                    .map(item => item.id);
+
+                if (missingProductIds.length > 0) {
+                    const { data: productsData } = await supabase
+                        .from("products")
+                        .select("id, image_url")
+                        .in("id", missingProductIds);
+
+                    if (productsData) {
+                        const updatedItems = items.map(item => {
+                            const product = productsData.find(p => p.id === item.id);
+                            return product ? { ...item, image: product.image_url } : item;
+                        });
+                        setEnrichedItems(updatedItems);
                     }
                 }
             };
@@ -233,8 +241,18 @@ export default function OrdersPage() {
             <h1 className="text-3xl font-black mb-10 tracking-tighter italic uppercase">{t.account.orders}</h1>
 
             {loading ? (
-                <div className="flex justify-center py-20">
-                    <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
+                <div className="space-y-6">
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className="bg-gray-50 rounded-[32px] p-6 border border-gray-100 animate-pulse">
+                            <div className="h-4 bg-gray-200 rounded-full w-24 mb-4"></div>
+                            <div className="h-6 bg-gray-200 rounded-full w-48 mb-6"></div>
+                            <div className="h-4 bg-gray-200 rounded-full w-32 mb-6"></div>
+                            <div className="flex justify-between items-center pt-5 border-t border-gray-200/50">
+                                <div className="h-8 bg-gray-200 rounded-full w-32"></div>
+                                <div className="h-4 bg-gray-200 rounded-full w-20"></div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             ) : orders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-gray-400">

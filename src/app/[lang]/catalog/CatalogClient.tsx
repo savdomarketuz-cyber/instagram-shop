@@ -213,7 +213,6 @@ export default function CatalogClient({ initialCategories }: CatalogClientProps)
                                                 sizes="(max-width: 768px) 80px, 128px"
                                                 priority={index < 12}
                                                 fetchPriority={index < 12 ? "high" : "auto"}
-                                                unoptimized={true}
                                             />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center text-gray-100"><LayoutGrid size={40} /></div>
@@ -254,7 +253,6 @@ export default function CatalogClient({ initialCategories }: CatalogClientProps)
                                                     sizes="(max-width: 768px) 64px, 96px"
                                                     priority={index < 12}
                                                     fetchPriority={index < 12 ? "high" : "auto"}
-                                                    unoptimized={true}
                                                 />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-gray-100"><ShoppingBag size={32} /></div>
