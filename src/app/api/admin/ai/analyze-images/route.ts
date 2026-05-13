@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { generateEmbedding } from "@/lib/embeddings";
+import { verifyJwt } from "@/lib/jwt-utils";
+
+async function verifyAdmin(req: NextRequest) {
+    const adminToken = req.cookies.get("admin_token")?.value;
+    const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim();
+    if (!ADMIN_SECRET || !adminToken) return false;
+    const payload = await verifyJwt(adminToken, ADMIN_SECRET);
+    return payload && payload.role === "admin";
+}
 
 const GROQ_API_KEYS = [
     process.env.GROQ_API_KEY_1 || "",
@@ -46,6 +55,8 @@ async function analyzeVisionImg(imageUrl: string, productName: string) {
 }
 
 export async function POST(req: NextRequest) {
+    if (!(await verifyAdmin(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     try {
         const { productId } = await req.json();
         if (!productId) return NextResponse.json({ error: "Product ID required" }, { status: 400 });
