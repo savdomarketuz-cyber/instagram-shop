@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { pingSitemapToGoogle } from "@/lib/google-indexing";
-import { sendCartReminder, sendPriceDropAlert } from "@/lib/telegram";
+import { sendCartReminder, sendPriceDropAlert, sendLowStockAlert } from "@/lib/telegram";
 
 export async function GET(req: Request) {
     const authHeader = req.headers.get('authorization');
@@ -18,21 +18,35 @@ export async function GET(req: Request) {
         const sitemapPinged = await pingSitemapToGoogle();
 
         // 3. 🛒 Savat tashlab ketganlar eslatmasi
-        // 24 soat oldin savat yangilangan, lekin buyurtma bermaganlarga xabar
+        // active_carts jadvalidan 24-48 soat oralig'idagi savatlar
         const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
         const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
         const { data: abandonedCarts } = await supabaseAdmin
-            .from("user_carts")
+            .from("active_carts")
             .select("user_phone, items, updated_at")
             .lt("updated_at", oneDayAgo)
             .gt("updated_at", twoDaysAgo)
-            .not("items", "eq", "[]");
+            .neq("user_phone", "anonymous");
 
         let cartRemindersSent = 0;
         if (abandonedCarts && abandonedCarts.length > 0) {
-            for (const cart of abandonedCarts) {
-                // Foydalanuvchi so'nggi 24 soatda buyurtma bermaganligini tekshirish
+            // Collect all unique product IDs to enrich items with name/price
+            const allIds = Array.from(new Set(
+                abandonedCarts.flatMap((c: any) => (c.items || []).map((i: any) => i.id).filter(Boolean))
+            ));
+
+            let productMap = new Map<string, any>();
+            if (allIds.length > 0) {
+                const { data: prods } = await supabaseAdmin.from("products").select("id, name, price").in("id", allIds);
+                if (prods) productMap = new Map(prods.map(p => [p.id, p]));
+            }
+
+            for (const cart of abandonedCarts as any[]) {
+                const cartItems = (cart.items || []) as any[];
+                if (cartItems.length === 0) continue;
+
+                // Check user hasn't ordered recently
                 const { data: recentOrder } = await supabaseAdmin
                     .from("orders")
                     .select("id")
@@ -42,7 +56,12 @@ export async function GET(req: Request) {
                     .single();
 
                 if (!recentOrder) {
-                    const result = await sendCartReminder(cart.user_phone, cart.items || []);
+                    // Enrich items with name and price from products table
+                    const enrichedItems = cartItems.map((item: any) => {
+                        const prod = productMap.get(item.id);
+                        return { ...item, name: prod?.name || item.name || "Mahsulot", price: prod?.price || item.price || 0 };
+                    });
+                    const result = await sendCartReminder(cart.user_phone, enrichedItems);
                     if (result?.success) cartRemindersSent++;
                 }
             }
@@ -106,12 +125,40 @@ export async function GET(req: Request) {
             console.error("Price drop cron error:", e);
         }
 
+        // 5. ⚠️ Mahsulot tugamoqda — admin xabardor qilish (stok ≤ 5)
+        let lowStockAlertsCount = 0;
+        try {
+            const { data: lowStockProducts } = await supabaseAdmin
+                .from("products")
+                .select("id, name, stock_details")
+                .eq("is_deleted", false);
+
+            if (lowStockProducts) {
+                const lowItems = lowStockProducts
+                    .map((p: any) => {
+                        const total = p.stock_details
+                            ? Object.values(p.stock_details).reduce((a: number, b: unknown) => a + (Number(b) || 0), 0)
+                            : 0;
+                        return { name: p.name, stock: total as number };
+                    })
+                    .filter(p => p.stock > 0 && p.stock <= 5);
+
+                if (lowItems.length > 0) {
+                    await sendLowStockAlert(lowItems);
+                    lowStockAlertsCount = lowItems.length;
+                }
+            }
+        } catch(e) {
+            console.error("Low stock alert error:", e);
+        }
+
         return NextResponse.json({
             success: true,
             message: "Cron tasks completed",
             sitemapPinged,
             cartRemindersSent,
-            priceDropAlertsSent
+            priceDropAlertsSent,
+            lowStockAlertsCount
         });
     } catch(e: any) {
         console.error("Cron Error: ", e);
