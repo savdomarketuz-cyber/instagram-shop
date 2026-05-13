@@ -677,44 +677,65 @@ export default function ProductClient({ params, initialProduct }: { params: { id
 
                             {/* Action Buttons */}
                             <div className="grid grid-cols-1 gap-4 mt-12">
-                                <div className="flex gap-4 items-stretch">
-                                    <button 
-                                        onClick={handleFastBuy}
-                                        className="flex-1 bg-white border-2 border-black text-black py-5 rounded-[28px] font-black text-sm uppercase tracking-widest hover:bg-gray-50 active:scale-95 transition-all shadow-xl shadow-black/5"
-                                    >
-                                        {language === 'uz' ? "TEZKOR XARID" : "КУПИТЬ СЕЙЧАС"}
-                                    </button>
-
-                                    {cartItem ? (
-                                        <div className="flex-1 flex items-center gap-2 animate-in fade-in zoom-in duration-300">
-                                            <div className="flex-1 bg-[#F2F3F5] h-[60px] rounded-[28px] flex items-center justify-around">
-                                                <button 
-                                                    onClick={() => updateQuantity(product.id, cartItem.quantity - 1)} 
-                                                    className="p-3 text-gray-400 hover:text-black"
-                                                >
-                                                    <Minus size={20} strokeWidth={3} />
-                                                </button>
-                                                <span className="text-xl font-black italic">{cartItem.quantity}</span>
-                                                <button 
-                                                    onClick={() => updateQuantity(product.id, cartItem.quantity + 1)} 
-                                                    className="p-3 text-gray-400 hover:text-black"
-                                                >
-                                                    <Plus size={20} strokeWidth={3} />
-                                                </button>
-                                            </div>
-                                            <Link href="/cart" className="bg-black text-white p-5 rounded-[28px] hover:scale-110 active:scale-90 transition-all shadow-xl">
-                                                <ShoppingBag size={20} strokeWidth={3} />
-                                            </Link>
+                                {totalStock === 0 ? (
+                                    // ❌ OUT OF STOCK — show wishlist save prompt
+                                    <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        <div className="w-full bg-gray-50 border-2 border-gray-200 rounded-[28px] py-5 flex items-center justify-center gap-3">
+                                            <span className="text-sm font-black text-gray-400 uppercase tracking-widest">
+                                                {language === 'uz' ? "Hozircha mavjud emas" : "Нет в наличии"}
+                                            </span>
                                         </div>
-                                    ) : (
-                                        <button 
-                                            onClick={() => addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any)}
-                                            className="flex-1 bg-black hover:bg-neutral-800 text-white py-5 rounded-[28px] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all shadow-2xl shadow-black/10"
+                                        <button
+                                            onClick={() => toggleWishlist(product as any)}
+                                            className={`w-full py-4 rounded-[28px] font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-all active:scale-95 border-2 ${isWishlisted ? 'border-red-500 bg-red-50 text-red-500' : 'border-gray-200 bg-white text-gray-700 hover:border-red-300 hover:text-red-500'}`}
                                         >
-                                            <Plus size={20} strokeWidth={3} /> {language === 'uz' ? "SAVATGA" : "В КОРЗИНУ"}
+                                            <Heart size={16} fill={isWishlisted ? "currentColor" : "none"} />
+                                            {isWishlisted
+                                                ? (language === 'uz' ? "Sevimlilar ro'yxatida — narx tushsa xabar beramiz" : "В избранном — уведомим при снижении цены")
+                                                : (language === 'uz' ? "Sevimlilarimga qo'shish — kelib tushganda xabar bering" : "В избранное — уведомить когда будет в наличии")
+                                            }
                                         </button>
-                                    )}
-                                </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex gap-4 items-stretch">
+                                        <button
+                                            onClick={handleFastBuy}
+                                            className="flex-1 bg-white border-2 border-black text-black py-5 rounded-[28px] font-black text-sm uppercase tracking-widest hover:bg-gray-50 active:scale-95 transition-all shadow-xl shadow-black/5"
+                                        >
+                                            {language === 'uz' ? "TEZKOR XARID" : "КУПИТЬ СЕЙЧАС"}
+                                        </button>
+
+                                        {cartItem ? (
+                                            <div className="flex-1 flex items-center gap-2 animate-in fade-in zoom-in duration-300">
+                                                <div className="flex-1 bg-[#F2F3F5] h-[60px] rounded-[28px] flex items-center justify-around">
+                                                    <button
+                                                        onClick={() => updateQuantity(product.id, cartItem.quantity - 1)}
+                                                        className="p-3 text-gray-400 hover:text-black"
+                                                    >
+                                                        <Minus size={20} strokeWidth={3} />
+                                                    </button>
+                                                    <span className="text-xl font-black italic">{cartItem.quantity}</span>
+                                                    <button
+                                                        onClick={() => updateQuantity(product.id, cartItem.quantity + 1)}
+                                                        className="p-3 text-gray-400 hover:text-black"
+                                                    >
+                                                        <Plus size={20} strokeWidth={3} />
+                                                    </button>
+                                                </div>
+                                                <Link href="/cart" className="bg-black text-white p-5 rounded-[28px] hover:scale-110 active:scale-90 transition-all shadow-xl">
+                                                    <ShoppingBag size={20} strokeWidth={3} />
+                                                </Link>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any)}
+                                                className="flex-1 bg-black hover:bg-neutral-800 text-white py-5 rounded-[28px] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all shadow-2xl shadow-black/10"
+                                            >
+                                                <Plus size={20} strokeWidth={3} /> {language === 'uz' ? "SAVATGA" : "В КОРЗИНУ"}
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -800,8 +821,24 @@ export default function ProductClient({ params, initialProduct }: { params: { id
 
             {/* Mobile Fixed Bottom Bar (Floating above Nav) — always visible since mobile has no other CTA */}
             <div className="md:hidden fixed bottom-[72px] left-4 right-4 z-[60] bg-white/95 backdrop-blur-2xl border border-gray-100 p-3 rounded-[32px] shadow-2xl">
+                {totalStock === 0 ? (
+                    // Out of stock mobile bar
+                    <div className="flex gap-2 items-stretch h-14">
+                        <div className="flex-1 bg-gray-100 rounded-[20px] flex items-center justify-center">
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                {language === 'uz' ? "Hozircha mavjud emas" : "Нет в наличии"}
+                            </span>
+                        </div>
+                        <button
+                            onClick={() => toggleWishlist(product as any)}
+                            className={`aspect-square h-full rounded-[20px] flex items-center justify-center active:scale-90 transition-all shadow-lg ${isWishlisted ? 'bg-red-500 text-white' : 'bg-white border border-gray-200 text-gray-500'}`}
+                        >
+                            <Heart size={18} fill={isWishlisted ? "currentColor" : "none"} />
+                        </button>
+                    </div>
+                ) : (
                 <div className="flex gap-2 items-stretch h-14">
-                    <button 
+                    <button
                         onClick={handleFastBuy}
                         className="flex-1 bg-black text-white rounded-[20px] font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all shadow-lg"
                     >
@@ -831,6 +868,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                         </button>
                     )}
                 </div>
+                )}
             </div>
         </div>
     );
