@@ -255,13 +255,20 @@ export default function OrdersPage() {
                     ))}
                 </div>
             ) : orders.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                    <Truck size={48} className="mb-4 opacity-20" />
-                    <p className="font-medium text-xs uppercase tracking-widest">
-                        {t.common.noOrders}
+                <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+                    <div className="w-24 h-24 bg-gray-50 rounded-[32px] flex items-center justify-center mb-6 border border-gray-100">
+                        <Truck size={40} className="text-gray-300" />
+                    </div>
+                    <h3 className="text-lg font-black text-gray-900 mb-2">
+                        {language === 'uz' ? "Hali buyurtmalar yo'q" : "Заказов пока нет"}
+                    </h3>
+                    <p className="text-xs text-gray-400 font-medium max-w-xs mb-8 leading-relaxed">
+                        {language === 'uz'
+                            ? "Birinchi xaridingizni qiling va buyurtma holatini bu yerdan kuzating"
+                            : "Сделайте первый заказ и отслеживайте его статус здесь"}
                     </p>
-                    <Link href="/" className="mt-4 text-black font-black border-b-2 border-black italic uppercase text-xs">
-                        {t.cart.startShopping}
+                    <Link href="/" className="px-8 py-4 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-black/10 hover:scale-105 active:scale-95 transition-all">
+                        {language === 'uz' ? "Xarid qilishni boshlash" : "Начать покупки"}
                     </Link>
                 </div>
             ) : (

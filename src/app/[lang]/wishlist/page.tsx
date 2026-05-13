@@ -45,11 +45,20 @@ export default function WishlistPage() {
             </div>
 
             {wishlist.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-                    <Heart size={48} className="mb-4 opacity-20" />
-                    <p className="font-medium">{t.common.nothingHereYet}</p>
-                    <Link href="/" className="mt-4 text-black font-bold border-b-2 border-black">
-                        {t.common.viewProducts}
+                <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+                    <div className="w-24 h-24 bg-red-50 rounded-[32px] flex items-center justify-center mb-6">
+                        <Heart size={40} className="text-red-300" />
+                    </div>
+                    <h3 className="text-lg font-black text-gray-900 mb-2">
+                        {language === 'uz' ? "Sevimlilar ro'yxati bo'sh" : "Список избранного пуст"}
+                    </h3>
+                    <p className="text-xs text-gray-400 font-medium max-w-xs mb-8 leading-relaxed">
+                        {language === 'uz'
+                            ? "Yoqtirgan mahsulotlaringizni saqlang — narxi tushganda xabar beramiz"
+                            : "Сохраняйте понравившиеся товары — уведомим при снижении цены"}
+                    </p>
+                    <Link href="/" className="px-8 py-4 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-black/10 hover:scale-105 active:scale-95 transition-all">
+                        {language === 'uz' ? "Mahsulotlarni ko'rish" : "Посмотреть товары"}
                     </Link>
                 </div>
             ) : (

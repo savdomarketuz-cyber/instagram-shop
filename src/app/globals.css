@@ -64,6 +64,24 @@ body {
   top: 0;
 }
 
+/* ===== TIPOGRAFIYA YUMSHATISH =====
+   Sarlavhalar: italic + uppercase + bold — qolaveradi (brend uslubi)
+   Paragraflar, tavsiflar, meta matnlar: normal, o'qilishi qulay
+*/
+p, li, span.text-gray-400, span.text-gray-500, span.text-gray-600 {
+  font-style: normal;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* Mahsulot tavsif matni qulay o'qilsin */
+.product-description {
+  font-size: 0.875rem;
+  line-height: 1.75;
+  font-weight: 400;
+  color: #4b5563;
+}
+
 @layer utilities {
   /* No Scrollbar utility — ikkala nom bilan ishlaydi */
   .no-scrollbar::-webkit-scrollbar,

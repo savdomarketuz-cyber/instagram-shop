@@ -96,7 +96,8 @@ export async function POST(req: Request) {
 
                 // Foydalanuvchini bazadan izlash
                 const { data: existingUser } = await supabaseAdmin.from("users").select("id").eq("phone", session.phone).single();
-                
+                const isNewUser = !existingUser;
+
                 // Foydalanuvchini asosiy bazaga saqlash
                 await supabaseAdmin.from("users").upsert({
                     id: existingUser?.id || crypto.randomUUID(),
@@ -105,8 +106,30 @@ export async function POST(req: Request) {
                     telegram_id: chatId.toString(),
                 }, { onConflict: 'phone' });
 
-                await sendTelegramMessage(chatId, 
-                    `Muvaffaqiyatli! ✅\n\nSiz ro'yxatdan o'tdingiz.\nTelefon: <code>${session.phone}</code>\nSaytga kirib ushbu raqam va parolingizdan foydalanishingiz mumkin.`
+                // 🎁 Yangi foydalanuvchiga WELCOME promokod yaratish
+                let welcomeMessage = "";
+                if (isNewUser) {
+                    const phoneLast4 = session.phone.slice(-4);
+                    const welcomeCode = `WELCOME${phoneLast4}`;
+                    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 kun
+
+                    await supabaseAdmin.from("promo_codes").insert({
+                        code: welcomeCode,
+                        discount_type: "percent",
+                        discount_value: 10, // 10% chegirma
+                        max_discount_amount: 50000, // max 50,000 so'm chegirma
+                        min_order_amount: 100000,   // minimal 100,000 so'm buyurtma
+                        usage_limit: 1,             // faqat 1 marta
+                        usage_count: 0,
+                        active: true,
+                        expires_at: expiresAt,
+                    }).on("conflict", () => {}); // agar allaqachon bor bo'lsa o'tkazib yuborish
+
+                    welcomeMessage = `\n\n🎁 <b>Birinchi xaridingiz uchun sovg'a!</b>\nPromokod: <code>${welcomeCode}</code>\n10% chegirma (max 50,000 so'm)\n30 kun ichida foydalaning.\nVelari.uz saytida checkout paytida kiriting!`;
+                }
+
+                await sendTelegramMessage(chatId,
+                    `Muvaffaqiyatli! ✅\n\nSiz ro'yxatdan o'tdingiz.\nTelefon: <code>${session.phone}</code>\nSaytga kirib ushbu raqam va parolingizdan foydalanishingiz mumkin.${welcomeMessage}`
                 );
 
                 await supabaseAdmin.from("bot_sessions").delete().eq("chat_id", chatId.toString());
