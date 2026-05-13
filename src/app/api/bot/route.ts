@@ -113,17 +113,18 @@ export async function POST(req: Request) {
                     const welcomeCode = `WELCOME${phoneLast4}`;
                     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 kun
 
-                    await supabaseAdmin.from("promo_codes").insert({
+                    // Allaqachon mavjud bo'lsa xato chiqarmasin (ignoreDuplicates)
+                    await supabaseAdmin.from("promo_codes").upsert({
                         code: welcomeCode,
                         discount_type: "percent",
-                        discount_value: 10, // 10% chegirma
-                        max_discount_amount: 50000, // max 50,000 so'm chegirma
+                        discount_value: 10,       // 10% chegirma
+                        max_discount_amount: 50000, // max 50,000 so'm
                         min_order_amount: 100000,   // minimal 100,000 so'm buyurtma
                         usage_limit: 1,             // faqat 1 marta
                         usage_count: 0,
                         active: true,
                         expires_at: expiresAt,
-                    }).on("conflict", () => {}); // agar allaqachon bor bo'lsa o'tkazib yuborish
+                    }, { onConflict: "code", ignoreDuplicates: true });
 
                     welcomeMessage = `\n\n🎁 <b>Birinchi xaridingiz uchun sovg'a!</b>\nPromokod: <code>${welcomeCode}</code>\n10% chegirma (max 50,000 so'm)\n30 kun ichida foydalaning.\nVelari.uz saytida checkout paytida kiriting!`;
                 }
