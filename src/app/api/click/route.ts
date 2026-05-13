@@ -36,10 +36,14 @@ export async function POST(req: Request) {
         const mySignString = crypto.createHash("md5").update(signStringTarget).digest("hex");
 
         if (mySignString !== sign_string) {
-            return NextResponse.json({
-                error: -1,
-                error_note: "SIGN CHECK FAILED"
-            });
+            return NextResponse.json({ error: -1, error_note: "SIGN CHECK FAILED" });
+        }
+
+        // Reject requests with sign_time older than 10 minutes to prevent replay attacks
+        // sign_time format from Click: "YYYY-MM-DD HH:MM:SS"
+        const signDate = new Date(sign_time.replace(" ", "T") + "Z");
+        if (isNaN(signDate.getTime()) || Date.now() - signDate.getTime() > 10 * 60 * 1000) {
+            return NextResponse.json({ error: -1, error_note: "SIGN TIME EXPIRED" });
         }
 
         const numericAmount = parseFloat(amount || "0");

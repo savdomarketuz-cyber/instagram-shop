@@ -5,8 +5,20 @@ import crypto from "crypto";
 import { hashPassword } from "@/lib/auth-utils";
 import { sendPinResetCode, sendMemberVerificationCode } from "@/lib/telegram";
 
-function hashPin(pin: string) {
-    return crypto.createHash('sha256').update(pin).digest('hex');
+function hashPin(pin: string, salt?: string): string {
+    const s = salt || crypto.randomBytes(16).toString('hex');
+    const hash = crypto.pbkdf2Sync(pin, s, 100000, 32, 'sha256').toString('hex');
+    return `${s}:${hash}`;
+}
+
+function verifyPin(pin: string, stored: string): boolean {
+    if (stored.includes(':')) {
+        const [salt, hash] = stored.split(':');
+        const candidate = crypto.pbkdf2Sync(pin, salt, 100000, 32, 'sha256').toString('hex');
+        return candidate === hash;
+    }
+    // Legacy: plain SHA256 (no salt) — accepts but next set_pin will upgrade
+    return crypto.createHash('sha256').update(pin).digest('hex') === stored;
 }
 
 async function getUserFromToken(req: NextRequest) {
@@ -102,8 +114,7 @@ export async function POST(req: NextRequest) {
         if (action === "verify_pin") {
             const { data: user } = await supabaseAdmin.from("users").select("affiliate_pin").eq("phone", userPhone).single();
             if (!user?.affiliate_pin) return NextResponse.json({ error: "PIN o'rnatilmagan" }, { status: 400 });
-            const isValid = hashPin(pin) === user.affiliate_pin;
-            if (!isValid) return NextResponse.json({ error: "Noto'g'ri PIN" }, { status: 400 });
+            if (!verifyPin(pin, user.affiliate_pin)) return NextResponse.json({ error: "Noto'g'ri PIN" }, { status: 400 });
             return NextResponse.json({ success: true });
         }
 
@@ -115,22 +126,30 @@ export async function POST(req: NextRequest) {
 
         // --- TRANSFER TO CASHBACK ---
         if (action === "transfer_to_cashback") {
+            if (!amount || amount <= 0) return NextResponse.json({ error: "Miqdor noto'g'ri" }, { status: 400 });
+
             const { data: user } = await supabaseAdmin.from("users").select("id, real_balance").eq("phone", userPhone).single();
             if (!user || user.real_balance < amount) return NextResponse.json({ error: "Mablag' yetarli emas" }, { status: 400 });
-            
-            // 1. Deduct from real balance
-            await supabaseAdmin.from("users").update({ 
-                real_balance: Number(user.real_balance) - Number(amount)
-            }).eq("phone", userPhone);
 
-            // 2. Add to user_wallets
+            // Atomically deduct — only succeeds if balance hasn't changed since we read it
+            const { count } = await supabaseAdmin
+                .from("users")
+                .update({ real_balance: Number(user.real_balance) - Number(amount) })
+                .eq("phone", userPhone)
+                .eq("real_balance", user.real_balance)
+                .select("id", { count: 'exact', head: true });
+
+            if (!count || count === 0) {
+                return NextResponse.json({ error: "Mablag' o'zgardi, qayta urinib ko'ring" }, { status: 409 });
+            }
+
+            // Add to user_wallets
             const { data: wallet } = await supabaseAdmin.from("user_wallets").select("balance").eq("user_phone", userPhone).single();
             if (wallet) {
-                await supabaseAdmin.from("user_wallets").update({ 
+                await supabaseAdmin.from("user_wallets").update({
                     balance: Number(wallet.balance) + Number(amount)
                 }).eq("user_phone", userPhone);
             } else {
-                // Create wallet if not exists
                 await supabaseAdmin.from("user_wallets").insert({
                     user_phone: userPhone,
                     balance: amount,
@@ -217,14 +236,26 @@ export async function POST(req: NextRequest) {
 
         // --- CREATE REFERRAL LINK ---
         if (action === "create_link") {
-            const { data: user } = await supabaseAdmin.from("users").select("id").eq("phone", userPhone).single();
-            const slug = Math.random().toString(36).substring(2, 10).toUpperCase();
-            await supabaseAdmin.from("affiliate_links").insert({
-                user_id: user?.id,
-                product_id: productId,
-                slug
-            });
-            return NextResponse.json({ success: true, slug });
+            const { data: user } = await supabaseAdmin.from("users").select("id, affiliate_code").eq("phone", userPhone).single();
+            if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+            // Generate unique slug with collision retry
+            let slug = "";
+            for (let i = 0; i < 5; i++) {
+                const rand = crypto.randomBytes(3).toString('hex');
+                const candidate = `${user.affiliate_code || rand}-${rand}`;
+                const { data: existing } = await supabaseAdmin.from("affiliate_links").select("id").eq("slug", candidate).single();
+                if (!existing) { slug = candidate; break; }
+            }
+            if (!slug) return NextResponse.json({ error: "Urinib ko'ring (slug collision)" }, { status: 500 });
+
+            const { data: link, error: linkError } = await supabaseAdmin
+                .from("affiliate_links")
+                .insert({ user_id: user.id, product_id: productId, slug })
+                .select()
+                .single();
+            if (linkError) throw linkError;
+            return NextResponse.json({ success: true, slug, data: link });
         }
 
         // --- VERIFY ACCOUNT PASSWORD ---
@@ -270,7 +301,7 @@ export async function POST(req: NextRequest) {
 
             if (!otp) return NextResponse.json({ error: "Kod noto'g'ri yoki muddati tugagan" }, { status: 401 });
 
-            // Set new PIN
+            // Set new PIN (salted PBKDF2)
             const hashedPin = hashPin(newPin);
             await supabaseAdmin.from("users").update({ affiliate_pin: hashedPin }).eq("phone", userPhone);
             
@@ -282,18 +313,31 @@ export async function POST(req: NextRequest) {
 
         // --- WITHDRAW ---
         if (action === "withdraw") {
-             const { data: user } = await supabaseAdmin.from("users").select("real_balance").eq("phone", userPhone).single();
-             if (!user || user.real_balance < amount) return NextResponse.json({ error: "Mablag' yetarli emas" }, { status: 400 });
+            if (!amount || amount <= 0) return NextResponse.json({ error: "Miqdor noto'g'ri" }, { status: 400 });
 
-             await supabaseAdmin.from("withdraw_requests").insert({
+            const { data: user } = await supabaseAdmin.from("users").select("real_balance").eq("phone", userPhone).single();
+            if (!user || user.real_balance < amount) return NextResponse.json({ error: "Mablag' yetarli emas" }, { status: 400 });
+
+            // Atomically deduct — only succeeds if balance hasn't changed since we read it
+            const { count } = await supabaseAdmin
+                .from("users")
+                .update({ real_balance: Number(user.real_balance) - Number(amount) })
+                .eq("phone", userPhone)
+                .eq("real_balance", user.real_balance)
+                .select("id", { count: 'exact', head: true });
+
+            if (!count || count === 0) {
+                return NextResponse.json({ error: "Mablag' o'zgardi, qayta urinib ko'ring" }, { status: 409 });
+            }
+
+            await supabaseAdmin.from("withdraw_requests").insert({
                 user_phone: userPhone,
                 amount,
                 card_number,
                 status: "pending"
-             });
+            });
 
-             await supabaseAdmin.from("users").update({ real_balance: user.real_balance - amount }).eq("phone", userPhone);
-             return NextResponse.json({ success: true });
+            return NextResponse.json({ success: true });
         }
 
         return NextResponse.json({ error: "Invalid action" }, { status: 400 });

@@ -15,14 +15,18 @@ export async function distributeCommissions(orderId: string) {
         return;
     }
 
-    // 2. Get pending affiliate transactions for this order
+    // 2. Atomically claim pending transactions (prevents double-processing)
     const { data: transactions } = await supabaseAdmin
         .from("affiliate_transactions")
-        .select("*")
+        .update({ status: 'processing' })
         .eq("order_id", orderId)
-        .eq("status", 'pending');
+        .eq("status", 'pending')
+        .select();
 
-    if (!transactions || transactions.length === 0) return;
+    if (!transactions || transactions.length === 0) {
+        console.log("No pending transactions (already processed or none exist).");
+        return;
+    }
 
     for (const trans of transactions) {
         try {
