@@ -5,6 +5,7 @@ import Navigation from "@/components/Navigation";
 import dynamic from "next/dynamic";
 const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
 const PWAInstallPrompt = dynamic(() => import("@/components/PWAInstallPrompt"), { ssr: false });
+const PushNotificationCTA = dynamic(() => import("@/components/PushNotificationCTA"), { ssr: false });
 
 import Link from "next/link";
 import { MessageSquare, CheckCircle, AlertCircle, Info } from "lucide-react";
@@ -221,6 +222,40 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
         setupPush();
     }, [user?.phone]);
 
+    // 💝 Wishlist sync to Supabase — for price-drop notifications
+    const wishlist = useStore(state => state.wishlist);
+    useEffect(() => {
+        if (!user?.phone || wishlist.length === 0) return;
+
+        const syncWishlist = async () => {
+            try {
+                // Save each wishlist item with current price snapshot
+                const rows = wishlist.map(item => ({
+                    user_phone: user.phone,
+                    product_id: item.id,
+                    saved_price: item.price,
+                    product_name: item.name_uz || item.name,
+                    updated_at: new Date().toISOString()
+                }));
+
+                await supabase.from("user_wishlists").upsert(rows, { onConflict: 'user_phone,product_id' });
+
+                // Remove items no longer in wishlist
+                const wishlistIds = wishlist.map(i => i.id);
+                await supabase
+                    .from("user_wishlists")
+                    .delete()
+                    .eq("user_phone", user.phone)
+                    .not("product_id", "in", `(${wishlistIds.join(",")})`);
+            } catch {
+                // Silent fail — wishlist sync is non-critical
+            }
+        };
+
+        const timer = setTimeout(syncWishlist, 3000);
+        return () => clearTimeout(timer);
+    }, [wishlist, user?.phone]);
+
 
 
     const isAdmin = pathname?.startsWith("/admin");
@@ -276,6 +311,7 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
 
             <ErrorBoundary>
                 <PWAInstallPrompt />
+                <PushNotificationCTA />
 
                 {children}
             </ErrorBoundary>

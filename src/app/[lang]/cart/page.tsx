@@ -2,7 +2,7 @@
 
 import { useStore } from "@/store/store";
 import Link from "next/link";
-import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, ShoppingCart, Package, ChevronLeft } from "lucide-react";
+import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, ShoppingCart, Package, ChevronLeft, Truck } from "lucide-react";
 import { translations } from "@/lib/translations";
 import Image from "next/image";
 
@@ -11,6 +11,9 @@ export default function CartPage() {
     const t = translations[language];
 
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const FREE_SHIPPING_THRESHOLD = 300000; // 300,000 so'm
+    const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - total);
+    const progress = Math.min(100, (total / FREE_SHIPPING_THRESHOLD) * 100);
 
     return (
         <div className="bg-white min-h-screen text-black w-full overflow-x-hidden">
@@ -112,6 +115,24 @@ export default function CartPage() {
                                 <h2 className="text-lg font-black italic tracking-tighter uppercase mb-6">
                                     Buyurtma xulosasi
                                 </h2>
+
+                                {/* 🚚 Free shipping progress bar */}
+                                <div className="mb-6 p-4 bg-white rounded-2xl border border-gray-100">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Truck size={14} className={remaining === 0 ? "text-green-500" : "text-gray-400"} />
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                            {remaining === 0
+                                                ? "🎉 Bepul yetkazib berish!"
+                                                : `Bepul yetkazib berish uchun yana ${remaining.toLocaleString()} so'm`}
+                                        </p>
+                                    </div>
+                                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                        <div
+                                            className={`h-full rounded-full transition-all duration-700 ${remaining === 0 ? 'bg-green-500' : 'bg-black'}`}
+                                            style={{ width: `${progress}%` }}
+                                        />
+                                    </div>
+                                </div>
 
                                 <div className="space-y-3 mb-6 pb-6 border-b border-gray-200">
                                     <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-gray-400">

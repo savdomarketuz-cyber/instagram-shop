@@ -26,9 +26,15 @@ export async function verifyJwt(token: string, secret: string) {
         const signature = Uint8Array.from(atob(signatureB64.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
         
         const isValid = await cryptoObj.subtle.verify('HMAC', secretKey, signature, data);
-        
+
         if (!isValid) return null;
-        return JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')));
+
+        const parsed = JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')));
+
+        // 🛡 Token muddati tugaganini tekshirish
+        if (parsed.exp && parsed.exp < Math.floor(Date.now() / 1000)) return null;
+
+        return parsed;
     } catch (e) {
         return null;
     }

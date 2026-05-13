@@ -1,7 +1,18 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { verifyJwt } from "@/lib/jwt-utils";
 
-export async function GET() {
+async function verifyAdmin(req: NextRequest) {
+    const adminToken = req.cookies.get("admin_token")?.value;
+    const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim();
+    if (!ADMIN_SECRET || !adminToken) return false;
+    const payload = await verifyJwt(adminToken, ADMIN_SECRET);
+    return payload && payload.role === "admin";
+}
+
+export async function GET(req: NextRequest) {
+    if (!(await verifyAdmin(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     try {
         const { data, error } = await supabaseAdmin
             .from("promo_codes")
@@ -15,7 +26,9 @@ export async function GET() {
     }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+    if (!(await verifyAdmin(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     try {
         const promo = await req.json();
         const { id, ...promoData } = promo;
@@ -41,14 +54,16 @@ export async function POST(req: Request) {
     }
 }
 
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
+    if (!(await verifyAdmin(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     try {
         const { id } = await req.json();
         const { error } = await supabaseAdmin
             .from("promo_codes")
             .delete()
             .eq("id", id);
-        
+
         if (error) throw error;
         return NextResponse.json({ success: true });
     } catch (error: any) {

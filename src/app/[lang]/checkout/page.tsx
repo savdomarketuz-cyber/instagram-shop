@@ -4,7 +4,8 @@ import { useStore } from "@/store/store";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { AlertCircle, ArrowLeft, Loader2, PackageX, MapPin, Globe, Tag, X, Wallet, Check } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, PackageX, MapPin, Globe, Tag, X, Wallet, Check, ChevronDown } from "lucide-react";
+import Image from "next/image";
 import dynamic from "next/dynamic";
 const YandexMapPicker = dynamic(() => import("@/components/YandexMapPicker"), {
     loading: () => <div className="h-64 animate-pulse bg-gray-50 rounded-3xl" />,
@@ -131,6 +132,7 @@ export default function CheckoutPage() {
     };
 
     const subtotal = displayProducts.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const [showItems, setShowItems] = useState(false);
     const [promoCode, setPromoCode] = useState("");
     const [promoData, setPromoData] = useState<any>(null);
     const [isApplyingPromo, setIsApplyingPromo] = useState(false);
@@ -262,6 +264,56 @@ export default function CheckoutPage() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
+                {/* 🛍 Buyurtma tarkibi */}
+                {displayProducts.length > 0 && (
+                    <div className="bg-gray-50 rounded-[32px] overflow-hidden border border-gray-100">
+                        <button
+                            type="button"
+                            onClick={() => setShowItems(v => !v)}
+                            className="w-full flex items-center justify-between px-6 py-5"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="flex -space-x-2">
+                                    {displayProducts.slice(0, 3).map((item, i) => (
+                                        <div key={i} className="w-8 h-8 rounded-xl overflow-hidden border-2 border-white bg-gray-200 shrink-0">
+                                            <Image src={item.imageUrl || item.image || ''} alt={item.name} width={32} height={32} className="object-cover w-full h-full" />
+                                        </div>
+                                    ))}
+                                </div>
+                                <span className="text-xs font-black uppercase tracking-widest text-gray-600">
+                                    {displayProducts.length} ta mahsulot
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-black">{subtotal.toLocaleString()} so'm</span>
+                                <ChevronDown size={16} className={`text-gray-400 transition-transform ${showItems ? 'rotate-180' : ''}`} />
+                            </div>
+                        </button>
+                        {showItems && (
+                            <div className="border-t border-gray-100 divide-y divide-gray-50">
+                                {displayProducts.map((item) => (
+                                    <div key={item.id} className="flex items-center gap-3 px-6 py-4">
+                                        <div className="w-12 h-12 rounded-2xl overflow-hidden bg-gray-200 shrink-0">
+                                            <Image src={item.imageUrl || item.image || ''} alt={item.name} width={48} height={48} className="object-cover w-full h-full" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-[11px] font-bold text-gray-900 line-clamp-1">
+                                                {item[`name_${language}`] || item.name}
+                                            </p>
+                                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
+                                                x{item.quantity}
+                                            </p>
+                                        </div>
+                                        <span className="text-[11px] font-black shrink-0">
+                                            {(item.price * item.quantity).toLocaleString()} so'm
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 <div className="bg-gray-50 p-6 rounded-[32px] space-y-4 shadow-sm">
                     <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
                         {t.account.myInfo}

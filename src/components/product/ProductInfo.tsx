@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { getProductSlug } from "@/lib/slugify";
-import { Star, Check, Truck, Clock, RefreshCw } from "lucide-react";
+import { Star, Check, Truck, Clock, RefreshCw, Flame } from "lucide-react";
 
 interface ProductInfoProps {
     product: any;
@@ -74,14 +74,25 @@ export const ProductInfo = ({
                 )}
 
                 <div className="space-y-3">
-                    {totalStock > 0 && (
+                    {totalStock > 0 && totalStock <= 5 ? (
+                        // 🔴 PAST STOK — URGENCY (FOMO)
+                        <div className="flex items-center gap-3 bg-red-50 p-4 rounded-3xl border border-red-200 animate-pulse animate-in fade-in slide-in-from-left duration-500">
+                            <div className="p-2 bg-red-100 text-red-600 rounded-2xl"><Flame size={18} strokeWidth={3} /></div>
+                            <p className="text-xs font-black text-red-700 uppercase tracking-tighter">
+                                {language === 'uz'
+                                    ? `Faqat ${totalStock} ta qoldi — tez harakating!`
+                                    : `Осталось всего ${totalStock} шт — торопитесь!`}
+                            </p>
+                        </div>
+                    ) : totalStock > 0 ? (
+                        // 🟢 Yetarli stok
                         <div className="flex items-center gap-3 bg-green-50 p-4 rounded-3xl border border-green-100 animate-in fade-in slide-in-from-left duration-500">
                             <div className="p-2 bg-green-100 text-green-600 rounded-2xl"><Check size={18} strokeWidth={3} /></div>
                             <p className="text-xs font-black text-gray-700 uppercase tracking-tighter transition-all">
                                 {language === 'uz' ? 'Qoldiq' : 'В наличии'}: <span className="text-black">{Number(totalStock)} {language === 'uz' ? 'ta mavjud' : 'шт'}</span>
                             </p>
                         </div>
-                    )}
+                    ) : null}
                     <div className="mt-8 p-6 bg-gray-50 rounded-[32px] border border-gray-100 flex items-center gap-5 transition-all hover:bg-white hover:shadow-xl hover:shadow-black/5 group">
                         <div className="w-14 h-14 bg-black text-white rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-black/10 group-hover:scale-110 transition-transform">
                             <Truck size={24} strokeWidth={2.5} />
@@ -116,10 +127,10 @@ export const ProductInfo = ({
             <div className="mb-10 bg-gray-50 p-8 rounded-[40px] border border-gray-100">
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{t.common.price}</p>
                 <div className="flex items-end gap-3 flex-wrap">
-                    <div className={`text-4xl font-black italic tracking-tighter ${product.oldPrice && product.oldPrice > product.price ? 'text-red-500' : 'text-black'}`}>
+                    <div className={`text-4xl font-black italic tracking-tighter ${product.oldPrice && product.oldPrice > 0 && product.oldPrice > product.price ? 'text-red-500' : 'text-black'}`}>
                         {Number(product.price || 0).toLocaleString()} <span className="text-xl not-italic">so'm</span>
                     </div>
-                    {product.oldPrice && product.oldPrice > product.price && (
+                    {product.oldPrice && product.oldPrice > 0 && product.oldPrice > product.price && (
                         <div className="flex items-center gap-2 mb-1">
                             <span className="text-gray-400 line-through font-bold text-lg">{Number(product.oldPrice || 0).toLocaleString()} so'm</span>
                             <span className="bg-red-500 text-white px-2 py-0.5 rounded-lg text-[10px] font-black tracking-tighter shadow-lg shadow-red-200">

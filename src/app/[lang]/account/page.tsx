@@ -975,9 +975,20 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                 if (!d.user.hasPin) setStep("pin");
                 else if (!d.user.affiliate_agreed) setStep("contract");
                 else if (authorized) setStep("dashboard");
+            } else {
+                // Foydalanuvchi login qilmagan — orqaga qaytarish
+                showToast(
+                    language === 'uz'
+                        ? "Davom etish uchun avval tizimga kiring"
+                        : "Для продолжения войдите в систему",
+                    "error"
+                );
+                onBack();
             }
         } catch (e) {
             console.error(e);
+            showToast(language === 'uz' ? "Xatolik yuz berdi" : "Произошла ошибка", "error");
+            onBack();
         } finally {
             setLoading(false);
         }
@@ -1118,9 +1129,10 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
             const res = await fetch("/api/affiliate/user", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
-                    action: "reset_pin_with_auth", 
-                    newPin: pin 
+                body: JSON.stringify({
+                    action: "reset_pin_with_auth",
+                    newPin: pin,
+                    password: recoveryPassword  // verify_password bosqichida kiritilgan parol
                 })
             });
             const d = await res.json();

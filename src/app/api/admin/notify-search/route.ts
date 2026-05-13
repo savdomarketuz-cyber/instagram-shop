@@ -4,12 +4,23 @@ import { submitToGoogleIndexing } from "@/lib/google-indexing";
 import { getProductSlug } from "@/lib/slugify";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { mapProduct } from "@/lib/mappers";
+import { verifyJwt } from "@/lib/jwt-utils";
+
+async function verifyAdmin(req: NextRequest) {
+    const adminToken = req.cookies.get("admin_token")?.value;
+    const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim();
+    if (!ADMIN_SECRET || !adminToken) return false;
+    const payload = await verifyJwt(adminToken, ADMIN_SECRET);
+    return payload && payload.role === "admin";
+}
 
 /**
  * API to notify search engines about new or updated products.
  * Supports single ID or array of IDs.
  */
 export async function POST(req: NextRequest) {
+    if (!(await verifyAdmin(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     try {
         const body = await req.json();
         const { productId, productIds, blogId, blogIds, categoryId, categoryIds } = body;

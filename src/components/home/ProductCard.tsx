@@ -112,6 +112,12 @@ export const ProductCard = memo(({
                                 TOP
                             </div>
                         )}
+                        {/* 🔴 Past stok urgency badge */}
+                        {totalStock > 0 && totalStock <= 5 && (
+                            <div className="bg-red-600 text-white px-1.5 py-0.5 rounded text-[8px] font-black uppercase animate-pulse">
+                                {language === 'uz' ? `${totalStock} ta qoldi!` : `${totalStock} шт!`}
+                            </div>
+                        )}
                     </div>
 
                     {item.isOriginal && (
