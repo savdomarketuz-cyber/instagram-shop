@@ -107,6 +107,18 @@ export default function ProductClient({ params, initialProduct }: { params: { id
         }
     }, []);
 
+    // 💾 Save to localStorage recently viewed (max 12 items)
+    useEffect(() => {
+        const p = initialProduct || product;
+        if (!p) return;
+        try {
+            const stored = JSON.parse(localStorage.getItem("recently_viewed") || "[]");
+            const filtered = stored.filter((x: any) => x.id !== p.id);
+            const updated = [{ id: p.id, name: p.name, name_uz: p.name_uz, name_ru: p.name_ru, price: p.price, image: p.image, article: p.article }, ...filtered].slice(0, 12);
+            localStorage.setItem("recently_viewed", JSON.stringify(updated));
+        } catch { /* silent */ }
+    }, [initialProduct?.id, product?.id]);
+
     // 1. Initial Data Pipeline (Hierarchical Prioritization)
     useEffect(() => {
         if (!initialProduct || (initialProduct.id !== productIdentifier && initialProduct.article !== productIdentifier)) {
@@ -786,8 +798,8 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                 language={language}
             />
 
-            {/* Mobile Fixed Bottom Bar (Floating above Nav) */}
-            <div className={`md:hidden fixed bottom-[72px] left-4 right-4 z-[60] bg-white/95 backdrop-blur-2xl border border-gray-100 p-3 rounded-[32px] shadow-2xl transition-all duration-500 transform ${isScrolledPast ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}>
+            {/* Mobile Fixed Bottom Bar (Floating above Nav) — always visible since mobile has no other CTA */}
+            <div className="md:hidden fixed bottom-[72px] left-4 right-4 z-[60] bg-white/95 backdrop-blur-2xl border border-gray-100 p-3 rounded-[32px] shadow-2xl">
                 <div className="flex gap-2 items-stretch h-14">
                     <button 
                         onClick={handleFastBuy}

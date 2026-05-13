@@ -14,6 +14,7 @@ import { useSearchParams } from "next/navigation";
 import { BannerSection } from "@/components/home/BannerSection";
 import { CategoryFilter } from "@/components/home/CategoryFilter";
 import { ProductGrid } from "@/components/home/ProductGrid";
+import { getProductSlug } from "@/lib/slugify";
 
 import type { Product, Category, Banner } from "@/types";
 
@@ -65,8 +66,9 @@ export default function HomeClient({
     }));
 
     const t = translations[language];
-    
+
     // UI State
+    const [recentlyViewed, setRecentlyViewed] = useState<any[]>([]);
     const [allProducts, setAllProducts] = useState<Product[]>(initialProducts);
     const [aiProductIds, setAiProductIds] = useState<string[]>([]);
     const [allCategories, setAllCategories] = useState<Category[]>(initialCategories);
@@ -96,6 +98,14 @@ export default function HomeClient({
     useEffect(() => {
         setSearch(homeSearchQuery);
     }, [homeSearchQuery]);
+
+    // Load recently viewed from localStorage
+    useEffect(() => {
+        try {
+            const stored = JSON.parse(localStorage.getItem("recently_viewed") || "[]");
+            if (stored.length > 1) setRecentlyViewed(stored.slice(0, 8));
+        } catch { /* silent */ }
+    }, []);
 
     // AI Recommendations logic
     useEffect(() => {
@@ -292,6 +302,35 @@ export default function HomeClient({
                     setCurrentBanner={setCurrentBanner} 
                     language={language} 
                 />
+            )}
+
+            {/* 🕐 Ko'rilgan mahsulotlar (Recently Viewed) */}
+            {recentlyViewed.length > 1 && !searchResults && (
+                <div className="px-3 md:px-10 mt-4">
+                    <div className="flex items-center justify-between mb-3 px-1">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                            {language === 'uz' ? "Ko'rilgan mahsulotlar" : "Недавно просмотренные"}
+                        </p>
+                        <button onClick={() => { localStorage.removeItem("recently_viewed"); setRecentlyViewed([]); }} className="text-[9px] font-black uppercase tracking-widest text-gray-300 hover:text-red-400 transition-colors">
+                            {language === 'uz' ? "Tozalash" : "Очистить"}
+                        </button>
+                    </div>
+                    <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                        {recentlyViewed.map((item) => (
+                            <Link
+                                key={item.id}
+                                href={`/products/${getProductSlug(item)}`}
+                                className="shrink-0 w-[100px] group"
+                            >
+                                <div className="aspect-[3/4] bg-gray-50 rounded-[20px] overflow-hidden mb-1.5 border border-gray-100 group-hover:border-gray-200 transition-all shadow-sm">
+                                    <img src={item.image || ''} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                </div>
+                                <p className="text-[9px] font-bold text-gray-700 line-clamp-2 leading-tight">{item[`name_${language}`] || item.name}</p>
+                                <p className="text-[9px] font-black text-black mt-0.5">{item.price?.toLocaleString()} so'm</p>
+                            </Link>
+                        ))}
+                    </div>
+                </div>
             )}
 
             {/* Trust strip */}
