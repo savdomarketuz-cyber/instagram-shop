@@ -210,13 +210,21 @@ export default function ProductClient({ params, initialProduct }: { params: { id
     };
 
     const fetchBoughtTogether = async () => {
-        const { data } = await supabase
+        const currentProduct = useStore.getState().cachedProducts?.find(p => p.id === (initialProduct?.id || productIdentifier)) || initialProduct;
+        const category = currentProduct?.category;
+
+        // Fetch from same category ordered by popularity — more relevant cross-sell
+        const query = supabase
             .from("products")
             .select("*")
             .eq("is_deleted", false)
             .neq("id", initialProduct?.id || productIdentifier)
-            .limit(10);
-        
+            .order("sales", { ascending: false })
+            .limit(8);
+
+        if (category) query.eq("category_id", category);
+
+        const { data } = await query;
         if (data) setBoughtTogether(data.map(mapProduct));
     };
 

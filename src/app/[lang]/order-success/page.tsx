@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle, Sparkles, Gift, ArrowRight, Wallet, History } from "lucide-react";
+import { CheckCircle, Sparkles, Gift, ArrowRight, Wallet, History, Share2, Copy, Check as CheckIcon } from "lucide-react";
 import Link from "next/link";
 import { useStore } from "@/store/store";
 import { translations } from "@/lib/translations";
@@ -14,12 +14,25 @@ function SuccessContent() {
     const orderId = searchParams.get("orderId");
     const [potentialCashback, setPotentialCashback] = useState<number>(0);
     const [loading, setLoading] = useState(true);
+    const [refLink, setRefLink] = useState<string | null>(null);
+    const [copied, setCopied] = useState(false);
 
     useEffect(() => {
         if (orderId) {
             fetchOrderReward();
         } else {
             setLoading(false);
+        }
+
+        // Fetch user's referral link
+        const { user } = useStore.getState();
+        if (user?.phone) {
+            supabase.from("users").select("affiliate_code").eq("phone", user.phone).single()
+                .then(({ data }) => {
+                    if (data?.affiliate_code) {
+                        setRefLink(`${window.location.origin}/ref/${data.affiliate_code}`);
+                    }
+                });
         }
     }, [orderId]);
 
@@ -97,6 +110,50 @@ function SuccessContent() {
                     <div className="absolute top-6 right-8 text-yellow-400/30 animate-pulse">
                         <Sparkles size={14} />
                     </div>
+                </div>
+            )}
+
+            {/* 📣 Referral Share CTA */}
+            {refLink && (
+                <div className="w-full max-w-sm mb-8 p-6 bg-gradient-to-br from-emerald-50 to-green-50 rounded-[32px] border border-emerald-100">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="w-8 h-8 bg-emerald-500 text-white rounded-xl flex items-center justify-center">
+                            <Gift size={16} />
+                        </div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">
+                            {language === 'uz' ? "Do'stingizni taklif qiling" : "Пригласите друга"}
+                        </p>
+                    </div>
+                    <p className="text-xs font-semibold text-gray-600 mb-4 leading-relaxed">
+                        {language === 'uz'
+                            ? "Do'stingiz siz orqali xarid qilsa — ikkalingiz ham bonus olasiz!"
+                            : "Когда друг купит через вашу ссылку — оба получите бонус!"}
+                    </p>
+                    <div className="flex gap-2">
+                        <div className="flex-1 bg-white rounded-2xl px-4 py-3 text-[10px] font-black text-gray-400 truncate border border-gray-100">
+                            {refLink.replace('https://', '')}
+                        </div>
+                        <button
+                            onClick={() => {
+                                navigator.clipboard.writeText(refLink);
+                                setCopied(true);
+                                setTimeout(() => setCopied(false), 2500);
+                            }}
+                            className={`px-4 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 ${copied ? 'bg-green-500 text-white' : 'bg-emerald-600 text-white active:scale-95'}`}
+                        >
+                            {copied ? <CheckIcon size={14} /> : <Copy size={14} />}
+                            {copied ? "Nusxa!" : "Copy"}
+                        </button>
+                    </div>
+                    {navigator.share && (
+                        <button
+                            onClick={() => navigator.share({ title: "Velari Market", text: language === 'uz' ? "Bu saytdan ajoyib mahsulotlar oling!" : "Отличные товары!", url: refLink })}
+                            className="w-full mt-3 py-3 bg-white rounded-2xl font-black text-[10px] uppercase tracking-widest text-emerald-600 border border-emerald-100 flex items-center justify-center gap-2 active:scale-95 transition-all"
+                        >
+                            <Share2 size={12} />
+                            {language === 'uz' ? "Ulashish" : "Поделиться"}
+                        </button>
+                    )}
                 </div>
             )}
 
