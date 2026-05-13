@@ -1024,6 +1024,29 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
         }
     };
 
+    const [codeSent, setCodeSent] = useState(false);
+
+    const handleSendMemberCode = async () => {
+        if (!memberPhone) return;
+        setIsActionLoading(true);
+        try {
+            const res = await fetch("/api/affiliate/user", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "request_member_verification", memberPhone })
+            });
+            const d = await res.json();
+            if (d.success) {
+                setCodeSent(true);
+                showToast(language === 'uz' ? "Kod Telegram'ga yuborildi!" : "Код отправлен в Telegram!", "success");
+            } else {
+                showToast(d.error, "error");
+            }
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
     const handleAddMember = async () => {
         if (!memberPhone || !vCode) return;
         setIsActionLoading(true);
@@ -1037,6 +1060,9 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
             if (d.success) {
                 showToast(language === 'uz' ? "A'zo qo'shildi!" : "Участник добавлен!", "success");
                 setShowAddMember(false);
+                setCodeSent(false);
+                setMemberPhone("");
+                setVCode("");
                 fetchData();
             } else {
                 showToast(d.error, "error");
@@ -1658,36 +1684,59 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
             {showAddMember && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
                     <div className="bg-white w-full max-w-md p-10 rounded-[40px] shadow-2xl space-y-6 relative animate-in fade-in zoom-in duration-300">
-                        <button onClick={() => setShowAddMember(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-all"><X size={18} /></button>
+                        <button onClick={() => { setShowAddMember(false); setCodeSent(false); setMemberPhone(""); setVCode(""); }} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-all"><X size={18} /></button>
                         <h2 className="text-2xl font-black italic tracking-tighter uppercase">{language === 'uz' ? "A'zo Qo'shish" : 'Добавить Участника'}</h2>
                         <div className="space-y-4">
+                            {/* Step 1: Phone + Send Code */}
                             <div>
                                 <label className="text-[10px] font-black uppercase text-gray-400 ml-4 mb-2 block">Telefon Raqam</label>
-                                <input 
-                                    type="text"
-                                    value={memberPhone}
-                                    onChange={e => setMemberPhone(e.target.value)}
-                                    placeholder="+998"
-                                    className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-black transition-all"
-                                />
+                                <div className="flex gap-3">
+                                    <input
+                                        type="text"
+                                        value={memberPhone}
+                                        onChange={e => { setMemberPhone(e.target.value); setCodeSent(false); setVCode(""); }}
+                                        placeholder="+998"
+                                        disabled={codeSent}
+                                        className="flex-1 bg-gray-50 border-none rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-black transition-all disabled:opacity-50"
+                                    />
+                                    <button
+                                        onClick={handleSendMemberCode}
+                                        disabled={isActionLoading || !memberPhone || codeSent}
+                                        className="shrink-0 bg-black text-white px-5 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest disabled:opacity-40 hover:scale-105 active:scale-95 transition-all"
+                                    >
+                                        {isActionLoading && !codeSent ? <Loader2 size={16} className="animate-spin" /> : codeSent ? <Check size={16} /> : (language === 'uz' ? 'Kod' : 'Код')}
+                                    </button>
+                                </div>
+                                {codeSent && (
+                                    <p className="text-[10px] text-emerald-500 font-black uppercase ml-4 mt-2">
+                                        ✓ {language === 'uz' ? "Kod Telegram'ga yuborildi" : "Код отправлен в Telegram"}
+                                    </p>
+                                )}
                             </div>
-                            <div>
-                                <label className="text-[10px] font-black uppercase text-gray-400 ml-4 mb-2 block">Telegram Kod (1234)</label>
-                                <input 
-                                    type="text"
-                                    value={vCode}
-                                    onChange={e => setVCode(e.target.value)}
-                                    placeholder="----"
-                                    className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-black transition-all text-center tracking-[1em]"
-                                />
-                            </div>
-                            <button 
-                                onClick={handleAddMember}
-                                disabled={isActionLoading || !memberPhone || !vCode}
-                                className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 shadow-xl shadow-black/10"
-                            >
-                                {isActionLoading ? <Loader2 className="animate-spin mx-auto" /> : (language === 'uz' ? 'QO\'SHISH' : 'ДОБАВИТЬ')}
-                            </button>
+
+                            {/* Step 2: Enter Code (shown after code sent) */}
+                            {codeSent && (
+                                <>
+                                    <div>
+                                        <label className="text-[10px] font-black uppercase text-gray-400 ml-4 mb-2 block">Telegram Kod</label>
+                                        <input
+                                            type="text"
+                                            value={vCode}
+                                            onChange={e => setVCode(e.target.value)}
+                                            placeholder="1234"
+                                            maxLength={4}
+                                            className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-black outline-none focus:ring-2 focus:ring-black transition-all text-center tracking-[1em] text-2xl"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={handleAddMember}
+                                        disabled={isActionLoading || !vCode || vCode.length < 4}
+                                        className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 shadow-xl shadow-black/10 disabled:opacity-40"
+                                    >
+                                        {isActionLoading ? <Loader2 className="animate-spin mx-auto" /> : (language === 'uz' ? "QO'SHISH" : 'ДОБАВИТЬ')}
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
