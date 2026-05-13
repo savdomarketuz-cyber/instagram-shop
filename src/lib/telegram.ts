@@ -211,6 +211,40 @@ export async function sendPinResetCode(phone: string, code: string) {
         console.error("PIN Reset Telegram notification error:", e);
     }
 }
+export async function sendPriceDropAlert(phone: string, drops: { name: string; oldPrice: number; newPrice: number }[]) {
+    try {
+        const { data: user } = await supabaseAdmin
+            .from('users')
+            .select('telegram_id')
+            .eq('phone', phone)
+            .single();
+
+        if (!user || !user.telegram_id || !CUSTOMER_BOT_TOKEN) return { success: false };
+
+        const dropText = drops.map(d => {
+            const pct = Math.round(((d.oldPrice - d.newPrice) / d.oldPrice) * 100);
+            return `🏷 <b>${d.name}</b>\n   ${d.oldPrice.toLocaleString()} → <b>${d.newPrice.toLocaleString()} so'm</b> (${pct}% arzon)`;
+        }).join('\n\n');
+
+        let text = `💸 <b>Narx tushdi! Sevimlilaringizdagi mahsulotlar arzonlashdi!</b>\n\n`;
+        text += dropText;
+        text += `\n\n🛒 <i>Velari.uz saytiga kiring va hoziroq xarid qiling!</i>`;
+
+        const res = await fetch(`https://api.telegram.org/bot${CUSTOMER_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: user.telegram_id, text, parse_mode: 'HTML' })
+        });
+
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.description);
+        return { success: true };
+    } catch(e: any) {
+        console.error("Price drop Telegram alert error:", e);
+        return { success: false, error: e.message };
+    }
+}
+
 export async function sendMemberVerificationCode(phone: string, senderName: string, code: string) {
     try {
         const { data: user } = await supabaseAdmin
