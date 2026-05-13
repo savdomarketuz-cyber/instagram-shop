@@ -10,7 +10,7 @@ export async function distributeCommissions(orderId: string) {
         .eq("id", orderId)
         .single();
 
-    if (!order || order.status !== 'delivered') {
+    if (!order || order.status !== 'Yetkazildi') {
         console.log("Order not delivered or not found.");
         return;
     }

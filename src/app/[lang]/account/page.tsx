@@ -956,6 +956,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
     const [affTariffs, setAffTariffs] = useState<any[]>([]);
     const [myPromoCodes, setMyPromoCodes] = useState<any[]>([]);
     const [myReferralLinks, setMyReferralLinks] = useState<any[]>([]);
+    const [analytics, setAnalytics] = useState<any>(null);
     const [isDataLoading, setIsDataLoading] = useState(false);
     const [showCreatePromo, setShowCreatePromo] = useState(false);
     const [selectedTariff, setSelectedTariff] = useState<any>(null);
@@ -1222,9 +1223,14 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                     setMyPromoCodes(d.myCodes);
                 }
             } else if (activeTab === "links") {
-                const res = await fetch("/api/affiliate/links");
-                const d = await res.json();
-                if (d.success) setMyReferralLinks(d.data);
+                const [linksRes, analyticsRes] = await Promise.all([
+                    fetch("/api/affiliate/links"),
+                    fetch("/api/affiliate/analytics")
+                ]);
+                const linksD = await linksRes.json();
+                const analyticsD = await analyticsRes.json();
+                if (linksD.success) setMyReferralLinks(linksD.data);
+                if (analyticsD.success) setAnalytics(analyticsD);
             }
         } finally {
             setIsDataLoading(false);
@@ -1587,47 +1593,130 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                 )}
 
                 {activeTab === 'links' && (
-                    <div className="space-y-6">
-                        <div className="bg-white rounded-[40px] overflow-hidden shadow-sm border border-gray-100">
-                            {myReferralLinks.length === 0 ? (
-                                <div className="p-16 text-center text-gray-300 font-bold italic text-sm">Hali havolalar yaratilmagan</div>
-                            ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left">
-                                        <thead>
-                                            <tr className="bg-gray-50 border-b border-gray-100">
-                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Mahsulot</th>
-                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-gray-400 text-center">Bosildi</th>
-                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-gray-400 text-center">Ko'rildi</th>
-                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-gray-400 text-center">Sotildi</th>
-                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-gray-400"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-50">
-                                            {myReferralLinks.map((l: any) => (
-                                                <tr key={l.id} className="hover:bg-gray-50/50 transition-colors">
-                                                    <td className="p-6">
-                                                        <p className="text-xs font-black italic uppercase">{l.products?.name}</p>
-                                                        <p className="text-[8px] font-bold text-gray-400 font-mono">/{language}/ref/{l.slug}</p>
-                                                    </td>
-                                                    <td className="p-6 text-center font-black italic">{l.clicks}</td>
-                                                    <td className="p-6 text-center font-black italic">{l.views}</td>
-                                                    <td className="p-6 text-center font-black italic text-emerald-500">{l.conversions}</td>
-                                                    <td className="p-6 text-right">
-                                                        <button 
-                                                            onClick={() => copyToClipboard(`${window.location.origin}/${language}/ref/${l.slug}`)}
-                                                            className="p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-all"
-                                                        >
-                                                            <Share2 size={16} />
-                                                        </button>
-                                                    </td>
+                    <div className="space-y-8">
+                        {/* Summary stats */}
+                        {analytics?.stats && (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {[
+                                    { label: language === 'uz' ? 'Jami bosishlar' : 'Всего кликов', value: analytics.stats.totalClicks, color: 'text-blue-600', bg: 'bg-blue-50' },
+                                    { label: language === 'uz' ? 'Konversiya' : 'Конверсий', value: analytics.stats.totalConversions, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                                    { label: language === 'uz' ? 'Conv. darajasi' : 'Conv. rate', value: `${analytics.stats.conversionRate}%`, color: 'text-purple-600', bg: 'bg-purple-50' },
+                                    { label: language === 'uz' ? 'Jamoa bosishlari' : 'Клики команды', value: analytics.stats.teamTotalClicks, color: 'text-orange-600', bg: 'bg-orange-50' },
+                                ].map((s, i) => (
+                                    <div key={i} className={`${s.bg} p-6 rounded-[28px]`}>
+                                        <p className={`text-2xl font-black italic ${s.color}`}>{s.value}</p>
+                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">{s.label}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* My links */}
+                        <div className="space-y-3">
+                            <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">
+                                {language === 'uz' ? 'Mening havolalarim' : 'Мои ссылки'}
+                            </h3>
+                            <div className="bg-white rounded-[40px] overflow-hidden shadow-sm border border-gray-100">
+                                {isDataLoading ? (
+                                    <div className="p-16 flex justify-center"><Loader2 className="animate-spin text-gray-300" /></div>
+                                ) : myReferralLinks.length === 0 ? (
+                                    <div className="p-16 text-center text-gray-300 font-bold italic text-sm">
+                                        {language === 'uz' ? 'Hali havolalar yaratilmagan' : 'Ссылки ещё не созданы'}<br/>
+                                        <span className="text-[10px]">{language === 'uz' ? '"Mahsulotlar" tabidan link yarating' : 'Создайте ссылку во вкладке "Товары"'}</span>
+                                    </div>
+                                ) : (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left">
+                                            <thead>
+                                                <tr className="bg-gray-50 border-b border-gray-100">
+                                                    <th className="p-5 text-[9px] font-black uppercase tracking-widest text-gray-400">Mahsulot</th>
+                                                    <th className="p-5 text-[9px] font-black uppercase tracking-widest text-gray-400 text-center">Bosishlar</th>
+                                                    <th className="p-5 text-[9px] font-black uppercase tracking-widest text-gray-400 text-center">Sotuvlar</th>
+                                                    <th className="p-5 text-[9px] font-black uppercase tracking-widest text-gray-400 text-right">Amal</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-50">
+                                                {myReferralLinks.map((l: any) => (
+                                                    <tr key={l.id} className="hover:bg-gray-50/50 transition-colors">
+                                                        <td className="p-5">
+                                                            <p className="text-xs font-black italic uppercase line-clamp-1">
+                                                                {language === 'uz' ? l.products?.name_uz || l.products?.name : l.products?.name_ru || l.products?.name}
+                                                            </p>
+                                                            <p className="text-[8px] font-bold text-gray-300 font-mono mt-0.5">/ref/{l.slug}</p>
+                                                        </td>
+                                                        <td className="p-5 text-center">
+                                                            <span className="text-lg font-black italic text-blue-600">{l.clicks || 0}</span>
+                                                        </td>
+                                                        <td className="p-5 text-center">
+                                                            <span className="text-lg font-black italic text-emerald-500">{l.conversions || 0}</span>
+                                                        </td>
+                                                        <td className="p-5 text-right">
+                                                            <button
+                                                                onClick={() => copyToClipboard(`${window.location.origin}/${language}/ref/${l.slug}`)}
+                                                                className="p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-all"
+                                                            >
+                                                                <Share2 size={16} />
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
                         </div>
+
+                        {/* Team links (only for SM / TSM / TM) */}
+                        {analytics?.teamLinks?.length > 0 && (
+                            <div className="space-y-3">
+                                <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2 flex items-center gap-2">
+                                    <Users size={12} />
+                                    {language === 'uz' ? 'Jamoa havolalari (shaffoflik)' : 'Ссылки команды (прозрачность)'}
+                                </h3>
+                                <div className="bg-white rounded-[40px] overflow-hidden shadow-sm border border-gray-100">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left">
+                                            <thead>
+                                                <tr className="bg-gray-50 border-b border-gray-100">
+                                                    <th className="p-5 text-[9px] font-black uppercase tracking-widest text-gray-400">A'zo</th>
+                                                    <th className="p-5 text-[9px] font-black uppercase tracking-widest text-gray-400">Mahsulot</th>
+                                                    <th className="p-5 text-[9px] font-black uppercase tracking-widest text-gray-400 text-center">Bosishlar</th>
+                                                    <th className="p-5 text-[9px] font-black uppercase tracking-widest text-gray-400 text-center">Sotuvlar</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-50">
+                                                {analytics.teamLinks.map((l: any) => (
+                                                    <tr key={l.id} className="hover:bg-gray-50/50 transition-colors">
+                                                        <td className="p-5">
+                                                            <p className="text-xs font-black italic">{l.member?.name || l.member?.phone}</p>
+                                                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${
+                                                                l.member?.affiliate_role === 'sales_manager' ? 'bg-blue-50 text-blue-600' :
+                                                                l.member?.affiliate_role === 'top_sales_manager' ? 'bg-purple-50 text-purple-600' :
+                                                                'bg-gray-100 text-gray-500'
+                                                            }`}>
+                                                                {l.member?.affiliate_role?.replace('_', ' ')}
+                                                            </span>
+                                                        </td>
+                                                        <td className="p-5">
+                                                            <p className="text-xs font-black italic line-clamp-1">
+                                                                {language === 'uz' ? l.products?.name_uz || l.products?.name : l.products?.name_ru || l.products?.name}
+                                                            </p>
+                                                        </td>
+                                                        <td className="p-5 text-center">
+                                                            <span className="text-lg font-black italic text-blue-600">{l.clicks || 0}</span>
+                                                        </td>
+                                                        <td className="p-5 text-center">
+                                                            <span className="text-lg font-black italic text-emerald-500">{l.conversions || 0}</span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 

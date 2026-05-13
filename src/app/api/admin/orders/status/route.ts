@@ -53,28 +53,11 @@ export async function POST(req: Request) {
 
         // 3. Handle Affiliate Rewards
         if (status === "Yetkazildi") {
-            const { data: affTx } = await supabaseAdmin
-                .from("affiliate_transactions")
-                .select("*")
-                .eq("order_id", orderId)
-                .eq("status", "pending")
-                .single();
-
-            if (affTx) {
-                // Approve transaction
-                await supabaseAdmin
-                    .from("affiliate_transactions")
-                    .update({ status: "approved" })
-                    .eq("id", affTx.id);
-                
-                // Add to user real_balance
-                await supabaseAdmin.rpc("increment_real_balance", {
-                    p_phone: affTx.affiliate_phone,
-                    p_amount: affTx.amount
-                });
-            }
+            // Import and run MLM commission distribution
+            const { distributeCommissions } = await import("@/lib/mlm-utils");
+            distributeCommissions(orderId).catch(err => console.error("MLM Distribute Error:", err));
         } else if (status === "Bekor qilingan") {
-            // Reject affiliate transaction if order is cancelled
+            // Reject all pending affiliate transactions for this order
             await supabaseAdmin
                 .from("affiliate_transactions")
                 .update({ status: "rejected" })

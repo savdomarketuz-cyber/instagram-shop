@@ -167,34 +167,28 @@ export async function POST(req: NextRequest) {
             if (!promoAffiliateId && validatedData.referralData && Object.keys(validatedData.referralData).length > 0) {
                 for (const [prodId, slug] of Object.entries(validatedData.referralData)) {
                     const { data: linkData } = await supabaseAdmin
-                        .from("affiliate_referral_links")
-                        .select("affiliate_id, id")
+                        .from("affiliate_links")
+                        .select("user_id, id")
                         .eq("slug", slug)
                         .eq("product_id", prodId)
                         .single();
-                    
-                    if (linkData) {
-                        // Create conversion log
-                        await supabaseAdmin.from("affiliate_event_logs").insert({
-                            affiliate_id: linkData.affiliate_id,
-                            link_id: linkData.id,
-                            order_id: orderId,
-                            event_type: "promo_use" // Using this as conversion
-                        });
 
-                        // Standard MLM commission will be handled by a separate background job or another RPC
-                        // For now, let's just log the transaction as pending with 0, to be updated later
+                    if (linkData) {
+                        // Log conversion on the link
+                        await supabaseAdmin
+                            .from("affiliate_links")
+                            .update({ conversions: supabaseAdmin.rpc('coalesce', {}) })
+                            .eq("id", linkData.id);
+
+                        // Create pending commission transaction (amount=0, calculated on delivery)
                         await supabaseAdmin.from("affiliate_transactions").insert({
-                            user_id: linkData.affiliate_id,
+                            user_id: linkData.user_id,
                             order_id: orderId,
                             product_id: prodId,
                             status: 'pending',
                             amount: 0,
                             order_stage: 'Referal havola orqali'
                         });
-
-                        // Increment conversions
-                        await supabaseAdmin.rpc('increment_link_conversions', { p_link_id: linkData.id });
                     }
                 }
             }

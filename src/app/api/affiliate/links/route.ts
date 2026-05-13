@@ -20,9 +20,9 @@ export async function GET(req: NextRequest) {
         if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
         const { data, error } = await supabaseAdmin
-            .from("affiliate_referral_links")
-            .select("*, products(name)")
-            .eq("affiliate_id", user.id)
+            .from("affiliate_links")
+            .select("*, products(name, name_uz, name_ru, image, price)")
+            .eq("user_id", user.id)
             .order("created_at", { ascending: false });
 
         if (error) throw error;
@@ -45,12 +45,12 @@ export async function POST(req: NextRequest) {
 
         // Generate a unique slug
         const randomStr = crypto.randomBytes(3).toString('hex');
-        const slug = `${user.affiliate_code}-${randomStr}`;
+        const slug = `${user.affiliate_code || randomStr}-${randomStr}`;
 
         const { data, error } = await supabaseAdmin
-            .from("affiliate_referral_links")
+            .from("affiliate_links")
             .insert({
-                affiliate_id: user.id,
+                user_id: user.id,
                 product_id: productId,
                 slug
             })

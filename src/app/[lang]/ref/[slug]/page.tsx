@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { cookies } from "next/headers";
 
 export default async function ReferralRedirect({ params }: { params: { slug: string, lang: string } }) {
     const { slug, lang } = params;
@@ -8,7 +7,7 @@ export default async function ReferralRedirect({ params }: { params: { slug: str
     try {
         // 1. Find the link
         const { data: link, error } = await supabaseAdmin
-            .from("affiliate_referral_links")
+            .from("affiliate_links")
             .select("*, products(id, name)")
             .eq("slug", slug)
             .single();
@@ -17,24 +16,14 @@ export default async function ReferralRedirect({ params }: { params: { slug: str
             redirect(`/${lang}`);
         }
 
-        // 2. Log the click
+        // 2. Log the click (increment clicks counter)
         await supabaseAdmin
-            .from("affiliate_referral_links")
+            .from("affiliate_links")
             .update({ clicks: (link.clicks || 0) + 1 })
             .eq("id", link.id);
 
-        await supabaseAdmin.from("affiliate_event_logs").insert({
-            affiliate_id: link.affiliate_id,
-            link_id: link.id,
-            event_type: "click"
-        });
-
-        // 3. Set cookie for attribution (30 days)
-        cookies().set("affiliate_id", link.affiliate_id, { maxAge: 60 * 60 * 24 * 30, path: "/" });
-        cookies().set("referral_link_id", link.id, { maxAge: 60 * 60 * 24 * 30, path: "/" });
-
-        // 4. Redirect to product page
-        redirect(`/${lang}/product/${link.product_id}`);
+        // 3. Redirect to product page with ?ref=SLUG so ProductClient saves to affiliate_data cookie
+        redirect(`/${lang}/products/${link.product_id}?ref=${slug}`);
     } catch (e) {
         redirect(`/${lang}`);
     }
