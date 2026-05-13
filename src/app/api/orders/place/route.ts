@@ -17,7 +17,7 @@ const orderSchema = z.object({
         quantity: z.number().int().positive(),
         image: z.string().optional()
     })).min(1),
-    total: z.number().positive(),
+    // total endi server tomonida items dan hisoblanadi (xavfsizroq)
     address: z.string().min(5),
     coords: z.array(z.number()).length(2).optional().nullable(),
     promoCode: z.string().optional().nullable(),
@@ -41,9 +41,12 @@ export async function POST(req: NextRequest) {
         const payload = userToken ? await verifyJwt(userToken, JWT_SECRET) : null;
 
         const rawBody = await req.json();
+        const items = rawBody.p_items || [];
+        // 🛡 total server tomonida hisoblanadi — foydalanuvchi manipulyatsiya qila olmaydi
+        const serverTotal = items.reduce((sum: number, item: any) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 0), 0);
         const body = {
             userPhone: rawBody.p_user_phone,
-            items: rawBody.p_items,
+            items,
             address: rawBody.p_address,
             coords: rawBody.p_coords,
             promoCode: rawBody.p_promo_code,
@@ -140,9 +143,9 @@ export async function POST(req: NextRequest) {
                     if (tariff.affiliate_reward_type === 'fixed_per_use') {
                         rewardAmount = tariff.affiliate_reward_value;
                     } else if (tariff.affiliate_reward_type === 'percent_of_final_price') {
-                        rewardAmount = (validatedData.total * tariff.affiliate_reward_value) / 100;
+                        rewardAmount = (serverTotal * tariff.affiliate_reward_value) / 100;
                     } else if (tariff.affiliate_reward_type === 'percent_of_discount') {
-                        const discount = tariff.type === 'fixed' ? tariff.discount_value : (validatedData.total * tariff.discount_value) / 100;
+                        const discount = tariff.type === 'fixed' ? tariff.discount_value : (serverTotal * tariff.discount_value) / 100;
                         rewardAmount = (discount * tariff.affiliate_reward_value) / 100;
                     }
 

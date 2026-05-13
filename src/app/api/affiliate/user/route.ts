@@ -239,6 +239,23 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true });
         }
 
+        // --- RESET PIN WITH ACCOUNT PASSWORD (parol orqali yangi PIN o'rnatish) ---
+        if (action === "reset_pin_with_auth") {
+            const { password, newPin } = body;
+            if (!password || !newPin || newPin.length !== 4) {
+                return NextResponse.json({ error: "Parol va 4 xonali PIN zarur" }, { status: 400 });
+            }
+            // 1. Parolni tekshirish
+            const { data: user } = await supabaseAdmin.from("users").select("password").eq("phone", userPhone).single();
+            if (!user) return NextResponse.json({ error: "Foydalanuvchi topilmadi" }, { status: 404 });
+            const isMatch = user.password === password || user.password === hashPassword(password);
+            if (!isMatch) return NextResponse.json({ error: "Parol noto'g'ri" }, { status: 401 });
+            // 2. Yangi PIN o'rnatish
+            const hashedPin = hashPin(newPin);
+            await supabaseAdmin.from("users").update({ affiliate_pin: hashedPin }).eq("phone", userPhone);
+            return NextResponse.json({ success: true });
+        }
+
         // --- REQUEST TELEGRAM RESET ---
         if (action === "request_telegram_reset") {
             const code = Math.floor(1000 + Math.random() * 9000).toString();

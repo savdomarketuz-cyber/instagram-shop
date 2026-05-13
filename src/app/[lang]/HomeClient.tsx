@@ -294,9 +294,28 @@ export default function HomeClient({
                 />
             )}
 
+            {/* Trust strip */}
+            {!searchResults && (
+                <div className="overflow-x-auto no-scrollbar px-3 md:px-10 mt-3">
+                    <div className="flex gap-2 min-w-max md:min-w-0 md:grid md:grid-cols-4">
+                        {[
+                            { emoji: "🚚", text: language === 'uz' ? "Bepul yetkazib berish" : "Бесплатная доставка" },
+                            { emoji: "🔒", text: language === 'uz' ? "Xavfsiz to'lov" : "Безопасная оплата" },
+                            { emoji: "↩️", text: language === 'uz' ? "14 kun qaytarish" : "14 дней возврат" },
+                            { emoji: "✅", text: language === 'uz' ? "100% Original" : "100% Оригинал" },
+                        ].map((item, i) => (
+                            <div key={i} className="flex items-center gap-1.5 bg-gray-50 rounded-xl px-3 py-2 shrink-0 md:shrink">
+                                <span className="text-sm">{item.emoji}</span>
+                                <span className="text-[10px] font-bold text-gray-700 whitespace-nowrap">{item.text}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {!searchResults && (
                 <div className="md:px-10">
-                    <CategoryFilter 
+                    <CategoryFilter
                         allCategories={allCategories}
                         activeFilter={activeFilter}
                         setActiveFilter={setActiveFilter}
