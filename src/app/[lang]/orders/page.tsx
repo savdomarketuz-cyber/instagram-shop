@@ -222,14 +222,14 @@ export default function OrdersPage() {
 
     if (!user) {
         return (
-            <div className="p-6 bg-white min-h-screen flex flex-col items-center justify-center gap-4 text-center">
-                <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-2">
+            <div className="p-6 min-h-screen flex flex-col items-center justify-center gap-4 text-center" style={{ background: "#FAFAF6" }}>
+                <div className="w-20 h-20 rounded-full flex items-center justify-center mb-2" style={{ background: "#EAF3EC", color: "#2D6E3E" }}>
                     <Package size={40} />
                 </div>
                 <p className="text-gray-500 font-medium">
                     {t.common.loginToSeeOrders}
                 </p>
-                <Link href="/login" className="bg-black text-white px-8 py-3 rounded-full font-bold shadow-lg">
+                <Link href="/login" className="px-8 py-3 rounded-full font-bold shadow-lg text-white" style={{ background: "#2D6E3E" }}>
                     {t.account.login}
                 </Link>
             </div>
@@ -237,7 +237,7 @@ export default function OrdersPage() {
     }
 
     return (
-        <div className="p-6 bg-white min-h-screen pt-12 pb-24">
+        <div className="p-6 min-h-screen pt-12 pb-24" style={{ background: "#FAFAF6" }}>
             <h1 className="text-3xl font-black mb-10 tracking-tighter italic uppercase">{t.account.orders}</h1>
 
             {loading ? (
@@ -270,7 +270,8 @@ export default function OrdersPage() {
                         <div
                             key={order.id}
                             onClick={() => setSelectedOrder(order)}
-                            className="bg-gray-50 rounded-[32px] p-6 shadow-sm border border-gray-100 active:scale-[0.98] transition-all cursor-pointer group"
+                            className="rounded-[22px] p-5 active:scale-[0.98] transition-all cursor-pointer"
+                            style={{ background: "#fff", boxShadow: "0 2px 12px rgba(15,20,16,0.06)", border: "1px solid rgba(15,20,16,0.05)" }}
                         >
                             <div className="mb-6">
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t.common.orderId}</p>
@@ -370,7 +371,8 @@ export default function OrdersPage() {
                                             {(selectedOrder.status === t.common.statusDelivered) && (
                                                 <button
                                                     onClick={() => setReviewProduct(item)}
-                                                    className="flex-1 py-3 bg-black text-white border border-black rounded-2xl text-[10px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-2 hover:bg-gray-900 transition-all active:scale-95 shadow-lg shadow-black/10"
+                                                    className="flex-1 py-3 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-2 active:scale-95 shadow-lg"
+                                                    style={{ background: "#2D6E3E" }}
                                                 >
                                                     <Star size={12} fill="currentColor" />
                                                     {t.common.review}
@@ -384,7 +386,7 @@ export default function OrdersPage() {
                             {/* Info Section */}
                             <div className="space-y-4 pt-10 border-t border-gray-100">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 bg-black text-white rounded-xl flex items-center justify-center shadow-lg shadow-black/10">
+                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "#EAF3EC", color: "#2D6E3E" }}>
                                         <CheckCircle size={18} />
                                     </div>
                                     <div>
@@ -393,7 +395,7 @@ export default function OrdersPage() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 bg-black text-white rounded-xl flex items-center justify-center shadow-lg shadow-black/10">
+                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "#EAF3EC", color: "#2D6E3E" }}>
                                         <Truck size={18} />
                                     </div>
                                     <div className="flex-1">
@@ -422,8 +424,8 @@ export default function OrdersPage() {
                             )}
 
                             {/* Total */}
-                            <div className="mt-10 p-8 bg-black text-white rounded-[32px] flex justify-between items-center shadow-2xl shadow-black/20">
-                                <div className="text-xs font-black uppercase tracking-widest opacity-60">{t.common.total}</div>
+                            <div className="mt-10 p-8 rounded-[32px] flex justify-between items-center" style={{ background: "#2D6E3E", color: "#fff" }}>
+                                <div className="text-xs font-black uppercase tracking-widest opacity-70">{t.common.total}</div>
                                 <div className="text-3xl font-black italic tracking-tighter">{selectedOrder.total?.toLocaleString()} so'm</div>
                             </div>
                         </div>

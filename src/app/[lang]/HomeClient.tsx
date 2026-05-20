@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense, useCallback } from "react";
 import Link from "next/link";
-import { Search, Loader2, Heart, Sparkles } from "lucide-react";
+import { Search, Heart, Sparkles } from "lucide-react";
 import Logo from "@/components/Logo";
 import { useStore } from "@/store/store";
 import { supabase } from "@/lib/supabase";
@@ -14,6 +14,10 @@ import { useSearchParams } from "next/navigation";
 import { BannerSection } from "@/components/home/BannerSection";
 import { CategoryFilter } from "@/components/home/CategoryFilter";
 import { ProductGrid } from "@/components/home/ProductGrid";
+import TrustStrip from "@/components/velari/TrustStrip";
+import RecentlyViewed from "@/components/velari/RecentlyViewed";
+import PromoCountdown from "@/components/velari/PromoCountdown";
+import StoriesRow from "@/components/velari/StoriesRow";
 
 import type { Product, Category, Banner } from "@/types";
 
@@ -281,22 +285,22 @@ export default function HomeClient({
     }, [hasMore, loading, isFetchingMore, pageNumber]);
 
     return (
-        <main className="min-h-screen bg-white pb-24 max-w-[1440px] mx-auto">
+        <main style={{ minHeight: "100svh", background: "#FAFAF6", paddingBottom: 100 }} className="max-w-[1440px] mx-auto">
             <h1 className="sr-only">{t.common.homeTitle}</h1>
-            
+
             {banners.length > 0 && !searchResults && (
-                <BannerSection 
-                    banners={banners} 
-                    bannerSettings={bannerSettings} 
-                    currentBanner={currentBanner} 
-                    setCurrentBanner={setCurrentBanner} 
-                    language={language} 
+                <BannerSection
+                    banners={banners}
+                    bannerSettings={bannerSettings}
+                    currentBanner={currentBanner}
+                    setCurrentBanner={setCurrentBanner}
+                    language={language}
                 />
             )}
 
             {!searchResults && (
                 <div className="md:px-10">
-                    <CategoryFilter 
+                    <CategoryFilter
                         allCategories={allCategories}
                         activeFilter={activeFilter}
                         setActiveFilter={setActiveFilter}
@@ -309,25 +313,33 @@ export default function HomeClient({
                 </div>
             )}
 
+            {!searchResults && <StoriesRow language={language} />}
+            {!searchResults && <PromoCountdown language={language} />}
+            {!searchResults && <TrustStrip language={language} />}
+
             <div className="px-2 md:px-10 mt-4">
                 {searchResults && (
-                    <div className="flex flex-col mb-8 animate-in slide-in-from-top-4 duration-500 gap-6 px-2">
-                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                            <div className="flex flex-col gap-1">
-                                <h2 className="text-3xl font-black italic tracking-tighter uppercase text-black">Qidiruv Natijalari</h2>
-                                <p className="text-gray-400 text-xs font-black uppercase tracking-widest">Sizning qidiruvingiz bo&apos;yicha topilgan mahsulotlar</p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 24, padding: "0 8px", animation: "velari-slide-in 300ms cubic-bezier(0.22,1,0.36,1)" }}>
+                        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+                            <div>
+                                <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.5, color: "#0F1410", margin: 0 }}>
+                                    {language === "uz" ? "Qidiruv natijalari" : "Результаты поиска"}
+                                </h2>
+                                <p style={{ fontSize: 13, color: "#9AA29C", marginTop: 4, fontWeight: 500 }}>
+                                    {searchResults.length} {language === "uz" ? "ta mahsulot" : "товаров"}
+                                </p>
                                 {didYouMean && searchResults.length > 0 && (
-                                    <p className="mt-2 text-sm font-bold text-gray-500">
-                                        {language === 'uz' ? 'Balki buni qidirgandirsiz: ' : 'Возможно вы искали: '}
-                                        <button 
+                                    <p style={{ marginTop: 8, fontSize: 13, color: "#5A625C" }}>
+                                        {language === "uz" ? "Balki: " : "Может быть: "}
+                                        <button
                                             onClick={async () => {
                                                 useStore.setState({ isSearchLoading: true, homeSearchQuery: didYouMean });
                                                 setSearch(didYouMean);
                                                 try {
-                                                    const res = await fetch('/api/search', {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({ query: didYouMean })
+                                                    const res = await fetch("/api/search", {
+                                                        method: "POST",
+                                                        headers: { "Content-Type": "application/json" },
+                                                        body: JSON.stringify({ query: didYouMean }),
                                                     });
                                                     const data = await res.json();
                                                     setSearchResults(data.results || [], data.facets || null, data.didYouMean || null);
@@ -337,34 +349,25 @@ export default function HomeClient({
                                                     useStore.setState({ isSearchLoading: false });
                                                 }
                                             }}
-                                            className="text-blue-600 hover:text-blue-800 underline italic font-black transition-colors"
+                                            style={{ color: "#2D6E3E", fontWeight: 600, background: "none", border: "none", cursor: "pointer", fontSize: 13 }}
                                         >
                                             {didYouMean}
                                         </button>
                                     </p>
                                 )}
                             </div>
-                            <button 
+                            <button
                                 onClick={() => { setSearchResults(null); setHomeSearchQuery(""); }}
-                                className="bg-gray-100 hover:bg-black hover:text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-sm whitespace-nowrap"
+                                style={{ padding: "10px 18px", borderRadius: 20, background: "#fff", border: "1px solid rgba(15,20,16,0.08)", fontSize: 13, fontWeight: 600, color: "#5A625C", cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}
                             >
-                                {language === 'uz' ? 'Tozalash' : 'Очистить'}
+                                {language === "uz" ? "Tozalash" : "Очистить"}
                             </button>
                         </div>
-                        
-                        {searchFacets && searchFacets.categories && Object.keys(searchFacets.categories).length > 0 && (
-                            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                        {searchFacets?.categories && Object.keys(searchFacets.categories).length > 0 && (
+                            <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }} className="scrollbar-hide">
                                 {Object.entries(searchFacets.categories).map(([cat, count]) => (
-                                    <button 
-                                        key={cat} 
-                                        onClick={() => {
-                                            // Simply jump to the category if possible or just visual
-                                            // For a real facet filter, we'd adjust the searchResults in state
-                                            // Leaving it as a visual badge for now that can be expanded later
-                                        }}
-                                        className="px-4 py-2 bg-[#F5F9F6] border border-[#2d6e3e]/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-[#2d6e3e] whitespace-nowrap hover:bg-[#2d6e3e] hover:text-white transition-colors"
-                                    >
-                                        {cat} <span className="opacity-50 ml-1">({count as number})</span>
+                                    <button key={cat} style={{ padding: "8px 14px", borderRadius: 18, whiteSpace: "nowrap", background: "#EAF3EC", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 500, color: "#2D6E3E" }}>
+                                        {cat} <span style={{ opacity: 0.6 }}>({count as number})</span>
                                     </button>
                                 ))}
                             </div>
@@ -373,30 +376,37 @@ export default function HomeClient({
                 )}
 
                 {!searchResults && (
-                    <div className="flex items-center justify-around relative mx-2 mb-6 border-b border-gray-50">
+                    <div style={{ display: "flex", borderBottom: "1px solid rgba(15,20,16,0.06)", marginBottom: 20, marginLeft: 8, marginRight: 8 }}>
                         {["for_you", "popular"].map(tab => (
                             <button
                                 key={tab}
                                 onClick={() => { setActiveTab(tab); setHomeActiveTab(tab); }}
-                                className={`flex-1 py-3 text-center transition-all relative ${activeTab === tab ? "text-black font-black" : "text-gray-400 font-bold"}`}
+                                style={{
+                                    flex: 1, paddingBottom: 12, paddingTop: 4, textAlign: "center",
+                                    position: "relative", background: "none", border: "none", cursor: "pointer",
+                                    fontSize: 14, fontWeight: activeTab === tab ? 700 : 500,
+                                    color: activeTab === tab ? "#0F1410" : "#9AA29C",
+                                    letterSpacing: -0.2, transition: "color 200ms ease",
+                                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                                }}
                             >
-                                <div className="flex items-center justify-center gap-1.5">
-                                    <span className="text-xs uppercase tracking-tight">
-                                        {tab === "for_you" ? (language === 'uz' ? 'Siz uchun' : 'Для вас') : (language === 'uz' ? 'Ommabop' : 'Популярное')}
-                                    </span>
-                                    {tab === "for_you" && aiProductIds.length > 0 && (
-                                        <span className="bg-purple-600 text-white text-[7px] px-1.5 py-0.5 rounded-full font-bold animate-pulse">AI</span>
-                                    )}
-                                </div>
+                                <span>
+                                    {tab === "for_you" ? (language === "uz" ? "Siz uchun" : "Для вас") : (language === "uz" ? "Ommabop" : "Популярное")}
+                                </span>
+                                {tab === "for_you" && aiProductIds.length > 0 && (
+                                    <span style={{ background: "#7C3AED", color: "#fff", fontSize: 8, fontWeight: 700, padding: "2px 5px", borderRadius: 6 }}>AI</span>
+                                )}
                                 {activeTab === tab && (
-                                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2d6e3e] rounded-t-full" />
+                                    <span style={{ position: "absolute", bottom: 0, left: "20%", right: "20%", height: 2.5, borderRadius: "2px 2px 0 0", background: "#2D6E3E" }} />
                                 )}
                             </button>
                         ))}
                     </div>
                 )}
 
-                <ProductGrid 
+                {!searchResults && <RecentlyViewed language={language} />}
+
+                <ProductGrid
                     products={searchResults || allProducts}
                     loading={isSearchLoading || (loading && allProducts.length === 0)}
                     language={language}
@@ -411,15 +421,15 @@ export default function HomeClient({
                 />
             </div>
 
-            <div ref={observerTarget} className="h-40 flex flex-col items-center justify-center gap-4">
+            <div ref={observerTarget} style={{ height: 100, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
                 {(isFetchingMore || isSearchLoading) && (
                     <>
-                        <Loader2 className="animate-spin text-black/20" size={32} />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-black/20">Yuklanmoqda...</span>
+                        <div style={{ width: 28, height: 28, borderRadius: 14, border: "2.5px solid #2D6E3E", borderTopColor: "transparent", animation: "velari-spin 0.8s linear infinite" }} />
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "#9AA29C" }}>{language === "uz" ? "Yuklanmoqda..." : "Загружается..."}</span>
                     </>
                 )}
                 {!hasMore && !searchResults && allProducts.length > 0 && (
-                    <span className="text-[10px] font-black uppercase tracking-widest text-black/10">Barcha mahsulotlar ko&apos;rsatildi</span>
+                    <span style={{ fontSize: 11, fontWeight: 500, color: "#9AA29C" }}>{language === "uz" ? "Barcha mahsulotlar ko'rsatildi" : "Все товары показаны"}</span>
                 )}
             </div>
         </main>

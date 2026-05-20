@@ -192,21 +192,23 @@ export const ReviewsSection = ({
         } catch (e) { console.error(e); }
     };
 
+    const GREEN = "#2D6E3E";
+
     return (
-        <div className="mt-16 px-8 mb-20 text-black">
-            <div className="flex border-b border-gray-100 mb-8">
-                <button onClick={() => setActiveCommentTab('review')} className={`flex-1 py-4 text-xs font-black uppercase tracking-widest relative ${activeCommentTab === 'review' ? 'text-black' : 'text-gray-400'}`}>
+        <div className="mt-8 px-4 mb-20 text-black" style={{ background: "#FAFAF6" }}>
+            <div className="flex border-b border-gray-100 mb-6">
+                <button onClick={() => setActiveCommentTab('review')} className={`flex-1 py-4 text-xs font-black uppercase tracking-widest relative ${activeCommentTab === 'review' ? '' : 'text-gray-400'}`} style={activeCommentTab === 'review' ? { color: GREEN } : {}}>
                     {language === 'uz' ? "Sharhlar" : "Отзывы"}
-                    {activeCommentTab === 'review' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black" />}
+                    {activeCommentTab === 'review' && <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: GREEN }} />}
                 </button>
-                <button onClick={() => setActiveCommentTab('question')} className={`flex-1 py-4 text-xs font-black uppercase tracking-widest relative ${activeCommentTab === 'question' ? 'text-black' : 'text-gray-400'}`}>
+                <button onClick={() => setActiveCommentTab('question')} className={`flex-1 py-4 text-xs font-black uppercase tracking-widest relative ${activeCommentTab === 'question' ? '' : 'text-gray-400'}`} style={activeCommentTab === 'question' ? { color: GREEN } : {}}>
                     {language === 'uz' ? "Savollar" : "Вопросы"}
-                    {activeCommentTab === 'question' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black" />}
+                    {activeCommentTab === 'question' && <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: GREEN }} />}
                 </button>
             </div>
 
             {user ? (
-                <div id="comment-input" className="bg-gray-50 p-6 rounded-[32px] mb-10 border border-gray-100 shadow-sm">
+                <div id="comment-input" className="p-5 rounded-[24px] mb-8 shadow-sm" style={{ background: "#fff", border: "1px solid rgba(15,20,16,0.06)" }}>
                     {replyTo && (
                         <div className="flex items-center justify-between bg-white px-4 py-2 rounded-xl mb-4 text-[10px] italic">
                             <span className="text-gray-400">Replying to @{replyTo.username}</span>
@@ -226,22 +228,25 @@ export const ReviewsSection = ({
                         </div>
                     )}
                     <div className="relative">
-                        <textarea 
-                            id="comment-textarea" 
-                            value={commentText} 
-                            onChange={(e) => setCommentText(e.target.value)} 
-                            placeholder={activeCommentTab === 'review' ? (language === 'uz' ? "Sharh qoldiring..." : "Оставить отзыв...") : (language === 'uz' ? "Savolingizni bering..." : "Задать вопрос...")} 
-                            className="w-full bg-white border-2 border-transparent focus:border-black rounded-2xl p-4 pr-32 text-sm font-medium outline-none transition-all min-h-[100px] resize-none" 
+                        <textarea
+                            id="comment-textarea"
+                            value={commentText}
+                            onChange={(e) => setCommentText(e.target.value)}
+                            placeholder={activeCommentTab === 'review' ? (language === 'uz' ? "Sharh qoldiring..." : "Оставить отзыв...") : (language === 'uz' ? "Savolingizni bering..." : "Задать вопрос...")}
+                            className="w-full rounded-2xl p-4 pr-16 text-sm font-medium outline-none transition-all min-h-[100px] resize-none"
+                            style={{ background: "#F5F5F0", border: "none" }}
                         />
                         <div className="absolute bottom-3 right-3 flex gap-2">
-                            <button onClick={submitComment} className="bg-black text-white p-3 rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-50">
+                            <button onClick={submitComment} className="text-white p-3 rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-50" style={{ background: GREEN }}>
                                 {isPosting ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                             </button>
                         </div>
                     </div>
                 </div>
             ) : (
-                <Link href="/login" className="block text-center p-8 bg-gray-50 rounded-[32px] border-2 border-dashed border-gray-200 text-gray-400 font-bold text-sm mb-10">Tizimga kiring</Link>
+                <Link href="/login" className="block text-center p-8 rounded-[24px] border-2 border-dashed text-sm font-bold mb-8" style={{ background: "#fff", borderColor: "rgba(45,110,62,0.18)", color: GREEN }}>
+                    {language === 'uz' ? "Sharh qoldirish uchun kiring" : "Войдите чтобы оставить отзыв"}
+                </Link>
             )}
 
             <div className="space-y-8">
@@ -313,7 +318,7 @@ export const ReviewsSection = ({
                                             <textarea value={editingText} onChange={(e) => setEditingText(e.target.value)} className="w-full text-sm font-medium outline-none resize-none min-h-[80px]" autoFocus />
                                             <div className="flex justify-end gap-2 mt-2">
                                                 <button onClick={() => setEditingCommentId(null)} className="px-4 py-2 text-[10px] font-black uppercase text-gray-400">Bekor qilish</button>
-                                                <button onClick={() => handleUpdateComment(comment.id)} className="px-6 py-2 bg-black text-white rounded-xl text-[10px] font-black uppercase shadow-lg transition-all">Saqlash</button>
+                                                <button onClick={() => handleUpdateComment(comment.id)} className="px-6 py-2 text-white rounded-xl text-[10px] font-black uppercase shadow-lg transition-all" style={{ background: GREEN }}>Saqlash</button>
                                             </div>
                                         </div>
                                     )}
@@ -339,8 +344,8 @@ export const ReviewsSection = ({
                     ))}
 
                 {comments.filter(c => c.type === activeCommentTab && !c.parentId).length > visibleCommentsCount && (
-                    <button onClick={() => setVisibleCommentsCount(prev => prev + 5)} className="w-full py-4 bg-gray-50 rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-black transition-all flex items-center justify-center gap-2">
-                        <ChevronDown size={14} strokeWidth={3} /> {language === 'uz' ? "Barchasini ko'rish" : "Посмотреть все"}
+                    <button onClick={() => setVisibleCommentsCount(prev => prev + 5)} className="w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2" style={{ background: "#EAF3EC", color: GREEN }}>
+                        <ChevronDown size={14} strokeWidth={3} /> {language === 'uz' ? "Ko'proq ko'rish" : "Показать ещё"}
                     </button>
                 )}
             </div>

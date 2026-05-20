@@ -45,23 +45,23 @@ export const RelatedProducts = ({
     );
 
     return (
-        <div className="mt-20 space-y-32">
+        <div className="mt-8 space-y-16" style={{ background: "#FAFAF6" }}>
             {relatedProducts.length > 0 && (
                 <section className="animate-in fade-in duration-700">
-                    <h2 className="text-xl font-bold text-gray-900 mb-8 px-8 flex items-center justify-between">
-                        {t.product.mayLike}
-                        <span className="text-[10px] font-black uppercase text-gray-400">AI Choice</span>
-                    </h2>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", marginBottom: 14 }}>
+                        <h2 style={{ fontSize: 19, fontWeight: 800, letterSpacing: -0.4, color: "#0F1410", margin: 0 }}>{t.product.mayLike}</h2>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: "#2D6E3E", background: "#EAF3EC", borderRadius: 8, padding: "3px 8px", textTransform: "uppercase", letterSpacing: 0.3 }}>AI</span>
+                    </div>
                     {renderGrid(relatedProducts)}
                 </section>
             )}
 
             {boughtTogether.length > 0 && (
                 <section className="animate-in fade-in slide-in-from-bottom-10 duration-1000">
-                    <h2 className="text-xl font-bold text-gray-900 mb-8 px-8 flex items-center justify-between">
-                        {t.product.boughtTogether}
-                        <span className="px-2 py-1 bg-blue-50 text-blue-600 text-[8px] font-black uppercase rounded-lg">Combo Deal</span>
-                    </h2>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", marginBottom: 14 }}>
+                        <h2 style={{ fontSize: 19, fontWeight: 800, letterSpacing: -0.4, color: "#0F1410", margin: 0 }}>{t.product.boughtTogether}</h2>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: "#5A625C", background: "#F0F0EC", borderRadius: 8, padding: "3px 8px", textTransform: "uppercase" }}>Combo</span>
+                    </div>
                     <div className="flex overflow-x-auto no-scrollbar gap-x-2 pb-8 px-4">
                         {boughtTogether.map(p => (
                             <div key={p.id} className="flex-shrink-0 w-[180px]">
@@ -83,13 +83,12 @@ export const RelatedProducts = ({
             )}
 
             {popularProducts.length > 0 && (
-                <section className="animate-in fade-in duration-1000 mt-20">
-                    <div className="mb-10 text-center">
-                        <h2 className="text-2xl font-black italic uppercase tracking-tighter text-gray-900 mb-2">{t.product.popular}</h2>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t.product.bestsellers}</p>
+                <section className="animate-in fade-in duration-1000">
+                    <div style={{ padding: "0 20px", marginBottom: 14 }}>
+                        <h2 style={{ fontSize: 19, fontWeight: 800, letterSpacing: -0.4, color: "#0F1410", margin: 0 }}>{t.product.popular}</h2>
                     </div>
                     {renderGrid(popularProducts)}
-                    {popularLoading && <div className="flex justify-center py-10"><Loader2 className="animate-spin text-gray-200" size={32} /></div>}
+                    {popularLoading && <div className="flex justify-center py-10"><Loader2 className="animate-spin" size={28} color="#2D6E3E" /></div>}
                 </section>
             )}
         </div>

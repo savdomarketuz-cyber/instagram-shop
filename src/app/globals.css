@@ -64,6 +64,85 @@ body {
   top: 0;
 }
 
+/* ─── Velari Design System — CSS Variables ─── */
+:root {
+  --velari-green: #2D6E3E;
+  --velari-green-deep: #1F5A30;
+  --velari-green-tint: #EAF3EC;
+  --velari-page: #FAFAF6;
+  --velari-text-primary: #0F1410;
+  --velari-text-secondary: #5A625C;
+  --velari-text-tertiary: #9AA29C;
+  --velari-danger: #FF3B30;
+  --velari-star: #F6B100;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ─── Velari Keyframes ─── */
+@keyframes velari-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes velari-slide-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes velari-sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes velari-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@keyframes velari-toast-in {
+  0% { opacity: 0; transform: translate(-50%, -20px) scale(0.9); }
+  100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+@keyframes velari-badge-pop {
+  0% { transform: scale(0); }
+  60% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+@keyframes velari-cart-in {
+  0% { opacity: 0; transform: translateY(10px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes velari-success-pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+@keyframes velari-ring-out {
+  0% { transform: scale(1); opacity: 0.4; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+@keyframes velari-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes velari-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+@keyframes velari-pulse-soft {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+@keyframes velari-pop-in {
+  0% { opacity: 0; transform: scale(0.85); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes velari-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes velari-story-progress {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
 @layer utilities {
   /* No Scrollbar utility — ikkala nom bilan ishlaydi */
   .no-scrollbar::-webkit-scrollbar,

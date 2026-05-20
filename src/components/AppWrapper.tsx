@@ -5,6 +5,7 @@ import Navigation from "@/components/Navigation";
 import dynamic from "next/dynamic";
 const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
 const PWAInstallPrompt = dynamic(() => import("@/components/PWAInstallPrompt"), { ssr: false });
+const PWAFlow = dynamic(() => import("@/components/pwa/PWAFlow"), { ssr: false });
 
 import Link from "next/link";
 import { MessageSquare, CheckCircle, AlertCircle, Info } from "lucide-react";
@@ -274,6 +275,7 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
                 </Suspense>
             )}
 
+            <PWAFlow />
             <ErrorBoundary>
                 <PWAInstallPrompt />
 

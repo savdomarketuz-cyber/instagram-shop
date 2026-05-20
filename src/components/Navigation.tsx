@@ -318,29 +318,79 @@ export default function Navigation() {
                 </div>
             </header>
 
-            {/* iOS-style Bottom Tab Bar */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 w-screen max-w-full bg-white/80 backdrop-blur-xl border-t border-gray-200/50 flex justify-around items-center z-[110]" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 8px), 8px)' }}>
-                <Link href={l("/")} className={`flex flex-col items-center pt-2 pb-1 px-3 gap-0.5 transition-colors ${isHomePage ? 'text-[#2d6e3e]' : 'text-gray-400'}`}>
-                    <LayoutGrid size={24} strokeWidth={isHomePage ? 2.5 : 1.8} />
-                    <span className="text-[10px] font-semibold">Asosiy</span>
-                </Link>
-                <Link href={l("/reels")} className={`flex flex-col items-center pt-2 pb-1 px-3 gap-0.5 transition-colors ${pathname === l('/reels') ? 'text-[#2d6e3e]' : 'text-gray-400'}`}>
-                    <Clapperboard size={24} strokeWidth={pathname === l('/reels') ? 2.5 : 1.8} />
-                    <span className="text-[10px] font-semibold">Reels</span>
-                </Link>
-                <Link href={l("/cart")} className={`relative flex flex-col items-center pt-2 pb-1 px-3 gap-0.5 transition-colors ${pathname === l('/cart') ? 'text-[#2d6e3e]' : 'text-gray-400'}`}>
-                    <ShoppingCart size={24} strokeWidth={pathname === l('/cart') ? 2.5 : 1.8} />
-                    {cartCount > 0 && <span className="absolute top-1 right-1 bg-red-500 w-4 h-4 flex items-center justify-center rounded-full text-white text-[9px] font-bold">{cartCount}</span>}
-                    <span className="text-[10px] font-semibold">Savat</span>
-                </Link>
-                <Link href={l("/wishlist")} className={`flex flex-col items-center pt-2 pb-1 px-3 gap-0.5 transition-colors ${pathname === l('/wishlist') ? 'text-[#2d6e3e]' : 'text-gray-400'}`}>
-                    <Heart size={24} strokeWidth={pathname === l('/wishlist') ? 2.5 : 1.8} fill={pathname === l('/wishlist') ? 'currentColor' : 'none'} />
-                    <span className="text-[10px] font-semibold">Saralar</span>
-                </Link>
-                <Link href={user ? l("/account") : l("/login")} className={`flex flex-col items-center pt-2 pb-1 px-3 gap-0.5 transition-colors ${pathname?.includes('/account') ? 'text-[#2d6e3e]' : 'text-gray-400'}`}>
-                    <User size={24} strokeWidth={pathname?.includes('/account') ? 2.5 : 1.8} />
-                    <span className="text-[10px] font-semibold">Profil</span>
-                </Link>
+            {/* Velari — iOS-style Glass Bottom Tab Bar */}
+            <nav
+                className="md:hidden fixed bottom-0 left-0 right-0 w-screen max-w-full z-[110]"
+                style={{
+                    background: "rgba(255,255,255,0.82)",
+                    backdropFilter: "blur(24px) saturate(180%)",
+                    WebkitBackdropFilter: "blur(24px) saturate(180%)",
+                    borderTop: "0.5px solid rgba(15,20,16,0.08)",
+                    paddingBottom: "max(env(safe-area-inset-bottom, 8px), 8px)",
+                    paddingTop: 6,
+                    display: "flex",
+                    justifyContent: "space-around",
+                }}
+            >
+                {[
+                    { href: l("/"), label: language === "uz" ? "Asosiy" : "Главная", active: isHomePage, icon: (on: boolean) => <LayoutGrid size={26} strokeWidth={on ? 2.5 : 1.8} /> },
+                    { href: l("/cart"), label: language === "uz" ? "Savat" : "Корзина", active: pathname === l("/cart"), badge: cartCount, icon: (on: boolean) => <ShoppingCart size={26} strokeWidth={on ? 2.5 : 1.8} /> },
+                    { href: l("/reels"), label: "Video", active: pathname === l("/reels"), icon: (on: boolean) => <Clapperboard size={26} strokeWidth={on ? 2.5 : 1.8} /> },
+                    { href: l("/wishlist"), label: language === "uz" ? "Saralangan" : "Избранное", active: pathname === l("/wishlist"), icon: (on: boolean) => <Heart size={26} strokeWidth={on ? 2.5 : 1.8} fill={on ? "currentColor" : "none"} /> },
+                    { href: user ? l("/account") : l("/login"), label: language === "uz" ? "Profil" : "Профиль", active: !!pathname?.includes("/account"), icon: (on: boolean) => <User size={26} strokeWidth={on ? 2.5 : 1.8} /> },
+                ].map((tab) => (
+                    <Link
+                        key={tab.href}
+                        href={tab.href}
+                        style={{
+                            flex: 1,
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: 3,
+                            padding: "6px 0",
+                            position: "relative",
+                            color: tab.active ? "#2D6E3E" : "#9AA29C",
+                            textDecoration: "none",
+                            WebkitTapHighlightColor: "transparent",
+                            transition: "color 150ms ease",
+                        }}
+                    >
+                        <div style={{ position: "relative" }}>
+                            {tab.icon(tab.active)}
+                            {(tab.badge ?? 0) > 0 && (
+                                <div style={{
+                                    position: "absolute",
+                                    top: -4,
+                                    right: -10,
+                                    minWidth: 18,
+                                    height: 18,
+                                    borderRadius: 9,
+                                    padding: "0 5px",
+                                    background: "#FF3B30",
+                                    color: "#fff",
+                                    fontSize: 11,
+                                    fontWeight: 700,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    boxShadow: "0 0 0 2px rgba(255,255,255,0.9)",
+                                    animation: "velari-badge-pop 360ms cubic-bezier(0.34,1.56,0.64,1)",
+                                }}>
+                                    {tab.badge}
+                                </div>
+                            )}
+                        </div>
+                        <span style={{
+                            fontSize: 10.5,
+                            fontWeight: 600,
+                            letterSpacing: 0.1,
+                            color: tab.active ? "#2D6E3E" : "#9AA29C",
+                        }}>
+                            {tab.label}
+                        </span>
+                    </Link>
+                ))}
             </nav>
         </>
     );

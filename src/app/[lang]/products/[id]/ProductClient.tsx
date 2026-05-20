@@ -28,6 +28,7 @@ const RelatedProducts = dynamic(() => import("@/components/product/RelatedProduc
 });
 
 import type { Product } from "@/types";
+import { trackProductView } from "@/components/velari/RecentlyViewed";
 
 export default function ProductClient({ params, initialProduct }: { params: { id: string }, initialProduct?: Product | null }) {
     const router = useRouter();
@@ -55,6 +56,11 @@ export default function ProductClient({ params, initialProduct }: { params: { id
     const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
     const [popularLoading, setPopularLoading] = useState(false);
     const [maxDesktopLoadIndex, setMaxDesktopLoadIndex] = useState(0);
+
+    // Track recently viewed
+    useEffect(() => {
+        if (product?.id) trackProductView(product.id);
+    }, [product?.id]);
 
     // Call Telemetry Tracker Hook
     useTelemetry({

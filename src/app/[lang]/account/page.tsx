@@ -162,7 +162,7 @@ export default function AccountPage() {
     };
 
     if (loading) return (
-        <div className="min-h-screen bg-[#F2F3F5] p-6 pb-32">
+        <div className="min-h-screen bg-[#FAFAF6] p-6 pb-32">
             <div className="max-w-xl mx-auto space-y-8 animate-pulse">
                 {/* Header Skeleton */}
                 <div className="pt-10">
@@ -199,7 +199,7 @@ export default function AccountPage() {
 
     if (!user) {
         return (
-            <div className="p-8 bg-[#F2F3F5] min-h-screen flex flex-col items-center justify-center text-center gap-6">
+            <div className="p-8 bg-[#FAFAF6] min-h-screen flex flex-col items-center justify-center text-center gap-6">
                 <div className="w-20 h-20 bg-white rounded-[32px] flex items-center justify-center text-gray-300 shadow-sm">
                     <User size={40} />
                 </div>
@@ -220,7 +220,7 @@ export default function AccountPage() {
 
     if (view === "edit-profile") {
         return (
-            <div className="bg-[#F2F3F5] min-h-screen pb-24 px-4 md:px-10">
+            <div className="bg-[#FAFAF6] min-h-screen pb-24 px-4 md:px-10">
                 <div className="max-w-xl mx-auto pt-10">
                     <button onClick={() => setView("menu")} className="flex items-center gap-2 text-gray-400 font-bold mb-8 hover:text-black transition-colors">
                         <ChevronLeft size={20} />
@@ -282,7 +282,7 @@ export default function AccountPage() {
 
     if (view === "language") {
         return (
-            <div className="bg-[#F2F3F5] min-h-screen px-4 md:px-10">
+            <div className="bg-[#FAFAF6] min-h-screen px-4 md:px-10">
                 <div className="max-w-xl mx-auto pt-10">
                     <button onClick={() => setView("menu")} className="flex items-center gap-2 text-gray-400 font-bold mb-8 transition-colors">
                         <ChevronLeft size={20} />
@@ -336,7 +336,7 @@ export default function AccountPage() {
     // --- Main Menu View ---
 
     return (
-        <div className="bg-[#F2F3F5] min-h-screen pb-32">
+        <div className="bg-[#FAFAF6] min-h-screen pb-32">
             <div className="max-w-xl mx-auto px-4 md:px-0">
                 
                 {/* 1. Profile Header */}
@@ -533,10 +533,10 @@ function ReviewsView({ user, language, showToast, onBack }: any) {
         });
     });
 
-    if (loading) return <div className="min-h-screen bg-[#F2F3F5] flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
+    if (loading) return <div className="min-h-screen bg-[#FAFAF6] flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
 
     return (
-        <div className="bg-[#F2F3F5] min-h-screen pb-24 px-4 md:px-10">
+        <div className="bg-[#FAFAF6] min-h-screen pb-24 px-4 md:px-10">
             <div className="max-w-xl mx-auto pt-10">
                 <button onClick={onBack} className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8 hover:text-black transition-all">
                     <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
@@ -794,7 +794,7 @@ function ReturnsView({ user, t, language, onBack }: any) {
     };
 
     if (success) return (
-        <div className="min-h-screen bg-[#F2F3F5] flex items-center justify-center p-8">
+        <div className="min-h-screen bg-[#FAFAF6] flex items-center justify-center p-8">
             <div className="bg-white p-10 rounded-[48px] text-center shadow-xl flex flex-col items-center max-w-sm">
                 <div className="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-6">
                     <CheckCircle2 size={40} />
@@ -806,7 +806,7 @@ function ReturnsView({ user, t, language, onBack }: any) {
     );
 
     return (
-        <div className="bg-[#F2F3F5] min-h-screen pb-24 px-4 md:px-10">
+        <div className="bg-[#FAFAF6] min-h-screen pb-24 px-4 md:px-10">
             <div className="max-w-xl mx-auto pt-10">
                 <button onClick={selectedOrder ? () => setSelectedOrder(null) : onBack} className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8 hover:text-black transition-all">
                     <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
@@ -899,7 +899,7 @@ function PromoCodesView({ t, language, onBack }: any) {
     }, []);
 
     return (
-        <div className="bg-[#F2F3F5] min-h-screen pb-24 px-4 md:px-10">
+        <div className="bg-[#FAFAF6] min-h-screen pb-24 px-4 md:px-10">
             <div className="max-w-xl mx-auto pt-10">
                 <button onClick={onBack} className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8 hover:text-black transition-all">
                     <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
@@ -909,8 +909,8 @@ function PromoCodesView({ t, language, onBack }: any) {
                     <div className="grid grid-cols-1 gap-4">
                         {promos.map(p => (
                             <div key={p.id} className="bg-white p-8 rounded-[40px] border-2 border-dashed border-gray-100 text-center relative overflow-hidden group">
-                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-6 bg-[#F2F3F5] rounded-b-full border-x border-b border-gray-100" />
-                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-6 bg-[#F2F3F5] rounded-t-full border-x border-t border-gray-100" />
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-6 bg-[#FAFAF6] rounded-b-full border-x border-b border-gray-100" />
+                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-6 bg-[#FAFAF6] rounded-t-full border-x border-t border-gray-100" />
                                 <h3 className="text-4xl font-black italic tracking-tighter uppercase mb-2 group-hover:scale-110 transition-transform">{p.code}</h3>
                                 <p className="text-[10px] font-black text-purple-500 uppercase tracking-widest">{p.discount_type === 'percent' ? `${p.discount_value}%` : `${p.discount_value.toLocaleString()} so'm`} Chegirma</p>
                             </div>
@@ -1288,11 +1288,11 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
         showToast(language === 'uz' ? "Nusxa olindi!" : "Скопировано!", "success");
     };
 
-    if (loading) return <div className="min-h-screen bg-[#F2F3F5] flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
+    if (loading) return <div className="min-h-screen bg-[#FAFAF6] flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
 
     if (!authorized && data?.user?.hasPin) {
         return (
-            <div className="bg-[#F2F3F5] min-h-screen p-4">
+            <div className="bg-[#FAFAF6] min-h-screen p-4">
                 <button onClick={onBack} className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8">
                     <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
                 </button>
@@ -1312,7 +1312,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
 
     if (!data?.user?.hasPin) {
         return (
-            <div className="bg-[#F2F3F5] min-h-screen p-4">
+            <div className="bg-[#FAFAF6] min-h-screen p-4">
                 <button onClick={onBack} className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8">
                     <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
                 </button>
@@ -1323,7 +1323,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
 
     if (step === "contract") {
         return (
-            <div className="bg-[#F2F3F5] min-h-screen p-6 flex flex-col items-center justify-center">
+            <div className="bg-[#FAFAF6] min-h-screen p-6 flex flex-col items-center justify-center">
                 <div className="max-w-md w-full bg-white p-10 rounded-[40px] shadow-2xl space-y-8">
                     <div className="w-20 h-20 bg-emerald-50 rounded-3xl flex items-center justify-center mx-auto">
                         <ShieldCheck className="text-emerald-500" size={40} />
@@ -1371,7 +1371,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
     else if (currentRole === 'agent') roleName = language === 'uz' ? 'Agent' : 'Агент';
 
     return (
-        <div className="bg-[#F2F3F5] min-h-screen pb-24 px-4 md:px-10 overflow-x-hidden">
+        <div className="bg-[#FAFAF6] min-h-screen pb-24 px-4 md:px-10 overflow-x-hidden">
             <div className="max-w-4xl mx-auto pt-10">
                 <div className="flex justify-between items-center mb-8">
                     <button onClick={onBack} className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] hover:text-black transition-all">

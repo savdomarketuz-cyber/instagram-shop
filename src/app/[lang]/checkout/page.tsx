@@ -228,9 +228,11 @@ export default function CheckoutPage() {
     if (!mounted) return null;
 
     return (
-        <div className="p-4 md:p-6 bg-white min-h-screen pt-8 md:pt-12 pb-32">
+        <div className="p-4 md:p-6 min-h-screen pt-8 md:pt-12 pb-32" style={{ background: "#FAFAF6" }}>
             <div className="flex items-center gap-4 mb-8 md:mb-10">
-                <button onClick={() => router.back()} className="p-3 bg-gray-50 rounded-2xl"><ArrowLeft size={20} /></button>
+                <button onClick={() => router.back()} style={{ width: 40, height: 40, borderRadius: 14, background: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", cursor: "pointer", flexShrink: 0 }}>
+                    <ArrowLeft size={20} />
+                </button>
                 <h1 className="text-2xl md:text-3xl font-black tracking-tighter sm:truncate">{t.common.checkout}</h1>
             </div>
 
@@ -261,101 +263,101 @@ export default function CheckoutPage() {
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="bg-gray-50 p-6 rounded-[32px] space-y-4 shadow-sm">
-                    <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
+            <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Phone info card */}
+                <div style={{ background: "#fff", borderRadius: 22, padding: "16px 18px", boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}>
+                    <p style={{ fontSize: 10, fontWeight: 700, color: "#9AA29C", letterSpacing: 0.4, textTransform: "uppercase", marginBottom: 8 }}>
                         {t.account.myInfo}
                     </p>
-                    <div className="flex justify-between items-center">
-                        <span className="text-sm font-bold text-gray-500">{t.account.phone}:</span>
-                        <span className="text-sm font-black">{user?.phone || "+998 ..."}</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: 13, fontWeight: 500, color: "#9AA29C" }}>{t.account.phone}:</span>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: "#0F1410" }}>{user?.phone || "+998 ..."}</span>
                     </div>
                 </div>
 
+                {/* Address */}
                 <div>
-                    <div className="flex justify-between items-center mb-4">
-                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest">{t.common.address}</label>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: "#9AA29C", letterSpacing: 0.4, textTransform: "uppercase" }}>{t.common.address}</label>
                         <button
                             type="button"
                             onClick={() => setIsMapOpen(true)}
-                            className="text-[10px] font-black uppercase text-blue-500 flex items-center gap-2 hover:bg-blue-50 px-3 py-1.5 rounded-xl transition-all"
+                            style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "#2D6E3E", background: "#EAF3EC", border: "none", borderRadius: 10, padding: "6px 12px", cursor: "pointer" }}
                         >
                             <MapPin size={12} />
                             {t.common.selectOnMap}
                         </button>
                     </div>
-                    <div className="relative group">
+                    <div style={{ position: "relative" }}>
                         <input
                             required
                             type="text"
                             value={address}
                             onChange={e => setAddress(e.target.value)}
                             placeholder={t.common.addressPlaceholder}
-                            className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-base font-bold focus:ring-2 focus:ring-black outline-none transition-all pr-12"
+                            style={{ width: "100%", background: "#fff", border: "none", borderRadius: 18, padding: "14px 48px 14px 18px", fontSize: 14, fontWeight: 600, color: "#0F1410", outline: "none", boxSizing: "border-box", boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}
                         />
-                        {coords && <Globe size={18} className="absolute right-6 top-1/2 -translate-y-1/2 text-green-500" />}
+                        {coords && <Globe size={16} color="#2D6E3E" style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)" }} />}
                     </div>
                 </div>
 
-                {/* Promo Code Input */}
-                <div className="bg-gray-50 p-6 rounded-[32px] space-y-4 shadow-sm border border-gray-100/50">
-                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest pl-2 flex items-center gap-2">
-                        <Tag size={12} className="text-purple-500" />
+                {/* Promo Code */}
+                <div style={{ background: "#fff", borderRadius: 22, padding: "16px 18px", boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "#9AA29C", letterSpacing: 0.4, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                        <Tag size={12} color="#9AA29C" />
                         {t.common.promoQuestion}
                     </label>
-                    <div className="flex gap-3">
+                    <div style={{ display: "flex", gap: 8 }}>
                         <input
                             type="text"
                             value={promoCode}
                             onChange={e => setPromoCode(e.target.value.toUpperCase())}
                             placeholder={t.common.promoPlaceholder}
                             disabled={!!promoData}
-                            className="flex-1 bg-white border-2 border-transparent focus:border-black rounded-2xl py-4 px-6 text-base font-black italic outline-none transition-all uppercase tracking-tighter disabled:opacity-50"
+                            style={{ flex: 1, background: "#F5F5F0", border: promoData ? "1.5px solid #2D6E3E" : "1.5px solid transparent", borderRadius: 14, padding: "12px 16px", fontSize: 14, fontWeight: 700, color: "#0F1410", outline: "none", letterSpacing: 0.5, opacity: promoData ? 0.8 : 1 }}
                         />
                         {promoData ? (
-                            <button
-                                type="button"
-                                onClick={() => { setPromoData(null); setPromoCode(""); }}
-                                className="px-6 bg-red-50 text-red-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all"
-                            >
-                                <X size={18} />
+                            <button type="button" onClick={() => { setPromoData(null); setPromoCode(""); }}
+                                style={{ padding: "12px 16px", background: "#FFF0EE", border: "none", borderRadius: 14, cursor: "pointer", display: "flex", alignItems: "center" }}>
+                                <X size={18} color="#FF3B30" />
                             </button>
                         ) : (
-                            <button
-                                type="button"
-                                onClick={handleApplyPromo}
-                                disabled={isApplyingPromo || !promoCode.trim()}
-                                className="px-8 bg-black text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:scale-100"
-                            >
-                                {isApplyingPromo ? <Loader2 size={18} className="animate-spin" /> : t.common.apply.toUpperCase()}
+                            <button type="button" onClick={handleApplyPromo} disabled={isApplyingPromo || !promoCode.trim()}
+                                style={{ padding: "12px 20px", background: "#0F1410", color: "#fff", border: "none", borderRadius: 14, fontSize: 12, fontWeight: 800, cursor: "pointer", opacity: (!promoCode.trim() || isApplyingPromo) ? 0.3 : 1, display: "flex", alignItems: "center", gap: 6 }}>
+                                {isApplyingPromo ? <Loader2 size={16} className="animate-spin" /> : t.common.apply}
                             </button>
                         )}
                     </div>
+                    {promoData && (
+                        <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: "#2D6E3E" }}>
+                            ✓ -{promoData.discount.toLocaleString()} so'm chegirma qo'llandi
+                        </div>
+                    )}
                 </div>
 
-                {/* Wallet Balance Usage - NEW */}
+                {/* Wallet */}
                 {walletBalance > 0 && !promoData && (
-                    <div className={`p-6 rounded-[32px] border-2 transition-all cursor-pointer ${useWallet ? 'border-emerald-500 bg-emerald-50' : 'border-gray-100 bg-gray-50'}`} 
-                         onClick={() => setUseWallet(!useWallet)}>
-                        <div className="flex justify-between items-center mb-2">
-                             <div className="flex items-center gap-4">
-                                <div className={`p-3 rounded-2xl ${useWallet ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
-                                    <Wallet size={20} />
+                    <div onClick={() => setUseWallet(!useWallet)}
+                        style={{ background: useWallet ? "#EAF3EC" : "#fff", border: useWallet ? "1.5px solid #2D6E3E" : "1.5px solid rgba(15,20,16,0.06)", borderRadius: 22, padding: "16px 18px", cursor: "pointer", boxShadow: "0 2px 8px rgba(15,20,16,0.04)", transition: "all 200ms ease" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                <div style={{ width: 40, height: 40, borderRadius: 13, background: useWallet ? "#2D6E3E" : "#F0F0EC", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                    <Wallet size={18} color={useWallet ? "#fff" : "#9AA29C"} />
                                 </div>
                                 <div>
-                                    <h3 className="font-black text-sm uppercase italic tracking-tighter">{t.common.payFromWallet}</h3>
-                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                                        {t.common.availableBalance.replace('{balance}', walletBalance.toLocaleString())}
+                                    <p style={{ fontSize: 13, fontWeight: 800, color: "#0F1410", marginBottom: 2 }}>{t.common.payFromWallet}</p>
+                                    <p style={{ fontSize: 11, fontWeight: 500, color: "#9AA29C" }}>
+                                        {t.common.availableBalance.replace("{balance}", walletBalance.toLocaleString())}
                                     </p>
                                 </div>
-                             </div>
-                             <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${useWallet ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300'}`}>
-                                {useWallet && <Check size={14} className="text-white" strokeWidth={4} />}
-                             </div>
+                            </div>
+                            <div style={{ width: 22, height: 22, borderRadius: "50%", border: useWallet ? "none" : "2px solid #D0D5CF", background: useWallet ? "#2D6E3E" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                {useWallet && <Check size={13} color="#fff" strokeWidth={3} />}
+                            </div>
                         </div>
                         {useWallet && (
-                            <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest pl-14 mt-2 animate-in slide-in-from-top-2">
-                                {t.common.walletUsageHint.replace('{amount}', Math.min(walletBalance, total).toLocaleString())}
+                            <p style={{ marginTop: 8, fontSize: 11, fontWeight: 700, color: "#2D6E3E", paddingLeft: 52 }}>
+                                {t.common.walletUsageHint.replace("{amount}", Math.min(walletBalance, total).toLocaleString())}
                             </p>
                         )}
                     </div>

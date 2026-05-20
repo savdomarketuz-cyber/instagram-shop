@@ -89,14 +89,14 @@ export default function CatalogClient({ initialCategories }: CatalogClientProps)
 
     if (loading && allCategories.length === 0) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-white">
-                <Loader2 className="animate-spin text-black/20" size={32} />
+            <div className="min-h-screen flex items-center justify-center" style={{ background: "#FAFAF6" }}>
+                <Loader2 className="animate-spin" size={32} color="#2D6E3E" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-white text-black font-sans">
+        <div className="min-h-screen text-black font-sans" style={{ background: "#FAFAF6" }}>
             <div className="max-w-[1440px] mx-auto px-4 md:px-10 py-6 md:py-12">
                 
                 <div className="flex flex-col gap-8 mb-12">
