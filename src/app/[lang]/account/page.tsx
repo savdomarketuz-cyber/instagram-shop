@@ -53,7 +53,7 @@ import { PinKeypad } from "@/components/PinKeypad";
 
 export default function AccountPage() {
     const router = useRouter();
-    const { user, setUser, logout, language, setLanguage, showToast } = useStore();
+    const { user, setUser, logout, language, setLanguage, showToast, wishlist } = useStore();
     const t = translations[language];
 
     const [view, setView] = useState<"menu" | "edit-profile" | "language" | "returns" | "promo-codes" | "reviews" | "affiliate">("menu");
@@ -68,6 +68,7 @@ export default function AccountPage() {
     const [realBalance, setRealBalance] = useState(0);
     const [affiliateCode, setAffiliateCode] = useState("");
     const [pendingCashback, setPendingCashback] = useState(0);
+    const [orderCount, setOrderCount] = useState(0);
 
     useEffect(() => {
         if (!user) {
@@ -79,10 +80,11 @@ export default function AccountPage() {
             const myPhoneClean = user.phone.replace(/\D/g, '');
             
             try {
-                const [userRes, walletRes, cashbackRes] = await Promise.all([
+                const [userRes, walletRes, cashbackRes, ordersRes] = await Promise.all([
                     supabase.from("users").select("*").eq("phone", user.phone).single(),
                     supabase.from("user_wallets").select("balance").eq("phone", myPhoneClean).single(),
-                    supabase.from("orders").select("potential_cashback").eq("user_phone", user.phone).neq("status", "Yetkazildi").neq("status", "Bekor qilingan").gt("potential_cashback", 0)
+                    supabase.from("orders").select("potential_cashback").eq("user_phone", user.phone).neq("status", "Yetkazildi").neq("status", "Bekor qilingan").gt("potential_cashback", 0),
+                    supabase.from("orders").select("id").eq("user_phone", user.phone)
                 ]);
 
                 if (userRes.data) {
@@ -100,6 +102,7 @@ export default function AccountPage() {
                     const total = cashbackRes.data.reduce((sum, o) => sum + Number(o.potential_cashback), 0);
                     setPendingCashback(total);
                 }
+                if (ordersRes.data) setOrderCount(ordersRes.data.length);
             } catch (e) {
                 console.error("Error fetching account data:", e);
             } finally {
@@ -162,35 +165,12 @@ export default function AccountPage() {
     };
 
     if (loading) return (
-        <div className="min-h-screen bg-[#FAFAF6] p-6 pb-32">
-            <div className="max-w-xl mx-auto space-y-8 animate-pulse">
-                {/* Header Skeleton */}
-                <div className="pt-10">
-                    <div className="bg-white p-6 rounded-[32px] border border-gray-100 flex items-center gap-4">
-                        <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
-                        <div className="flex-1 space-y-2">
-                            <div className="h-6 bg-gray-200 rounded-full w-32"></div>
-                            <div className="h-3 bg-gray-100 rounded-full w-24"></div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Balance Skeleton */}
-                <div className="bg-white p-6 rounded-[32px] border border-gray-100 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded-xl"></div>
-                        <div className="space-y-2">
-                            <div className="h-5 bg-gray-200 rounded-full w-28"></div>
-                            <div className="h-3 bg-gray-100 rounded-full w-20"></div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Menu Skeletons */}
+        <div style={{ minHeight: "100vh", background: "#FAFAF6", paddingBottom: 100 }}>
+            <div className="max-w-xl mx-auto animate-pulse">
+                <div style={{ margin: "54px 16px 12px", borderRadius: 28, height: 160, background: "linear-gradient(135deg, rgba(45,110,62,0.3) 0%, rgba(31,90,48,0.3) 100%)" }} />
                 {[1, 2, 3].map(i => (
-                    <div key={i} className="space-y-3">
-                        <div className="h-3 bg-gray-200 rounded-full w-20 ml-6"></div>
-                        <div className="bg-white rounded-[32px] h-32 border border-gray-100"></div>
+                    <div key={i} style={{ padding: i === 1 ? "10px 16px 0" : "12px 16px 0" }}>
+                        <div style={{ background: "#fff", borderRadius: 20, height: 120 }} />
                     </div>
                 ))}
             </div>
@@ -199,17 +179,22 @@ export default function AccountPage() {
 
     if (!user) {
         return (
-            <div className="p-8 bg-[#FAFAF6] min-h-screen flex flex-col items-center justify-center text-center gap-6">
-                <div className="w-20 h-20 bg-white rounded-[32px] flex items-center justify-center text-gray-300 shadow-sm">
-                    <User size={40} />
+            <div style={{ minHeight: "100vh", background: "#FAFAF6", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: 24, padding: 32 }}>
+                <div style={{ width: 100, height: 100, borderRadius: 50, background: "#EAF3EC", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <User size={48} color="#2D6E3E" />
                 </div>
                 <div>
-                    <h2 className="text-2xl font-black tracking-tighter mb-2">{t.account.login}</h2>
-                    <p className="text-gray-400 text-sm font-medium max-w-[240px]">
-                        {language === 'uz' ? 'Profilga kirib buyurtmalarni kuzating' : 'Войдите чтобы заказать'}
+                    <h2 style={{ fontSize: 22, fontWeight: 700, color: "#0F1410", letterSpacing: -0.3, marginBottom: 8 }}>{t.account.login}</h2>
+                    <p style={{ color: "#9AA29C", fontSize: 14, maxWidth: 240 }}>
+                        {language === 'uz' ? 'Profilga kirib buyurtmalarni kuzating' : 'Войдите чтобы отслеживать заказы'}
                     </p>
                 </div>
-                <Link href="/login" className="w-full max-w-[200px] bg-black text-white py-4 rounded-full font-black text-xs uppercase tracking-widest active:scale-95 transition-all">
+                <Link href={`/${language}/login`} style={{
+                    display: "block", width: "100%", maxWidth: 200, textAlign: "center",
+                    background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)",
+                    color: "#fff", padding: "16px 0", borderRadius: 18,
+                    fontWeight: 700, fontSize: 15, textDecoration: "none",
+                }}>
                     {t.account.login}
                 </Link>
             </div>
@@ -335,94 +320,123 @@ export default function AccountPage() {
 
     // --- Main Menu View ---
 
+    const GREEN = "#2D6E3E";
+    const GREEN_DEEP = "#1F5A30";
+    const GREEN_TINT = "#EAF3EC";
+
     return (
-        <div className="bg-[#FAFAF6] min-h-screen pb-32">
-            <div className="max-w-xl mx-auto px-4 md:px-0">
-                
-                {/* 1. Profile Header */}
-                <div className="pt-10 pb-6">
-                    <div className="flex items-center justify-between bg-white p-6 rounded-[32px] shadow-sm border border-gray-100/50">
-                        <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-2xl font-black overflow-hidden relative group">
-                                {name ? name.charAt(0).toUpperCase() : <User size={24} />}
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                                    <Settings size={16} />
-                                </div>
-                            </div>
-                            <div className="min-w-0">
-                                <h2 className="text-xl font-black tracking-tighter truncate">{name || user.phone}</h2>
-                                <button onClick={() => setView("edit-profile")} className="text-gray-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-1 hover:text-black transition-colors mt-0.5">
-                                    {(t.account as any).myInfo} <ChevronRight size={12} />
-                                </button>
-                            </div>
+        <div style={{ background: "#FAFAF6", minHeight: "100vh", paddingBottom: 100 }}>
+            <div className="max-w-xl mx-auto">
+
+                {/* Gradient Header Card */}
+                <div style={{
+                    margin: "54px 16px 12px",
+                    borderRadius: 28,
+                    padding: "22px 20px 26px",
+                    background: `linear-gradient(135deg, ${GREEN} 0%, ${GREEN_DEEP} 100%)`,
+                    color: "#fff",
+                    position: "relative",
+                    overflow: "hidden",
+                    boxShadow: "0 16px 40px rgba(45,110,62,0.28)",
+                }}>
+                    {/* Decorative blobs */}
+                    <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: 80, background: "rgba(255,255,255,0.08)", pointerEvents: "none" }} />
+                    <div style={{ position: "absolute", bottom: -60, left: -20, width: 140, height: 140, borderRadius: 70, background: "rgba(255,255,255,0.05)", pointerEvents: "none" }} />
+
+                    {/* Avatar + Name row */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 14, position: "relative" }}>
+                        <div style={{
+                            width: 64, height: 64, borderRadius: 32,
+                            background: "rgba(255,255,255,0.18)", backdropFilter: "blur(20px)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            border: "1.5px solid rgba(255,255,255,0.25)", flexShrink: 0,
+                        }}>
+                            <User size={32} color="#fff" />
                         </div>
-                        <Link href={`/${language}/messages`} className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center hover:bg-black hover:text-white transition-all">
-                            <MessageSquare size={20} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 19, fontWeight: 700, letterSpacing: -0.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                {name || user.phone}
+                            </div>
+                            <button
+                                onClick={() => setView("edit-profile")}
+                                style={{ fontSize: 13, opacity: 0.85, marginTop: 2, background: "none", border: "none", color: "#fff", padding: 0, cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted" }}
+                            >
+                                @{user.username || (language === 'uz' ? 'tahrirlash' : 'редактировать')} →
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Stats row */}
+                    <div style={{ marginTop: 18, display: "flex", gap: 8, position: "relative" }}>
+                        <Link href={`/${language}/orders`} style={{ flex: 1, padding: 10, borderRadius: 14, background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)", textDecoration: "none", color: "#fff", display: "block" }}>
+                            <div style={{ fontSize: 18, fontWeight: 700 }}>{orderCount}</div>
+                            <div style={{ fontSize: 11, opacity: 0.8 }}>{t.account.orders}</div>
+                        </Link>
+                        <Link href={`/${language}/wishlist`} style={{ flex: 1, padding: 10, borderRadius: 14, background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)", textDecoration: "none", color: "#fff", display: "block" }}>
+                            <div style={{ fontSize: 18, fontWeight: 700 }}>{wishlist.length}</div>
+                            <div style={{ fontSize: 11, opacity: 0.8 }}>{t.nav.wishlist}</div>
+                        </Link>
+                        <Link href={`/${language}/wallet`} style={{ flex: 1, padding: 10, borderRadius: 14, background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)", textDecoration: "none", color: "#fff", display: "block" }}>
+                            <div style={{ fontSize: 18, fontWeight: 700 }}>{(balance || 0).toLocaleString()}</div>
+                            <div style={{ fontSize: 11, opacity: 0.8 }}>{language === 'uz' ? 'Cashback' : 'Кэшбэк'}</div>
                         </Link>
                     </div>
                 </div>
 
-                {/* 2. Balance Card (Bonus Balansi) */}
-                <div className="mb-8">
-                    <Link href={`/${language}/wallet`} className="block bg-white p-6 rounded-[32px] shadow-sm border border-gray-100/50 hover:scale-[1.02] active:scale-95 transition-all">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-green-50 rounded-xl">
-                                    <Wallet size={24} className="text-green-600" />
-                                </div>
-                                <div>
-                                    <p className="text-lg font-black italic tracking-tighter">{(balance || 0).toLocaleString()} so'm</p>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{language === 'uz' ? 'Bonus balansi' : 'Бонусный баланс'}</p>
-                                </div>
-                            </div>
-                            <ChevronRight className="text-gray-300" size={20} />
-                        </div>
-                    </Link>
-                </div>
-
-                {/* 3. Sections Mapping */}
-                <div className="space-y-8">
-                    {/* Shopping */}
-                    <div className="space-y-3">
-                        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">{t.account.sections.shopping}</h3>
-                        <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-100/50">
-                            <MenuItem href="/orders" icon={<Package size={20} />} label={t.account.orders} language={language} />
-                            <MenuItem onClick={() => setView("returns")} icon={<RotateCcw size={20} />} label={t.account.sections.returns} divider={false} language={language} />
-                        </div>
-                    </div>
-
-                    {/* Benefits */}
-                    <div className="space-y-3">
-                        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">{t.account.sections.benefits}</h3>
-                        <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-100/50">
-                            <MenuItem onClick={() => setView("promo-codes")} icon={<Ticket size={20} />} label={t.account.sections.promoCodes} language={language} />
-                            <MenuItem onClick={() => setView("affiliate")} icon={<Sparkles size={20} />} label={language === 'uz' ? 'Hamkorlik (Pul ishlash)' : 'Партнерство (Заработок)'} divider={false} language={language} />
-                        </div>
-                    </div>
-
-                    {/* Marketplace */}
-                    <div className="space-y-3">
-                        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">{language === 'uz' ? 'Mening Bozorim' : 'Мой Маркет'}</h3>
-                        <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-100/50">
-                            <MenuItem onClick={() => setView("reviews")} icon={<Star size={20} />} label={t.account.sections.reviews} language={language} />
-                            <MenuItem href="/wishlist" icon={<Heart size={20} />} label={t.nav.wishlist} language={language} />
-                            <MenuItem onClick={() => setView("language")} icon={<Globe size={20} />} label={(t.account.sections as any).language} divider={false} language={language} />
-                        </div>
-                    </div>
-
-                    {/* Others */}
-                    <div className="space-y-3">
-                        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-6">{t.account.sections.others}</h3>
-                        <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-100/50">
-                            <MenuItem href="/messages" icon={<MessageSquare size={20} />} label={language === 'uz' ? 'Suhbatlar' : 'Беседы'} language={language} />
-                            <MenuItem href="/chat" icon={<Headset size={20} />} label={t.account.sections.support} language={language} />
-                            <MenuItem onClick={logout} icon={<LogOut size={20} />} label={t.account.logout} variant="danger" divider={false} language={language} />
-                        </div>
+                {/* Menu Group 1: Shopping */}
+                <div style={{ padding: "10px 16px 0" }}>
+                    <div style={{ background: "#fff", borderRadius: 20, overflow: "hidden" }}>
+                        <MenuItem href="/orders" icon={<Package size={20} color={GREEN} />} label={t.account.orders} language={language} />
+                        <VDivider />
+                        <MenuItem onClick={() => setView("returns")} icon={<RotateCcw size={20} color={GREEN} />} label={t.account.sections.returns} language={language} />
+                        <VDivider />
+                        <MenuItem href="/wishlist" icon={<Heart size={20} color={GREEN} />} label={t.nav.wishlist} badge={wishlist.length} language={language} />
+                        <VDivider />
+                        <MenuItem onClick={() => setView("reviews")} icon={<Star size={20} color={GREEN} />} label={t.account.sections.reviews} language={language} />
+                        <VDivider />
+                        <MenuItem onClick={() => setView("promo-codes")} icon={<Ticket size={20} color={GREEN} />} label={t.account.sections.promoCodes} language={language} />
+                        <VDivider />
+                        <MenuItem href="/wallet" icon={<Wallet size={20} color={GREEN} />} label={language === 'uz' ? 'Hamyon' : 'Кошелёк'} language={language} />
                     </div>
                 </div>
 
-                <div className="mt-12 text-center text-gray-300 text-[10px] font-bold uppercase tracking-[0.2em]">
-                    Velari v1.2.5
+                {/* Menu Group 2: Magazine + Affiliate */}
+                <div style={{ padding: "12px 16px 0" }}>
+                    <div style={{ background: "#fff", borderRadius: 20, overflow: "hidden" }}>
+                        <MenuItem onClick={() => setView("affiliate")} icon={<Sparkles size={20} color={GREEN} />} label={language === 'uz' ? 'Hamkorlik (Pul ishlash)' : 'Партнерство (Заработок)'} language={language} />
+                        <VDivider />
+                        <MenuItem href="/messages" icon={<MessageSquare size={20} color={GREEN} />} label={language === 'uz' ? 'Suhbatlar' : 'Беседы'} language={language} />
+                    </div>
+                </div>
+
+                {/* Menu Group 3: Settings */}
+                <div style={{ padding: "12px 16px 0" }}>
+                    <div style={{ background: "#fff", borderRadius: 20, overflow: "hidden" }}>
+                        <MenuItem href="/chat" icon={<Headset size={20} color={GREEN} />} label={t.account.sections.support} language={language} />
+                        <VDivider />
+                        <MenuItem onClick={() => setView("language")} icon={<Globe size={20} color={GREEN} />} label={(t.account.sections as any).language} language={language} />
+                    </div>
+                </div>
+
+                {/* Logout */}
+                <div style={{ padding: "16px 16px 0" }}>
+                    <button
+                        onClick={logout}
+                        style={{
+                            width: "100%", padding: "14px 16px", borderRadius: 18,
+                            background: "#fff", border: "none", cursor: "pointer",
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                            color: "#FF3B30", fontSize: 15, fontWeight: 600,
+                        }}
+                    >
+                        <LogOut size={18} color="#FF3B30" />
+                        {t.account.logout}
+                    </button>
+                </div>
+
+                {/* Footer */}
+                <div style={{ padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                    <div style={{ fontSize: 11, color: "#9AA29C" }}>Velari v1.2.5</div>
                 </div>
 
             </div>
@@ -2009,30 +2023,43 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
     );
 }
 
-function MenuItem({ href, icon, label, language, divider = true, onClick, variant = "default" }: any) {
+function VDivider() {
+    return <div style={{ height: 1, background: "rgba(15,20,16,0.05)", marginLeft: 66 }} />;
+}
+
+function MenuItem({ href, icon, label, language, onClick, badge }: any) {
+    const GREEN_TINT = "#EAF3EC";
 
     const Content = (
-        <div className="flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer group">
-            <div className="flex items-center gap-4">
-                <div className={`text-gray-400 group-hover:text-black transition-colors ${variant === 'danger' ? 'group-hover:text-red-500' : ''}`}>
-                    {icon}
-                </div>
-                <span className={`text-sm font-bold tracking-tight text-gray-700 group-hover:text-black transition-colors ${variant === 'danger' ? 'group-hover:text-red-500' : ''}`}>
-                    {label}
-                </span>
+        <div style={{
+            width: "100%", display: "flex", alignItems: "center", gap: 14,
+            padding: "14px 16px", cursor: "pointer",
+        }}>
+            <div style={{
+                width: 36, height: 36, borderRadius: 10, background: GREEN_TINT,
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}>
+                {icon}
             </div>
-            <ChevronRight size={18} className="text-gray-300 group-hover:text-black transition-colors" />
+            <span style={{ flex: 1, fontSize: 15, fontWeight: 500, color: "#0F1410", letterSpacing: -0.2 }}>
+                {label}
+            </span>
+            {badge != null && badge > 0 && (
+                <span style={{
+                    minWidth: 22, height: 22, padding: "0 7px", borderRadius: 11,
+                    background: GREEN_TINT, color: "#2D6E3E",
+                    fontSize: 12, fontWeight: 700,
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                }}>
+                    {badge}
+                </span>
+            )}
+            <ChevronRight size={18} color="#C7CDC8" />
         </div>
     );
 
-    return (
-        <>
-            {href && href !== "#" ? (
-                <Link href={`/${language}${href}`}>{Content}</Link>
-            ) : (
-                <div onClick={onClick}>{Content}</div>
-            )}
-            {divider && <div className="mx-6 border-b border-gray-50" />}
-        </>
-    );
+    if (href && href !== "#") {
+        return <Link href={`/${language}${href}`} style={{ display: "block", textDecoration: "none" }}>{Content}</Link>;
+    }
+    return <div onClick={onClick}>{Content}</div>;
 }
