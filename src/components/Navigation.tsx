@@ -150,7 +150,7 @@ export default function Navigation() {
     return (
         <>
             {/* Main Header - Top Fixed */}
-            <header className={`fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-2xl z-[100] border-b border-gray-100 h-16 md:h-24 ${!isHomePage ? 'hidden md:block' : 'block'}`}>
+            <header className={`fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-2xl z-[100] border-b border-gray-100 h-16 md:h-24 ${isHomePage ? 'hidden md:block' : 'block'}`}>
                 <div className="max-w-[1440px] mx-auto h-full px-4 md:px-10 flex items-center gap-3 md:gap-12">
                     
                     <div className="shrink-0 group">

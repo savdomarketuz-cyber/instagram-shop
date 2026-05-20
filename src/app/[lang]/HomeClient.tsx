@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { Search, Heart, Sparkles } from "lucide-react";
-import Logo from "@/components/Logo";
+import { Search, Sparkles, MapPin, ChevronRight, User, X, Loader2, LayoutGrid } from "lucide-react";
 import { useStore } from "@/store/store";
 import { supabase } from "@/lib/supabase";
 import { mapProduct, mapBanner } from "@/lib/mappers";
@@ -284,18 +283,202 @@ export default function HomeClient({
         return () => observer.disconnect();
     }, [hasMore, loading, isFetchingMore, pageNumber]);
 
+    const mobileSearchTimer = useRef<NodeJS.Timeout | null>(null);
+
+    const handleMobileSearch = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        if (!search.trim()) { setSearchResults(null); return; }
+        useStore.setState({ isSearchLoading: true });
+        try {
+            const res = await fetch("/api/search", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query: search, userPhone: user?.phone }),
+            });
+            const data = res.ok ? await res.json() : { results: [], facets: null, didYouMean: null };
+            setSearchResults(data.results || [], data.facets || null, data.didYouMean || null);
+            setHomeSearchQuery(search);
+        } catch (e) { console.error(e); }
+        finally { useStore.setState({ isSearchLoading: false }); }
+    };
+
+    const handleMobileSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setSearch(val);
+        if (!val.trim()) { setSearchResults(null); setHomeSearchQuery(""); return; }
+        if (mobileSearchTimer.current) clearTimeout(mobileSearchTimer.current);
+        mobileSearchTimer.current = setTimeout(() => handleMobileSearch(), 600);
+    };
+
     return (
         <main style={{ minHeight: "100svh", background: "#FAFAF6", paddingBottom: 100 }} className="max-w-[1440px] mx-auto">
             <h1 className="sr-only">{t.common.homeTitle}</h1>
 
+            {/* ── MOBILE: Velari sticky header ── */}
+            <div className="md:hidden" style={{
+                position: "sticky", top: 0, zIndex: 100,
+                background: homeScrollPosition > 30 ? "rgba(250,250,246,0.92)" : "#FAFAF6",
+                backdropFilter: homeScrollPosition > 30 ? "blur(20px) saturate(180%)" : "none",
+                WebkitBackdropFilter: homeScrollPosition > 30 ? "blur(20px) saturate(180%)" : "none",
+                borderBottom: homeScrollPosition > 30 ? "0.5px solid rgba(15,20,16,0.06)" : "none",
+                transition: "background 240ms ease",
+                padding: "12px 20px 12px",
+            }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                    <div>
+                        <div style={{ fontSize: 12, color: "#9AA29C", fontWeight: 500 }}>
+                            {language === "ru" ? "Доставка в" : "Yetkazib berish"}
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
+                            <MapPin size={14} color="#2D6E3E" />
+                            <span style={{ fontSize: 15, fontWeight: 600, color: "#0F1410", letterSpacing: -0.2 }}>
+                                Toshkent, Yunusobod
+                            </span>
+                            <ChevronRight size={13} color="#9AA29C" />
+                        </div>
+                    </div>
+                    <Link href={`/${language}/account`} style={{
+                        width: 40, height: 40, borderRadius: 20, background: "#fff",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        boxShadow: "0 2px 8px rgba(15,20,16,0.05)", position: "relative", flexShrink: 0,
+                        textDecoration: "none",
+                    }}>
+                        <User size={18} color="#0F1410" />
+                        {user && <div style={{ position: "absolute", top: 8, right: 9, width: 8, height: 8, borderRadius: 4, background: "#2D6E3E", border: "2px solid #FAFAF6" }} />}
+                    </Link>
+                </div>
+                <form onSubmit={handleMobileSearch}>
+                    <div style={{
+                        width: "100%", height: 46, borderRadius: 23,
+                        background: "#fff", display: "flex", alignItems: "center", gap: 10, padding: "0 16px",
+                        boxShadow: "0 2px 10px rgba(15,20,16,0.04)", border: "1px solid rgba(15,20,16,0.05)",
+                    }}>
+                        {isSearchLoading ? <Loader2 size={18} color="#9AA29C" className="animate-spin" /> : <Search size={18} color="#9AA29C" />}
+                        <input
+                            type="text"
+                            placeholder={language === "uz" ? "Mahsulot qidirish..." : "Поиск товаров..."}
+                            value={search}
+                            onChange={handleMobileSearchChange}
+                            style={{ flex: 1, fontSize: 14, color: "#0F1410", background: "none", border: "none", outline: "none", fontWeight: 500 }}
+                        />
+                        {search && (
+                            <button type="button" onClick={() => { setSearch(""); setSearchResults(null); setHomeSearchQuery(""); }}
+                                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
+                                <X size={16} color="#9AA29C" />
+                            </button>
+                        )}
+                    </div>
+                </form>
+            </div>
+
+            {/* ── MOBILE: Gradient Catalog CTA ── */}
+            {!searchResults && (
+                <div className="md:hidden" style={{ padding: "10px 20px 0" }}>
+                    <Link href={`/${language}/catalog`} style={{
+                        height: 52, borderRadius: 18, display: "flex", alignItems: "center",
+                        justifyContent: "space-between", padding: "0 18px",
+                        background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)",
+                        boxShadow: "0 8px 20px rgba(45,110,62,0.28)", color: "#fff", textDecoration: "none",
+                    }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <div style={{
+                                width: 32, height: 32, borderRadius: 10,
+                                background: "rgba(255,255,255,0.2)",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                            }}>
+                                <LayoutGrid size={17} color="#fff" />
+                            </div>
+                            <div>
+                                <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: -0.2 }}>
+                                    {language === "uz" ? "Katalog" : "Каталог"}
+                                </div>
+                                <div style={{ fontSize: 11, opacity: 0.8 }}>
+                                    {language === "uz" ? "Barcha mahsulotlar" : "Все товары"}
+                                </div>
+                            </div>
+                        </div>
+                        <ChevronRight size={20} color="rgba(255,255,255,0.8)" />
+                    </Link>
+                </div>
+            )}
+
+            {!searchResults && <StoriesRow language={language} />}
+            {!searchResults && <PromoCountdown language={language} />}
+
+            {/* ── BANNER: desktop original, mobile Velari style ── */}
             {banners.length > 0 && !searchResults && (
-                <BannerSection
-                    banners={banners}
-                    bannerSettings={bannerSettings}
-                    currentBanner={currentBanner}
-                    setCurrentBanner={setCurrentBanner}
-                    language={language}
-                />
+                <div className="hidden md:block">
+                    <BannerSection
+                        banners={banners}
+                        bannerSettings={bannerSettings}
+                        currentBanner={currentBanner}
+                        setCurrentBanner={setCurrentBanner}
+                        language={language}
+                    />
+                </div>
+            )}
+            {!searchResults && (
+                <div className="md:hidden" style={{ padding: "12px 20px 0" }}>
+                    {banners.length > 0 ? (
+                        <div style={{
+                            position: "relative", borderRadius: 24, overflow: "hidden",
+                            aspectRatio: "16/10",
+                        }} onClick={() => setCurrentBanner((currentBanner + 1) % banners.length)}>
+                            <img
+                                src={language === "ru" ? banners[currentBanner]?.imageUrl_ru : banners[currentBanner]?.imageUrl_uz}
+                                alt={language === "ru" ? (banners[currentBanner]?.title_ru || "Banner") : (banners[currentBanner]?.title_uz || "Banner")}
+                                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                            />
+                            <div style={{
+                                position: "absolute", inset: 0,
+                                background: "linear-gradient(to top, rgba(15,20,16,0.55) 0%, transparent 55%)",
+                            }} />
+                            {(language === "ru" ? banners[currentBanner]?.title_ru : banners[currentBanner]?.title_uz) && (
+                                <div style={{ position: "absolute", bottom: 16, left: 16, right: 16 }}>
+                                    <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: -0.4, lineHeight: 1.2 }}>
+                                        {language === "ru" ? banners[currentBanner].title_ru : banners[currentBanner].title_uz}
+                                    </h2>
+                                </div>
+                            )}
+                            {banners.length > 1 && (
+                                <div style={{ position: "absolute", bottom: 12, right: 16, display: "flex", gap: 5 }}>
+                                    {banners.map((_, i) => (
+                                        <div key={i} style={{
+                                            width: i === currentBanner ? 20 : 6, height: 6, borderRadius: 3,
+                                            background: i === currentBanner ? "#fff" : "rgba(255,255,255,0.5)",
+                                            transition: "all 320ms cubic-bezier(0.22,1,0.36,1)",
+                                        }} />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div style={{
+                            position: "relative", borderRadius: 24, overflow: "hidden", aspectRatio: "16/10",
+                            background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)",
+                            boxShadow: "0 16px 40px rgba(45,110,62,0.25)",
+                        }}>
+                            <div style={{ position: "absolute", top: -30, right: -20, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
+                            <div style={{ position: "absolute", bottom: -40, left: -15, width: 150, height: 150, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
+                            <div style={{ position: "absolute", inset: 0, padding: 22, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                                <div>
+                                    <div style={{ display: "inline-flex", padding: "4px 10px", borderRadius: 8, background: "rgba(255,255,255,0.18)", fontSize: 10, fontWeight: 700, letterSpacing: 0.6, color: "#fff" }}>
+                                        {language === "uz" ? "YANGI KOLLEKSIYA" : "НОВАЯ КОЛЛЕКЦИЯ"}
+                                    </div>
+                                    <h2 style={{ margin: "10px 0 0", fontSize: 22, fontWeight: 700, color: "#fff", letterSpacing: -0.4, lineHeight: 1.15, maxWidth: "70%" }}>
+                                        {language === "uz" ? "Premium sifat mahsulotlar" : "Премиум товары"}
+                                    </h2>
+                                </div>
+                                <Link href={`/${language}/catalog`} style={{
+                                    alignSelf: "flex-start", padding: "10px 18px", borderRadius: 20,
+                                    background: "#fff", fontSize: 13, fontWeight: 600, color: "#0F1410", textDecoration: "none",
+                                }}>
+                                    {language === "uz" ? "Ko'rish →" : "Смотреть →"}
+                                </Link>
+                            </div>
+                        </div>
+                    )}
+                </div>
             )}
 
             {!searchResults && (
@@ -313,8 +496,6 @@ export default function HomeClient({
                 </div>
             )}
 
-            {!searchResults && <StoriesRow language={language} />}
-            {!searchResults && <PromoCountdown language={language} />}
             {!searchResults && <TrustStrip language={language} />}
 
             <div className="px-2 md:px-10 mt-4">
