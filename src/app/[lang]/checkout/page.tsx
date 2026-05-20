@@ -230,7 +230,7 @@ export default function CheckoutPage() {
     return (
         <div className="p-4 md:p-6 min-h-screen pt-8 md:pt-12 pb-32" style={{ background: "#FAFAF6" }}>
             <div className="flex items-center gap-4 mb-8 md:mb-10">
-                <button onClick={() => router.back()} style={{ width: 40, height: 40, borderRadius: 14, background: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", cursor: "pointer", flexShrink: 0 }}>
+                <button onClick={() => router.back()} style={{ width: 40, height: 40, borderRadius: 20, background: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", cursor: "pointer", flexShrink: 0 }}>
                     <ArrowLeft size={20} />
                 </button>
                 <h1 className="text-2xl md:text-3xl font-black tracking-tighter sm:truncate">{t.common.checkout}</h1>
@@ -363,28 +363,29 @@ export default function CheckoutPage() {
                     </div>
                 )}
 
-                <div className="mt-8 md:mt-12 p-5 md:p-10 bg-black text-white rounded-[32px] md:rounded-[40px] shadow-2xl relative overflow-hidden">
-                    <div className="relative z-10">
-                        <div className="flex justify-between mb-4 opacity-60 text-[10px] font-black uppercase tracking-[0.2em] px-1">
+                {/* Summary card \u2014 Velari green */}
+                <div style={{ marginTop: 24, padding: "20px 20px", background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", borderRadius: 24, boxShadow: "0 16px 40px rgba(45,110,62,0.28)", position: "relative", overflow: "hidden" }}>
+                    <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: 60, background: "rgba(255,255,255,0.08)", pointerEvents: "none" }} />
+                    <div style={{ position: "relative" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: 12, opacity: 0.8 }}>
                             <span>{t.common.products}</span>
-                            <span className="font-mono">{subtotal.toLocaleString()} so'm</span>
+                            <span>{subtotal.toLocaleString()} {language === "ru" ? "\u0441\u0443\u043C" : "so'm"}</span>
                         </div>
                         {promoData && (
-                            <div className="flex justify-between mb-4 text-[10px] font-black uppercase tracking-[0.2em] px-1 text-green-400">
-                                <span className="flex items-center gap-2"><Tag size={12} /> {promoData.code}</span>
-                                <span className="font-mono">-{promoData.discount.toLocaleString()} so'm</span>
+                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: 12, color: "#A3F0B8" }}>
+                                <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Tag size={12} /> {promoData.code}</span>
+                                <span>-{promoData.discount.toLocaleString()} {language === "ru" ? "\u0441\u0443\u043C" : "so'm"}</span>
                             </div>
                         )}
-                        <div className="flex justify-between mb-8 opacity-60 text-[10px] font-black uppercase tracking-[0.2em] px-1">
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14, fontSize: 12, opacity: 0.8 }}>
                             <span>{t.common.delivery}</span>
-                            <span className="text-green-400 font-black">{t.cart.free}</span>
+                            <span style={{ color: "#A3F0B8", fontWeight: 700 }}>{t.cart.free}</span>
                         </div>
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end font-black pt-6 md:pt-8 border-t border-white/10 px-1 gap-2 md:gap-4 w-full">
-                            <span className="uppercase text-[10px] md:text-sm not-italic opacity-40 tracking-[0.2em]">{t.common.total}</span>
-                            <div className="leading-[1.1] text-left sm:text-right text-3xl md:text-4xl italic tracking-tighter flex flex-wrap items-baseline gap-1">
-                                <span>{total.toLocaleString().replace(/\u00A0/g, ' ')}</span>
-                                <span className="text-xl md:text-2xl not-italic opacity-80">so'm</span>
-                            </div>
+                        <div style={{ borderTop: "1px solid rgba(255,255,255,0.15)", paddingTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: 13, opacity: 0.7, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>{t.common.total}</span>
+                            <span style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5 }}>
+                                {total.toLocaleString()} <span style={{ fontSize: 16, opacity: 0.8 }}>{language === "ru" ? "\u0441\u0443\u043C" : "so'm"}</span>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -392,9 +393,16 @@ export default function CheckoutPage() {
                 <button
                     type="submit"
                     disabled={isSubmitting || displayProducts.length === 0 || stockErrors.length > 0 || isValidating}
-                    className="w-full bg-[#2d6e3e] text-white py-6 rounded-full font-black text-xl shadow-2xl mt-8 active:scale-95 transition-all disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none flex items-center justify-center gap-4"
+                    style={{
+                        width: "100%", padding: "17px 0", borderRadius: 18, border: "none", cursor: "pointer",
+                        background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)",
+                        color: "#fff", fontSize: 16, fontWeight: 700, letterSpacing: -0.2,
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                        boxShadow: "0 8px 20px rgba(45,110,62,0.28)", marginTop: 12,
+                        opacity: (isSubmitting || displayProducts.length === 0 || stockErrors.length > 0 || isValidating) ? 0.4 : 1,
+                    }}
                 >
-                    {isValidating ? <Loader2 className="animate-spin" size={24} /> : (isSubmitting ? t.common.sending : t.common.goToPayment)}
+                    {isValidating ? <Loader2 className="animate-spin" size={20} /> : (isSubmitting ? <><Loader2 className="animate-spin" size={20} /> {t.common.sending}</> : t.common.goToPayment)}
                 </button>
             </form>
 

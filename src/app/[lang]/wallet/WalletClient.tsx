@@ -114,90 +114,109 @@ export default function WalletClient() {
         setIsProcessing(false);
     };
 
+    const GREEN = "#2D6E3E";
+    const GREEN_DEEP = "#1F5A30";
+
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center bg-[#F2F3F5]">
-            <Loader2 className="animate-spin text-black" size={32} />
+        <div style={{ minHeight: "100vh", background: "#FAFAF6", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Loader2 style={{ animation: "spin 1s linear infinite", color: GREEN }} size={32} />
         </div>
     );
 
     return (
-        <div className="bg-[#F2F3F5] min-h-screen pb-24 px-4 md:px-10">
-            <div className="max-w-xl mx-auto pt-10">
-                <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-400 font-bold uppercase tracking-widest text-[10px] mb-8 hover:text-black transition-all">
-                    <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
-                </button>
+        <div style={{ background: "#FAFAF6", minHeight: "100vh", paddingBottom: 100 }}>
+            <div className="max-w-xl mx-auto" style={{ padding: "0 16px" }}>
+                {/* Back button */}
+                <div style={{ paddingTop: 20, marginBottom: 16 }}>
+                    <button onClick={() => router.back()} style={{ width: 40, height: 40, borderRadius: 20, background: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", cursor: "pointer" }}>
+                        <ChevronLeft size={20} color="#0F1410" />
+                    </button>
+                </div>
 
-                {/* Bank Card */}
-                <div className="bg-black text-white p-8 md:p-10 rounded-[50px] shadow-2xl relative overflow-hidden mb-8">
-                    <div className="absolute top-0 right-0 p-10 opacity-10 rotate-12 scale-150">
-                        <ShieldCheck size={120} />
-                    </div>
-                    <div className="relative z-10">
-                        <div className="flex justify-between items-start mb-12">
+                {/* Balance card — Velari green gradient */}
+                <div style={{
+                    background: `linear-gradient(135deg, ${GREEN} 0%, ${GREEN_DEEP} 100%)`,
+                    color: "#fff", borderRadius: 28, padding: "22px 22px 26px",
+                    boxShadow: "0 16px 40px rgba(45,110,62,0.28)", position: "relative", overflow: "hidden", marginBottom: 14,
+                }}>
+                    <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: 60, background: "rgba(255,255,255,0.08)", pointerEvents: "none" }} />
+                    <div style={{ position: "absolute", bottom: -50, left: -20, width: 140, height: 140, borderRadius: 70, background: "rgba(255,255,255,0.05)", pointerEvents: "none" }} />
+                    <div style={{ position: "relative" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
                             <div>
-                                <p className="text-[10px] font-black opacity-40 uppercase tracking-widest mb-1 italic">Tizim hamyoni</p>
-                                <h2 className="text-3xl md:text-4xl font-black italic tracking-tighter">{(wallet?.balance || 0).toLocaleString()} <span className="text-lg opacity-40">SO'M</span></h2>
+                                <p style={{ fontSize: 11, opacity: 0.6, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>
+                                    {language === 'uz' ? "Cashback hamyoni" : "Кэшбэк кошелёк"}
+                                </p>
+                                <h2 style={{ fontSize: 32, fontWeight: 700, letterSpacing: -0.8, margin: 0 }}>
+                                    {(wallet?.balance || 0).toLocaleString()} <span style={{ fontSize: 16, opacity: 0.7 }}>{language === 'uz' ? "so'm" : "сум"}</span>
+                                </h2>
                             </div>
-                            <div className="w-12 h-12 bg-white/10 rounded-2xl backdrop-blur-md flex items-center justify-center border border-white/10">
-                                <Wallet size={24} />
+                            <div style={{ width: 48, height: 48, borderRadius: 16, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <Wallet size={22} color="#fff" />
                             </div>
                         </div>
-                        <div className="flex justify-between items-end">
-                            <div>
-                                <p className="text-[9px] font-black opacity-30 uppercase tracking-widest mb-1 italic">Kutilmoqda</p>
-                                <p className="font-bold text-sm text-green-400">+{totalPending.toLocaleString()} som</p>
+                        <div style={{ display: "flex", gap: 8 }}>
+                            <div style={{ flex: 1, padding: "10px 12px", borderRadius: 14, background: "rgba(255,255,255,0.12)" }}>
+                                <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 3 }}>{language === 'uz' ? "Kutilmoqda" : "Ожидается"}</div>
+                                <div style={{ fontSize: 14, fontWeight: 700 }}>+{totalPending.toLocaleString()}</div>
                             </div>
-                            <div className="text-right">
-                                <p className="text-[9px] font-black opacity-30 uppercase tracking-widest mb-1 italic">Foydalanuvchi</p>
-                                <p className="font-bold text-sm uppercase">{user?.name || "Mijoz"}</p>
+                            <div style={{ flex: 1, padding: "10px 12px", borderRadius: 14, background: "rgba(255,255,255,0.12)" }}>
+                                <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 3 }}>{language === 'uz' ? "Foydalanuvchi" : "Пользователь"}</div>
+                                <div style={{ fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.name || "Mijoz"}</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* P2P Transfer Button */}
-                <button 
-                    onClick={() => setShowTransfer(true)}
-                    className="w-full bg-white p-6 rounded-[32px] border-2 border-transparent hover:border-black shadow-sm mb-10 flex items-center justify-between group transition-all"
-                >
-                    <div className="flex items-center gap-4 text-left">
-                        <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-all">
-                            <RotateCcw className="rotate-90" size={20} />
+                {/* Transfer button */}
+                <div style={{ background: "#fff", borderRadius: 20, overflow: "hidden", marginBottom: 14 }}>
+                    <button
+                        onClick={() => setShowTransfer(true)}
+                        style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
+                    >
+                        <div style={{ width: 36, height: 36, borderRadius: 10, background: "#EAF3EC", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <RotateCcw size={18} color={GREEN} />
                         </div>
-                        <div>
-                            <h3 className="font-black italic uppercase text-sm tracking-tighter">Hamyonlararo o'tkazma</h3>
-                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Bank darajasidagi xavfsizlik (2FA Telegram)</p>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 15, fontWeight: 600, color: "#0F1410", letterSpacing: -0.2 }}>
+                                {language === 'uz' ? "Hamyonlararo o'tkazma" : "Перевод между кошельками"}
+                            </div>
+                            <div style={{ fontSize: 11, color: "#9AA29C", marginTop: 2 }}>
+                                {language === 'uz' ? "2FA Telegram orqali himoya" : "Защита через 2FA Telegram"}
+                            </div>
                         </div>
-                    </div>
-                    <ChevronRight className="text-gray-300 group-hover:text-black transition-all" />
-                </button>
+                        <ChevronRight size={18} color="#C7CDC8" />
+                    </button>
+                </div>
 
-                {/* Audit Trail */}
-                <div className="space-y-6">
-                    <div className="flex items-center justify-between px-2">
-                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Tranzaksiyalar auditi</p>
-                        <HistoryIcon size={16} className="text-gray-300" />
+                {/* Transaction history */}
+                <div style={{ marginBottom: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 4px 10px" }}>
+                        <p style={{ fontSize: 11, fontWeight: 700, color: "#9AA29C", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                            {language === 'uz' ? "Tranzaksiyalar" : "Транзакции"}
+                        </p>
+                        <HistoryIcon size={16} color="#9AA29C" />
                     </div>
-                    <div className="space-y-3">
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         {transactions.length === 0 ? (
-                            <div className="bg-white p-12 rounded-[40px] text-center italic font-bold text-gray-300">Hozircha tranzaksiyalar yo'q...</div>
-                        ) : transactions.map((t, i) => (
-                            <div key={i} className="bg-white p-5 rounded-[28px] border border-gray-100 flex items-center justify-between group shadow-sm transition-all hover:bg-gray-50">
-                                <div className="flex items-center gap-4">
-                                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black ${t.val > 0 ? 'bg-green-50 text-green-500' : 'bg-red-50 text-red-500'}`}>
-                                        {t.val > 0 ? '+' : '-'}
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="font-black italic uppercase text-[12px] tracking-tight truncate">
-                                            {t.type === 'cashback' ? "Keshbek to'plandi" : 
-                                             t.type.includes('gift') ? `🎁 Sovg'a: ${t.isOutgoing ? t.receiver_phone : t.sender_phone}` :
-                                             (t.isOutgoing ? `To: ${t.receiver_phone}` : `From: ${t.sender_phone}`)}
-                                        </p>
-                                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{new Date(t.date).toLocaleDateString()}</p>
-                                    </div>
+                            <div style={{ background: "#fff", borderRadius: 20, padding: "40px 16px", textAlign: "center", color: "#9AA29C", fontSize: 14 }}>
+                                {language === 'uz' ? "Hozircha tranzaksiyalar yo'q" : "Транзакций пока нет"}
+                            </div>
+                        ) : transactions.map((tx, i) => (
+                            <div key={i} style={{ background: "#fff", borderRadius: 18, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+                                <div style={{ width: 40, height: 40, borderRadius: 13, background: tx.val > 0 ? "#EAF3EC" : "#FFF0EE", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontWeight: 800, fontSize: 16, color: tx.val > 0 ? GREEN : "#FF3B30" }}>
+                                    {tx.val > 0 ? "+" : "−"}
                                 </div>
-                                <p className={`shrink-0 font-black italic text-sm tracking-tighter ${t.val > 0 ? (t.type.includes('gift') ? 'text-amber-500' : 'text-green-500') : 'text-red-500'}`}>
-                                    {Math.abs(t.val).toLocaleString()} <span className="text-[9px] opacity-40 italic">som</span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{ fontSize: 13, fontWeight: 600, color: "#0F1410", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        {tx.type === 'cashback' ? (language === 'uz' ? "Keshbek to'plandi" : "Кэшбэк начислен") :
+                                         tx.type?.includes('gift') ? `🎁 ${tx.isOutgoing ? tx.receiver_phone : tx.sender_phone}` :
+                                         (tx.isOutgoing ? `→ ${tx.receiver_phone}` : `← ${tx.sender_phone}`)}
+                                    </p>
+                                    <p style={{ fontSize: 11, color: "#9AA29C", marginTop: 2 }}>{new Date(tx.date).toLocaleDateString()}</p>
+                                </div>
+                                <p style={{ flexShrink: 0, fontWeight: 700, fontSize: 15, color: tx.val > 0 ? GREEN : "#FF3B30", letterSpacing: -0.3 }}>
+                                    {tx.val > 0 ? "+" : "−"}{Math.abs(tx.val).toLocaleString()}
                                 </p>
                             </div>
                         ))}
@@ -207,50 +226,44 @@ export default function WalletClient() {
 
             {/* Transfer Modal */}
             {showTransfer && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-xl z-50 flex items-center justify-center p-6 animate-in fade-in">
-                    <div className="bg-white w-full max-w-sm rounded-[50px] p-8 shadow-2xl relative">
-                        <button onClick={() => { setShowTransfer(false); setTransferStep(1); }} className="absolute top-6 right-6 text-gray-300 hover:text-black transition-all rotate-45"><RotateCcw size={24} /></button>
-                        
-                        <div className="text-center mb-10 pt-4">
-                            <div className="w-16 h-16 bg-black text-white rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-black/20">
-                                <ShieldCheck size={28} />
+                <div style={{ position: "fixed", inset: 0, background: "rgba(15,20,16,0.6)", backdropFilter: "blur(20px)", zIndex: 50, display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 0 20px" }}>
+                    <div style={{ background: "#fff", width: "100%", maxWidth: 480, borderRadius: "32px 32px 28px 28px", padding: "24px 24px 32px", boxShadow: "0 -8px 40px rgba(15,20,16,0.12)", position: "relative" }}>
+                        <button onClick={() => { setShowTransfer(false); setTransferStep(1); }} style={{ position: "absolute", top: 20, right: 20, width: 36, height: 36, borderRadius: 18, background: "#F5F5F0", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            ✕
+                        </button>
+                        <div style={{ textAlign: "center", marginBottom: 24 }}>
+                            <div style={{ width: 56, height: 56, borderRadius: 18, background: "#EAF3EC", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+                                <ShieldCheck size={26} color={GREEN} />
                             </div>
-                            <h2 className="text-xl font-black italic tracking-tighter uppercase">{transferStep === 1 ? "O'tkazma" : "2FA Tasdiqlash"}</h2>
+                            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#0F1410", letterSpacing: -0.4 }}>
+                                {transferStep === 1 ? (language === 'uz' ? "O'tkazma" : "Перевод") : (language === 'uz' ? "2FA Tasdiqlash" : "2FA Подтверждение")}
+                            </h2>
                         </div>
 
-                        {error && <div className="bg-red-50 text-red-500 p-3 rounded-xl text-[10px] font-black uppercase text-center mb-6 tracking-widest">{error}</div>}
+                        {error && <div style={{ background: "#FFF0EE", color: "#FF3B30", padding: "12px 16px", borderRadius: 14, fontSize: 13, marginBottom: 16 }}>{error}</div>}
 
                         {transferStep === 1 ? (
-                            <div className="space-y-4">
-                                <input type="tel" placeholder="Qabul qiluvchi tel..." value={receiverPhone} onChange={e => setReceiverPhone(e.target.value)} className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-2xl p-4 text-sm font-bold outline-none" />
-                                <input type="number" placeholder="Summa..." value={amount} onChange={e => setAmount(e.target.value)} className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-2xl p-4 text-sm font-bold outline-none" />
-                                
-                                <button 
-                                    onClick={() => setIsGift(!isGift)}
-                                    className={`w-full p-4 rounded-2xl border-2 transition-all flex items-center justify-between ${isGift ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-gray-50 text-gray-400 hover:border-gray-200'}`}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isGift ? 'bg-amber-400 text-white' : 'bg-gray-100'}`}>
-                                            <Star size={16} fill={isGift ? "currentColor" : "none"} />
-                                        </div>
-                                        <span className="text-[10px] font-black uppercase tracking-widest">🎁 Sovg'a sifatida yuborish</span>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                                <input type="tel" placeholder={language === 'uz' ? "Qabul qiluvchi tel..." : "Телефон получателя..."} value={receiverPhone} onChange={e => setReceiverPhone(e.target.value)} style={{ width: "100%", background: "#F5F5F0", border: "none", borderRadius: 16, padding: "14px 18px", fontSize: 15, fontWeight: 600, color: "#0F1410", outline: "none", boxSizing: "border-box" }} />
+                                <input type="number" placeholder={language === 'uz' ? "Summa (so'm)..." : "Сумма (сум)..."} value={amount} onChange={e => setAmount(e.target.value)} style={{ width: "100%", background: "#F5F5F0", border: "none", borderRadius: 16, padding: "14px 18px", fontSize: 15, fontWeight: 600, color: "#0F1410", outline: "none", boxSizing: "border-box" }} />
+                                <button onClick={() => setIsGift(!isGift)} style={{ width: "100%", padding: "14px 16px", borderRadius: 16, border: isGift ? "1.5px solid #F59E0B" : "1.5px solid rgba(15,20,16,0.06)", background: isGift ? "#FFFBEB" : "#fff", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
+                                    <div style={{ width: 32, height: 32, borderRadius: 10, background: isGift ? "#F59E0B" : "#F5F5F0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                        <Star size={16} fill={isGift ? "#fff" : "none"} color={isGift ? "#fff" : "#9AA29C"} />
                                     </div>
-                                    <div className={`w-10 h-5 rounded-full relative transition-all ${isGift ? 'bg-amber-400' : 'bg-gray-200'}`}>
-                                        <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${isGift ? 'left-6' : 'left-1'}`} />
-                                    </div>
+                                    <span style={{ fontSize: 13, fontWeight: 600, color: isGift ? "#B45309" : "#9AA29C" }}>🎁 {language === 'uz' ? "Sovg'a sifatida yuborish" : "Отправить как подарок"}</span>
                                 </button>
-
-                                <button onClick={handleTransferRequest} disabled={isProcessing} className={`w-full ${isGift ? 'bg-amber-500' : 'bg-black'} text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl ${isGift ? 'shadow-amber-500/20' : 'shadow-black/20'}`}>
-                                    {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <ChevronRight size={16} />} DAVOM ETISH
+                                <button onClick={handleTransferRequest} disabled={isProcessing} style={{ width: "100%", padding: "16px", borderRadius: 18, border: "none", background: `linear-gradient(135deg, ${GREEN} 0%, #1F5A30 100%)`, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 8px 20px rgba(45,110,62,0.28)", opacity: isProcessing ? 0.5 : 1 }}>
+                                    {isProcessing ? <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} /> : (language === 'uz' ? "Davom etish" : "Продолжить")}
                                 </button>
                             </div>
                         ) : (
-                            <div className="space-y-4 text-center">
-                                <input type="text" maxLength={6} placeholder="000000" value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-2xl p-4 text-2xl font-black tracking-[0.5em] text-center outline-none" />
-                                <button onClick={handleTransferConfirm} disabled={isProcessing || otpCode.length < 6} className="w-full bg-black text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
-                                    {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} TASDIQLASH
+                            <div style={{ display: "flex", flexDirection: "column", gap: 12, textAlign: "center" }}>
+                                <input type="text" maxLength={6} placeholder="000000" value={otpCode} onChange={e => setOtpCode(e.target.value)} style={{ background: "#F5F5F0", border: "none", borderRadius: 16, padding: "20px 16px", fontSize: 32, fontWeight: 700, textAlign: "center", letterSpacing: "0.5em", outline: "none", width: "100%", boxSizing: "border-box", color: "#0F1410" }} />
+                                <button onClick={handleTransferConfirm} disabled={isProcessing || otpCode.length < 6} style={{ width: "100%", padding: "16px", borderRadius: 18, border: "none", background: `linear-gradient(135deg, ${GREEN} 0%, #1F5A30 100%)`, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: (isProcessing || otpCode.length < 6) ? 0.5 : 1 }}>
+                                    {isProcessing ? <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} /> : <CheckCircle2 size={18} />}
+                                    {language === 'uz' ? "Tasdiqlash" : "Подтвердить"}
                                 </button>
-                                <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest leading-relaxed">Kodni botimizdan oldingiz</p>
+                                <p style={{ fontSize: 12, color: "#9AA29C" }}>{language === 'uz' ? "Kodni Telegram botimizdan oldingiz" : "Код получен в Telegram боте"}</p>
                             </div>
                         )}
                     </div>
