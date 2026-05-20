@@ -446,14 +446,30 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                 </div>
             </div>
 
-            {/* Mobile View (Social Style) */}
+            {/* Mobile View */}
             <div className="md:hidden" style={{ overscrollBehavior: 'none', touchAction: 'pan-x pan-y' }}>
-                <div className="px-5 pt-4 flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-widest overflow-x-auto no-scrollbar whitespace-nowrap">
-                    <Link href="/" className="hover:text-black transition-colors">MAHSULOTLAR</Link>
-                    <span>/</span>
-                    <Link href={`/catalog?category=${product.category}`} className="hover:text-black transition-colors">
-                        {categoryData ? (categoryData[language === 'uz' ? 'name_uz' : 'name_ru'] || categoryData.name) : (product[language === 'uz' ? 'category_uz' : 'category_ru'] || product.category)}
+                {/* Floating back + wishlist buttons */}
+                <div style={{ position: "absolute", top: 56, left: 16, right: 16, zIndex: 20, display: "flex", justifyContent: "space-between", pointerEvents: "none" }} className="md:hidden">
+                    <Link href={`/${language}/catalog`} style={{
+                        width: 40, height: 40, borderRadius: 20,
+                        background: "rgba(255,255,255,0.9)", backdropFilter: "blur(12px)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        boxShadow: "0 2px 8px rgba(15,20,16,0.08)", pointerEvents: "auto",
+                    }}>
+                        <ChevronLeft size={20} color="#0F1410" />
                     </Link>
+                    <button
+                        onClick={() => toggleWishlist(product)}
+                        style={{
+                            width: 40, height: 40, borderRadius: 20,
+                            background: "rgba(255,255,255,0.9)", backdropFilter: "blur(12px)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            border: "none", cursor: "pointer",
+                            boxShadow: "0 2px 8px rgba(15,20,16,0.08)", pointerEvents: "auto",
+                        }}
+                    >
+                        <Heart size={18} fill={isWishlisted ? "#FF3B30" : "none"} color={isWishlisted ? "#FF3B30" : "#0F1410"} />
+                    </button>
                 </div>
                 <ProductMedia 
                     allMedia={allMedia}
@@ -784,36 +800,48 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                 language={language}
             />
 
-            {/* Mobile Fixed Bottom Bar (Floating above Nav) */}
-            <div className={`md:hidden fixed bottom-[72px] left-4 right-4 z-[60] bg-white/95 backdrop-blur-2xl border border-gray-100 p-3 rounded-[32px] shadow-2xl transition-all duration-500 transform ${isScrolledPast ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}>
-                <div className="flex gap-2 items-stretch h-14">
-                    <button 
-                        onClick={handleFastBuy}
-                        className="flex-1 bg-black text-white rounded-[20px] font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all shadow-lg"
+            {/* Mobile Sticky CTA — Velari style */}
+            <div className={`md:hidden fixed bottom-[66px] left-0 right-0 z-[60] transition-all duration-500 transform ${isScrolledPast ? 'translate-y-40 opacity-0' : 'translate-y-0 opacity-100'}`}
+                style={{ padding: "14px 20px 20px", background: "rgba(250,250,246,0.92)", backdropFilter: "blur(20px) saturate(180%)", borderTop: "0.5px solid rgba(15,20,16,0.06)" }}>
+                <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
+                    {/* Heart */}
+                    <button
+                        onClick={() => toggleWishlist(product)}
+                        style={{
+                            width: 54, height: 54, borderRadius: 27, flexShrink: 0,
+                            background: "#fff", border: "1.5px solid rgba(15,20,16,0.08)",
+                            display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                        }}
                     >
-                        {language === 'uz' ? "Hozir sotib olish" : "Купить сейчас"}
+                        <Heart size={20} fill={isWishlisted ? "#FF3B30" : "none"} color={isWishlisted ? "#FF3B30" : "#0F1410"} />
                     </button>
 
+                    {/* Cart CTA */}
                     {cartItem ? (
-                        <div className="flex-1 flex items-center gap-2">
-                            <div className="flex-1 bg-gray-50 h-full rounded-[20px] border border-gray-100 flex items-center justify-around">
-                                <button onClick={() => updateQuantity(product.id, cartItem.quantity - 1)} className="p-2 text-gray-400 hover:text-black"><Minus size={16} /></button>
-                                <span className="text-sm font-black italic">{cartItem.quantity}</span>
-                                <button onClick={() => updateQuantity(product.id, cartItem.quantity + 1)} className="p-2 text-gray-400 hover:text-black"><Plus size={16} /></button>
+                        <div style={{ flex: 1, display: "flex", gap: 8, alignItems: "stretch" }}>
+                            <div style={{ flex: 1, background: "#EAF3EC", borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "space-around" }}>
+                                <button onClick={() => updateQuantity(product.id, cartItem.quantity - 1)} style={{ padding: 10, background: "none", border: "none", cursor: "pointer", color: "#2D6E3E" }}><Minus size={16} /></button>
+                                <span style={{ fontSize: 16, fontWeight: 700, color: "#0F1410" }}>{cartItem.quantity}</span>
+                                <button onClick={() => updateQuantity(product.id, cartItem.quantity + 1)} style={{ padding: 10, background: "none", border: "none", cursor: "pointer", color: "#2D6E3E" }}><Plus size={16} /></button>
                             </div>
-                            <Link href="/cart" className="bg-black text-white h-full aspect-square rounded-[20px] flex items-center justify-center shadow-lg active:scale-90 transition-all">
-                                <ShoppingBag size={20} strokeWidth={3} />
+                            <Link href={`/${language}/cart`} style={{ width: 54, height: 54, borderRadius: 27, background: "#2D6E3E", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", flexShrink: 0 }}>
+                                <ShoppingBag size={20} color="#fff" />
                             </Link>
                         </div>
                     ) : (
-                        <button 
+                        <button
                             onClick={() => addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any)}
-                            className="flex-1 bg-[#2d6e3e] text-white rounded-[20px] font-black text-[10px] uppercase tracking-tight flex flex-col items-center justify-center active:scale-95 transition-all shadow-xl shadow-emerald-800/10"
+                            style={{
+                                flex: 1, height: 54, borderRadius: 18, border: "none", cursor: "pointer",
+                                background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)",
+                                color: "#fff", fontSize: 15, fontWeight: 700, letterSpacing: -0.2,
+                                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                                boxShadow: "0 8px 20px rgba(45,110,62,0.28)",
+                                WebkitTapHighlightColor: "transparent",
+                            }}
                         >
-                            <span className="text-[8px] opacity-60 mb-0.5">{language === 'uz' ? "Savatga" : "В корзину"}</span>
-                            <span className="flex items-center gap-1">
-                                <Truck size={12} strokeWidth={3} /> {getDeliveryDateText(language, deliverySettings)}
-                            </span>
+                            <ShoppingBag size={18} color="#fff" />
+                            {language === 'uz' ? "Savatga qo'shish" : "В корзину"}
                         </button>
                     )}
                 </div>
