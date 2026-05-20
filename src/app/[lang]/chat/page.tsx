@@ -145,21 +145,25 @@ export default function ChatPage() {
         );
     }
 
+    const GREEN = "#2D6E3E";
+    const GREEN_DEEP = "#1F5A30";
+    const GREEN_TINT = "#EAF3EC";
+
     return (
-        <div className="flex flex-col h-[100dvh] bg-gray-50 max-w-md mx-auto relative overflow-hidden">
+        <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "#FAFAF6", maxWidth: 480, margin: "0 auto", position: "relative", overflow: "hidden" }}>
             {/* Header */}
-            <div className="bg-white p-6 pt-12 flex items-center gap-4 border-b border-gray-100 shadow-sm z-10 shrink-0">
-                <button onClick={() => router.back()} className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center active:scale-90 transition-all">
-                    <ChevronLeft size={20} />
+            <div style={{ background: "rgba(250,250,246,0.92)", backdropFilter: "blur(20px)", padding: "54px 16px 12px", display: "flex", alignItems: "center", gap: 12, borderBottom: "0.5px solid rgba(15,20,16,0.06)", flexShrink: 0, zIndex: 10 }}>
+                <button onClick={() => router.back()} style={{ width: 40, height: 40, borderRadius: 20, background: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", cursor: "pointer", flexShrink: 0 }}>
+                    <ChevronLeft size={20} color="#0F1410" />
                 </button>
-                <div className="flex items-center gap-3 flex-1">
-                    <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center shadow-lg shadow-black/10">
-                        <Headset size={24} />
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 14, background: GREEN_TINT, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Headset size={22} color={GREEN} />
                     </div>
                     <div>
-                        <h1 className="text-sm font-black uppercase tracking-widest leading-none mb-1">{language === 'uz' ? "Qo'llab-quvvatlash" : "Поддержка"}</h1>
-                        <p className="text-[10px] font-bold text-green-500 uppercase tracking-tighter flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                        <h1 style={{ fontSize: 15, fontWeight: 700, color: "#0F1410", letterSpacing: -0.2, marginBottom: 2 }}>{language === 'uz' ? "Qo'llab-quvvatlash" : "Поддержка"}</h1>
+                        <p style={{ fontSize: 11, color: GREEN, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                            <span style={{ width: 6, height: 6, borderRadius: 3, background: GREEN, display: "inline-block" }} />
                             Online
                         </p>
                     </div>
@@ -167,55 +171,37 @@ export default function ChatPage() {
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
+            <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px", display: "flex", flexDirection: "column", gap: 12 }} className="no-scrollbar">
                 {messages.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-center px-10">
-                        <div className="w-20 h-20 bg-black/5 rounded-full flex items-center justify-center mb-6">
-                            <Headset size={40} className="text-black/10" />
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "40px 32px" }}>
+                        <div style={{ width: 80, height: 80, borderRadius: 28, background: GREEN_TINT, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+                            <Headset size={36} color={GREEN} />
                         </div>
-                        <h2 className="text-lg font-black italic uppercase tracking-tighter mb-2">{language === 'uz' ? "Qanday yordam bera olamiz?" : "Чем мы можем помочь?"}</h2>
-                        <p className="text-xs font-medium text-gray-400 leading-relaxed uppercase tracking-widest">
-                            {language === 'uz' ? "Muammolaringiz yoki savollaringizni shu yerda yozib qoldiring. Mutaxassislarimiz tez orada javob berishadi." : "Напишите здесь ваши вопросы или проблемы. Наши специалисты ответят в ближайшее время."}
+                        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#0F1410", letterSpacing: -0.3, marginBottom: 8 }}>{language === 'uz' ? "Qanday yordam bera olamiz?" : "Чем мы можем помочь?"}</h2>
+                        <p style={{ fontSize: 13, color: "#9AA29C", lineHeight: 1.5, maxWidth: 260 }}>
+                            {language === 'uz' ? "Muammolaringiz yoki savollaringizni shu yerda yozib qoldiring." : "Напишите здесь ваши вопросы или проблемы."}
                         </p>
                     </div>
                 ) : (
-                    messages.map((msg, idx) => {
+                    messages.map((msg) => {
                         const isMe = msg.senderId === user?.phone;
                         const hasMedia = msg.image || msg.video;
                         return (
-                            <div key={msg.id} className={`flex items-end gap-2 ${isMe ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+                            <div key={msg.id} style={{ display: "flex", alignItems: "flex-end", gap: 8, justifyContent: isMe ? "flex-end" : "flex-start" }}>
                                 {!isMe && (
-                                    <div className="w-8 h-8 bg-black text-white rounded-lg flex items-center justify-center shrink-0 shadow-lg shadow-black/5 mb-1">
-                                        <Headset size={14} />
+                                    <div style={{ width: 32, height: 32, borderRadius: 10, background: GREEN_TINT, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginBottom: 2 }}>
+                                        <Headset size={14} color={GREEN} />
                                     </div>
                                 )}
-                                <div className={`max-w-[85%] rounded-[24px] overflow-hidden shadow-sm transition-all ${isMe ? "rounded-br-none" : "rounded-bl-none border border-gray-100"}`}>
-                                    <div className="relative">
-                                        {msg.image && (
-                                            <img src={msg.image} className="w-full max-h-96 object-cover cursor-pointer hover:opacity-95 transition-all" alt="Chat" onClick={() => window.open(msg.image, '_blank')} />
-                                        )}
-                                        {msg.video && (
-                                            <video src={msg.video} className="w-full max-h-96 object-cover" controls playsInline muted autoPlay loop />
-                                        )}
-
-                                        {/* Overlay timestamp if media only */}
-                                        {hasMedia && !msg.text && (
-                                            <div className="absolute bottom-2 right-2 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-lg">
-                                                <p className="text-[9px] font-bold text-white uppercase tracking-widest opacity-80">
-                                                    {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "..."}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-
+                                <div style={{ maxWidth: "82%", borderRadius: isMe ? "20px 20px 4px 20px" : "20px 20px 20px 4px", overflow: "hidden", boxShadow: "0 2px 8px rgba(15,20,16,0.06)" }}>
+                                    {msg.image && <img src={msg.image} style={{ width: "100%", maxHeight: 280, objectFit: "cover", display: "block", cursor: "pointer" }} alt="Chat" onClick={() => window.open(msg.image, '_blank')} />}
+                                    {msg.video && <video src={msg.video} style={{ width: "100%", maxHeight: 280, objectFit: "cover" }} controls playsInline muted />}
                                     {(msg.text || !hasMedia) && (
-                                        <div className={`p-4 px-5 ${isMe ? "bg-black text-white" : "bg-white text-black"}`}>
-                                            {msg.text && <p className="text-[13px] font-medium leading-relaxed mb-1.5">{msg.text}</p>}
-                                            <div className={`flex items-center gap-2 ${isMe ? "justify-end" : "justify-start"}`}>
-                                                <p className={`text-[8px] font-black uppercase tracking-widest opacity-40 ${isMe ? "text-white/60" : "text-gray-400"}`}>
-                                                    {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Hozirgina"}
-                                                </p>
-                                            </div>
+                                        <div style={{ padding: "10px 14px", background: isMe ? `linear-gradient(135deg, ${GREEN} 0%, ${GREEN_DEEP} 100%)` : "#fff" }}>
+                                            {msg.text && <p style={{ fontSize: 14, fontWeight: 500, color: isMe ? "#fff" : "#0F1410", lineHeight: 1.45, marginBottom: 4 }}>{msg.text}</p>}
+                                            <p style={{ fontSize: 10, color: isMe ? "rgba(255,255,255,0.6)" : "#9AA29C", textAlign: isMe ? "right" : "left" }}>
+                                                {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "•••"}
+                                            </p>
                                         </div>
                                     )}
                                 </div>
@@ -227,56 +213,38 @@ export default function ChatPage() {
             </div>
 
             {/* Input Area */}
-            <div className="p-6 pb-6 bg-white border-t border-gray-100 shrink-0">
+            <div style={{ padding: "12px 16px 24px", background: "rgba(250,250,246,0.92)", backdropFilter: "blur(20px)", borderTop: "0.5px solid rgba(15,20,16,0.06)", flexShrink: 0 }}>
                 {mediaPreview && (
-                    <div className="mb-4 relative w-32 aspect-video group shadow-xl">
+                    <div style={{ marginBottom: 10, position: "relative", width: 120 }}>
                         {selectedFile?.type.startsWith('video/') ? (
-                            <video src={mediaPreview} className="w-full h-full object-cover rounded-xl border border-gray-200 shadow-sm" muted />
+                            <video src={mediaPreview} style={{ width: 120, height: 80, objectFit: "cover", borderRadius: 12 }} muted />
                         ) : (
-                            <img src={mediaPreview} className="w-full h-full object-cover rounded-xl border border-gray-200 shadow-sm" alt="Preview" />
+                            <img src={mediaPreview} style={{ width: 120, height: 80, objectFit: "cover", borderRadius: 12 }} alt="Preview" />
                         )}
-                        <button
-                            onClick={() => { setSelectedFile(null); setMediaPreview(null); }}
-                            className="absolute -top-3 -right-3 bg-black text-white rounded-full p-1.5 shadow-2xl active:scale-90 border-2 border-white hover:bg-gray-800 transition-colors"
-                        >
-                            <ChevronLeft size={16} className="rotate-45" />
-                        </button>
-                        {isUploadingMedia && (
-                            <div className="absolute inset-0 bg-black/60 rounded-xl flex items-center justify-center">
-                                <Loader2 size={24} className="animate-spin text-white" />
-                            </div>
-                        )}
+                        <button onClick={() => { setSelectedFile(null); setMediaPreview(null); }} style={{ position: "absolute", top: -8, right: -8, width: 24, height: 24, borderRadius: 12, background: "#FF3B30", border: "none", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+                        {isUploadingMedia && <div style={{ position: "absolute", inset: 0, background: "rgba(15,20,16,0.5)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}><Loader2 size={20} color="#fff" className="animate-spin" /></div>}
                     </div>
                 )}
-                <div className="flex items-center gap-3 relative">
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleFileSelect}
-                        accept="image/*,video/*"
-                        className="hidden"
-                    />
-                    <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-12 h-12 bg-gray-100 text-black rounded-2xl flex items-center justify-center hover:bg-black hover:text-white transition-all active:scale-95 shadow-lg shadow-black/5"
-                    >
-                        <Paperclip size={20} />
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/*,video/*" className="hidden" />
+                    <button onClick={() => fileInputRef.current?.click()} style={{ width: 44, height: 44, borderRadius: 14, background: GREEN_TINT, border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+                        <Paperclip size={18} color={GREEN} />
                     </button>
-                    <div className="flex-1 relative">
+                    <div style={{ flex: 1, position: "relative" }}>
                         <input
                             type="text"
                             value={inputText}
                             onChange={(e) => setInputText(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                             placeholder={language === 'uz' ? "Xabaringizni yozing..." : "Напишите сообщение..."}
-                            className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-2xl p-4 pr-12 text-sm font-medium outline-none transition-all"
+                            style={{ width: "100%", background: "#fff", border: "1.5px solid rgba(15,20,16,0.06)", borderRadius: 20, padding: "12px 48px 12px 18px", fontSize: 14, fontWeight: 500, color: "#0F1410", outline: "none", boxSizing: "border-box" }}
                         />
                         <button
                             onClick={handleSendMessage}
                             disabled={isSending || (!inputText.trim() && !selectedFile)}
-                            className={`absolute right-2 top-2 w-8 h-8 rounded-xl flex items-center justify-center transition-all ${(inputText.trim() || selectedFile) ? "bg-black text-white shadow-lg" : "text-gray-300 pointer-events-none"}`}
+                            style={{ position: "absolute", right: 6, top: 6, width: 34, height: 34, borderRadius: 14, background: (inputText.trim() || selectedFile) ? `linear-gradient(135deg, ${GREEN} 0%, ${GREEN_DEEP} 100%)` : "#F5F5F0", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 200ms ease" }}
                         >
-                            {isSending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                            {isSending ? <Loader2 size={14} color="#fff" className="animate-spin" /> : <Send size={14} color={(inputText.trim() || selectedFile) ? "#fff" : "#9AA29C"} />}
                         </button>
                     </div>
                 </div>

@@ -42,7 +42,7 @@ export default function WishlistPage() {
             <div className="md:hidden" style={{ background: "#FAFAF6", minHeight: "100vh", paddingBottom: 100 }}>
                 {/* Header */}
                 <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "20px 20px 16px" }}>
-                    <Link href="/" style={{ width: 40, height: 40, borderRadius: 14, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", textDecoration: "none", color: "#0F1410", flexShrink: 0 }}>
+                    <Link href={`/${language}/catalog`} style={{ width: 40, height: 40, borderRadius: 20, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", textDecoration: "none", color: "#0F1410", flexShrink: 0 }}>
                         <ChevronLeft size={20} />
                     </Link>
                     <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.6, color: "#0F1410", margin: 0 }}>

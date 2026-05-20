@@ -35,7 +35,7 @@ export default async function BlogPage({ params: { lang } }: any) {
     const blogs = (blogsData || []).map(mapBlog);
 
     return (
-        <main className="min-h-screen bg-[#F8F9FA] pt-32 pb-20 px-4 md:px-10">
+        <main className="min-h-screen bg-[#FAFAF6] pt-32 pb-20 px-4 md:px-10">
             <div className="max-w-7xl mx-auto">
                 
                 {/* Hero Section */}
@@ -52,11 +52,11 @@ export default async function BlogPage({ params: { lang } }: any) {
                 </div>
 
                 {blogs.length === 0 ? (
-                    <div className="bg-white rounded-[64px] p-24 text-center shadow-sm border border-gray-100 flex flex-col items-center gap-6">
-                        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-200">
-                            <Sparkles size={40} />
+                    <div style={{ background: "#fff", borderRadius: 32, padding: "60px 32px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+                        <div style={{ width: 80, height: 80, borderRadius: 28, background: "#EAF3EC", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <Sparkles size={40} color="#2D6E3E" />
                         </div>
-                        <p className="text-gray-300 font-black italic text-xl uppercase tracking-tighter">{t.blog.noPosts}</p>
+                        <p style={{ color: "#9AA29C", fontSize: 16, fontWeight: 600 }}>{t.blog.noPosts}</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
@@ -64,7 +64,7 @@ export default async function BlogPage({ params: { lang } }: any) {
                             <Link 
                                 key={blog.id} 
                                 href={`/${lang}/blog/${blog.slug}`}
-                                className="group bg-white rounded-[48px] overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-3 transition-all duration-700 border border-transparent hover:border-emerald-50"
+                                className="group bg-white rounded-[32px] overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-500 border border-transparent"
                             >
                                 <div className="aspect-[16/11] overflow-hidden relative">
                                     {blog.image ? (
@@ -89,14 +89,14 @@ export default async function BlogPage({ params: { lang } }: any) {
                                         <div className="flex items-center gap-2"><Calendar size={14} className="text-emerald-500" /> {new Date(blog.created_at).toLocaleDateString()}</div>
                                         <div className="flex items-center gap-2"><Clock size={14} className="text-emerald-500" /> {blog.readTime} {t.blog.readTime}</div>
                                     </div>
-                                    <h2 className="text-2xl font-black tracking-tighter italic leading-tight mb-5 group-hover:text-emerald-600 transition-colors duration-300">
+                                    <h2 className="text-2xl font-black tracking-tighter italic leading-tight mb-5 group-hover:text-[#2D6E3E] transition-colors duration-300">
                                         {lang === 'uz' ? blog.title_uz : blog.title_ru}
                                     </h2>
                                     <p className="text-gray-400 text-sm font-medium line-clamp-2 mb-8 leading-relaxed opacity-80">
                                         {lang === 'uz' ? blog.excerpt_uz : blog.excerpt_ru}
                                     </p>
                                     <div className="flex items-center justify-between pt-8 border-t border-gray-50">
-                                        <span className="text-emerald-600 font-black text-[10px] uppercase tracking-widest flex items-center gap-3 group-hover:gap-5 transition-all duration-500">
+                                        <span className="text-[#2D6E3E] font-black text-[10px] uppercase tracking-widest flex items-center gap-3 group-hover:gap-5 transition-all duration-500">
                                             {t.blog.readMore} <ArrowRight size={16} />
                                         </span>
                                         <div className="flex items-center gap-2 text-gray-300 text-[10px] font-black italic">

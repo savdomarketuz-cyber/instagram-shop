@@ -133,25 +133,25 @@ export default function MessagesPage() {
     }
 
     return (
-        <div className="flex flex-col h-screen bg-white max-w-md mx-auto relative overflow-hidden">
+        <div style={{ display: "flex", flexDirection: "column", height: "100svh", background: "#FAFAF6", maxWidth: 480, margin: "0 auto", position: "relative", overflow: "hidden" }}>
             {/* Header */}
-            <div className="bg-white p-6 pt-12 flex items-center justify-between border-b border-gray-50 shrink-0 relative z-[60]">
-                <div className="flex items-center gap-3">
+            <div style={{ background: "rgba(250,250,246,0.92)", backdropFilter: "blur(20px)", padding: "54px 20px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "0.5px solid rgba(15,20,16,0.06)", flexShrink: 0, position: "relative", zIndex: 60 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <button
                         onClick={() => setShowMenu(!showMenu)}
-                        className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center font-black text-xs shadow-lg active:scale-90 transition-all overflow-hidden border-2 border-white"
+                        style={{ width: 40, height: 40, borderRadius: 20, background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, cursor: "pointer", boxShadow: "0 4px 12px rgba(45,110,62,0.28)" }}
                     >
                         {user?.username?.charAt(0).toUpperCase() || user?.name?.charAt(0).toUpperCase() || <User size={18} />}
                     </button>
                     <div>
-                        <h1 className="text-lg font-black italic uppercase tracking-tighter leading-none">Inbox</h1>
-                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">@{user?.username || 'user'}</p>
+                        <h1 style={{ fontSize: 18, fontWeight: 700, color: "#0F1410", letterSpacing: -0.3 }}>Inbox</h1>
+                        <p style={{ fontSize: 11, color: "#9AA29C", fontWeight: 500 }}>@{user?.username || 'user'}</p>
                     </div>
                 </div>
 
                 <button
                     onClick={() => setShowMenu(!showMenu)}
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${showMenu ? 'bg-black text-white rotate-90' : 'bg-gray-50 text-gray-400'}`}
+                    style={{ width: 40, height: 40, borderRadius: 14, background: showMenu ? "#2D6E3E" : "#fff", color: showMenu ? "#fff" : "#9AA29C", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 2px 8px rgba(15,20,16,0.06)" }}
                 >
                     <Settings size={20} />
                 </button>
@@ -162,7 +162,7 @@ export default function MessagesPage() {
                         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" onClick={() => setShowMenu(false)} />
                         <div className="absolute top-full right-6 mt-2 w-64 bg-white rounded-[32px] shadow-2xl border border-gray-100 p-2 z-50 animate-in slide-in-from-top-4 duration-300">
                             <div className="p-4 bg-gray-50 rounded-[24px] mb-2 flex items-center gap-3">
-                                <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center font-black text-sm">
+                                <div style={{ width: 48, height: 48, borderRadius: 16, background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14 }}>
                                     {user?.username?.charAt(0).toUpperCase()}
                                 </div>
                                 <div className="min-w-0">
@@ -205,21 +205,23 @@ export default function MessagesPage() {
             </div>
 
             {/* Search */}
-            <div className="p-6 shrink-0">
-                <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+            <div style={{ padding: "12px 16px", flexShrink: 0 }}>
+                <div style={{ position: "relative" }}>
+                    <Search style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#C7CDC8", pointerEvents: "none" }} size={18} />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder={t.common.search}
-                        className="w-full bg-gray-50 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold border-none focus:ring-2 focus:ring-black/5 outline-none transition-all"
+                        style={{ width: "100%", background: "#fff", border: "1.5px solid rgba(15,20,16,0.06)", borderRadius: 16, padding: "12px 14px 12px 44px", fontSize: 14, fontWeight: 500, color: "#0F1410", outline: "none", boxSizing: "border-box", transition: "border-color 200ms" }}
+                        onFocus={e => (e.target.style.borderColor = "#2D6E3E")}
+                        onBlur={e => (e.target.style.borderColor = "rgba(15,20,16,0.06)")}
                     />
                 </div>
             </div>
 
             {/* Chat List */}
-            <div className="flex-1 overflow-y-auto px-4 pb-20 no-scrollbar">
+            <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 100px" }} className="no-scrollbar">
                 {filteredChats.length === 0 && 
                  searchQuery.trim().length === 0 && 
                  (!supportChat || !`admin support qo'llab quvvatlash`.includes(searchQuery.toLowerCase())) ? (
@@ -233,10 +235,10 @@ export default function MessagesPage() {
                         {supportChat && `admin support qo'llab quvvatlash`.includes(searchQuery.toLowerCase()) && (
                             <Link
                                 href="/chat"
-                                className="flex items-center gap-4 p-4 rounded-3xl bg-black text-white active:scale-[0.98] transition-all group mb-4 shadow-xl shadow-black/10"
+                                style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", borderRadius: 20, background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", textDecoration: "none", marginBottom: 8, boxShadow: "0 8px 20px rgba(45,110,62,0.22)" }}
                             >
-                                <div className="w-14 h-14 bg-white/10 text-white rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-all">
-                                    <Headset size={28} />
+                                <div style={{ width: 48, height: 48, borderRadius: 16, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                    <Headset size={24} color="#fff" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between mb-1">
@@ -275,9 +277,9 @@ export default function MessagesPage() {
                                 <Link
                                     key={chat.id}
                                     href={`/messages/${otherPhone}`}
-                                    className="flex items-center gap-4 p-4 rounded-3xl hover:bg-gray-50 active:scale-[0.98] transition-all group"
+                                    style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", borderRadius: 18, textDecoration: "none", background: "#fff", marginBottom: 6 }}
                                 >
-                                    <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center font-black text-xs shrink-0 shadow-lg shadow-black/10 group-hover:scale-105 transition-all">
+                                    <div style={{ width: 46, height: 46, borderRadius: 16, background: "#EAF3EC", color: "#2D6E3E", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 16, flexShrink: 0 }}>
                                         {otherData.name?.charAt(0).toUpperCase()}
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -288,7 +290,7 @@ export default function MessagesPage() {
                                         <div className="flex items-center justify-between gap-2">
                                             <p className="text-[11px] font-bold text-gray-500 truncate leading-none mb-0.5 opacity-60 uppercase tracking-widest">{lastMsg}</p>
                                             {unread > 0 && (
-                                                <div className="px-2 py-0.5 bg-black text-white rounded-full text-[9px] font-black italic shadow-lg shadow-black/20 shrink-0">
+                                                <div style={{ minWidth: 20, height: 20, padding: "0 6px", background: "#2D6E3E", color: "#fff", borderRadius: 10, fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                                                     {unread}
                                                 </div>
                                             )}
@@ -319,7 +321,7 @@ export default function MessagesPage() {
                                                     href={`/messages/${u.phone}`}
                                                     className="flex items-center gap-4 p-4 rounded-3xl hover:bg-gray-50 active:scale-[0.98] transition-all group"
                                                 >
-                                                    <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center font-black text-xs shrink-0 shadow-lg shadow-black/10 group-hover:scale-105 transition-all">
+                                                    <div style={{ width: 48, height: 48, borderRadius: 16, background: "#EAF3EC", color: "#2D6E3E", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 16, flexShrink: 0 }}>
                                                         {u.name?.charAt(0).toUpperCase() || u.username?.charAt(0).toUpperCase()}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
