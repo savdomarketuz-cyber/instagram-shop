@@ -132,14 +132,14 @@ export async function POST(req: NextRequest) {
             if (!user || user.real_balance < amount) return NextResponse.json({ error: "Mablag' yetarli emas" }, { status: 400 });
 
             // Atomically deduct — only succeeds if balance hasn't changed since we read it
-            const { count } = await supabaseAdmin
+            const { data: updated } = await supabaseAdmin
                 .from("users")
                 .update({ real_balance: Number(user.real_balance) - Number(amount) })
                 .eq("phone", userPhone)
                 .eq("real_balance", user.real_balance)
-                .select("id", { count: 'exact', head: true });
+                .select("id");
 
-            if (!count || count === 0) {
+            if (!updated || updated.length === 0) {
                 return NextResponse.json({ error: "Mablag' o'zgardi, qayta urinib ko'ring" }, { status: 409 });
             }
 
@@ -319,14 +319,14 @@ export async function POST(req: NextRequest) {
             if (!user || user.real_balance < amount) return NextResponse.json({ error: "Mablag' yetarli emas" }, { status: 400 });
 
             // Atomically deduct — only succeeds if balance hasn't changed since we read it
-            const { count } = await supabaseAdmin
+            const { data: updated } = await supabaseAdmin
                 .from("users")
                 .update({ real_balance: Number(user.real_balance) - Number(amount) })
                 .eq("phone", userPhone)
                 .eq("real_balance", user.real_balance)
-                .select("id", { count: 'exact', head: true });
+                .select("id");
 
-            if (!count || count === 0) {
+            if (!updated || updated.length === 0) {
                 return NextResponse.json({ error: "Mablag' o'zgardi, qayta urinib ko'ring" }, { status: 409 });
             }
 
