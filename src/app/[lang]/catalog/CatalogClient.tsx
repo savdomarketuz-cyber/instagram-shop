@@ -165,7 +165,7 @@ export default function CatalogClient({ initialCategories }: CatalogClientProps)
 
                 <div className="mt-8">
                     {searchQuery.trim() && mainCategories.filter(c => (c[`name_${language}`] || c.name).toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
-                        <div className="mb-12 p-8 bg-black text-white rounded-[32px] flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div className="mb-12 p-8 rounded-[32px] flex flex-col md:flex-row items-center justify-between gap-6" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff" }}>
                             <div className="flex flex-col gap-2 text-center md:text-left">
                                 <h3 className="text-xl font-black uppercase tracking-tighter italic">Kategoriyalar topilmadi</h3>
                                 <p className="text-gray-400 text-sm font-bold">"{searchQuery}" bo'yicha mahsulotlarni izlab ko'rasizmi?</p>
@@ -228,9 +228,10 @@ export default function CatalogClient({ initialCategories }: CatalogClientProps)
                         </div>
                     ) : (
                         <div className="space-y-12">
-                            <button 
+                            <button
                                 onClick={() => router.push(`/${language}/?category=${selectedCategory.id}`)}
-                                className="inline-flex items-center gap-3 px-8 py-4 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-black/20 hover:scale-105 active:scale-95 transition-all"
+                                className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all"
+                                style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", boxShadow: "0 8px 20px rgba(45,110,62,0.28)" }}
                             >
                                 <Grid3X3 size={18} />
                                 {language === 'uz' ? 'Turkumdagi barcha mahsulotlar' : 'Все товары категории'}

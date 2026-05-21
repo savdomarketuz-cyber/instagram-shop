@@ -159,7 +159,7 @@ export default function CartPage() {
                                 <Package size={20} strokeWidth={2.5} />
                                 <span className="text-[10px] font-black uppercase tracking-widest">Buyurtmalar</span>
                             </Link>
-                            <div className="p-3 bg-black text-white rounded-2xl">
+                            <div className="p-3 rounded-2xl" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff" }}>
                                 <ShoppingCart size={22} strokeWidth={2.5} />
                             </div>
                         </div>
@@ -171,7 +171,7 @@ export default function CartPage() {
                                 <ShoppingBag size={48} />
                             </div>
                             <p className="text-gray-400 font-black uppercase tracking-widest text-xs mb-8">{t.cart.empty}</p>
-                            <Link href="/" className="bg-black text-white px-10 py-5 rounded-full font-black uppercase tracking-widest text-xs shadow-2xl active:scale-95 transition-all">
+                            <Link href="/" className="px-10 py-5 rounded-full font-black uppercase tracking-widest text-xs active:scale-95 transition-all" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", boxShadow: "0 8px 20px rgba(45,110,62,0.28)" }}>
                                 {language === "uz" ? "Xaridni boshlash" : "Начать покупки"}
                             </Link>
                         </div>
@@ -226,7 +226,7 @@ export default function CartPage() {
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-1">{t.common.total}</p>
                                         <p className="text-3xl font-black italic tracking-tighter text-black break-words">{total.toLocaleString("uz-UZ")}<span className="text-xl not-italic opacity-80"> so'm</span></p>
                                     </div>
-                                    <Link href="/checkout" className="flex w-full bg-black text-white py-5 rounded-full font-black text-sm hover:bg-gray-900 transition-all shadow-xl justify-center items-center gap-3 active:scale-95 uppercase tracking-widest">
+                                    <Link href="/checkout" className="flex w-full py-5 rounded-[18px] font-black text-sm transition-all justify-center items-center gap-3 active:scale-95 uppercase tracking-widest" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", boxShadow: "0 8px 20px rgba(45,110,62,0.28)" }}>
                                         <span>{t.common.checkout}</span>
                                         <ArrowRight size={20} strokeWidth={3} />
                                     </Link>
