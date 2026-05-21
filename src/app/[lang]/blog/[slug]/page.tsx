@@ -78,16 +78,17 @@ export default async function BlogPostPage({ params: { lang, slug } }: { params:
     await supabaseAdmin.from("blogs").update({ views: (blog.views || 0) + 1 }).eq("id", blog.id);
 
     return (
-        <main className="min-h-screen bg-white pb-32">
-            
+        <main className="min-h-screen pb-32" style={{ background: "#FAFAF6" }}>
+
             {/* 1. Header Navigation */}
             <div className="fixed top-24 left-0 right-0 z-50 pointer-events-none">
                 <div className="max-w-4xl mx-auto px-4 md:px-0">
-                    <Link 
-                        href={`/${lang}/blog`} 
-                        className="pointer-events-auto inline-flex items-center gap-2 bg-white/80 backdrop-blur-2xl border border-gray-100 px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-black/5"
+                    <Link
+                        href={`/${lang}/blog`}
+                        className="pointer-events-auto inline-flex items-center gap-2 bg-white/90 backdrop-blur-2xl border border-gray-100 px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-black/5"
+                        style={{ color: "#2D6E3E" }}
                     >
-                        <ChevronLeft size={16} className="text-emerald-500" /> {t.blog.backToList}
+                        <ChevronLeft size={16} /> {t.blog.backToList}
                     </Link>
                 </div>
             </div>
@@ -95,26 +96,26 @@ export default async function BlogPostPage({ params: { lang, slug } }: { params:
             {/* 2. Hero Image Section */}
             <div className="w-full h-[60vh] md:h-[80vh] relative pt-24">
                 <div className="absolute inset-0 bg-black/40 z-10" />
-                <img 
-                    src={blog.image || '/images/blog-placeholder.jpg'} 
+                <img
+                    src={blog.image || '/images/blog-placeholder.jpg'}
                     alt={lang === 'uz' ? blog.title_uz : blog.title_ru}
                     className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-20" />
-                
+
                 <div className="absolute bottom-20 left-0 right-0 z-30 px-6 md:px-0">
                     <div className="max-w-4xl mx-auto">
-                        <span className="inline-block bg-emerald-500 text-white px-6 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] mb-8 shadow-2xl shadow-emerald-500/40">
+                        <span className="inline-block text-white px-6 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] mb-8" style={{ background: "#2D6E3E", boxShadow: "0 8px 20px rgba(45,110,62,0.4)" }}>
                             {blog.category || 'INSIGHTS'}
                         </span>
                         <h1 className="text-4xl md:text-7xl font-black text-white italic tracking-tighter uppercase leading-[0.9] mb-10 drop-shadow-2xl">
                             {lang === 'uz' ? blog.title_uz : blog.title_ru}
                         </h1>
-                        
+
                         <div className="flex flex-wrap items-center gap-10 text-white/70 text-[10px] font-black uppercase tracking-widest">
-                            <div className="flex items-center gap-3"><Calendar size={16} className="text-emerald-400" /> {new Date(blog.created_at).toLocaleDateString()}</div>
-                            <div className="flex items-center gap-3"><Clock size={16} className="text-emerald-400" /> {blog.readTime} {t.blog.readTime}</div>
-                            <div className="flex items-center gap-3"><Eye size={16} className="text-emerald-400" /> {blog.views} {t.blog.views}</div>
+                            <div className="flex items-center gap-3"><Calendar size={16} style={{ color: "#4CAF71" }} /> {new Date(blog.created_at).toLocaleDateString()}</div>
+                            <div className="flex items-center gap-3"><Clock size={16} style={{ color: "#4CAF71" }} /> {blog.readTime} {t.blog.readTime}</div>
+                            <div className="flex items-center gap-3"><Eye size={16} style={{ color: "#4CAF71" }} /> {blog.views} {t.blog.views}</div>
                         </div>
                     </div>
                 </div>
@@ -122,7 +123,7 @@ export default async function BlogPostPage({ params: { lang, slug } }: { params:
 
             {/* 3. Content Section */}
             <div className="max-w-3xl mx-auto px-6 md:px-0 pt-20">
-                <article className="prose prose-emerald prose-xl max-w-none">
+                <article className="prose prose-lg max-w-none">
                     <div className="text-gray-700 leading-[1.8] font-medium text-lg md:text-xl whitespace-pre-wrap tracking-tight">
                         {lang === 'uz' ? blog.content_uz : blog.content_ru}
                     </div>

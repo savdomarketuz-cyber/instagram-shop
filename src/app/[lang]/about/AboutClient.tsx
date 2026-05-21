@@ -25,12 +25,12 @@ export default function AboutClient() {
     };
 
     return (
-        <div className="bg-white min-h-screen text-black w-full overflow-x-hidden">
+        <div className="min-h-screen text-black w-full overflow-x-hidden" style={{ background: "#FAFAF6" }}>
             <div className="w-full px-4 md:px-10 pb-32">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8 md:mb-12 pt-8 md:pt-0 w-full border-b border-gray-50 pb-6">
                     <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
-                        <Link href="/" className="p-3 bg-gray-50 rounded-[20px] hover:bg-gray-100 transition-all active:scale-90">
+                        <Link href="/" style={{ width: 40, height: 40, borderRadius: 20, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", flexShrink: 0, textDecoration: "none", color: "#0F1410" }}>
                             <ChevronLeft size={20} />
                         </Link>
                         <div>
@@ -49,7 +49,7 @@ export default function AboutClient() {
                     
                     {/* 1. Brand Story */}
                     <section className="space-y-6">
-                        <div className="inline-block px-4 py-1.5 bg-black text-white text-[10px] font-black uppercase tracking-widest rounded-full mb-2">
+                        <div className="inline-block px-4 py-1.5 text-white text-[10px] font-black uppercase tracking-widest rounded-full mb-2" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" }}>
                              {t.aboutUs.mainTitle}
                         </div>
                         <h2 className="text-3xl md:text-5xl font-black tracking-tighter italic leading-tight max-w-2xl">
@@ -100,11 +100,11 @@ export default function AboutClient() {
                          <h3 className="text-2xl font-black italic text-center md:text-left uppercase tracking-tighter">{t.aboutUs.statsTitle}</h3>
                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             {t.aboutUs.stats.map((stat: string, i: number) => (
-                                <div key={i} className="p-6 bg-black text-white rounded-3xl flex flex-col justify-center items-center text-center group hover:bg-neutral-900 transition-colors">
+                                <div key={i} className="p-6 rounded-3xl flex flex-col justify-center items-center text-center group transition-all" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff" }}>
                                     <span className="text-2xl font-black italic tracking-tighter mb-2 group-hover:scale-105 transition-transform">
                                         {stat.split(' ')[0]}
                                     </span>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                                    <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.6)" }}>
                                         {stat.substring(stat.indexOf(' ') + 1)}
                                     </span>
                                 </div>
@@ -113,20 +113,19 @@ export default function AboutClient() {
                     </section>
 
                     {/* 5. Promise */}
-                    <section className="relative overflow-hidden bg-gradient-to-br from-gray-900 to-black text-white rounded-[48px] p-10 md:p-20">
+                    <section className="relative overflow-hidden text-white rounded-[48px] p-10 md:p-20" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" }}>
                          <div className="relative z-10 space-y-8">
                             <h3 className="text-3xl md:text-4xl font-black italic tracking-tighter uppercase">{t.aboutUs.promiseTitle}</h3>
                             <div className="space-y-6">
                                 {t.aboutUs.promiseText.split('\n').map((line: string, i: number) => (
-                                    <p key={i} className="text-lg md:text-xl text-gray-400 font-medium leading-relaxed">
+                                    <p key={i} className="text-lg md:text-xl font-medium leading-relaxed" style={{ color: "rgba(255,255,255,0.7)" }}>
                                         {line}
                                     </p>
                                 ))}
                             </div>
                          </div>
-                         {/* Abstract background element */}
-                         <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
-                         <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl" />
+                         <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/8 rounded-full blur-3xl" />
+                         <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
                     </section>
 
                     {/* 6. Contacts */}
@@ -144,7 +143,7 @@ export default function AboutClient() {
                                     rel="noopener noreferrer" 
                                     className="p-8 bg-gray-50 hover:bg-white border border-gray-100 hover:border-black rounded-[32px] transition-all hover:shadow-2xl group flex flex-col items-center md:items-start text-center md:text-left gap-4"
                                 >
-                                    <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-black/10">
+                                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", boxShadow: "0 4px 12px rgba(45,110,62,0.3)" }}>
                                         {contactIcons[contact.label] || <MessageCircle size={20} />}
                                     </div>
                                     <div>

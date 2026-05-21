@@ -141,19 +141,19 @@ function PaymentContent() {
     };
 
     if (loadingOrder) return (
-        <div className="min-h-screen flex items-center justify-center bg-white">
-            <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
+        <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#FAFAF6" }}>
+            <div style={{ width: 36, height: 36, border: "3px solid #2D6E3E", borderTopColor: "transparent", borderRadius: "50%" }} className="animate-spin" />
         </div>
     );
 
     return (
-        <div className="p-6 bg-white min-h-screen pt-12 pb-24">
-            <div className="flex items-center gap-4 mb-10">
-                <button 
-                    onClick={() => router.back()} 
-                    className="p-3 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all active:scale-95"
+        <div style={{ padding: "24px 16px 96px", background: "#FAFAF6", minHeight: "100vh" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32, paddingTop: 48 }}>
+                <button
+                    onClick={() => router.back()}
+                    style={{ width: 40, height: 40, borderRadius: 20, background: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", cursor: "pointer", flexShrink: 0 }}
                 >
-                    <ArrowLeft size={20} />
+                    <ArrowLeft size={20} color="#0F1410" />
                 </button>
                 <h1 className="text-2xl font-black italic tracking-tighter uppercase">
                     {language === 'uz' ? 'To\'lov usuli' : 'Способ оплаты'}
@@ -216,19 +216,20 @@ function PaymentContent() {
                 </div>
             )}
 
-            <div className="p-8 bg-gray-50 rounded-[40px] mb-8 border border-gray-100">
-                <div className="flex justify-between items-center font-black italic tracking-tighter text-xl">
-                    <span className="text-gray-400 uppercase tracking-widest text-[10px] not-italic">{t.common.total}:</span>
-                    <span>{order?.total?.toLocaleString() || 0} so'm</span>
+            <div style={{ padding: "20px 24px", borderRadius: 24, background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", marginBottom: 20, color: "#fff" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", opacity: 0.7 }}>{t.common.total}</span>
+                    <span style={{ fontSize: 22, fontWeight: 900, fontStyle: "italic", letterSpacing: -0.5 }}>{order?.total?.toLocaleString() || 0} so'm</span>
                 </div>
             </div>
 
             <button
                 onClick={handlePayment}
                 disabled={isProcessing}
-                className={`w-full py-6 rounded-full font-black text-sm uppercase tracking-widest flex justify-center items-center gap-3 shadow-2xl active:scale-95 transition-all disabled:opacity-70 ${
-                    paymentMethod === "click" ? "bg-[#00a1ff] text-white shadow-[#00a1ff]/30" : "bg-black text-white shadow-black/20"
+                className={`w-full py-6 rounded-[20px] font-black text-sm uppercase tracking-widest flex justify-center items-center gap-3 active:scale-95 transition-all disabled:opacity-70 ${
+                    paymentMethod === "click" ? "bg-[#00a1ff] text-white" : ""
                 }`}
+                style={paymentMethod !== "click" ? { background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", boxShadow: "0 8px 20px rgba(45,110,62,0.28)" } : { boxShadow: "0 8px 20px rgba(0,161,255,0.3)" }}
             >
                 {isProcessing ? (
                     <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -255,8 +256,8 @@ function PaymentContent() {
 export default function PaymentPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center bg-white">
-                <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
+            <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#FAFAF6" }}>
+                <div style={{ width: 36, height: 36, border: "3px solid #2D6E3E", borderTopColor: "transparent", borderRadius: "50%" }} className="animate-spin" />
             </div>
         }>
             <PaymentContent />

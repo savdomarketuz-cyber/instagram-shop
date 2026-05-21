@@ -6,13 +6,17 @@ import { Send, ChevronLeft, Loader2, Paperclip, MoreVertical } from "lucide-reac
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
+const GREEN = "#2D6E3E";
+const GREEN_DEEP = "#1F5A30";
+const GREEN_TINT = "#EAF3EC";
+
 export default function P2PChatPage() {
     const { user, language } = useStore();
     const router = useRouter();
     const params = useParams();
     const targetPhoneRaw = params.id as string;
     const targetPhone = decodeURIComponent(targetPhoneRaw);
-    
+
     const [messages, setMessages] = useState<any[]>([]);
     const [inputText, setInputText] = useState("");
     const [loading, setLoading] = useState(true);
@@ -39,10 +43,9 @@ export default function P2PChatPage() {
         }
 
         const fetchTargetInfo = async () => {
-            // First try Users table
             const { data: userData } = await supabase.from("users").select("*").eq("phone", targetPhone).single();
             const { data: statusData } = await supabase.from("user_status").select("*").eq("id", targetPhone).single();
-            
+
             setTargetUserData({
                 name: userData?.name || "User",
                 username: userData?.username || targetPhone.slice(-4),
@@ -58,7 +61,7 @@ export default function P2PChatPage() {
                 .select("*")
                 .eq("chat_id", roomId)
                 .order("created_at", { ascending: true });
-            
+
             if (error) throw error;
             setMessages(data || []);
             setLoading(false);
@@ -77,15 +80,13 @@ export default function P2PChatPage() {
         };
         markAsRead();
 
-        // Real-time (Robust: Using unique room channel and client-side check)
         const channel = supabase
             .channel(`p2p_${roomId}`)
-            .on('postgres_changes', { 
-                event: 'INSERT', 
-                schema: 'public', 
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
                 table: 'private_messages'
             }, (payload) => {
-                console.log("⚡️ Live message event:", payload.new);
                 if (payload.new.chat_id === roomId) {
                     setMessages(prev => {
                         const exists = prev.some(m => m.id === payload.new.id);
@@ -95,9 +96,7 @@ export default function P2PChatPage() {
                     scrollToBottom();
                 }
             })
-            .subscribe((status) => {
-                console.log("📡 Subscription status:", status);
-            });
+            .subscribe();
 
         return () => {
             supabase.removeChannel(channel);
@@ -121,7 +120,6 @@ export default function P2PChatPage() {
         const msgText = inputText;
 
         try {
-            // Optimistic update: Show message immediately
             const optimisticMsg = {
                 id: tempId,
                 chat_id: roomId,
@@ -141,15 +139,13 @@ export default function P2PChatPage() {
                 const { url } = await uploadToYandexS3(selectedFile);
                 uploadedUrl = url;
                 fileType = selectedFile.type.startsWith('image/') ? 'image' : 'video';
-                
-                // Update optimistic message with media
                 setMessages(prev => prev.map(m => m.id === tempId ? { ...m, image: fileType === 'image' ? uploadedUrl : null, video: fileType === 'video' ? uploadedUrl : null } : m));
             }
 
             const { data: existingChat } = await supabase.from("private_chats").select("id, unread_count").eq("id", roomId).single();
             const otherPhoneClean = targetPhone.replace(/\D/g, '');
             const myPhoneClean = user.phone.replace(/\D/g, '');
-            
+
             if (!existingChat) {
                 await supabase.from("private_chats").insert([{
                     id: roomId,
@@ -162,8 +158,7 @@ export default function P2PChatPage() {
                 }]);
             }
 
-            // Real DB Insert
-            const { data: realMsg, error } = await supabase.from("private_messages").insert([{
+            const { data: realMsg } = await supabase.from("private_messages").insert([{
                 id: crypto.randomUUID(),
                 chat_id: roomId,
                 text: msgText,
@@ -173,13 +168,12 @@ export default function P2PChatPage() {
             }]).select().single();
 
             if (realMsg) {
-                // Replace optimistic with real
                 setMessages(prev => prev.map(m => m.id === tempId ? realMsg : m));
             }
 
             const lastMsg = uploadedUrl ? (fileType === 'image' ? "🖼️ Foto" : "🎥 Video") : msgText;
             const currentOtherUnread = existingChat?.unread_count?.[otherPhoneClean] || 0;
-            
+
             await supabase.from("private_chats").update({
                 last_message: lastMsg,
                 last_timestamp: new Date().toISOString(),
@@ -191,7 +185,6 @@ export default function P2PChatPage() {
             scrollToBottom();
         } catch (error) {
             console.error("Error sending message:", error);
-            // Rollback optimistic on error
             setMessages(prev => prev.filter(m => m.id !== tempId));
         } finally {
             setIsSending(false);
@@ -202,12 +195,9 @@ export default function P2PChatPage() {
     const handleDeleteMessage = async (msgId: string, forEveryone: boolean) => {
         try {
             if (forEveryone) {
-                // Delete from DB permanently
                 await supabase.from("private_messages").delete().eq("id", msgId);
                 setMessages(prev => prev.filter(m => m.id !== msgId));
             } else {
-                // For "Delete for me", we just hide it locally for now 
-                // (In a full prod app this would be a row in a delete_flags table)
                 setMessages(prev => prev.filter(m => m.id !== msgId));
             }
         } catch (error) {
@@ -229,82 +219,104 @@ export default function P2PChatPage() {
 
     if (!mounted || (loading && !messages.length)) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-white">
-                <Loader2 className="animate-spin text-black" size={32} />
+            <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#FAFAF6" }}>
+                <Loader2 style={{ color: GREEN }} size={32} className="animate-spin" />
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col h-[100dvh] bg-[#f0f2f5] max-w-md mx-auto relative overflow-hidden font-sans">
+        <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "#FAFAF6", maxWidth: 480, margin: "0 auto", position: "relative", overflow: "hidden" }}>
             {/* Header */}
-            <div className="bg-white/80 backdrop-blur-xl p-4 pt-12 flex items-center gap-4 border-b border-gray-100 shadow-sm z-10 shrink-0">
-                <button onClick={() => router.back()} className="w-10 h-10 hover:bg-gray-100 rounded-full flex items-center justify-center active:scale-90 transition-all text-gray-500">
-                    <ChevronLeft size={24} />
+            <div style={{ background: "rgba(250,250,246,0.92)", backdropFilter: "blur(20px)", padding: "54px 16px 12px", display: "flex", alignItems: "center", gap: 12, borderBottom: "0.5px solid rgba(15,20,16,0.06)", flexShrink: 0, zIndex: 10 }}>
+                <button
+                    onClick={() => router.back()}
+                    style={{ width: 40, height: 40, borderRadius: 20, background: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", cursor: "pointer", flexShrink: 0 }}
+                >
+                    <ChevronLeft size={20} color="#0F1410" />
                 </button>
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-11 h-11 bg-black text-white rounded-full flex items-center justify-center shadow-lg shadow-black/10 shrink-0 font-black text-xs">
-                        {targetUserData?.username?.charAt(0).toUpperCase() || "U"}
+
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 14, background: GREEN_TINT, color: GREEN, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 16, flexShrink: 0 }}>
+                        {targetUserData?.name?.charAt(0).toUpperCase() || "U"}
                     </div>
-                    <div className="min-w-0">
-                        <h1 className="text-[14px] font-black italic uppercase tracking-tight truncate leading-none mb-0.5">{targetUserData?.name}</h1>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                    <div style={{ minWidth: 0 }}>
+                        <h1 style={{ fontSize: 15, fontWeight: 700, color: "#0F1410", letterSpacing: -0.2, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {targetUserData?.name}
+                        </h1>
+                        <p style={{ fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 4, color: targetUserData?.isOnline ? GREEN : "#9AA29C" }}>
                             {targetUserData?.isOnline ? (
-                                <><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" /> Online</>
-                            ) : `@{${targetUserData?.username}}`}
+                                <><span style={{ width: 6, height: 6, borderRadius: 3, background: GREEN, display: "inline-block" }} />Online</>
+                            ) : `@${targetUserData?.username}`}
                         </p>
                     </div>
                 </div>
-                <div className="relative group/menu">
-                    <button className="w-10 h-10 hover:bg-gray-100 rounded-full flex items-center justify-center text-gray-400"><MoreVertical size={20} /></button>
-                    <div className="absolute right-0 top-full mt-1 bg-white border border-gray-100 shadow-xl rounded-2xl py-2 w-48 opacity-0 group-hover/menu:opacity-100 pointer-events-none group-hover/menu:pointer-events-auto transition-all z-20">
-                        <button onClick={handleDeleteChat} className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-500 font-bold text-xs uppercase flex items-center gap-2">
-                            <span>Suhbatni o'chirish</span>
+
+                <div style={{ position: "relative" }} className="group/menu">
+                    <button
+                        style={{ width: 40, height: 40, borderRadius: 14, background: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 2px 8px rgba(15,20,16,0.06)" }}
+                        className="group/btn"
+                    >
+                        <MoreVertical size={18} color="#9AA29C" />
+                    </button>
+                    <div style={{ position: "absolute", right: 0, top: "calc(100% + 8px)", background: "#fff", borderRadius: 20, boxShadow: "0 8px 32px rgba(15,20,16,0.12)", minWidth: 180, zIndex: 20, padding: 8 }} className="opacity-0 pointer-events-none group-hover/menu:opacity-100 group-hover/menu:pointer-events-auto transition-all">
+                        <button
+                            onClick={handleDeleteChat}
+                            style={{ width: "100%", textAlign: "left", padding: "10px 14px", borderRadius: 12, border: "none", background: "none", cursor: "pointer", color: "#FF3B30", fontSize: 13, fontWeight: 700 }}
+                        >
+                            {language === 'uz' ? "Suhbatni o'chirish" : "Удалить чат"}
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Chat Area - Telegram Style Background */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed">
-                <div className="py-4 text-center">
-                    <span className="bg-black/5 backdrop-blur-md text-[9px] font-black uppercase tracking-widest text-gray-500 px-3 py-1 rounded-full">Xavfsiz muloqot boshlandi</span>
+            {/* Chat Area */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 10 }} className="no-scrollbar">
+                <div style={{ textAlign: "center", marginBottom: 8 }}>
+                    <span style={{ background: "rgba(15,20,16,0.05)", backdropFilter: "blur(8px)", fontSize: 10, fontWeight: 700, color: "#9AA29C", padding: "4px 14px", borderRadius: 20, letterSpacing: 0.5 }}>
+                        {language === 'uz' ? "Xavfsiz muloqot boshlandi" : "Защищённый чат начат"}
+                    </span>
                 </div>
+
                 {messages.map((msg) => {
                     const isMe = msg.sender_id === user?.phone;
                     const hasMedia = msg.image || msg.video;
                     return (
-                        <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"} mb-1 animate-in fade-in slide-in-from-bottom-1 duration-200 group/msg`}>
-                            <div className={`max-w-[80%] rounded-[20px] shadow-sm relative ${isMe ? "bg-black text-white rounded-br-none" : "bg-white text-black rounded-bl-none border border-gray-100"}`}>
+                        <div key={msg.id} style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start", marginBottom: 2 }} className="group/msg">
+                            <div style={{ maxWidth: "82%", borderRadius: isMe ? "20px 20px 4px 20px" : "20px 20px 20px 4px", overflow: "hidden", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", position: "relative" }}>
                                 {msg.image && (
-                                    <div className="p-1 pb-0">
-                                        <img src={msg.image} className="rounded-[16px] w-full max-h-80 object-cover" alt="Media" onClick={() => window.open(msg.image, '_blank')} />
-                                    </div>
+                                    <img src={msg.image} style={{ width: "100%", maxHeight: 280, objectFit: "cover", display: "block", cursor: "pointer" }} alt="Media" onClick={() => window.open(msg.image, '_blank')} />
                                 )}
                                 {msg.video && (
-                                    <div className="p-1 pb-0">
-                                        <video src={msg.video} className="rounded-[16px] w-full max-h-80 object-cover" controls playsInline />
-                                    </div>
+                                    <video src={msg.video} style={{ width: "100%", maxHeight: 280, objectFit: "cover" }} controls playsInline />
                                 )}
-                                <div className="p-3 px-4 relative min-w-[80px]">
-                                    {msg.text && <p className="text-[13px] font-medium leading-relaxed pr-6">{msg.text}</p>}
-                                    <div className={`absolute bottom-1.5 right-2 flex items-center gap-1 ${msg.text ? "" : "bg-black/20 backdrop-blur-md px-1.5 py-0.5 rounded-lg"}`}>
-                                        <span className={`text-[8px] font-bold uppercase tracking-tighter ${isMe ? "text-white/60" : "text-gray-400"}`}>
+                                <div style={{ padding: "10px 14px", background: isMe ? `linear-gradient(135deg, ${GREEN} 0%, ${GREEN_DEEP} 100%)` : "#fff" }}>
+                                    {msg.text && (
+                                        <p style={{ fontSize: 14, fontWeight: 500, color: isMe ? "#fff" : "#0F1410", lineHeight: 1.45, marginBottom: 4 }}>{msg.text}</p>
+                                    )}
+                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
+                                        <span style={{ fontSize: 10, color: isMe ? "rgba(255,255,255,0.6)" : "#9AA29C" }}>
                                             {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </span>
-                                        {isMe && <div className="w-3 h-3 flex items-center justify-center opacity-60 text-[8px]">✓✓</div>}
+                                        {isMe && <span style={{ fontSize: 10, color: "rgba(255,255,255,0.6)" }}>✓✓</span>}
                                     </div>
                                 </div>
 
-                                {/* Message Context Action */}
-                                <div className={`absolute -top-2 ${isMe ? "-left-8" : "-right-8"} opacity-0 group-hover/msg:opacity-100 transition-all`}>
+                                {/* Context menu */}
+                                <div style={{ position: "absolute", top: -8, ...(isMe ? { left: -36 } : { right: -36 }) }} className="opacity-0 group-hover/msg:opacity-100 transition-all">
                                     <div className="relative group/opt">
-                                        <button className="w-8 h-8 rounded-full bg-white/80 backdrop-blur-md shadow-sm flex items-center justify-center text-gray-400 hover:text-black transition-all">
-                                            <MoreVertical size={14} />
+                                        <button style={{ width: 28, height: 28, borderRadius: 14, background: "rgba(255,255,255,0.9)", backdropFilter: "blur(8px)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 2px 8px rgba(15,20,16,0.1)" }}>
+                                            <MoreVertical size={12} color="#9AA29C" />
                                         </button>
-                                        <div className={`absolute ${isMe ? "right-0" : "left-0"} top-full mt-1 bg-white border border-gray-100 shadow-xl rounded-xl py-1 w-32 opacity-0 group-hover/opt:opacity-100 pointer-events-none group-hover/opt:pointer-events-auto transition-all z-20`}>
-                                            <button onClick={() => handleDeleteMessage(msg.id, false)} className="w-full text-left px-3 py-1.5 hover:bg-gray-50 text-[10px] font-bold uppercase">Mendan</button>
-                                            {isMe && <button onClick={() => handleDeleteMessage(msg.id, true)} className="w-full text-left px-3 py-1.5 hover:bg-red-50 text-red-500 text-[10px] font-bold uppercase">Hamma uchun</button>}
+                                        <div style={{ position: "absolute", ...(isMe ? { right: 0 } : { left: 0 }), top: "calc(100% + 4px)", background: "#fff", borderRadius: 16, boxShadow: "0 8px 24px rgba(15,20,16,0.12)", minWidth: 120, zIndex: 20, padding: 6 }} className="opacity-0 pointer-events-none group-hover/opt:opacity-100 group-hover/opt:pointer-events-auto transition-all">
+                                            <button onClick={() => handleDeleteMessage(msg.id, false)} style={{ width: "100%", padding: "8px 12px", borderRadius: 10, border: "none", background: "none", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#0F1410", textAlign: "left" }}>
+                                                {language === 'uz' ? "Mendan" : "У меня"}
+                                            </button>
+                                            {isMe && (
+                                                <button onClick={() => handleDeleteMessage(msg.id, true)} style={{ width: "100%", padding: "8px 12px", borderRadius: 10, border: "none", background: "none", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#FF3B30", textAlign: "left" }}>
+                                                    {language === 'uz' ? "Hamma uchun" : "Для всех"}
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -312,47 +324,47 @@ export default function P2PChatPage() {
                         </div>
                     );
                 })}
-                <div ref={scrollRef} className="h-4" />
+                <div ref={scrollRef} style={{ height: 4 }} />
             </div>
 
             {/* Input Area */}
-            <div className="p-3 pb-8 bg-white/80 backdrop-blur-xl border-t border-gray-100 shrink-0">
+            <div style={{ padding: "12px 16px 24px", background: "rgba(250,250,246,0.92)", backdropFilter: "blur(20px)", borderTop: "0.5px solid rgba(15,20,16,0.06)", flexShrink: 0 }}>
                 {mediaPreview && (
-                    <div className="mb-3 relative w-24 aspect-square group animate-in slide-in-from-bottom-2">
-                        <img src={mediaPreview} className="w-full h-full object-cover rounded-2xl border-2 border-white shadow-xl" alt="Preview" />
-                        <button onClick={() => { setSelectedFile(null); setMediaPreview(null); }} className="absolute -top-2 -right-2 bg-black text-white rounded-full p-1 shadow-lg border border-white">
-                            <ChevronLeft size={14} className="rotate-45" />
-                        </button>
+                    <div style={{ marginBottom: 10, position: "relative", width: 120 }}>
+                        {selectedFile?.type.startsWith('video/') ? (
+                            <video src={mediaPreview} style={{ width: 120, height: 80, objectFit: "cover", borderRadius: 12 }} muted />
+                        ) : (
+                            <img src={mediaPreview} style={{ width: 120, height: 80, objectFit: "cover", borderRadius: 12 }} alt="Preview" />
+                        )}
+                        <button onClick={() => { setSelectedFile(null); setMediaPreview(null); }} style={{ position: "absolute", top: -8, right: -8, width: 24, height: 24, borderRadius: 12, background: "#FF3B30", border: "none", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+                        {isUploadingMedia && <div style={{ position: "absolute", inset: 0, background: "rgba(15,20,16,0.5)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}><Loader2 size={20} color="#fff" className="animate-spin" /></div>}
                     </div>
                 )}
-                <div className="flex items-center gap-2">
-                    <button onClick={() => fileInputRef.current?.click()} className="w-11 h-11 text-gray-400 hover:text-black transition-colors flex items-center justify-center shrink-0">
-                        <Paperclip size={22} />
-                    </button>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <input type="file" ref={fileInputRef} onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) {
-                            setSelectedFile(file);
-                            setMediaPreview(URL.createObjectURL(file));
-                        }
+                        if (file) { setSelectedFile(file); setMediaPreview(URL.createObjectURL(file)); }
                     }} className="hidden" accept="image/*,video/*" />
-                    <div className="flex-1 bg-gray-100 rounded-full px-4 py-2.5 flex items-center gap-2">
+                    <button onClick={() => fileInputRef.current?.click()} style={{ width: 44, height: 44, borderRadius: 14, background: GREEN_TINT, border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+                        <Paperclip size={18} color={GREEN} />
+                    </button>
+                    <div style={{ flex: 1, position: "relative" }}>
                         <input
                             type="text"
                             value={inputText}
                             onChange={(e) => setInputText(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                            placeholder="Xabar..."
-                            className="bg-transparent flex-1 text-sm font-medium outline-none"
+                            placeholder={language === 'uz' ? "Xabar yozing..." : "Напишите сообщение..."}
+                            style={{ width: "100%", background: "#fff", border: "1.5px solid rgba(15,20,16,0.06)", borderRadius: 20, padding: "12px 48px 12px 18px", fontSize: 14, fontWeight: 500, color: "#0F1410", outline: "none", boxSizing: "border-box" }}
                         />
+                        <button
+                            onClick={handleSendMessage}
+                            disabled={isSending || (!inputText.trim() && !selectedFile)}
+                            style={{ position: "absolute", right: 6, top: 6, width: 34, height: 34, borderRadius: 14, background: (inputText.trim() || selectedFile) ? `linear-gradient(135deg, ${GREEN} 0%, ${GREEN_DEEP} 100%)` : "#F5F5F0", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 200ms ease" }}
+                        >
+                            {isSending ? <Loader2 size={14} color="#fff" className="animate-spin" /> : <Send size={14} color={(inputText.trim() || selectedFile) ? "#fff" : "#9AA29C"} />}
+                        </button>
                     </div>
-                    <button
-                        onClick={handleSendMessage}
-                        disabled={isSending || (!inputText.trim() && !selectedFile)}
-                        className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${inputText.trim() || selectedFile ? "bg-black text-white shadow-lg scale-100" : "text-gray-300 scale-90"}`}
-                    >
-                        {isSending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-                    </button>
                 </div>
             </div>
         </div>
