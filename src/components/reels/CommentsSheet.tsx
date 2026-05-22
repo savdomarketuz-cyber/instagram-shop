@@ -152,7 +152,7 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
                         <button
                             onClick={handleSubmit}
                             disabled={isPosting || !newComment.trim()}
-                            className="p-2 bg-black text-white rounded-xl disabled:opacity-20 transition-all active:scale-90"
+                            className="p-2 rounded-xl disabled:opacity-20 transition-all active:scale-90 velari-green-btn"
                         >
                             {isPosting ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                         </button>

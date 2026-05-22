@@ -52,7 +52,7 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
                             this.setState({ hasError: false, error: null });
                             window.location.reload();
                         }}
-                        className="bg-black text-white px-8 py-4 rounded-full font-black text-xs uppercase tracking-widest shadow-2xl active:scale-95 transition-all"
+                        className="velari-green-btn px-8 py-4 rounded-full font-black text-xs uppercase tracking-widest active:scale-95 transition-all"
                     >
                         Qayta yuklash
                     </button>

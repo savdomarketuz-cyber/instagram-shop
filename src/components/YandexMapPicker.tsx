@@ -335,7 +335,7 @@ export default function YandexMapPicker({
                                 )}
                                 <button
                                     type="submit"
-                                    className="px-5 py-2.5 bg-black text-white rounded-[20px] flex items-center justify-center hover:bg-zinc-800 transition-all shadow-xl active:scale-90"
+                                    className="px-5 py-2.5 velari-green-btn rounded-[20px] flex items-center justify-center transition-all shadow-xl active:scale-90"
                                 >
                                     <Search size={18} strokeWidth={3} />
                                 </button>
@@ -417,7 +417,7 @@ export default function YandexMapPicker({
                         <button
                             disabled={!selectedCoords || isSearching}
                             onClick={handleConfirm}
-                            className="w-full md:w-auto px-10 py-4 md:px-12 md:py-5 bg-black text-white rounded-full font-black text-base md:text-lg flex items-center justify-center gap-3 shadow-2xl disabled:opacity-50 active:scale-95 transition-all shrink-0"
+                            className="w-full md:w-auto px-10 py-4 md:px-12 md:py-5 velari-green-btn rounded-full font-black text-base md:text-lg flex items-center justify-center gap-3 disabled:opacity-50 active:scale-95 transition-all shrink-0"
                         >
                             <Check size={20} className="md:w-6 md:h-6" strokeWidth={3} />
                             {language === 'uz' ? 'Tasdiqlash' : 'Подтвердить'}

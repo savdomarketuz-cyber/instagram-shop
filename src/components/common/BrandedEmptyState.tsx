@@ -117,7 +117,7 @@ export default function BrandedEmptyState({
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                    <Link href="/" className="px-10 py-5 bg-black text-white rounded-[24px] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-black/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
+                    <Link href="/" className="px-10 py-5 velari-green-btn rounded-[24px] font-black text-xs uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
                         <Home size={18} strokeWidth={3} /> {language === 'uz' ? "Bosh sahifa" : "Главная"}
                     </Link>
                     <Link href="/catalog" className="px-10 py-5 bg-gray-50 text-black border border-gray-100 rounded-[24px] font-black text-xs uppercase tracking-[0.2em] hover:bg-white hover:shadow-xl active:scale-95 transition-all flex items-center gap-3">
