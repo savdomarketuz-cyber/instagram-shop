@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Heart, Star, Minus, Plus } from "lucide-react";
@@ -12,27 +12,26 @@ import { getProductSlug } from "@/lib/slugify";
 const GREEN = "#2D6E3E";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
-// — Pointer intent prefetch: foydalanuvchi card ga teganda product rasmlarini fonida yuklash —
+// — Next.js Image optimizer URL (carousel sizes: 85vw → w=640 on most mobiles) —
+function nextImgUrl(src: string, w = 640, q = 75) {
+    return `/_next/image?url=${encodeURIComponent(src)}&w=${w}&q=${q}`;
+}
+
+// — Prefetch product images into browser cache via /_next/image proxy —
 const prefetchedSet = new Set<string>();
-function prefetchProductImages(item: Product) {
+function prefetchProductImages(item: Product, priority: "low" | "high" = "low") {
     if (typeof document === "undefined") return;
     if (prefetchedSet.has(item.id)) return;
     prefetchedSet.add(item.id);
 
-    const urls = (item.images || []).slice(0, 6); // dastlabki 6 ta carousel rasmi yetadi
-    const meta = item.image_metadata || {};
-    const firstUrl = urls[0]; // 1-rasm home page da allaqachon yuklangan — skip
-
+    const urls = (item.images || []).filter(Boolean).slice(0, 6);
     urls.forEach((u) => {
-        if (!u || u === firstUrl) return;
-        if (u.toLowerCase().endsWith(".mp4")) return; // video prefetch qilmaymiz
-        const target = meta[u]?.lowResUrl || u; // carouselda lowResUrl ishlatiladi
+        if (u.toLowerCase().endsWith(".mp4")) return;
         const link = document.createElement("link");
         link.rel = "prefetch";
         link.as = "image";
-        link.href = target;
-        link.crossOrigin = "anonymous";
-        link.fetchPriority = "low";
+        link.href = nextImgUrl(u);          // /_next/image URL → real cache hit
+        (link as any).fetchPriority = priority;
         document.head.appendChild(link);
     });
 }
@@ -93,6 +92,25 @@ export const ProductCard = memo(({
   toggleWishlist, addToCart, updateQuantity, removeFromCart,
   priority = false,
 }: ProductCardProps) => {
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // — Viewport prefetch: card ko'ringanda rasmlarni fonida yuklash —
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el || prefetchedSet.has(item.id)) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          observer.disconnect();
+          prefetchProductImages(item, "low");
+        }
+      },
+      { threshold: 0.3 } // 30% ko'ringanda boshlaydi
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [item.id]);
+
   const isInCart = cart.find(ci => ci.id === item.id);
   const isWished = wishlist.some(w => w.id === item.id);
   const totalStock = item.stockDetails
@@ -118,7 +136,7 @@ export const ProductCard = memo(({
   };
 
   return (
-    <div style={{
+    <div ref={cardRef} style={{
       background: "#fff",
       borderRadius: 22,
       overflow: "hidden",
@@ -133,9 +151,9 @@ export const ProductCard = memo(({
         href={`/${language}/products/${getProductSlug(item)}`}
         style={{ display: "block", textDecoration: "none", color: "inherit" }}
         prefetch={true}
-        onPointerEnter={() => prefetchProductImages(item)}
-        onPointerDown={() => prefetchProductImages(item)}
-        onTouchStart={() => prefetchProductImages(item)}
+        onPointerEnter={() => prefetchProductImages(item, "high")}
+        onPointerDown={() => prefetchProductImages(item, "high")}
+        onTouchStart={() => prefetchProductImages(item, "high")}
         onClick={() => {
           const query = useStore.getState().homeSearchQuery;
           if (query && query.trim().length >= 2) {
