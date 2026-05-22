@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Plus, Trash2, GripVertical, Save, Loader2, CheckCircle2, Eye, EyeOff, Image as ImageIcon } from "lucide-react";
+import { Plus, Trash2, Save, Loader2, CheckCircle2, Eye, EyeOff, Image as ImageIcon, Music, Video } from "lucide-react";
 import Image from "next/image";
 
 interface Story {
@@ -11,6 +11,8 @@ interface Story {
     title_ru: string;
     image: string;
     link: string;
+    audio?: string;
+    video?: string;
     is_active: boolean;
     sort_order: number;
 }
@@ -20,6 +22,8 @@ const EMPTY: Omit<Story, "id" | "sort_order"> = {
     title_ru: "",
     image: "",
     link: "",
+    audio: "",
+    video: "",
     is_active: true,
 };
 
@@ -33,9 +37,7 @@ export default function AdminStoriesPage() {
     const [newStory, setNewStory] = useState({ ...EMPTY });
     const [uploading, setUploading] = useState<string | null>(null);
 
-    useEffect(() => {
-        fetchStories();
-    }, []);
+    useEffect(() => { fetchStories(); }, []);
 
     const fetchStories = async () => {
         setLoading(true);
@@ -51,6 +53,8 @@ export default function AdminStoriesPage() {
             title_ru: story.title_ru,
             image: story.image,
             link: story.link,
+            audio: story.audio || null,
+            video: story.video || null,
             is_active: story.is_active,
             sort_order: story.sort_order,
         }).eq("id", story.id);
@@ -68,7 +72,9 @@ export default function AdminStoriesPage() {
     };
 
     const handleAdd = async () => {
-        if (!newStory.title_uz || !newStory.image) { alert("Sarlavha va rasm majburiy!"); return; }
+        if (!newStory.title_uz || (!newStory.image && !newStory.video)) {
+            alert("Sarlavha va rasm yoki video majburiy!"); return;
+        }
         setAdding(true);
         const maxOrder = Math.max(0, ...stories.map(s => s.sort_order));
         const { data } = await supabase.from("stories").insert({ ...newStory, sort_order: maxOrder + 1 }).select().single();
@@ -85,22 +91,22 @@ export default function AdminStoriesPage() {
         setStories(prev => prev.map(s => s.id === id ? { ...s, [key]: value } : s));
     };
 
-    const handleUpload = async (file: File, targetId: string | "new") => {
-        setUploading(targetId);
+    // field = "image" | "audio" | "video"
+    const handleUpload = async (file: File, targetId: string | "new", field: "image" | "audio" | "video" = "image") => {
+        const key = `${targetId}-${field}`;
+        setUploading(key);
         try {
-            const ext = file.name.split(".").pop();
-            const path = `stories/${Date.now()}.${ext}`;
-            const res = await fetch(`/api/admin/upload?path=${encodeURIComponent(path)}&contentType=${encodeURIComponent(file.type)}`, {
-                method: "POST",
-                body: file,
-            });
+            const fd = new FormData();
+            fd.append("file", file);
+            fd.append("fileName", `story_${field}_${Date.now()}.${file.name.split(".").pop()}`);
+            const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
             const json = await res.json();
-            const url = json.url || json.publicUrl;
-            if (!url) throw new Error("URL olishda xatolik");
+            const url = json.url;
+            if (!url) throw new Error(json.error || "URL olishda xatolik");
             if (targetId === "new") {
-                setNewStory(prev => ({ ...prev, image: url }));
+                setNewStory(prev => ({ ...prev, [field]: url }));
             } else {
-                setStories(prev => prev.map(s => s.id === targetId ? { ...s, image: url } : s));
+                setStories(prev => prev.map(s => s.id === targetId ? { ...s, [field]: url } : s));
             }
         } catch (e: any) {
             alert("Yuklashda xatolik: " + e.message);
@@ -123,6 +129,41 @@ export default function AdminStoriesPage() {
 
     if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin" /></div>;
 
+    // Reusable media upload row
+    const MediaRow = ({
+        label, icon, accept, value, uploadKey,
+        onUrlChange, onFileChange,
+    }: {
+        label: string;
+        icon: React.ReactNode;
+        accept: string;
+        value: string;
+        uploadKey: string;
+        onUrlChange: (url: string) => void;
+        onFileChange: (file: File) => void;
+    }) => (
+        <div className="flex items-center gap-2 md:col-span-2">
+            <label className="flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 border-gray-100 cursor-pointer hover:border-black transition-colors shrink-0 text-xs font-bold text-gray-500 hover:text-black">
+                <input type="file" accept={accept} className="hidden"
+                    onChange={e => e.target.files?.[0] && onFileChange(e.target.files[0])} />
+                {uploading === uploadKey ? <Loader2 size={14} className="animate-spin" /> : icon}
+                {label}
+            </label>
+            <input
+                value={value}
+                onChange={e => onUrlChange(e.target.value)}
+                placeholder={`${label} URL`}
+                className="flex-1 px-3 py-2 rounded-xl border-2 border-gray-100 text-xs font-mono focus:outline-none focus:border-black transition-colors min-w-0"
+            />
+            {value && label === "Audio" && (
+                <audio controls src={value} className="h-8 shrink-0" style={{ maxWidth: 160 }} />
+            )}
+            {value && label === "Video" && (
+                <video src={value} className="h-8 w-14 rounded-lg object-cover shrink-0" />
+            )}
+        </div>
+    );
+
     return (
         <div className="space-y-10 pb-20 max-w-5xl">
             {saved && (
@@ -141,18 +182,20 @@ export default function AdminStoriesPage() {
                 {stories.map((s, idx) => (
                     <div key={s.id} className="bg-white rounded-[28px] p-6 border border-gray-100 shadow-sm">
                         <div className="flex gap-4 items-start">
-                            {/* Image */}
+                            {/* Thumbnail */}
                             <div className="relative shrink-0">
                                 <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-100 relative">
                                     {s.image
                                         ? <Image src={s.image} alt="" fill sizes="64px" style={{ objectFit: "cover" }} />
+                                        : s.video
+                                        ? <div className="w-full h-full flex items-center justify-center bg-gray-900"><Video size={24} className="text-white" /></div>
                                         : <div className="w-full h-full flex items-center justify-center text-gray-300"><ImageIcon size={24} /></div>
                                     }
                                 </div>
                                 <label className="absolute -bottom-1 -right-1 w-6 h-6 bg-black rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-800 transition-colors">
                                     <input type="file" accept="image/*" className="hidden"
-                                        onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], s.id)} />
-                                    {uploading === s.id ? <Loader2 size={10} className="animate-spin text-white" /> : <span className="text-white text-xs">+</span>}
+                                        onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], s.id, "image")} />
+                                    {uploading === `${s.id}-image` ? <Loader2 size={10} className="animate-spin text-white" /> : <span className="text-white text-xs font-bold">+</span>}
                                 </label>
                             </div>
 
@@ -177,6 +220,26 @@ export default function AdminStoriesPage() {
                                     value={s.link} placeholder="Havola (ixtiyoriy)"
                                     onChange={e => handleField(s.id, "link", e.target.value)}
                                     className="px-4 py-2.5 rounded-xl border-2 border-gray-100 text-sm font-mono focus:outline-none focus:border-black transition-colors md:col-span-2"
+                                />
+                                {/* Audio upload */}
+                                <MediaRow
+                                    label="Audio"
+                                    icon={<Music size={14} />}
+                                    accept="audio/*"
+                                    value={s.audio || ""}
+                                    uploadKey={`${s.id}-audio`}
+                                    onUrlChange={url => handleField(s.id, "audio", url)}
+                                    onFileChange={file => handleUpload(file, s.id, "audio")}
+                                />
+                                {/* Video upload */}
+                                <MediaRow
+                                    label="Video"
+                                    icon={<Video size={14} />}
+                                    accept="video/*"
+                                    value={s.video || ""}
+                                    uploadKey={`${s.id}-video`}
+                                    onUrlChange={url => handleField(s.id, "video", url)}
+                                    onFileChange={file => handleUpload(file, s.id, "video")}
                                 />
                             </div>
 
@@ -214,13 +277,15 @@ export default function AdminStoriesPage() {
                         <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-100 relative">
                             {newStory.image
                                 ? <Image src={newStory.image} alt="" fill sizes="64px" style={{ objectFit: "cover" }} />
+                                : newStory.video
+                                ? <div className="w-full h-full flex items-center justify-center bg-gray-900"><Video size={24} className="text-white" /></div>
                                 : <div className="w-full h-full flex items-center justify-center text-gray-300"><ImageIcon size={24} /></div>
                             }
                         </div>
                         <label className="absolute -bottom-1 -right-1 w-6 h-6 bg-black rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-800 transition-colors">
                             <input type="file" accept="image/*" className="hidden"
-                                onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], "new")} />
-                            {uploading === "new" ? <Loader2 size={10} className="animate-spin text-white" /> : <span className="text-white text-xs">+</span>}
+                                onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], "new", "image")} />
+                            {uploading === "new-image" ? <Loader2 size={10} className="animate-spin text-white" /> : <span className="text-white text-xs font-bold">+</span>}
                         </label>
                     </div>
                     <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -230,18 +295,43 @@ export default function AdminStoriesPage() {
                         <input value={newStory.title_ru} placeholder="Sarlavha (RU)"
                             onChange={e => setNewStory(p => ({ ...p, title_ru: e.target.value }))}
                             className="px-4 py-2.5 rounded-xl border-2 border-gray-100 text-sm font-semibold focus:outline-none focus:border-black transition-colors" />
-                        <input value={newStory.image} placeholder="Rasm URL *"
+                        <input value={newStory.image} placeholder="Rasm URL"
                             onChange={e => setNewStory(p => ({ ...p, image: e.target.value }))}
                             className="px-4 py-2.5 rounded-xl border-2 border-gray-100 text-sm font-mono focus:outline-none focus:border-black transition-colors md:col-span-2" />
                         <input value={newStory.link} placeholder="Havola (ixtiyoriy)"
                             onChange={e => setNewStory(p => ({ ...p, link: e.target.value }))}
                             className="px-4 py-2.5 rounded-xl border-2 border-gray-100 text-sm font-mono focus:outline-none focus:border-black transition-colors md:col-span-2" />
+                        {/* Audio upload */}
+                        <MediaRow
+                            label="Audio"
+                            icon={<Music size={14} />}
+                            accept="audio/*"
+                            value={newStory.audio || ""}
+                            uploadKey="new-audio"
+                            onUrlChange={url => setNewStory(p => ({ ...p, audio: url }))}
+                            onFileChange={file => handleUpload(file, "new", "audio")}
+                        />
+                        {/* Video upload */}
+                        <MediaRow
+                            label="Video"
+                            icon={<Video size={14} />}
+                            accept="video/*"
+                            value={newStory.video || ""}
+                            uploadKey="new-video"
+                            onUrlChange={url => setNewStory(p => ({ ...p, video: url }))}
+                            onFileChange={file => handleUpload(file, "new", "video")}
+                        />
                     </div>
                     <button onClick={handleAdd} disabled={adding}
                         className="flex items-center gap-2 px-6 py-3 bg-black text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-gray-800 transition-colors disabled:opacity-50 shrink-0">
                         {adding ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} Qo'shish
                     </button>
                 </div>
+            </div>
+
+            {/* DB note */}
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-800 font-semibold">
+                <strong>Eslatma:</strong> Audio va video maydonlari ishlashi uchun Supabase&apos;da <code className="bg-amber-100 px-1 rounded">stories</code> jadvaliga <code className="bg-amber-100 px-1 rounded">audio text</code> va <code className="bg-amber-100 px-1 rounded">video text</code> ustunlarini qo&apos;shing (Table Editor → Add column, nullable = true).
             </div>
         </div>
     );

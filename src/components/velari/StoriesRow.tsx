@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 
@@ -10,6 +10,8 @@ interface Story {
     title_ru: string;
     image: string;
     link: string;
+    audio?: string;
+    video?: string;
     is_active: boolean;
     sort_order: number;
 }
@@ -37,6 +39,7 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
     const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
     const [open, setOpen] = useState<Story | null>(null);
     const [openIdx, setOpenIdx] = useState(0);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
         setSeenIds(getSeenIds());
@@ -48,16 +51,42 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
             .then(({ data }) => { if (data) setStories(data); });
     }, []);
 
+    // Stop audio on unmount
+    useEffect(() => {
+        return () => {
+            if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+        };
+    }, []);
+
     if (stories.length === 0) return null;
+
+    const playAudio = (story: Story) => {
+        if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+        if (story.audio) {
+            const a = new Audio(story.audio);
+            a.loop = true;
+            a.volume = 0.7;
+            a.play().catch(() => {});
+            audioRef.current = a;
+        }
+    };
+
+    const stopAudio = () => {
+        if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    };
 
     const handleOpen = (story: Story, idx: number) => {
         setOpen(story);
         setOpenIdx(idx);
         markSeen(story.id);
         setSeenIds(prev => new Set<string>([...Array.from(prev), story.id]));
+        playAudio(story);
     };
 
-    const handleClose = () => setOpen(null);
+    const handleClose = () => {
+        stopAudio();
+        setOpen(null);
+    };
 
     const handleNav = (dir: 1 | -1) => {
         const next = openIdx + dir;
@@ -67,6 +96,7 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
         setOpenIdx(next);
         markSeen(s.id);
         setSeenIds(prev => new Set<string>([...Array.from(prev), s.id]));
+        playAudio(s);
     };
 
     return (
@@ -79,6 +109,7 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
                     {stories.map((s, idx) => {
                         const seen = seenIds.has(s.id);
                         const name = language === "uz" ? s.title_uz : s.title_ru;
+                        const hasVideo = !!s.video;
                         return (
                             <button
                                 key={s.id}
@@ -107,6 +138,7 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
                                         ? "rgba(15,20,16,0.08)"
                                         : `conic-gradient(${GREEN} 0%, #7DC492 50%, ${GREEN} 100%)`,
                                     boxSizing: "border-box",
+                                    position: "relative",
                                 }}>
                                     <div style={{
                                         width: "100%",
@@ -117,14 +149,26 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
                                         position: "relative",
                                         background: "#F0F0EC",
                                     }}>
-                                        <Image
-                                            src={s.image || "/placeholder.png"}
-                                            alt={name}
-                                            fill
-                                            sizes="64px"
-                                            style={{ objectFit: "cover" }}
-                                        />
+                                        {s.image ? (
+                                            <Image
+                                                src={s.image}
+                                                alt={name}
+                                                fill
+                                                sizes="64px"
+                                                style={{ objectFit: "cover" }}
+                                            />
+                                        ) : hasVideo ? (
+                                            <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#111" }}>
+                                                <span style={{ fontSize: 20, color: "#fff" }}>▶</span>
+                                            </div>
+                                        ) : null}
                                     </div>
+                                    {/* Video indicator */}
+                                    {hasVideo && (
+                                        <div style={{ position: "absolute", bottom: 0, right: 0, width: 18, height: 18, borderRadius: "50%", background: GREEN, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                            <span style={{ color: "#fff", fontSize: 8, lineHeight: 1 }}>▶</span>
+                                        </div>
+                                    )}
                                 </div>
                                 <span style={{
                                     fontSize: 11,
@@ -162,7 +206,11 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
                     {/* Progress bars */}
                     <div style={{ display: "flex", gap: 4, padding: "16px 16px 0", position: "relative", zIndex: 2 }}>
                         {stories.map((s, i) => (
-                            <div key={s.id} style={{ flex: 1, height: 2.5, borderRadius: 2, background: i < openIdx ? "#fff" : i === openIdx ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.25)", overflow: "hidden" }}>
+                            <div key={s.id} style={{
+                                flex: 1, height: 2.5, borderRadius: 2,
+                                background: i < openIdx ? "#fff" : i === openIdx ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.25)",
+                                overflow: "hidden",
+                            }}>
                                 {i === openIdx && (
                                     <div style={{ height: "100%", background: "#fff", borderRadius: 2, animation: "velari-story-progress 5s linear forwards" }} />
                                 )}
@@ -173,20 +221,51 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
                     {/* Header */}
                     <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", position: "relative", zIndex: 2 }}>
                         <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", border: "2px solid rgba(255,255,255,0.4)", position: "relative", flexShrink: 0 }}>
-                            <Image src={open.image || "/placeholder.png"} alt="" fill sizes="36px" style={{ objectFit: "cover" }} />
+                            {open.image ? (
+                                <Image src={open.image} alt="" fill sizes="36px" style={{ objectFit: "cover" }} />
+                            ) : (
+                                <div style={{ width: "100%", height: "100%", background: GREEN, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                    <span style={{ color: "#fff", fontSize: 14 }}>▶</span>
+                                </div>
+                            )}
                         </div>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", letterSpacing: -0.2 }}>
-                            {language === "uz" ? open.title_uz : open.title_ru}
-                        </span>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", letterSpacing: -0.2 }}>
+                                {language === "uz" ? open.title_uz : open.title_ru}
+                            </span>
+                            {open.audio && (
+                                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontWeight: 600, letterSpacing: 0.5 }}>
+                                    ♪ Musiqa ijroyo&apos;da
+                                </span>
+                            )}
+                        </div>
                         <button
                             onClick={handleClose}
                             style={{ marginLeft: "auto", background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "50%", width: 32, height: 32, color: "#fff", fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                         >×</button>
                     </div>
 
-                    {/* Image */}
+                    {/* Media: Video or Image */}
                     <div style={{ flex: 1, position: "relative" }} onClick={e => e.stopPropagation()}>
-                        <Image src={open.image || "/placeholder.png"} alt="" fill sizes="100vw" style={{ objectFit: "contain" }} />
+                        {open.video ? (
+                            <video
+                                key={open.id + "-video"}
+                                src={open.video}
+                                autoPlay
+                                playsInline
+                                loop
+                                muted={!!open.audio}
+                                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                            />
+                        ) : (
+                            <Image
+                                src={open.image || "/placeholder.png"}
+                                alt=""
+                                fill
+                                sizes="100vw"
+                                style={{ objectFit: "contain" }}
+                            />
+                        )}
 
                         {/* Tap left / right */}
                         <button onClick={e => { e.stopPropagation(); handleNav(-1); }}
