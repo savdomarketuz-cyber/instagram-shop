@@ -46,28 +46,44 @@ export default function AdminStoriesPage() {
         setLoading(false);
     };
 
+    // supabaseAdmin (RLS bypass) uchun /api/admin/crud orqali
+    const adminCrud = async (action: string, payload: any, matchConfig?: any) => {
+        const res = await fetch("/api/admin/crud", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ table: "stories", action, payload, matchConfig }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Xatolik");
+        return json;
+    };
+
     const handleUpdate = async (story: Story) => {
         setSaving(story.id);
-        await supabase.from("stories").update({
-            title_uz: story.title_uz,
-            title_ru: story.title_ru,
-            image: story.image,
-            link: story.link,
-            audio: story.audio || null,
-            video: story.video || null,
-            is_active: story.is_active,
-            sort_order: story.sort_order,
-        }).eq("id", story.id);
+        try {
+            await adminCrud("update", {
+                title_uz: story.title_uz,
+                title_ru: story.title_ru,
+                image: story.image,
+                link: story.link,
+                audio: story.audio || null,
+                video: story.video || null,
+                is_active: story.is_active,
+                sort_order: story.sort_order,
+            }, { column: "id", value: story.id });
+            setSaved(true);
+            setTimeout(() => setSaved(false), 2000);
+        } catch (e: any) { alert("Xatolik: " + e.message); }
         setSaving(null);
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
     };
 
     const handleDelete = async (id: string) => {
         if (!confirm("O'chirilsinmi?")) return;
         setDeleting(id);
-        await supabase.from("stories").delete().eq("id", id);
-        setStories(prev => prev.filter(s => s.id !== id));
+        try {
+            await adminCrud("delete", {}, { column: "id", value: id });
+            setStories(prev => prev.filter(s => s.id !== id));
+        } catch (e: any) { alert("Xatolik: " + e.message); }
         setDeleting(null);
     };
 
@@ -76,10 +92,12 @@ export default function AdminStoriesPage() {
             alert("Sarlavha va rasm yoki video majburiy!"); return;
         }
         setAdding(true);
-        const maxOrder = Math.max(0, ...stories.map(s => s.sort_order));
-        const { data } = await supabase.from("stories").insert({ ...newStory, sort_order: maxOrder + 1 }).select().single();
-        if (data) setStories(prev => [...prev, data]);
-        setNewStory({ ...EMPTY });
+        try {
+            const maxOrder = Math.max(0, ...stories.map(s => s.sort_order));
+            const result = await adminCrud("insert", { ...newStory, sort_order: maxOrder + 1 });
+            if (result.data?.[0]) setStories(prev => [...prev, result.data[0]]);
+            setNewStory({ ...EMPTY });
+        } catch (e: any) { alert("Xatolik: " + e.message); }
         setAdding(false);
     };
 
@@ -123,8 +141,10 @@ export default function AdminStoriesPage() {
         updated[idx].sort_order = idx;
         updated[next].sort_order = next;
         setStories(updated);
-        await supabase.from("stories").update({ sort_order: idx }).eq("id", updated[idx].id);
-        await supabase.from("stories").update({ sort_order: next }).eq("id", updated[next].id);
+        await Promise.all([
+            adminCrud("update", { sort_order: idx },  { column: "id", value: updated[idx].id }),
+            adminCrud("update", { sort_order: next }, { column: "id", value: updated[next].id }),
+        ]);
     };
 
     if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin" /></div>;
