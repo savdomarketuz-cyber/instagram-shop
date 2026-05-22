@@ -567,7 +567,8 @@ export default function OrdersPage() {
                             <button
                                 onClick={handleSubmitReview}
                                 disabled={isSubmittingReview || !reviewText.trim()}
-                                className="w-full py-5 bg-black text-white rounded-[32px] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 shadow-2xl shadow-black/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+                                className="w-full py-5 rounded-[32px] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+                                style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", boxShadow: "0 8px 20px rgba(45,110,62,0.28)" }}
                             >
                                 {isSubmittingReview ? <Loader2 className="animate-spin" size={18} /> : (
                                     <>

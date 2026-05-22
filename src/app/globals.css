@@ -164,4 +164,14 @@ body {
     from { opacity: 0; }
     to { opacity: 1; }
   }
+
+  /* Velari design system utility */
+  .velari-green-btn {
+    background: linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%);
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(45, 110, 62, 0.28);
+  }
+  .velari-green-btn:disabled {
+    opacity: 0.5;
+  }
 }

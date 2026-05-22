@@ -188,12 +188,12 @@ function PaymentContent() {
                 {/* Cash on Delivery Option */}
                 <div
                     onClick={() => setPaymentMethod("cash")}
-                    className={`p-6 border-2 rounded-[32px] cursor-pointer transition-all ${paymentMethod === "cash" ? "border-black bg-gray-50 shadow-xl shadow-black/5" : "border-gray-100"
-                        }`}
+                    className={`p-6 border-2 rounded-[32px] cursor-pointer transition-all ${paymentMethod === "cash" ? "bg-white shadow-xl" : "border-gray-100"}`}
+                    style={paymentMethod === "cash" ? { borderColor: "#2D6E3E" } : {}}
                 >
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-4">
-                            <div className={`p-3 rounded-2xl ${paymentMethod === "cash" ? "bg-black text-white" : "bg-gray-100"}`}>
+                            <div className="p-3 rounded-2xl" style={paymentMethod === "cash" ? { background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff" } : { background: "#f3f4f6" }}>
                                 <Banknote size={20} />
                             </div>
                             <span className="font-black text-sm italic uppercase tracking-tighter">
