@@ -204,7 +204,7 @@ export default function Navigation() {
                             )}
                             <button
                                 type="submit"
-                                className={`p-2 md:p-3 rounded-lg md:rounded-xl transition-all ${isSearchLoading ? 'bg-black text-white' : 'text-gray-400 hover:text-[#2d6e3e] hover:bg-white shadow-sm'}`}
+                                className={`p-2 md:p-3 rounded-lg md:rounded-xl transition-all ${isSearchLoading ? 'velari-green-btn' : 'text-gray-400 hover:text-[#2d6e3e] hover:bg-white shadow-sm'}`}
                             >
                                 {isSearchLoading ? <Loader2 size={18} className="animate-spin" /> : <Search size={20} />}
                             </button>

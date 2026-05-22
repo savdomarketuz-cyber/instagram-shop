@@ -103,7 +103,7 @@ export default function BrandedEmptyState({
                         {type === '404' ? '404' : 'OOP!'}
                     </div>
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-24 h-24 md:w-32 md:h-32 bg-black rounded-[40px] flex items-center justify-center shadow-2xl rotate-12 animate-bounce duration-[2000ms]">
+                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-[40px] flex items-center justify-center shadow-2xl rotate-12 animate-bounce duration-[2000ms]" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" }}>
                             <Search size={40} className="text-white -rotate-12" strokeWidth={3} />
                         </div>
                     </div>

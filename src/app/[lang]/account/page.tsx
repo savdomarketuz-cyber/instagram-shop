@@ -723,7 +723,7 @@ function ReviewsView({ user, language, showToast, onBack }: any) {
                                        </div>
                                    ))}
                                    {reviewVideo && (
-                                       <div className="w-14 h-14 bg-black rounded-xl overflow-hidden relative group">
+                                       <div className="w-14 h-14 rounded-xl overflow-hidden relative group" style={{ background: "#0F1410" }}>
                                            <video src={reviewVideo} className="w-full h-full object-cover opacity-60" />
                                            <div className="absolute inset-0 flex items-center justify-center"><Play size={14} className="text-white" /></div>
                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer" onClick={() => setReviewVideo("")}>
@@ -879,7 +879,7 @@ function ReturnsView({ user, t, language, onBack }: any) {
                                                 className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between ${isSelected ? 'border-black bg-gray-50' : 'border-gray-50 hover:border-gray-200'}`}
                                             >
                                                 <div className="font-bold text-sm tracking-tighter italic uppercase">{item.name}</div>
-                                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 ${isSelected ? 'bg-black border-black text-white' : 'border-gray-100'}`}>
+                                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 ${isSelected ? 'border-transparent text-white' : 'border-gray-100'}" style={isSelected ? { background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" } : {}}`}>
                                                     {isSelected && <CheckCircle2 size={12} />}
                                                 </div>
                                             </div>

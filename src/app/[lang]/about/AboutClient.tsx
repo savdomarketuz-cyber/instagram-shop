@@ -80,7 +80,7 @@ export default function AboutClient() {
                     <section className="space-y-12">
                         <div className="text-center space-y-4">
                             <h3 className="text-3xl md:text-4xl font-black italic tracking-tighter uppercase">{t.aboutUs.whyTitle}</h3>
-                            <div className="h-1.5 w-20 bg-black mx-auto rounded-full" />
+                            <div className="h-1.5 w-20 mx-auto rounded-full" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" }} />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {t.aboutUs.whyItems.map((item: any, i: number) => (
