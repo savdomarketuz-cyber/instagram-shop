@@ -566,8 +566,8 @@ function ReviewsView({ user, language, showToast, onBack }: any) {
                     {/* Pending Reviews */}
                     {pendingProducts.length > 0 && (
                         <div className="space-y-4">
-                            <h2 className="text-[10px] font-black uppercase tracking-widest text-emerald-600 flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                            <h2 className="text-[10px] font-black uppercase tracking-widest text-[#2D6E3E] flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 bg-[#EAF3EC]0 rounded-full animate-pulse" />
                                 {language === 'uz' ? 'Baholashni kutyapti' : 'Ожидают оценки'}
                             </h2>
                             <div className="grid grid-cols-1 gap-4">
@@ -580,9 +580,9 @@ function ReviewsView({ user, language, showToast, onBack }: any) {
                                         <div className="w-16 h-16 rounded-2xl bg-gray-100 overflow-hidden shrink-0"><img src={p.image} className="w-full h-full object-cover" alt={p.name} /></div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-xs font-black italic uppercase truncate">{p.name}</p>
-                                            <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-1">{language === 'uz' ? 'Mahsulotni baholang' : 'Оцените товар'}</p>
+                                            <p className="text-[10px] font-bold text-[#2D6E3E] uppercase tracking-widest mt-1">{language === 'uz' ? 'Mahsulotni baholang' : 'Оцените товар'}</p>
                                         </div>
-                                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-[#2D6E3E] group-hover:bg-[#EAF3EC]0 group-hover:text-white transition-all">
                                             <Star size={18} fill="currentColor" />
                                         </div>
                                     </div>
@@ -1340,8 +1340,8 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
         return (
             <div className="bg-[#FAFAF6] min-h-screen p-6 flex flex-col items-center justify-center">
                 <div className="max-w-md w-full bg-white p-10 rounded-[40px] shadow-2xl space-y-8">
-                    <div className="w-20 h-20 bg-emerald-50 rounded-3xl flex items-center justify-center mx-auto">
-                        <ShieldCheck className="text-emerald-500" size={40} />
+                    <div className="w-20 h-20 bg-[#EAF3EC] rounded-3xl flex items-center justify-center mx-auto">
+                        <ShieldCheck className="text-[#2D6E3E]" size={40} />
                     </div>
                     <div className="text-center space-y-2">
                         <h2 className="text-2xl font-black italic tracking-tighter uppercase">{language === 'uz' ? 'Hamkorlik Shartnomasi' : 'Партнерское Соглашение'}</h2>
@@ -1424,10 +1424,10 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                             <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 flex flex-col justify-between min-h-[220px]">
                                 <div>
                                     <div className="flex justify-between items-start">
-                                        <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center">
-                                            <Banknote className="text-emerald-500" size={24} />
+                                        <div className="w-12 h-12 bg-[#EAF3EC] rounded-2xl flex items-center justify-center">
+                                            <Banknote className="text-[#2D6E3E]" size={24} />
                                         </div>
-                                        <button onClick={() => setShowWithdraw(true)} className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1.5 rounded-xl hover:bg-emerald-100 transition-all">
+                                        <button onClick={() => setShowWithdraw(true)} className="text-[10px] font-black text-[#2D6E3E] uppercase tracking-widest bg-[#EAF3EC] px-3 py-1.5 rounded-xl hover:bg-[#D4EBDA] transition-all">
                                             {language === 'uz' ? 'Yechish' : 'Вывод'}
                                         </button>
                                     </div>
@@ -1480,7 +1480,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                                         <p className="text-[8px] font-bold uppercase text-gray-400 tracking-tighter">{m.affiliate_role}</p>
                                                     </div>
                                                 </div>
-                                                <div className="text-emerald-500">
+                                                <div className="text-[#2D6E3E]">
                                                     <TrendingUp size={14} />
                                                 </div>
                                             </div>
@@ -1556,7 +1556,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{c.promo_code_tariffs?.name}</p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-xs font-black text-emerald-500">+{c.total_earned?.toLocaleString()} so'm</p>
+                                                <p className="text-xs font-black text-[#2D6E3E]">+{c.total_earned?.toLocaleString()} so'm</p>
                                                 <p className="text-[8px] font-bold text-gray-300 uppercase">{c.usage_count} marta ishlatildi</p>
                                             </div>
                                         </div>
@@ -1586,8 +1586,8 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                                 <p className="text-xl font-black italic">{t.discount_value}{t.type === 'percentage' ? '%' : ' so\'m'}</p>
                                             </div>
                                             <div className="bg-white/5 p-4 rounded-2xl">
-                                                <p className="text-[8px] font-black text-emerald-500 uppercase">Sizning foydangiz</p>
-                                                <p className="text-xl font-black italic text-emerald-400">
+                                                <p className="text-[8px] font-black text-[#2D6E3E] uppercase">Sizning foydangiz</p>
+                                                <p className="text-xl font-black italic text-[#4CAF71]">
                                                     {t.affiliate_reward_type === 'fixed_per_use' ? `${t.affiliate_reward_value.toLocaleString()} so'm` : `${t.affiliate_reward_value}%`}
                                                 </p>
                                             </div>
@@ -1597,7 +1597,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                                 setSelectedTariff(t);
                                                 setShowCreatePromo(true);
                                             }}
-                                            className="w-full bg-white text-black py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-400 transition-all"
+                                            className="w-full bg-white text-black py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#2D6E3E] transition-all"
                                         >
                                             Kod yaratish
                                         </button>
@@ -1615,7 +1615,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 {[
                                     { label: language === 'uz' ? 'Jami bosishlar' : 'Всего кликов', value: analytics.stats.totalClicks, color: 'text-blue-600', bg: 'bg-blue-50' },
-                                    { label: language === 'uz' ? 'Konversiya' : 'Конверсий', value: analytics.stats.totalConversions, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                                    { label: language === 'uz' ? 'Konversiya' : 'Конверсий', value: analytics.stats.totalConversions, color: 'text-[#2D6E3E]', bg: 'bg-[#EAF3EC]' },
                                     { label: language === 'uz' ? 'Conv. darajasi' : 'Conv. rate', value: `${analytics.stats.conversionRate}%`, color: 'text-purple-600', bg: 'bg-purple-50' },
                                     { label: language === 'uz' ? 'Jamoa bosishlari' : 'Клики команды', value: analytics.stats.teamTotalClicks, color: 'text-orange-600', bg: 'bg-orange-50' },
                                 ].map((s, i) => (
@@ -1664,7 +1664,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                                             <span className="text-lg font-black italic text-blue-600">{l.clicks || 0}</span>
                                                         </td>
                                                         <td className="p-5 text-center">
-                                                            <span className="text-lg font-black italic text-emerald-500">{l.conversions || 0}</span>
+                                                            <span className="text-lg font-black italic text-[#2D6E3E]">{l.conversions || 0}</span>
                                                         </td>
                                                         <td className="p-5 text-right">
                                                             <button
@@ -1723,7 +1723,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                                             <span className="text-lg font-black italic text-blue-600">{l.clicks || 0}</span>
                                                         </td>
                                                         <td className="p-5 text-center">
-                                                            <span className="text-lg font-black italic text-emerald-500">{l.conversions || 0}</span>
+                                                            <span className="text-lg font-black italic text-[#2D6E3E]">{l.conversions || 0}</span>
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -1760,7 +1760,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                             <tr key={t.id} className="hover:bg-gray-50/50 transition-colors">
                                                 <td className="p-6">
                                                     <div className="flex items-center gap-3">
-                                                        <div className={`w-2 h-2 rounded-full ${t.status === 'released' ? 'bg-emerald-500' : t.status === 'approved' ? 'bg-blue-500' : t.status === 'pending' ? 'bg-orange-500' : 'bg-red-500'} animate-pulse`} />
+                                                        <div className={`w-2 h-2 rounded-full ${t.status === 'released' ? 'bg-[#EAF3EC]0' : t.status === 'approved' ? 'bg-blue-500' : t.status === 'pending' ? 'bg-orange-500' : 'bg-red-500'} animate-pulse`} />
                                                         <div>
                                                             <p className="text-xs font-black italic tracking-tighter uppercase">{t.order_stage || 'Jarayonda'}</p>
                                                             <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">
@@ -1813,7 +1813,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                     </button>
                                 </div>
                                 {codeSent && (
-                                    <p className="text-[10px] text-emerald-500 font-black uppercase ml-4 mt-2">
+                                    <p className="text-[10px] text-[#2D6E3E] font-black uppercase ml-4 mt-2">
                                         ✓ {language === 'uz' ? "Kod Telegram'ga yuborildi" : "Код отправлен в Telegram"}
                                     </p>
                                 )}
@@ -1898,7 +1898,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                             <button 
                                 onClick={handleTransfer}
                                 disabled={isActionLoading || !transferAmount}
-                                className="w-full bg-emerald-500 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 shadow-xl shadow-emerald-500/20"
+                                className="w-full bg-[#EAF3EC]0 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 shadow-xl shadow-emerald-500/20"
                             >
                                 {isActionLoading ? <Loader2 className="animate-spin mx-auto" /> : (language === 'uz' ? 'O\'TKAZISH' : 'ПЕРЕВЕСТИ')}
                             </button>

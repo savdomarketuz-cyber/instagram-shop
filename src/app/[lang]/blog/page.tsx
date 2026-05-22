@@ -41,7 +41,7 @@ export default async function BlogPage({ params: { lang } }: any) {
                 {/* Hero Section */}
                 <div className="mb-20 text-center relative">
                     <div className="absolute -top-10 left-1/2 -translate-x-1/2 opacity-10 animate-pulse pointer-events-none">
-                        <Sparkles size={120} className="text-emerald-500" />
+                        <Sparkles size={120} className="text-[#2D6E3E]" />
                     </div>
                     <h1 className="text-5xl md:text-8xl font-black tracking-tighter italic uppercase mb-6 relative">
                         {t.blog.title}
@@ -74,7 +74,7 @@ export default async function BlogPage({ params: { lang } }: any) {
                                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                                         />
                                     ) : (
-                                        <div className="w-full h-full bg-emerald-50 flex items-center justify-center text-emerald-200">
+                                        <div className="w-full h-full bg-[#EAF3EC] flex items-center justify-center text-[#A8D5B3]">
                                             <Sparkles size={60} />
                                         </div>
                                     )}
@@ -86,8 +86,8 @@ export default async function BlogPage({ params: { lang } }: any) {
                                 </div>
                                 <div className="p-10">
                                     <div className="flex items-center gap-6 text-gray-400 text-[9px] font-black uppercase tracking-widest mb-6 opacity-60">
-                                        <div className="flex items-center gap-2"><Calendar size={14} className="text-emerald-500" /> {new Date(blog.created_at).toLocaleDateString()}</div>
-                                        <div className="flex items-center gap-2"><Clock size={14} className="text-emerald-500" /> {blog.readTime} {t.blog.readTime}</div>
+                                        <div className="flex items-center gap-2"><Calendar size={14} className="text-[#2D6E3E]" /> {new Date(blog.created_at).toLocaleDateString()}</div>
+                                        <div className="flex items-center gap-2"><Clock size={14} className="text-[#2D6E3E]" /> {blog.readTime} {t.blog.readTime}</div>
                                     </div>
                                     <h2 className="text-2xl font-black tracking-tighter italic leading-tight mb-5 group-hover:text-[#2D6E3E] transition-colors duration-300">
                                         {lang === 'uz' ? blog.title_uz : blog.title_ru}

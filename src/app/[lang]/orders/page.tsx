@@ -290,7 +290,7 @@ export default function OrdersPage() {
                                     order.status === t.common.statusPaid ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' :
                                         order.status.includes('To\'lov') || order.status.includes('Оплат') ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/20' :
                                             order.status === t.common.statusCancelled ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' :
-                                                'bg-black text-white shadow-lg shadow-black/10'
+                                                'velari-green-btn'
                                     }`}>
                                     {order.status}
                                 </div>

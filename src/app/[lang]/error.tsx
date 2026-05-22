@@ -32,7 +32,7 @@ export default function Error({
       <div className="flex flex-col sm:flex-row gap-3">
         <button
           onClick={() => reset()}
-          className="flex items-center justify-center gap-2 bg-black text-white px-8 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all"
+          className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all velari-green-btn"
         >
           <RotateCcw size={16} />
           Qayta urinish

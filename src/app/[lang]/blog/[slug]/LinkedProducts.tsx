@@ -28,7 +28,7 @@ export default function LinkedProducts({ products, lang }: LinkedProductsProps) 
     return (
         <div className="max-w-6xl mx-auto px-6 md:px-0 mt-32">
             <div className="flex items-center gap-4 mb-12">
-                <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500 shadow-xl shadow-emerald-500/10">
+                <div className="w-12 h-12 bg-[#EAF3EC] rounded-2xl flex items-center justify-center text-[#2D6E3E] shadow-xl shadow-none">
                     <Sparkles size={24} />
                 </div>
                 <h3 className="text-3xl font-black italic tracking-tighter uppercase">

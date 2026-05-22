@@ -419,25 +419,25 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                         </button>
 
                         {cartItem ? (
-                           <div className="flex items-center bg-black text-white rounded-[24px] overflow-hidden shadow-2xl h-[56px]">
-                               <button 
+                           <div className="flex items-center rounded-[24px] overflow-hidden h-[56px]" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", boxShadow: "0 8px 24px rgba(45,110,62,0.28)" }}>
+                               <button
                                    onClick={() => updateQuantity(product.id, cartItem.quantity - 1)}
-                                   className="px-6 py-4 hover:bg-neutral-800 transition-colors"
+                                   className="px-6 py-4 hover:bg-white/10 transition-colors"
                                >
                                    <Minus size={18} strokeWidth={3} />
                                </button>
                                <span className="px-2 font-black italic text-lg">{cartItem.quantity}</span>
-                               <button 
+                               <button
                                    onClick={() => updateQuantity(product.id, cartItem.quantity + 1)}
-                                   className="px-6 py-4 hover:bg-neutral-800 transition-colors"
+                                   className="px-6 py-4 hover:bg-white/10 transition-colors"
                                >
                                    <Plus size={18} strokeWidth={3} />
                                </button>
                            </div>
                         ) : (
-                            <button 
+                            <button
                                 onClick={() => addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any)}
-                                className="bg-black text-white px-10 py-4 rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-black/10 flex items-center gap-3"
+                                className="px-10 py-4 rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all flex items-center gap-3 velari-green-btn"
                             >
                                 <Plus size={18} strokeWidth={3} /> {language === 'uz' ? "SAVATGA" : "В КОРЗИНУ"}
                             </button>
@@ -704,14 +704,14 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                                     <Plus size={20} strokeWidth={3} />
                                                 </button>
                                             </div>
-                                            <Link href="/cart" className="bg-black text-white p-5 rounded-[28px] hover:scale-110 active:scale-90 transition-all shadow-xl">
+                                            <Link href="/cart" className="p-5 rounded-[28px] hover:scale-110 active:scale-90 transition-all velari-green-btn">
                                                 <ShoppingBag size={20} strokeWidth={3} />
                                             </Link>
                                         </div>
                                     ) : (
-                                        <button 
+                                        <button
                                             onClick={() => addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any)}
-                                            className="flex-1 bg-black hover:bg-neutral-800 text-white py-5 rounded-[28px] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all shadow-2xl shadow-black/10"
+                                            className="flex-1 py-5 rounded-[28px] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all velari-green-btn"
                                         >
                                             <Plus size={20} strokeWidth={3} /> {language === 'uz' ? "SAVATGA" : "В КОРЗИНУ"}
                                         </button>
