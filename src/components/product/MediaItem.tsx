@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Play } from "lucide-react";
 import Image from "next/image";
 
@@ -8,20 +8,19 @@ interface MediaItemProps {
     media: {
         type: "video" | "image";
         url: string;
-        lowResUrl?: string; // High-speed thumbnail
+        lowResUrl?: string;  // 360px WebP — carousel uchun
+        blurDataURL?: string; // base64 — darhol ko'rinadi
     };
     isActive: boolean;
     isLightbox: boolean;
     onClick?: () => void;
     alt?: string;
     priority?: boolean;
-    blurDataURL?: string;
     onLoadComplete?: () => void;
 }
 
-export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority = false, blurDataURL, onLoadComplete }: MediaItemProps) => {
+export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority = false, onLoadComplete }: MediaItemProps) => {
     const videoRef = useRef<HTMLVideoElement>(null);
-    const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
         if (media.type === 'video' && videoRef.current) {
@@ -93,37 +92,22 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority 
         );
     }
 
-    // Normal carousel: Two-layer loading for maximum perception speed
+    // Normal carousel: lowResUrl (360px WebP) + blurDataURL placeholder for instant perception
     return (
         <div
             className="w-full h-full flex items-center justify-center cursor-pointer relative overflow-hidden bg-gray-50"
             onClick={onClick}
         >
-            {/* 1. Low-Res Background (Instant) */}
-            {media.lowResUrl && (
-                <Image
-                    src={media.lowResUrl}
-                    alt=""
-                    fill
-                    className={`object-cover blur-[5px] scale-110 transition-opacity duration-1000 ${isLoaded ? 'opacity-0' : 'opacity-100'}`}
-                    sizes="10vw"
-                    priority={priority}
-                />
-            )}
-
-            {/* 2. High-Res Foreground (Gradual) */}
             <Image
-                src={media.url}
+                src={media.lowResUrl || media.url}
                 alt={alt || "Velari mahsulotlari - Sifatli elektronika va maishiy texnika"}
                 fill
-                className={`object-cover transition-all duration-700 ease-out ${isLoaded ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-105 blur-sm'}`}
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="object-cover"
+                sizes="(max-width: 768px) 85vw, 50vw"
                 priority={priority}
-                fetchPriority={priority ? "high" : "auto"}
-                onLoad={() => {
-                    setIsLoaded(true);
-                    if (onLoadComplete) onLoadComplete();
-                }}
+                placeholder={media.blurDataURL ? "blur" : "empty"}
+                blurDataURL={media.blurDataURL}
+                onLoad={() => onLoadComplete?.()}
                 itemProp="image"
                 referrerPolicy="no-referrer"
             />
