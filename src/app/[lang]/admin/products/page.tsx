@@ -77,7 +77,7 @@ interface Product {
     cashback_type?: "global" | "percent" | "fixed";
     cashback_value?: number;
     model?: string;
-    image_metadata?: Record<string, { alt_uz?: string; alt_ru?: string; blurDataURL?: string }>;
+    image_metadata?: Record<string, { alt_uz?: string; alt_ru?: string; blurDataURL?: string; lowResUrl?: string }>;
     comm_seller?: number;
     comm_tm?: number;
     comm_manager?: number;
@@ -591,7 +591,15 @@ export default function AdminProducts() {
                 : (newProduct.image ? [newProduct.image] : []);
 
             const proxiedResults = await Promise.all(
-                imagesArrayRaw.map(url => uploadFromUrlToYandexS3(url))
+                imagesArrayRaw.map(url => {
+                    const existing = newProduct.image_metadata?.[url];
+                    // lowResUrl allaqachon bor → qayta yuklamay, shunchaki return
+                    if (existing?.lowResUrl) {
+                        return Promise.resolve({ url, lowResUrl: existing.lowResUrl, blurDataURL: existing.blurDataURL });
+                    }
+                    // Yo'q → thumbnail generatsiya (Yandex URL bo'lsa ham)
+                    return uploadFromUrlToYandexS3(url);
+                })
             );
 
             const imagesArray = proxiedResults.map(r => r.url);

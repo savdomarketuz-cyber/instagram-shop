@@ -40,21 +40,26 @@ export async function uploadToYandexS3(file: File | Blob, fileName?: string): Pr
 
 
 /**
- * Downloads an image from an external URL and uploads it to Yandex S3
+ * Downloads an image from an external URL and uploads it to Yandex S3.
+ * Yandex S3 URL bo'lsa — originalini qayta yuklamaydi, faqat thumbnail generatsiya qiladi.
  */
 export async function uploadFromUrlToYandexS3(externalUrl: string): Promise<{ url: string; blurDataURL?: string; lowResUrl?: string }> {
     try {
-        // If it's already on our S3, don't re-upload
-        if (externalUrl.includes("yandexcloud.net")) {
-            return { url: externalUrl };
-        }
+        const isAlreadyOnS3 = externalUrl.includes("yandexcloud.net");
 
-        const response = await fetch(externalUrl);
+        const response = await fetch(externalUrl, { signal: AbortSignal.timeout(15000) });
         if (!response.ok) throw new Error(`External image fetch failed: ${response.statusText}`);
 
         const blob = await response.blob();
         const fileName = externalUrl.split('/').pop()?.split('?')[0] || 'image.jpg';
 
+        if (isAlreadyOnS3) {
+            // Original allaqachon S3 da — faqat thumbnail generatsiya
+            const result = await uploadToYandexS3(blob, `thumb_${fileName}`);
+            return { url: externalUrl, lowResUrl: result.lowResUrl, blurDataURL: result.blurDataURL };
+        }
+
+        // Yangi tashqi URL — to'liq upload (original + thumbnail)
         return await uploadToYandexS3(blob, fileName);
     } catch (error) {
         console.error("Failed to proxy image to S3:", error);
