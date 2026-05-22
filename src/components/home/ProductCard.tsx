@@ -36,12 +36,11 @@ function prefetchProductImages(item: Product, priority: "low" | "high" = "low") 
 
     urls.forEach((u) => {
         if (u.toLowerCase().endsWith(".mp4")) return;
-        // If lowResUrl exists — prefetch it directly (no proxy needed, 20KB WebP)
-        const lowRes = meta[u]?.lowResUrl;
+        // Carousel media.url ni DPR-aware w bilan prefetch (to'liq sifat)
         const link = document.createElement("link");
         link.rel = "prefetch";
         link.as = "image";
-        link.href = lowRes ?? nextImgUrl(u, w); // direct if possible, else proxy
+        link.href = nextImgUrl(u, w); // /_next/image?url=<original>&w=<dpr_w>&q=75
         (link as any).fetchPriority = priority;
         document.head.appendChild(link);
     });

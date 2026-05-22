@@ -92,14 +92,15 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority 
         );
     }
 
-    // Normal carousel: lowResUrl (360px WebP) + blurDataURL placeholder for instant perception
+    // Carousel: to'liq sifat (media.url), blurDataURL — darhol placeholder
+    // lowResUrl faqat home card uchun (kichik, 360px yetadi)
     return (
         <div
             className="w-full h-full flex items-center justify-center cursor-pointer relative overflow-hidden bg-gray-50"
             onClick={onClick}
         >
             <Image
-                src={media.lowResUrl || media.url}
+                src={media.url}
                 alt={alt || "Velari mahsulotlari - Sifatli elektronika va maishiy texnika"}
                 fill
                 className="object-cover"
