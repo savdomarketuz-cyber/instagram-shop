@@ -596,13 +596,14 @@ export default function AdminProducts() {
 
             const imagesArray = proxiedResults.map(r => r.url);
             
-            // Merge blurDataURLs into existing metadata
+            // Merge blurDataURL + lowResUrl into existing metadata
             const updatedMeta = { ...(newProduct.image_metadata || {}) };
             proxiedResults.forEach(r => {
-                if (r.blurDataURL) {
+                if (r.blurDataURL || r.lowResUrl) {
                     updatedMeta[r.url] = {
                         ...updatedMeta[r.url],
-                        blurDataURL: r.blurDataURL
+                        ...(r.blurDataURL && { blurDataURL: r.blurDataURL }),
+                        ...(r.lowResUrl   && { lowResUrl:   r.lowResUrl   }),
                     };
                 }
             });

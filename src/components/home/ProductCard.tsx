@@ -12,8 +12,14 @@ import { getProductSlug } from "@/lib/slugify";
 const GREEN = "#2D6E3E";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
-// — Next.js Image optimizer URL (carousel sizes: 85vw → w=640 on most mobiles) —
-function nextImgUrl(src: string, w = 640, q = 75) {
+// — Device-aware Next.js Image URL (matches what carousel <Image> actually requests) —
+const DEVICE_SIZES = [640, 750, 828, 1080, 1200];
+function getCarouselW(): number {
+    if (typeof window === "undefined") return 828;
+    const physicalPx = Math.ceil(window.innerWidth * 0.85 * (window.devicePixelRatio || 1));
+    return DEVICE_SIZES.find(s => s >= physicalPx) ?? 1200;
+}
+function nextImgUrl(src: string, w: number, q = 75) {
     return `/_next/image?url=${encodeURIComponent(src)}&w=${w}&q=${q}`;
 }
 
@@ -24,13 +30,18 @@ function prefetchProductImages(item: Product, priority: "low" | "high" = "low") 
     if (prefetchedSet.has(item.id)) return;
     prefetchedSet.add(item.id);
 
+    const w = getCarouselW(); // DPR-aware: iPhone 14 DPR=3 → w=1080, not 640
+    const meta = item.image_metadata || {};
     const urls = (item.images || []).filter(Boolean).slice(0, 6);
+
     urls.forEach((u) => {
         if (u.toLowerCase().endsWith(".mp4")) return;
+        // If lowResUrl exists — prefetch it directly (no proxy needed, 20KB WebP)
+        const lowRes = meta[u]?.lowResUrl;
         const link = document.createElement("link");
         link.rel = "prefetch";
         link.as = "image";
-        link.href = nextImgUrl(u);          // /_next/image URL → real cache hit
+        link.href = lowRes ?? nextImgUrl(u, w); // direct if possible, else proxy
         (link as any).fetchPriority = priority;
         document.head.appendChild(link);
     });
