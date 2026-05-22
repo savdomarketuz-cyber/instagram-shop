@@ -12,6 +12,31 @@ import { getProductSlug } from "@/lib/slugify";
 const GREEN = "#2D6E3E";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
+// — Pointer intent prefetch: foydalanuvchi card ga teganda product rasmlarini fonida yuklash —
+const prefetchedSet = new Set<string>();
+function prefetchProductImages(item: Product) {
+    if (typeof document === "undefined") return;
+    if (prefetchedSet.has(item.id)) return;
+    prefetchedSet.add(item.id);
+
+    const urls = (item.images || []).slice(0, 6); // dastlabki 6 ta carousel rasmi yetadi
+    const meta = item.image_metadata || {};
+    const firstUrl = urls[0]; // 1-rasm home page da allaqachon yuklangan — skip
+
+    urls.forEach((u) => {
+        if (!u || u === firstUrl) return;
+        if (u.toLowerCase().endsWith(".mp4")) return; // video prefetch qilmaymiz
+        const target = meta[u]?.lowResUrl || u; // carouselda lowResUrl ishlatiladi
+        const link = document.createElement("link");
+        link.rel = "prefetch";
+        link.as = "image";
+        link.href = target;
+        link.crossOrigin = "anonymous";
+        link.fetchPriority = "low";
+        document.head.appendChild(link);
+    });
+}
+
 interface ProductCardProps {
   item: Product;
   language: "uz" | "ru";
@@ -108,6 +133,9 @@ export const ProductCard = memo(({
         href={`/${language}/products/${getProductSlug(item)}`}
         style={{ display: "block", textDecoration: "none", color: "inherit" }}
         prefetch={true}
+        onPointerEnter={() => prefetchProductImages(item)}
+        onPointerDown={() => prefetchProductImages(item)}
+        onTouchStart={() => prefetchProductImages(item)}
         onClick={() => {
           const query = useStore.getState().homeSearchQuery;
           if (query && query.trim().length >= 2) {
