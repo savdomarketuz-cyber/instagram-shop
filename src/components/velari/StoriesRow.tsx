@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 
@@ -17,12 +17,12 @@ interface Story {
 }
 
 const SEEN_KEY = "velari_seen_stories";
+const STORY_DURATION = 5000; // ms — har bir story shu vaqt ko'rsatiladi
 
 function getSeenIds(): Set<string> {
     try { return new Set<string>(JSON.parse(localStorage.getItem(SEEN_KEY) || "[]")); }
     catch { return new Set<string>(); }
 }
-
 function markSeen(id: string) {
     try {
         const ids = getSeenIds();
@@ -39,8 +39,17 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
     const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
     const [open, setOpen] = useState<Story | null>(null);
     const [openIdx, setOpenIdx] = useState(0);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
+    // progressKey o'zgarganda progress bar animatsiyasi qayta boshlanadi
+    const [progressKey, setProgressKey] = useState(0);
 
+    const audioRef   = useRef<HTMLAudioElement | null>(null);
+    const timerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const touchX     = useRef(0);
+    const touchY     = useRef(0);
+    const storiesRef = useRef<Story[]>([]);
+    storiesRef.current = stories;
+
+    // — Data fetch —
     useEffect(() => {
         setSeenIds(getSeenIds());
         supabase
@@ -51,17 +60,16 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
             .then(({ data }) => { if (data) setStories(data); });
     }, []);
 
-    // Stop audio on unmount
-    useEffect(() => {
-        return () => {
-            if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-        };
+    // — Audio helpers —
+    const stopAudio = useCallback(() => {
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current = null;
+        }
     }, []);
 
-    if (stories.length === 0) return null;
-
-    const playAudio = (story: Story) => {
-        if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    const playAudio = useCallback((story: Story) => {
+        stopAudio();
         if (story.audio) {
             const a = new Audio(story.audio);
             a.loop = true;
@@ -69,38 +77,110 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
             a.play().catch(() => {});
             audioRef.current = a;
         }
-    };
+    }, [stopAudio]);
 
-    const stopAudio = () => {
-        if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    };
+    // — Close —
+    const handleClose = useCallback(() => {
+        stopAudio();
+        if (timerRef.current) clearTimeout(timerRef.current);
+        setOpen(null);
+    }, [stopAudio]);
 
-    const handleOpen = (story: Story, idx: number) => {
-        setOpen(story);
+    // — Go to specific story index —
+    const goTo = useCallback((idx: number) => {
+        const list = storiesRef.current;
+        if (idx < 0 || idx >= list.length) {
+            // Oxirgi storydan keyin yoki birinchidan oldin — yopiladi
+            handleClose();
+            return;
+        }
+        const s = list[idx];
+        markSeen(s.id);
+        setSeenIds(prev => new Set<string>([...Array.from(prev), s.id]));
+        setOpen(s);
         setOpenIdx(idx);
+        setProgressKey(k => k + 1); // progress bar qayta boshlanadi
+        playAudio(s);
+    }, [handleClose, playAudio]);
+
+    // — Auto-advance timer: story 5 soniyadan keyin keyingisiga o'tadi —
+    useEffect(() => {
+        if (!open) return;
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => {
+            goTo(openIdx + 1);
+        }, STORY_DURATION);
+        return () => {
+            if (timerRef.current) clearTimeout(timerRef.current);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [progressKey, open]); // progressKey o'zgarganda timer qayta boshlanadi
+
+    // — Body scroll lock —
+    useEffect(() => {
+        if (open) {
+            document.body.style.overflow = "hidden";
+            document.body.style.touchAction = "none";
+        } else {
+            document.body.style.overflow = "";
+            document.body.style.touchAction = "";
+        }
+        return () => {
+            document.body.style.overflow = "";
+            document.body.style.touchAction = "";
+        };
+    }, [open]);
+
+    // — Keyboard navigation —
+    useEffect(() => {
+        if (!open) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape")      handleClose();
+            if (e.key === "ArrowRight")  goTo(openIdx + 1);
+            if (e.key === "ArrowLeft")   goTo(openIdx - 1);
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [open, openIdx, handleClose, goTo]);
+
+    // — Unmount cleanup —
+    useEffect(() => {
+        return () => {
+            stopAudio();
+            if (timerRef.current) clearTimeout(timerRef.current);
+        };
+    }, [stopAudio]);
+
+    // — Open story —
+    const handleOpen = (story: Story, idx: number) => {
         markSeen(story.id);
         setSeenIds(prev => new Set<string>([...Array.from(prev), story.id]));
+        setOpen(story);
+        setOpenIdx(idx);
+        setProgressKey(k => k + 1);
         playAudio(story);
     };
 
-    const handleClose = () => {
-        stopAudio();
-        setOpen(null);
+    // — Swipe gestures (left/right navigate, down closes) —
+    const onTouchStart = (e: React.TouchEvent) => {
+        touchX.current = e.touches[0].clientX;
+        touchY.current = e.touches[0].clientY;
+    };
+    const onTouchEnd = (e: React.TouchEvent) => {
+        const dx = e.changedTouches[0].clientX - touchX.current;
+        const dy = e.changedTouches[0].clientY - touchY.current;
+        if (Math.abs(dy) > Math.abs(dx)) {
+            if (dy > 60) handleClose(); // swipe down → yopiladi
+        } else if (Math.abs(dx) > 40) {
+            goTo(openIdx + (dx < 0 ? 1 : -1)); // swipe left → keyingi, right → oldingi
+        }
     };
 
-    const handleNav = (dir: 1 | -1) => {
-        const next = openIdx + dir;
-        if (next < 0 || next >= stories.length) { handleClose(); return; }
-        const s = stories[next];
-        setOpen(s);
-        setOpenIdx(next);
-        markSeen(s.id);
-        setSeenIds(prev => new Set<string>([...Array.from(prev), s.id]));
-        playAudio(s);
-    };
+    if (stories.length === 0) return null;
 
     return (
         <>
+            {/* — Story bubbles row — */}
             <div className="md:hidden mt-4 mb-0">
                 <div
                     style={{ display: "flex", gap: 14, overflowX: "auto", padding: "4px 20px 8px", scrollbarWidth: "none" }}
@@ -128,7 +208,7 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
                                     animation: `velari-cart-in ${200 + idx * 50}ms ${EASE} both`,
                                 }}
                             >
-                                {/* Ring */}
+                                {/* Gradient ring: ko'rilmagan → yashil, ko'rilgan → kulrang */}
                                 <div style={{
                                     width: 64,
                                     height: 64,
@@ -163,7 +243,6 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
                                             </div>
                                         ) : null}
                                     </div>
-                                    {/* Video indicator */}
                                     {hasVideo && (
                                         <div style={{ position: "absolute", bottom: 0, right: 0, width: 18, height: 18, borderRadius: "50%", background: GREEN, display: "flex", alignItems: "center", justifyContent: "center" }}>
                                             <span style={{ color: "#fff", fontSize: 8, lineHeight: 1 }}>▶</span>
@@ -189,7 +268,7 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
                 </div>
             </div>
 
-            {/* Story viewer */}
+            {/* — Story viewer — */}
             {open && (
                 <div
                     style={{
@@ -201,25 +280,44 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
                         flexDirection: "column",
                         animation: "velari-fade-in 180ms ease both",
                     }}
-                    onClick={handleClose}
+                    onTouchStart={onTouchStart}
+                    onTouchEnd={onTouchEnd}
                 >
                     {/* Progress bars */}
-                    <div style={{ display: "flex", gap: 4, padding: "16px 16px 0", position: "relative", zIndex: 2 }}>
+                    <div
+                        style={{ display: "flex", gap: 4, padding: "16px 16px 0", position: "relative", zIndex: 2 }}
+                        onClick={e => e.stopPropagation()}
+                    >
                         {stories.map((s, i) => (
                             <div key={s.id} style={{
                                 flex: 1, height: 2.5, borderRadius: 2,
-                                background: i < openIdx ? "#fff" : i === openIdx ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.25)",
+                                background: i < openIdx ? "#fff" : "rgba(255,255,255,0.25)",
                                 overflow: "hidden",
-                            }}>
+                                cursor: "pointer",
+                            }}
+                                onClick={() => goTo(i)}
+                            >
                                 {i === openIdx && (
-                                    <div style={{ height: "100%", background: "#fff", borderRadius: 2, animation: "velari-story-progress 5s linear forwards" }} />
+                                    // key={progressKey} — har safar yangi key → animatsiya qayta boshlanadi
+                                    <div
+                                        key={progressKey}
+                                        style={{
+                                            height: "100%",
+                                            background: "#fff",
+                                            borderRadius: 2,
+                                            animation: `velari-story-progress ${STORY_DURATION}ms linear forwards`,
+                                        }}
+                                    />
                                 )}
                             </div>
                         ))}
                     </div>
 
-                    {/* Header */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", position: "relative", zIndex: 2 }}>
+                    {/* Header — stopPropagation bor, yopilmaydi */}
+                    <div
+                        style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", position: "relative", zIndex: 2 }}
+                        onClick={e => e.stopPropagation()}
+                    >
                         <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", border: "2px solid rgba(255,255,255,0.4)", position: "relative", flexShrink: 0 }}>
                             {open.image ? (
                                 <Image src={open.image} alt="" fill sizes="36px" style={{ objectFit: "cover" }} />
@@ -229,24 +327,29 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
                                 </div>
                             )}
                         </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                            <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", letterSpacing: -0.2 }}>
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", letterSpacing: -0.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                 {language === "uz" ? open.title_uz : open.title_ru}
                             </span>
                             {open.audio && (
                                 <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontWeight: 600, letterSpacing: 0.5 }}>
-                                    ♪ Musiqa ijroyo&apos;da
+                                    ♪ {language === "uz" ? "Musiqa ijroyoda" : "Музыка играет"}
                                 </span>
                             )}
                         </div>
                         <button
                             onClick={handleClose}
-                            style={{ marginLeft: "auto", background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "50%", width: 32, height: 32, color: "#fff", fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                            style={{
+                                background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "50%",
+                                width: 32, height: 32, color: "#fff", fontSize: 20, cursor: "pointer",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                flexShrink: 0, lineHeight: 1,
+                            }}
                         >×</button>
                     </div>
 
-                    {/* Media: Video or Image */}
-                    <div style={{ flex: 1, position: "relative" }} onClick={e => e.stopPropagation()}>
+                    {/* Media area — tap left 40% / right 40% to navigate */}
+                    <div style={{ flex: 1, position: "relative" }}>
                         {open.video ? (
                             <video
                                 key={open.id + "-video"}
@@ -259,26 +362,39 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
                             />
                         ) : (
                             <Image
+                                key={open.id + "-img"}
                                 src={open.image || "/placeholder.png"}
-                                alt=""
+                                alt={language === "uz" ? open.title_uz : open.title_ru}
                                 fill
                                 sizes="100vw"
+                                priority
                                 style={{ objectFit: "contain" }}
                             />
                         )}
 
-                        {/* Tap left / right */}
-                        <button onClick={e => { e.stopPropagation(); handleNav(-1); }}
-                            style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "40%", background: "none", border: "none", cursor: "pointer" }} />
-                        <button onClick={e => { e.stopPropagation(); handleNav(1); }}
-                            style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "40%", background: "none", border: "none", cursor: "pointer" }} />
+                        {/* Oldingi story — chap 40% */}
+                        <button
+                            onClick={e => { e.stopPropagation(); goTo(openIdx - 1); }}
+                            style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "40%", background: "none", border: "none", cursor: "pointer" }}
+                            aria-label="Oldingi story"
+                        />
+                        {/* Keyingi story — o'ng 40% */}
+                        <button
+                            onClick={e => { e.stopPropagation(); goTo(openIdx + 1); }}
+                            style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "40%", background: "none", border: "none", cursor: "pointer" }}
+                            aria-label="Keyingi story"
+                        />
                     </div>
 
                     {/* Link button */}
                     {open.link && (
-                        <div style={{ padding: "16px 24px 40px", position: "relative", zIndex: 2 }} onClick={e => e.stopPropagation()}>
+                        <div
+                            style={{ padding: "16px 24px 40px", position: "relative", zIndex: 2 }}
+                            onClick={e => e.stopPropagation()}
+                        >
                             <a
                                 href={open.link}
+                                onClick={handleClose}
                                 style={{
                                     display: "block",
                                     textAlign: "center",
