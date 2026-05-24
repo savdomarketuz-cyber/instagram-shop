@@ -121,15 +121,23 @@ export default function PromoCountdownAdmin() {
                 ...settings,
                 end_time: new Date(settings.end_time).toISOString(),
             };
-            const { error } = await supabase
-                .from("site_settings")
-                .upsert({ key: "promo_countdown", value: payload });
-            if (error) throw error;
+            // supabaseAdmin (RLS bypass) orqali saqlash
+            const res = await fetch("/api/admin/crud", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    table: "site_settings",
+                    action: "upsert",
+                    payload: { key: "promo_countdown", value: payload },
+                }),
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error || "Xatolik");
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
-            alert("Saqlashda xatolik!");
+            alert("Saqlashda xatolik: " + e.message);
         } finally {
             setSaving(false);
         }
