@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyJwt } from "@/lib/jwt-utils";
+import sharp from "sharp";
+
+export const maxDuration = 60; // Vercel: max 60s on Hobby, 300s on Pro
 
 // — Yandex S3 config —
 const YANDEX = {
@@ -104,13 +107,25 @@ export async function POST(req: NextRequest) {
         const safeName = rawName.replace(/[^a-zA-Z0-9._-]/g, "_");
         const ts = Date.now();
 
-        // — Image → optimise to AVIF —
+        let blurDataURL = "";
+
+        // — Image → optimise to AVIF + blur placeholder —
         if (mime.startsWith("image/") && !mime.includes("gif") && !mime.includes("svg")) {
             try {
-                const sharp = (await import("sharp")).default;
-                buffer = await sharp(buffer)
+                const img = sharp(buffer);
+
+                // 1. Blur placeholder (20×20 base64 WebP — instant)
+                const blurBuf = await img.clone()
+                    .resize(20, 20, { fit: "cover" })
+                    .blur(5)
+                    .toFormat("webp", { quality: 20 })
+                    .toBuffer();
+                blurDataURL = `data:image/webp;base64,${blurBuf.toString("base64")}`;
+
+                // 2. Main image → AVIF (effort 3 = fast, still good quality)
+                buffer = await img.clone()
                     .resize(1080, 1440, { fit: "inside", withoutEnlargement: true })
-                    .toFormat("avif", { quality: 75, effort: 6 })
+                    .toFormat("avif", { quality: 75, effort: 3 })
                     .toBuffer();
                 mime = "image/avif";
             } catch { /* sharp failed – upload original */ }
@@ -126,7 +141,7 @@ export async function POST(req: NextRequest) {
         const key = `${folder}/${ts}_${safeName.split(".")[0]}.${ext}`;
 
         const url = await uploadToS3(buffer, key, mime);
-        return NextResponse.json({ url });
+        return NextResponse.json({ url, blurDataURL: blurDataURL || undefined });
 
     } catch (err: any) {
         console.error("Admin upload error:", err);

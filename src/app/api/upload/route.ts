@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import { checkRateLimit } from "@/lib/rate-limiter";
 
+export const maxDuration = 60; // Vercel: max 60s on Hobby, 300s on Pro
+
 const YANDEX_CONFIG = {
     ACCESS_KEY: process.env.YANDEX_S3_ACCESS_KEY || "",
     SECRET_KEY: process.env.YANDEX_S3_SECRET_KEY || "",
@@ -86,18 +88,18 @@ export async function POST(req: NextRequest) {
                     .toBuffer();
                 blurDataURL = `data:image/webp;base64,${blurBuffer.toString("base64")}`;
 
-                // 2. Generate Original (1080x1440px, Q75) - Ultra Optimized AVIF
+                // 2. Generate Original (1080x1440px, Q75) - AVIF
                 originalBuffer = await image
                     .clone()
                     .resize(1080, 1440, { fit: "cover" })
-                    .toFormat("avif", { quality: 75, effort: 8 })
+                    .toFormat("avif", { quality: 75, effort: 3 })
                     .toBuffer();
- 
-                 // 3. Generate Thumbnail (360x480px, Q40) - Maximum Compression
+
+                 // 3. Generate Thumbnail (360x480px, Q40) - WebP
                  lowResBuffer = await image
                      .clone()
                      .resize(360, 480, { fit: "cover" })
-                     .toFormat("webp", { quality: 40, effort: 9, smartSubsample: true })
+                     .toFormat("webp", { quality: 40, effort: 6, smartSubsample: true })
                      .toBuffer();
 
                  fileName = (fileName || `img_${Date.now()}`).split('.')[0] + '.avif';

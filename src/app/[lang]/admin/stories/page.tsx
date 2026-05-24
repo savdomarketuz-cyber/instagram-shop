@@ -118,13 +118,23 @@ export default function AdminStoriesPage() {
             fd.append("file", file);
             fd.append("fileName", `story_${field}_${Date.now()}.${file.name.split(".").pop()}`);
             const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-            const json = await res.json();
-            const url = json.url;
-            if (!url) throw new Error(json.error || "URL olishda xatolik");
+
+            let json: any = {};
+            try {
+                json = await res.json();
+            } catch {
+                // Non-JSON response (e.g. 504 timeout HTML page)
+                throw new Error(res.status === 504 ? "Server timeout — fayl juda katta yoki server band. Kichikroq fayl yuklang." : `Server xatosi (${res.status})`);
+            }
+
+            if (!res.ok || !json.url) {
+                throw new Error(json.error || `Yuklash muvaffaqiyatsiz (${res.status})`);
+            }
+
             if (targetId === "new") {
-                setNewStory(prev => ({ ...prev, [field]: url }));
+                setNewStory(prev => ({ ...prev, [field]: json.url }));
             } else {
-                setStories(prev => prev.map(s => s.id === targetId ? { ...s, [field]: url } : s));
+                setStories(prev => prev.map(s => s.id === targetId ? { ...s, [field]: json.url } : s));
             }
         } catch (e: any) {
             alert("Yuklashda xatolik: " + e.message);
