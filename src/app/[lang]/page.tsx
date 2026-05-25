@@ -36,37 +36,41 @@ async function getInitialData() {
             { data: productsData },
             { data: categoriesData },
             { data: bannersData },
-            { data: settingsData }
+            { data: settingsData },
+            { data: promoData }
         ] = await Promise.all([
             supabaseAdmin.from("products").select("*").eq("is_deleted", false).order("created_at", { ascending: false }).limit(20),
             supabaseAdmin.from("categories").select("*").eq("is_deleted", false).order("name", { ascending: true }),
             supabaseAdmin.from("banners").select("*").eq("active", true).order("order_index", { ascending: true }),
-            supabaseAdmin.from("settings").select("*").eq("id", "banners").single()
+            supabaseAdmin.from("settings").select("*").eq("id", "banners").single(),
+            supabaseAdmin.from("site_settings").select("value").eq("key", "promo_countdown").single(),
         ]);
-        
+
         const products = (productsData || []).map(mapProduct);
         const categories = (categoriesData || []).map(mapCategory);
         const banners = (bannersData || []).map(mapBanner);
-        const bannerSettings = settingsData?.data 
+        const bannerSettings = settingsData?.data
             ? { desktopHeight: settingsData.data.desktopHeight || 210, borderRadius: settingsData.data.borderRadius || 32 }
             : { desktopHeight: 210, borderRadius: 32 };
+        const promoSettings = (promoData?.value as any) || null;
 
-        return { products, categories, banners, bannerSettings };
+        return { products, categories, banners, bannerSettings, promoSettings };
     } catch (error) {
         console.error("Server-side fetch failed:", error);
-        return { products: [], categories: [], banners: [], bannerSettings: { desktopHeight: 210, borderRadius: 32 } };
+        return { products: [], categories: [], banners: [], bannerSettings: { desktopHeight: 210, borderRadius: 32 }, promoSettings: null };
     }
 }
 
 async function HomeDataWrapper() {
-    const { products, categories, banners, bannerSettings } = await getInitialData();
+    const { products, categories, banners, bannerSettings, promoSettings } = await getInitialData();
     
     return (
-        <HomeClient 
+        <HomeClient
             initialProducts={products}
             initialCategories={categories}
             initialBanners={banners}
             initialBannerSettings={bannerSettings}
+            initialPromo={promoSettings}
         />
     );
 }

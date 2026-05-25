@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
 
 interface PromoSettings {
     enabled: boolean;
@@ -36,24 +35,18 @@ function pad(n: number) {
     return String(n).padStart(2, "0");
 }
 
-export default function PromoCountdown({ language }: { language: "uz" | "ru" }) {
-    const [settings, setSettings] = useState<PromoSettings | null>(null);
-    const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(null);
-
-    useEffect(() => {
-        supabase
-            .from("site_settings")
-            .select("value")
-            .eq("key", "promo_countdown")
-            .single()
-            .then(({ data }) => {
-                if (!data) return;
-                const s = data.value as PromoSettings;
-                if (!s.enabled) return;
-                setSettings(s);
-                setTimeLeft(calcTimeLeft(s.end_time));
-            });
-    }, []);
+export default function PromoCountdown({ language, initialSettings }: { language: "uz" | "ru"; initialSettings?: any }) {
+    const [settings, setSettings] = useState<PromoSettings | null>(() => {
+        // Server dan kelgan ma'lumotni darhol ishlatamiz — Supabase fetch kerak emas
+        if (!initialSettings) return null;
+        const s = initialSettings as PromoSettings;
+        if (!s.enabled) return null;
+        return s;
+    });
+    const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(() => {
+        if (!initialSettings?.enabled) return null;
+        return calcTimeLeft(initialSettings.end_time);
+    });
 
     useEffect(() => {
         if (!settings) return;

@@ -25,13 +25,15 @@ interface HomeClientProps {
     initialCategories: Category[];
     initialBanners: Banner[];
     initialBannerSettings: { desktopHeight: number; borderRadius: number };
+    initialPromo?: any;
 }
 
-export default function HomeClient({ 
-    initialProducts, 
-    initialCategories, 
-    initialBanners, 
-    initialBannerSettings 
+export default function HomeClient({
+    initialProducts,
+    initialCategories,
+    initialBanners,
+    initialBannerSettings,
+    initialPromo,
 }: HomeClientProps) {
     const searchParams = useSearchParams();
     const urlCategory = searchParams.get("category");
@@ -403,7 +405,7 @@ export default function HomeClient({
             )}
 
             {!searchResults && <StoriesRow language={language} />}
-            {!searchResults && <PromoCountdown language={language} />}
+            {!searchResults && <PromoCountdown language={language} initialSettings={initialPromo} />}
 
             {/* ── BANNER: desktop original, mobile Velari style ── */}
             {banners.length > 0 && !searchResults && (
