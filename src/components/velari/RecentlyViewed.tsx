@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { Link } from "next-view-transitions";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { mapProduct } from "@/lib/mappers";
@@ -104,7 +104,7 @@ export default function RecentlyViewed({ language, currentProductId }: RecentlyV
                                 flexDirection: "column",
                             }}
                         >
-                            <div style={{ position: "relative", aspectRatio: "1/1", background: "#F5F5F0" }}>
+                            <div style={{ position: "relative", aspectRatio: "1/1", background: "#F5F5F0", viewTransitionName: `product-img-${product.id}` } as React.CSSProperties}>
                                 <Image
                                     src={product.image_metadata?.[mainImg]?.lowResUrl || mainImg}
                                     alt={name}

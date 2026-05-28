@@ -97,6 +97,7 @@ import AppWrapper from "@/components/AppWrapper";
 import YandexMetrika from "@/components/YandexMetrika";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { ViewTransitions } from "next-view-transitions";
 
 export default function RootLayout({
     children,
@@ -181,6 +182,7 @@ export default function RootLayout({
     const displayLang = ['uz', 'ru'].includes(params.lang) ? params.lang : 'uz';
 
     return (
+        <ViewTransitions>
         <html lang={displayLang} className={inter.variable}>
             <head>
                 {/* 🚀 VIP Magistral: Preconnect with CrossOrigin for instant data flow */}
@@ -227,6 +229,7 @@ export default function RootLayout({
                 `}} />
             </body>
         </html>
+        </ViewTransitions>
     );
 }
 

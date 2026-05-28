@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useState } from "react";
-import Link from "next/link";
+import { Link } from "next-view-transitions";
 import Image from "next/image";
 import { Heart, Star, Minus, Plus } from "lucide-react";
 import { useStore } from "@/store/store";
@@ -163,7 +163,8 @@ export const ProductCard = memo(({
             borderRadius: 16,
             overflow: "hidden",
             background: "#F5F5F0",
-          }}>
+            viewTransitionName: `product-img-${item.id}`,
+          } as React.CSSProperties}>
             {isVideo ? (
               <video
                 src={mainMedia}

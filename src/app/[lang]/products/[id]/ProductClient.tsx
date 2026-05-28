@@ -550,7 +550,10 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                 </button>
                             ))}
                         </div>
-                        <div className="flex-1 bg-gray-50 rounded-[40px] overflow-hidden relative group/hero shadow-2xl shadow-black/5">
+                        <div
+                            className="flex-1 bg-gray-50 rounded-[40px] overflow-hidden relative group/hero shadow-2xl shadow-black/5"
+                            style={{ viewTransitionName: `product-img-${product.id}` } as React.CSSProperties}
+                        >
                             {allMedia[activeImage]?.type === 'video' ? (
                                 <div className="w-full h-full bg-black relative flex items-center justify-center">
                                     <video 
