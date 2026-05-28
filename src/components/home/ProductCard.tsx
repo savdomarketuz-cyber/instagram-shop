@@ -8,6 +8,7 @@ import { useStore } from "@/store/store";
 import { Product, CartItem } from "@/types";
 import { TranslationKeys } from "@/lib/translations";
 import { getProductSlug } from "@/lib/slugify";
+import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
 
 const GREEN = "#2D6E3E";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
@@ -28,10 +29,20 @@ function prefetchFirstImage(item: Product) {
     prefetchedSet.add(item.id);
     const first = (item.images || []).find(u => u && !u.toLowerCase().endsWith(".mp4"));
     if (!first) return;
+
+    const meta = item.image_metadata?.[first];
+    const w = getCarouselW();
+    let href: string;
+    if (meta?.lg && meta?.md && meta?.xs) {
+        href = w <= 640 ? meta.xs : w <= 828 ? meta.md : meta.lg;
+    } else {
+        href = nextImgUrl(first, w);
+    }
+
     const link = document.createElement("link");
     link.rel = "prefetch";
     link.as = "image";
-    link.href = nextImgUrl(first, getCarouselW());
+    link.href = href;
     (link as any).fetchPriority = "high";
     document.head.appendChild(link);
 }
@@ -161,12 +172,13 @@ export const ProductCard = memo(({
               />
             ) : (
               <Image
-                src={item.image_metadata?.[mainMedia]?.lowResUrl || mainMedia}
+                src={mainMedia}
                 alt={name}
                 fill
                 sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 25vw"
                 style={{ objectFit: "cover" }}
                 priority={priority}
+                loader={hasVariants(item.image_metadata, mainMedia) ? makeVariantLoader(item.image_metadata) : undefined}
                 placeholder={item.image_metadata?.[mainMedia]?.blurDataURL ? "blur" : "empty"}
                 blurDataURL={item.image_metadata?.[mainMedia]?.blurDataURL}
               />

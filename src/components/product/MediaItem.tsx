@@ -3,13 +3,17 @@
 import { useEffect, useRef } from "react";
 import { Play } from "lucide-react";
 import Image from "next/image";
+import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
 
 interface MediaItemProps {
     media: {
         type: "video" | "image";
         url: string;
-        lowResUrl?: string;  // 360px WebP — carousel uchun
-        blurDataURL?: string; // base64 — darhol ko'rinadi
+        lowResUrl?: string;
+        blurDataURL?: string;
+        xs?: string;
+        md?: string;
+        lg?: string;
     };
     isActive: boolean;
     isLightbox: boolean;
@@ -92,8 +96,9 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority 
         );
     }
 
-    // Carousel: to'liq sifat (media.url), blurDataURL — darhol placeholder
-    // lowResUrl faqat home card uchun (kichik, 360px yetadi)
+    const metaForUrl = { [media.url]: { xs: media.xs, md: media.md, lg: media.lg, lowResUrl: media.lowResUrl, blurDataURL: media.blurDataURL } };
+    const hasV = hasVariants(metaForUrl, media.url);
+
     return (
         <div
             className="w-full h-full flex items-center justify-center cursor-pointer relative overflow-hidden bg-gray-50"
@@ -106,6 +111,7 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority 
                 className="object-cover"
                 sizes="(max-width: 768px) 85vw, 50vw"
                 priority={priority}
+                loader={hasV ? makeVariantLoader(metaForUrl) : undefined}
                 placeholder={media.blurDataURL ? "blur" : "empty"}
                 blurDataURL={media.blurDataURL}
                 onLoad={() => onLoadComplete?.()}

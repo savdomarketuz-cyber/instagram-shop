@@ -116,6 +116,9 @@ export const ProductMedia = ({
                                         ...media,
                                         lowResUrl:   product.image_metadata?.[media.url]?.lowResUrl,
                                         blurDataURL: product.image_metadata?.[media.url]?.blurDataURL,
+                                        xs:          product.image_metadata?.[media.url]?.xs,
+                                        md:          product.image_metadata?.[media.url]?.md,
+                                        lg:          product.image_metadata?.[media.url]?.lg,
                                     }}
                                     isActive={activeImage === i}
                                     isLightbox={false}

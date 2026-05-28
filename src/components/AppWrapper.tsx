@@ -172,7 +172,9 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
 
         document.addEventListener('click', handleGlobalClick);
 
-        updateActivity();
+        const ric = (cb: () => void) =>
+            (window as any).requestIdleCallback?.(cb, { timeout: 3000 }) ?? setTimeout(cb, 1500);
+        ric(() => updateActivity());
         intervalId = setInterval(() => updateActivity(), 300000);
 
         const handleVisibility = () => {
