@@ -49,11 +49,15 @@ import { translations } from "@/lib/translations";
 import { mapUser, mapComment } from "@/lib/mappers";
 import Image from "next/image";
 import { uploadToYandexS3 } from "@/lib/yandex-s3";
+import { useShallow } from "zustand/react/shallow";
 import { PinKeypad } from "@/components/PinKeypad";
 
 export default function AccountPage() {
     const router = useRouter();
-    const { user, setUser, logout, language, setLanguage, showToast, wishlist } = useStore();
+    const { user, setUser, logout, language, setLanguage, showToast, wishlist } = useStore(useShallow(s => ({
+        user: s.user, setUser: s.setUser, logout: s.logout, language: s.language,
+        setLanguage: s.setLanguage, showToast: s.showToast, wishlist: s.wishlist
+    })));
     const t = translations[language];
 
     const [view, setView] = useState<"menu" | "edit-profile" | "language" | "returns" | "promo-codes" | "reviews" | "affiliate">("menu");

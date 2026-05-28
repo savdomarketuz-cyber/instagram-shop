@@ -1,6 +1,7 @@
 "use client";
 
 import { useStore } from "@/store/store";
+import { useShallow } from "zustand/react/shallow";
 import Link from "next/link";
 import { Heart, Trash2, ChevronLeft, ShoppingBag } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -14,7 +15,10 @@ const GREEN = "#2D6E3E";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 export default function WishlistPage() {
-    const { wishlist, toggleWishlist, addToCart, cart, updateQuantity, removeFromCart, user, language } = useStore();
+    const { wishlist, toggleWishlist, addToCart, cart, updateQuantity, removeFromCart, user, language } = useStore(useShallow(s => ({
+        wishlist: s.wishlist, toggleWishlist: s.toggleWishlist, addToCart: s.addToCart, cart: s.cart,
+        updateQuantity: s.updateQuantity, removeFromCart: s.removeFromCart, user: s.user, language: s.language
+    })));
     const t = translations[language];
     const [mounted, setMounted] = useState(false);
 

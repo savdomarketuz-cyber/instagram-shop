@@ -33,7 +33,7 @@ export const metadata = {
     },
     icons: {
         icon: "/favicon.ico",
-        apple: "/icons/icon-192x192.png",
+        apple: "/apple-touch-icon.png",
     },
     metadataBase: new URL("https://velari.uz"),
     alternates: {

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { Search, Sparkles, MapPin, ChevronRight, User, X, Loader2, LayoutGrid } from "lucide-react";
 import { useStore } from "@/store/store";
+import { useShallow } from "zustand/react/shallow";
 import { supabase } from "@/lib/supabase";
 import { mapProduct, mapBanner } from "@/lib/mappers";
 import { translations } from "@/lib/translations";
@@ -44,7 +45,7 @@ export default function HomeClient({
         homeSearchQuery, setHomeSearchQuery, homeActiveFilter, setHomeActiveFilter, 
         homeActiveTab, setHomeActiveTab, searchResults, searchFacets, didYouMean, 
         isSearchLoading, setSearchResults 
-    } = useStore(state => ({
+    } = useStore(useShallow(state => ({
         cart: state.cart,
         wishlist: state.wishlist,
         language: state.language,
@@ -67,7 +68,7 @@ export default function HomeClient({
         didYouMean: state.didYouMean,
         isSearchLoading: state.isSearchLoading,
         setSearchResults: state.setSearchResults,
-    }));
+    })));
 
     const t = translations[language];
     

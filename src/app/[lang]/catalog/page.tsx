@@ -44,7 +44,7 @@ async function getCategories() {
     try {
         const { data, error } = await supabaseAdmin
             .from("categories")
-            .select("*")
+            .select("id,name,name_uz,name_ru,parent_id,image,image_meta")
             .eq("is_deleted", false)
             .order("name");
 

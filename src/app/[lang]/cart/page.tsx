@@ -1,6 +1,7 @@
 "use client";
 
 import { useStore } from "@/store/store";
+import { useShallow } from "zustand/react/shallow";
 import Link from "next/link";
 import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, ShoppingCart, Package, ChevronLeft } from "lucide-react";
 import { translations } from "@/lib/translations";
@@ -11,7 +12,9 @@ const GREEN = "#2D6E3E";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 export default function CartPage() {
-    const { cart, updateQuantity, removeFromCart, language } = useStore();
+    const { cart, updateQuantity, removeFromCart, language } = useStore(useShallow(s => ({
+        cart: s.cart, updateQuantity: s.updateQuantity, removeFromCart: s.removeFromCart, language: s.language
+    })));
     const t = translations[language];
 
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);

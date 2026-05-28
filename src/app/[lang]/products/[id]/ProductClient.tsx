@@ -108,8 +108,6 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                 const expires = new Date();
                 expires.setTime(expires.getTime() + (30 * 24 * 60 * 60 * 1000));
                 document.cookie = `affiliate_data=${encodeURIComponent(JSON.stringify(refData))};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
-                
-                console.log("Referral tracked for product:", product.id, ref);
             }
         }
     }, []);

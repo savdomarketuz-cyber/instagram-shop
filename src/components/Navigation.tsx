@@ -6,6 +6,7 @@ import Image from "next/image";
 import Logo from "./Logo";
 import { getProductSlug } from "@/lib/slugify";
 import { useStore } from "@/store/store";
+import { useShallow } from "zustand/react/shallow";
 import { usePathname, useRouter } from "next/navigation";
 import { translations } from "@/lib/translations";
 import { useState, useMemo, useRef, useEffect } from "react";
@@ -53,7 +54,9 @@ export default function Navigation() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const { setSearchResults, isSearchLoading, setHomeSearchQuery: setStoreGlobalQuery } = useStore();
+    const { setSearchResults, isSearchLoading, setHomeSearchQuery: setStoreGlobalQuery } = useStore(useShallow(s => ({
+        setSearchResults: s.setSearchResults, isSearchLoading: s.isSearchLoading, setHomeSearchQuery: s.setHomeSearchQuery
+    })));
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleSearch = async (e?: React.FormEvent, forceQuery?: string) => {

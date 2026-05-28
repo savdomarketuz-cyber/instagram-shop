@@ -1,6 +1,7 @@
 "use client";
 
 import { useStore } from "@/store/store";
+import { useShallow } from "zustand/react/shallow";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -14,7 +15,9 @@ import { translations } from "@/lib/translations";
 
 export default function CheckoutPage() {
     const router = useRouter();
-    const { cart, user, clearCart, language, showToast } = useStore();
+    const { cart, user, clearCart, language, showToast } = useStore(useShallow(s => ({
+        cart: s.cart, user: s.user, clearCart: s.clearCart, language: s.language, showToast: s.showToast
+    })));
     const [displayProducts, setDisplayProducts] = useState<any[]>([]);
     const [isFastBuy, setIsFastBuy] = useState(false);
     const t = translations[language];
