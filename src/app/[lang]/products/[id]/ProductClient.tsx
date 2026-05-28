@@ -12,6 +12,7 @@ import { getDeliveryDateText } from "@/lib/date-utils";
 import Image from "next/image";
 import { getProductIdFromSlug, getProductSlug } from "@/lib/slugify";
 import { useTelemetry } from "@/hooks/useTelemetry";
+import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
 
 // Components
 import { ProductMedia } from "@/components/product/ProductMedia";
@@ -385,11 +386,13 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                 <div className="max-w-[1440px] mx-auto px-10 flex items-center justify-between w-full h-16">
                     <div className="flex items-center gap-6 flex-1 min-w-0">
                         <div className="relative w-14 h-14 rounded-2xl overflow-hidden shrink-0 border border-gray-100 shadow-sm">
-                            <Image 
-                                src={product.image} 
-                                fill 
-                                className="object-cover" 
-                                alt={(product.image_metadata?.[product.image]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || (product[`name_${language}` as keyof typeof product] as string) || product.name} 
+                            <Image
+                                src={product.image}
+                                fill
+                                className="object-cover"
+                                alt={(product.image_metadata?.[product.image]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || (product[`name_${language}` as keyof typeof product] as string) || product.name}
+                                sizes="56px"
+                                loader={hasVariants(product.image_metadata, product.image) ? makeVariantLoader(product.image_metadata) : undefined}
                             />
                         </div>
                         <div className="min-w-0">
@@ -516,12 +519,13 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                         <div className="relative w-full h-full bg-gray-50">
                                             {/* Zanjirli yuklanish: Faqat o'z navbati kelgan rasm yuklanadi */}
                                             {i <= maxDesktopLoadIndex ? (
-                                                <Image 
-                                                    src={product.image_metadata?.[media.url]?.lowResUrl || media.url} 
+                                                <Image
+                                                    src={media.url}
                                                     fill
-                                                    className="object-cover group-hover:scale-110 transition-transform" 
+                                                    className="object-cover group-hover:scale-110 transition-transform"
                                                     alt={(product.image_metadata?.[media.url]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || `${(product[`name_${language}` as keyof typeof product] as string) || product.name} - ${i + 1}`}
                                                     sizes="160px"
+                                                    loader={hasVariants(product.image_metadata, media.url) ? makeVariantLoader(product.image_metadata) : undefined}
                                                     onLoad={() => setMaxDesktopLoadIndex(prev => Math.max(prev, i + 1))}
                                                 />
                                             ) : (
@@ -573,15 +577,16 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                     )}
                                     
                                     {/* 2. High-Res Foreground (Gradual) */}
-                                    <Image 
-                                        src={allMedia[activeImage]?.url || ""} 
+                                    <Image
+                                        src={allMedia[activeImage]?.url || ""}
                                         fill
-                                        className="object-contain p-10 animate-in fade-in zoom-in-95 duration-500" 
-                                        alt={(product.image_metadata?.[allMedia[activeImage]?.url]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || `${(product[`name_${language}` as keyof typeof product] as string) || product.name} - Asosiy rasm`} 
+                                        className="object-contain p-10 animate-in fade-in zoom-in-95 duration-500"
+                                        alt={(product.image_metadata?.[allMedia[activeImage]?.url]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || `${(product[`name_${language}` as keyof typeof product] as string) || product.name} - Asosiy rasm`}
                                         priority
                                         sizes="(max-width: 1024px) 100vw, 60vw"
                                         quality={65}
                                         fetchPriority="high"
+                                        loader={hasVariants(product.image_metadata, allMedia[activeImage]?.url || "") ? makeVariantLoader(product.image_metadata) : undefined}
                                         onLoad={() => setMaxDesktopLoadIndex(prev => Math.max(prev, 1))}
                                     />
                                 </>
@@ -657,12 +662,13 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                                 href={`/products/${getProductSlug(v)}`} 
                                                 className={`aspect-[3/4] rounded-3xl overflow-hidden border-2 transition-all flex-shrink-0 shadow-sm relative group/v ${v.id === product.id ? "border-black scale-105 shadow-xl z-10" : "border-white opacity-60 hover:opacity-100 hover:border-gray-200"}`}
                                             >
-                                                <Image 
-                                                    src={v.image} 
+                                                <Image
+                                                    src={v.image}
                                                     fill
-                                                    className="object-cover transition-transform duration-500 group-hover/v:scale-110" 
-                                                    alt={`${(v[`name_${language}` as keyof typeof v] as string) || v.name} - ${v.colorName || "variant"}`} 
+                                                    className="object-cover transition-transform duration-500 group-hover/v:scale-110"
+                                                    alt={`${(v[`name_${language}` as keyof typeof v] as string) || v.name} - ${v.colorName || "variant"}`}
                                                     sizes="100px"
+                                                    loader={hasVariants(v.image_metadata, v.image) ? makeVariantLoader(v.image_metadata) : undefined}
                                                 />
                                                 {v.id === product.id && (
                                                     <div className="absolute inset-0 bg-black/5 flex items-center justify-center">
