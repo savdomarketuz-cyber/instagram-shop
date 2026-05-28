@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Heart, Star, Minus, Plus } from "lucide-react";
@@ -12,7 +12,6 @@ import { getProductSlug } from "@/lib/slugify";
 const GREEN = "#2D6E3E";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
-// — Device-aware Next.js Image URL (matches what carousel <Image> actually requests) —
 const DEVICE_SIZES = [640, 750, 828, 1080, 1200];
 function getCarouselW(): number {
     if (typeof window === "undefined") return 828;
@@ -23,27 +22,18 @@ function nextImgUrl(src: string, w: number, q = 75) {
     return `/_next/image?url=${encodeURIComponent(src)}&w=${w}&q=${q}`;
 }
 
-// — Prefetch product images into browser cache via /_next/image proxy —
 const prefetchedSet = new Set<string>();
-function prefetchProductImages(item: Product, priority: "low" | "high" = "low") {
-    if (typeof document === "undefined") return;
-    if (prefetchedSet.has(item.id)) return;
+function prefetchFirstImage(item: Product) {
+    if (typeof document === "undefined" || prefetchedSet.has(item.id)) return;
     prefetchedSet.add(item.id);
-
-    const w = getCarouselW(); // DPR-aware: iPhone 14 DPR=3 → w=1080, not 640
-    const meta = item.image_metadata || {};
-    const urls = (item.images || []).filter(Boolean).slice(0, 6);
-
-    urls.forEach((u) => {
-        if (u.toLowerCase().endsWith(".mp4")) return;
-        // Carousel media.url ni DPR-aware w bilan prefetch (to'liq sifat)
-        const link = document.createElement("link");
-        link.rel = "prefetch";
-        link.as = "image";
-        link.href = nextImgUrl(u, w); // /_next/image?url=<original>&w=<dpr_w>&q=75
-        (link as any).fetchPriority = priority;
-        document.head.appendChild(link);
-    });
+    const first = (item.images || []).find(u => u && !u.toLowerCase().endsWith(".mp4"));
+    if (!first) return;
+    const link = document.createElement("link");
+    link.rel = "prefetch";
+    link.as = "image";
+    link.href = nextImgUrl(first, getCarouselW());
+    (link as any).fetchPriority = "high";
+    document.head.appendChild(link);
 }
 
 interface ProductCardProps {
@@ -102,25 +92,6 @@ export const ProductCard = memo(({
   toggleWishlist, addToCart, updateQuantity, removeFromCart,
   priority = false,
 }: ProductCardProps) => {
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  // — Viewport prefetch: card ko'ringanda rasmlarni fonida yuklash —
-  useEffect(() => {
-    const el = cardRef.current;
-    if (!el || prefetchedSet.has(item.id)) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          observer.disconnect();
-          prefetchProductImages(item, "low");
-        }
-      },
-      { threshold: 0.3 } // 30% ko'ringanda boshlaydi
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [item.id]);
-
   const isInCart = cart.find(ci => ci.id === item.id);
   const isWished = wishlist.some(w => w.id === item.id);
   const totalStock = item.stockDetails
@@ -146,7 +117,7 @@ export const ProductCard = memo(({
   };
 
   return (
-    <div ref={cardRef} style={{
+    <div style={{
       background: "#fff",
       borderRadius: 22,
       overflow: "hidden",
@@ -161,9 +132,9 @@ export const ProductCard = memo(({
         href={`/${language}/products/${getProductSlug(item)}`}
         style={{ display: "block", textDecoration: "none", color: "inherit" }}
         prefetch={true}
-        onPointerEnter={() => prefetchProductImages(item, "high")}
-        onPointerDown={() => prefetchProductImages(item, "high")}
-        onTouchStart={() => prefetchProductImages(item, "high")}
+        onPointerEnter={() => prefetchFirstImage(item)}
+        onPointerDown={() => prefetchFirstImage(item)}
+        onTouchStart={() => prefetchFirstImage(item)}
         onClick={() => {
           const query = useStore.getState().homeSearchQuery;
           if (query && query.trim().length >= 2) {

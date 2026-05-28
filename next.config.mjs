@@ -23,9 +23,33 @@ const withPWA = withPWAInit({
                 handler: 'NetworkOnly',
             },
             {
-                urlPattern: /https:\/\/.*\.yandex\.ru\/.*$/i,
-                handler: 'NetworkOnly',
-            }
+                urlPattern: /^https:\/\/storage\.yandexcloud\.net\/.*\.(?:png|jpg|jpeg|webp|avif|gif|svg)$/i,
+                handler: 'CacheFirst',
+                options: {
+                    cacheName: 'yandex-images',
+                    expiration: { maxEntries: 600, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                    cacheableResponse: { statuses: [0, 200] },
+                },
+            },
+            {
+                urlPattern: /^https:\/\/storage\.yandexcloud\.net\/.*\.mp4$/i,
+                handler: 'CacheFirst',
+                options: {
+                    cacheName: 'yandex-videos',
+                    rangeRequests: true,
+                    expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 * 14 },
+                    cacheableResponse: { statuses: [0, 200, 206] },
+                },
+            },
+            {
+                urlPattern: /^\/_next\/image\?.*/i,
+                handler: 'StaleWhileRevalidate',
+                options: {
+                    cacheName: 'next-images',
+                    expiration: { maxEntries: 600, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                    cacheableResponse: { statuses: [0, 200] },
+                },
+            },
         ]
     },
 });
@@ -40,10 +64,10 @@ const nextConfig = {
     },
     images: {
         unoptimized: false,
-        formats: ['image/avif', 'image/webp'],
-        minimumCacheTTL: 3600,
-        deviceSizes: [640, 750, 828, 1080, 1200],
-        imageSizes: [16, 32, 48, 64, 96, 128, 256],
+        formats: ['image/webp'],
+        minimumCacheTTL: 31536000,
+        deviceSizes: [640, 828, 1080],
+        imageSizes: [64, 128, 256, 384],
         remotePatterns: [
             { protocol: 'https', hostname: 'images.unsplash.com' },
             { protocol: 'https', hostname: 'storage.yandexcloud.net' },
