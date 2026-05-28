@@ -70,16 +70,21 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Fayl hajmi juda katta (Max: 10MB)" }, { status: 400 });
         }
 
-        let originalBuffer: Buffer = Buffer.from(new Uint8Array(await file.arrayBuffer()));
+        const sourceBuffer: Buffer = Buffer.from(new Uint8Array(await file.arrayBuffer()));
+        let originalBuffer: Buffer = sourceBuffer;
         let lowResBuffer: Buffer | null = null;
+        let xsBuffer: Buffer | null = null;
+        let mdBuffer: Buffer | null = null;
+        let lgBuffer: Buffer | null = null;
         let blurDataURL = "";
+        let isImage = false;
 
         // 🟢 PRE-PROCESSING: Optimize Images with Sharp
         if (file.type.startsWith("image/") && !file.type.includes("dynamic") && !file.type.includes("gif") && !file.type.includes("svg")) {
             try {
-                const image = sharp(originalBuffer);
-                
-                // 1. Generate ultra-low res blur placeholder (base64)
+                const image = sharp(sourceBuffer);
+                isImage = true;
+
                 const blurBuffer = await image
                     .clone()
                     .resize(20, 20, { fit: "cover" })
@@ -88,21 +93,25 @@ export async function POST(req: NextRequest) {
                     .toBuffer();
                 blurDataURL = `data:image/webp;base64,${blurBuffer.toString("base64")}`;
 
-                // 2. Generate Original (1080x1440px, Q75) - AVIF
                 originalBuffer = await image
                     .clone()
                     .resize(1080, 1440, { fit: "cover" })
                     .toFormat("avif", { quality: 75, effort: 3 })
                     .toBuffer();
 
-                 // 3. Generate Thumbnail (360x480px, Q40) - WebP
-                 lowResBuffer = await image
-                     .clone()
-                     .resize(360, 480, { fit: "cover" })
-                     .toFormat("webp", { quality: 40, effort: 6, smartSubsample: true })
-                     .toBuffer();
+                lowResBuffer = await image
+                    .clone()
+                    .resize(360, 480, { fit: "cover" })
+                    .toFormat("webp", { quality: 40, effort: 6, smartSubsample: true })
+                    .toBuffer();
 
-                 fileName = (fileName || `img_${Date.now()}`).split('.')[0] + '.avif';
+                [xsBuffer, mdBuffer, lgBuffer] = await Promise.all([
+                    image.clone().resize({ width: 640,  withoutEnlargement: true }).toFormat("webp", { quality: 78, effort: 4 }).toBuffer(),
+                    image.clone().resize({ width: 828,  withoutEnlargement: true }).toFormat("webp", { quality: 80, effort: 4 }).toBuffer(),
+                    image.clone().resize({ width: 1080, withoutEnlargement: true }).toFormat("webp", { quality: 82, effort: 4 }).toBuffer(),
+                ]);
+
+                fileName = (fileName || `img_${Date.now()}`).split('.')[0] + '.avif';
 
             } catch (err) {
                 console.error("Sharp processing failed:", err);
@@ -155,22 +164,28 @@ export async function POST(req: NextRequest) {
         };
  
         const safeBaseName = (fileName || "image.avif").replace(/[^a-zA-Z0-9.-]/g, "_");
+        const baseNoExt = safeBaseName.replace(/\.(avif|webp|jpg|jpeg|png)$/i, "");
         const timestamp = Date.now();
-        
-        const uploadPromises = [
-            uploadToS3(originalBuffer, `uploads/${timestamp}_original_${safeBaseName}`, "image/avif")
+
+        const originalContentType = isImage ? "image/avif" : (file.type || "application/octet-stream");
+        const uploadPromises: Promise<string>[] = [
+            uploadToS3(originalBuffer, `uploads/${timestamp}_original_${safeBaseName}`, originalContentType),
         ];
- 
-        if (lowResBuffer) {
-            uploadPromises.push(uploadToS3(lowResBuffer, `uploads/${timestamp}_thumb_${safeBaseName.replace('.avif', '.webp')}`, "image/webp"));
-        }
+        if (lowResBuffer) uploadPromises.push(uploadToS3(lowResBuffer, `uploads/${timestamp}_thumb_${baseNoExt}.webp`, "image/webp"));
+        if (xsBuffer)     uploadPromises.push(uploadToS3(xsBuffer,     `uploads/${timestamp}_${baseNoExt}_xs.webp`, "image/webp"));
+        if (mdBuffer)     uploadPromises.push(uploadToS3(mdBuffer,     `uploads/${timestamp}_${baseNoExt}_md.webp`, "image/webp"));
+        if (lgBuffer)     uploadPromises.push(uploadToS3(lgBuffer,     `uploads/${timestamp}_${baseNoExt}_lg.webp`, "image/webp"));
 
-        const [originalUrl, thumbUrl] = await Promise.all(uploadPromises);
+        const results = await Promise.all(uploadPromises);
+        const [originalUrl, thumbUrl, xsUrl, mdUrl, lgUrl] = results;
 
-        return NextResponse.json({ 
-            url: originalUrl, 
-            lowResUrl: thumbUrl || originalUrl, 
-            blurDataURL 
+        return NextResponse.json({
+            url: originalUrl,
+            lowResUrl: thumbUrl || originalUrl,
+            blurDataURL,
+            xs: xsUrl,
+            md: mdUrl,
+            lg: lgUrl,
         });
 
     } catch (error: any) {

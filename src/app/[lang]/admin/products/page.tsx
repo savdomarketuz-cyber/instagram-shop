@@ -120,8 +120,8 @@ export default function AdminProducts() {
 
         setIsUploading(true);
         try {
-            const { url, blurDataURL, lowResUrl } = await uploadToYandexS3(file);
-            
+            const { url, blurDataURL, lowResUrl, xs, md, lg } = await uploadToYandexS3(file);
+
             if (isGallery) {
                 setNewProduct(prev => ({
                     ...prev,
@@ -132,7 +132,8 @@ export default function AdminProducts() {
                         [url]: {
                             ...(prev.image_metadata?.[url] || {}),
                             blurDataURL,
-                            lowResUrl
+                            lowResUrl,
+                            xs, md, lg,
                         }
                     }
 
@@ -147,7 +148,8 @@ export default function AdminProducts() {
                         [url]: {
                             ...(prev.image_metadata?.[url] || {}),
                             blurDataURL,
-                            lowResUrl
+                            lowResUrl,
+                            xs, md, lg,
                         }
 
                     }
@@ -412,8 +414,14 @@ export default function AdminProducts() {
                     const proxiedImages = proxiedResults.map(r => r.url);
                     const localMeta: any = {};
                     proxiedResults.forEach(r => {
-                        if (r.blurDataURL) {
-                            localMeta[r.url] = { blurDataURL: r.blurDataURL };
+                        if (r.blurDataURL || r.lowResUrl || r.xs || r.md || r.lg) {
+                            localMeta[r.url] = {
+                                ...(r.blurDataURL && { blurDataURL: r.blurDataURL }),
+                                ...(r.lowResUrl   && { lowResUrl:   r.lowResUrl   }),
+                                ...(r.xs && { xs: r.xs }),
+                                ...(r.md && { md: r.md }),
+                                ...(r.lg && { lg: r.lg }),
+                            };
                         }
                     });
 
@@ -592,26 +600,26 @@ export default function AdminProducts() {
 
             const proxiedResults = await Promise.all(
                 imagesArrayRaw.map(url => {
-                    const existing = newProduct.image_metadata?.[url];
-                    // lowResUrl allaqachon bor → qayta yuklamay, shunchaki return
-                    if (existing?.lowResUrl) {
-                        return Promise.resolve({ url, lowResUrl: existing.lowResUrl, blurDataURL: existing.blurDataURL });
+                    const existing = newProduct.image_metadata?.[url] as any;
+                    if (existing?.lowResUrl && existing?.xs && existing?.md && existing?.lg) {
+                        return Promise.resolve({ url, lowResUrl: existing.lowResUrl, blurDataURL: existing.blurDataURL, xs: existing.xs, md: existing.md, lg: existing.lg });
                     }
-                    // Yo'q → thumbnail generatsiya (Yandex URL bo'lsa ham)
                     return uploadFromUrlToYandexS3(url);
                 })
             );
 
             const imagesArray = proxiedResults.map(r => r.url);
-            
-            // Merge blurDataURL + lowResUrl into existing metadata
-            const updatedMeta = { ...(newProduct.image_metadata || {}) };
-            proxiedResults.forEach(r => {
-                if (r.blurDataURL || r.lowResUrl) {
+
+            const updatedMeta: any = { ...(newProduct.image_metadata || {}) };
+            proxiedResults.forEach((r: any) => {
+                if (r.blurDataURL || r.lowResUrl || r.xs || r.md || r.lg) {
                     updatedMeta[r.url] = {
                         ...updatedMeta[r.url],
                         ...(r.blurDataURL && { blurDataURL: r.blurDataURL }),
                         ...(r.lowResUrl   && { lowResUrl:   r.lowResUrl   }),
+                        ...(r.xs && { xs: r.xs }),
+                        ...(r.md && { md: r.md }),
+                        ...(r.lg && { lg: r.lg }),
                     };
                 }
             });

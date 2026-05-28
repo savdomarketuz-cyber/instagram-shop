@@ -101,20 +101,23 @@ export async function POST(req: NextRequest) {
 
     try {
         const rawBuffer = await file.arrayBuffer();
-        let buffer: Buffer = Buffer.from(new Uint8Array(rawBuffer));
+        const sourceBuffer: Buffer = Buffer.from(new Uint8Array(rawBuffer));
+        let buffer: Buffer = sourceBuffer;
         let mime    = file.type || "application/octet-stream";
         const rawName = (formData.get("fileName") as string | null) || file.name || `file_${Date.now()}`;
         const safeName = rawName.replace(/[^a-zA-Z0-9._-]/g, "_");
         const ts = Date.now();
 
         let blurDataURL = "";
+        let lowResBuf: Buffer | null = null;
+        let xsBuf: Buffer | null = null;
+        let mdBuf: Buffer | null = null;
+        let lgBuf: Buffer | null = null;
 
-        // — Image → optimise to AVIF + blur placeholder —
         if (mime.startsWith("image/") && !mime.includes("gif") && !mime.includes("svg")) {
             try {
-                const img = sharp(buffer);
+                const img = sharp(sourceBuffer);
 
-                // 1. Blur placeholder (20×20 base64 WebP — instant)
                 const blurBuf = await img.clone()
                     .resize(20, 20, { fit: "cover" })
                     .blur(5)
@@ -122,26 +125,45 @@ export async function POST(req: NextRequest) {
                     .toBuffer();
                 blurDataURL = `data:image/webp;base64,${blurBuf.toString("base64")}`;
 
-                // 2. Main image → AVIF (effort 3 = fast, still good quality)
                 buffer = await img.clone()
                     .resize(1080, 1440, { fit: "inside", withoutEnlargement: true })
                     .toFormat("avif", { quality: 75, effort: 3 })
                     .toBuffer();
                 mime = "image/avif";
+
+                lowResBuf = await img.clone()
+                    .resize(360, 480, { fit: "cover" })
+                    .toFormat("webp", { quality: 40, effort: 6 })
+                    .toBuffer();
+
+                [xsBuf, mdBuf, lgBuf] = await Promise.all([
+                    img.clone().resize({ width: 640,  withoutEnlargement: true }).toFormat("webp", { quality: 78, effort: 4 }).toBuffer(),
+                    img.clone().resize({ width: 828,  withoutEnlargement: true }).toFormat("webp", { quality: 80, effort: 4 }).toBuffer(),
+                    img.clone().resize({ width: 1080, withoutEnlargement: true }).toFormat("webp", { quality: 82, effort: 4 }).toBuffer(),
+                ]);
             } catch { /* sharp failed – upload original */ }
         }
 
-        // — Determine folder by type —
         let folder = "admin/misc";
         if (mime.startsWith("image/"))  folder = "admin/images";
         if (mime.startsWith("audio/"))  folder = "admin/audio";
         if (mime.startsWith("video/"))  folder = "admin/video";
 
         const ext = mime.startsWith("image/") ? "avif" : safeName.split(".").pop() || "bin";
-        const key = `${folder}/${ts}_${safeName.split(".")[0]}.${ext}`;
+        const baseNoExt = safeName.split(".")[0];
+        const key = `${folder}/${ts}_${baseNoExt}.${ext}`;
 
         const url = await uploadToS3(buffer, key, mime);
-        return NextResponse.json({ url, blurDataURL: blurDataURL || undefined });
+
+        let lowResUrl: string | undefined, xsUrl: string | undefined, mdUrl: string | undefined, lgUrl: string | undefined;
+        const extras: Promise<void>[] = [];
+        if (lowResBuf) extras.push(uploadToS3(lowResBuf, `${folder}/${ts}_${baseNoExt}_thumb.webp`, "image/webp").then(u => { lowResUrl = u; }));
+        if (xsBuf)     extras.push(uploadToS3(xsBuf,     `${folder}/${ts}_${baseNoExt}_xs.webp`,    "image/webp").then(u => { xsUrl = u; }));
+        if (mdBuf)     extras.push(uploadToS3(mdBuf,     `${folder}/${ts}_${baseNoExt}_md.webp`,    "image/webp").then(u => { mdUrl = u; }));
+        if (lgBuf)     extras.push(uploadToS3(lgBuf,     `${folder}/${ts}_${baseNoExt}_lg.webp`,    "image/webp").then(u => { lgUrl = u; }));
+        if (extras.length) await Promise.all(extras);
+
+        return NextResponse.json({ url, blurDataURL: blurDataURL || undefined, lowResUrl, xs: xsUrl, md: mdUrl, lg: lgUrl });
 
     } catch (err: any) {
         console.error("Admin upload error:", err);
