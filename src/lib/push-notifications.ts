@@ -13,14 +13,15 @@ function urlBase64ToUint8Array(base64String: string) {
 
 export async function subscribeToPushNotifications(userPhone?: string) {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-        console.warn("Push xabarlar bu brauzerda ishlamaydi");
+        return;
+    }
+    if (!VAPID_PUBLIC_KEY) {
         return;
     }
 
     try {
         const registration = await navigator.serviceWorker.ready;
-        
-        // Mavjud obunani tekshirish
+
         const existingSubscription = await registration.pushManager.getSubscription();
         if (existingSubscription) {
             return existingSubscription;
@@ -28,7 +29,7 @@ export async function subscribeToPushNotifications(userPhone?: string) {
 
         const subscribeOptions = {
             userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY!)
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
         };
 
         const subscription = await registration.pushManager.subscribe(subscribeOptions);
