@@ -159,7 +159,7 @@ export const ProductCard = memo(({
         <div style={{ position: "relative", padding: 12, paddingBottom: 6 }}>
           <div style={{
             position: "relative",
-            aspectRatio: "1 / 1",
+            aspectRatio: "3 / 4",
             borderRadius: 16,
             overflow: "hidden",
             background: "#F5F5F0",

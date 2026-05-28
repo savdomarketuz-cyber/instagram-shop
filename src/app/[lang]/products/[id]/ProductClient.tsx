@@ -2,7 +2,7 @@
 
 import { useStore } from "@/store/store";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { mapProduct, mapComment } from "@/lib/mappers";
 import { translations } from "@/lib/translations";
@@ -17,6 +17,7 @@ import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
 // Components
 import { ProductMedia } from "@/components/product/ProductMedia";
 import { ProductInfo } from "@/components/product/ProductInfo";
+import { ProductCard } from "@/components/home/ProductCard";
 import dynamic from "next/dynamic";
 const ReviewsSection = dynamic(() => import("@/components/product/ReviewsSection").then(mod => ({ default: mod.ReviewsSection })), {
     loading: () => <div className="h-40 animate-pulse bg-gray-50 rounded-3xl mx-4 my-8" />,
@@ -57,6 +58,13 @@ export default function ProductClient({ params, initialProduct }: { params: { id
     const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
     const [popularLoading, setPopularLoading] = useState(false);
     const [maxDesktopLoadIndex, setMaxDesktopLoadIndex] = useState(0);
+
+    // Infinite scroll state
+    const [infiniteProducts, setInfiniteProducts] = useState<Product[]>([]);
+    const [infinitePage, setInfinitePage] = useState(0);
+    const [infiniteHasMore, setInfiniteHasMore] = useState(true);
+    const [infiniteLoading, setInfiniteLoading] = useState(false);
+    const infiniteSentinel = useRef<HTMLDivElement>(null);
 
     // Track recently viewed
     useEffect(() => {
@@ -247,6 +255,50 @@ export default function ProductClient({ params, initialProduct }: { params: { id
         }
         setPopularLoading(false);
     };
+
+    const loadMoreInfinite = useCallback(async () => {
+        if (infiniteLoading || !infiniteHasMore || !product) return;
+        setInfiniteLoading(true);
+        try {
+            const excludeIds = [
+                product.id,
+                ...relatedProducts.map(p => p.id),
+                ...boughtTogether.map(p => p.id),
+                ...popularProducts.map(p => p.id),
+                ...infiniteProducts.map(p => p.id),
+            ];
+            const PAGE_SIZE = 12;
+            const from = infinitePage * PAGE_SIZE;
+            let q = supabase.from("products")
+                .select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,rating,review_count,stock,category,brand_id,model,color_name,group_id,article")
+                .eq("is_deleted", false)
+                .order("sales", { ascending: false })
+                .range(from, from + PAGE_SIZE - 1);
+            if (excludeIds.length) q = q.not("id", "in", `(${excludeIds.map(i => `"${i}"`).join(",")})`);
+            const { data } = await q;
+            if (!data || data.length === 0) {
+                setInfiniteHasMore(false);
+            } else {
+                setInfiniteProducts(prev => [...prev, ...data.map(mapProduct)]);
+                setInfinitePage(prev => prev + 1);
+                if (data.length < PAGE_SIZE) setInfiniteHasMore(false);
+            }
+        } catch (e) {
+            setInfiniteHasMore(false);
+        } finally {
+            setInfiniteLoading(false);
+        }
+    }, [infiniteLoading, infiniteHasMore, infinitePage, infiniteProducts, relatedProducts, boughtTogether, popularProducts, product]);
+
+    useEffect(() => {
+        const sentinel = infiniteSentinel.current;
+        if (!sentinel) return;
+        const obs = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) loadMoreInfinite();
+        }, { rootMargin: "600px" });
+        obs.observe(sentinel);
+        return () => obs.disconnect();
+    }, [loadMoreInfinite]);
 
     const fetchGroup = async (groupId: string) => {
         const { data } = await supabase.from("products").select("*").eq("group_id", groupId).eq("is_deleted", false);
@@ -785,7 +837,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                 router={router}
             />
 
-            <RelatedProducts 
+            <RelatedProducts
                 relatedProducts={relatedProducts}
                 boughtTogether={boughtTogether}
                 popularProducts={popularProducts}
@@ -799,6 +851,34 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                 popularLoading={popularLoading}
                 t={t}
             />
+
+            {infiniteProducts.length > 0 && (
+                <section className="mt-8 pb-8" style={{ background: "#FAFAF6" }}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-2 md:gap-x-6 gap-y-6 md:gap-y-10 px-4 max-w-[1440px] mx-auto">
+                        {infiniteProducts.map(p => (
+                            <ProductCard
+                                key={p.id}
+                                item={p}
+                                language={language}
+                                t={t}
+                                cart={cart}
+                                wishlist={wishlist}
+                                toggleWishlist={toggleWishlist}
+                                addToCart={addToCart}
+                                updateQuantity={updateQuantity}
+                                removeFromCart={removeFromCart}
+                            />
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            <div ref={infiniteSentinel} aria-hidden="true" style={{ height: 1 }} />
+            {infiniteLoading && (
+                <div className="flex justify-center py-10" style={{ background: "#FAFAF6" }}>
+                    <Loader2 className="animate-spin" size={28} color="#2D6E3E" />
+                </div>
+            )}
 
             <ProductDescriptionModal 
                 isOpen={isDescriptionModalOpen}

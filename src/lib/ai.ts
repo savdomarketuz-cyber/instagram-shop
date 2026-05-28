@@ -67,7 +67,7 @@ export async function getAiRecommendations(userInterests: any, allProducts: Prod
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "llama-3.1-70b-versatile",
+                model: "llama-3.3-70b-versatile",
                 messages: [
                     { role: "system", content: "Sen faqat JSON qaytaruvchi AI yordamchisan." },
                     { role: "user", content: prompt }
@@ -103,7 +103,7 @@ export async function getAiRecommendations(userInterests: any, allProducts: Prod
             user_phone: userPhone,
             input: userInterests,
             output: recommendedIds,
-            model: "llama-3.1-70b",
+            model: "llama-3.3-70b-versatile",
             action: "personalized_recommendation_refreshed"
         }]);
 
@@ -128,7 +128,7 @@ export async function logAiActivity(data: {
             input: data.input,
             output: data.output,
             action: data.action,
-            model: data.model || "llama-3.1-70b"
+            model: data.model || "llama-3.3-70b-versatile"
         }]);
     } catch (e) {
         console.error("AI Logging error:", e);

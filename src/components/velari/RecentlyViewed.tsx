@@ -104,7 +104,7 @@ export default function RecentlyViewed({ language, currentProductId }: RecentlyV
                                 flexDirection: "column",
                             }}
                         >
-                            <div style={{ position: "relative", aspectRatio: "1/1", background: "#F5F5F0" }}>
+                            <div style={{ position: "relative", aspectRatio: "3/4", background: "#F5F5F0" }}>
                                 <Image
                                     src={product.image_metadata?.[mainImg]?.lowResUrl || mainImg}
                                     alt={name}

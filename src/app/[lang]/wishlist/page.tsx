@@ -83,7 +83,7 @@ export default function WishlistPage() {
                                     position: "relative",
                                 }}>
                                     <Link href={`/${language}/products/${slug}`} style={{ textDecoration: "none" }}>
-                                        <div style={{ position: "relative", aspectRatio: "1/1", background: "#F5F5F0" }}>
+                                        <div style={{ position: "relative", aspectRatio: "3/4", background: "#F5F5F0" }}>
                                             {(() => {
                                                 const u = item.image || item.imageUrl || "/placeholder.png";
                                                 return <Image src={u} alt={name} fill sizes="(max-width: 768px) 50vw, 200px" style={{ objectFit: "cover" }} loader={hasVariants(item.image_metadata, u) ? makeVariantLoader(item.image_metadata) : undefined} />;
