@@ -59,7 +59,8 @@ async function getCategories() {
             name_uz: c.name_uz,
             name_ru: c.name_ru,
             parentId: c.parent_id,
-            image: c.image
+            image: c.image,
+            image_meta: c.image_meta || undefined,
         }));
     } catch (error) {
         console.error("Catalog SSR error:", error);

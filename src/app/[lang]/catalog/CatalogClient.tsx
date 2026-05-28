@@ -11,6 +11,7 @@ import { translations } from "@/lib/translations";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import Image from "next/image";
+import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
 
 interface Category {
     id: string;
@@ -19,6 +20,7 @@ interface Category {
     name_ru?: string;
     parentId?: string;
     image?: string;
+    image_meta?: { xs?: string; md?: string; lg?: string; lowResUrl?: string; blurDataURL?: string };
 }
 
 interface CatalogClientProps {
@@ -58,7 +60,8 @@ export default function CatalogClient({ initialCategories }: CatalogClientProps)
                     name_uz: c.name_uz,
                     name_ru: c.name_ru,
                     parentId: c.parent_id,
-                    image: c.image
+                    image: c.image,
+                    image_meta: c.image_meta || undefined,
                 })) as Category[];
 
                 setAllCategories(cData);
@@ -204,17 +207,19 @@ export default function CatalogClient({ initialCategories }: CatalogClientProps)
                                     className="group flex flex-col items-center gap-4 p-4 md:p-8 bg-gray-50/50 rounded-[40px] border border-transparent hover:border-gray-100 hover:bg-white hover:shadow-2xl hover:shadow-black/5 transition-all duration-500"
                                 >
                                     <div className="w-20 h-20 md:w-32 md:h-32 rounded-[32px] overflow-hidden bg-white shadow-xl shadow-black/5 group-hover:scale-105 transition-transform duration-500 relative">
-                                        {cat.image ? (
-                                            <Image 
-                                                src={cat.image} 
-                                                alt={cat.name} 
+                                        {cat.image ? (() => {
+                                            const meta = cat.image_meta ? { [cat.image]: cat.image_meta } : undefined;
+                                            return <Image
+                                                src={cat.image}
+                                                alt={cat.name}
                                                 fill
-                                                className="object-cover" 
+                                                className="object-cover"
                                                 sizes="(max-width: 768px) 80px, 128px"
                                                 priority={index < 12}
                                                 fetchPriority={index < 12 ? "high" : "auto"}
-                                            />
-                                        ) : (
+                                                loader={hasVariants(meta, cat.image) ? makeVariantLoader(meta) : undefined}
+                                            />;
+                                        })() : (
                                             <div className="w-full h-full flex items-center justify-center text-gray-100"><LayoutGrid size={40} /></div>
                                         )}
                                     </div>
@@ -245,17 +250,19 @@ export default function CatalogClient({ initialCategories }: CatalogClientProps)
                                         className="group flex flex-col items-center gap-4 p-4 md:p-8 bg-gray-50/50 rounded-[40px] border border-transparent hover:border-gray-100 hover:bg-white hover:shadow-2xl hover:shadow-black/5 transition-all duration-500"
                                     >
                                         <div className="w-16 h-16 md:w-24 md:h-24 rounded-[28px] overflow-hidden bg-white shadow-lg shadow-black/5 group-hover:scale-110 transition-transform relative">
-                                            {sub.image ? (
-                                                <Image 
-                                                    src={sub.image} 
-                                                    alt={sub.name} 
+                                            {sub.image ? (() => {
+                                                const meta = sub.image_meta ? { [sub.image]: sub.image_meta } : undefined;
+                                                return <Image
+                                                    src={sub.image}
+                                                    alt={sub.name}
                                                     fill
-                                                    className="object-cover" 
+                                                    className="object-cover"
                                                     sizes="(max-width: 768px) 64px, 96px"
                                                     priority={index < 12}
                                                     fetchPriority={index < 12 ? "high" : "auto"}
-                                                />
-                                            ) : (
+                                                    loader={hasVariants(meta, sub.image) ? makeVariantLoader(meta) : undefined}
+                                                />;
+                                            })() : (
                                                 <div className="w-full h-full flex items-center justify-center text-gray-100"><ShoppingBag size={32} /></div>
                                             )}
                                         </div>

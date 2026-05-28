@@ -31,6 +31,10 @@ yarn-error.log*
 # claude code worktrees
 .claude/worktrees/
 
+# big local artifacts
+design_handoff_phase1/
+velari sayt skrinshot/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -24,6 +24,7 @@ export default function AdminCategories() {
     const [catId, setCatId] = useState(""); // Custom ID state
     const [parentId, setParentId] = useState<string>("none");
     const [iconUrl, setIconUrl] = useState("");
+    const [iconMeta, setIconMeta] = useState<{ xs?: string; md?: string; lg?: string; lowResUrl?: string; blurDataURL?: string } | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [activeTab, setActiveTab] = useState<"active" | "trash">("active");
@@ -43,6 +44,7 @@ export default function AdminCategories() {
         setParentId("none");
         setSelectionPath([]);
         setIconUrl("");
+        setIconMeta(null);
     };
 
     const handleIconUpload = async (file: File | undefined) => {
@@ -58,8 +60,9 @@ export default function AdminCategories() {
                     headers: { 'Content-Type': 'application/json' }
                  }).catch(e => console.error("Eski rasmni o'chirishda xatolik:", e));
             }
-            const { url } = await uploadToYandexS3(file);
+            const { url, blurDataURL, lowResUrl, xs, md, lg } = await uploadToYandexS3(file);
             setIconUrl(url);
+            setIconMeta({ xs, md, lg, lowResUrl, blurDataURL });
         } catch (error: any) {
             console.error("Upload failed:", error);
             alert("Ikonka yuklashda xatolik: " + (error.message || "Noma'lum xato"));
@@ -139,6 +142,7 @@ export default function AdminCategories() {
                         name_ru: name_ru.trim(),
                         parent_id: parentId === "none" ? null : parentId,
                         image: iconUrl.trim() || null,
+                        image_meta: iconMeta || null,
                         is_deleted: false
                     }
                 })
@@ -162,6 +166,7 @@ export default function AdminCategories() {
         setNameUz(cat.name_uz || cat.name);
         setNameRu(cat.name_ru || "");
         setIconUrl(cat.iconUrl || "");
+        setIconMeta((cat as any).image_meta || null);
 
         const path: string[] = [];
         let curr = cat.parentId;

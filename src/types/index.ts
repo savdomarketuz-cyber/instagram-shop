@@ -46,6 +46,7 @@ export interface CartItem extends Product {
 }
 
 export interface Category {
+    image_meta?: { xs?: string; md?: string; lg?: string; lowResUrl?: string; blurDataURL?: string };
     id: string;
     name: string;
     name_uz?: string;
@@ -67,6 +68,10 @@ export interface Banner {
     tabName_uz?: string;
     tabName_ru?: string;
     order?: number;
+    image_meta?: {
+        uz?: { xs?: string; md?: string; lg?: string; lowResUrl?: string; blurDataURL?: string };
+        ru?: { xs?: string; md?: string; lg?: string; lowResUrl?: string; blurDataURL?: string };
+    };
 }
 
 export interface User {

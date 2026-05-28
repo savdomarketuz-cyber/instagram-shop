@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { translations } from "@/lib/translations";
 import { getProductSlug } from "@/lib/slugify";
 import Image from "next/image";
+import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
 import { useStore as useStoreCart } from "@/store/store";
 
 const GREEN = "#2D6E3E";
@@ -79,13 +80,10 @@ export default function WishlistPage() {
                                 }}>
                                     <Link href={`/${language}/products/${slug}`} style={{ textDecoration: "none" }}>
                                         <div style={{ position: "relative", aspectRatio: "1/1", background: "#F5F5F0" }}>
-                                            <Image
-                                                src={item.imageUrl || item.image || "/placeholder.png"}
-                                                alt={name}
-                                                fill
-                                                sizes="(max-width: 768px) 50vw, 200px"
-                                                style={{ objectFit: "cover" }}
-                                            />
+                                            {(() => {
+                                                const u = item.image || item.imageUrl || "/placeholder.png";
+                                                return <Image src={u} alt={name} fill sizes="(max-width: 768px) 50vw, 200px" style={{ objectFit: "cover" }} loader={hasVariants(item.image_metadata, u) ? makeVariantLoader(item.image_metadata) : undefined} />;
+                                            })()}
                                         </div>
                                         <div style={{ padding: "10px 12px 12px" }}>
                                             <p style={{ fontSize: 12, fontWeight: 600, color: "#0F1410", lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden", marginBottom: 6 }}>
@@ -150,7 +148,10 @@ export default function WishlistPage() {
                                 <div key={item.id} className="relative group">
                                     <Link href={`/${language}/products/${getProductSlug(item)}`} className="block">
                                         <div className="aspect-[3/4] overflow-hidden rounded-[24px] bg-gray-50 mb-3 shadow-sm relative">
-                                            <Image src={item.imageUrl || item.image || ""} alt={name} fill sizes="300px" className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                                            {(() => {
+                                                const u = item.image || item.imageUrl || "";
+                                                return <Image src={u} alt={name} fill sizes="300px" className="object-cover group-hover:scale-105 transition-transform duration-500" loader={hasVariants(item.image_metadata, u) ? makeVariantLoader(item.image_metadata) : undefined} />;
+                                            })()}
                                         </div>
                                         <h3 className="text-[13px] font-bold text-gray-900 leading-tight line-clamp-2 min-h-[2.5em]">{name}</h3>
                                         <p className="text-sm font-black text-black mt-1">{fmtPrice(item.price)}</p>

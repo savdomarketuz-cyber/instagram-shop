@@ -26,13 +26,12 @@ export default function ReelsPage() {
     useEffect(() => {
         const fetchReelsData = async () => {
             try {
-                // Fetch from 'reels' table
-                const { data: reelsData } = await supabase
-                    .from("reels")
-                    .select("*")
-                    .limit(20);
-                
-                let fetchedReels = (reelsData || []).map(r => ({
+                const [reelsRes, productsRes] = await Promise.all([
+                    supabase.from("reels").select("*").limit(20),
+                    supabase.from("products").select("*").not("video_url", "is", null).neq("video_url", "").limit(20),
+                ]);
+
+                const reelItems = (reelsRes.data || []).map(r => ({
                     id: r.id,
                     videoUrl: r.video_url,
                     likesCount: r.likes_count,
@@ -40,31 +39,21 @@ export default function ReelsPage() {
                     productId: r.product_id,
                     name: r.name,
                     price: r.price,
-                    image: r.image
+                    image: r.image,
                 })) as Reel[];
 
-                // If not enough reels, fetch products with videos
-                if (fetchedReels.length < 5) {
-                    const { data: productsWithVideos } = await supabase
-                        .from("products")
-                        .select("*")
-                        .not("video_url", "is", null)
-                        .neq("video_url", "")
-                        .limit(20);
-                    
-                    const productReels = (productsWithVideos || []).map(p => ({
-                        id: p.id,
-                        videoUrl: p.video_url,
-                        productId: p.id,
-                        name: p.name,
-                        price: p.price,
-                        image: p.image
-                    })) as Reel[];
+                const productItems = (productsRes.data || []).map(p => ({
+                    id: p.id,
+                    videoUrl: p.video_url,
+                    productId: p.id,
+                    name: p.name,
+                    price: p.price,
+                    image: p.image,
+                })) as Reel[];
 
-                    fetchedReels = [...fetchedReels, ...productReels.filter(pr => !fetchedReels.find(fr => fr.id === pr.id))];
-                }
-
-                setReels(fetchedReels.sort(() => Math.random() - 0.5));
+                const seen = new Set(reelItems.map(r => r.id));
+                const merged = [...reelItems, ...productItems.filter(p => !seen.has(p.id))];
+                setReels(merged.sort(() => Math.random() - 0.5));
             } catch (error) {
                 console.error("Error fetching reels:", error);
             } finally {

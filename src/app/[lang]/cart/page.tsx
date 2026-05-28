@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, ShoppingCart, Package, ChevronLeft } from "lucide-react";
 import { translations } from "@/lib/translations";
 import Image from "next/image";
+import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
 
 const GREEN = "#2D6E3E";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
@@ -64,7 +65,10 @@ export default function CartPage() {
                                 }}>
                                     {/* Image */}
                                     <div style={{ width: 80, height: 80, borderRadius: 16, overflow: "hidden", background: "#F5F5F0", flexShrink: 0, position: "relative" }}>
-                                        <Image src={item.imageUrl || item.image || "/placeholder.png"} alt={name} fill sizes="80px" style={{ objectFit: "cover" }} />
+                                        {(() => {
+                                            const u = item.image || item.imageUrl || "/placeholder.png";
+                                            return <Image src={u} alt={name} fill sizes="80px" style={{ objectFit: "cover" }} loader={hasVariants(item.image_metadata, u) ? makeVariantLoader(item.image_metadata) : undefined} />;
+                                        })()}
                                     </div>
 
                                     {/* Info */}
@@ -184,7 +188,10 @@ export default function CartPage() {
                                         <div key={item.id} className="bg-white border border-gray-100 rounded-3xl p-4 w-full overflow-hidden">
                                             <div className="flex gap-3 w-full overflow-hidden">
                                                 <div className="w-20 h-20 bg-gray-50 rounded-2xl overflow-hidden shrink-0 relative">
-                                                    <Image src={item.imageUrl || item.image || ""} alt={name} fill className="object-cover" sizes="80px" />
+                                                    {(() => {
+                                                        const u = item.image || item.imageUrl || "";
+                                                        return <Image src={u} alt={name} fill className="object-cover" sizes="80px" loader={hasVariants(item.image_metadata, u) ? makeVariantLoader(item.image_metadata) : undefined} />;
+                                                    })()}
                                                 </div>
                                                 <div className="flex-1 min-w-0 overflow-hidden">
                                                     <h3 className="font-black text-xs text-gray-900 leading-tight uppercase tracking-tight mb-2 line-clamp-2">{name}</h3>

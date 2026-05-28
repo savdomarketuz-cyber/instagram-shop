@@ -3,6 +3,9 @@
 import { useRef, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
+import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
+
+type BannerImgMeta = { xs?: string; md?: string; lg?: string; lowResUrl?: string; blurDataURL?: string };
 
 interface Banner {
     id: string;
@@ -15,6 +18,7 @@ interface Banner {
     tabName_uz?: string;
     tabName_ru?: string;
     order?: number;
+    image_meta?: { uz?: BannerImgMeta; ru?: BannerImgMeta };
 }
 
 interface BannerSectionProps {
@@ -61,15 +65,20 @@ export const BannerSection = ({ banners, bannerSettings, currentBanner, setCurre
 
                                     if (!imageUrl) return null;
 
+                                    const meta = banner.image_meta?.[language];
+                                    const metaForUrl = meta ? { [imageUrl]: meta } : undefined;
+                                    const hasV = hasVariants(metaForUrl, imageUrl);
+
                                     return (
                                          <div key={banner.id} className="min-w-full h-full snap-center relative">
-                                             <Image 
-                                                 src={imageUrl} 
+                                             <Image
+                                                 src={imageUrl}
                                                  fill
-                                                 className="object-cover" 
-                                                 alt={title || ""} 
+                                                 className="object-cover"
+                                                 alt={title || ""}
                                                  priority={index === 0}
                                                  sizes="100vw"
+                                                 loader={hasV ? makeVariantLoader(metaForUrl) : undefined}
                                                  placeholder={blurUrl ? "blur" : "empty"}
                                                  blurDataURL={blurUrl}
                                                  fetchPriority={index === 0 ? "high" : "auto"}

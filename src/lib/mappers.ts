@@ -28,7 +28,8 @@ export const mapProduct = (p: any): Product => {
 export const mapCategory = (c: any): Category => ({
     ...c,
     isDeleted: c.is_deleted,
-    parentId: c.parent_id
+    parentId: c.parent_id,
+    image_meta: c.image_meta || undefined,
 });
 
 export const mapBanner = (b: any): Banner => ({
@@ -40,7 +41,8 @@ export const mapBanner = (b: any): Banner => ({
     buttonText: b.button_text,
     order: b.order_index,
     tabName_uz: b.tab_name_uz,
-    tabName_ru: b.tab_name_ru
+    tabName_ru: b.tab_name_ru,
+    image_meta: b.image_meta || undefined
 });
 
 export const mapUser = (u: any) => ({
