@@ -391,7 +391,7 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
                                 }}
                             >
                                 <div style={{
-                                    width: 64, height: 64, borderRadius: "50%", padding: 2.5,
+                                    width: 80, height: 80, borderRadius: "50%", padding: 3,
                                     background: seen ? "rgba(15,20,16,0.08)" : `conic-gradient(${GREEN} 0%, #7DC492 50%, ${GREEN} 100%)`,
                                     boxSizing: "border-box", position: "relative",
                                 }}>
@@ -401,7 +401,7 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
                                         position: "relative", background: "#F0F0EC",
                                     }}>
                                         {g.coverImage ? (
-                                            <Image src={g.coverImage} alt={name} fill sizes="64px" style={{ objectFit: "cover" }} />
+                                            <Image src={g.coverImage} alt={name} fill sizes="80px" style={{ objectFit: "cover" }} />
                                         ) : hasVideo ? (
                                             <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#111" }}>
                                                 <span style={{ fontSize: 20, color: "#fff" }}>▶</span>
@@ -410,9 +410,9 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
                                     </div>
                                     {g.slides.length > 1 && (
                                         <div style={{
-                                            position: "absolute", bottom: 0, right: 0, minWidth: 18, height: 18,
-                                            padding: "0 5px", borderRadius: 9, background: GREEN, color: "#fff",
-                                            fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center",
+                                            position: "absolute", bottom: 0, right: 0, minWidth: 20, height: 20,
+                                            padding: "0 5px", borderRadius: 10, background: GREEN, color: "#fff",
+                                            fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center",
                                             justifyContent: "center", border: "2px solid #FAFAF6",
                                         }}>{g.slides.length}</div>
                                     )}
@@ -420,7 +420,7 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
                                 <span style={{
                                     fontSize: 11, fontWeight: seen ? 500 : 700,
                                     color: seen ? "#9AA29C" : "#0F1410", letterSpacing: -0.1,
-                                    maxWidth: 64, textAlign: "center", whiteSpace: "nowrap",
+                                    maxWidth: 80, textAlign: "center", whiteSpace: "nowrap",
                                     overflow: "hidden", textOverflow: "ellipsis",
                                 }}>{name}</span>
                             </button>
