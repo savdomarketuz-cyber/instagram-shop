@@ -30,6 +30,7 @@ export default function CheckoutPage() {
     const [coords, setCoords] = useState<[number, number] | null>(null);
     const [walletBalance, setWalletBalance] = useState(0);
     const [useWallet, setUseWallet] = useState(false);
+    const [personalOffers, setPersonalOffers] = useState<Record<string, number>>({});
 
     useEffect(() => {
         setMounted(true);
@@ -66,8 +67,27 @@ export default function CheckoutPage() {
     useEffect(() => {
         if (user?.phone) {
             fetchWalletBalance();
+            fetchPersonalOffers();
         }
     }, [user]);
+
+    const fetchPersonalOffers = async () => {
+        try {
+            const res = await fetch("/api/discount");
+            const json = await res.json();
+            if (json?.success && Array.isArray(json.offers)) {
+                const map: Record<string, number> = {};
+                for (const o of json.offers) {
+                    const pid = String(o.product_id);
+                    const pct = Number(o.percent) || 0;
+                    if (pct > (map[pid] || 0)) map[pid] = pct;
+                }
+                setPersonalOffers(map);
+            }
+        } catch (e) {
+            console.error("Fetch personal offers error:", e);
+        }
+    };
 
     const fetchWalletBalance = async () => {
         try {
@@ -134,10 +154,15 @@ export default function CheckoutPage() {
     };
 
     const subtotal = displayProducts.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    // Shaxsiy smart-chegirma — place_order bilan bir xil hisoblanadi: floor(narx*soni*foiz/100) har mahsulot uchun
+    const smartDiscount = displayProducts.reduce((sum, item) => {
+        const pct = personalOffers[item.id] || 0;
+        return pct > 0 ? sum + Math.floor(item.price * item.quantity * pct / 100) : sum;
+    }, 0);
     const [promoCode, setPromoCode] = useState("");
     const [promoData, setPromoData] = useState<any>(null);
     const [isApplyingPromo, setIsApplyingPromo] = useState(false);
-    const total = Math.max(0, subtotal - (promoData?.discount || 0));
+    const total = Math.max(0, subtotal - (promoData?.discount || 0) - smartDiscount);
 
     const handleApplyPromo = async () => {
         if (!promoCode.trim()) return;
@@ -374,6 +399,12 @@ export default function CheckoutPage() {
                             <span>{t.common.products}</span>
                             <span>{subtotal.toLocaleString()} {language === "ru" ? "\u0441\u0443\u043C" : "so'm"}</span>
                         </div>
+                        {smartDiscount > 0 && (
+                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: 12, color: "#A3F0B8" }}>
+                                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>\u2726 {language === "ru" ? "\u041F\u0435\u0440\u0441\u043E\u043D\u0430\u043B\u044C\u043D\u0430\u044F \u0441\u043A\u0438\u0434\u043A\u0430" : "Shaxsiy chegirma"}</span>
+                                <span>-{smartDiscount.toLocaleString()} {language === "ru" ? "\u0441\u0443\u043C" : "so'm"}</span>
+                            </div>
+                        )}
                         {promoData && (
                             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: 12, color: "#A3F0B8" }}>
                                 <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Tag size={12} /> {promoData.code}</span>

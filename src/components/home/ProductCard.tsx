@@ -106,6 +106,8 @@ export const ProductCard = memo(({
 }: ProductCardProps) => {
   const isInCart = cart.find(ci => ci.id === item.id);
   const isWished = wishlist.some(w => w.id === item.id);
+  const personalPct = useStore(s => s.personalOffers[item.id] || 0);
+  const hasPersonal = personalPct > 0;
   const totalStock = item.stockDetails
     ? Object.values(item.stockDetails).reduce((a, b) => a + (Number(b) || 0), 0)
     : 0;
@@ -270,16 +272,33 @@ export const ProductCard = memo(({
           </div>
 
           {/* Price */}
-          <div style={{ marginTop: 8, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: "#0F1410", letterSpacing: -0.3 }}>
-              {fmtPrice(item.price)}
-            </span>
-            {item.oldPrice && item.oldPrice > item.price && (
-              <span style={{ fontSize: 12, color: "#9AA29C", textDecoration: "line-through" }}>
-                {fmtPrice(item.oldPrice)}
-              </span>
-            )}
-          </div>
+          {(() => {
+            // Shaxsiy chegirma bo'lsa: faqat 2 narx — eski narx (chizilgan) + shaxsiy narx.
+            // Oraliq (joriy) narx ko'rsatilmaydi, mijozni chalkashtirmaslik uchun.
+            const displayPrice = hasPersonal ? Math.round(item.price * (1 - personalPct / 100)) : item.price;
+            const struck = hasPersonal
+              ? (item.oldPrice && item.oldPrice > item.price ? item.oldPrice : item.price)
+              : (item.oldPrice && item.oldPrice > item.price ? item.oldPrice : null);
+            return (
+              <>
+                <div style={{ marginTop: 8, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: hasPersonal ? "#4F46E5" : "#0F1410", letterSpacing: -0.3 }}>
+                    {fmtPrice(displayPrice)}
+                  </span>
+                  {struck && (
+                    <span style={{ fontSize: 12, color: "#9AA29C", textDecoration: "line-through" }}>
+                      {fmtPrice(struck)}
+                    </span>
+                  )}
+                </div>
+                {hasPersonal && (
+                  <div style={{ marginTop: 3, fontSize: 9.5, fontWeight: 800, color: "#4F46E5", letterSpacing: 0.3, textTransform: "uppercase" }}>
+                    {language === "uz" ? `Siz uchun −${personalPct}%` : `Для вас −${personalPct}%`}
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       </Link>
 

@@ -40,6 +40,9 @@ interface StoreState {
     setSearchResults: (results: Product[] | null, facets?: SearchFacets | null, didYouMean?: string | null) => void;
     prefetchedProducts: Record<string, Product>;
     setPrefetchedProduct: (product: Product) => void;
+    // Shaxsiy smart-chegirma: productId -> foiz (login mijoz uchun aktiv offerlar)
+    personalOffers: Record<string, number>;
+    fetchPersonalOffers: () => Promise<void>;
 }
 
 export const useStore = create<StoreState>()(
@@ -86,7 +89,7 @@ export const useStore = create<StoreState>()(
             }),
             clearCart: () => set({ cart: [] }),
             setUser: (user) => set({ user }),
-            logout: () => set({ user: null, cart: [], wishlist: [] }),
+            logout: () => set({ user: null, cart: [], wishlist: [], personalOffers: {} }),
             cachedProducts: [],
             cachedCategories: [],
             setCachedProducts: (products) => set({ cachedProducts: products }),
@@ -113,6 +116,22 @@ export const useStore = create<StoreState>()(
             didYouMean: null,
             isSearchLoading: false,
             setSearchResults: (results, facets = null, didYouMean = null) => set({ searchResults: results, searchFacets: facets, didYouMean: didYouMean }),
+            personalOffers: {},
+            fetchPersonalOffers: async () => {
+                try {
+                    const res = await fetch("/api/discount");
+                    const json = await res.json();
+                    if (json?.success && Array.isArray(json.offers)) {
+                        const map: Record<string, number> = {};
+                        for (const o of json.offers) {
+                            const pid = String(o.product_id);
+                            const pct = Number(o.percent) || 0;
+                            if (pct > (map[pid] || 0)) map[pid] = pct;
+                        }
+                        set({ personalOffers: map });
+                    }
+                } catch { /* offline yoki guest — e'tibordan chetda */ }
+            },
         }),
         {
             name: "velari-store",

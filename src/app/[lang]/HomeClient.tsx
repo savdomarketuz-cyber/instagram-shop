@@ -106,6 +106,13 @@ export default function HomeClient({
         setSearch(homeSearchQuery);
     }, [homeSearchQuery]);
 
+    // Shaxsiy smart-chegirmalarni yuklash (login mijoz) — kartochkalarda ko'rsatish uchun
+    useEffect(() => {
+        if (user?.phone && user.phone !== 'ADMIN') {
+            useStore.getState().fetchPersonalOffers();
+        }
+    }, [user?.phone]);
+
     // Shaxsiy tavsiya — persona-asosli moslashtirish (mehmon + login, sabab bilan).
     // attentionIds: yaqinda ko'rilgan (mehmon ham) + server (login) signali endpoint'da qo'shiladi.
     useEffect(() => {

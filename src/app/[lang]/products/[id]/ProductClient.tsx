@@ -479,8 +479,12 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                         <div className="min-w-0">
                             <h2 className="text-sm font-black italic uppercase truncate tracking-tight">{product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name}</h2>
                             <div className="flex items-center gap-3">
-                                <span className="text-lg font-black italic">{Number(product.price || 0).toLocaleString()} <span className="text-[10px] not-italic">so&apos;m</span></span>
-                                {product.oldPrice && product.oldPrice > product.price && (
+                                <span className={`text-lg font-black italic ${personalOffer ? 'text-indigo-700' : ''}`}>
+                                    {Number((personalOffer ? Math.round(product.price * (1 - personalOffer.percent / 100)) : product.price) || 0).toLocaleString()} <span className="text-[10px] not-italic">so&apos;m</span>
+                                </span>
+                                {personalOffer ? (
+                                    <span className="text-xs text-gray-300 line-through font-bold">{Number((product.oldPrice && product.oldPrice > product.price ? product.oldPrice : product.price) || 0).toLocaleString()}</span>
+                                ) : product.oldPrice && product.oldPrice > product.price && (
                                     <span className="text-xs text-gray-300 line-through font-bold">{Number(product.oldPrice || 0).toLocaleString()}</span>
                                 )}
                             </div>
@@ -700,27 +704,24 @@ export default function ProductClient({ params, initialProduct }: { params: { id
 
                              <div className="flex flex-col gap-1 mb-8">
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{t.common.price}</p>
-                                <div className="flex items-baseline gap-4">
-                                    <div className="text-6xl font-black italic tracking-tighter text-black">
-                                        {Number(product.price || 0).toLocaleString()} <span className="text-2xl not-italic">so'm</span>
-                                    </div>
-                                    {product.oldPrice && product.oldPrice > product.price && (
-                                        <span className="text-gray-300 line-through font-bold text-2xl">{Number(product.oldPrice || 0).toLocaleString()}</span>
-                                    )}
-                                </div>
-
-                                {personalOffer && (
-                                    <div className="mt-3 flex flex-col gap-2 bg-gradient-to-r from-indigo-50 to-indigo-100/40 border border-indigo-200 rounded-3xl p-5 animate-in fade-in slide-in-from-bottom-2 duration-500 w-fit">
-                                        <div className="flex items-center gap-2">
+                                {personalOffer ? (
+                                    // Shaxsiy chegirma: faqat 2 narx — eski narx (chizilgan) + shaxsiy narx. Oraliq narx yo'q.
+                                    <>
+                                        <div className="flex items-center gap-2 mb-1">
                                             <span className="px-2 py-1 bg-indigo-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest">-{personalOffer.percent}%</span>
                                             <span className="text-[11px] font-black text-indigo-700 uppercase tracking-widest">
                                                 {language === 'uz' ? 'Siz uchun shaxsiy narx' : 'Персональная цена для вас'}
                                             </span>
                                         </div>
-                                        <div className="text-3xl font-black italic tracking-tighter text-indigo-700">
-                                            {Math.round(product.price * (1 - personalOffer.percent / 100)).toLocaleString()} <span className="text-base not-italic">so'm</span>
+                                        <div className="flex items-baseline gap-4">
+                                            <div className="text-6xl font-black italic tracking-tighter text-indigo-700">
+                                                {Math.round(product.price * (1 - personalOffer.percent / 100)).toLocaleString()} <span className="text-2xl not-italic">so'm</span>
+                                            </div>
+                                            <span className="text-gray-300 line-through font-bold text-2xl">
+                                                {Number((product.oldPrice && product.oldPrice > product.price ? product.oldPrice : product.price) || 0).toLocaleString()}
+                                            </span>
                                         </div>
-                                        <p className="text-[10px] font-bold text-indigo-500/80 tracking-wide">
+                                        <p className="text-[10px] font-bold text-indigo-500/80 tracking-wide mt-1">
                                             {(language === 'uz' ? personalOffer.reason_uz : personalOffer.reason_ru) || (language === 'uz' ? 'Siz uchun shaxsiy chegirma' : 'Персональная скидка')}
                                             {personalOffer.expires_at
                                                 ? ` · ${new Date(personalOffer.expires_at).toLocaleDateString(language === 'uz' ? 'uz' : 'ru')} ${language === 'uz' ? 'gacha' : 'до'}`
@@ -729,6 +730,15 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                         <p className="text-[9px] font-bold text-gray-400 tracking-wide">
                                             {language === 'uz' ? 'Chegirma buyurtma berishda avtomatik qo\'llanadi' : 'Скидка применится автоматически при оформлении'}
                                         </p>
+                                    </>
+                                ) : (
+                                    <div className="flex items-baseline gap-4">
+                                        <div className="text-6xl font-black italic tracking-tighter text-black">
+                                            {Number(product.price || 0).toLocaleString()} <span className="text-2xl not-italic">so'm</span>
+                                        </div>
+                                        {product.oldPrice && product.oldPrice > product.price && (
+                                            <span className="text-gray-300 line-through font-bold text-2xl">{Number(product.oldPrice || 0).toLocaleString()}</span>
+                                        )}
                                     </div>
                                 )}
                             </div>
