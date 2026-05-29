@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
             const { data, error } = await query.insert(payload).select();
             if (error) throw error;
             
-            if (table === "products" || table === "banners" || table === "categories" || table === "site_settings") {
+            if (table === "products" || table === "banners" || table === "categories" || table === "site_settings" || table === "settings") {
                 revalidatePath("/", "layout");
                 revalidatePath("/uz", "layout");
                 revalidatePath("/ru", "layout");
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
             const { data, error } = await updateQuery.select();
             if (error) throw error;
             
-            if (table === "products" || table === "banners" || table === "categories" || table === "site_settings") {
+            if (table === "products" || table === "banners" || table === "categories" || table === "site_settings" || table === "settings") {
                 revalidatePath("/", "layout");
                 revalidatePath("/uz", "layout");
                 revalidatePath("/ru", "layout");
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
             const { data, error } = await upsertQuery.select();
             if (error) throw error;
             
-            if (table === "products" || table === "banners" || table === "categories" || table === "site_settings") {
+            if (table === "products" || table === "banners" || table === "categories" || table === "site_settings" || table === "settings") {
                 revalidatePath("/", "layout");
                 revalidatePath("/uz", "layout");
                 revalidatePath("/ru", "layout");
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
             const { data, error } = await deleteQuery;
             if (error) throw error;
             
-            if (table === "products" || table === "banners" || table === "categories" || table === "site_settings") {
+            if (table === "products" || table === "banners" || table === "categories" || table === "site_settings" || table === "settings") {
                 revalidatePath("/", "layout");
                 revalidatePath("/uz", "layout");
                 revalidatePath("/ru", "layout");

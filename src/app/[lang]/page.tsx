@@ -38,15 +38,18 @@ async function getInitialData() {
             { data: bannersData },
             { data: settingsData },
             { data: promoData },
-            { data: prodCatRows }
+            { data: prodCatRows },
+            { data: featuredSettingRow }
         ] = await Promise.all([
             supabaseAdmin.from("products").select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,created_at").eq("is_deleted", false).order("created_at", { ascending: false }).limit(20),
-            supabaseAdmin.from("categories").select("id,name,name_uz,name_ru,parent_id,image,image_meta,is_deleted").eq("is_deleted", false).order("name", { ascending: true }),
+            supabaseAdmin.from("categories").select("id,name,name_uz,name_ru,parent_id,image,image_meta,icon,color,is_deleted").eq("is_deleted", false).order("name", { ascending: true }),
             supabaseAdmin.from("banners").select("id,title_uz,title_ru,subtitle_uz,subtitle_ru,image_url_uz,image_url_ru,blur_data_url_uz,blur_data_url_ru,image_meta,link_type,link_ids,button_text,active,order_index,tab_name_uz,tab_name_ru").eq("active", true).order("order_index", { ascending: true }),
             supabaseAdmin.from("settings").select("data").eq("id", "banners").single(),
             supabaseAdmin.from("site_settings").select("value").eq("key", "promo_countdown").single(),
             // Mahsuloti bor kategoriyalarni aniqlash uchun barcha mahsulot category_id lari
             supabaseAdmin.from("products").select("category_id").eq("is_deleted", false),
+            // Kategoriya vitrinasi sozlamasi (settings anon o'qishdan yopiq -> server orqali)
+            supabaseAdmin.from("settings").select("data").eq("id", "featured_categories").maybeSingle(),
         ]);
 
         // Mahsuloti bor (bo'sh bo'lmagan) kategoriyalar to'plamini hisoblash.
@@ -73,16 +76,33 @@ async function getInitialData() {
             : { desktopHeight: 210, borderRadius: 32 };
         const promoSettings = (promoData?.value as any) || null;
 
-        return { products, categories, banners, bannerSettings, promoSettings };
+        // Kategoriya vitrinasi: tanlangan, mahsuloti bor, tartibda saqlangan kategoriyalar.
+        const fcData: any = (featuredSettingRow as any)?.data || null;
+        const fcShow = fcData ? fcData.show_on_home !== false : false;
+        const fcIds: string[] = fcData?.category_ids || [];
+        const featuredCategories = (fcShow ? fcIds : [])
+            .map((id: string) => rawCats.find((c: any) => String(c.id) === String(id)))
+            .filter((c: any) => c && nonEmpty.has(String(c.id)))
+            .map((c: any) => ({
+                id: String(c.id),
+                name: c.name,
+                name_uz: c.name_uz,
+                name_ru: c.name_ru,
+                image: c.image || null,
+                icon: c.icon || null,
+                color: c.color || null,
+            }));
+
+        return { products, categories, banners, bannerSettings, promoSettings, featuredCategories };
     } catch (error) {
         console.error("Server-side fetch failed:", error);
-        return { products: [], categories: [], banners: [], bannerSettings: { desktopHeight: 210, borderRadius: 32 }, promoSettings: null };
+        return { products: [], categories: [], banners: [], bannerSettings: { desktopHeight: 210, borderRadius: 32 }, promoSettings: null, featuredCategories: [] };
     }
 }
 
 async function HomeDataWrapper() {
-    const { products, categories, banners, bannerSettings, promoSettings } = await getInitialData();
-    
+    const { products, categories, banners, bannerSettings, promoSettings, featuredCategories } = await getInitialData();
+
     return (
         <HomeClient
             initialProducts={products}
@@ -90,6 +110,7 @@ async function HomeDataWrapper() {
             initialBanners={banners}
             initialBannerSettings={bannerSettings}
             initialPromo={promoSettings}
+            initialFeaturedCategories={featuredCategories}
         />
     );
 }

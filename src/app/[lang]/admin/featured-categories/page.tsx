@@ -48,14 +48,24 @@ export default function AdminFeaturedCategoriesPage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [catRes, settingsRes] = await Promise.all([
+            // settings jadvali anon o'qishdan RLS bilan yopiq — server (service role) orqali o'qiymiz.
+            const [catRes, settingsJson] = await Promise.all([
                 supabase.from("categories").select("id, name, name_uz, name_ru, parent_id, image, icon, color").eq("is_deleted", false),
-                supabase.from("settings").select("data").eq("id", "featured_categories").maybeSingle(),
+                fetch("/api/admin/crud", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        table: "settings",
+                        action: "select",
+                        matchConfig: { column: "id", value: "featured_categories" },
+                        payload: { columns: "data", single: true },
+                    }),
+                }).then(r => r.json()).catch(() => null),
             ]);
 
             if (catRes.data) setAllCategories(catRes.data);
 
-            const val = settingsRes.data?.data;
+            const val = settingsJson?.data?.data;
             if (val) {
                 setSelectedIds(val.category_ids || []);
                 setShowOnHome(val.show_on_home !== false);

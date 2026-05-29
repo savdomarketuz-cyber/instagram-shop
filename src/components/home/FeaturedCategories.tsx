@@ -23,11 +23,15 @@ const PALETTE = [
     "#F3E8FF", "#CFFAFE", "#FEE2E2", "#E0F2FE",
 ];
 
-export default function FeaturedCategories({ language }: { language: "uz" | "ru" }) {
-    const [categories, setCategories] = useState<FeaturedCat[]>([]);
-    const [loading, setLoading] = useState(true);
+export default function FeaturedCategories({ language, initial }: { language: "uz" | "ru"; initial?: FeaturedCat[] }) {
+    const [categories, setCategories] = useState<FeaturedCat[]>(initial || []);
+    // Server'dan tayyor ma'lumot kelsa, client-fetch (anon RLS yopiq) kerak emas.
+    const [loading, setLoading] = useState(!initial);
 
     useEffect(() => {
+        // Server prop bergan bo'lsa, qayta yuklamaymiz.
+        if (initial) { setCategories(initial); setLoading(false); return; }
+
         const fetchFeatured = async () => {
             try {
                 // 1) Settings'dan featured category ID lar ro'yxatini olish
@@ -87,7 +91,8 @@ export default function FeaturedCategories({ language }: { language: "uz" | "ru"
             }
         };
         fetchFeatured();
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initial]);
 
     // Sozlanmagan / yuklanayotgan paytda hech narsa ko'rsatmaymiz (skelet chiziqlar bo'lmasin).
     if (loading) return null;

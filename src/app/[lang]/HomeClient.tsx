@@ -28,6 +28,7 @@ interface HomeClientProps {
     initialBanners: Banner[];
     initialBannerSettings: { desktopHeight: number; borderRadius: number };
     initialPromo?: any;
+    initialFeaturedCategories?: any[];
 }
 
 export default function HomeClient({
@@ -36,6 +37,7 @@ export default function HomeClient({
     initialBanners,
     initialBannerSettings,
     initialPromo,
+    initialFeaturedCategories,
 }: HomeClientProps) {
     const searchParams = useSearchParams();
     const urlCategory = searchParams.get("category");
@@ -503,7 +505,7 @@ export default function HomeClient({
             )}
 
             {!searchResults && <StoriesRow language={language} />}
-            {!searchResults && <FeaturedCategories language={language} />}
+            {!searchResults && <FeaturedCategories language={language} initial={initialFeaturedCategories} />}
             {!searchResults && <PromoCountdown language={language} initialSettings={initialPromo} />}
 
             {/* ── BANNER: desktop original, mobile Velari style ── */}
