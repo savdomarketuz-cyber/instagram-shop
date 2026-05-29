@@ -18,10 +18,13 @@ interface ProductGridProps {
     addToCart: (product: Product) => void;
     updateQuantity: (id: string, qty: number) => void;
     removeFromCart: (id: string) => void;
+    reasonMap?: Record<string, { uz: string; ru: string }>;
+    showReasons?: boolean;
 }
 
 export const ProductGrid = ({
-    products, loading, language, t, cart, wishlist, user, toggleWishlist, addToCart, updateQuantity, removeFromCart
+    products, loading, language, t, cart, wishlist, user, toggleWishlist, addToCart, updateQuantity, removeFromCart,
+    reasonMap, showReasons
 }: ProductGridProps) => {
     if (loading) {
         return (
@@ -56,7 +59,7 @@ export const ProductGrid = ({
                         updateQuantity={updateQuantity}
                         removeFromCart={removeFromCart}
                         priority={index < 2}
-
+                        reason={showReasons ? reasonMap?.[item.id]?.[language] : undefined}
                     />
                 </WatchedProduct>
             ))}

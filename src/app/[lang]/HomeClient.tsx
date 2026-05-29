@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Search, Sparkles, MapPin, ChevronRight, User, X, Loader2, LayoutGrid } from "lucide-react";
 import { useStore } from "@/store/store";
@@ -15,7 +15,7 @@ import { BannerSection } from "@/components/home/BannerSection";
 import { CategoryFilter } from "@/components/home/CategoryFilter";
 import { ProductGrid } from "@/components/home/ProductGrid";
 import TrustStrip from "@/components/velari/TrustStrip";
-import RecentlyViewed from "@/components/velari/RecentlyViewed";
+import RecentlyViewed, { getRecentlyViewedIds } from "@/components/velari/RecentlyViewed";
 import PromoCountdown from "@/components/velari/PromoCountdown";
 import StoriesRow from "@/components/velari/StoriesRow";
 
@@ -75,6 +75,9 @@ export default function HomeClient({
     // UI State
     const [allProducts, setAllProducts] = useState<Product[]>(initialProducts);
     const [aiProductIds, setAiProductIds] = useState<string[]>([]);
+    const [personalOrder, setPersonalOrder] = useState<string[]>([]);
+    const [personalReasons, setPersonalReasons] = useState<Record<string, { uz: string; ru: string }>>({});
+    const personalizeDoneRef = useRef<string | null>(null);
     const [allCategories, setAllCategories] = useState<Category[]>(initialCategories);
     const [banners, setBanners] = useState<Banner[]>(initialBanners);
     const [search, setSearch] = useState(homeSearchQuery);
@@ -103,43 +106,53 @@ export default function HomeClient({
         setSearch(homeSearchQuery);
     }, [homeSearchQuery]);
 
-    // AI Recommendations logic
+    // Shaxsiy tavsiya — persona-asosli moslashtirish (mehmon + login, sabab bilan).
+    // attentionIds: yaqinda ko'rilgan (mehmon ham) + server (login) signali endpoint'da qo'shiladi.
     useEffect(() => {
-        if (user?.phone && user.phone !== 'ADMIN' && allProducts.length > 0) {
-            const fetchAiRecs = async () => {
-                const { data: interests } = await supabase
-                    .from("user_interests")
-                    .select("*")
-                    .eq("id", user.phone)
-                    .single();
-                
-                if (interests) {
-                    // Minimal payload — faqat tavsiya uchun kerakli maydonlar
-                    const slimProducts = allProducts.map(p => ({
-                        id: p.id, name: p.name, category: p.category,
-                        price: p.price, oldPrice: p.oldPrice,
-                        rating: p.rating, sales: p.sales, tag: p.tag, brand: (p as any).brand,
-                    }));
-                    const response = await fetch("/api/ai/recommendations", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            action: "get_recommendations",
-                            userInterests: interests,
-                            allProducts: slimProducts,
-                            userPhone: user.phone
-                        })
+        if (allProducts.length === 0 || user?.phone === 'ADMIN') return;
+        const key = user?.phone || "guest";
+        if (personalizeDoneRef.current === key) return;
+        personalizeDoneRef.current = key;
+
+        const run = async () => {
+            try {
+                const attentionIds = getRecentlyViewedIds();
+                const res = await fetch("/api/ai/personalize", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ attentionIds, limit: 24 }),
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.results?.length) {
+                    const order: string[] = [];
+                    const reasons: Record<string, { uz: string; ru: string }> = {};
+                    data.results.forEach((r: any) => {
+                        order.push(r.id);
+                        reasons[r.id] = { uz: r.reason_uz, ru: r.reason_ru };
                     });
-                    
-                    if (response.ok) {
-                        const { recommendations } = await response.json();
-                        if (recommendations && recommendations.length > 0) setAiProductIds(recommendations);
-                    }
+                    setPersonalOrder(order);
+                    setPersonalReasons(reasons);
+                    setAiProductIds(order);
                 }
-            };
-            fetchAiRecs();
-        }
+            } catch { /* sokin */ }
+        };
+        run();
     }, [user?.phone, allProducts.length]);
+
+    // "Siz uchun" tabida mahsulotlarni shaxsiy tartibga ko'ra qayta saralash.
+    const displayProducts = useMemo(() => {
+        if (searchResults) return searchResults;
+        if (activeTab === "for_you" && personalOrder.length > 0) {
+            const rank = new Map(personalOrder.map((id, i) => [id, i]));
+            return [...allProducts].sort((a, b) => {
+                const ra = rank.has(a.id) ? rank.get(a.id)! : Number.MAX_SAFE_INTEGER;
+                const rb = rank.has(b.id) ? rank.get(b.id)! : Number.MAX_SAFE_INTEGER;
+                return ra - rb;
+            });
+        }
+        return allProducts;
+    }, [searchResults, activeTab, personalOrder, allProducts]);
 
     // Real-time updates for Banners and Settings (Supabase Realtime)
     useEffect(() => {
@@ -597,7 +610,7 @@ export default function HomeClient({
                 {!searchResults && <RecentlyViewed language={language} />}
 
                 <ProductGrid
-                    products={searchResults || allProducts}
+                    products={displayProducts}
                     loading={isSearchLoading || (loading && allProducts.length === 0)}
                     language={language}
                     t={t}
@@ -608,6 +621,8 @@ export default function HomeClient({
                     addToCart={addToCart}
                     updateQuantity={updateQuantity}
                     removeFromCart={removeFromCart}
+                    reasonMap={personalReasons}
+                    showReasons={activeTab === "for_you" && !searchResults}
                 />
             </div>
 

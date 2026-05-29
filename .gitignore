@@ -30,6 +30,8 @@ yarn-error.log*
 
 # claude code worktrees
 .claude/worktrees/
+# claude local settings — contains secrets, NEVER commit
+.claude/settings.local.json
 
 # big local artifacts
 design_handoff_phase1/

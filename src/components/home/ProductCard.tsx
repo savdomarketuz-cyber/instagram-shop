@@ -3,7 +3,7 @@
 import { memo, useState } from "react";
 import { Link } from "next-view-transitions";
 import Image from "next/image";
-import { Heart, Star, Minus, Plus } from "lucide-react";
+import { Heart, Star, Minus, Plus, Sparkles } from "lucide-react";
 import { useStore } from "@/store/store";
 import { Product, CartItem } from "@/types";
 import { TranslationKeys } from "@/lib/translations";
@@ -58,6 +58,7 @@ interface ProductCardProps {
   updateQuantity: (id: string, qty: number) => void;
   removeFromCart: (id: string) => void;
   priority?: boolean;
+  reason?: string;
 }
 
 function WishBtn({ isWished, onClick }: { isWished: boolean; onClick: (e: React.MouseEvent) => void }) {
@@ -101,7 +102,7 @@ function WishBtn({ isWished, onClick }: { isWished: boolean; onClick: (e: React.
 export const ProductCard = memo(({
   item, language, t, cart, wishlist,
   toggleWishlist, addToCart, updateQuantity, removeFromCart,
-  priority = false,
+  priority = false, reason,
 }: ProductCardProps) => {
   const isInCart = cart.find(ci => ci.id === item.id);
   const isWished = wishlist.some(w => w.id === item.id);
@@ -239,6 +240,20 @@ export const ProductCard = memo(({
           }}>
             {name}
           </div>
+
+          {/* Personal reason — "nega bu senga" (halol, persona'dan) */}
+          {reason && (
+            <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6 }}>
+              <Sparkles size={11} color={GREEN} style={{ flexShrink: 0 }} />
+              <span style={{
+                fontSize: 11, fontWeight: 600, color: GREEN, letterSpacing: -0.1,
+                lineHeight: 1.2, display: "-webkit-box", WebkitLineClamp: 1,
+                WebkitBoxOrient: "vertical" as const, overflow: "hidden",
+              }}>
+                {reason}
+              </span>
+            </div>
+          )}
 
           {/* Rating */}
           <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6 }}>

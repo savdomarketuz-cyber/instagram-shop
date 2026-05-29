@@ -71,6 +71,28 @@ export default function ProductClient({ params, initialProduct }: { params: { id
         if (product?.id) trackProductView(product.id);
     }, [product?.id]);
 
+    // Shaxsiy chegirma (smart/manual offer) — login mijozga ko'rsatiladi
+    const [personalOffer, setPersonalOffer] = useState<{ percent: number; reason_uz?: string; reason_ru?: string; expires_at: string | null } | null>(null);
+    useEffect(() => {
+        const pid = product?.id;
+        if (!pid || !user) { setPersonalOffer(null); return; }
+        let cancelled = false;
+        const inWishlist = wishlist.some(w => w.id === pid);
+        // 1) AI taklifini "mint" qilishga urinish (config yoqilgan bo'lsa), so'ng
+        // 2) barcha aktiv takliflardan shu mahsulotникини olish (manual ham, config'dan mustaqil)
+        fetch("/api/discount", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productId: pid, inWishlist }),
+        }).catch(() => {}).finally(() => {
+            fetch("/api/discount").then(r => r.json()).then(d => {
+                if (cancelled) return;
+                const off = (d.offers || []).find((o: any) => o.product_id === pid);
+                setPersonalOffer(off || null);
+            }).catch(() => {});
+        });
+        return () => { cancelled = true; };
+    }, [product?.id, user, wishlist]);
+
     // Call Telemetry Tracker Hook
     useTelemetry({
         productId: product?.id || productIdentifier,
@@ -686,6 +708,29 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                         <span className="text-gray-300 line-through font-bold text-2xl">{Number(product.oldPrice || 0).toLocaleString()}</span>
                                     )}
                                 </div>
+
+                                {personalOffer && (
+                                    <div className="mt-3 flex flex-col gap-2 bg-gradient-to-r from-indigo-50 to-indigo-100/40 border border-indigo-200 rounded-3xl p-5 animate-in fade-in slide-in-from-bottom-2 duration-500 w-fit">
+                                        <div className="flex items-center gap-2">
+                                            <span className="px-2 py-1 bg-indigo-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest">-{personalOffer.percent}%</span>
+                                            <span className="text-[11px] font-black text-indigo-700 uppercase tracking-widest">
+                                                {language === 'uz' ? 'Siz uchun shaxsiy narx' : 'Персональная цена для вас'}
+                                            </span>
+                                        </div>
+                                        <div className="text-3xl font-black italic tracking-tighter text-indigo-700">
+                                            {Math.round(product.price * (1 - personalOffer.percent / 100)).toLocaleString()} <span className="text-base not-italic">so'm</span>
+                                        </div>
+                                        <p className="text-[10px] font-bold text-indigo-500/80 tracking-wide">
+                                            {(language === 'uz' ? personalOffer.reason_uz : personalOffer.reason_ru) || (language === 'uz' ? 'Siz uchun shaxsiy chegirma' : 'Персональная скидка')}
+                                            {personalOffer.expires_at
+                                                ? ` · ${new Date(personalOffer.expires_at).toLocaleDateString(language === 'uz' ? 'uz' : 'ru')} ${language === 'uz' ? 'gacha' : 'до'}`
+                                                : ''}
+                                        </p>
+                                        <p className="text-[9px] font-bold text-gray-400 tracking-wide">
+                                            {language === 'uz' ? 'Chegirma buyurtma berishda avtomatik qo\'llanadi' : 'Скидка применится автоматически при оформлении'}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Stock Indicator (Desktop) */}

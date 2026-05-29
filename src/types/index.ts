@@ -37,6 +37,17 @@ export interface Product {
     model?: string;
     image_metadata?: Record<string, { alt_uz?: string; alt_ru?: string; blurDataURL?: string; lowResUrl?: string; xs?: string; md?: string; lg?: string }>;
     created_at?: string;
+    ai_persona?: {
+        personas?: string[];
+        use_cases?: string[];
+        moods?: string[];
+        complements?: string[];
+        value_props?: string[];
+        occasions?: string[];
+        search_terms?: string[];
+        one_liner_uz?: string;
+        one_liner_ru?: string;
+    } | string | null;
 }
 
 export interface CartItem extends Product {

@@ -1,0 +1,90 @@
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { mapProduct } from "@/lib/mappers";
+import { personalize, type AffinitySignals } from "@/lib/personalize";
+import { verifyJwt } from "@/lib/jwt-utils";
+
+/**
+ * Shaxsiy tavsiya endpoint'i — personalize() dvigatelini server'da ishlatadi.
+ * ai_persona katta bo'lgani uchun client'ga yuborilmaydi; hammasi shu yerda.
+ *
+ * body: { attentionIds?: string[]; excludeIds?: string[]; limit?: number }
+ * - Login bo'lsa: user_interests.attention_products + affinity profili o'qiladi.
+ * - Mehmon bo'lsa: client'dagi "yaqinda ko'rilgan" attentionIds ishlatiladi.
+ */
+const PERSONA_SELECT =
+    "id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,avg_rating,review_count,stock,stock_details,category_id,brand_id,is_original,article,ai_persona";
+
+export async function POST(req: NextRequest) {
+    try {
+        const body = await req.json().catch(() => ({}));
+        const clientAttentionIds: string[] = Array.isArray(body.attentionIds) ? body.attentionIds.slice(0, 20) : [];
+        const excludeIds = new Set<string>(Array.isArray(body.excludeIds) ? body.excludeIds : []);
+        const limit = Math.min(Number(body.limit) || 12, 30);
+
+        // Login holatini aniqlash (ixtiyoriy)
+        const token = req.cookies.get("user_token")?.value;
+        const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+        const payload = token ? await verifyJwt(token, JWT_SECRET) : null;
+        const userPhone = payload?.sub || null;
+
+        // 1. Niyat manbalari: attention IDlar + affinity
+        let attentionIds: string[] = [...clientAttentionIds];
+        let affinity: AffinitySignals | undefined;
+
+        if (userPhone) {
+            const [{ data: interests }, { data: aff }] = await Promise.all([
+                supabaseAdmin.from("user_interests").select("attention_products, categories").eq("id", userPhone).single(),
+                supabaseAdmin.from("user_affinity_profiles").select("price_segment, avg_price_affinity, night_owl, discount_seeker, top_categories").eq("user_identifier", userPhone).single(),
+            ]);
+            if (interests?.attention_products && Array.isArray(interests.attention_products)) {
+                // Server (login) signali oldinda, keyin client (sessiya) — takrorsiz
+                attentionIds = Array.from(new Set([...interests.attention_products, ...clientAttentionIds]));
+            }
+            if (aff) {
+                affinity = {
+                    priceSegment: aff.price_segment,
+                    avgPriceAffinity: aff.avg_price_affinity,
+                    nightOwl: aff.night_owl,
+                    discountSeeker: aff.discount_seeker,
+                    topCategories: aff.top_categories || (interests?.categories ?? undefined),
+                };
+            } else if (interests?.categories) {
+                affinity = { topCategories: interests.categories };
+            }
+        }
+
+        // 2. Attention mahsulotlarini persona bilan yuklash (eng yangi tartibni saqlash)
+        let attentionProducts: ReturnType<typeof mapProduct>[] = [];
+        if (attentionIds.length > 0) {
+            const { data } = await supabaseAdmin.from("products").select(PERSONA_SELECT).in("id", attentionIds.slice(0, 20)).eq("is_deleted", false);
+            const byId = new Map((data || []).map((d: any) => [d.id, mapProduct(d)]));
+            attentionProducts = attentionIds.map(id => byId.get(id)).filter(Boolean) as any[];
+        }
+
+        // 3. Nomzodlar (hozircha sotuv bo'yicha top — 1000+ da embedding retrieval bilan almashtiriladi, task #43)
+        const { data: candData } = await supabaseAdmin
+            .from("products")
+            .select(PERSONA_SELECT)
+            .eq("is_deleted", false)
+            .not("ai_persona", "is", null)
+            .order("sales", { ascending: false })
+            .limit(300);
+        const candidates = (candData || []).map(mapProduct);
+
+        // 4. Moslashtirish
+        const ranked = personalize(candidates, attentionProducts, affinity, { limit, excludeIds });
+
+        const results = ranked.map(r => ({
+            id: r.product.id,
+            score: Math.round(r.score * 100) / 100,
+            reasonKind: r.reason.kind,
+            reason_uz: r.reasonText.uz,
+            reason_ru: r.reasonText.ru,
+        }));
+
+        return NextResponse.json({ success: true, results, personalized: attentionProducts.length > 0 });
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}

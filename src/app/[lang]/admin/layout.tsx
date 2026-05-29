@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutDashboard, ShoppingCart, Package, Layers, LogOut, Menu, X, Users, Image as ImageIcon, Database, Settings, Sparkles, Activity, Zap, MessageSquare, ShieldAlert, Truck, Warehouse, RotateCcw, Tag, Banknote, Wallet, BookOpen, ClipboardList, BookA, Bell, Timer } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Package, Layers, LogOut, Menu, X, Users, Image as ImageIcon, Database, Settings, Sparkles, Activity, Zap, MessageSquare, ShieldAlert, Truck, Warehouse, RotateCcw, Tag, Banknote, Wallet, BookOpen, ClipboardList, BookA, Bell, Timer, Percent } from "lucide-react";
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/store/store";
@@ -50,6 +50,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { name: "Promo Kodlar", href: l("/admin/promo-codes"), icon: Tag },
         { name: "Hamyon", href: l("/admin/wallets"), icon: Wallet },
         { name: "Cashback", href: l("/admin/cashback"), icon: Banknote },
+        { name: "Smart Chegirma", href: l("/admin/smart-discount"), icon: Percent },
         { name: "Hamkorlik", href: l("/admin/affiliate"), icon: Sparkles },
         { name: "Mahsulotlar", href: l("/admin/products"), icon: Package },
         { name: "Kategoriyalar", href: l("/admin/categories"), icon: Layers },
