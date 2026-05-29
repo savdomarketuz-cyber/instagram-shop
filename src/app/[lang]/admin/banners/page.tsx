@@ -103,7 +103,17 @@ export default function AdminBanners() {
                 supabase.from("banners").select("*").order("order", { ascending: true }),
                 supabase.from("products").select("id, name, price"),
                 supabase.from("categories").select("id, name"),
-                supabase.from("settings").select("value").eq("id", "banners").single()
+                // settings jadvali anon o'qishdan RLS bilan yopiq — server (service role) orqali o'qiymiz.
+                fetch("/api/admin/crud", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        table: "settings",
+                        action: "select",
+                        matchConfig: { column: "id", value: "banners" },
+                        payload: { columns: "data", single: true },
+                    }),
+                }).then(r => r.json()).catch(() => null)
             ]);
 
             if (bannersRes.error) throw bannersRes.error;
@@ -133,9 +143,10 @@ export default function AdminBanners() {
             setProducts(productsRes.data as Product[]);
             setCategories(catsRes.data as Category[]);
 
-            if (settingsRes.data) {
-                setGlobalHeight(settingsRes.data.value.desktopHeight || 450);
-                setGlobalRadius(settingsRes.data.value.borderRadius || 40);
+            const settingsVal = settingsRes?.data?.data;
+            if (settingsVal) {
+                setGlobalHeight(settingsVal.desktopHeight || 450);
+                setGlobalRadius(settingsVal.borderRadius || 40);
             }
         } catch (error) {
             console.error("Fetch banners data error:", error);
@@ -302,7 +313,7 @@ export default function AdminBanners() {
                     action: 'upsert',
                     payload: {
                         id: "banners",
-                        value: {
+                        data: {
                             desktopHeight: globalHeight,
                             borderRadius: globalRadius
                         }

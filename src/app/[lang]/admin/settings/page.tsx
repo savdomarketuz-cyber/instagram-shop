@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
 import { Globe, Instagram, Send, Phone, Save, Loader2, CheckCircle2 } from "lucide-react";
 
 export default function AdminSettings() {
@@ -19,15 +18,21 @@ export default function AdminSettings() {
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                const { data, error } = await supabase
-                    .from("settings")
-                    .select("value")
-                    .eq("id", "shop")
-                    .single();
-                
-                if (error && error.code !== "PGRST116") throw error;
-                if (data) {
-                    setShopData(data.value as any);
+                // settings jadvali anon o'qishdan RLS bilan yopiq — server (service role) orqali o'qiymiz.
+                const res = await fetch("/api/admin/crud", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        table: "settings",
+                        action: "select",
+                        matchConfig: { column: "id", value: "shop" },
+                        payload: { columns: "data", single: true },
+                    }),
+                }).then(r => r.json()).catch(() => null);
+
+                const val = res?.data?.data;
+                if (val) {
+                    setShopData(val as any);
                 }
             } catch (error) {
                 console.error("Fetch settings error:", error);
@@ -42,14 +47,18 @@ export default function AdminSettings() {
     const handleSaveShop = async () => {
         setIsSaving(true);
         try {
-            const { error } = await supabase
-                .from("settings")
-                .upsert({
-                    id: "shop",
-                    value: shopData
-                });
-            
-            if (error) throw error;
+            // RLS chetlab o'tib server (service role) orqali saqlaymiz; ustun nomi `data`.
+            const res = await fetch("/api/admin/crud", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    table: "settings",
+                    action: "upsert",
+                    payload: { id: "shop", data: shopData },
+                }),
+            });
+
+            if (!res.ok) throw new Error("Saqlashda xatolik");
             setShowSuccess(true);
             setTimeout(() => setShowSuccess(false), 3000);
         } catch (e) {
