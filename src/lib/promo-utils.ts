@@ -27,7 +27,7 @@ export function applyGlobalPromo(product: Product, globalPromo: PromoSettings | 
     } else if (globalPromo.target_type === "category") {
         isTargeted = globalPromo.target_ids.includes(product.category || "");
     } else if (globalPromo.target_type === "brand") {
-        isTargeted = globalPromo.target_ids.includes(product.brand || "");
+        isTargeted = globalPromo.target_ids.includes((product as any).brand_id || "");
     } else if (globalPromo.target_type === "manual") {
         isTargeted = globalPromo.target_ids.includes(product.id);
     }

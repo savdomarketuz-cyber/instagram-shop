@@ -35,6 +35,7 @@ export interface Product {
     article?: string;
     videoUrl?: string;
     model?: string;
+    brand_id?: string;
     image_metadata?: Record<string, { alt_uz?: string; alt_ru?: string; blurDataURL?: string; lowResUrl?: string; xs?: string; md?: string; lg?: string }>;
     created_at?: string;
     ai_persona?: {
