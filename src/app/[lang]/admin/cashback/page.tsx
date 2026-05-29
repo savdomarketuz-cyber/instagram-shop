@@ -33,8 +33,18 @@ export default function AdminCashbackPage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const { data: settingsData } = await supabase.from("site_settings").select("*").eq("key", "cashback_settings").single();
-            if (settingsData) setGlobalSettings(settingsData.value);
+            // site_settings RLS bilan himoyalangan — server (service role) orqali o'qiymiz
+            const settJson = await fetch("/api/admin/crud", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    table: "site_settings",
+                    action: "select",
+                    matchConfig: { column: "key", value: "cashback_settings" },
+                    payload: { columns: "value", single: true },
+                }),
+            }).then(r => r.json()).catch(() => null);
+            if (settJson?.data?.value) setGlobalSettings(settJson.data.value);
 
             const { data: prodData } = await supabase.from("products").select("*").neq("cashback_type", "global").eq("is_deleted", false);
             if (prodData) setExceptions(prodData);

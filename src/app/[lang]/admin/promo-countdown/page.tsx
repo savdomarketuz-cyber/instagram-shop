@@ -144,8 +144,20 @@ export default function PromoCountdownAdmin() {
 
     useEffect(() => {
         const fetchAll = async () => {
-            const [settRes, catRes, brRes, prodRes] = await Promise.all([
-                supabase.from("site_settings").select("value").eq("key", "promo_countdown").maybeSingle(),
+            // site_settings RLS bilan himoyalangan — server (service role) orqali o'qiymiz
+            const settPromise = fetch("/api/admin/crud", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    table: "site_settings",
+                    action: "select",
+                    matchConfig: { column: "key", value: "promo_countdown" },
+                    payload: { columns: "value", single: true },
+                }),
+            }).then(r => r.json()).catch(() => null);
+
+            const [settJson, catRes, brRes, prodRes] = await Promise.all([
+                settPromise,
                 supabase.from("categories").select("id, name").eq("is_deleted", false),
                 supabase.from("brands").select("id, name").eq("is_deleted", false),
                 supabase.from("products").select("id, name").eq("is_deleted", false),
@@ -155,8 +167,8 @@ export default function PromoCountdownAdmin() {
             if (brRes.data) setBrands(brRes.data);
             if (prodRes.data) setProducts(prodRes.data);
 
-            if (settRes.data?.value) {
-                const v = settRes.data.value as any;
+            if (settJson?.data?.value) {
+                const v = settJson.data.value as any;
                 setSettings({
                     ...DEFAULT,
                     ...v,

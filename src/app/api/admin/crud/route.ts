@@ -27,7 +27,18 @@ export async function POST(req: NextRequest) {
 
         let query = supabaseAdmin.from(table);
 
-        if (action === "insert") {
+        if (action === "select") {
+            // RLS chetlab o'tib o'qish (admin sahifalarda sozlamalarni yuklash uchun)
+            let selectQuery: any = query.select(payload?.columns || "*");
+            if (matchConfig) selectQuery = selectQuery.eq(matchConfig.column, matchConfig.value);
+            if (inConfig) selectQuery = selectQuery.in(inConfig.column, inConfig.values);
+            const { data, error } = payload?.single
+                ? await selectQuery.maybeSingle()
+                : await selectQuery;
+            if (error) throw error;
+            return NextResponse.json({ success: true, data });
+        }
+        else if (action === "insert") {
             const { data, error } = await query.insert(payload).select();
             if (error) throw error;
             
