@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { Search, Sparkles, MapPin, ChevronRight, User, X, Loader2, LayoutGrid } from "lucide-react";
+import { Search, Sparkles, MapPin, ChevronRight, ChevronLeft, User, X, Loader2, LayoutGrid } from "lucide-react";
 import { useStore } from "@/store/store";
 import { useShallow } from "zustand/react/shallow";
 import { supabase } from "@/lib/supabase";
 import { mapProduct, mapBanner } from "@/lib/mappers";
 import { translations } from "@/lib/translations";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 // Components
 import { BannerSection } from "@/components/home/BannerSection";
@@ -40,6 +40,7 @@ export default function HomeClient({
     initialFeaturedCategories,
 }: HomeClientProps) {
     const searchParams = useSearchParams();
+    const router = useRouter();
     const urlCategory = searchParams.get("category");
     const urlBrand = searchParams.get("brand");
 
@@ -87,6 +88,13 @@ export default function HomeClient({
     const [search, setSearch] = useState(homeSearchQuery);
     const [activeFilter, setActiveFilter] = useState(urlCategory || homeActiveFilter);
     const [activeParent, setActiveParent] = useState("all");
+
+    // URL ?category= bo'lganda fokuslangan "kategoriya sahifasi" rejimi uchun nom
+    const activeCategoryName = useMemo(() => {
+        if (!urlCategory) return "";
+        const c = allCategories.find(cat => String(cat.id) === String(urlCategory));
+        return c ? ((c as any)[`name_${language}`] || c.name) : "";
+    }, [urlCategory, allCategories, language]);
     const [activeTab, setActiveTab] = useState(homeActiveTab);
     const [loading, setLoading] = useState(initialProducts.length === 0);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -469,7 +477,7 @@ export default function HomeClient({
             </div>
 
             {/* ── MOBILE: Gradient Catalog CTA ── */}
-            {!searchResults && (
+            {!searchResults && !urlCategory && (
                 <div className="md:hidden" style={{ padding: "10px 20px 0" }}>
                     <Link href={`/${language}/catalog`} style={{
                         height: 52, borderRadius: 18, display: "flex", alignItems: "center",
@@ -504,11 +512,11 @@ export default function HomeClient({
                 </div>
             )}
 
-            {!searchResults && <StoriesRow language={language} />}
-            {!searchResults && <PromoCountdown language={language} initialSettings={initialPromo} />}
+            {!searchResults && !urlCategory && <StoriesRow language={language} />}
+            {!searchResults && !urlCategory && <PromoCountdown language={language} initialSettings={initialPromo} />}
 
             {/* ── BANNER: desktop original, mobile Velari style ── */}
-            {banners.length > 0 && !searchResults && (
+            {banners.length > 0 && !searchResults && !urlCategory && (
                 <div className="hidden md:block">
                     <BannerSection
                         banners={banners}
@@ -519,7 +527,7 @@ export default function HomeClient({
                     />
                 </div>
             )}
-            {!searchResults && (
+            {!searchResults && !urlCategory && (
                 <div className="md:hidden" style={{ padding: "12px 20px 0" }}>
                     {banners.length > 0 ? (
                         <div style={{
@@ -584,7 +592,7 @@ export default function HomeClient({
             )}
 
             {/* Kategoriya vitrinasi — mobilda banner tagida ko'rinadi (komponent o'zi md:hidden) */}
-            {!searchResults && <FeaturedCategories language={language} initial={initialFeaturedCategories} />}
+            {!searchResults && !urlCategory && <FeaturedCategories language={language} initial={initialFeaturedCategories} />}
 
             {/* CategoryFilter faqat desktopda — mobilda o'rnini kategoriya vitrinasi bosadi */}
             {!searchResults && (
@@ -602,7 +610,7 @@ export default function HomeClient({
                 </div>
             )}
 
-            {!searchResults && <TrustStrip language={language} />}
+            {!searchResults && !urlCategory && <TrustStrip language={language} />}
 
             <div className="px-2 md:px-10 mt-4">
                 {searchResults && (
@@ -662,7 +670,28 @@ export default function HomeClient({
                     </div>
                 )}
 
-                {!searchResults && (
+                {/* Fokuslangan kategoriya rejimi — sarlavha + orqaga tugma (sahifa o'zgargandek his qildiradi) */}
+                {urlCategory && !searchResults && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20, padding: "0 8px", animation: "velari-slide-in 300ms cubic-bezier(0.22,1,0.36,1)" }}>
+                        <button
+                            onClick={() => { setActiveFilter("all"); setHomeActiveFilter("all"); router.push(`/${language}`); }}
+                            aria-label={language === "uz" ? "Orqaga" : "Назад"}
+                            style={{ width: 40, height: 40, borderRadius: 14, background: "#fff", border: "1px solid rgba(15,20,16,0.08)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}
+                        >
+                            <ChevronLeft size={20} color="#0F1410" />
+                        </button>
+                        <div style={{ minWidth: 0 }}>
+                            <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.5, color: "#0F1410", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                {activeCategoryName || (language === "uz" ? "Kategoriya" : "Категория")}
+                            </h2>
+                            <p style={{ fontSize: 13, color: "#9AA29C", marginTop: 2, fontWeight: 500 }}>
+                                {language === "uz" ? "Kategoriya mahsulotlari" : "Товары категории"}
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {!searchResults && !urlCategory && (
                     <div style={{ display: "flex", borderBottom: "1px solid rgba(15,20,16,0.06)", marginBottom: 20, marginLeft: 8, marginRight: 8 }}>
                         {["for_you", "popular"].map(tab => (
                             <button
@@ -691,7 +720,7 @@ export default function HomeClient({
                     </div>
                 )}
 
-                {!searchResults && <RecentlyViewed language={language} />}
+                {!searchResults && !urlCategory && <RecentlyViewed language={language} />}
 
                 <ProductGrid
                     products={displayProducts}
@@ -706,7 +735,7 @@ export default function HomeClient({
                     updateQuantity={updateQuantity}
                     removeFromCart={removeFromCart}
                     reasonMap={personalReasons}
-                    showReasons={activeTab === "for_you" && !searchResults}
+                    showReasons={activeTab === "for_you" && !searchResults && !urlCategory}
                 />
             </div>
 
