@@ -55,7 +55,7 @@ async function getInitialData() {
         const parentOf = new Map<string, string | null>(rawCats.map((c: any) => [String(c.id), c.parent_id ? String(c.parent_id) : null]));
         const directCatIds = new Set<string>((prodCatRows || []).map((r: any) => String(r.category)).filter(Boolean));
         const nonEmpty = new Set<string>();
-        for (const id of directCatIds) {
+        for (const id of Array.from(directCatIds)) {
             let cur: string | null | undefined = id;
             while (cur) {
                 if (nonEmpty.has(cur)) break;
