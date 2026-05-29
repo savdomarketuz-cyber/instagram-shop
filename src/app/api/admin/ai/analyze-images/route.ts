@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { generateEmbedding } from "@/lib/embeddings";
 
 const GROQ_API_KEYS = [
     process.env.GROQ_API_KEY_1 || "",
@@ -92,17 +91,10 @@ export async function POST(req: NextRequest) {
                 }
             };
 
-            const visionText = Object.values(updatedMeta).map((m: any) => m.alt_uz + ' ' + m.alt_ru).join(' ');
-            const searchBlob = `${product.name_uz || product.name} ${product.name_ru || product.name} ${product.category} ${visionText} ${product.description_uz || ''}`.trim();
-            const embedding = await generateEmbedding(searchBlob);
-
-            // 4. Update Product Metadata and Embedding
+            // 4. Update Product Metadata (alt-text SEO)
             await supabase
                 .from("products")
-                .update({ 
-                    image_metadata: updatedMeta,
-                    embedding: `[${embedding.join(',')}]`
-                })
+                .update({ image_metadata: updatedMeta })
                 .eq("id", productId);
 
             // 5. Log Success

@@ -60,7 +60,7 @@ const nextConfig = {
     poweredByHeader: false,
     compress: true,
     experimental: {
-        serverComponentsExternalPackages: ['@xenova/transformers', 'sharp'],
+        serverComponentsExternalPackages: ['sharp'],
     },
     images: {
         unoptimized: false,
@@ -81,18 +81,8 @@ const nextConfig = {
     },
     webpack: (config, { isServer }) => {
         if (isServer) {
-            config.externals.push('@xenova/transformers', 'sharp');
+            config.externals.push('sharp');
         }
-        
-        config.module.rules.push({
-            test: /\.node$/,
-            use: 'node-loader',
-        });
-
-        config.resolve.alias = {
-            ...config.resolve.alias,
-            'onnxruntime-node': false,
-        };
         return config;
     }
 

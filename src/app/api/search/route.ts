@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { mapProduct } from '@/lib/mappers';
-import { generateEmbedding } from '@/lib/embeddings';
 import { checkRateLimit } from '@/lib/rate-limiter';
+import { normalizeQuery } from '@/lib/query-normalize';
 
 export async function POST(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
@@ -28,42 +28,32 @@ export async function POST(req: NextRequest) {
 
         // 1.5 Identify User for Affinity Profiling
         const userPhoneCookie = req.cookies.get('user_phone')?.value;
-        const fallbackSession = req.headers.get('x-forwarded-for') || req.ip || 'anonymous_session';
-        const userIdentifier = userPhone || userPhoneCookie || fallbackSession;
+        const userIdentifier = userPhone || userPhoneCookie || null;
 
-        // 2. Compute Embedding for Semantic Search (Fail-safe)
-        let queryEmbedding = null;
-        if (!suggest) {
-            console.log(`Smart Search Executing: ${searchQuery}`);
-            try {
-                queryEmbedding = await generateEmbedding(searchQuery);
-            } catch(e) {
-                console.warn("Embedding generation failed, falling back to pure text search:", e);
-            }
-        } else {
-            console.log(`Live Suggestion Search Executing: ${searchQuery}`);
-        }
+        // 2. Normalize query (typo/transliteration: "ayfon" → "iPhone")
+        const normalizedQuery = normalizeQuery(searchQuery);
 
-        // 3. Call Smart Search RPC (FTS + pg_trgm + Synonyms)
+        // 3. Behavioral + affinity ranked search (text + trigram + telemetry + user profile)
         let finalResults: any[] = [];
-        
-        // Use our new Postgres-native smart search
-        const { data: results, error } = await supabase.rpc('smart_search', {
-            search_query: searchQuery,
-            result_limit: suggest ? 5 : 50
+
+        const { data: results, error } = await supabase.rpc('advanced_smart_search', {
+            search_query: normalizedQuery,
+            query_embedding: null,
+            match_threshold: 0.15,
+            match_count: suggest ? 6 : 50,
+            p_user_identifier: suggest ? null : userIdentifier,
         });
 
         if (error) {
-            console.error("Smart search RPC error:", error);
-            // Fallback to basic text search if RPC fails
-            const sanitizedQuery = searchQuery.replace(/[,"'\\]/g, ' ').trim();
+            console.error("advanced_smart_search RPC error:", error);
+            const sanitizedQuery = normalizedQuery.replace(/[,"'\\]/g, ' ').trim();
             const { data: textResults } = await supabase
                 .from('products')
                 .select('*')
                 .or(`name.ilike.%${sanitizedQuery}%,name_uz.ilike.%${sanitizedQuery}%,name_ru.ilike.%${sanitizedQuery}%,article.ilike.%${sanitizedQuery}%,model.ilike.%${sanitizedQuery}%`)
                 .eq('is_deleted', false)
-                .limit(suggest ? 5 : 20);
-            
+                .limit(suggest ? 6 : 20);
+
             if (textResults) finalResults = textResults;
         } else {
             finalResults = results || [];
