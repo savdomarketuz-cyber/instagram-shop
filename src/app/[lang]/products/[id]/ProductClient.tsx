@@ -19,6 +19,7 @@ import { ProductMedia } from "@/components/product/ProductMedia";
 import { ProductInfo } from "@/components/product/ProductInfo";
 import { ProductCard } from "@/components/home/ProductCard";
 import dynamic from "next/dynamic";
+import { applyGlobalPromo } from "@/lib/promo-utils";
 const ReviewsSection = dynamic(() => import("@/components/product/ReviewsSection").then(mod => ({ default: mod.ReviewsSection })), {
     loading: () => <div className="h-40 animate-pulse bg-gray-50 rounded-3xl mx-4 my-8" />,
     ssr: false,
@@ -43,7 +44,15 @@ export default function ProductClient({ params, initialProduct }: { params: { id
 
     // Core Data State
     const prefetched = prefetchedProducts[productIdentifier];
-    const [product, setProduct] = useState<Product | null>(initialProduct || prefetched || null);
+    const [rawProduct, setProduct] = useState<Product | null>(initialProduct || prefetched || null);
+    const globalPromo = useStore(s => s.globalPromo);
+    
+    // Apply global promo
+    const product = useMemo(() => {
+        if (!rawProduct) return null;
+        return applyGlobalPromo(rawProduct, globalPromo);
+    }, [rawProduct, globalPromo]);
+
     const [loading, setLoading] = useState<boolean>(!initialProduct && !prefetched);
     const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
     const [boughtTogether, setBoughtTogether] = useState<Product[]>([]);

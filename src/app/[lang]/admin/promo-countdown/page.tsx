@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
-import { Timer, ToggleLeft, ToggleRight, Save, CheckCircle2, Loader2, Eye, EyeOff } from "lucide-react";
+import { Timer, ToggleLeft, ToggleRight, Save, CheckCircle2, Loader2, Search, X } from "lucide-react";
 
 interface PromoSettings {
     enabled: boolean;
+    start_time: string;
     end_time: string;
     text_uz: string;
     text_ru: string;
@@ -13,10 +14,14 @@ interface PromoSettings {
     label_ru: string;
     bg_color: string;
     link: string;
+    discount_percent: number;
+    target_type: "all" | "category" | "brand" | "manual";
+    target_ids: string[];
 }
 
 const DEFAULT: PromoSettings = {
     enabled: false,
+    start_time: new Date(Date.now()).toISOString().slice(0, 16),
     end_time: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16),
     text_uz: "Chegirma tugashiga",
     text_ru: "До конца скидки",
@@ -24,38 +29,74 @@ const DEFAULT: PromoSettings = {
     label_ru: "Специальное предложение!",
     bg_color: "#2D6E3E",
     link: "",
+    discount_percent: 0,
+    target_type: "all",
+    target_ids: [],
 };
 
 function pad(n: number) { return String(n).padStart(2, "0"); }
 
 function LivePreview({ settings, language }: { settings: PromoSettings; language: "uz" | "ru" }) {
     const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+    const [isWaiting, setIsWaiting] = useState(false);
 
     useEffect(() => {
         const calc = () => {
-            const diff = new Date(settings.end_time).getTime() - Date.now();
-            if (diff <= 0) return;
-            setTimeLeft({
-                days: Math.floor(diff / 86400000),
-                hours: Math.floor((diff % 86400000) / 3600000),
-                minutes: Math.floor((diff % 3600000) / 60000),
-                seconds: Math.floor((diff % 60000) / 1000),
-            });
+            const now = Date.now();
+            const start = new Date(settings.start_time).getTime();
+            const end = new Date(settings.end_time).getTime();
+
+            if (now < start) {
+                // Boshlanishini kutyapmiz
+                setIsWaiting(true);
+                const diff = start - now;
+                setTimeLeft({
+                    days: Math.floor(diff / 86400000),
+                    hours: Math.floor((diff % 86400000) / 3600000),
+                    minutes: Math.floor((diff % 3600000) / 60000),
+                    seconds: Math.floor((diff % 60000) / 1000),
+                });
+            } else if (now <= end) {
+                // Aktiv
+                setIsWaiting(false);
+                const diff = end - now;
+                setTimeLeft({
+                    days: Math.floor(diff / 86400000),
+                    hours: Math.floor((diff % 86400000) / 3600000),
+                    minutes: Math.floor((diff % 3600000) / 60000),
+                    seconds: Math.floor((diff % 60000) / 1000),
+                });
+            } else {
+                // Tugagan
+                setIsWaiting(false);
+                setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+            }
         };
         calc();
         const id = setInterval(calc, 1000);
         return () => clearInterval(id);
-    }, [settings.end_time]);
+    }, [settings.start_time, settings.end_time]);
 
     const label = language === "uz" ? settings.label_uz : settings.label_ru;
-    const text = language === "uz" ? settings.text_uz : settings.text_ru;
+    // Agar kutish rejimida bo'lsa, text ni o'zgartiramiz
+    let text = language === "uz" ? settings.text_uz : settings.text_ru;
+    if (isWaiting) {
+        text = language === "uz" ? "Aksiya boshlanishiga" : "До начала акции";
+    }
 
     return (
         <div style={{ borderRadius: 20, overflow: "hidden", maxWidth: 400 }}>
             <div style={{ background: settings.bg_color, padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                 <div>
                     <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.7)", letterSpacing: 0.4, textTransform: "uppercase", marginBottom: 2 }}>{label}</div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{text}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", display: "flex", alignItems: "center", gap: 6 }}>
+                        {settings.discount_percent > 0 && (
+                            <span style={{ background: "#fff", color: settings.bg_color, padding: "2px 6px", borderRadius: 6, fontSize: 11, fontWeight: 900 }}>
+                                -{settings.discount_percent}%
+                            </span>
+                        )}
+                        {text}
+                    </div>
                 </div>
                 <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
                     {timeLeft.days > 0 && (
@@ -95,23 +136,40 @@ export default function PromoCountdownAdmin() {
     const [saved, setSaved] = useState(false);
     const [previewLang, setPreviewLang] = useState<"uz" | "ru">("uz");
 
+    const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+    const [brands, setBrands] = useState<{ id: string; name: string }[]>([]);
+    const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
+    
+    const [searchQuery, setSearchQuery] = useState("");
+
     useEffect(() => {
-        supabase
-            .from("site_settings")
-            .select("value")
-            .eq("key", "promo_countdown")
-            .single()
-            .then(({ data }) => {
-                if (data?.value) {
-                    const v = data.value as PromoSettings;
-                    // normalize datetime-local format
-                    setSettings({
-                        ...v,
-                        end_time: v.end_time ? new Date(v.end_time).toISOString().slice(0, 16) : DEFAULT.end_time,
-                    });
-                }
-                setLoading(false);
-            });
+        const fetchAll = async () => {
+            const [settRes, catRes, brRes, prodRes] = await Promise.all([
+                supabase.from("site_settings").select("value").eq("key", "promo_countdown").single(),
+                supabase.from("categories").select("id, name").eq("is_deleted", false),
+                supabase.from("brands").select("id, name").eq("is_deleted", false),
+                supabase.from("products").select("id, name").eq("is_deleted", false),
+            ]);
+
+            if (catRes.data) setCategories(catRes.data);
+            if (brRes.data) setBrands(brRes.data);
+            if (prodRes.data) setProducts(prodRes.data);
+
+            if (settRes.data?.value) {
+                const v = settRes.data.value as any;
+                setSettings({
+                    ...DEFAULT,
+                    ...v,
+                    start_time: v.start_time ? new Date(v.start_time).toISOString().slice(0, 16) : DEFAULT.start_time,
+                    end_time: v.end_time ? new Date(v.end_time).toISOString().slice(0, 16) : DEFAULT.end_time,
+                    target_type: v.target_type || "all",
+                    target_ids: v.target_ids || [],
+                    discount_percent: v.discount_percent || 0
+                });
+            }
+            setLoading(false);
+        };
+        fetchAll();
     }, []);
 
     const handleSave = async () => {
@@ -119,9 +177,9 @@ export default function PromoCountdownAdmin() {
         try {
             const payload = {
                 ...settings,
+                start_time: new Date(settings.start_time).toISOString(),
                 end_time: new Date(settings.end_time).toISOString(),
             };
-            // supabaseAdmin (RLS bypass) orqali saqlash
             const res = await fetch("/api/admin/crud", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -148,13 +206,30 @@ export default function PromoCountdownAdmin() {
             <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">{label}</label>
             <input
                 type={type}
-                value={settings[key] as string}
-                onChange={e => setSettings(prev => ({ ...prev, [key]: e.target.value }))}
+                value={settings[key] as any}
+                onChange={e => setSettings(prev => ({ ...prev, [key]: type === "number" ? Number(e.target.value) : e.target.value }))}
                 placeholder={placeholder}
                 className="w-full px-5 py-3 rounded-2xl border-2 border-gray-100 bg-white text-sm font-semibold focus:outline-none focus:border-black transition-colors"
             />
         </div>
     );
+
+    const filteredOptions = useMemo(() => {
+        let list: { id: string; name: string }[] = [];
+        if (settings.target_type === "category") list = categories;
+        if (settings.target_type === "brand") list = brands;
+        if (settings.target_type === "manual") list = products;
+
+        if (!searchQuery.trim()) return list.slice(0, 10);
+        return list.filter(x => x.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 10);
+    }, [settings.target_type, searchQuery, categories, brands, products]);
+
+    const getName = (id: string) => {
+        if (settings.target_type === "category") return categories.find(c => c.id === id)?.name;
+        if (settings.target_type === "brand") return brands.find(b => b.id === id)?.name;
+        if (settings.target_type === "manual") return products.find(p => p.id === id)?.name;
+        return id;
+    };
 
     if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin" /></div>;
 
@@ -170,14 +245,14 @@ export default function PromoCountdownAdmin() {
                 <h1 className="text-5xl font-black tracking-tighter mb-4 italic uppercase flex items-center gap-4">
                     <Timer size={40} /> Promo Countdown
                 </h1>
-                <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px]">Mobil banner — bosh sahifada ko'rinadi</p>
+                <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px]">Aksiya banneri va avtomatik chegirmalar tizimi</p>
             </div>
 
             {/* Toggle */}
             <div className="bg-white rounded-[32px] p-8 shadow-sm border border-gray-100 flex items-center justify-between gap-6">
                 <div>
                     <div className="font-black text-lg tracking-tight">Banner holati</div>
-                    <div className="text-gray-400 text-sm mt-1">{settings.enabled ? "Yoqilgan — foydalanuvchilar ko'rmoqda" : "O'chirilgan — hech kim ko'rmaydi"}</div>
+                    <div className="text-gray-400 text-sm mt-1">{settings.enabled ? "Yoqilgan — muddatiga qarab mijozlarga ko'rinadi" : "O'chirilgan — hech kim ko'rmaydi"}</div>
                 </div>
                 <button
                     onClick={() => setSettings(p => ({ ...p, enabled: !p.enabled }))}
@@ -190,17 +265,20 @@ export default function PromoCountdownAdmin() {
                 </button>
             </div>
 
-            {/* Form */}
+            {/* Vaqt va Chegirma */}
             <div className="bg-white rounded-[32px] p-8 shadow-sm border border-gray-100 space-y-6">
-                <div className="font-black text-lg tracking-tight mb-2">Kontent</div>
+                <div className="font-black text-lg tracking-tight mb-2">Vaqt va Chegirma</div>
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {field("Sarlavha (UZ)", "label_uz", "text", "Maxsus taklif!")}
-                    {field("Sarlavha (RU)", "label_ru", "text", "Специальное предложение!")}
-                    {field("Matn (UZ)", "text_uz", "text", "Chegirma tugashiga")}
-                    {field("Matn (RU)", "text_ru", "text", "До конца скидки")}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Boshlanish vaqti</label>
+                        <input
+                            type="datetime-local"
+                            value={settings.start_time}
+                            onChange={e => setSettings(p => ({ ...p, start_time: e.target.value }))}
+                            className="w-full px-5 py-3 rounded-2xl border-2 border-gray-100 bg-white text-sm font-semibold focus:outline-none focus:border-black transition-colors"
+                        />
+                    </div>
                     <div>
                         <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Tugash vaqti</label>
                         <input
@@ -210,6 +288,10 @@ export default function PromoCountdownAdmin() {
                             className="w-full px-5 py-3 rounded-2xl border-2 border-gray-100 bg-white text-sm font-semibold focus:outline-none focus:border-black transition-colors"
                         />
                     </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {field("Chegirma foizi (%)", "discount_percent", "number")}
                     <div>
                         <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Fon rangi</label>
                         <div className="flex gap-3 items-center">
@@ -228,8 +310,84 @@ export default function PromoCountdownAdmin() {
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {field("Havola (ixtiyoriy)", "link", "url", "https://...")}
+            {/* Target Products */}
+            <div className="bg-white rounded-[32px] p-8 shadow-sm border border-gray-100 space-y-6">
+                <div className="font-black text-lg tracking-tight mb-2">Qaysi mahsulotlarga ta'sir qiladi?</div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                        { id: "all", label: "Barchasi" },
+                        { id: "category", label: "Kategoriyalar" },
+                        { id: "brand", label: "Brendlar" },
+                        { id: "manual", label: "Mahsulotlar (Qo'lda)" }
+                    ].map(t => (
+                        <button key={t.id}
+                            onClick={() => {
+                                setSettings(p => ({ ...p, target_type: t.id as any, target_ids: [] }));
+                                setSearchQuery("");
+                            }}
+                            className={`py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border-2 ${
+                                settings.target_type === t.id ? "bg-black text-white border-black" : "bg-white text-gray-400 border-gray-100 hover:border-gray-300"
+                            }`}>
+                            {t.label}
+                        </button>
+                    ))}
+                </div>
+
+                {settings.target_type !== "all" && (
+                    <div className="space-y-4 pt-4 border-t border-gray-100 mt-4">
+                        <div className="relative">
+                            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                                placeholder="Qidirish va qo'shish..."
+                                className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-2xl py-4 pl-14 pr-4 text-sm font-bold outline-none" />
+                            {searchQuery.trim() && filteredOptions.length > 0 && (
+                                <div className="absolute z-20 left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+                                    {filteredOptions.map(o => (
+                                        <button key={o.id}
+                                            onClick={() => {
+                                                if (!settings.target_ids.includes(o.id)) {
+                                                    setSettings(p => ({ ...p, target_ids: [...p.target_ids, o.id] }));
+                                                }
+                                                setSearchQuery("");
+                                            }}
+                                            className="w-full text-left px-5 py-3 text-sm font-bold hover:bg-gray-50 transition-colors line-clamp-1">
+                                            {o.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Selected targets */}
+                        <div className="flex flex-wrap gap-2">
+                            {settings.target_ids.map(id => (
+                                <span key={id} className="inline-flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-xl text-xs font-black">
+                                    {getName(id) || id}
+                                    <button onClick={() => setSettings(p => ({ ...p, target_ids: p.target_ids.filter(x => x !== id) }))} className="text-gray-400 hover:text-red-500">
+                                        <X size={14} />
+                                    </button>
+                                </span>
+                            ))}
+                            {settings.target_ids.length === 0 && (
+                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-300 italic">Hech narsa tanlanmagan</span>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Matnlar */}
+            <div className="bg-white rounded-[32px] p-8 shadow-sm border border-gray-100 space-y-6">
+                <div className="font-black text-lg tracking-tight mb-2">Banner matnlari</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {field("Sarlavha (UZ)", "label_uz", "text", "Maxsus taklif!")}
+                    {field("Sarlavha (RU)", "label_ru", "text", "Специальное предложение!")}
+                    {field("Faol matn (UZ)", "text_uz", "text", "Chegirma tugashiga")}
+                    {field("Faol matn (RU)", "text_ru", "text", "До конца скидки")}
+                </div>
+                {field("Havola (ixtiyoriy) - Mahsulotlar sahifasiga yo'naltirish mumkin", "link", "url", "Masalan: /uz/catalog?promo=true")}
             </div>
 
             {/* Live Preview */}

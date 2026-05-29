@@ -79,6 +79,8 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
             return path;
         };
 
+        const fetchGlobalPromo = useStore.getState().fetchGlobalPromo;
+
         const updateActivity = async (action: string = "Ko'rmoqda") => {
             // Completely silent tracking - no toasts shown if this fails
             try {
@@ -174,7 +176,11 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
 
         const ric = (cb: () => void) =>
             (window as any).requestIdleCallback?.(cb, { timeout: 3000 }) ?? setTimeout(cb, 1500);
-        ric(() => updateActivity());
+        ric(() => {
+            updateActivity();
+            fetchGlobalPromo();
+            useStore.getState().fetchPersonalOffers();
+        });
         intervalId = setInterval(() => updateActivity(), 300000);
 
         const handleVisibility = () => {

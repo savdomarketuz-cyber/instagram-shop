@@ -99,11 +99,16 @@ function WishBtn({ isWished, onClick }: { isWished: boolean; onClick: (e: React.
   );
 }
 
+import { applyGlobalPromo } from "@/lib/promo-utils";
+
 export const ProductCard = memo(({
-  item, language, t, cart, wishlist,
+  item: rawItem, language, t, cart, wishlist,
   toggleWishlist, addToCart, updateQuantity, removeFromCart,
   priority = false, reason,
 }: ProductCardProps) => {
+  const globalPromo = useStore(s => s.globalPromo);
+  const item = applyGlobalPromo(rawItem, globalPromo);
+
   const isInCart = cart.find(ci => ci.id === item.id);
   const isWished = wishlist.some(w => w.id === item.id);
   const personalPct = useStore(s => s.personalOffers[item.id] || 0);

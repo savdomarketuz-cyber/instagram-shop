@@ -43,6 +43,9 @@ interface StoreState {
     // Shaxsiy smart-chegirma: productId -> foiz (login mijoz uchun aktiv offerlar)
     personalOffers: Record<string, number>;
     fetchPersonalOffers: () => Promise<void>;
+    // Global Promo Countdown settings
+    globalPromo: any | null;
+    fetchGlobalPromo: () => Promise<void>;
 }
 
 export const useStore = create<StoreState>()(
@@ -131,6 +134,16 @@ export const useStore = create<StoreState>()(
                         set({ personalOffers: map });
                     }
                 } catch { /* offline yoki guest — e'tibordan chetda */ }
+            },
+            globalPromo: null,
+            fetchGlobalPromo: async () => {
+                try {
+                    const res = await fetch("/api/promo");
+                    const json = await res.json();
+                    if (json?.success && json.promo) {
+                        set({ globalPromo: json.promo });
+                    }
+                } catch { }
             },
         }),
         {

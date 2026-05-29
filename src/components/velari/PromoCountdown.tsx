@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 interface PromoSettings {
     enabled: boolean;
+    start_time: string;
     end_time: string;
     text_uz: string;
     text_ru: string;
@@ -11,6 +12,9 @@ interface PromoSettings {
     label_ru: string;
     bg_color: string;
     link: string;
+    discount_percent: number;
+    target_type: "all" | "category" | "brand" | "manual";
+    target_ids: string[];
 }
 
 interface TimeLeft {
@@ -20,8 +24,8 @@ interface TimeLeft {
     seconds: number;
 }
 
-function calcTimeLeft(endTime: string): TimeLeft | null {
-    const diff = new Date(endTime).getTime() - Date.now();
+function calcTimeLeft(targetTime: string): TimeLeft | null {
+    const diff = new Date(targetTime).getTime() - Date.now();
     if (diff <= 0) return null;
     return {
         days: Math.floor(diff / 86400000),
@@ -36,33 +40,47 @@ function pad(n: number) {
 }
 
 export default function PromoCountdown({ language, initialSettings }: { language: "uz" | "ru"; initialSettings?: any }) {
-    const [settings, setSettings] = useState<PromoSettings | null>(() => {
-        // Server dan kelgan ma'lumotni darhol ishlatamiz — Supabase fetch kerak emas
+    const [settings] = useState<PromoSettings | null>(() => {
         if (!initialSettings) return null;
         const s = initialSettings as PromoSettings;
         if (!s.enabled) return null;
         return s;
     });
-    const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(() => {
-        if (!initialSettings?.enabled) return null;
-        return calcTimeLeft(initialSettings.end_time);
-    });
+
+    const [status, setStatus] = useState<"waiting" | "active" | "ended">("ended");
+    const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(null);
 
     useEffect(() => {
         if (!settings) return;
         const id = setInterval(() => {
-            const t = calcTimeLeft(settings.end_time);
-            setTimeLeft(t);
-            if (!t) clearInterval(id);
+            const now = Date.now();
+            const start = new Date(settings.start_time).getTime();
+            const end = new Date(settings.end_time).getTime();
+
+            if (now < start) {
+                setStatus("waiting");
+                setTimeLeft(calcTimeLeft(settings.start_time));
+            } else if (now <= end) {
+                setStatus("active");
+                setTimeLeft(calcTimeLeft(settings.end_time));
+            } else {
+                setStatus("ended");
+                setTimeLeft(null);
+                clearInterval(id);
+            }
         }, 1000);
         return () => clearInterval(id);
     }, [settings]);
 
-    if (!settings || !timeLeft) return null;
+    if (!settings || !timeLeft || status === "ended") return null;
 
     const bg = settings.bg_color || "#2D6E3E";
     const label = language === "uz" ? settings.label_uz : settings.label_ru;
-    const text = language === "uz" ? settings.text_uz : settings.text_ru;
+    
+    let text = language === "uz" ? settings.text_uz : settings.text_ru;
+    if (status === "waiting") {
+        text = language === "uz" ? "Aksiya boshlanishiga" : "До начала акции";
+    }
 
     const inner = (
         <div
@@ -83,7 +101,12 @@ export default function PromoCountdown({ language, initialSettings }: { language
                     <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.7)", letterSpacing: 0.4, textTransform: "uppercase", marginBottom: 2 }}>
                         {label}
                     </div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", display: "flex", alignItems: "center", gap: 6 }}>
+                        {settings.discount_percent > 0 && status === "active" && (
+                            <span style={{ background: "#fff", color: bg, padding: "2px 6px", borderRadius: 6, fontSize: 11, fontWeight: 900 }}>
+                                -{settings.discount_percent}%
+                            </span>
+                        )}
                         {text}
                     </div>
                 </div>
@@ -106,7 +129,7 @@ export default function PromoCountdown({ language, initialSettings }: { language
         </div>
     );
 
-    if (settings.link) {
+    if (settings.link && status === "active") {
         return (
             <a href={settings.link} style={{ textDecoration: "none", display: "block" }}>
                 {inner}
