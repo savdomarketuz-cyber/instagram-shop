@@ -19,7 +19,10 @@ export async function GET(req: NextRequest) {
     if (!payload || payload.sub !== userPhone) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
 
     try {
-        if (!await checkRateLimit(ip, 10, 60)) {
+        // Authenticated read endpoint — isolate its bucket so unrelated traffic
+        // (promo/discount/search polling on every page) can't silently 429 it,
+        // which was hiding the user's own orders. Generous limit per scope.
+        if (!await checkRateLimit(ip, 60, 60, "orders-user")) {
             return NextResponse.json({ success: false, message: "Juda ko'p urinish." }, { status: 429 });
         }
 

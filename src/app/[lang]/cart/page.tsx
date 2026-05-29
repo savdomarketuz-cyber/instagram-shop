@@ -3,25 +3,40 @@
 import { useStore } from "@/store/store";
 import { useShallow } from "zustand/react/shallow";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, ShoppingCart, Package, ChevronLeft, ChevronRight, Ticket, Loader2, X } from "lucide-react";
 import { translations } from "@/lib/translations";
 import Image from "next/image";
 import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
+import { computeStandardDelivery } from "@/lib/delivery";
+import Sheet from "@/components/velari/Sheet";
+import { Gift } from "lucide-react";
 
 const GREEN = "#2D6E3E";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 export default function CartPage() {
-    const { cart, updateQuantity, removeFromCart, language, cartPromo, setCartPromo, showToast } = useStore(useShallow(s => ({
+    const { cart, updateQuantity, removeFromCart, language, cartPromo, setCartPromo, showToast, personalOffers, fetchPersonalOffers } = useStore(useShallow(s => ({
         cart: s.cart, updateQuantity: s.updateQuantity, removeFromCart: s.removeFromCart, language: s.language,
-        cartPromo: s.cartPromo, setCartPromo: s.setCartPromo, showToast: s.showToast
+        cartPromo: s.cartPromo, setCartPromo: s.setCartPromo, showToast: s.showToast,
+        personalOffers: s.personalOffers, fetchPersonalOffers: s.fetchPersonalOffers
     })));
     const t = translations[language];
 
+    // Shaxsiy smart-chegirmalarni yuklash (reload'da reset bo'ladi — store persist qilmaydi)
+    useEffect(() => { fetchPersonalOffers(); }, [fetchPersonalOffers]);
+
     const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    // Har bir mahsulot uchun shaxsiy chegirma — checkout/place_order bilan bir xil: floor(narx*soni*foiz/100)
+    const lineDiscount = (item: any) => {
+        const pct = personalOffers[item.id] || 0;
+        return pct > 0 ? Math.floor(item.price * item.quantity * pct / 100) : 0;
+    };
+    const smartDiscount = cart.reduce((sum, item) => sum + lineDiscount(item), 0);
     const promoDiscount = cartPromo?.discount || 0;
-    const total = Math.max(0, subtotal - promoDiscount);
+    const goodsTotal = Math.max(0, subtotal - smartDiscount - promoDiscount);
+    const deliveryFee = computeStandardDelivery(goodsTotal);
+    const total = goodsTotal + deliveryFee;
     const fmtPrice = (n: number) => n.toLocaleString("ru-RU") + (language === "ru" ? " сум" : " so'm");
 
     // Promokod (savatda kiritish — qo'llangani checkout'ga uzatiladi)
@@ -138,9 +153,27 @@ export default function CartPage() {
                                                 </button>
                                             </div>
                                             {/* Price */}
-                                            <span style={{ fontSize: 15, fontWeight: 800, color: "#0F1410", letterSpacing: -0.3 }}>
-                                                {fmtPrice(item.price * item.quantity)}
-                                            </span>
+                                            {(() => {
+                                                const ld = lineDiscount(item);
+                                                const lineTotal = item.price * item.quantity;
+                                                if (ld > 0) {
+                                                    return (
+                                                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", lineHeight: 1.1 }}>
+                                                            <span style={{ fontSize: 15, fontWeight: 800, color: "#4F46E5", letterSpacing: -0.3 }}>
+                                                                {fmtPrice(lineTotal - ld)}
+                                                            </span>
+                                                            <span style={{ fontSize: 11, fontWeight: 600, color: "#C0C5BF", textDecoration: "line-through" }}>
+                                                                {fmtPrice(lineTotal)}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                }
+                                                return (
+                                                    <span style={{ fontSize: 15, fontWeight: 800, color: "#0F1410", letterSpacing: -0.3 }}>
+                                                        {fmtPrice(lineTotal)}
+                                                    </span>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
 
@@ -172,22 +205,6 @@ export default function CartPage() {
                                         <X size={16} color="#FF3B30" />
                                     </button>
                                 </div>
-                            ) : promoOpen ? (
-                                <div style={{ background: "#fff", borderRadius: 18, padding: "12px 14px", boxShadow: "0 2px 8px rgba(15,20,16,0.04)", display: "flex", gap: 8 }}>
-                                    <input
-                                        type="text"
-                                        value={promoCode}
-                                        onChange={e => setPromoCode(e.target.value.toUpperCase())}
-                                        placeholder={t.common.promoPlaceholder}
-                                        autoFocus
-                                        onKeyDown={e => { if (e.key === "Enter") handleApplyPromo(); }}
-                                        style={{ flex: 1, minWidth: 0, background: "#F5F5F0", border: "1.5px solid transparent", borderRadius: 12, padding: "11px 14px", fontSize: 14, fontWeight: 700, color: "#0F1410", outline: "none", letterSpacing: 0.5 }}
-                                    />
-                                    <button onClick={handleApplyPromo} disabled={isApplyingPromo || !promoCode.trim()}
-                                        style={{ padding: "0 18px", background: "#0F1410", color: "#fff", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: (!promoCode.trim() || isApplyingPromo) ? 0.3 : 1, display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                                        {isApplyingPromo ? <Loader2 size={16} className="animate-spin" /> : t.common.apply}
-                                    </button>
-                                </div>
                             ) : (
                                 <button onClick={() => setPromoOpen(true)}
                                     style={{ width: "100%", background: "#fff", borderRadius: 18, padding: "14px 16px", boxShadow: "0 2px 8px rgba(15,20,16,0.04)", border: "1px dashed rgba(15,20,16,0.12)", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", textAlign: "left" }}>
@@ -211,6 +228,14 @@ export default function CartPage() {
                                 <span style={{ fontSize: 14, fontWeight: 500, color: "#5A625C" }}>{t.common.products}</span>
                                 <span style={{ fontSize: 14, fontWeight: 700, color: "#0F1410" }}>{fmtPrice(subtotal)}</span>
                             </div>
+                            {smartDiscount > 0 && (
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                                    <span style={{ fontSize: 14, fontWeight: 500, color: "#4F46E5", display: "flex", alignItems: "center", gap: 6 }}>
+                                        ✦ {language === "uz" ? "Shaxsiy chegirma" : "Персональная скидка"}
+                                    </span>
+                                    <span style={{ fontSize: 14, fontWeight: 700, color: "#4F46E5" }}>−{fmtPrice(smartDiscount)}</span>
+                                </div>
+                            )}
                             {promoDiscount > 0 && (
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                                     <span style={{ fontSize: 14, fontWeight: 500, color: "#2D6E3E", display: "flex", alignItems: "center", gap: 6 }}>
@@ -221,7 +246,9 @@ export default function CartPage() {
                             )}
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                                 <span style={{ fontSize: 14, fontWeight: 500, color: "#5A625C" }}>{t.cart.delivery}</span>
-                                <span style={{ fontSize: 14, fontWeight: 700, color: "#2D6E3E" }}>{t.cart.free}</span>
+                                <span style={{ fontSize: 14, fontWeight: 700, color: deliveryFee > 0 ? "#0F1410" : "#2D6E3E" }}>
+                                    {deliveryFee > 0 ? fmtPrice(deliveryFee) : t.cart.free}
+                                </span>
                             </div>
                             <div style={{ borderTop: "1px solid rgba(15,20,16,0.08)", paddingTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                 <span style={{ fontSize: 15, fontWeight: 700, color: "#0F1410" }}>{t.common.total}</span>
@@ -318,7 +345,19 @@ export default function CartPage() {
                                                         <Plus size={15} strokeWidth={3} />
                                                     </button>
                                                 </div>
-                                                <p className="text-base font-black italic tracking-tighter">{(item.price * item.quantity).toLocaleString("uz-UZ")} so'm</p>
+                                                {(() => {
+                                                    const ld = lineDiscount(item);
+                                                    const lineTotal = item.price * item.quantity;
+                                                    if (ld > 0) {
+                                                        return (
+                                                            <div className="text-right leading-tight">
+                                                                <p className="text-base font-black italic tracking-tighter" style={{ color: "#4F46E5" }}>{(lineTotal - ld).toLocaleString("uz-UZ")} so'm</p>
+                                                                <p className="text-xs font-bold text-gray-300 line-through">{lineTotal.toLocaleString("uz-UZ")} so'm</p>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return <p className="text-base font-black italic tracking-tighter">{lineTotal.toLocaleString("uz-UZ")} so'm</p>;
+                                                })()}
                                             </div>
                                         </div>
                                     );
@@ -332,9 +371,23 @@ export default function CartPage() {
                                             <span>Mahsulotlar soni</span>
                                             <span className="text-black">{cart.length} ta</span>
                                         </div>
+                                        {smartDiscount > 0 && (
+                                            <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest" style={{ color: "#4F46E5" }}>
+                                                <span>{language === "uz" ? "Shaxsiy chegirma" : "Перс. скидка"}</span>
+                                                <span>−{smartDiscount.toLocaleString("uz-UZ")} so'm</span>
+                                            </div>
+                                        )}
+                                        {promoDiscount > 0 && (
+                                            <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-green-600">
+                                                <span>{cartPromo?.code}</span>
+                                                <span>−{promoDiscount.toLocaleString("uz-UZ")} so'm</span>
+                                            </div>
+                                        )}
                                         <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-gray-400">
                                             <span>Yetkazib berish</span>
-                                            <span className="text-green-600">Bepul</span>
+                                            <span className={deliveryFee > 0 ? "text-black" : "text-green-600"}>
+                                                {deliveryFee > 0 ? `${deliveryFee.toLocaleString("uz-UZ")} so'm` : "Bepul"}
+                                            </span>
                                         </div>
                                     </div>
                                     <div className="mb-6 w-full">
@@ -351,6 +404,45 @@ export default function CartPage() {
                     )}
                 </div>
             </div>
+
+            {/* ── Promokod bottom-sheet (iOS uslubida, pastdan tepaga) ── */}
+            <Sheet open={promoOpen} onClose={() => setPromoOpen(false)}>
+                <div style={{ padding: "8px 22px 28px", paddingBottom: "calc(28px + env(safe-area-inset-bottom))" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", marginBottom: 18 }}>
+                        <div style={{ width: 60, height: 60, borderRadius: 20, background: "#EAF3EC", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
+                            <Gift size={28} color={GREEN} strokeWidth={2.2} />
+                        </div>
+                        <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.5, color: "#0F1410", margin: "0 0 6px" }}>
+                            {language === "uz" ? "Promokod" : "Промокод"}
+                        </h2>
+                        <p style={{ fontSize: 13, fontWeight: 500, color: "#9AA29C", margin: 0 }}>
+                            {language === "uz" ? "Sinab ko'ring:" : "Попробуйте:"} <strong style={{ color: GREEN }}>VELARI25</strong>
+                        </p>
+                    </div>
+
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "#9AA29C", letterSpacing: 0.6, textTransform: "uppercase", display: "block", marginBottom: 8 }}>
+                        {language === "uz" ? "Kodni kiriting" : "Введите код"}
+                    </label>
+                    <input
+                        type="text"
+                        value={promoCode}
+                        onChange={e => setPromoCode(e.target.value.toUpperCase())}
+                        placeholder={t.common.promoPlaceholder}
+                        autoFocus
+                        onKeyDown={e => { if (e.key === "Enter") handleApplyPromo(); }}
+                        style={{ width: "100%", boxSizing: "border-box", background: "#F5F5F0", border: "1.5px solid transparent", borderRadius: 16, padding: "16px 18px", fontSize: 17, fontWeight: 800, color: "#0F1410", outline: "none", letterSpacing: 1.5, textAlign: "center" }}
+                    />
+
+                    <button onClick={handleApplyPromo} disabled={isApplyingPromo || !promoCode.trim()}
+                        style={{ width: "100%", marginTop: 14, height: 54, background: GREEN, color: "#fff", border: "none", borderRadius: 18, fontSize: 16, fontWeight: 700, cursor: "pointer", opacity: (!promoCode.trim() || isApplyingPromo) ? 0.4 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 8px 24px rgba(45,110,62,0.28)" }}>
+                        {isApplyingPromo ? <Loader2 size={18} className="animate-spin" /> : (language === "uz" ? "Qo'llash" : "Применить")}
+                    </button>
+
+                    <p style={{ fontSize: 12, fontWeight: 500, color: "#9AA29C", textAlign: "center", margin: "16px 0 0" }}>
+                        {language === "uz" ? "Promokod bitta mahsulotga qo'llanadi" : "Промокод применяется к одному товару"}
+                    </p>
+                </div>
+            </Sheet>
 
         </div>
     );

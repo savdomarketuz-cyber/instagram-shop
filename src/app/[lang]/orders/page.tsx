@@ -81,11 +81,19 @@ export default function OrdersPage() {
 
     const fetchOrders = async () => {
         try {
-            const response = await fetch(`/api/orders/user?phone=${encodeURIComponent(user?.phone || '')}`);
-            const data = await response.json();
-            
-            if (data.success && data.orders) {
+            const response = await fetch(`/api/orders/user?phone=${encodeURIComponent(user?.phone || '')}`, {
+                credentials: "include",
+                cache: "no-store",
+            });
+            const data = await response.json().catch(() => ({}));
+
+            if (response.ok && data.success && Array.isArray(data.orders)) {
                 setOrders(data.orders.map(mapOrder));
+            } else if (response.status === 401) {
+                // Sessiya muddati tugagan — buyurtmalar ko'rinmasligining asosiy sababi shu bo'lishi mumkin
+                showToast(language === 'uz' ? "Sessiya muddati tugadi. Iltimos, qayta kiring." : "Сессия истекла. Войдите снова.", 'info');
+            } else if (response.status === 429) {
+                showToast(language === 'uz' ? "Juda ko'p urinish. Biroz kuting." : "Слишком много запросов. Подождите.", 'error');
             }
         } catch (error) {
             console.error("Fetch orders error:", error);

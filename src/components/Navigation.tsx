@@ -339,8 +339,10 @@ export default function Navigation() {
                 </div>
             </header>
 
-            {/* Velari — iOS-style Glass Bottom Tab Bar */}
-            {!pathname?.includes('/admin') && <nav
+            {/* Velari — iOS-style Glass Bottom Tab Bar.
+                Savat (cart) sahifasida yashiriladi: u yerda o'zining "Buyurtma berish"
+                tugmasi pastda turadi, tab bar uni to'sib qo'ymasligi kerak. */}
+            {!pathname?.includes('/admin') && !pathname?.endsWith('/cart') && <nav
                 className="md:hidden fixed bottom-0 left-0 right-0 w-screen max-w-full z-[110]"
                 style={{
                     background: "rgba(255,255,255,0.82)",

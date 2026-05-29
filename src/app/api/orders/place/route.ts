@@ -4,6 +4,8 @@ import { checkRateLimit } from "@/lib/rate-limiter";
 import { verifyJwt } from "@/lib/jwt-utils";
 import { z } from "zod";
 import { sendLowStockAlert } from "@/lib/telegram";
+import { computeStandardDelivery, EXPRESS_FREE_THRESHOLD } from "@/lib/delivery";
+import { estimateExpressDelivery, formatEta } from "@/lib/yandex-delivery";
 
 /**
  * Zod Schema for Order Validation
@@ -110,6 +112,65 @@ export async function POST(req: NextRequest) {
             console.error("Order RPC Error:", error);
             return NextResponse.json({ success: false, message: "Buyurtma berishda xatolik: " + error.message }, { status: 500 });
         }
+
+        // --- NEW: Yetkazib berish narxini SERVER tomonida hisoblash va buyurtmaga yozish (#7/#8) ---
+        // Narx mijozdan emas, server tomonidan hisoblanadi (xavfsizlik). delivery_* ustunlari
+        // mavjud bo'lmasa, update jim ravishda o'tkazib yuboriladi (buyurtma baribir o'tadi).
+        try {
+            const orderId = data?.orderId;
+            if (data?.success && orderId) {
+                const reqDeliveryType = rawBody.p_delivery_type === "express" ? "express" : "standard";
+
+                // RPC hisoblagan haqiqiy summani o'qiymiz
+                const { data: ord } = await supabaseAdmin
+                    .from("orders")
+                    .select("total, wallet_amount")
+                    .eq("id", orderId)
+                    .single();
+                const baseTotal = Number(ord?.total) || 0;
+                const walletAmt = Number(ord?.wallet_amount) || 0;
+                // Barcha chegirmalardan keyingi tovarlar summasi (hamyon ta'sirisiz) — bepullik chegarasi uchun
+                const goodsBasis = baseTotal + walletAmt;
+
+                let deliveryType: "standard" | "express" = "standard";
+                let deliveryFee = 0;
+                let deliveryEta: string | null = null;
+
+                // Express so'ralgan bo'lsa — kamida bitta mahsulot mos kelishi kerak
+                let expressEligible = false;
+                if (reqDeliveryType === "express") {
+                    const ids = (validatedData.items || []).map((i: any) => i.id);
+                    const { data: prods } = await supabaseAdmin
+                        .from("products").select("id, express_delivery").in("id", ids);
+                    expressEligible = (prods || []).some((p: any) => p.express_delivery === true);
+                }
+
+                const coords = Array.isArray(validatedData.coords) ? (validatedData.coords as [number, number]) : null;
+                if (expressEligible && coords) {
+                    deliveryType = "express";
+                    const est = await estimateExpressDelivery(coords);
+                    deliveryEta = formatEta(est.etaMinMinutes, est.etaMaxMinutes, "uz");
+                    deliveryFee = goodsBasis >= EXPRESS_FREE_THRESHOLD ? 0 : est.price;
+                } else {
+                    deliveryType = "standard";
+                    deliveryFee = computeStandardDelivery(goodsBasis);
+                }
+
+                const { error: updErr } = await supabaseAdmin
+                    .from("orders")
+                    .update({
+                        delivery_type: deliveryType,
+                        delivery_fee: deliveryFee,
+                        delivery_eta: deliveryEta,
+                        total: baseTotal + deliveryFee,
+                    })
+                    .eq("id", orderId);
+                if (updErr) console.error("Delivery update skipped:", updErr.message);
+            }
+        } catch (delErr) {
+            console.error("Delivery calc error:", delErr);
+        }
+        // ----------------------------------------------------------------------------------
 
         // --- NEW: Check Low Stock Alert ---
         try {

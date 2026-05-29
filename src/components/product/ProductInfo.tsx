@@ -15,13 +15,17 @@ interface ProductInfoProps {
     totalStock: number;
     getDeliveryDateText: () => string;
     onDescriptionOpen: () => void;
+    personalOffer?: { percent: number; reason_uz?: string; reason_ru?: string; expires_at?: string | null } | null;
 }
 
 export const ProductInfo = ({
-    product, language, t, groupProducts, totalStock, getDeliveryDateText, onDescriptionOpen
+    product, language, t, groupProducts, totalStock, getDeliveryDateText, onDescriptionOpen, personalOffer
 }: ProductInfoProps) => {
     const name = (language === "uz" ? product.name_uz : product.name_ru) || product.name;
     const fmtPrice = (n: number) => n.toLocaleString("ru-RU") + (language === "ru" ? " сум" : " so'm");
+    // Shaxsiy smart-chegirma (desktop bilan bir xil ko'rinish): yakuniy narx + chizilgan asl narx
+    const hasPersonal = !!personalOffer && personalOffer.percent > 0;
+    const personalPrice = hasPersonal ? Math.round(product.price * (1 - personalOffer!.percent / 100)) : product.price;
 
     return (
         <div style={{ padding: "20px 20px 120px", background: "#FAFAF6", position: "relative", zIndex: 20 }}>
@@ -60,21 +64,46 @@ export const ProductInfo = ({
             {/* Price card */}
             <div style={{ background: "#fff", borderRadius: 20, padding: "16px 18px", marginBottom: 14, boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}>
                 <span style={{ fontSize: 10, fontWeight: 700, color: "#9AA29C", letterSpacing: 0.4, textTransform: "uppercase", display: "block", marginBottom: 4 }}>{t.common.price}</span>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 28, fontWeight: 900, letterSpacing: -1, color: product.oldPrice && product.oldPrice > product.price ? "#FF3B30" : "#0F1410" }}>
-                        {fmtPrice(product.price || 0)}
-                    </span>
-                    {product.oldPrice && product.oldPrice > product.price && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ fontSize: 14, fontWeight: 600, color: "#C0C5BF", textDecoration: "line-through" }}>
-                                {fmtPrice(product.oldPrice)}
+                {hasPersonal ? (
+                    // Shaxsiy chegirma: faqat 2 narx — yakuniy shaxsiy narx + chizilgan asl narx
+                    <>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                            <span style={{ fontSize: 11, fontWeight: 800, background: "#4F46E5", color: "#fff", borderRadius: 7, padding: "2px 8px", letterSpacing: 0.3 }}>
+                                -{personalOffer!.percent}%
                             </span>
-                            <span style={{ fontSize: 11, fontWeight: 800, background: "#FF3B30", color: "#fff", borderRadius: 7, padding: "2px 7px" }}>
-                                -{Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)}%
+                            <span style={{ fontSize: 10, fontWeight: 800, color: "#4F46E5", letterSpacing: 0.3, textTransform: "uppercase" }}>
+                                {language === "uz" ? "Siz uchun shaxsiy narx" : "Персональная цена"}
                             </span>
                         </div>
-                    )}
-                </div>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+                            <span style={{ fontSize: 28, fontWeight: 900, letterSpacing: -1, color: "#4F46E5" }}>
+                                {fmtPrice(personalPrice)}
+                            </span>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: "#C0C5BF", textDecoration: "line-through" }}>
+                                {fmtPrice((product.oldPrice && product.oldPrice > product.price ? product.oldPrice : product.price) || 0)}
+                            </span>
+                        </div>
+                        <p style={{ fontSize: 10, fontWeight: 600, color: "#9AA29C", margin: "4px 0 0" }}>
+                            {language === "uz" ? "Chegirma buyurtmada avtomatik qo'llanadi" : "Скидка применится автоматически при оформлении"}
+                        </p>
+                    </>
+                ) : (
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 28, fontWeight: 900, letterSpacing: -1, color: product.oldPrice && product.oldPrice > product.price ? "#FF3B30" : "#0F1410" }}>
+                            {fmtPrice(product.price || 0)}
+                        </span>
+                        {product.oldPrice && product.oldPrice > product.price && (
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <span style={{ fontSize: 14, fontWeight: 600, color: "#C0C5BF", textDecoration: "line-through" }}>
+                                    {fmtPrice(product.oldPrice)}
+                                </span>
+                                <span style={{ fontSize: 11, fontWeight: 800, background: "#FF3B30", color: "#fff", borderRadius: 7, padding: "2px 7px" }}>
+                                    -{Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)}%
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Variants / Group */}

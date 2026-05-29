@@ -265,13 +265,26 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
 
 
 
-    const isAdmin = pathname?.startsWith("/admin");
-    const isProductDetail = pathname?.startsWith("/products/") && pathname.split("/").length > 2;
+    // ⚠️ pathname locale prefiksi bilan keladi (masalan "/uz/checkout"), chunki
+    // middleware redirect qiladi (rewrite emas). Shu sabab oldingi "=== '/checkout'"
+    // tekshiruvlari hech qachon mos kelmagan va nav/footer hamma joyda chiqib ketgan.
+    // Locale'ni olib tashlab, toza yo'l bo'yicha tekshiramiz.
+    const pathWithoutLocale = (() => {
+        if (!pathname) return "/";
+        const m = pathname.match(/^\/(uz|ru)(?=\/|$)/);
+        const p = m ? pathname.slice(m[0].length) : pathname;
+        return p === "" ? "/" : p;
+    })();
+
+    const isAdmin = pathWithoutLocale.startsWith("/admin");
+    const isProductDetail = pathWithoutLocale.startsWith("/products/");
     // Show navigation on main messages list, but hide inside actual chat rooms
-    const isChat = pathname === "/chat" || (pathname?.startsWith("/messages/") && pathname !== "/messages");
-    const isCheckout = pathname === "/checkout";
-    const isPayment = pathname === "/payment";
-    const isMessages = pathname === "/messages";
+    const isChat = pathWithoutLocale === "/chat" || (pathWithoutLocale.startsWith("/messages/") && pathWithoutLocale !== "/messages");
+    const isCheckout = pathWithoutLocale === "/checkout";
+    const isPayment = pathWithoutLocale === "/payment";
+    const isMessages = pathWithoutLocale === "/messages";
+    // Footer (Biz haqimizda / Foydalanuvchilarga / Tadbirkorlarga) faqat profil bo'limida
+    const isAccount = pathWithoutLocale === "/account" || pathWithoutLocale.startsWith("/account/");
 
     // Manual Scroll Restoration Logic
     useEffect(() => {
@@ -323,7 +336,7 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
                 {children}
             </ErrorBoundary>
 
-            {showNav && <Footer />}
+            {showNav && isAccount && <Footer />}
 
             {/* Animated Toast Notification — to'g'ri subscribe qilingan */}
             {toast && !toast.message.toLowerCase().includes('failed to fetch') && (

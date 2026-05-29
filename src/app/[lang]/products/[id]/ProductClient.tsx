@@ -599,6 +599,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                     totalStock={totalStock}
                     getDeliveryDateText={() => getDeliveryDateText(language, deliverySettings)}
                     onDescriptionOpen={() => setIsDescriptionModalOpen(true)}
+                    personalOffer={personalOffer}
                 />
             </div>
 

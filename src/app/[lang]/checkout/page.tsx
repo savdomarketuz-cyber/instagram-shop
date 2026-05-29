@@ -5,7 +5,8 @@ import { useShallow } from "zustand/react/shallow";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { AlertCircle, ArrowLeft, Loader2, PackageX, MapPin, Globe, Tag, X, Wallet, Check } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, PackageX, MapPin, Globe, Tag, X, Wallet, Check, Truck, Zap, Clock } from "lucide-react";
+import { computeStandardDelivery, fmtSom } from "@/lib/delivery";
 import dynamic from "next/dynamic";
 const YandexMapPicker = dynamic(() => import("@/components/YandexMapPicker"), {
     loading: () => <div className="h-64 animate-pulse bg-gray-50 rounded-3xl" />,
@@ -32,6 +33,10 @@ export default function CheckoutPage() {
     const [walletBalance, setWalletBalance] = useState(0);
     const [useWallet, setUseWallet] = useState(false);
     const [personalOffers, setPersonalOffers] = useState<Record<string, number>>({});
+    // Yetkazib berish: tur + tezkor (express) ma'lumoti
+    const [deliveryType, setDeliveryType] = useState<"standard" | "express">("standard");
+    const [expressInfo, setExpressInfo] = useState<{ eligible: boolean; price?: number; free?: boolean; etaText?: string; needCoords?: boolean } | null>(null);
+    const [loadingExpress, setLoadingExpress] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -164,7 +169,51 @@ export default function CheckoutPage() {
     const [promoCode, setPromoCode] = useState(cartPromo?.code || "");
     const [promoData, setPromoData] = useState<any>(cartPromo ? { code: cartPromo.code, discount: cartPromo.discount, success: true } : null);
     const [isApplyingPromo, setIsApplyingPromo] = useState(false);
-    const total = Math.max(0, subtotal - (promoData?.discount || 0) - smartDiscount);
+    // Tovarlar summasi (barcha chegirmalardan keyin) — hamyon va bepullik chegarasi shunga asoslanadi
+    const goodsTotal = Math.max(0, subtotal - (promoData?.discount || 0) - smartDiscount);
+
+    // Yetkazib berish narxi
+    const expressEligible = !!expressInfo?.eligible;
+    const expressUsable = expressEligible && !!coords && expressInfo?.price != null;
+    const standardFee = computeStandardDelivery(goodsTotal);
+    const expressFee = expressInfo?.free ? 0 : (expressInfo?.price || 0);
+    const useExpress = deliveryType === "express" && expressUsable;
+    const deliveryFee = useExpress ? expressFee : standardFee;
+    const total = goodsTotal + deliveryFee; // Yakuniy summa (yetkazish bilan)
+
+    // Tezkor (express) yetkazish — moslik + narx/vaqtni baholash
+    useEffect(() => {
+        if (displayProducts.length === 0) { setExpressInfo(null); return; }
+        let cancelled = false;
+        (async () => {
+            setLoadingExpress(true);
+            try {
+                const res = await fetch("/api/delivery/express", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        items: displayProducts.map(i => ({ id: i.id })),
+                        coords: coords || null,
+                        orderAmount: goodsTotal,
+                        language,
+                    }),
+                });
+                const data = await res.json();
+                if (cancelled) return;
+                if (data?.success) {
+                    setExpressInfo({ eligible: !!data.eligible, price: data.price, free: data.free, etaText: data.etaText, needCoords: data.needCoords });
+                    if (!data.eligible) setDeliveryType("standard");
+                } else {
+                    setExpressInfo(null);
+                }
+            } catch {
+                if (!cancelled) setExpressInfo(null);
+            } finally {
+                if (!cancelled) setLoadingExpress(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [displayProducts, coords, goodsTotal, language]);
 
     const handleApplyPromo = async () => {
         if (!promoCode.trim()) return;
@@ -220,7 +269,8 @@ export default function CheckoutPage() {
                     p_coords: coords,
                     p_status: t.common.statusPendingPayment,
                     p_promo_code: promoData?.code || null,
-                    p_wallet_usage: useWallet ? Math.min(walletBalance, total) : 0,
+                    p_delivery_type: useExpress ? "express" : "standard",
+                    p_wallet_usage: useWallet ? Math.min(walletBalance, goodsTotal) : 0,
                     p_referral_data: (() => {
                         const cookieStr = document.cookie.split('; ').find(row => row.startsWith('affiliate_data='));
                         if (cookieStr) {
@@ -333,6 +383,66 @@ export default function CheckoutPage() {
                     </div>
                 </div>
 
+                {/* Yetkazib berish usuli */}
+                <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "#9AA29C", letterSpacing: 0.4, textTransform: "uppercase", display: "block", marginBottom: 8 }}>
+                        {language === "uz" ? "Yetkazib berish usuli" : "Способ доставки"}
+                    </label>
+
+                    {expressEligible ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                            {/* Standart */}
+                            <button type="button" onClick={() => setDeliveryType("standard")}
+                                style={{ display: "flex", alignItems: "center", gap: 12, background: "#fff", border: deliveryType === "standard" ? "1.5px solid #2D6E3E" : "1.5px solid rgba(15,20,16,0.06)", borderRadius: 20, padding: "14px 16px", cursor: "pointer", textAlign: "left", boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}>
+                                <div style={{ width: 42, height: 42, borderRadius: 13, background: deliveryType === "standard" ? "#2D6E3E" : "#F0F0EC", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                    <Truck size={20} color={deliveryType === "standard" ? "#fff" : "#9AA29C"} />
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{ fontSize: 14, fontWeight: 800, color: "#0F1410", margin: 0 }}>{language === "uz" ? "Standart yetkazish" : "Стандартная доставка"}</p>
+                                    <p style={{ fontSize: 12, fontWeight: 500, color: "#9AA29C", margin: "2px 0 0" }}>{language === "uz" ? "Toshkent shahri bo'ylab" : "По городу Ташкент"}</p>
+                                </div>
+                                <span style={{ fontSize: 13, fontWeight: 800, color: standardFee > 0 ? "#0F1410" : "#2D6E3E", flexShrink: 0 }}>
+                                    {standardFee > 0 ? fmtSom(standardFee, language) : (language === "uz" ? "Bepul" : "Бесплатно")}
+                                </span>
+                            </button>
+
+                            {/* Tezkor */}
+                            <button type="button" onClick={() => setDeliveryType("express")} disabled={!coords}
+                                style={{ display: "flex", alignItems: "center", gap: 12, background: "#fff", border: deliveryType === "express" ? "1.5px solid #4F46E5" : "1.5px solid rgba(15,20,16,0.06)", borderRadius: 20, padding: "14px 16px", cursor: coords ? "pointer" : "not-allowed", textAlign: "left", boxShadow: "0 2px 8px rgba(15,20,16,0.04)", opacity: coords ? 1 : 0.7 }}>
+                                <div style={{ width: 42, height: 42, borderRadius: 13, background: deliveryType === "express" ? "#4F46E5" : "#EEF0FF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                    <Zap size={20} color={deliveryType === "express" ? "#fff" : "#4F46E5"} />
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{ fontSize: 14, fontWeight: 800, color: "#0F1410", margin: 0 }}>{language === "uz" ? "Tezkor yetkazish" : "Экспресс-доставка"}</p>
+                                    <p style={{ fontSize: 12, fontWeight: 500, color: "#9AA29C", margin: "2px 0 0", display: "flex", alignItems: "center", gap: 4 }}>
+                                        {loadingExpress
+                                            ? (language === "uz" ? "Hisoblanmoqda..." : "Расчёт...")
+                                            : !coords
+                                                ? (language === "uz" ? "Manzilni xaritadan tanlang" : "Выберите адрес на карте")
+                                                : (<><Clock size={11} /> {expressInfo?.etaText || (language === "uz" ? "30 daqiqa — 1.5 soat" : "30 мин — 1.5 ч")}</>)}
+                                    </p>
+                                </div>
+                                <span style={{ fontSize: 13, fontWeight: 800, color: expressFee > 0 ? "#4F46E5" : "#2D6E3E", flexShrink: 0 }}>
+                                    {!coords ? "—" : (expressFee > 0 ? fmtSom(expressFee, language) : (language === "uz" ? "Bepul" : "Бесплатно"))}
+                                </span>
+                            </button>
+                        </div>
+                    ) : (
+                        <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#fff", borderRadius: 20, padding: "14px 16px", boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}>
+                            <div style={{ width: 42, height: 42, borderRadius: 13, background: "#2D6E3E", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                <Truck size={20} color="#fff" />
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ fontSize: 14, fontWeight: 800, color: "#0F1410", margin: 0 }}>{language === "uz" ? "Standart yetkazish" : "Стандартная доставка"}</p>
+                                <p style={{ fontSize: 12, fontWeight: 500, color: "#9AA29C", margin: "2px 0 0" }}>{language === "uz" ? "Toshkent shahri bo'ylab" : "По городу Ташкент"}</p>
+                            </div>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: standardFee > 0 ? "#0F1410" : "#2D6E3E", flexShrink: 0 }}>
+                                {standardFee > 0 ? fmtSom(standardFee, language) : (language === "uz" ? "Bepul" : "Бесплатно")}
+                            </span>
+                        </div>
+                    )}
+                </div>
+
                 {/* Promo Code */}
                 <div style={{ background: "#fff", borderRadius: 22, padding: "16px 18px", boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}>
                     <label style={{ fontSize: 11, fontWeight: 700, color: "#9AA29C", letterSpacing: 0.4, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
@@ -389,7 +499,7 @@ export default function CheckoutPage() {
                         </div>
                         {useWallet && (
                             <p style={{ marginTop: 8, fontSize: 11, fontWeight: 700, color: "#2D6E3E", paddingLeft: 52 }}>
-                                {t.common.walletUsageHint.replace("{amount}", Math.min(walletBalance, total).toLocaleString())}
+                                {t.common.walletUsageHint.replace("{amount}", Math.min(walletBalance, goodsTotal).toLocaleString())}
                             </p>
                         )}
                     </div>
@@ -416,8 +526,13 @@ export default function CheckoutPage() {
                             </div>
                         )}
                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14, fontSize: 12, opacity: 0.8 }}>
-                            <span>{t.common.delivery}</span>
-                            <span style={{ color: "#A3F0B8", fontWeight: 700 }}>{t.cart.free}</span>
+                            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                {useExpress ? <Zap size={12} /> : <Truck size={12} />}
+                                {t.common.delivery}{useExpress ? (language === "uz" ? " (tezkor)" : " (экспресс)") : ""}
+                            </span>
+                            <span style={{ color: deliveryFee > 0 ? "#fff" : "#A3F0B8", fontWeight: 700 }}>
+                                {deliveryFee > 0 ? fmtSom(deliveryFee, language) : t.cart.free}
+                            </span>
                         </div>
                         <div style={{ borderTop: "1px solid rgba(255,255,255,0.15)", paddingTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <span style={{ fontSize: 13, opacity: 0.7, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>{t.common.total}</span>
