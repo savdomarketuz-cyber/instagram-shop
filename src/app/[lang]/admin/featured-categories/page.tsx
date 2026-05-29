@@ -50,12 +50,12 @@ export default function AdminFeaturedCategoriesPage() {
         try {
             const [catRes, settingsRes] = await Promise.all([
                 supabase.from("categories").select("id, name, name_uz, name_ru, parent_id, image, icon, color").eq("is_deleted", false),
-                supabase.from("settings").select("value").eq("id", "featured_categories").single(),
+                supabase.from("settings").select("data").eq("id", "featured_categories").maybeSingle(),
             ]);
 
             if (catRes.data) setAllCategories(catRes.data);
 
-            const val = settingsRes.data?.value;
+            const val = settingsRes.data?.data;
             if (val) {
                 setSelectedIds(val.category_ids || []);
                 setShowOnHome(val.show_on_home !== false);
@@ -80,7 +80,7 @@ export default function AdminFeaturedCategoriesPage() {
             // 1) Settings saqlash
             await adminCrud("settings", "upsert", {
                 id: "featured_categories",
-                value: {
+                data: {
                     category_ids: selectedIds,
                     show_on_home: showOnHome,
                 },

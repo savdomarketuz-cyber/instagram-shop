@@ -40,20 +40,20 @@ async function getInitialData() {
             { data: promoData },
             { data: prodCatRows }
         ] = await Promise.all([
-            supabaseAdmin.from("products").select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,rating,review_count,stock,stock_details,category,brand_id,video_url,model,color_name,group_id,is_original,article,created_at").eq("is_deleted", false).order("created_at", { ascending: false }).limit(20),
+            supabaseAdmin.from("products").select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,created_at").eq("is_deleted", false).order("created_at", { ascending: false }).limit(20),
             supabaseAdmin.from("categories").select("id,name,name_uz,name_ru,parent_id,image,image_meta,is_deleted").eq("is_deleted", false).order("name", { ascending: true }),
             supabaseAdmin.from("banners").select("id,title_uz,title_ru,subtitle_uz,subtitle_ru,image_url_uz,image_url_ru,blur_data_url_uz,blur_data_url_ru,image_meta,link_type,link_ids,button_text,active,order_index,tab_name_uz,tab_name_ru").eq("active", true).order("order_index", { ascending: true }),
             supabaseAdmin.from("settings").select("data").eq("id", "banners").single(),
             supabaseAdmin.from("site_settings").select("value").eq("key", "promo_countdown").single(),
             // Mahsuloti bor kategoriyalarni aniqlash uchun barcha mahsulot category_id lari
-            supabaseAdmin.from("products").select("category").eq("is_deleted", false),
+            supabaseAdmin.from("products").select("category_id").eq("is_deleted", false),
         ]);
 
         // Mahsuloti bor (bo'sh bo'lmagan) kategoriyalar to'plamini hisoblash.
         // Subkategoriyada mahsulot bo'lsa, uning parenti ham "bo'sh emas" hisoblanadi.
         const rawCats = categoriesData || [];
         const parentOf = new Map<string, string | null>(rawCats.map((c: any) => [String(c.id), c.parent_id ? String(c.parent_id) : null]));
-        const directCatIds = new Set<string>((prodCatRows || []).map((r: any) => String(r.category)).filter(Boolean));
+        const directCatIds = new Set<string>((prodCatRows || []).map((r: any) => String(r.category_id)).filter(Boolean));
         const nonEmpty = new Set<string>();
         for (const id of Array.from(directCatIds)) {
             let cur: string | null | undefined = id;

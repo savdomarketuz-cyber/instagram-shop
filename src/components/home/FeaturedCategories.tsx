@@ -33,12 +33,12 @@ export default function FeaturedCategories({ language }: { language: "uz" | "ru"
                 // 1) Settings'dan featured category ID lar ro'yxatini olish
                 const { data: settingsRow } = await supabase
                     .from("settings")
-                    .select("value")
+                    .select("data")
                     .eq("id", "featured_categories")
-                    .single();
+                    .maybeSingle();
 
-                const ids: string[] = settingsRow?.value?.category_ids || [];
-                const showOnHome = settingsRow?.value?.show_on_home !== false;
+                const ids: string[] = settingsRow?.data?.category_ids || [];
+                const showOnHome = settingsRow?.data?.show_on_home !== false;
 
                 if (!showOnHome || ids.length === 0) {
                     setLoading(false);
@@ -48,7 +48,7 @@ export default function FeaturedCategories({ language }: { language: "uz" | "ru"
                 // 2) Barcha kategoriyalar (daraxt) + tanlangan kategoriyalar ma'lumotlari
                 const [{ data: allCats }, { data: prodCatRows }] = await Promise.all([
                     supabase.from("categories").select("id, parent_id").eq("is_deleted", false),
-                    supabase.from("products").select("category").eq("is_deleted", false),
+                    supabase.from("products").select("category_id").eq("is_deleted", false),
                 ]);
 
                 // Mahsuloti bor kategoriyalar (parentlar ham, agar subda mahsulot bo'lsa)
@@ -57,7 +57,7 @@ export default function FeaturedCategories({ language }: { language: "uz" | "ru"
                 );
                 const nonEmpty = new Set<string>();
                 for (const r of (prodCatRows || [])) {
-                    let cur: string | null | undefined = String((r as any).category || "");
+                    let cur: string | null | undefined = String((r as any).category_id || "");
                     while (cur) {
                         if (nonEmpty.has(cur)) break;
                         nonEmpty.add(cur);
