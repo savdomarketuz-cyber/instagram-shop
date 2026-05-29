@@ -89,12 +89,19 @@ export async function POST(req: NextRequest) {
         }
 
         // 2. Execute Atomic DB Transaction via Admin Client (Secure bypass)
+        // Boshlang'ich holat: to'lovdan oldingi holat. Client lokalizatsiyalangan
+        // qiymat yuborsa o'shani, aks holda o'zbekcha standart qiymatni yozamiz
+        // (eski "pending" inglizcha qiymati endi ishlatilmaydi).
+        const initialStatus =
+            typeof rawBody.p_status === "string" && rawBody.p_status.trim()
+                ? rawBody.p_status.trim()
+                : "To'lov kutilmoqda";
         const { data, error } = await supabaseAdmin.rpc('place_order', {
             p_user_phone: validatedData.userPhone,
             p_items: validatedData.items,
             p_address: validatedData.address,
             p_coords: validatedData.coords || null,
-            p_status: 'pending',
+            p_status: initialStatus,
             p_promo_code: validatedData.promoCode || null,
             p_wallet_usage: validatedData.walletUsage || 0
         });

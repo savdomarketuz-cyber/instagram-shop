@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Search, ChevronRight, CheckCircle, Truck, Clock, XCircle, MoreVertical, MapPin, Phone, Package, User, Globe, X, Info, Tag, Layers, Hash } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { normalizeOrderStatus, getStatusLabel, ADMIN_STATUS_TABS } from "@/lib/order-status";
 import Image from "next/image";
 
 interface Order {
@@ -29,14 +30,12 @@ export default function AdminOrders() {
 
     const fetchOrders = async () => {
         try {
-            const { data, error } = await supabase
-                .from("orders")
-                .select("*")
-                .order("created_at", { ascending: false });
-            
-            if (error) throw error;
+            // orders RLS tufayli anon client o'qiy olmaydi — service-role API orqali
+            const res = await fetch("/api/admin/orders");
+            const json = await res.json();
+            if (!json.success) throw new Error(json.error || "Buyurtmalarni yuklab bo'lmadi");
 
-            const fetchedOrders = data.map(o => ({
+            const fetchedOrders = (json.orders || []).map((o: any) => ({
                 id: o.id,
                 userPhone: o.user_phone,
                 total: o.total,
@@ -106,9 +105,10 @@ export default function AdminOrders() {
         }
     };
 
+    const tabCodes: Record<string, string[]> = Object.fromEntries(ADMIN_STATUS_TABS.map(tb => [tb.label_uz, tb.codes]));
     const filteredOrders = filter === "Barchasi"
         ? orders
-        : orders.filter(o => o.status === filter);
+        : orders.filter(o => (tabCodes[filter] || []).includes(normalizeOrderStatus(o.status)));
 
     if (loading) {
         return (
@@ -193,7 +193,7 @@ export default function AdminOrders() {
                                                 e.stopPropagation();
                                                 updateStatus(order.id, "Kutilmoqda");
                                             }}
-                                            className={`p-3 rounded-xl transition-all ${order.status === "Kutilmoqda" ? "bg-orange-500 text-white shadow-lg" : "bg-gray-50 text-gray-300 hover:bg-orange-100"}`}
+                                            className={`p-3 rounded-xl transition-all ${["pending", "accepted", "awaiting_payment", "paid"].includes(normalizeOrderStatus(order.status)) ? "bg-orange-500 text-white shadow-lg" : "bg-gray-50 text-gray-300 hover:bg-orange-100"}`}
                                             title="Kutilmoqda"
                                         >
                                             <Clock size={16} />
@@ -203,7 +203,7 @@ export default function AdminOrders() {
                                                 e.stopPropagation();
                                                 updateStatus(order.id, "Yetkazilmoqda");
                                             }}
-                                            className={`p-3 rounded-xl transition-all ${order.status === "Yetkazilmoqda" ? "bg-blue-500 text-white shadow-lg" : "bg-gray-50 text-gray-300 hover:bg-blue-100"}`}
+                                            className={`p-3 rounded-xl transition-all ${normalizeOrderStatus(order.status) === "shipping" ? "bg-blue-500 text-white shadow-lg" : "bg-gray-50 text-gray-300 hover:bg-blue-100"}`}
                                             title="Yetkazilmoqda"
                                         >
                                             <Truck size={16} />
@@ -213,7 +213,7 @@ export default function AdminOrders() {
                                                 e.stopPropagation();
                                                 updateStatus(order.id, "Yetkazildi");
                                             }}
-                                            className={`p-3 rounded-xl transition-all ${order.status === "Yetkazildi" ? "bg-green-500 text-white shadow-lg" : "bg-gray-50 text-gray-300 hover:bg-green-100"}`}
+                                            className={`p-3 rounded-xl transition-all ${normalizeOrderStatus(order.status) === "delivered" ? "bg-green-500 text-white shadow-lg" : "bg-gray-50 text-gray-300 hover:bg-green-100"}`}
                                             title="Yetkazildi"
                                         >
                                             <CheckCircle size={16} />
@@ -225,7 +225,7 @@ export default function AdminOrders() {
                                                     updateStatus(order.id, "Bekor qilingan");
                                                 }
                                             }}
-                                            className={`p-3 rounded-xl transition-all ${order.status === "Bekor qilingan" ? "bg-red-500 text-white shadow-lg" : "bg-gray-50 text-gray-300 hover:bg-red-100"}`}
+                                            className={`p-3 rounded-xl transition-all ${normalizeOrderStatus(order.status) === "cancelled" ? "bg-red-500 text-white shadow-lg" : "bg-gray-50 text-gray-300 hover:bg-red-100"}`}
                                             title="Bekor qilish"
                                         >
                                             <XCircle size={16} />
@@ -251,8 +251,8 @@ export default function AdminOrders() {
                                 <p className="text-[10px] font-black text-gray-400 uppercase">ID: #{order.id}</p>
                                 <p className="font-black mt-1">{order.userPhone}</p>
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${order.status === 'Yetkazildi' ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'
-                                }`}>{order.status}</span>
+                            <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${normalizeOrderStatus(order.status) === 'delivered' ? 'bg-green-100 text-green-600' : normalizeOrderStatus(order.status) === 'cancelled' ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'
+                                }`}>{getStatusLabel(order.status, 'uz')}</span>
                         </div>
                         <div className="flex justify-between items-end border-t border-gray-50 pt-4">
                             <div className="text-2xl font-black italic">{order.total?.toLocaleString()} so'm</div>
@@ -307,14 +307,14 @@ export default function AdminOrders() {
                                 <div className="p-6 bg-black text-white rounded-[32px] shadow-2xl shadow-black/20">
                                     <p className="text-[10px] font-black opacity-40 uppercase tracking-[0.2em] mb-4">Buyurtma Holati</p>
                                     <div className="flex items-center gap-4">
-                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${selectedOrder.status === 'Yetkazildi' ? 'bg-green-500' :
-                                            selectedOrder.status === 'Bekor qilingan' ? 'bg-red-500' :
+                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${normalizeOrderStatus(selectedOrder.status) === 'delivered' ? 'bg-green-500' :
+                                            normalizeOrderStatus(selectedOrder.status) === 'cancelled' ? 'bg-red-500' :
                                                 'bg-orange-500 animate-pulse'
                                             }`}>
                                             <Package size={24} />
                                         </div>
                                         <div>
-                                            <p className="text-xl font-black italic tracking-tighter uppercase">{selectedOrder.status}</p>
+                                            <p className="text-xl font-black italic tracking-tighter uppercase">{getStatusLabel(selectedOrder.status, 'uz')}</p>
                                             <p className="text-[10px] font-bold opacity-40">#{selectedOrder.id}</p>
                                         </div>
                                     </div>

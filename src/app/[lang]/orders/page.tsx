@@ -10,6 +10,7 @@ import Image from "next/image";
 import { translations } from "@/lib/translations";
 import { uploadToYandexS3 } from "@/lib/yandex-s3";
 import { mapOrder, mapProduct } from "@/lib/mappers";
+import { normalizeOrderStatus, getStatusLabel } from "@/lib/order-status";
 
 interface Order {
     id: string;
@@ -105,14 +106,16 @@ export default function OrdersPage() {
         setIsCancelling(true);
         try {
             const statusLabel = t.common.statusCancelled;
-            
+
+            // API parametrlari: orderId / status / userPhone (oldin order_id/new_status/user_phone
+            // yuborilgani sababli bekor qilish umuman ishlamasdi)
             const response = await fetch('/api/orders/update-status', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    order_id: orderId,
-                    new_status: statusLabel,
-                    user_phone: user?.phone
+                    orderId: orderId,
+                    status: statusLabel,
+                    userPhone: user?.phone
                 })
             });
 
@@ -286,13 +289,13 @@ export default function OrdersPage() {
                             </div>
 
                             <div className="mb-5">
-                                <div className={`inline-block text-[10px] px-3 py-1.5 rounded-full font-black uppercase tracking-tighter ${order.status === t.common.statusDelivered ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' :
-                                    order.status === t.common.statusPaid ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' :
-                                        order.status.includes('To\'lov') || order.status.includes('Оплат') ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/20' :
-                                            order.status === t.common.statusCancelled ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' :
+                                <div className={`inline-block text-[10px] px-3 py-1.5 rounded-full font-black uppercase tracking-tighter ${normalizeOrderStatus(order.status) === 'delivered' ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' :
+                                    normalizeOrderStatus(order.status) === 'paid' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' :
+                                        normalizeOrderStatus(order.status) === 'awaiting_payment' ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/20' :
+                                            normalizeOrderStatus(order.status) === 'cancelled' ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' :
                                                 'velari-green-btn'
                                     }`}>
-                                    {order.status}
+                                    {getStatusLabel(order.status, language)}
                                 </div>
                             </div>
 
@@ -368,7 +371,7 @@ export default function OrdersPage() {
                                             >
                                                 {t.common.inMarket}
                                             </Link>
-                                            {(selectedOrder.status === t.common.statusDelivered) && (
+                                            {(normalizeOrderStatus(selectedOrder.status) === 'delivered') && (
                                                 <button
                                                     onClick={() => setReviewProduct(item)}
                                                     className="flex-1 py-3 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-2 active:scale-95 shadow-lg"
@@ -391,7 +394,7 @@ export default function OrdersPage() {
                                     </div>
                                     <div>
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t.common.status}</p>
-                                        <p className="font-black text-xs italic uppercase tracking-tighter">{selectedOrder.status}</p>
+                                        <p className="font-black text-xs italic uppercase tracking-tighter">{getStatusLabel(selectedOrder.status, language)}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4">
@@ -405,8 +408,8 @@ export default function OrdersPage() {
                                 </div>
                             </div>
 
-                            {/* Cancel Order Button */}
-                            {['Kutulmoqda', 'To\'lov kutilmoqda', 'To\'lov tekshirilmoqda', 'Ожидание', 'Ожидание оплаты'].some(s => selectedOrder.status.includes(s)) && (
+                            {/* Cancel Order Button — faqat jo'natilmagan/yetkazilmagan buyurtmalar */}
+                            {['awaiting_payment', 'accepted', 'pending'].includes(normalizeOrderStatus(selectedOrder.status)) && (
                                 <button
                                     onClick={() => handleCancelOrder(selectedOrder.id)}
                                     disabled={isCancelling}
