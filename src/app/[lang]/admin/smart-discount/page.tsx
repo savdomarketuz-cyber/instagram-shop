@@ -88,15 +88,14 @@ export default function AdminSmartDiscountPage() {
                 });
                 setOffers(json.offers || []);
                 setStats(json.stats || {});
+                setUsers(json.users || []);
             }
-            const [{ data: prods }, { data: cats }, { data: usrs }] = await Promise.all([
+            const [{ data: prods }, { data: cats }] = await Promise.all([
                 supabase.from("products").select("id, name").eq("is_deleted", false).order("name"),
                 supabase.from("categories").select("id, name").order("name"),
-                supabase.from("users").select("phone, name").order("name"),
             ]);
             setProducts(prods || []);
             setCategories(cats || []);
-            setUsers(usrs || []);
         } catch (e) { console.error(e); } finally { setLoading(false); }
     };
 

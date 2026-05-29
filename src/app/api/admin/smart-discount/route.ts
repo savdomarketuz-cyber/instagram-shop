@@ -40,6 +40,13 @@ export async function GET(req: NextRequest) {
         }
         const offersWithNames = (offers || []).map(o => ({ ...o, product_name: nameMap[o.product_id] || o.product_id }));
 
+        // Mijozlar — RLS tufayli client (anon) o'qiy olmaydi, shuning uchun bu yerda service-role bilan
+        const { data: users } = await supabaseAdmin
+            .from("users")
+            .select("phone, name")
+            .is("deleted_at", null)
+            .order("name", { nullsFirst: false });
+
         const stats = {
             total: offers?.length || 0,
             active: offers?.filter(o => o.status === "active").length || 0,
@@ -48,7 +55,7 @@ export async function GET(req: NextRequest) {
             revoked: offers?.filter(o => o.status === "revoked").length || 0,
         };
 
-        return NextResponse.json({ success: true, config: config || { id: "global", ...DEFAULT_DISCOUNT_CONFIG }, offers: offersWithNames, stats });
+        return NextResponse.json({ success: true, config: config || { id: "global", ...DEFAULT_DISCOUNT_CONFIG }, offers: offersWithNames, stats, users: users || [] });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
