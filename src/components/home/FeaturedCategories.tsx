@@ -67,29 +67,9 @@ export default function FeaturedCategories({ language }: { language: "uz" | "ru"
         fetchFeatured();
     }, []);
 
-    if (loading) {
-        return (
-            <div className="md:hidden" style={{ padding: "16px 20px 0" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                    <div style={{ width: 120, height: 18, borderRadius: 9, background: "#F0F0EC" }} />
-                    <div style={{ width: 60, height: 14, borderRadius: 7, background: "#F0F0EC" }} />
-                </div>
-                <div style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 4 }} className="no-scrollbar">
-                    {[...Array(5)].map((_, i) => (
-                        <div key={i} style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                            <div style={{
-                                width: 64, height: 64, borderRadius: 20,
-                                background: "#F0F0EC",
-                                animation: "velari-shimmer 1.6s infinite",
-                                backgroundSize: "200% 100%",
-                            }} />
-                            <div style={{ width: 48, height: 10, borderRadius: 5, background: "#F0F0EC" }} />
-                        </div>
-                    ))}
-                </div>
-            </div>
-        );
-    }
+    // Yuklanayotgan paytda skelet ko'rsatmaymiz — agar kategoriyalar admin
+    // panelidan sozlanmagan bo'lsa, hech qanday "uzunchoq chiziqlar" chiqmasligi kerak.
+    if (loading) return null;
 
     if (categories.length === 0) return null;
 
