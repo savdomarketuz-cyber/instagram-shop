@@ -57,13 +57,18 @@ export default function BrandedEmptyState({
                         .single();
                     
                     if (interests) {
+                        const slimProducts = finalProducts.map((p: any) => ({
+                            id: p.id, name: p.name, category: p.category,
+                            price: p.price, oldPrice: p.oldPrice,
+                            rating: p.rating, sales: p.sales, tag: p.tag, brand: p.brand,
+                        }));
                         const response = await fetch("/api/ai/recommendations", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({
                                 action: "get_recommendations",
                                 userInterests: interests,
-                                allProducts: finalProducts,
+                                allProducts: slimProducts,
                                 userPhone: user.phone
                             })
                         });

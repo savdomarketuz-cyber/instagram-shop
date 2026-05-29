@@ -4,6 +4,39 @@ import { mapProduct } from '@/lib/mappers';
 import { checkRateLimit } from '@/lib/rate-limiter';
 import { normalizeQuery } from '@/lib/query-normalize';
 
+// Rasmdan qidiruv kalit so'zlarini chiqarish (Groq vision)
+async function extractKeywordsFromImage(imageDataUrl: string): Promise<string | null> {
+    const apiKey = process.env.GROQ_API_KEY_1 || process.env.GROQ_API_KEY_2;
+    if (!apiKey) return null;
+    // base64 hajm cheklovi (~4MB)
+    if (imageDataUrl.length > 6_000_000) return null;
+
+    try {
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+                messages: [{
+                    role: 'user',
+                    content: [
+                        { type: 'text', text: "Rasmдagi asosiy mahsulotni aniqlang. FAQAT qidiruv uchun 2-4 ta kalit so'z qaytaring (brend, mahsulot turi, rang). Boshqa matn yo'q. Masalan: 'VGR soch olish mashinkasi' yoki 'simsiz quloqchin oq'." },
+                        { type: 'image_url', image_url: { url: imageDataUrl } }
+                    ]
+                }],
+                temperature: 0.1,
+                max_tokens: 50,
+            }),
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        const kw = (data.choices?.[0]?.message?.content || "").trim().replace(/['"]/g, '').slice(0, 80);
+        return kw || null;
+    } catch {
+        return null;
+    }
+}
+
 export async function POST(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
 
@@ -15,13 +48,17 @@ export async function POST(req: NextRequest) {
 
         const { query, image, suggest, userPhone } = await req.json();
 
-        // 1. Handle Visual Search (if image is provided)
-        if (image && !query) {
-            console.log("Visual Search requested");
-            return NextResponse.json({ success: true, results: [], count: 0 });
+        let searchQuery = (query || "").trim();
+
+        // 1. Visual Search — rasmni Groq vision bilan tahlil qilib kalit so'z chiqarish
+        if (image && !searchQuery) {
+            const visionKeywords = await extractKeywordsFromImage(image);
+            if (!visionKeywords) {
+                return NextResponse.json({ success: true, results: [], count: 0, message: "Rasmdan mahsulot aniqlanmadi" });
+            }
+            searchQuery = visionKeywords;
         }
 
-        const searchQuery = (query || "").trim();
         if (!searchQuery) {
             return NextResponse.json({ results: [] });
         }
