@@ -224,6 +224,24 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
         setupPush();
     }, [user?.phone]);
 
+    // 🔗 Affiliate attribution sync: login bo'lganda cookie'dagi ref'larni
+    // serverga ko'chiramiz (mehmon havola bosib, keyin login qilsa — cross-device ishlaydi)
+    useEffect(() => {
+        if (!user?.phone) return;
+        const cookieStr = document.cookie.split('; ').find(row => row.startsWith('affiliate_data='));
+        if (!cookieStr) return;
+        try {
+            const items = JSON.parse(decodeURIComponent(cookieStr.split('=')[1]));
+            if (items && Object.keys(items).length > 0) {
+                fetch("/api/affiliate/track", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ items }),
+                }).catch(() => null);
+            }
+        } catch { /* noto'g'ri cookie */ }
+    }, [user?.phone]);
+
 
 
     const isAdmin = pathname?.startsWith("/admin");

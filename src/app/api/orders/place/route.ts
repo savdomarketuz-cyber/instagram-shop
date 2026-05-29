@@ -170,8 +170,27 @@ export async function POST(req: NextRequest) {
             }
 
             // 2. If NO Promo Code was used, check for Referral Links (Standard MLM)
-            if (!promoAffiliateId && validatedData.referralData && Object.keys(validatedData.referralData).length > 0) {
-                for (const [prodId, slug] of Object.entries(validatedData.referralData)) {
+            if (!promoAffiliateId) {
+                // Atributsiyani birlashtirish: server-side DB (cross-device) + cookie (joriy qurilma).
+                // Last-click: cookie (eng yangi session) DB ustidan ustun turadi.
+                const cookieRefs: Record<string, string> = (validatedData.referralData as any) || {};
+
+                const { data: dbAttr } = await supabaseAdmin
+                    .from("referral_attributions")
+                    .select("product_id, slug")
+                    .eq("user_phone", validatedData.userPhone);
+
+                const merged: Record<string, string> = {};
+                (dbAttr || []).forEach(a => { merged[a.product_id] = a.slug; });
+                Object.entries(cookieRefs).forEach(([pid, slug]) => { merged[pid] = slug; }); // cookie ustun
+
+                // Faqat shu buyurtmadagi mahsulotlar uchun
+                const orderedIds = new Set(validatedData.items.map((i: any) => i.id));
+                const referralData = Object.fromEntries(
+                    Object.entries(merged).filter(([pid]) => orderedIds.has(pid))
+                );
+
+                for (const [prodId, slug] of Object.entries(referralData)) {
                     const { data: linkData } = await supabaseAdmin
                         .from("affiliate_links")
                         .select("user_id, id")

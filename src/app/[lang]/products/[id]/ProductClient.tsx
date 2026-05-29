@@ -112,13 +112,22 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                 // Add new referral mapping
                 refData[product.id] = ref;
 
-                // Store back in cookie for 30 days
+                // Store back in cookie for 30 days (mehmonlar uchun)
                 const expires = new Date();
                 expires.setTime(expires.getTime() + (30 * 24 * 60 * 60 * 1000));
                 document.cookie = `affiliate_data=${encodeURIComponent(JSON.stringify(refData))};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+
+                // Login qilgan bo'lsa — serverga ham yozamiz (cross-device, last-click)
+                if (user?.phone) {
+                    fetch("/api/affiliate/track", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ productId: product.id, slug: ref }),
+                    }).catch(() => null);
+                }
             }
         }
-    }, [product?.id]);
+    }, [product?.id, user?.phone]);
 
     // 1. Initial Data Pipeline (Hierarchical Prioritization)
     useEffect(() => {
