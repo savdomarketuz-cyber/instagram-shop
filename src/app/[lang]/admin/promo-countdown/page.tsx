@@ -145,7 +145,7 @@ export default function PromoCountdownAdmin() {
     useEffect(() => {
         const fetchAll = async () => {
             const [settRes, catRes, brRes, prodRes] = await Promise.all([
-                supabase.from("site_settings").select("value").eq("key", "promo_countdown").single(),
+                supabase.from("site_settings").select("value").eq("key", "promo_countdown").maybeSingle(),
                 supabase.from("categories").select("id, name").eq("is_deleted", false),
                 supabase.from("brands").select("id, name").eq("is_deleted", false),
                 supabase.from("products").select("id, name").eq("is_deleted", false),
@@ -186,6 +186,7 @@ export default function PromoCountdownAdmin() {
                 body: JSON.stringify({
                     table: "site_settings",
                     action: "upsert",
+                    onConflict: "key",
                     payload: { key: "promo_countdown", value: payload },
                 }),
             });

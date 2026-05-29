@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     if (!(await verifyAdmin(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
-        const { table, action, payload, matchConfig, inConfig } = await req.json();
+        const { table, action, payload, matchConfig, inConfig, onConflict } = await req.json();
 
         if (!table) return NextResponse.json({ error: "Table is required" }, { status: 400 });
 
@@ -81,7 +81,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true, data });
         }
         else if (action === "upsert") {
-            const { data, error } = await query.upsert(payload).select();
+            let upsertQuery = query.upsert(payload, onConflict ? { onConflict } : undefined);
+            const { data, error } = await upsertQuery.select();
             if (error) throw error;
             
             if (table === "products" || table === "banners" || table === "categories") {
