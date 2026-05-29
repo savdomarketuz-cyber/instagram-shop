@@ -5,6 +5,8 @@ import { supabase } from "@/lib/supabase";
 import { Plus, Trash2, Save, Loader2, CheckCircle2, Eye, EyeOff, Image as ImageIcon, Music, Video } from "lucide-react";
 import Image from "next/image";
 
+type CtaType = "none" | "product" | "category" | "brand";
+
 interface Story {
     id: string;
     title_uz: string;
@@ -15,7 +17,16 @@ interface Story {
     video?: string;
     is_active: boolean;
     sort_order: number;
+    group_key?: string | null;
+    group_title_uz?: string | null;
+    group_title_ru?: string | null;
+    cta_type?: CtaType | null;
+    cta_ids?: string[] | null;
+    cta_label_uz?: string | null;
+    cta_label_ru?: string | null;
 }
+
+interface PickTarget { id: string; name: string; }
 
 const EMPTY: Omit<Story, "id" | "sort_order"> = {
     title_uz: "",
@@ -25,7 +36,88 @@ const EMPTY: Omit<Story, "id" | "sort_order"> = {
     audio: "",
     video: "",
     is_active: true,
+    group_key: "",
+    group_title_uz: "",
+    group_title_ru: "",
+    cta_type: "none",
+    cta_ids: [],
+    cta_label_uz: "",
+    cta_label_ru: "",
 };
+
+// Guruh + CTA tahrirlagich (alohida komponent — qidiruv holati saqlanishi uchun)
+function StoryExtras({
+    groupKey, groupTitleUz, groupTitleRu, ctaType, ctaIds, ctaLabelUz, ctaLabelRu,
+    set, products, categories, brands,
+}: {
+    groupKey: string; groupTitleUz: string; groupTitleRu: string;
+    ctaType: CtaType; ctaIds: string[]; ctaLabelUz: string; ctaLabelRu: string;
+    set: (key: keyof Story, value: any) => void;
+    products: PickTarget[]; categories: PickTarget[]; brands: PickTarget[];
+}) {
+    const [q, setQ] = useState("");
+    const targets = ctaType === "product" ? products : ctaType === "category" ? categories : ctaType === "brand" ? brands : [];
+    const filtered = (q.trim() ? targets.filter(t => (t.name || "").toLowerCase().includes(q.toLowerCase())) : targets).slice(0, 40);
+    const toggle = (id: string) => {
+        const cur = ctaIds || [];
+        set("cta_ids", cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id]);
+    };
+    const inputCls = "px-3 py-2 rounded-xl border-2 border-gray-100 text-xs font-semibold focus:outline-none focus:border-black transition-colors";
+
+    return (
+        <div className="md:col-span-2 mt-2 p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <input value={groupKey} placeholder="Guruh kaliti (mavzu) — bir xil = bitta pufak"
+                    onChange={e => set("group_key", e.target.value)} className={inputCls + " md:col-span-3 font-mono"} />
+                <input value={groupTitleUz} placeholder="Guruh nomi (UZ, ixtiyoriy)"
+                    onChange={e => set("group_title_uz", e.target.value)} className={inputCls} />
+                <input value={groupTitleRu} placeholder="Guruh nomi (RU, ixtiyoriy)"
+                    onChange={e => set("group_title_ru", e.target.value)} className={inputCls} />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <select value={ctaType} onChange={e => { set("cta_type", e.target.value); set("cta_ids", []); setQ(""); }}
+                    className={inputCls}>
+                    <option value="none">CTA tugma — yo&apos;q</option>
+                    <option value="product">Mahsulot(lar)ga</option>
+                    <option value="category">Kategoriyaga</option>
+                    <option value="brand">Brendga</option>
+                </select>
+                <input value={ctaLabelUz} placeholder="Tugma matni (UZ) — bo'sh: Xarid qilish"
+                    onChange={e => set("cta_label_uz", e.target.value)} className={inputCls} />
+                <input value={ctaLabelRu} placeholder="Tugma matni (RU) — bo'sh: Купить"
+                    onChange={e => set("cta_label_ru", e.target.value)} className={inputCls} />
+            </div>
+
+            {ctaType !== "none" && (
+                <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Qidirish..."
+                            className={inputCls + " flex-1 mr-3"} />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 shrink-0">
+                            {(ctaIds || []).length} ta tanlandi
+                        </span>
+                    </div>
+                    <div className="max-h-44 overflow-y-auto rounded-xl border border-gray-200 bg-white divide-y divide-gray-50">
+                        {filtered.map(t => {
+                            const on = (ctaIds || []).includes(t.id);
+                            return (
+                                <button key={t.id} type="button" onClick={() => toggle(t.id)}
+                                    className={`w-full flex items-center gap-3 px-3 py-2 text-left text-xs font-semibold transition-colors ${on ? "bg-green-50 text-green-700" : "hover:bg-gray-50 text-gray-700"}`}>
+                                    <span className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${on ? "bg-green-600 border-green-600" : "border-gray-300"}`}>
+                                        {on && <span className="text-white text-[9px] font-black">✓</span>}
+                                    </span>
+                                    <span className="truncate">{t.name || t.id}</span>
+                                </button>
+                            );
+                        })}
+                        {filtered.length === 0 && <div className="px-3 py-3 text-xs text-gray-400">Topilmadi</div>}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
 
 export default function AdminStoriesPage() {
     const [stories, setStories] = useState<Story[]>([]);
@@ -37,13 +129,29 @@ export default function AdminStoriesPage() {
     const [newStory, setNewStory] = useState({ ...EMPTY });
     const [uploading, setUploading] = useState<string | null>(null);
 
-    useEffect(() => { fetchStories(); }, []);
+    // CTA target manbalari
+    const [products, setProducts] = useState<PickTarget[]>([]);
+    const [categories, setCategories] = useState<PickTarget[]>([]);
+    const [brands, setBrands] = useState<PickTarget[]>([]);
+
+    useEffect(() => { fetchStories(); fetchTargets(); }, []);
 
     const fetchStories = async () => {
         setLoading(true);
         const { data } = await supabase.from("stories").select("*").order("sort_order", { ascending: true });
         if (data) setStories(data);
         setLoading(false);
+    };
+
+    const fetchTargets = async () => {
+        const [p, c, b] = await Promise.all([
+            supabase.from("products").select("id, name").eq("is_deleted", false),
+            supabase.from("categories").select("id, name").eq("is_deleted", false),
+            supabase.from("brands").select("id, name").eq("is_deleted", false),
+        ]);
+        if (p.data) setProducts(p.data as PickTarget[]);
+        if (c.data) setCategories(c.data as PickTarget[]);
+        if (b.data) setBrands(b.data as PickTarget[]);
     };
 
     // supabaseAdmin (RLS bypass) uchun /api/admin/crud orqali
@@ -70,6 +178,13 @@ export default function AdminStoriesPage() {
                 video: story.video || null,
                 is_active: story.is_active,
                 sort_order: story.sort_order,
+                group_key: story.group_key?.trim() || null,
+                group_title_uz: story.group_title_uz?.trim() || null,
+                group_title_ru: story.group_title_ru?.trim() || null,
+                cta_type: story.cta_type || "none",
+                cta_ids: story.cta_ids || [],
+                cta_label_uz: story.cta_label_uz?.trim() || null,
+                cta_label_ru: story.cta_label_ru?.trim() || null,
             }, { column: "id", value: story.id });
             setSaved(true);
             setTimeout(() => setSaved(false), 2000);
@@ -105,7 +220,7 @@ export default function AdminStoriesPage() {
         setStories(prev => prev.map(s => s.id === id ? { ...s, is_active: !s.is_active } : s));
     };
 
-    const handleField = (id: string, key: keyof Story, value: string | boolean | number) => {
+    const handleField = (id: string, key: keyof Story, value: any) => {
         setStories(prev => prev.map(s => s.id === id ? { ...s, [key]: value } : s));
     };
 
@@ -271,6 +386,18 @@ export default function AdminStoriesPage() {
                                     onUrlChange={url => handleField(s.id, "video", url)}
                                     onFileChange={file => handleUpload(file, s.id, "video")}
                                 />
+                                {/* Guruh + CTA */}
+                                <StoryExtras
+                                    groupKey={s.group_key || ""}
+                                    groupTitleUz={s.group_title_uz || ""}
+                                    groupTitleRu={s.group_title_ru || ""}
+                                    ctaType={(s.cta_type as CtaType) || "none"}
+                                    ctaIds={s.cta_ids || []}
+                                    ctaLabelUz={s.cta_label_uz || ""}
+                                    ctaLabelRu={s.cta_label_ru || ""}
+                                    set={(key, value) => handleField(s.id, key, value)}
+                                    products={products} categories={categories} brands={brands}
+                                />
                             </div>
 
                             {/* Actions */}
@@ -350,6 +477,18 @@ export default function AdminStoriesPage() {
                             uploadKey="new-video"
                             onUrlChange={url => setNewStory(p => ({ ...p, video: url }))}
                             onFileChange={file => handleUpload(file, "new", "video")}
+                        />
+                        {/* Guruh + CTA */}
+                        <StoryExtras
+                            groupKey={newStory.group_key || ""}
+                            groupTitleUz={newStory.group_title_uz || ""}
+                            groupTitleRu={newStory.group_title_ru || ""}
+                            ctaType={(newStory.cta_type as CtaType) || "none"}
+                            ctaIds={newStory.cta_ids || []}
+                            ctaLabelUz={newStory.cta_label_uz || ""}
+                            ctaLabelRu={newStory.cta_label_ru || ""}
+                            set={(key, value) => setNewStory(p => ({ ...p, [key]: value }))}
+                            products={products} categories={categories} brands={brands}
                         />
                     </div>
                     <button onClick={handleAdd} disabled={adding}

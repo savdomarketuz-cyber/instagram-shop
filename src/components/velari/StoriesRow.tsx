@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
+import { ShoppingBag, Send, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 interface Story {
@@ -14,42 +15,83 @@ interface Story {
     video?: string;
     is_active: boolean;
     sort_order: number;
+    group_key?: string | null;
+    group_title_uz?: string | null;
+    group_title_ru?: string | null;
+    cta_type?: "none" | "product" | "category" | "brand" | null;
+    cta_ids?: string[] | null;
+    cta_label_uz?: string | null;
+    cta_label_ru?: string | null;
+}
+
+interface StoryGroup {
+    key: string;
+    coverImage: string;
+    coverIsVideo: boolean;
+    title_uz: string;
+    title_ru: string;
+    slides: Story[];
 }
 
 const SEEN_KEY = "velari_seen_stories";
-const STORY_DURATION = 5000; // ms — har bir story shu vaqt ko'rsatiladi
+const IMG_DURATION = 5000;   // ms — rasm slayd davomiyligi
+const VIDEO_DURATION = 15000; // ms — video slayd maksimal davomiyligi
+const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+const CUBE_EASE = "cubic-bezier(0.45, 0.05, 0.2, 1)";
+const CUBE_MS = 480;
+const GREEN = "#2D6E3E";
 
 function getSeenIds(): Set<string> {
     try { return new Set<string>(JSON.parse(localStorage.getItem(SEEN_KEY) || "[]")); }
     catch { return new Set<string>(); }
 }
-function markSeen(id: string) {
+function markSeen(ids: string[]) {
     try {
-        const ids = getSeenIds();
-        ids.add(id);
-        localStorage.setItem(SEEN_KEY, JSON.stringify(Array.from(ids)));
+        const set = getSeenIds();
+        ids.forEach(id => set.add(id));
+        localStorage.setItem(SEEN_KEY, JSON.stringify(Array.from(set)));
     } catch {}
 }
 
-const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
-const GREEN = "#2D6E3E";
+// CTA tugmasi uchun manzil yasash
+function ctaHref(lang: string, s: Story): string | null {
+    const ids = Array.isArray(s.cta_ids) ? s.cta_ids : [];
+    const type = s.cta_type || "none";
+    if (type === "product" && ids[0]) return `/${lang}/products/${ids[0]}`;
+    if (type === "category" && ids[0]) return `/${lang}/?category=${ids[0]}`;
+    if (type === "brand" && ids[0]) return `/${lang}/?brand=${ids[0]}`;
+    if (s.link) return s.link; // legacy oddiy URL
+    return null;
+}
 
 export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
-    const [stories, setStories] = useState<Story[]>([]);
+    const [groups, setGroups] = useState<StoryGroup[]>([]);
     const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
-    const [open, setOpen] = useState<Story | null>(null);
-    const [openIdx, setOpenIdx] = useState(0);
-    // progressKey o'zgarganda progress bar animatsiyasi qayta boshlanadi
-    const [progressKey, setProgressKey] = useState(0);
 
-    const audioRef   = useRef<HTMLAudioElement | null>(null);
-    const timerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const touchX     = useRef(0);
-    const touchY     = useRef(0);
-    const storiesRef = useRef<Story[]>([]);
-    storiesRef.current = stories;
+    // Viewer holati
+    const [open, setOpen] = useState(false);
+    const [groupIdx, setGroupIdx] = useState(0);
+    const [slideIdx, setSlideIdx] = useState(0);
+    const [progress, setProgress] = useState(0);
+    const [paused, setPaused] = useState(false);
 
-    // — Data fetch —
+    // Kub o'tish holati
+    const [rot, setRot] = useState(0);
+    const [rotAnim, setRotAnim] = useState(false);
+    const [transGroup, setTransGroup] = useState<number | null>(null);
+    const [transDir, setTransDir] = useState<1 | -1>(1);
+
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const videoRef = useRef<HTMLVideoElement | null>(null);
+    const pausedRef = useRef(false);
+    const busyRef = useRef(false); // kub aylanayotganda progress to'xtaydi
+    const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const ptr = useRef({ x: 0, y: 0, t: 0, moved: false, held: false });
+
+    const groupsRef = useRef<StoryGroup[]>([]);
+    groupsRef.current = groups;
+
+    // — Data fetch + guruhlash —
     useEffect(() => {
         setSeenIds(getSeenIds());
         supabase
@@ -57,64 +99,156 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
             .select("*")
             .eq("is_active", true)
             .order("sort_order", { ascending: true })
-            .then(({ data }) => { if (data) setStories(data); });
+            .then(({ data }) => {
+                if (!data) return;
+                const order: string[] = [];
+                const map = new Map<string, Story[]>();
+                (data as Story[]).forEach(s => {
+                    const key = s.group_key && s.group_key.trim() ? s.group_key.trim() : `__solo_${s.id}`;
+                    if (!map.has(key)) { map.set(key, []); order.push(key); }
+                    map.get(key)!.push(s);
+                });
+                const built: StoryGroup[] = order.map(key => {
+                    const slides = map.get(key)!;
+                    const first = slides[0];
+                    const cover = slides.find(x => x.image)?.image || "";
+                    return {
+                        key,
+                        coverImage: cover,
+                        coverIsVideo: !cover && !!first.video,
+                        title_uz: first.group_title_uz?.trim() || first.title_uz,
+                        title_ru: first.group_title_ru?.trim() || first.title_ru,
+                        slides,
+                    };
+                });
+                setGroups(built);
+            });
     }, []);
 
-    // — Audio helpers —
+    const curGroup = groups[groupIdx];
+    const curSlide = curGroup?.slides[slideIdx];
+
+    // Refs for rAF closure
+    const curSlideRef = useRef<Story | undefined>(undefined);
+    curSlideRef.current = curSlide;
+
+    // — Audio —
     const stopAudio = useCallback(() => {
-        if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current = null;
-        }
+        if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     }, []);
-
-    const playAudio = useCallback((story: Story) => {
+    const playAudio = useCallback((s?: Story) => {
         stopAudio();
-        if (story.audio) {
-            const a = new Audio(story.audio);
-            a.loop = true;
-            a.volume = 0.7;
+        if (s?.audio) {
+            const a = new Audio(s.audio);
+            a.loop = true; a.volume = 0.7;
             a.play().catch(() => {});
             audioRef.current = a;
         }
     }, [stopAudio]);
 
-    // — Close —
+    // — Yopish —
     const handleClose = useCallback(() => {
         stopAudio();
-        if (timerRef.current) clearTimeout(timerRef.current);
-        setOpen(null);
+        busyRef.current = false;
+        setOpen(false);
+        setPaused(false);
+        pausedRef.current = false;
     }, [stopAudio]);
 
-    // — Go to specific story index —
-    const goTo = useCallback((idx: number) => {
-        const list = storiesRef.current;
-        if (idx < 0 || idx >= list.length) {
-            // Oxirgi storydan keyin yoki birinchidan oldin — yopiladi
-            handleClose();
-            return;
-        }
-        const s = list[idx];
-        markSeen(s.id);
-        setSeenIds(prev => new Set<string>([...Array.from(prev), s.id]));
-        setOpen(s);
-        setOpenIdx(idx);
-        setProgressKey(k => k + 1); // progress bar qayta boshlanadi
-        playAudio(s);
-    }, [handleClose, playAudio]);
+    // — Slayd ichida o'tish —
+    const advanceRef = useRef<() => void>(() => {});
 
-    // — Auto-advance timer: story 5 soniyadan keyin keyingisiga o'tadi —
+    const startCube = useCallback((dir: 1 | -1) => {
+        if (busyRef.current) return;
+        const list = groupsRef.current;
+        const target = groupIdx + dir;
+        if (target < 0) return;            // birinchi guruhdan oldin — hech narsa
+        if (target >= list.length) { handleClose(); return; } // oxirgidan keyin — yopiladi
+
+        busyRef.current = true;
+        stopAudio();
+        setTransGroup(target);
+        setTransDir(dir);
+        // animatsiyani yoqib, kubni aylantiramiz
+        requestAnimationFrame(() => {
+            setRotAnim(true);
+            setRot(dir === 1 ? -90 : 90);
+        });
+        // tugagach holatni yangilaymiz
+        window.setTimeout(() => {
+            markSeen([list[target].slides[0].id]);
+            setSeenIds(prev => new Set<string>([...Array.from(prev), list[target].slides[0].id]));
+            setRotAnim(false);
+            setRot(0);
+            setTransGroup(null);
+            setGroupIdx(target);
+            setSlideIdx(0);
+            setProgress(0);
+            busyRef.current = false;
+            playAudio(list[target].slides[0]);
+        }, CUBE_MS);
+    }, [groupIdx, handleClose, stopAudio, playAudio]);
+
+    const nextSlide = useCallback(() => {
+        if (busyRef.current) return;
+        const g = groupsRef.current[groupIdx];
+        if (!g) return;
+        if (slideIdx < g.slides.length - 1) {
+            const ni = slideIdx + 1;
+            markSeen([g.slides[ni].id]);
+            setSeenIds(prev => new Set<string>([...Array.from(prev), g.slides[ni].id]));
+            setSlideIdx(ni);
+            setProgress(0);
+        } else {
+            startCube(1); // guruhning oxirgi slaydi — keyingi guruhga kub bilan
+        }
+    }, [groupIdx, slideIdx, startCube]);
+    advanceRef.current = nextSlide;
+
+    const prevSlide = useCallback(() => {
+        if (busyRef.current) return;
+        if (slideIdx > 0) {
+            setSlideIdx(slideIdx - 1);
+            setProgress(0);
+        } else {
+            startCube(-1); // birinchi slayd — oldingi guruhga
+        }
+    }, [slideIdx, startCube]);
+
+    // — rAF progress (pauza/davom bilan) —
     useEffect(() => {
         if (!open) return;
-        if (timerRef.current) clearTimeout(timerRef.current);
-        timerRef.current = setTimeout(() => {
-            goTo(openIdx + 1);
-        }, STORY_DURATION);
-        return () => {
-            if (timerRef.current) clearTimeout(timerRef.current);
+        let raf = 0;
+        let last = performance.now();
+        let elapsed = 0;
+        setProgress(0);
+        const dur = curSlideRef.current?.video ? VIDEO_DURATION : IMG_DURATION;
+        const tick = (now: number) => {
+            const dt = now - last; last = now;
+            if (!pausedRef.current && !busyRef.current) {
+                elapsed += dt;
+                const p = Math.min(1, elapsed / dur);
+                setProgress(p);
+                if (p >= 1) { advanceRef.current(); return; }
+            }
+            raf = requestAnimationFrame(tick);
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [progressKey, open]); // progressKey o'zgarganda timer qayta boshlanadi
+        raf = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(raf);
+    }, [open, groupIdx, slideIdx]);
+
+    // — Pauza: video/audio —
+    useEffect(() => {
+        pausedRef.current = paused;
+        const v = videoRef.current;
+        if (paused) {
+            if (v) v.pause();
+            if (audioRef.current) audioRef.current.pause();
+        } else {
+            if (v) v.play().catch(() => {});
+            if (audioRef.current) audioRef.current.play().catch(() => {});
+        }
+    }, [paused]);
 
     // — Body scroll lock —
     useEffect(() => {
@@ -131,137 +265,164 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
         };
     }, [open]);
 
-    // — Keyboard navigation —
+    // — Klaviatura —
     useEffect(() => {
         if (!open) return;
         const onKey = (e: KeyboardEvent) => {
-            if (e.key === "Escape")      handleClose();
-            if (e.key === "ArrowRight")  goTo(openIdx + 1);
-            if (e.key === "ArrowLeft")   goTo(openIdx - 1);
+            if (e.key === "Escape") handleClose();
+            if (e.key === "ArrowRight") nextSlide();
+            if (e.key === "ArrowLeft") prevSlide();
         };
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
-    }, [open, openIdx, handleClose, goTo]);
+    }, [open, handleClose, nextSlide, prevSlide]);
 
-    // — Unmount cleanup —
-    useEffect(() => {
-        return () => {
-            stopAudio();
-            if (timerRef.current) clearTimeout(timerRef.current);
-        };
-    }, [stopAudio]);
+    // — Tozalash —
+    useEffect(() => () => { stopAudio(); if (holdTimer.current) clearTimeout(holdTimer.current); }, [stopAudio]);
 
-    // — Open story —
-    const handleOpen = (story: Story, idx: number) => {
-        markSeen(story.id);
-        setSeenIds(prev => new Set<string>([...Array.from(prev), story.id]));
-        setOpen(story);
-        setOpenIdx(idx);
-        setProgressKey(k => k + 1);
-        playAudio(story);
+    // — Pufakni ochish —
+    const openGroup = (gi: number) => {
+        const g = groupsRef.current[gi];
+        if (!g) return;
+        markSeen([g.slides[0].id]);
+        setSeenIds(prev => new Set<string>([...Array.from(prev), g.slides[0].id]));
+        setGroupIdx(gi);
+        setSlideIdx(0);
+        setProgress(0);
+        setRot(0);
+        setRotAnim(false);
+        setTransGroup(null);
+        setPaused(false);
+        pausedRef.current = false;
+        busyRef.current = false;
+        setOpen(true);
+        playAudio(g.slides[0]);
     };
 
-    // — Swipe gestures (left/right navigate, down closes) —
-    const onTouchStart = (e: React.TouchEvent) => {
-        touchX.current = e.touches[0].clientX;
-        touchY.current = e.touches[0].clientY;
+    // — Gesture overlay —
+    const onPointerDown = (e: React.PointerEvent) => {
+        ptr.current = { x: e.clientX, y: e.clientY, t: performance.now(), moved: false, held: false };
+        if (holdTimer.current) clearTimeout(holdTimer.current);
+        holdTimer.current = setTimeout(() => {
+            ptr.current.held = true;
+            setPaused(true);
+        }, 220);
     };
-    const onTouchEnd = (e: React.TouchEvent) => {
-        const dx = e.changedTouches[0].clientX - touchX.current;
-        const dy = e.changedTouches[0].clientY - touchY.current;
-        if (Math.abs(dy) > Math.abs(dx)) {
-            if (dy > 60) handleClose(); // swipe down → yopiladi
-        } else if (Math.abs(dx) > 40) {
-            goTo(openIdx + (dx < 0 ? 1 : -1)); // swipe left → keyingi, right → oldingi
+    const onPointerMove = (e: React.PointerEvent) => {
+        const dx = e.clientX - ptr.current.x;
+        const dy = e.clientY - ptr.current.y;
+        if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+            ptr.current.moved = true;
+            if (holdTimer.current) { clearTimeout(holdTimer.current); holdTimer.current = null; }
         }
     };
+    const onPointerUp = (e: React.PointerEvent) => {
+        if (holdTimer.current) { clearTimeout(holdTimer.current); holdTimer.current = null; }
+        const dx = e.clientX - ptr.current.x;
+        const dy = e.clientY - ptr.current.y;
 
-    if (stories.length === 0) return null;
+        if (ptr.current.held) { setPaused(false); return; } // hold tugadi — navigatsiya yo'q
+
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+            startCube(dx < 0 ? 1 : -1); // chapga surish → keyingi mavzu, o'ngga → oldingi
+            return;
+        }
+        if (dy > 90 && Math.abs(dy) > Math.abs(dx)) { handleClose(); return; } // pastga — yopiladi
+
+        // oddiy tap — chap 35% oldingi, qolgani keyingi slayd
+        const w = (e.currentTarget as HTMLElement).clientWidth || window.innerWidth;
+        const rel = e.clientX - (e.currentTarget as HTMLElement).getBoundingClientRect().left;
+        if (rel < w * 0.35) prevSlide(); else nextSlide();
+    };
+    const onPointerCancel = () => {
+        if (holdTimer.current) { clearTimeout(holdTimer.current); holdTimer.current = null; }
+        if (ptr.current.held) setPaused(false);
+    };
+
+    // — Slayd mediasi —
+    const renderMedia = (s: Story | undefined) => {
+        if (!s) return null;
+        if (s.video) {
+            return (
+                <video
+                    ref={s === curSlide ? videoRef : undefined}
+                    key={s.id + "-v"}
+                    src={s.video}
+                    autoPlay playsInline loop
+                    muted={!!s.audio}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", background: "#000" }}
+                />
+            );
+        }
+        return (
+            <Image
+                key={s.id + "-i"}
+                src={s.image || "/placeholder.png"}
+                alt={language === "uz" ? s.title_uz : s.title_ru}
+                fill sizes="100vw" priority
+                style={{ objectFit: "cover" }}
+            />
+        );
+    };
+
+    if (groups.length === 0) return null;
 
     return (
         <>
-            {/* — Story bubbles row — */}
+            {/* — Story pufaklari qatori — */}
             <div className="md:hidden mt-4 mb-0">
                 <div
                     style={{ display: "flex", gap: 14, overflowX: "auto", padding: "4px 20px 8px", scrollbarWidth: "none" }}
                     className="no-scrollbar"
                 >
-                    {stories.map((s, idx) => {
-                        const seen = seenIds.has(s.id);
-                        const name = language === "uz" ? s.title_uz : s.title_ru;
-                        const hasVideo = !!s.video;
+                    {groups.map((g, idx) => {
+                        const seen = g.slides.every(s => seenIds.has(s.id));
+                        const name = language === "uz" ? g.title_uz : g.title_ru;
+                        const hasVideo = g.coverIsVideo;
                         return (
                             <button
-                                key={s.id}
-                                onClick={() => handleOpen(s, idx)}
+                                key={g.key}
+                                onClick={() => openGroup(idx)}
                                 style={{
-                                    flexShrink: 0,
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "center",
-                                    gap: 6,
-                                    background: "none",
-                                    border: "none",
-                                    padding: 0,
-                                    cursor: "pointer",
-                                    WebkitTapHighlightColor: "transparent",
+                                    flexShrink: 0, display: "flex", flexDirection: "column",
+                                    alignItems: "center", gap: 6, background: "none", border: "none",
+                                    padding: 0, cursor: "pointer", WebkitTapHighlightColor: "transparent",
                                     animation: `velari-cart-in ${200 + idx * 50}ms ${EASE} both`,
                                 }}
                             >
-                                {/* Gradient ring: ko'rilmagan → yashil, ko'rilgan → kulrang */}
                                 <div style={{
-                                    width: 64,
-                                    height: 64,
-                                    borderRadius: "50%",
-                                    padding: 2.5,
-                                    background: seen
-                                        ? "rgba(15,20,16,0.08)"
-                                        : `conic-gradient(${GREEN} 0%, #7DC492 50%, ${GREEN} 100%)`,
-                                    boxSizing: "border-box",
-                                    position: "relative",
+                                    width: 64, height: 64, borderRadius: "50%", padding: 2.5,
+                                    background: seen ? "rgba(15,20,16,0.08)" : `conic-gradient(${GREEN} 0%, #7DC492 50%, ${GREEN} 100%)`,
+                                    boxSizing: "border-box", position: "relative",
                                 }}>
                                     <div style={{
-                                        width: "100%",
-                                        height: "100%",
-                                        borderRadius: "50%",
-                                        border: "2.5px solid #FAFAF6",
-                                        overflow: "hidden",
-                                        position: "relative",
-                                        background: "#F0F0EC",
+                                        width: "100%", height: "100%", borderRadius: "50%",
+                                        border: "2.5px solid #FAFAF6", overflow: "hidden",
+                                        position: "relative", background: "#F0F0EC",
                                     }}>
-                                        {s.image ? (
-                                            <Image
-                                                src={s.image}
-                                                alt={name}
-                                                fill
-                                                sizes="64px"
-                                                style={{ objectFit: "cover" }}
-                                            />
+                                        {g.coverImage ? (
+                                            <Image src={g.coverImage} alt={name} fill sizes="64px" style={{ objectFit: "cover" }} />
                                         ) : hasVideo ? (
                                             <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#111" }}>
                                                 <span style={{ fontSize: 20, color: "#fff" }}>▶</span>
                                             </div>
                                         ) : null}
                                     </div>
-                                    {hasVideo && (
-                                        <div style={{ position: "absolute", bottom: 0, right: 0, width: 18, height: 18, borderRadius: "50%", background: GREEN, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                            <span style={{ color: "#fff", fontSize: 8, lineHeight: 1 }}>▶</span>
-                                        </div>
+                                    {g.slides.length > 1 && (
+                                        <div style={{
+                                            position: "absolute", bottom: 0, right: 0, minWidth: 18, height: 18,
+                                            padding: "0 5px", borderRadius: 9, background: GREEN, color: "#fff",
+                                            fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center",
+                                            justifyContent: "center", border: "2px solid #FAFAF6",
+                                        }}>{g.slides.length}</div>
                                     )}
                                 </div>
                                 <span style={{
-                                    fontSize: 11,
-                                    fontWeight: seen ? 500 : 700,
-                                    color: seen ? "#9AA29C" : "#0F1410",
-                                    letterSpacing: -0.1,
-                                    maxWidth: 64,
-                                    textAlign: "center",
-                                    whiteSpace: "nowrap",
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                }}>
-                                    {name}
-                                </span>
+                                    fontSize: 11, fontWeight: seen ? 500 : 700,
+                                    color: seen ? "#9AA29C" : "#0F1410", letterSpacing: -0.1,
+                                    maxWidth: 64, textAlign: "center", whiteSpace: "nowrap",
+                                    overflow: "hidden", textOverflow: "ellipsis",
+                                }}>{name}</span>
                             </button>
                         );
                     })}
@@ -269,147 +430,104 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
             </div>
 
             {/* — Story viewer — */}
-            {open && (
-                <div
-                    style={{
-                        position: "fixed",
-                        inset: 0,
-                        zIndex: 9999,
-                        background: "#000",
-                        display: "flex",
-                        flexDirection: "column",
-                        animation: "velari-fade-in 180ms ease both",
-                    }}
-                    onTouchStart={onTouchStart}
-                    onTouchEnd={onTouchEnd}
-                >
-                    {/* Progress bars */}
+            {open && curGroup && (
+                <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#000", animation: "velari-fade-in 180ms ease both" }}>
+                    {/* 3D kub sahna */}
+                    <div style={{ position: "absolute", inset: 0, perspective: "1400px", overflow: "hidden" }}>
+                        <div style={{
+                            position: "absolute", inset: 0, transformStyle: "preserve-3d",
+                            transform: `translateZ(-50vw) rotateY(${rot}deg)`,
+                            transition: rotAnim ? `transform ${CUBE_MS}ms ${CUBE_EASE}` : "none",
+                        }}>
+                            {/* Old (joriy) yuza */}
+                            <div style={{ position: "absolute", inset: 0, overflow: "hidden", WebkitBackfaceVisibility: "hidden", backfaceVisibility: "hidden", transform: "rotateY(0deg) translateZ(50vw)", background: "#000" }}>
+                                {renderMedia(curSlide)}
+                            </div>
+                            {/* Yon (keyingi/oldingi) yuza */}
+                            {transGroup != null && (
+                                <div style={{
+                                    position: "absolute", inset: 0, overflow: "hidden",
+                                    WebkitBackfaceVisibility: "hidden", backfaceVisibility: "hidden",
+                                    transform: `rotateY(${transDir === 1 ? 90 : -90}deg) translateZ(50vw)`, background: "#000",
+                                }}>
+                                    {renderMedia(groups[transGroup]?.slides[0])}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Gesture overlay (mediadan ustun, lekin UI dan past) */}
                     <div
-                        style={{ display: "flex", gap: 4, padding: "16px 16px 0", position: "relative", zIndex: 2 }}
-                        onClick={e => e.stopPropagation()}
-                    >
-                        {stories.map((s, i) => (
-                            <div key={s.id} style={{
-                                flex: 1, height: 2.5, borderRadius: 2,
-                                background: i < openIdx ? "#fff" : "rgba(255,255,255,0.25)",
-                                overflow: "hidden",
-                                cursor: "pointer",
-                            }}
-                                onClick={() => goTo(i)}
-                            >
-                                {i === openIdx && (
-                                    // key={progressKey} — har safar yangi key → animatsiya qayta boshlanadi
-                                    <div
-                                        key={progressKey}
-                                        style={{
-                                            height: "100%",
-                                            background: "#fff",
-                                            borderRadius: 2,
-                                            animation: `velari-story-progress ${STORY_DURATION}ms linear forwards`,
-                                        }}
-                                    />
-                                )}
+                        style={{ position: "absolute", inset: 0, zIndex: 2, touchAction: "none" }}
+                        onPointerDown={onPointerDown}
+                        onPointerMove={onPointerMove}
+                        onPointerUp={onPointerUp}
+                        onPointerCancel={onPointerCancel}
+                    />
+
+                    {/* Progress bars (faqat joriy guruh slaydlari) */}
+                    <div style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 5, display: "flex", gap: 4, padding: "16px 16px 0", opacity: paused ? 0.4 : 1, transition: "opacity 200ms ease" }}>
+                        {curGroup.slides.map((s, i) => (
+                            <div key={s.id} style={{ flex: 1, height: 2.5, borderRadius: 2, background: "rgba(255,255,255,0.28)", overflow: "hidden" }}>
+                                <div style={{
+                                    height: "100%", borderRadius: 2, background: "#fff",
+                                    width: i < slideIdx ? "100%" : i === slideIdx ? `${progress * 100}%` : "0%",
+                                    transition: i === slideIdx ? "width 80ms linear" : "none",
+                                }} />
                             </div>
                         ))}
                     </div>
 
-                    {/* Header — stopPropagation bor, yopilmaydi */}
-                    <div
-                        style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", position: "relative", zIndex: 2 }}
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", border: "2px solid rgba(255,255,255,0.4)", position: "relative", flexShrink: 0 }}>
-                            {open.image ? (
-                                <Image src={open.image} alt="" fill sizes="36px" style={{ objectFit: "cover" }} />
-                            ) : (
-                                <div style={{ width: "100%", height: "100%", background: GREEN, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                    <span style={{ color: "#fff", fontSize: 14 }}>▶</span>
-                                </div>
+                    {/* Header */}
+                    <div style={{ position: "absolute", top: 22, left: 0, right: 0, zIndex: 5, display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", opacity: paused ? 0.4 : 1, transition: "opacity 200ms ease" }}>
+                        <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", border: "2px solid rgba(255,255,255,0.4)", position: "relative", flexShrink: 0, background: GREEN }}>
+                            {curGroup.coverImage && (
+                                <Image src={curGroup.coverImage} alt="" fill sizes="36px" style={{ objectFit: "cover" }} />
                             )}
                         </div>
-                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+                        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
                             <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", letterSpacing: -0.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {language === "uz" ? open.title_uz : open.title_ru}
+                                {language === "uz" ? curGroup.title_uz : curGroup.title_ru}
                             </span>
-                            {open.audio && (
-                                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontWeight: 600, letterSpacing: 0.5 }}>
-                                    ♪ {language === "uz" ? "Musiqa ijroyoda" : "Музыка играет"}
+                            {curSlide?.audio && (
+                                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.55)", fontWeight: 600, letterSpacing: 0.4 }}>
+                                    ♪ {language === "uz" ? "Musiqa ijroda" : "Музыка играет"}
                                 </span>
                             )}
                         </div>
-                        <button
-                            onClick={handleClose}
-                            style={{
-                                background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "50%",
-                                width: 32, height: 32, color: "#fff", fontSize: 20, cursor: "pointer",
-                                display: "flex", alignItems: "center", justifyContent: "center",
-                                flexShrink: 0, lineHeight: 1,
-                            }}
-                        >×</button>
+                        <button onClick={handleClose} style={{
+                            background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "50%",
+                            width: 32, height: 32, color: "#fff", cursor: "pointer", display: "flex",
+                            alignItems: "center", justifyContent: "center", flexShrink: 0,
+                        }}><X size={18} /></button>
                     </div>
 
-                    {/* Media area — tap left 40% / right 40% to navigate */}
-                    <div style={{ flex: 1, position: "relative" }}>
-                        {open.video ? (
-                            <video
-                                key={open.id + "-video"}
-                                src={open.video}
-                                autoPlay
-                                playsInline
-                                loop
-                                muted={!!open.audio}
-                                style={{ width: "100%", height: "100%", objectFit: "contain" }}
-                            />
-                        ) : (
-                            <Image
-                                key={open.id + "-img"}
-                                src={open.image || "/placeholder.png"}
-                                alt={language === "uz" ? open.title_uz : open.title_ru}
-                                fill
-                                sizes="100vw"
-                                priority
-                                style={{ objectFit: "contain" }}
-                            />
-                        )}
-
-                        {/* Oldingi story — chap 40% */}
-                        <button
-                            onClick={e => { e.stopPropagation(); goTo(openIdx - 1); }}
-                            style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "40%", background: "none", border: "none", cursor: "pointer" }}
-                            aria-label="Oldingi story"
-                        />
-                        {/* Keyingi story — o'ng 40% */}
-                        <button
-                            onClick={e => { e.stopPropagation(); goTo(openIdx + 1); }}
-                            style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "40%", background: "none", border: "none", cursor: "pointer" }}
-                            aria-label="Keyingi story"
-                        />
-                    </div>
-
-                    {/* Link button */}
-                    {open.link && (
-                        <div
-                            style={{ padding: "16px 24px 40px", position: "relative", zIndex: 2 }}
-                            onClick={e => e.stopPropagation()}
-                        >
+                    {/* CTA — "Xarid qilish" tugmasi */}
+                    {!busyRef.current && curSlide && ctaHref(language, curSlide) && (
+                        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 5, padding: "16px 20px 36px", display: "flex", justifyContent: "center", gap: 10 }}>
                             <a
-                                href={open.link}
+                                href={ctaHref(language, curSlide) || "#"}
                                 onClick={handleClose}
                                 style={{
-                                    display: "block",
-                                    textAlign: "center",
-                                    padding: "14px",
-                                    background: "#fff",
-                                    borderRadius: 16,
-                                    color: "#0F1410",
-                                    fontWeight: 700,
-                                    fontSize: 14,
-                                    textDecoration: "none",
-                                    letterSpacing: -0.2,
+                                    flex: 1, maxWidth: 360, display: "flex", alignItems: "center", justifyContent: "center",
+                                    gap: 8, padding: "15px 18px", background: "#fff", borderRadius: 30,
+                                    color: "#0F1410", fontWeight: 800, fontSize: 14, textDecoration: "none",
+                                    letterSpacing: -0.2, boxShadow: "0 6px 24px rgba(0,0,0,0.25)",
                                 }}
                             >
-                                {language === "uz" ? "Ko'rish →" : "Смотреть →"}
+                                <ShoppingBag size={17} color={GREEN} strokeWidth={2.4} />
+                                {curSlide.cta_label_uz || curSlide.cta_label_ru
+                                    ? (language === "uz" ? (curSlide.cta_label_uz || curSlide.cta_label_ru) : (curSlide.cta_label_ru || curSlide.cta_label_uz))
+                                    : (curSlide.cta_type && curSlide.cta_type !== "none"
+                                        ? (language === "uz" ? "Xarid qilish" : "Купить")
+                                        : (language === "uz" ? "Ko'rish" : "Смотреть"))}
                             </a>
+                            <div style={{
+                                width: 52, height: 52, borderRadius: 26, background: "rgba(255,255,255,0.16)",
+                                backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                            }}>
+                                <Send size={20} color="#fff" />
+                            </div>
                         </div>
                     )}
                 </div>

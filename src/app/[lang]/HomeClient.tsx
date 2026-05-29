@@ -38,6 +38,7 @@ export default function HomeClient({
 }: HomeClientProps) {
     const searchParams = useSearchParams();
     const urlCategory = searchParams.get("category");
+    const urlBrand = searchParams.get("brand");
 
     const { 
         cart, wishlist, language, user, addToCart, updateQuantity, removeFromCart, 
@@ -248,13 +249,13 @@ export default function HomeClient({
 
     // Re-fetch when filters change (reset pagination)
     useEffect(() => {
-        const isDefault = activeFilter === 'all' && activeTab === 'for_you' && !search;
+        const isDefault = activeFilter === 'all' && activeTab === 'for_you' && !search && !urlBrand;
         if (!isDefault || allProducts.length === 0) {
             fetchProducts(false);
         }
         // fetchProducts is intentionally omitted — it's defined below and stable enough
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeFilter, activeTab, search]);
+    }, [activeFilter, activeTab, search, urlBrand]);
 
     const fetchProducts = async (isLoadMore = false) => {
         if (isLoadMore && (!hasMore || isFetchingMore)) return;
@@ -291,6 +292,11 @@ export default function HomeClient({
                     const categoryIds = getAllCategoryIds(targetCategory.id);
                     query = query.in("category_id", categoryIds);
                 }
+            }
+
+            // Brend bo'yicha filtr (story CTA / ?brand= havolasi uchun)
+            if (urlBrand) {
+                query = query.eq("brand_id", urlBrand);
             }
 
             if (search.trim()) {
