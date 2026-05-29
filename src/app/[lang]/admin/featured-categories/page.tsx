@@ -128,8 +128,24 @@ export default function AdminFeaturedCategoriesPage() {
     const getIcon = (cat: Category) => pendingIconChanges[cat.id] ?? cat.icon ?? "";
     const getColor = (cat: Category) => pendingColorChanges[cat.id] ?? cat.color ?? "";
 
-    // Faqat parent kategoriyalar (parent_id null)
-    const parentCategories = allCategories.filter(c => !c.parent_id);
+    // Barcha kategoriyalar tanlash uchun (parent + subkategoriyalar).
+    // Parent nomini ko'rsatish uchun map.
+    const parentNameById = new Map(
+        allCategories.filter(c => !c.parent_id).map(c => [c.id, c.name_uz || c.name])
+    );
+    // Avval parentlar, keyin har biri ostidagi subkategoriyalar tartibida.
+    const orderedCategories = (() => {
+        const parents = allCategories.filter(c => !c.parent_id);
+        const result: Category[] = [];
+        for (const p of parents) {
+            result.push(p);
+            result.push(...allCategories.filter(c => c.parent_id === p.id));
+        }
+        // Parent topilmagan (orphan) subkategoriyalar
+        const seen = new Set(result.map(c => c.id));
+        result.push(...allCategories.filter(c => !seen.has(c.id)));
+        return result;
+    })();
 
     if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin" size={32} /></div>;
 
@@ -283,10 +299,12 @@ export default function AdminFeaturedCategoriesPage() {
                     Barcha kategoriyalar — tanlang
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {parentCategories.map((cat, idx) => {
+                    {orderedCategories.map((cat, idx) => {
                         const isSelected = selectedIds.includes(cat.id);
                         const icon = getIcon(cat);
                         const color = getColor(cat) || PALETTE[idx % PALETTE.length];
+                        const isParent = !cat.parent_id;
+                        const parentName = cat.parent_id ? parentNameById.get(cat.parent_id) : null;
 
                         return (
                             <button
@@ -306,9 +324,13 @@ export default function AdminFeaturedCategoriesPage() {
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <div className="font-bold text-sm truncate">{cat.name_uz || cat.name}</div>
-                                    {cat.name_ru && (
+                                    {isParent ? (
+                                        <div className="text-[9px] text-green-600 font-black uppercase tracking-wider truncate">Asosiy</div>
+                                    ) : parentName ? (
+                                        <div className="text-[10px] text-gray-400 truncate">{parentName}</div>
+                                    ) : cat.name_ru ? (
                                         <div className="text-[10px] text-gray-400 truncate">{cat.name_ru}</div>
-                                    )}
+                                    ) : null}
                                 </div>
                                 {isSelected && (
                                     <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shrink-0">
