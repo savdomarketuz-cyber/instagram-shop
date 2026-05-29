@@ -39,25 +39,51 @@ export async function getAiRecommendations(userInterests: any, allProducts: Prod
     const GROQ_API_KEY = process.env.GROQ_API_KEY_1 || process.env.GROQ_API_KEY_2;
     if (!GROQ_API_KEY) return [];
 
-    const topCategories = Object.entries((userInterests.categories as Record<string, number>) || {})
+    const catWeights = (userInterests.categories as Record<string, number>) || {};
+    const topCategories = Object.entries(catWeights)
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
+        .slice(0, 6)
         .map(([cat]) => cat);
 
-    const relevantProducts = allProducts
+    // Foydalanuvchi e'tibor bergan mahsulotlar (eng kuchli signal)
+    const attentionIds: string[] = Array.isArray(userInterests.attention_products) ? userInterests.attention_products : [];
+    const attentionProducts = allProducts
+        .filter(p => attentionIds.includes(p.id))
+        .slice(0, 10)
+        .map(p => ({ name: p.name, category: p.category, price: p.price }));
+
+    // Nomzod mahsulotlar — boyroq kontekst (narx, brend, reyting, sotuv)
+    const candidates = allProducts
         .filter(p => topCategories.includes(p.category) || (p.tag && topCategories.includes(p.tag)))
-        .slice(0, 40);
+        .filter(p => !attentionIds.includes(p.id)) // ko'rilganlarni takrorlamaslik
+        .slice(0, 50)
+        .map(p => ({
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            price: p.price,
+            brand: (p as any).brand || (p.name || "").split(" ")[0],
+            rating: p.rating || 0,
+            sales: p.sales || 0,
+            discount: p.oldPrice && p.oldPrice > p.price ? Math.round((1 - p.price / p.oldPrice) * 100) : 0,
+        }));
 
-    const productsContext = relevantProducts.map(p => ({ id: p.id, name: p.name, category: p.category }));
+    if (candidates.length === 0) return [];
 
-    const prompt = `
-        Sen professional sotuvchi AI yordamchisan. 
-        Mijozning qiziqishlari: ${JSON.stringify(userInterests.categories)}
-        Mavjud mahsulotlar: ${JSON.stringify(productsContext)}
+    const systemPrompt = `Sen Velari onlayn do'konining shaxsiy tavsiya AI'sisan (Amazon/Wildberries darajasida).
+Vazifang: mijoz xulqini tahlil qilib, u SOTIB OLISHI EHTIMOLI ENG YUQORI bo'lgan mahsulotlarni tanlash.
+Qoidalar:
+1. Mijoz e'tibor bergan mahsulotlarga O'XSHASH yoki ularni TO'LDIRUVCHI mahsulotlarni afzal ko'r.
+2. Faqat 1 kategoriyaga tiqilib qolma — qiziqishlar bo'yicha XILMA-XIL tanla (2-4 kategoriya).
+3. Reyting yuqori, sotuvi ko'p va chegirmali mahsulotlarni biroz ustun qo'y.
+4. Faqat berilgan ro'yxatdagi haqiqiy ID'larni qaytar.
+JAVOB QAT'IY JSON: {"recommendations": ["id1","id2",...,"id8"]}`;
 
-        Mijoz uchun eng mos 6 ta mahsulot ID raqamlarini JSON formatida qaytar. 
-        Faqat JSON bo'lsin: ["id1", "id2", "id3", "id4", "id5", "id6"]
-    `;
+    const userPrompt = `Mijoz qiziqishlari (kategoriya: og'irlik): ${JSON.stringify(catWeights)}
+Mijoz yaqinda e'tibor bergan mahsulotlar: ${JSON.stringify(attentionProducts)}
+Tanlash uchun nomzod mahsulotlar: ${JSON.stringify(candidates)}
+
+Eng mos 8 ta mahsulot ID'sini tanla.`;
 
     try {
         const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -67,12 +93,12 @@ export async function getAiRecommendations(userInterests: any, allProducts: Prod
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "llama-3.3-70b-versatile",
+                model: "openai/gpt-oss-120b",
                 messages: [
-                    { role: "system", content: "Sen faqat JSON qaytaruvchi AI yordamchisan." },
-                    { role: "user", content: prompt }
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: userPrompt }
                 ],
-                temperature: 0.7,
+                temperature: 0.5,
                 response_format: { type: "json_object" }
             })
         });
@@ -80,13 +106,17 @@ export async function getAiRecommendations(userInterests: any, allProducts: Prod
         if (!groqResponse.ok) throw new Error("Groq API error");
         const data = await groqResponse.json();
         const content = data.choices[0].message.content;
-        
-        const jsonMatch = content.match(/\[[\s\S]*\]/);
-        let recommendedIds = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+
+        let parsed: any = {};
+        try { parsed = JSON.parse(content); } catch {
+            const m = content.match(/\[[\s\S]*\]/);
+            parsed = { recommendations: m ? JSON.parse(m[0]) : [] };
+        }
+        let recommendedIds: string[] = Array.isArray(parsed.recommendations) ? parsed.recommendations : (Array.isArray(parsed) ? parsed : []);
 
         // 3. Filter to ensure IDs still exist in 'allProducts'
-        const existingIds = allProducts.map(p => p.id);
-        recommendedIds = recommendedIds.filter((id: string) => existingIds.includes(id));
+        const existingIds = new Set(allProducts.map(p => p.id));
+        recommendedIds = recommendedIds.filter((id: string) => existingIds.has(id));
 
         // 4. Save to Cache in Supabase (Background)
         if (recommendedIds.length > 0) {
@@ -103,7 +133,7 @@ export async function getAiRecommendations(userInterests: any, allProducts: Prod
             user_phone: userPhone,
             input: userInterests,
             output: recommendedIds,
-            model: "llama-3.3-70b-versatile",
+            model: "openai/gpt-oss-120b",
             action: "personalized_recommendation_refreshed"
         }]);
 

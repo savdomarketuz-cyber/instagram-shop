@@ -82,13 +82,34 @@ export async function POST(req: NextRequest) {
                 visualDescription = visionData.choices?.[0]?.message?.content || "";
                 if (!visualDescription) throw new Error("Vision AI failed to analyze");
 
-                // Step 2: Content Generation
+                // Step 2: SEO-optimallashtirilgan content generation
                 finalModel = "openai/gpt-oss-120b";
                 finalMessages = [
-                    { role: 'system', content: 'Siz professional marketing tahlilchisiz. JAVOB FAQAT TOZA JSON BO\'LSIN.' },
-                    { 
-                        role: 'user', 
-                        content: `Mahsulot tahlili: ${visualDescription}. JSON formatda qaytaring (name_uz, name_ru, description_uz, description_ru, short_uz, short_ru, brand, category_guess).` 
+                    {
+                        role: 'system',
+                        content: `Siz O'zbekiston elektron tijorat (Velari) uchun SEO va marketing mutaxassisisiz.
+Vazifangiz: mahsulot tahlilidan Google'da yuqori o'rin oladigan, sotuvni oshiradigan kontent yaratish.
+SEO qoidalari:
+- name: brend + model + asosiy xususiyat + mahsulot turi (60 belgigacha, kalit so'zlarga boy). Masalan: "VGR V-385 Professional Soch Olish Mashinkasi LED Displey".
+- description: 400-600 belgi, tabiiy matnda kalit so'zlar: mahsulot turi, brend, asosiy 3-4 xususiyat, "O'zbekistonda", afzalliklar. Ortiqcha takror yo'q.
+- short: 1 jumlalik jozibali tavsif.
+- keywords: 8-12 ta qidiruv kalit so'zi (uz va ru aralash, bozor so'rovlari: "narxi", "sotib olish", brend nomi, model, mahsulot turi).
+- meta_description: 150-160 belgi, Google snippet uchun.
+JAVOB QAT'IY TOZA JSON.`
+                    },
+                    {
+                        role: 'user',
+                        content: `Mahsulot rasmidan tahlil: ${visualDescription}
+
+Quyidagi JSON strukturada qaytar:
+{
+  "name_uz": "...", "name_ru": "...",
+  "description_uz": "...", "description_ru": "...",
+  "short_uz": "...", "short_ru": "...",
+  "keywords_uz": ["..."], "keywords_ru": ["..."],
+  "meta_description_uz": "...", "meta_description_ru": "...",
+  "brand": "...", "category_guess": "..."
+}`
                     }
                 ];
                 responseFormat = { type: 'json_object' };
@@ -132,10 +153,15 @@ export async function POST(req: NextRequest) {
 
                 const data = await response.json();
                 const content = data.choices[0].message.content;
+                const parsed = responseFormat?.type === 'json_object'
+                    ? JSON.parse(content.replace(/```json|```/g, '').trim())
+                    : content;
 
-                return NextResponse.json({ 
-                    content: responseFormat?.type === 'json_object' ? JSON.parse(content.replace(/```json|```/g, '').trim()) : content,
-                    visualDescription 
+                // `content` (eski mijozlar) va `result` (admin) — ikkalasini qaytaramiz
+                return NextResponse.json({
+                    content: parsed,
+                    result: parsed,
+                    visualDescription
                 });
 
             } catch (error: any) {

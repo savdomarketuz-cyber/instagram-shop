@@ -506,8 +506,9 @@ export default function AdminProducts() {
             const data = await response.json();
             if (data.error) throw new Error(data.error);
 
-            const res = data.result;
+            const res = data.result || data.content;
             if (res) {
+                const kw = [...(res.keywords_uz || []), ...(res.keywords_ru || [])].filter(Boolean).join(', ');
                 setNewProduct(prev => ({
                     ...prev,
                     name_uz: res.name_uz || prev.name_uz,
@@ -515,9 +516,10 @@ export default function AdminProducts() {
                     name: res.name_uz || prev.name,
                     description_uz: res.description_uz || prev.description_uz,
                     description_ru: res.description_ru || prev.description_ru,
-                    brand: res.brand || prev.brand
+                    brand: res.brand || prev.brand,
+                    tag: kw || prev.tag,
                 }));
-                alert("AI tahlili muvaffaqiyatli yakunlandi!");
+                alert("AI tahlili muvaffaqiyatli yakunlandi! (SEO kalit so'zlar tag'ga qo'shildi)");
             }
         } catch (error: any) {
             console.error("AI Vision error:", error);

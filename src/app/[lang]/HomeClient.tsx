@@ -114,13 +114,19 @@ export default function HomeClient({
                     .single();
                 
                 if (interests) {
+                    // Minimal payload — faqat tavsiya uchun kerakli maydonlar
+                    const slimProducts = allProducts.map(p => ({
+                        id: p.id, name: p.name, category: p.category,
+                        price: p.price, oldPrice: p.oldPrice,
+                        rating: p.rating, sales: p.sales, tag: p.tag, brand: (p as any).brand,
+                    }));
                     const response = await fetch("/api/ai/recommendations", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             action: "get_recommendations",
                             userInterests: interests,
-                            allProducts,
+                            allProducts: slimProducts,
                             userPhone: user.phone
                         })
                     });

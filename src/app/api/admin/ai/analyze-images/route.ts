@@ -25,7 +25,10 @@ async function analyzeVisionImg(imageUrl: string, productName: string) {
                     {
                         role: 'user',
                         content: [
-                            { type: 'text', text: `Ushbu mahsulot rasmi uchun Google qidiruv tizimida (SEO) eng yuqori natija beradigan, qisqa va tushunarli muqobil matn (alt text) yozing. JAVOB FAQAT JSON BO'LSIN: { "uz": "...", "ru": "..." }. Mahsulot nomi: ${productName}` },
+                            { type: 'text', text: `Ushbu mahsulot rasmi uchun Google Images'da yuqori o'rin oladigan SEO alt-text yozing.
+Qoidalar: brend + model + mahsulot turi + rasmda ko'ringan asosiy xususiyat/rang. 100-125 belgi, kalit so'zlarga boy, tabiiy. "rasm/foto" so'zlarini ishlatma.
+Mahsulot nomi: ${productName}
+JAVOB FAQAT JSON: { "uz": "...", "ru": "..." }` },
                             { type: 'image_url', image_url: { url: imageUrl } }
                         ]
                     }
