@@ -199,10 +199,12 @@ export default function AdminFeaturedCategoriesPage() {
                                     <div className="relative">
                                         <button
                                             onClick={() => setEditingIcon(editingIcon === id ? null : id)}
-                                            style={{ background: color, width: 48, height: 48, borderRadius: 14 }}
+                                            style={{ background: cat.image ? "#fff" : color, width: 48, height: 48, borderRadius: 14, overflow: "hidden" }}
                                             className="flex items-center justify-center text-2xl hover:scale-105 transition-transform"
                                         >
-                                            {icon || "📦"}
+                                            {cat.image
+                                                ? <img src={cat.image} alt="" className="w-full h-full object-cover" />
+                                                : (icon || "📦")}
                                         </button>
                                         {editingIcon === id && (
                                             <div className="absolute top-full left-0 mt-2 z-50 bg-white rounded-2xl shadow-2xl border border-gray-100 p-3 w-72"
@@ -317,10 +319,12 @@ export default function AdminFeaturedCategoriesPage() {
                                 }`}
                             >
                                 <div
-                                    style={{ background: color, width: 40, height: 40, borderRadius: 12 }}
+                                    style={{ background: cat.image ? "#fff" : color, width: 40, height: 40, borderRadius: 12, overflow: "hidden" }}
                                     className="flex items-center justify-center text-xl shrink-0"
                                 >
-                                    {icon || "📦"}
+                                    {cat.image
+                                        ? <img src={cat.image} alt="" className="w-full h-full object-cover" />
+                                        : (icon || "📦")}
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <div className="font-bold text-sm truncate">{cat.name_uz || cat.name}</div>

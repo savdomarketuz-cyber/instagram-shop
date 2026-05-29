@@ -10,13 +10,13 @@ interface FeaturedCat {
     name: string;
     name_uz?: string;
     name_ru?: string;
+    image?: string;
     icon?: string;
     color?: string;
 }
 
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
-// Pastel rang generatsiya — agar kategoriyada rang yo'q bo'lsa
 const PALETTE = [
     "#FFE0EC", "#E0E7FF", "#D1FAE5", "#FEF3C7",
     "#FCE7F3", "#DBEAFE", "#ECFDF5", "#FEF9C3",
@@ -45,16 +45,38 @@ export default function FeaturedCategories({ language }: { language: "uz" | "ru"
                     return;
                 }
 
-                // 2) Kategoriyalar ma'lumotlarini olish
+                // 2) Barcha kategoriyalar (daraxt) + tanlangan kategoriyalar ma'lumotlari
+                const [{ data: allCats }, { data: prodCatRows }] = await Promise.all([
+                    supabase.from("categories").select("id, parent_id").eq("is_deleted", false),
+                    supabase.from("products").select("category").eq("is_deleted", false),
+                ]);
+
+                // Mahsuloti bor kategoriyalar (parentlar ham, agar subda mahsulot bo'lsa)
+                const parentOf = new Map<string, string | null>(
+                    (allCats || []).map((c: any) => [String(c.id), c.parent_id ? String(c.parent_id) : null])
+                );
+                const nonEmpty = new Set<string>();
+                for (const r of (prodCatRows || [])) {
+                    let cur: string | null | undefined = String((r as any).category || "");
+                    while (cur) {
+                        if (nonEmpty.has(cur)) break;
+                        nonEmpty.add(cur);
+                        cur = parentOf.get(cur) ?? null;
+                    }
+                }
+
+                // Faqat mahsuloti bor tanlangan kategoriyalar
+                const visibleIds = ids.filter(id => nonEmpty.has(String(id)));
+                if (visibleIds.length === 0) { setLoading(false); return; }
+
                 const { data: cats } = await supabase
                     .from("categories")
-                    .select("id, name, name_uz, name_ru, icon, color")
-                    .in("id", ids);
+                    .select("id, name, name_uz, name_ru, image, icon, color")
+                    .in("id", visibleIds);
 
                 if (cats) {
-                    // settings dagi tartib bo'yicha saralash
-                    const sorted = ids
-                        .map(id => cats.find(c => c.id === id))
+                    const sorted = visibleIds
+                        .map(id => cats.find(c => String(c.id) === String(id)))
                         .filter(Boolean) as FeaturedCat[];
                     setCategories(sorted);
                 }
@@ -67,10 +89,8 @@ export default function FeaturedCategories({ language }: { language: "uz" | "ru"
         fetchFeatured();
     }, []);
 
-    // Yuklanayotgan paytda skelet ko'rsatmaymiz — agar kategoriyalar admin
-    // panelidan sozlanmagan bo'lsa, hech qanday "uzunchoq chiziqlar" chiqmasligi kerak.
+    // Sozlanmagan / yuklanayotgan paytda hech narsa ko'rsatmaymiz (skelet chiziqlar bo'lmasin).
     if (loading) return null;
-
     if (categories.length === 0) return null;
 
     return (
@@ -125,13 +145,19 @@ export default function FeaturedCategories({ language }: { language: "uz" | "ru"
                         >
                             <div style={{
                                 width: 64, height: 64, borderRadius: 20,
-                                background: bg,
+                                background: cat.image ? "#fff" : bg,
                                 display: "flex", alignItems: "center", justifyContent: "center",
-                                fontSize: 28, lineHeight: 1,
-                                boxShadow: `0 4px 12px ${bg}66`,
+                                fontSize: 28, lineHeight: 1, overflow: "hidden",
+                                boxShadow: "0 4px 12px rgba(15,20,16,0.08)",
                                 transition: "transform 200ms ease, box-shadow 200ms ease",
                             }}>
-                                {cat.icon || "📦"}
+                                {cat.image ? (
+                                    <img
+                                        src={cat.image}
+                                        alt={name}
+                                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                                    />
+                                ) : (cat.icon || "📦")}
                             </div>
                             <span style={{
                                 fontSize: 11, fontWeight: 600, color: "#0F1410",

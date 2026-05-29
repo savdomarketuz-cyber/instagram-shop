@@ -168,7 +168,13 @@ export default function ProductClient({ params, initialProduct }: { params: { id
             // High priority: Delivery, Group & Internal logic
             fetchDeliverySettings(initialProduct);
             if (initialProduct.groupId) fetchGroup(initialProduct.groupId);
-            
+
+            // Kategoriya ma'lumotini yuklash (breadcrumb to'g'ri nom ko'rsatishi uchun)
+            if (initialProduct.category) {
+                supabase.from("categories").select("*").eq("id", initialProduct.category).maybeSingle()
+                    .then(({ data: catData }) => { if (catData) setCategoryData(catData); });
+            }
+
             // Secondary priority: Defer background sections to free up initial render thread
             const timer = setTimeout(() => {
                 Promise.all([
@@ -212,7 +218,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                 // Parallel fetching
                 const fetchCat = async () => {
                     if (data.category) {
-                        const { data: catData } = await supabase.from("categories").select("*").eq("id", data.category).single();
+                        const { data: catData } = await supabase.from("categories").select("*").eq("id", data.category).maybeSingle();
                         if (catData) setCategoryData(catData);
                     }
                 };
@@ -599,11 +605,15 @@ export default function ProductClient({ params, initialProduct }: { params: { id
             {/* Desktop View (E-commerce Grid Style) */}
             <div className="hidden md:block max-w-[1440px] mx-auto px-10 py-12">
                 <div className="flex items-center gap-2 text-xs text-gray-400 font-bold uppercase tracking-widest mb-10 overflow-x-auto no-scrollbar whitespace-nowrap">
-                    <Link href="/" className="hover:text-black transition-colors">MAHSULOTLAR</Link>
-                    <span>/</span>
-                    <Link href={`/catalog?category=${product.category}`} className="hover:text-black transition-colors">
-                        {categoryData ? (categoryData[language === 'uz' ? 'name_uz' : 'name_ru'] || categoryData.name) : (product[language === 'uz' ? 'category_uz' : 'category_ru'] || product.category)}
-                    </Link>
+                    <Link href={`/${language}`} className="hover:text-black transition-colors">MAHSULOTLAR</Link>
+                    {categoryData && (
+                        <>
+                            <span>/</span>
+                            <Link href={`/${language}/?category=${product.category}`} className="hover:text-black transition-colors">
+                                {categoryData[language === 'uz' ? 'name_uz' : 'name_ru'] || categoryData.name}
+                            </Link>
+                        </>
+                    )}
                     <span>/</span>
                     <span className="text-black italic">{product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name}</span>
                 </div>
