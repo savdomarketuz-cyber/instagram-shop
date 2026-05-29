@@ -63,8 +63,11 @@ export default function AdminOrders() {
             
             const data = await res.json();
             if (!data.success) throw new Error(data.error);
-            
+
+            // Optimistik yangilash + serverdan qayta o'qish (manba haqiqiy holat)
             setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+            if (selectedOrder?.id === orderId) setSelectedOrder({ ...selectedOrder, status: newStatus });
+            fetchOrders();
         } catch (error) {
             console.error("Update status error:", error);
             alert("Holatni yangilashda xatolik yuz berdi.");
@@ -149,6 +152,7 @@ export default function AdminOrders() {
                             <th className="p-8 text-[10px] font-black text-gray-400 uppercase tracking-widest">Mijoz</th>
                             <th className="p-8 text-[10px] font-black text-gray-400 uppercase tracking-widest">Mahsulotlar</th>
                             <th className="p-8 text-[10px] font-black text-gray-400 uppercase tracking-widest">Summa</th>
+                            <th className="p-8 text-[10px] font-black text-gray-400 uppercase tracking-widest">Holat</th>
                             <th className="p-8 text-[10px] font-black text-gray-400 uppercase tracking-widest">Holatni boshqarish</th>
                         </tr>
                     </thead>
@@ -185,6 +189,21 @@ export default function AdminOrders() {
                                 </td>
                                 <td className="p-8">
                                     <div className="text-xl font-black italic tracking-tighter">{order.total?.toLocaleString()} so'm</div>
+                                </td>
+                                <td className="p-8">
+                                    {(() => {
+                                        const code = normalizeOrderStatus(order.status);
+                                        const tone = code === "delivered" ? "bg-green-100 text-green-700"
+                                            : code === "cancelled" ? "bg-red-100 text-red-600"
+                                            : code === "shipping" ? "bg-blue-100 text-blue-700"
+                                            : code === "awaiting_payment" ? "bg-yellow-100 text-yellow-700"
+                                            : "bg-orange-100 text-orange-700";
+                                        return (
+                                            <span className={`inline-block px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tighter ${tone}`}>
+                                                {getStatusLabel(order.status, "uz")}
+                                            </span>
+                                        );
+                                    })()}
                                 </td>
                                 <td className="p-8">
                                     <div className="flex items-center gap-2">

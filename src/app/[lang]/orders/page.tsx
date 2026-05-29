@@ -122,11 +122,12 @@ export default function OrdersPage() {
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || t.common.error);
 
-            // Update local state
+            // Update local state + serverdan qayta o'qish (manba haqiqiy holat)
             setOrders(orders.map(o => o.id === orderId ? { ...o, status: statusLabel } : o));
             if (selectedOrder?.id === orderId) {
                 setSelectedOrder({ ...selectedOrder, status: statusLabel });
             }
+            fetchOrders();
         } catch (error) {
             console.error("Cancel order error:", error);
             const errorMsg = t.common.error + ". " + (language === 'uz' ? "Iltimos, qaytadan urinib ko'ring." : "Пожалуйста, попробуйте еще раз.");
