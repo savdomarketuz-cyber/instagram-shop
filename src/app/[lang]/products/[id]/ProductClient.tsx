@@ -242,6 +242,15 @@ export default function ProductClient({ params, initialProduct }: { params: { id
     };
 
     const fetchRelated = async (category: string, currentId: string) => {
+        // Semantik o'xshashlik — saqlangan embedding asosida (pgvector). Runtime model kerak emas.
+        try {
+            const { data: vec, error } = await supabase.rpc("match_products_by_embedding", {
+                p_id: currentId, p_match_count: 10,
+            });
+            if (!error && vec && vec.length > 0) { setRelatedProducts(vec.map(mapProduct)); return; }
+        } catch { /* fallback'ga o'tamiz */ }
+
+        // Fallback: kategoriya bo'yicha (embedding hali yo'q bo'lsa)
         const { data } = await supabase
             .from("products")
             .select("*")
@@ -249,7 +258,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
             .eq("is_deleted", false)
             .neq("id", currentId)
             .limit(10);
-        
+
         if (data) setRelatedProducts(data.map(mapProduct));
     };
 
