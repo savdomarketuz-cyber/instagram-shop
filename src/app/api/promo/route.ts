@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
     try {
         const { data, error } = await supabaseAdmin
             .from("site_settings")
             .select("value")
             .eq("key", "promo_countdown")
-            .single();
+            .maybeSingle();
 
         if (error || !data) {
             return NextResponse.json({ success: false });
