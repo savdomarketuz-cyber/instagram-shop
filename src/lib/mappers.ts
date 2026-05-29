@@ -4,7 +4,7 @@ export const mapProduct = (p: any): Product => {
     // Destructure snake_case fields out so they don't duplicate with camelCase
     const {
         is_deleted, created_at, category_id, brand_id, old_price,
-        stock_details, video_url, review_count, is_original,
+        stock_details, video_url, review_count, avg_rating, is_original,
         group_id, color_name, ...rest
     } = p;
 
@@ -18,6 +18,7 @@ export const mapProduct = (p: any): Product => {
         stockDetails: stock_details,
         videoUrl: video_url,
         reviewCount: review_count,
+        rating: avg_rating ?? p.rating ?? 0,
         isOriginal: is_original,
         groupId: group_id,
         colorName: color_name,

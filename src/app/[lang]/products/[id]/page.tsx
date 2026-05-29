@@ -129,13 +129,17 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
     const priceValidDate = new Date();
     priceValidDate.setDate(priceValidDate.getDate() + 30);
 
-    const jsonLd = {
+    const ratingValue = Number(product.rating || product.avg_rating || 0);
+    const reviewCount = Number(product.reviewCount || product.review_count || 0);
+
+    const jsonLd: any = {
         "@context": "https://schema.org",
         "@type": "Product",
         "name": productName,
         "image": productImages,
         "description": (product.description_uz || product.description || '').substring(0, 500),
         "sku": product.sku || product.article || product.id,
+        "mpn": product.model || product.article || product.id,
         "brand": { "@type": "Brand", "name": brandName },
         "offers": {
             "@type": "Offer",
@@ -145,9 +149,40 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
             "priceValidUntil": priceValidDate.toISOString().split('T')[0],
             "itemCondition": "https://schema.org/NewCondition",
             "availability": product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-            "seller": { "@type": "Organization", "name": "Velari" }
+            "seller": { "@type": "Organization", "name": "Velari" },
+            // Google Merchant — bepul yetkazib berish (Toshkent)
+            "shippingDetails": {
+                "@type": "OfferShippingDetails",
+                "shippingRate": { "@type": "MonetaryAmount", "value": 0, "currency": "UZS" },
+                "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "UZ" },
+                "deliveryTime": {
+                    "@type": "ShippingDeliveryTime",
+                    "handlingTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 1, "unitCode": "DAY" },
+                    "transitTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 1, "unitCode": "DAY" }
+                }
+            },
+            // 14 kunlik qaytarish siyosati
+            "hasMerchantReturnPolicy": {
+                "@type": "MerchantReturnPolicy",
+                "applicableCountry": "UZ",
+                "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+                "merchantReturnDays": 14,
+                "returnMethod": "https://schema.org/ReturnByMail",
+                "returnFees": "https://schema.org/FreeReturn"
+            }
         }
     };
+
+    // AggregateRating — FAQAT haqiqiy review bo'lganda (Google policy)
+    if (reviewCount > 0 && ratingValue > 0) {
+        jsonLd.aggregateRating = {
+            "@type": "AggregateRating",
+            "ratingValue": ratingValue.toFixed(1),
+            "reviewCount": reviewCount,
+            "bestRating": "5",
+            "worstRating": "1"
+        };
+    }
 
     const language = params.lang || 'uz'; // Dynamic language for SEO indexing
 
