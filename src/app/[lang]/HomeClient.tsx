@@ -91,6 +91,8 @@ export default function HomeClient({
     const [hasMore, setHasMore] = useState(initialProducts.length >= 20);
     const [currentBanner, setCurrentBanner] = useState(0);
     const [bannerSettings, setBannerSettings] = useState(initialBannerSettings);
+    const [catalogCategoryCount, setCatalogCategoryCount] = useState(0);
+    const [catalogProductCount, setCatalogProductCount] = useState(0);
     const [locationLabel, setLocationLabel] = useState(language === "ru" ? "Ташкент, Юнусабад" : "Toshkent, Yunusobod");
 
     const observerTarget = useRef(null);
@@ -102,6 +104,21 @@ export default function HomeClient({
             setHomeActiveFilter(urlCategory);
         }
     }, [urlCategory, setHomeActiveFilter]);
+
+    // Katalog tugmasi uchun kategoriya va mahsulot sonini olish
+    useEffect(() => {
+        const fetchCounts = async () => {
+            try {
+                const [catRes, prodRes] = await Promise.all([
+                    supabase.from("categories").select("id", { count: "exact", head: true }),
+                    supabase.from("products").select("id", { count: "exact", head: true }).eq("is_deleted", false),
+                ]);
+                if (catRes.count != null) setCatalogCategoryCount(catRes.count);
+                if (prodRes.count != null) setCatalogProductCount(prodRes.count);
+            } catch {}
+        };
+        fetchCounts();
+    }, []);
 
     // Sync local search with store
     useEffect(() => {
@@ -470,7 +487,12 @@ export default function HomeClient({
                                     {language === "uz" ? "Katalog" : "Каталог"}
                                 </div>
                                 <div style={{ fontSize: 11, opacity: 0.8 }}>
-                                    {language === "uz" ? "Barcha mahsulotlar" : "Все товары"}
+                                    {catalogCategoryCount > 0 && catalogProductCount > 0
+                                        ? (language === "uz"
+                                            ? `${catalogCategoryCount} kategoriya · ${catalogProductCount} mahsulot`
+                                            : `${catalogCategoryCount} категорий · ${catalogProductCount} товаров`)
+                                        : (language === "uz" ? "Barcha mahsulotlar" : "Все товары")
+                                    }
                                 </div>
                             </div>
                         </div>
