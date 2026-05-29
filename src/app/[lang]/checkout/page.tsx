@@ -15,8 +15,9 @@ import { translations } from "@/lib/translations";
 
 export default function CheckoutPage() {
     const router = useRouter();
-    const { cart, user, clearCart, language, showToast } = useStore(useShallow(s => ({
-        cart: s.cart, user: s.user, clearCart: s.clearCart, language: s.language, showToast: s.showToast
+    const { cart, user, clearCart, language, showToast, cartPromo, setCartPromo } = useStore(useShallow(s => ({
+        cart: s.cart, user: s.user, clearCart: s.clearCart, language: s.language, showToast: s.showToast,
+        cartPromo: s.cartPromo, setCartPromo: s.setCartPromo
     })));
     const [displayProducts, setDisplayProducts] = useState<any[]>([]);
     const [isFastBuy, setIsFastBuy] = useState(false);
@@ -159,8 +160,9 @@ export default function CheckoutPage() {
         const pct = personalOffers[item.id] || 0;
         return pct > 0 ? sum + Math.floor(item.price * item.quantity * pct / 100) : sum;
     }, 0);
-    const [promoCode, setPromoCode] = useState("");
-    const [promoData, setPromoData] = useState<any>(null);
+    // Savatda qo'llangan promo-kodni boshlang'ich qiymat sifatida olamiz
+    const [promoCode, setPromoCode] = useState(cartPromo?.code || "");
+    const [promoData, setPromoData] = useState<any>(cartPromo ? { code: cartPromo.code, discount: cartPromo.discount, success: true } : null);
     const [isApplyingPromo, setIsApplyingPromo] = useState(false);
     const total = Math.max(0, subtotal - (promoData?.discount || 0) - smartDiscount);
 
@@ -176,10 +178,12 @@ export default function CheckoutPage() {
             const data = await res.json();
             if (data.success) {
                 setPromoData(data);
+                setCartPromo({ code: data.code, discount: data.discount });
                 showToast(t.common.promoApplied, 'success');
             } else {
                 showToast(data.error, 'error');
                 setPromoData(null);
+                setCartPromo(null);
             }
         } catch (e) {
             console.error(e);
@@ -345,7 +349,7 @@ export default function CheckoutPage() {
                             style={{ flex: 1, background: "#F5F5F0", border: promoData ? "1.5px solid #2D6E3E" : "1.5px solid transparent", borderRadius: 14, padding: "12px 16px", fontSize: 14, fontWeight: 700, color: "#0F1410", outline: "none", letterSpacing: 0.5, opacity: promoData ? 0.8 : 1 }}
                         />
                         {promoData ? (
-                            <button type="button" onClick={() => { setPromoData(null); setPromoCode(""); }}
+                            <button type="button" onClick={() => { setPromoData(null); setPromoCode(""); setCartPromo(null); }}
                                 style={{ padding: "12px 16px", background: "#FFF0EE", border: "none", borderRadius: 14, cursor: "pointer", display: "flex", alignItems: "center" }}>
                                 <X size={18} color="#FF3B30" />
                             </button>

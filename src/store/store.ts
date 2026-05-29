@@ -46,6 +46,9 @@ interface StoreState {
     // Global Promo Countdown settings
     globalPromo: any | null;
     fetchGlobalPromo: () => Promise<void>;
+    // Savatda qo'llangan promo-kod (checkout sahifasiga uzatiladi)
+    cartPromo: { code: string; discount: number } | null;
+    setCartPromo: (promo: { code: string; discount: number } | null) => void;
 }
 
 export const useStore = create<StoreState>()(
@@ -145,6 +148,8 @@ export const useStore = create<StoreState>()(
                     }
                 } catch { }
             },
+            cartPromo: null,
+            setCartPromo: (promo) => set({ cartPromo: promo }),
         }),
         {
             name: "velari-store",

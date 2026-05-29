@@ -3,7 +3,8 @@
 import { useStore } from "@/store/store";
 import { useShallow } from "zustand/react/shallow";
 import Link from "next/link";
-import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, ShoppingCart, Package, ChevronLeft } from "lucide-react";
+import { useState } from "react";
+import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, ShoppingCart, Package, ChevronLeft, ChevronRight, Ticket, Loader2, X } from "lucide-react";
 import { translations } from "@/lib/translations";
 import Image from "next/image";
 import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
@@ -12,13 +13,51 @@ const GREEN = "#2D6E3E";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 export default function CartPage() {
-    const { cart, updateQuantity, removeFromCart, language } = useStore(useShallow(s => ({
-        cart: s.cart, updateQuantity: s.updateQuantity, removeFromCart: s.removeFromCart, language: s.language
+    const { cart, updateQuantity, removeFromCart, language, cartPromo, setCartPromo, showToast } = useStore(useShallow(s => ({
+        cart: s.cart, updateQuantity: s.updateQuantity, removeFromCart: s.removeFromCart, language: s.language,
+        cartPromo: s.cartPromo, setCartPromo: s.setCartPromo, showToast: s.showToast
     })));
     const t = translations[language];
 
-    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const promoDiscount = cartPromo?.discount || 0;
+    const total = Math.max(0, subtotal - promoDiscount);
     const fmtPrice = (n: number) => n.toLocaleString("ru-RU") + (language === "ru" ? " сум" : " so'm");
+
+    // Promokod (savatda kiritish — qo'llangani checkout'ga uzatiladi)
+    const [promoOpen, setPromoOpen] = useState(false);
+    const [promoCode, setPromoCode] = useState("");
+    const [isApplyingPromo, setIsApplyingPromo] = useState(false);
+
+    const handleApplyPromo = async () => {
+        if (!promoCode.trim()) return;
+        setIsApplyingPromo(true);
+        try {
+            const res = await fetch("/api/promo-codes/validate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ code: promoCode, totalAmount: subtotal }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                setCartPromo({ code: data.code, discount: data.discount });
+                setPromoCode("");
+                setPromoOpen(false);
+                showToast(t.common.promoApplied, "success");
+            } else {
+                showToast(data.error, "error");
+            }
+        } catch (e) {
+            console.error("Promo apply error:", e);
+        } finally {
+            setIsApplyingPromo(false);
+        }
+    };
+
+    const handleRemovePromo = () => {
+        setCartPromo(null);
+        setPromoCode("");
+    };
 
     return (
         <div className="min-h-screen" style={{ background: "#FAFAF6" }}>
@@ -115,10 +154,84 @@ export default function CartPage() {
                                 </div>
                             );
                         })}
+
+                        {/* ── Promokod ── */}
+                        <div style={{ marginTop: 6 }}>
+                            {cartPromo ? (
+                                <div style={{ background: "#EAF3EC", border: "1.5px solid #2D6E3E", borderRadius: 18, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+                                    <div style={{ width: 38, height: 38, borderRadius: 12, background: "#2D6E3E", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                        <Ticket size={18} color="#fff" />
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <p style={{ fontSize: 14, fontWeight: 800, color: "#0F1410", margin: 0, letterSpacing: 0.3 }}>{cartPromo.code}</p>
+                                        <p style={{ fontSize: 12, fontWeight: 600, color: "#2D6E3E", margin: "2px 0 0" }}>
+                                            −{fmtPrice(cartPromo.discount)} {language === "uz" ? "chegirma" : "скидка"}
+                                        </p>
+                                    </div>
+                                    <button onClick={handleRemovePromo} style={{ width: 32, height: 32, borderRadius: 10, background: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                        <X size={16} color="#FF3B30" />
+                                    </button>
+                                </div>
+                            ) : promoOpen ? (
+                                <div style={{ background: "#fff", borderRadius: 18, padding: "12px 14px", boxShadow: "0 2px 8px rgba(15,20,16,0.04)", display: "flex", gap: 8 }}>
+                                    <input
+                                        type="text"
+                                        value={promoCode}
+                                        onChange={e => setPromoCode(e.target.value.toUpperCase())}
+                                        placeholder={t.common.promoPlaceholder}
+                                        autoFocus
+                                        onKeyDown={e => { if (e.key === "Enter") handleApplyPromo(); }}
+                                        style={{ flex: 1, minWidth: 0, background: "#F5F5F0", border: "1.5px solid transparent", borderRadius: 12, padding: "11px 14px", fontSize: 14, fontWeight: 700, color: "#0F1410", outline: "none", letterSpacing: 0.5 }}
+                                    />
+                                    <button onClick={handleApplyPromo} disabled={isApplyingPromo || !promoCode.trim()}
+                                        style={{ padding: "0 18px", background: "#0F1410", color: "#fff", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: (!promoCode.trim() || isApplyingPromo) ? 0.3 : 1, display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                                        {isApplyingPromo ? <Loader2 size={16} className="animate-spin" /> : t.common.apply}
+                                    </button>
+                                </div>
+                            ) : (
+                                <button onClick={() => setPromoOpen(true)}
+                                    style={{ width: "100%", background: "#fff", borderRadius: 18, padding: "14px 16px", boxShadow: "0 2px 8px rgba(15,20,16,0.04)", border: "1px dashed rgba(15,20,16,0.12)", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", textAlign: "left" }}>
+                                    <div style={{ width: 38, height: 38, borderRadius: 12, background: "#F5F5F0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                        <Ticket size={18} color="#5A625C" />
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <p style={{ fontSize: 14, fontWeight: 700, color: "#0F1410", margin: 0 }}>{t.common.promoQuestion}</p>
+                                        <p style={{ fontSize: 12, fontWeight: 500, color: "#9AA29C", margin: "2px 0 0" }}>
+                                            {language === "uz" ? "Chegirma uchun kiriting" : "Введите для скидки"}
+                                        </p>
+                                    </div>
+                                    <ChevronRight size={18} color="#9AA29C" style={{ flexShrink: 0 }} />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* ── Buyurtma xulosasi ── */}
+                        <div style={{ marginTop: 4, background: "#fff", borderRadius: 22, padding: "18px 18px", boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                                <span style={{ fontSize: 14, fontWeight: 500, color: "#5A625C" }}>{t.common.products}</span>
+                                <span style={{ fontSize: 14, fontWeight: 700, color: "#0F1410" }}>{fmtPrice(subtotal)}</span>
+                            </div>
+                            {promoDiscount > 0 && (
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                                    <span style={{ fontSize: 14, fontWeight: 500, color: "#2D6E3E", display: "flex", alignItems: "center", gap: 6 }}>
+                                        <Ticket size={14} /> {cartPromo?.code}
+                                    </span>
+                                    <span style={{ fontSize: 14, fontWeight: 700, color: "#2D6E3E" }}>−{fmtPrice(promoDiscount)}</span>
+                                </div>
+                            )}
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                                <span style={{ fontSize: 14, fontWeight: 500, color: "#5A625C" }}>{t.cart.delivery}</span>
+                                <span style={{ fontSize: 14, fontWeight: 700, color: "#2D6E3E" }}>{t.cart.free}</span>
+                            </div>
+                            <div style={{ borderTop: "1px solid rgba(15,20,16,0.08)", paddingTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <span style={{ fontSize: 15, fontWeight: 700, color: "#0F1410" }}>{t.common.total}</span>
+                                <span style={{ fontSize: 22, fontWeight: 800, color: "#0F1410", letterSpacing: -0.5 }}>{fmtPrice(total)}</span>
+                            </div>
+                        </div>
                     </div>
                 )}
 
-                {/* Sticky bottom bar */}
+                {/* Sticky bottom bar — Buyurtma berish */}
                 {cart.length > 0 && (
                     <div style={{
                         position: "fixed", bottom: 0, left: 0, right: 0,
@@ -130,14 +243,6 @@ export default function CartPage() {
                         paddingBottom: "calc(16px + env(safe-area-inset-bottom))",
                         zIndex: 50,
                     }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                            <span style={{ fontSize: 13, color: "#9AA29C", fontWeight: 500 }}>
-                                {language === "uz" ? "Jami to'lov:" : "Итого:"}
-                            </span>
-                            <span style={{ fontSize: 20, fontWeight: 800, color: "#0F1410", letterSpacing: -0.5 }}>
-                                {fmtPrice(total)}
-                            </span>
-                        </div>
                         <Link href="/checkout" style={{
                             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                             width: "100%", height: 54,
@@ -146,7 +251,7 @@ export default function CartPage() {
                             textDecoration: "none", letterSpacing: -0.2,
                             boxShadow: "0 8px 24px rgba(45,110,62,0.28)",
                         }}>
-                            {t.common.checkout} <ArrowRight size={18} />
+                            {t.common.checkout} · {fmtPrice(total)} <ArrowRight size={18} />
                         </Link>
                     </div>
                 )}
