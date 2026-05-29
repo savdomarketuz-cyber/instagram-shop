@@ -41,9 +41,15 @@ export async function POST(req: NextRequest) {
         const payload = userToken ? await verifyJwt(userToken, JWT_SECRET) : null;
 
         const rawBody = await req.json();
+        const rawItems = Array.isArray(rawBody.p_items) ? rawBody.p_items : [];
+        const computedTotal = rawItems.reduce(
+            (sum: number, i: any) => sum + (Number(i.price) || 0) * (Number(i.quantity) || 0),
+            0
+        );
         const body = {
             userPhone: rawBody.p_user_phone,
             items: rawBody.p_items,
+            total: computedTotal,
             address: rawBody.p_address,
             coords: rawBody.p_coords,
             promoCode: rawBody.p_promo_code,
@@ -174,10 +180,15 @@ export async function POST(req: NextRequest) {
                         .single();
 
                     if (linkData) {
-                        // Log conversion on the link
+                        // Konversiya hisoblagichni oshirish (read-then-increment)
+                        const { data: curLink } = await supabaseAdmin
+                            .from("affiliate_links")
+                            .select("conversions")
+                            .eq("id", linkData.id)
+                            .single();
                         await supabaseAdmin
                             .from("affiliate_links")
-                            .update({ conversions: supabaseAdmin.rpc('coalesce', {}) })
+                            .update({ conversions: (curLink?.conversions || 0) + 1 })
                             .eq("id", linkData.id);
 
                         // Create pending commission transaction (amount=0, calculated on delivery)

@@ -118,7 +118,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                 document.cookie = `affiliate_data=${encodeURIComponent(JSON.stringify(refData))};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
             }
         }
-    }, []);
+    }, [product?.id]);
 
     // 1. Initial Data Pipeline (Hierarchical Prioritization)
     useEffect(() => {
