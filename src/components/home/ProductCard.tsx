@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState } from "react";
+import { memo, useState, useRef } from "react";
 import { Link } from "next-view-transitions";
 import Image from "next/image";
 import { Heart, Star, Minus, Plus, Sparkles } from "lucide-react";
@@ -108,6 +108,7 @@ export const ProductCard = memo(({
 }: ProductCardProps) => {
   const globalPromo = useStore(s => s.globalPromo);
   const item = applyGlobalPromo(rawItem, globalPromo);
+  const imgWrapRef = useRef<HTMLDivElement>(null);
 
   const isInCart = cart.find(ci => ci.id === item.id);
   const isWished = wishlist.some(w => w.id === item.id);
@@ -155,6 +156,9 @@ export const ProductCard = memo(({
         onPointerDown={() => prefetchFirstImage(item)}
         onTouchStart={() => prefetchFirstImage(item)}
         onClick={() => {
+          // view-transition-name faqat bosilgan kartochkaga, navigatsiyadan oldin beriladi.
+          // Statik berilsa, bir mahsulot bir nechta ro'yxatda chiqsa "duplicate" xatosi bo'lardi.
+          if (imgWrapRef.current) imgWrapRef.current.style.viewTransitionName = `product-img-${item.id}`;
           const query = useStore.getState().homeSearchQuery;
           if (query && query.trim().length >= 2) {
             fetch("/api/analytics/search-click", {
@@ -165,13 +169,12 @@ export const ProductCard = memo(({
         }}
       >
         <div style={{ position: "relative", padding: 12, paddingBottom: 6 }}>
-          <div style={{
+          <div ref={imgWrapRef} style={{
             position: "relative",
             aspectRatio: "3 / 4",
             borderRadius: 16,
             overflow: "hidden",
             background: "#F5F5F0",
-            viewTransitionName: `product-img-${item.id}`,
           } as React.CSSProperties}>
             {isVideo ? (
               <video
