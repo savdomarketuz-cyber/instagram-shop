@@ -505,7 +505,6 @@ export default function HomeClient({
             )}
 
             {!searchResults && <StoriesRow language={language} />}
-            {!searchResults && <FeaturedCategories language={language} initial={initialFeaturedCategories} />}
             {!searchResults && <PromoCountdown language={language} initialSettings={initialPromo} />}
 
             {/* ── BANNER: desktop original, mobile Velari style ── */}
@@ -584,8 +583,12 @@ export default function HomeClient({
                 </div>
             )}
 
+            {/* Kategoriya vitrinasi — mobilda banner tagida ko'rinadi (komponent o'zi md:hidden) */}
+            {!searchResults && <FeaturedCategories language={language} initial={initialFeaturedCategories} />}
+
+            {/* CategoryFilter faqat desktopda — mobilda o'rnini kategoriya vitrinasi bosadi */}
             {!searchResults && (
-                <div className="md:px-10">
+                <div className="hidden md:block md:px-10">
                     <CategoryFilter
                         allCategories={allCategories}
                         activeFilter={activeFilter}
