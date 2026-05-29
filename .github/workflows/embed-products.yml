@@ -1,0 +1,31 @@
+name: Embed new products
+
+# Yangi qo'shilgan mahsulotlarni avtomatik embedding qiladi (semantik o'xshashlik/qidiruv uchun).
+# Lokal multilingual MiniLM modeli GitHub serverida ishlaydi — Vercel'da og'ir model kerak emas.
+# Faqat embedding YO'Q mahsulotlarni to'ldiradi (npm run embed, bayroqsiz).
+
+on:
+  schedule:
+    - cron: '0 */3 * * *'   # har 3 soatda
+  workflow_dispatch: {}       # qo'lda ishga tushirish (Actions tabidan)
+
+# Bir vaqtda bittadan ortiq ishga tushmasin
+concurrency:
+  group: embed-products
+  cancel-in-progress: false
+
+jobs:
+  embed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Embed new products
+        run: npm run embed
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

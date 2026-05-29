@@ -15,10 +15,15 @@ import { readFileSync } from 'fs';
 import pg from 'pg';
 import { pipeline } from '@xenova/transformers';
 
-const env = readFileSync('.env.local', 'utf8');
-const pick = (k) => env.match(new RegExp(`^${k}=(.+)$`, 'm'))?.[1]?.trim().replace(/^["']|["']$/g, '');
-const DATABASE_URL = pick('DATABASE_URL');
-if (!DATABASE_URL) { console.error('❌ DATABASE_URL topilmadi'); process.exit(1); }
+// DATABASE_URL: avval muhit o'zgaruvchisidan (CI/GitHub Actions), aks holda .env.local'dan
+let DATABASE_URL = process.env.DATABASE_URL;
+if (!DATABASE_URL) {
+    try {
+        const env = readFileSync('.env.local', 'utf8');
+        DATABASE_URL = env.match(/^DATABASE_URL=(.+)$/m)?.[1]?.trim().replace(/^["']|["']$/g, '');
+    } catch { /* .env.local yo'q (CI muhiti) */ }
+}
+if (!DATABASE_URL) { console.error('❌ DATABASE_URL topilmadi (env yoki .env.local)'); process.exit(1); }
 
 const args = process.argv.slice(2);
 const FORCE = args.includes('--force');
