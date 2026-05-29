@@ -122,29 +122,34 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
                     device_memory: (navigator as any).deviceMemory || null,
                     cpu_cores: navigator.hardwareConcurrency || null,
                 };
-
-                await supabase.from("user_status").upsert({
-                    id: sessionId,
-                    user_phone: user?.phone || null,
-                    name: user?.name || "Mehmon",
-                    ip_address: geoData.ip || "Unknown",
-                    last_seen: new Date().toISOString(),
-                    is_online: true,
-                    current_path: getFriendlyPath(pathname),
-                    last_action: action,
-                    type: user?.phone ? "user" : "visitor",
-                    // 🆕 Yangi maydonlar
-                    screen_resolution: deviceInfo.screen_resolution,
-                    device_type: deviceInfo.device_type,
-                    device_memory: deviceInfo.device_memory,
-                    cpu_cores: deviceInfo.cpu_cores,
-                    city: geoData.city || null,
-                    region: geoData.region || null,
-                    country: geoData.country || null,
-                    isp: geoData.isp || null,
-                    latitude: geoData.latitude || null,
-                    longitude: geoData.longitude || null,
-                }, { onConflict: 'id' });
+                fetch("/api/client-sync", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        type: "status",
+                        payload: {
+                            id: sessionId,
+                            user_phone: user?.phone || null,
+                            name: user?.name || "Mehmon",
+                            ip_address: geoData.ip || "Unknown",
+                            last_seen: new Date().toISOString(),
+                            is_online: true,
+                            current_path: getFriendlyPath(pathname),
+                            last_action: action,
+                            type: user?.phone ? "user" : "visitor",
+                            screen_resolution: deviceInfo.screen_resolution,
+                            device_type: deviceInfo.device_type,
+                            device_memory: deviceInfo.device_memory,
+                            cpu_cores: deviceInfo.cpu_cores,
+                            city: geoData.city || null,
+                            region: geoData.region || null,
+                            country: geoData.country || null,
+                            isp: geoData.isp || null,
+                            latitude: geoData.latitude || null,
+                            longitude: geoData.longitude || null
+                        }
+                    })
+                }).catch(() => {});
 
             } catch (error) {
                 if (process.env.NODE_ENV === 'development') {
@@ -195,7 +200,15 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
             clearInterval(intervalId);
             document.removeEventListener('click', handleGlobalClick);
             document.removeEventListener("visibilitychange", handleVisibility);
-            supabase.from("user_status").update({ is_online: false, updated_at: new Date().toISOString() }).eq("id", sessionId);
+            fetch("/api/client-sync", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    type: "status_update",
+                    payload: { id: sessionId, is_online: false }
+                }),
+                keepalive: true
+            }).catch(() => {});
         };
     }, [user?.phone, pathname]);
 
@@ -204,15 +217,17 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
         if (!user?.phone) return;
 
         const syncCart = async () => {
-            if (cart.length === 0) {
-                await supabase.from("active_carts").delete().eq("user_phone", user.phone);
-            } else {
-                await supabase.from("active_carts").upsert({
-                    user_phone: user.phone,
-                    items: cart.map(item => ({ id: item.id, quantity: item.quantity })),
-                    updated_at: new Date().toISOString()
-                });
-            }
+            fetch("/api/client-sync", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    type: "cart",
+                    payload: {
+                        user_phone: user.phone,
+                        items: cart.length > 0 ? cart.map(item => ({ id: item.id, quantity: item.quantity })) : []
+                    }
+                })
+            }).catch(() => {});
         };
 
         const timer = setTimeout(syncCart, 2000);
