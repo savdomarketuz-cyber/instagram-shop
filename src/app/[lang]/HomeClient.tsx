@@ -18,6 +18,7 @@ import TrustStrip from "@/components/velari/TrustStrip";
 import RecentlyViewed, { getRecentlyViewedIds } from "@/components/velari/RecentlyViewed";
 import PromoCountdown from "@/components/velari/PromoCountdown";
 import StoriesRow from "@/components/velari/StoriesRow";
+import FeaturedCategories from "@/components/home/FeaturedCategories";
 
 import type { Product, Category, Banner } from "@/types";
 
@@ -502,6 +503,7 @@ export default function HomeClient({
             )}
 
             {!searchResults && <StoriesRow language={language} />}
+            {!searchResults && <FeaturedCategories language={language} />}
             {!searchResults && <PromoCountdown language={language} initialSettings={initialPromo} />}
 
             {/* ── BANNER: desktop original, mobile Velari style ── */}
