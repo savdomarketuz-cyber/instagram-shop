@@ -90,6 +90,7 @@ export default function HomeClient({
     const [hasMore, setHasMore] = useState(initialProducts.length >= 20);
     const [currentBanner, setCurrentBanner] = useState(0);
     const [bannerSettings, setBannerSettings] = useState(initialBannerSettings);
+    const [locationLabel, setLocationLabel] = useState(language === "ru" ? "Ташкент, Юнусабад" : "Toshkent, Yunusobod");
 
     const observerTarget = useRef(null);
 
@@ -105,6 +106,47 @@ export default function HomeClient({
     useEffect(() => {
         setSearch(homeSearchQuery);
     }, [homeSearchQuery]);
+
+    // GPS asosida yetkazib berish manzilini aniqlash (keshlangan, sahifa ochilganda avto)
+    useEffect(() => {
+        const langCode = language === "ru" ? "ru" : "uz";
+        const cacheKey = `velari_geo_label_${langCode}`;
+
+        try {
+            const cached = localStorage.getItem(cacheKey);
+            if (cached) {
+                setLocationLabel(cached);
+                return;
+            }
+        } catch {}
+
+        if (typeof navigator === "undefined" || !navigator.geolocation) return;
+
+        navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+                const { latitude, longitude } = pos.coords;
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=${langCode}&countrycodes=uz`);
+                    const data = await res.json();
+                    const a = data?.address;
+                    if (!a) return;
+
+                    const city = a.city || a.town || a.county || a.state || "";
+                    const district = a.city_district || a.suburb || a.neighbourhood || a.borough || "";
+                    const label = [city, district].filter(Boolean).join(", ");
+
+                    if (label) {
+                        setLocationLabel(label);
+                        try { localStorage.setItem(cacheKey, label); } catch {}
+                    }
+                } catch {
+                    // Tarmoq/geocoder xatosi — default qoladi
+                }
+            },
+            () => { /* Ruxsat berilmadi — default qoladi */ },
+            { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 }
+        );
+    }, [language]);
 
     // Shaxsiy smart-chegirmalarni yuklash (login mijoz) — kartochkalarda ko'rsatish uchun
     useEffect(() => {
@@ -361,7 +403,7 @@ export default function HomeClient({
                         <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
                             <MapPin size={14} color="#2D6E3E" />
                             <span style={{ fontSize: 15, fontWeight: 600, color: "#0F1410", letterSpacing: -0.2 }}>
-                                Toshkent, Yunusobod
+                                {locationLabel}
                             </span>
                             <ChevronRight size={13} color="#9AA29C" />
                         </div>
