@@ -558,6 +558,71 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                 </div>
             </div>
 
+            {/* Sticky Quick-Buy Bar (Mobile) — pastga skrol qilinganda tepada paydo bo'ladi */}
+            <div
+                className="md:hidden fixed top-0 left-0 right-0 z-[95] transition-all duration-400"
+                style={{
+                    background: "rgba(250,250,246,0.94)",
+                    backdropFilter: "blur(20px) saturate(180%)",
+                    borderBottom: "0.5px solid rgba(15,20,16,0.06)",
+                    padding: "10px 14px",
+                    transform: isScrolledPast ? "translateY(0)" : "translateY(-100%)",
+                    opacity: isScrolledPast ? 1 : 0,
+                    pointerEvents: isScrolledPast ? "auto" : "none",
+                }}
+            >
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    {/* Thumbnail */}
+                    <div style={{ position: "relative", width: 44, height: 44, borderRadius: 12, overflow: "hidden", flexShrink: 0, border: "1px solid rgba(15,20,16,0.06)" }}>
+                        <Image
+                            src={product.image}
+                            fill
+                            className="object-cover"
+                            alt={product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name}
+                            sizes="44px"
+                            loader={hasVariants(product.image_metadata, product.image) ? makeVariantLoader(product.image_metadata) : undefined}
+                        />
+                    </div>
+                    {/* Title + Price */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: 11, fontWeight: 600, color: "#0F1410", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name}
+                        </p>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                            <span style={{ fontSize: 14, fontWeight: 800, color: personalOffer ? "#4338CA" : "#0F1410" }}>
+                                {Number((personalOffer ? Math.round(product.price * (1 - personalOffer.percent / 100)) : product.price) || 0).toLocaleString()}
+                                <span style={{ fontSize: 10, fontWeight: 600 }}> so&apos;m</span>
+                            </span>
+                            {product.oldPrice && product.oldPrice > product.price && (
+                                <span style={{ fontSize: 11, color: "#9AA29C", textDecoration: "line-through", fontWeight: 600 }}>{Number(product.oldPrice).toLocaleString()}</span>
+                            )}
+                        </div>
+                    </div>
+                    {/* Cart CTA */}
+                    {cartItem ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, background: "#EAF3EC", borderRadius: 14, padding: "0 4px", height: 44, flexShrink: 0 }}>
+                            <button onClick={() => updateQuantity(product.id, cartItem.quantity - 1)} style={{ padding: 8, background: "none", border: "none", cursor: "pointer", color: "#2D6E3E" }}><Minus size={15} /></button>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: "#0F1410", minWidth: 16, textAlign: "center" }}>{cartItem.quantity}</span>
+                            <button onClick={() => updateQuantity(product.id, cartItem.quantity + 1)} style={{ padding: 8, background: "none", border: "none", cursor: "pointer", color: "#2D6E3E" }}><Plus size={15} /></button>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any)}
+                            style={{
+                                flexShrink: 0, height: 44, borderRadius: 14, border: "none", cursor: "pointer",
+                                padding: "0 18px", background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)",
+                                color: "#fff", fontSize: 13, fontWeight: 700, letterSpacing: -0.2,
+                                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                                boxShadow: "0 6px 16px rgba(45,110,62,0.26)", WebkitTapHighlightColor: "transparent",
+                            }}
+                        >
+                            <ShoppingBag size={16} color="#fff" />
+                            {language === 'uz' ? "Savatga" : "В корзину"}
+                        </button>
+                    )}
+                </div>
+            </div>
+
             {/* Mobile View */}
             <div className="md:hidden" style={{ overscrollBehavior: 'none', touchAction: 'pan-x pan-y' }}>
                 {/* Floating back + wishlist buttons */}
@@ -984,16 +1049,18 @@ export default function ProductClient({ params, initialProduct }: { params: { id
             <div className={`md:hidden fixed bottom-[66px] left-0 right-0 z-[60] transition-all duration-500 transform ${isScrolledPast ? 'translate-y-40 opacity-0' : 'translate-y-0 opacity-100'}`}
                 style={{ padding: "14px 20px 20px", background: "rgba(250,250,246,0.92)", backdropFilter: "blur(20px) saturate(180%)", borderTop: "0.5px solid rgba(15,20,16,0.06)" }}>
                 <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
-                    {/* Heart */}
+                    {/* Tezkor xarid (like o'rniga) */}
                     <button
-                        onClick={() => toggleWishlist(product)}
+                        onClick={handleFastBuy}
                         style={{
-                            width: 54, height: 54, borderRadius: 27, flexShrink: 0,
-                            background: "#fff", border: "1.5px solid rgba(15,20,16,0.08)",
+                            flexShrink: 0, height: 54, borderRadius: 18, padding: "0 18px",
+                            background: "#fff", border: "1.5px solid rgba(45,110,62,0.25)",
+                            color: "#2D6E3E", fontSize: 14, fontWeight: 700, letterSpacing: -0.2,
                             display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                            WebkitTapHighlightColor: "transparent",
                         }}
                     >
-                        <Heart size={20} fill={isWishlisted ? "#FF3B30" : "none"} color={isWishlisted ? "#FF3B30" : "#0F1410"} />
+                        {language === 'uz' ? "Tezkor xarid" : "Купить сейчас"}
                     </button>
 
                     {/* Cart CTA */}
