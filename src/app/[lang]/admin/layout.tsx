@@ -1,11 +1,102 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutDashboard, ShoppingCart, Package, Layers, LogOut, Menu, X, Users, Image as ImageIcon, Database, Settings, Sparkles, Activity, Zap, MessageSquare, ShieldAlert, Truck, Warehouse, RotateCcw, Tag, Banknote, Wallet, BookOpen, ClipboardList, BookA, Bell, Timer, Percent, Grid } from "lucide-react";
-import { useState, useEffect } from "react";
+import { LayoutDashboard, ShoppingCart, Package, Layers, LogOut, Menu, X, Users, Image as ImageIcon, Database, Settings, Sparkles, Activity, Zap, MessageSquare, ShieldAlert, Truck, Warehouse, RotateCcw, Tag, Banknote, Wallet, BookOpen, ClipboardList, BookA, Bell, Timer, Percent, Grid, ChevronDown } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/store/store";
 import { AdminNotificationListener } from "@/components/AdminNotificationListener";
+
+type MenuItem = { name: string; href: string; icon: LucideIcon };
+type MenuGroup = { title: string; items: MenuItem[] };
+
+function AdminTopNav({ groups, pathname }: { groups: MenuGroup[]; pathname: string }) {
+    const [hoverGroup, setHoverGroup] = useState<string | null>(null);
+    const [pinnedGroup, setPinnedGroup] = useState<string | null>(null);
+    const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const navRef = useRef<HTMLElement | null>(null);
+
+    const openGroup = (title: string) => {
+        if (closeTimer.current) clearTimeout(closeTimer.current);
+        setHoverGroup(title);
+    };
+    const scheduleClose = () => {
+        if (closeTimer.current) clearTimeout(closeTimer.current);
+        closeTimer.current = setTimeout(() => setHoverGroup(null), 160);
+    };
+    const togglePin = (title: string) => {
+        setPinnedGroup((prev) => (prev === title ? null : title));
+    };
+
+    // Tashqariga bosilsa — qotirilgan menyu yopiladi
+    useEffect(() => {
+        const onDocClick = (e: MouseEvent) => {
+            if (navRef.current && !navRef.current.contains(e.target as Node)) {
+                setPinnedGroup(null);
+                setHoverGroup(null);
+            }
+        };
+        document.addEventListener("mousedown", onDocClick);
+        return () => document.removeEventListener("mousedown", onDocClick);
+    }, []);
+
+    return (
+        <nav
+            ref={navRef}
+            className="hidden lg:flex items-center gap-1 sticky top-0 z-30 bg-white/85 backdrop-blur-md border-b border-gray-100 px-6 py-3"
+        >
+            {groups.map((group) => {
+                const isOpen = pinnedGroup === group.title || hoverGroup === group.title;
+                const hasActive = group.items.some((i) => i.href === pathname);
+                return (
+                    <div
+                        key={group.title}
+                        className="relative"
+                        onMouseEnter={() => openGroup(group.title)}
+                        onMouseLeave={scheduleClose}
+                    >
+                        <button
+                            onClick={() => togglePin(group.title)}
+                            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold tracking-tight transition-all ${
+                                isOpen
+                                    ? "bg-gray-900 text-white"
+                                    : hasActive
+                                    ? "text-gray-900 bg-gray-100"
+                                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                            }`}
+                        >
+                            {group.title}
+                            <ChevronDown size={15} className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+                        </button>
+
+                        {isOpen && (
+                            <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl shadow-black/10 border border-gray-100 p-2 z-50 animate-in fade-in slide-in-from-top-1 duration-200">
+                                {group.items.map((item) => {
+                                    const Icon = item.icon;
+                                    const active = pathname === item.href;
+                                    return (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            onClick={() => { setPinnedGroup(null); setHoverGroup(null); }}
+                                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                                                active ? "bg-gray-900 text-white font-bold" : "text-gray-600 hover:bg-gray-100"
+                                            }`}
+                                        >
+                                            <Icon size={18} className={active ? "text-white" : "text-gray-400"} />
+                                            <span className="text-sm tracking-tight">{item.name}</span>
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
+        </nav>
+    );
+}
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -176,6 +267,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <h1 className="font-black tracking-tighter italic">ADMIN PANEL</h1>
                     <div className="w-10"></div>
                 </header>
+
+                {/* Desktop top bar — guruh menyulari (hover ochadi, bosilsa qotadi) */}
+                <AdminTopNav groups={menuGroups} pathname={pathname} />
 
                 <div className="p-6 md:p-12 lg:p-16 max-w-[1600px] mx-auto">
                     {children}
