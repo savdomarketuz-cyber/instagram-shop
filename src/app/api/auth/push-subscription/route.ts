@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
                 token: JSON.stringify(subscription),
                 platform: platform || 'web',
                 last_updated: new Date().toISOString()
-            }, { onConflict: 'token' });
+            }, { onConflict: 'user_phone' });
 
         if (error) throw error;
 

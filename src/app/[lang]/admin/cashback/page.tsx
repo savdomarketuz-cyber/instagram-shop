@@ -12,13 +12,16 @@ import {
     Loader2, 
     X,
     Calculator,
-    Check
+    Check,
+    Search
 } from "lucide-react";
 import { adminSelect } from "@/lib/admin-api";
 
 export default function AdminCashbackPage() {
     const [globalSettings, setGlobalSettings] = useState({ rate: 0.02, enabled: true });
     const [exceptions, setExceptions] = useState<any[]>([]);
+    const [allProducts, setAllProducts] = useState<any[]>([]);
+    const [productSearch, setProductSearch] = useState("");
     const [loading, setLoading] = useState(true);
     const [isSavingSettings, setIsSavingSettings] = useState(false);
 
@@ -48,7 +51,10 @@ export default function AdminCashbackPage() {
 
             // Maxsus cashback belgilangan mahsulotlar (global emas) — RLS chetlab admin API orqali
             const prodData = await adminSelect<any[]>("products", { match: { column: "is_deleted", value: false } });
-            if (prodData) setExceptions(prodData.filter(p => p.cashback_type && p.cashback_type !== "global"));
+            if (prodData) {
+                setAllProducts(prodData);
+                setExceptions(prodData.filter(p => p.cashback_type && p.cashback_type !== "global"));
+            }
         } catch (e) {
             console.error(e);
         } finally {
@@ -64,9 +70,9 @@ export default function AdminCashbackPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     table: 'site_settings',
-                    action: 'update',
-                    payload: { value: globalSettings },
-                    matchConfig: { column: 'key', value: 'cashback_settings' }
+                    action: 'upsert',
+                    payload: { key: 'cashback_settings', value: globalSettings, updated_at: new Date().toISOString() },
+                    onConflict: 'key'
                 })
             });
             if (!res.ok) throw new Error("Sozlamalarni saqlashda xatolik");
@@ -167,6 +173,57 @@ export default function AdminCashbackPage() {
                         </p>
                     </div>
                     <p className="text-[10px] font-black italic text-gray-400 uppercase tracking-widest underline decoration-orange-500 underline-offset-4">{exceptions.length} TA MAHSULOT</p>
+                </div>
+
+                {/* Mahsulot qidirib istisno qo'shish */}
+                <div className="mb-10">
+                    <div className="relative">
+                        <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300" />
+                        <input
+                            type="text"
+                            value={productSearch}
+                            onChange={(e) => setProductSearch(e.target.value)}
+                            placeholder="Mahsulot nomi bo'yicha qidiring va istisno qo'shing..."
+                            className="w-full bg-gray-50 border-2 border-transparent focus:border-orange-400 rounded-3xl py-5 pl-14 pr-5 text-sm font-bold outline-none transition-all"
+                        />
+                    </div>
+                    {productSearch.trim().length >= 2 && (
+                        <div className="mt-3 bg-white border border-gray-100 rounded-[30px] shadow-xl divide-y divide-gray-50 max-h-80 overflow-y-auto">
+                            {allProducts
+                                .filter(p => (p.name || "").toLowerCase().includes(productSearch.toLowerCase()))
+                                .slice(0, 12)
+                                .map(p => {
+                                    const isExc = p.cashback_type && p.cashback_type !== "global";
+                                    return (
+                                        <button
+                                            key={p.id}
+                                            onClick={() => {
+                                                setSelectedProduct({ ...p, cashback_type: isExc ? p.cashback_type : "percent", cashback_value: p.cashback_value || 0 });
+                                                setIsExceptionModalOpen(true);
+                                                setProductSearch("");
+                                            }}
+                                            className="w-full flex items-center gap-4 p-4 hover:bg-orange-50/40 transition-colors text-left"
+                                        >
+                                            <div className="w-12 h-14 bg-gray-50 rounded-2xl overflow-hidden shrink-0">
+                                                <img src={p.image} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-black uppercase text-gray-900 line-clamp-1">{p.name}</p>
+                                                <p className="text-[10px] font-bold text-gray-400">{Number(p.price || 0).toLocaleString()} so'm</p>
+                                            </div>
+                                            {isExc ? (
+                                                <span className="px-3 py-1 rounded-lg text-[8px] font-black uppercase bg-orange-50 text-orange-600 shrink-0">Istisno</span>
+                                            ) : (
+                                                <span className="px-3 py-1 rounded-lg text-[8px] font-black uppercase bg-emerald-50 text-emerald-600 shrink-0">+ Qo'shish</span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            {allProducts.filter(p => (p.name || "").toLowerCase().includes(productSearch.toLowerCase())).length === 0 && (
+                                <p className="p-6 text-center text-xs font-bold text-gray-300 uppercase tracking-widest">Mahsulot topilmadi</p>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {exceptions.length === 0 ? (

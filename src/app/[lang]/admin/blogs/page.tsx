@@ -74,6 +74,8 @@ export default function AdminBlogs() {
         setIsSaving(true);
         // Map camelCase UI state back to snake_case for Database
         const blogDataForDB: any = {
+            title: editingBlog.title_uz,
+            content: editingBlog.content_uz || editingBlog.content_ru || "",
             title_uz: editingBlog.title_uz,
             title_ru: editingBlog.title_ru || editingBlog.title_uz,
             excerpt_uz: editingBlog.excerpt_uz,

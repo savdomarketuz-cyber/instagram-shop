@@ -186,7 +186,7 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
             fetchGlobalPromo();
             useStore.getState().fetchPersonalOffers();
         });
-        intervalId = setInterval(() => updateActivity(), 300000);
+        intervalId = setInterval(() => updateActivity(), 120000);
 
         const handleVisibility = () => {
             if (document.visibilityState === 'visible') {
