@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { adminSelect } from "@/lib/admin-api";
 import { TrendingUp, Users, ShoppingBag, DollarSign, Clock, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { mapOrder } from "@/lib/mappers";
@@ -25,20 +25,20 @@ export default function AdminDashboard() {
     const fetchDashboardData = async () => {
         try {
             // Fetch all orders for stats (can be optimized with RPC later)
-            const { data: allOrders } = await supabase.from("orders").select("total, status, created_at");
-            
+            const allOrders = await adminSelect<any[]>("orders", { columns: "total, status, created_at" });
+
             const revenue = allOrders?.reduce((sum, order) => sum + (Number(order.total) || 0), 0) || 0;
             const pending = allOrders?.filter(order =>
                 ["Kutilmoqda", "To'lov kutilmoqda", "Ожидание", "Ожидание оплаты"].some(s => order.status?.includes(s))
             ).length || 0;
 
             // Fetch user count
-            const { count: userCount } = await supabase.from("users").select("*", { count: "exact", head: true });
+            const allUsers = await adminSelect<any[]>("users", { columns: "id" });
 
             setStats({
                 totalOrders: allOrders?.length || 0,
                 totalRevenue: revenue,
-                totalUsers: userCount || 0,
+                totalUsers: allUsers?.length || 0,
                 pendingOrders: pending
             });
 
@@ -64,12 +64,11 @@ export default function AdminDashboard() {
             setChartData(last7Days);
 
             // Get 5 most recent orders
-            const { data: recent } = await supabase
-                .from("orders")
-                .select("*")
-                .order("created_at", { ascending: false })
-                .limit(5);
-            
+            const recent = await adminSelect<any[]>("orders", {
+                orderBy: { column: "created_at", ascending: false },
+                limit: 5,
+            });
+
             if (recent) setRecentOrders(recent.map(mapOrder));
 
         } catch (error) {
