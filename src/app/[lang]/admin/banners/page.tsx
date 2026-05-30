@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { adminSelect } from "@/lib/admin-api";
 import { Plus, Trash2, Edit2, Save, X, Image as ImageIcon, Link as LinkIcon, Loader2, Search, Check } from "lucide-react";
 import Image from "next/image";
 
@@ -16,7 +16,7 @@ interface Banner {
     blurDataURL_uz?: string;
     blurDataURL_ru?: string;
     image_meta?: { uz?: any; ru?: any };
-    linkType: "product" | "category" | "none";
+    linkType: "product" | "category" | "brand" | "none";
     linkIds: string[];
     buttonText: string;
     active: boolean;
@@ -36,12 +36,18 @@ interface Category {
     name: string;
 }
 
+interface Brand {
+    id: string;
+    name: string;
+}
+
 import { uploadToYandexS3 } from "@/lib/yandex-s3";
 
 export default function AdminBanners() {
     const [banners, setBanners] = useState<Banner[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [brands, setBrands] = useState<Brand[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -84,7 +90,7 @@ export default function AdminBanners() {
         imageUrl_ru: "",
         blurDataURL_uz: "",
         blurDataURL_ru: "",
-        linkType: "none" as "product" | "category" | "none",
+        linkType: "none" as "product" | "category" | "brand" | "none",
         linkIds: [] as string[],
         buttonText: "Sotib olish",
         active: true,
@@ -99,10 +105,11 @@ export default function AdminBanners() {
 
     const fetchData = async () => {
         try {
-            const [bannersRes, productsRes, catsRes, settingsRes] = await Promise.all([
-                supabase.from("banners").select("*").order("order", { ascending: true }),
-                supabase.from("products").select("id, name, price"),
-                supabase.from("categories").select("id, name"),
+            const [bannersData, productsData, catsData, brandsData, settingsRes] = await Promise.all([
+                adminSelect<any[]>("banners", { orderBy: { column: "order_index", ascending: true } }),
+                adminSelect<any[]>("products", { columns: "id, name, price" }),
+                adminSelect<any[]>("categories", { columns: "id, name" }),
+                adminSelect<any[]>("brands", { columns: "id, name", orderBy: { column: "name", ascending: true } }),
                 // settings jadvali anon o'qishdan RLS bilan yopiq — server (service role) orqali o'qiymiz.
                 fetch("/api/admin/crud", {
                     method: "POST",
@@ -116,11 +123,7 @@ export default function AdminBanners() {
                 }).then(r => r.json()).catch(() => null)
             ]);
 
-            if (bannersRes.error) throw bannersRes.error;
-            if (productsRes.error) throw productsRes.error;
-            if (catsRes.error) throw catsRes.error;
-
-            setBanners(bannersRes.data.map(b => ({
+            setBanners((bannersData || []).map(b => ({
                 id: b.id,
                 title_uz: b.title_uz,
                 title_ru: b.title_ru,
@@ -135,13 +138,14 @@ export default function AdminBanners() {
                 linkIds: b.link_ids || [],
                 buttonText: b.button_text,
                 active: b.active,
-                order: b.order,
+                order: b.order_index,
                 tabName_uz: b.tab_name_uz,
                 tabName_ru: b.tab_name_ru
             })) as Banner[]);
 
-            setProducts(productsRes.data as Product[]);
-            setCategories(catsRes.data as Category[]);
+            setProducts((productsData || []) as Product[]);
+            setCategories((catsData || []) as Category[]);
+            setBrands((brandsData || []) as Brand[]);
 
             const settingsVal = settingsRes?.data?.data;
             if (settingsVal) {
@@ -224,7 +228,7 @@ export default function AdminBanners() {
                 link_ids: newBanner.linkIds,
                 button_text: newBanner.buttonText,
                 active: newBanner.active,
-                order: editId ? newBanner.order : banners.length,
+                order_index: editId ? newBanner.order : banners.length,
                 tab_name_uz: newBanner.tabName_uz,
                 tab_name_ru: newBanner.tabName_ru
             };
@@ -296,7 +300,7 @@ export default function AdminBanners() {
                         table: 'banners',
                         action: 'update',
                         payload: {
-                            order: Number(gb.order),
+                            order_index: Number(gb.order),
                             tab_name_uz: gb.tabName_uz || "",
                             tab_name_ru: gb.tabName_ru || ""
                         },
@@ -341,9 +345,12 @@ export default function AdminBanners() {
         }));
     };
 
-    const filteredTargets = newBanner.linkType === "product"
-        ? products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
-        : categories.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    const linkSource = newBanner.linkType === "product"
+        ? products
+        : newBanner.linkType === "brand"
+            ? brands
+            : categories;
+    const filteredTargets = linkSource.filter(t => (t.name || "").toLowerCase().includes(searchQuery.toLowerCase()));
 
     if (loading) {
         return (
@@ -538,6 +545,7 @@ export default function AdminBanners() {
                                     <option value="none">Hech narsa</option>
                                     <option value="product">Mahsulotlar</option>
                                     <option value="category">Kategoriyalar</option>
+                                    <option value="brand">Brendlar</option>
                                 </select>
                             </div>
 
@@ -767,6 +775,8 @@ export default function AdminBanners() {
                                             <span>{banner.linkIds?.length || 0} TA MAHSULOTGA BOG'LANGAN</span>
                                         ) : banner.linkType === "category" ? (
                                             <span>{banner.linkIds?.length || 0} TA KATEGORIYAGA BOG'LANGAN</span>
+                                        ) : banner.linkType === "brand" ? (
+                                            <span>{banner.linkIds?.length || 0} TA BRENDGA BOG'LANGAN</span>
                                         ) : (
                                             <span className="opacity-40 italic">BOG'LANMAGAN</span>
                                         )}
