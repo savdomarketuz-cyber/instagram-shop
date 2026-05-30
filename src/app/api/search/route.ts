@@ -1,8 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { mapProduct } from '@/lib/mappers';
 import { checkRateLimit } from '@/lib/rate-limiter';
 import { normalizeQuery } from '@/lib/query-normalize';
+
+/**
+ * Admin "Qidiruv Lug'ati" (search_synonyms) jadvalidagi sinonimlarni qo'llaydi.
+ * keyword (xaridor yozadigan) → maps_to (asl izlanadigan). RLS chetlab service role bilan o'qiladi.
+ */
+async function applyDbSynonyms(raw: string): Promise<string> {
+    const lower = (raw || '').toLowerCase().trim();
+    if (!lower) return raw;
+    const words = lower.split(/\s+/);
+    const candidates = Array.from(new Set([lower, ...words]));
+    try {
+        const { data } = await supabaseAdmin
+            .from('search_synonyms')
+            .select('keyword, maps_to')
+            .in('keyword', candidates);
+        if (!data || data.length === 0) return raw;
+        const map: Record<string, string> = {};
+        for (const row of data) map[(row.keyword || '').toLowerCase()] = row.maps_to;
+        // To'liq so'rov mosligi ustuvor
+        if (map[lower]) return map[lower];
+        // So'zma-so'z almashtirish
+        return words.map(w => map[w] || w).join(' ');
+    } catch {
+        return raw;
+    }
+}
 
 // Rasmdan qidiruv kalit so'zlarini chiqarish (Groq vision)
 async function extractKeywordsFromImage(imageDataUrl: string): Promise<string | null> {
@@ -67,8 +94,9 @@ export async function POST(req: NextRequest) {
         const userPhoneCookie = req.cookies.get('user_phone')?.value;
         const userIdentifier = userPhone || userPhoneCookie || null;
 
-        // 2. Normalize query (typo/transliteration: "ayfon" → "iPhone")
-        const normalizedQuery = normalizeQuery(searchQuery);
+        // 2. Normalize query — avval admin sinonim lug'ati (DB), keyin kod ichidagi typo/transliteratsiya xaritasi
+        const dbNormalized = await applyDbSynonyms(searchQuery);
+        const normalizedQuery = normalizeQuery(dbNormalized);
 
         // 3. Behavioral + affinity ranked search (text + trigram + telemetry + user profile)
         let finalResults: any[] = [];
