@@ -39,34 +39,69 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const language = pathname.split('/')[1] || 'uz';
     const l = (path: string) => `/${language}${path}`;
 
-    const menuItems = [
-        { name: "Dashboard", href: l("/admin"), icon: LayoutDashboard },
-        { name: "Live", href: l("/admin/live"), icon: Zap },
-        { name: "Jurnal (Logs)", href: l("/admin/logs"), icon: ClipboardList },
-        { name: "Buyurtmalar", href: l("/admin/orders"), icon: ShoppingCart },
-        { name: "Tark etilgan savat", href: l("/admin/carts"), icon: ShoppingCart },
-        { name: "Xabarnomalar", href: l("/admin/notifications"), icon: Bell },
-        { name: "Qaytarishlar", href: l("/admin/returns"), icon: RotateCcw },
-        { name: "Tezkor yetkazish", href: l("/admin/express-delivery"), icon: Truck },
-        { name: "Promo Kodlar", href: l("/admin/promo-codes"), icon: Tag },
-        { name: "Hamyon", href: l("/admin/wallets"), icon: Wallet },
-        { name: "Cashback", href: l("/admin/cashback"), icon: Banknote },
-        { name: "Smart Chegirma", href: l("/admin/smart-discount"), icon: Percent },
-        { name: "Hamkorlik", href: l("/admin/affiliate"), icon: Sparkles },
-        { name: "Mahsulotlar", href: l("/admin/products"), icon: Package },
-        { name: "Kategoriyalar", href: l("/admin/categories"), icon: Layers },
-        { name: "Brendlar", href: l("/admin/brands"), icon: Activity },
-        { name: "Mijozlar", href: l("/admin/customers"), icon: Users },
-        { name: "Bannerlar", href: l("/admin/banners"), icon: ImageIcon },
-        { name: "Stories", href: l("/admin/stories"), icon: Sparkles },
-        { name: "Kategoriya vitrina", href: l("/admin/featured-categories"), icon: Grid },
-        { name: "Promo Countdown", href: l("/admin/promo-countdown"), icon: Timer },
-        { name: "Maqolalar", href: l("/admin/blogs"), icon: BookOpen },
-        { name: "Qoldiqlar", href: l("/admin/inventory"), icon: Database },
-        { name: "Omborlar", href: l("/admin/warehouses"), icon: Warehouse },
-        { name: "Chat", href: l("/admin/chats"), icon: MessageSquare },
-        { name: "Sozlamalar", href: l("/admin/settings"), icon: Settings },
-        { name: "Qidiruv Lug'ati", href: l("/admin/synonyms"), icon: BookA },
+    const menuGroups = [
+        {
+            title: "Asosiy",
+            items: [
+                { name: "Dashboard", href: l("/admin"), icon: LayoutDashboard },
+                { name: "Live", href: l("/admin/live"), icon: Zap },
+                { name: "Jurnal (Logs)", href: l("/admin/logs"), icon: ClipboardList },
+            ],
+        },
+        {
+            title: "Savdo",
+            items: [
+                { name: "Buyurtmalar", href: l("/admin/orders"), icon: ShoppingCart },
+                { name: "Tark etilgan savat", href: l("/admin/carts"), icon: ShoppingCart },
+                { name: "Qaytarishlar", href: l("/admin/returns"), icon: RotateCcw },
+                { name: "Tezkor yetkazish", href: l("/admin/express-delivery"), icon: Truck },
+            ],
+        },
+        {
+            title: "Katalog",
+            items: [
+                { name: "Mahsulotlar", href: l("/admin/products"), icon: Package },
+                { name: "Kategoriyalar", href: l("/admin/categories"), icon: Layers },
+                { name: "Brendlar", href: l("/admin/brands"), icon: Activity },
+                { name: "Qoldiqlar", href: l("/admin/inventory"), icon: Database },
+                { name: "Omborlar", href: l("/admin/warehouses"), icon: Warehouse },
+            ],
+        },
+        {
+            title: "Marketing",
+            items: [
+                { name: "Promo Kodlar", href: l("/admin/promo-codes"), icon: Tag },
+                { name: "Smart Chegirma", href: l("/admin/smart-discount"), icon: Percent },
+                { name: "Cashback", href: l("/admin/cashback"), icon: Banknote },
+                { name: "Hamyon", href: l("/admin/wallets"), icon: Wallet },
+                { name: "Hamkorlik", href: l("/admin/affiliate"), icon: Sparkles },
+                { name: "Promo Countdown", href: l("/admin/promo-countdown"), icon: Timer },
+            ],
+        },
+        {
+            title: "Kontent / Vitrina",
+            items: [
+                { name: "Bannerlar", href: l("/admin/banners"), icon: ImageIcon },
+                { name: "Stories", href: l("/admin/stories"), icon: Sparkles },
+                { name: "Kategoriya vitrina", href: l("/admin/featured-categories"), icon: Grid },
+                { name: "Maqolalar", href: l("/admin/blogs"), icon: BookOpen },
+            ],
+        },
+        {
+            title: "Mijozlar",
+            items: [
+                { name: "Mijozlar", href: l("/admin/customers"), icon: Users },
+                { name: "Chat", href: l("/admin/chats"), icon: MessageSquare },
+                { name: "Xabarnomalar", href: l("/admin/notifications"), icon: Bell },
+            ],
+        },
+        {
+            title: "Tizim",
+            items: [
+                { name: "Sozlamalar", href: l("/admin/settings"), icon: Settings },
+                { name: "Qidiruv Lug'ati", href: l("/admin/synonyms"), icon: BookA },
+            ],
+        },
     ];
 
     // Agar avtorizatsiya tekshirilmagan bo'lsa, loading ko'rsatish
@@ -92,25 +127,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         <span className="bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent italic">ADMIN</span>
                     </h2>
 
-                    <nav className="space-y-2">
-                        {menuItems.map((item) => {
-                            const Icon = item.icon;
-                            const isActive = pathname === item.href;
-                            return (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    onClick={() => setIsSidebarOpen(false)}
-                                    className={`flex items-center gap-4 px-6 py-4 rounded-[24px] transition-all duration-300 group ${isActive
-                                        ? 'bg-white text-black font-black shadow-2xl shadow-white/10'
-                                        : 'text-gray-500 hover:bg-white/5 hover:text-white'
-                                        }`}
-                                >
-                                    <Icon size={20} className={isActive ? 'text-black' : 'group-hover:scale-110 transition-transform'} />
-                                    <span className="text-sm tracking-tight">{item.name}</span>
-                                </Link>
-                            );
-                        })}
+                    <nav className="space-y-6">
+                        {menuGroups.map((group) => (
+                            <div key={group.title} className="space-y-1.5">
+                                <p className="px-6 mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-600">
+                                    {group.title}
+                                </p>
+                                {group.items.map((item) => {
+                                    const Icon = item.icon;
+                                    const isActive = pathname === item.href;
+                                    return (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            onClick={() => setIsSidebarOpen(false)}
+                                            className={`flex items-center gap-4 px-6 py-3.5 rounded-[24px] transition-all duration-300 group ${isActive
+                                                ? 'bg-white text-black font-black shadow-2xl shadow-white/10'
+                                                : 'text-gray-500 hover:bg-white/5 hover:text-white'
+                                                }`}
+                                        >
+                                            <Icon size={20} className={isActive ? 'text-black' : 'group-hover:scale-110 transition-transform'} />
+                                            <span className="text-sm tracking-tight">{item.name}</span>
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        ))}
                     </nav>
                 </div>
 
