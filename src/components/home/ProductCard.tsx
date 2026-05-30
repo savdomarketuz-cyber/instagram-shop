@@ -59,6 +59,7 @@ interface ProductCardProps {
   removeFromCart: (id: string) => void;
   priority?: boolean;
   reason?: string;
+  brandLabel?: string;
 }
 
 function WishBtn({ isWished, onClick }: { isWished: boolean; onClick: (e: React.MouseEvent) => void }) {
@@ -104,7 +105,7 @@ import { applyGlobalPromo } from "@/lib/promo-utils";
 export const ProductCard = memo(({
   item: rawItem, language, t, cart, wishlist,
   toggleWishlist, addToCart, updateQuantity, removeFromCart,
-  priority = false, reason,
+  priority = false, reason, brandLabel,
 }: ProductCardProps) => {
   const globalPromo = useStore(s => s.globalPromo);
   const item = applyGlobalPromo(rawItem, globalPromo);
@@ -129,7 +130,7 @@ export const ProductCard = memo(({
   const badgeBg = badge === "HIT" ? "#0F1410" : "#FF3B30";
 
   const name = (language === "uz" ? item.name_uz : item.name_ru) || item.name;
-  const brandName = "";
+  const brandName = brandLabel || "";
 
   const fmtPrice = (n: number) => {
     const s = n.toLocaleString("ru-RU");

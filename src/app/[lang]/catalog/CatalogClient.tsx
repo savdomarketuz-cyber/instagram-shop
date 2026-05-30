@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useStore } from "@/store/store";
-import {
-    Search, Heart, ChevronRight, ChevronLeft,
-    LayoutGrid, ShoppingBag, Loader2, Grid3X3, ArrowLeft
-} from "lucide-react";
+import { useShallow } from "zustand/react/shallow";
+import { Search, SlidersHorizontal, ArrowUpDown, X, Check, Loader2, PackageSearch } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { translations } from "@/lib/translations";
 import { supabase } from "@/lib/supabase";
-import Link from "next/link";
-import Image from "next/image";
-import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
+import { mapProduct } from "@/lib/mappers";
+import { ProductCard } from "@/components/home/ProductCard";
+import type { Product } from "@/types";
+
+const GREEN = "#2D6E3E";
 
 interface Category {
     id: string;
@@ -20,270 +20,422 @@ interface Category {
     name_ru?: string;
     parentId?: string;
     image?: string;
-    image_meta?: { xs?: string; md?: string; lg?: string; lowResUrl?: string; blurDataURL?: string };
+}
+
+interface Brand {
+    id: string;
+    name: string;
+    name_uz?: string;
+    name_ru?: string;
 }
 
 interface CatalogClientProps {
     initialCategories?: Category[];
 }
 
+type SortKey = "popular" | "new" | "price_asc" | "price_desc" | "rating";
+
 export default function CatalogClient({ initialCategories }: CatalogClientProps) {
     const router = useRouter();
-    const { language, cachedCategories, setCachedCategories } = useStore();
+    const {
+        language, cachedCategories, setCachedCategories,
+        cart, wishlist, addToCart, updateQuantity, removeFromCart, toggleWishlist,
+    } = useStore(useShallow(state => ({
+        language: state.language,
+        cachedCategories: state.cachedCategories,
+        setCachedCategories: state.setCachedCategories,
+        cart: state.cart,
+        wishlist: state.wishlist,
+        addToCart: state.addToCart,
+        updateQuantity: state.updateQuantity,
+        removeFromCart: state.removeFromCart,
+        toggleWishlist: state.toggleWishlist,
+    })));
     const t = translations[language];
+    const catName = (c: { name: string; name_uz?: string; name_ru?: string }) =>
+        (language === "uz" ? c.name_uz : c.name_ru) || c.name;
 
     const [allCategories, setAllCategories] = useState<Category[]>(initialCategories || cachedCategories || []);
-    const [loading, setLoading] = useState((initialCategories || []).length === 0 && cachedCategories.length === 0);
+    const [brands, setBrands] = useState<Brand[]>([]);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [loadingProducts, setLoadingProducts] = useState(true);
+
     const [searchQuery, setSearchQuery] = useState("");
-    const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+    const [mainCat, setMainCat] = useState<string>("all");
+    const [subCat, setSubCat] = useState<string>("all");
 
-    useEffect(() => {
-        // Only fetch client-side if no server-side data was provided
-        if (initialCategories && initialCategories.length > 0) {
-            setCachedCategories(initialCategories);
-            return;
-        }
-        
-        const fetchCategories = async () => {
-            try {
-                const { data, error } = await supabase
-                    .from("categories")
-                    .select("*")
-                    .eq("is_deleted", false)
-                    .order("name");
-                
-                if (error) throw error;
+    const [showFilters, setShowFilters] = useState(false);
+    const [showSort, setShowSort] = useState(false);
 
-                const cData = data.map(c => ({
-                    id: c.id,
-                    name: c.name,
-                    name_uz: c.name_uz,
-                    name_ru: c.name_ru,
-                    parentId: c.parent_id,
-                    image: c.image,
-                    image_meta: c.image_meta || undefined,
-                })) as Category[];
+    // Filter state
+    const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+    const [minRating, setMinRating] = useState<number>(0);
+    const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
+    const [sortBy, setSortBy] = useState<SortKey>("popular");
 
-                setAllCategories(cData);
-                setCachedCategories(cData);
-            } catch (error) {
-                console.error("Error fetching categories:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchCategories();
-    }, []);
+    // Draft state for the filter sheet (apply on confirm)
+    const [draftBrands, setDraftBrands] = useState<string[]>([]);
+    const [draftRating, setDraftRating] = useState<number>(0);
+    const [draftMaxPrice, setDraftMaxPrice] = useState<number>(0);
 
     const mainCategories = allCategories.filter(c => !c.parentId);
-    const subCategories = selectedCategory
-        ? allCategories.filter(c => c.parentId === selectedCategory.id)
-        : [];
+    const subCategories = mainCat !== "all" ? allCategories.filter(c => c.parentId === mainCat) : [];
 
-    const handleCategoryClick = (category: Category) => {
-        const hasSubs = allCategories.some(c => c.parentId === category.id);
-        if (hasSubs) {
-            setSelectedCategory(category);
-        } else {
-            router.push(`/${language}/?category=${category.id}`);
-        }
+    // Fetch categories (if not provided) + brands
+    useEffect(() => {
+        const load = async () => {
+            if (!initialCategories || initialCategories.length === 0) {
+                if (cachedCategories.length === 0) {
+                    const { data } = await supabase.from("categories").select("*").eq("is_deleted", false).order("name");
+                    if (data) {
+                        const cData = data.map(c => ({
+                            id: c.id, name: c.name, name_uz: c.name_uz, name_ru: c.name_ru,
+                            parentId: c.parent_id, image: c.image,
+                        })) as Category[];
+                        setAllCategories(cData);
+                        setCachedCategories(cData);
+                    }
+                }
+            } else {
+                setCachedCategories(initialCategories);
+            }
+
+            const { data: bData } = await supabase.from("brands").select("id, name, name_uz, name_ru").eq("is_deleted", false).order("name");
+            if (bData) setBrands(bData as Brand[]);
+        };
+        load();
+    }, []);
+
+    // Fetch products when category/subcategory changes
+    useEffect(() => {
+        const fetchProducts = async () => {
+            setLoadingProducts(true);
+            try {
+                let query = supabase.from("products").select("*").eq("is_deleted", false);
+
+                const activeCat = subCat !== "all" ? subCat : mainCat;
+                if (activeCat !== "all") {
+                    const getAllIds = (catId: string): string[] => {
+                        const children = allCategories.filter(c => c.parentId === catId);
+                        let ids = [catId];
+                        for (const child of children) ids = [...ids, ...getAllIds(child.id)];
+                        return ids;
+                    };
+                    query = query.in("category_id", getAllIds(activeCat));
+                }
+
+                const { data } = await query.order("sales", { ascending: false }).limit(120);
+                setProducts((data || []).map(mapProduct));
+            } catch (e) {
+                console.error("Catalog products fetch failed", e);
+            } finally {
+                setLoadingProducts(false);
+            }
+        };
+        fetchProducts();
+    }, [mainCat, subCat, allCategories.length]);
+
+    const brandName = (id?: string) => {
+        const b = brands.find(x => x.id === id);
+        return b ? ((language === "uz" ? b.name_uz : b.name_ru) || b.name) : "";
     };
 
-    if (loading && allCategories.length === 0) {
-        return (
-            <div className="min-h-screen flex items-center justify-center" style={{ background: "#FAFAF6" }}>
-                <Loader2 className="animate-spin" size={32} color="#2D6E3E" />
-            </div>
-        );
-    }
+    // Max price across current product set (for the slider bound)
+    const maxProductPrice = useMemo(() => {
+        const max = products.reduce((m, p) => Math.max(m, p.oldPrice || p.price || 0), 0);
+        return max > 0 ? Math.ceil(max / 100000) * 100000 : 5000000;
+    }, [products]);
+
+    const filteredProducts = useMemo(() => {
+        let list = products;
+
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            list = list.filter(p =>
+                (p.name || "").toLowerCase().includes(q) ||
+                (p.name_uz || "").toLowerCase().includes(q) ||
+                (p.name_ru || "").toLowerCase().includes(q) ||
+                brandName((p as any).brand || p.brand_id).toLowerCase().includes(q)
+            );
+        }
+        if (selectedBrands.length > 0) {
+            list = list.filter(p => selectedBrands.includes((p as any).brand || p.brand_id || ""));
+        }
+        if (minRating > 0) {
+            list = list.filter(p => (p.rating || 0) >= minRating);
+        }
+        if (priceRange[1] > 0) {
+            list = list.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
+        }
+
+        const sorted = [...list];
+        switch (sortBy) {
+            case "new": sorted.sort((a, b) => (b.created_at || "").localeCompare(a.created_at || "")); break;
+            case "price_asc": sorted.sort((a, b) => a.price - b.price); break;
+            case "price_desc": sorted.sort((a, b) => b.price - a.price); break;
+            case "rating": sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0)); break;
+            default: sorted.sort((a, b) => (b.sales || 0) - (a.sales || 0));
+        }
+        return sorted;
+    }, [products, searchQuery, selectedBrands, minRating, priceRange, sortBy, brands, language]);
+
+    const activeFilterCount = (selectedBrands.length > 0 ? 1 : 0) + (minRating > 0 ? 1 : 0) + (priceRange[1] > 0 ? 1 : 0);
+
+    const openFilters = () => {
+        setDraftBrands(selectedBrands);
+        setDraftRating(minRating);
+        setDraftMaxPrice(priceRange[1] > 0 ? priceRange[1] : maxProductPrice);
+        setShowFilters(true);
+    };
+    const applyFilters = () => {
+        setSelectedBrands(draftBrands);
+        setMinRating(draftRating);
+        setPriceRange([0, draftMaxPrice >= maxProductPrice ? 0 : draftMaxPrice]);
+        setShowFilters(false);
+    };
+    const clearFilters = () => {
+        setDraftBrands([]);
+        setDraftRating(0);
+        setDraftMaxPrice(maxProductPrice);
+    };
+
+    const sortOptions: { key: SortKey; label_uz: string; label_ru: string }[] = [
+        { key: "popular", label_uz: "Mashhurligi", label_ru: "По популярности" },
+        { key: "new", label_uz: "Yangilari", label_ru: "Новинки" },
+        { key: "price_asc", label_uz: "Arzondan qimmatga", label_ru: "Сначала дешёвые" },
+        { key: "price_desc", label_uz: "Qimmatdan arzonga", label_ru: "Сначала дорогие" },
+        { key: "rating", label_uz: "Reyting bo'yicha", label_ru: "По рейтингу" },
+    ];
+
+    const fmt = (n: number) => n.toLocaleString("ru-RU") + (language === "ru" ? " сум" : " so'm");
 
     return (
-        <div className="min-h-screen text-black font-sans" style={{ background: "#FAFAF6" }}>
-            <div className="max-w-[1440px] mx-auto px-4 md:px-10 py-6 md:py-12">
-                
-                <div className="flex flex-col gap-8 mb-12">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <button onClick={() => selectedCategory ? setSelectedCategory(null) : router.back()} className="p-3 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all">
-                                <ArrowLeft size={20} />
-                            </button>
-                            <h1 className="text-3xl md:text-5xl font-black italic tracking-tighter uppercase">
-                                {selectedCategory ? (selectedCategory[`name_${language}`] || selectedCategory.name) : (language === 'uz' ? 'Katalog' : 'Каталог')}
-                            </h1>
-                        </div>
-                        <div className="hidden md:flex relative w-96 group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                            <input
-                                type="text"
-                                placeholder={language === 'uz' ? "Turkumlarni izlash" : "Поиск категорий"}
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && searchQuery.trim()) {
-                                        const globalForm = document.querySelector('form') as HTMLFormElement;
-                                        if (globalForm) {
-                                            const globalInput = globalForm.querySelector('input');
-                                            if (globalInput) {
-                                                globalInput.value = searchQuery;
-                                                globalInput.dispatchEvent(new Event('input', { bubbles: true }));
-                                                globalForm.requestSubmit();
-                                            }
-                                        }
-                                    }
-                                }}
-                                className="w-full bg-gray-50 border-none rounded-2xl py-4 pl-12 pr-4 text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-black/5 outline-none transition-all"
+        <div className="min-h-screen text-black font-sans pb-24" style={{ background: "#FAFAF6" }}>
+            <div className="max-w-[1440px] mx-auto px-4 md:px-10 py-5 md:py-10">
+
+                {/* Title */}
+                <h1 className="text-3xl md:text-5xl font-black tracking-tighter mb-5">
+                    {language === "uz" ? "Katalog" : "Каталог"}
+                </h1>
+
+                {/* Search */}
+                <div className="relative mb-5">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                    <input
+                        type="text"
+                        placeholder={language === "uz" ? "Mahsulot, brend, kategoriya..." : "Товар, бренд, категория..."}
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="w-full bg-white rounded-[20px] py-4 pl-12 pr-4 text-sm font-medium border border-gray-100 shadow-sm outline-none focus:border-gray-200"
+                    />
+                </div>
+
+                {/* Main category pills */}
+                <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 mb-3 -mx-1 px-1">
+                    <Pill active={mainCat === "all"} onClick={() => { setMainCat("all"); setSubCat("all"); }}>
+                        {language === "uz" ? "Hammasi" : "Все"}
+                    </Pill>
+                    {mainCategories.map(c => (
+                        <Pill key={c.id} active={mainCat === c.id} onClick={() => { setMainCat(c.id); setSubCat("all"); }}>
+                            {catName(c)}
+                        </Pill>
+                    ))}
+                </div>
+
+                {/* Sub category pills */}
+                {subCategories.length > 0 && (
+                    <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 mb-3 -mx-1 px-1">
+                        <Pill small active={subCat === "all"} onClick={() => setSubCat("all")}>
+                            {language === "uz" ? "Barchasi" : "Все"}
+                        </Pill>
+                        {subCategories.map(c => (
+                            <Pill key={c.id} small active={subCat === c.id} onClick={() => setSubCat(c.id)}>
+                                {catName(c)}
+                            </Pill>
+                        ))}
+                    </div>
+                )}
+
+                {/* Filter / Sort buttons */}
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                    <button
+                        onClick={openFilters}
+                        className="flex items-center justify-center gap-2 bg-white border border-gray-100 rounded-2xl py-3.5 text-sm font-bold shadow-sm active:scale-[0.98] transition-transform"
+                    >
+                        <SlidersHorizontal size={16} />
+                        {language === "uz" ? "Filtrlar" : "Фильтры"}
+                        {activeFilterCount > 0 && (
+                            <span className="ml-1 w-5 h-5 rounded-full text-white text-[10px] font-black flex items-center justify-center" style={{ background: GREEN }}>
+                                {activeFilterCount}
+                            </span>
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setShowSort(true)}
+                        className="flex items-center justify-center gap-2 bg-white border border-gray-100 rounded-2xl py-3.5 text-sm font-bold shadow-sm active:scale-[0.98] transition-transform"
+                    >
+                        <ArrowUpDown size={16} />
+                        {language === "uz" ? "Saralash" : "Сортировка"}
+                    </button>
+                </div>
+
+                {/* Product grid */}
+                {loadingProducts ? (
+                    <div className="flex justify-center py-24">
+                        <Loader2 className="animate-spin" size={32} color={GREEN} />
+                    </div>
+                ) : filteredProducts.length === 0 ? (
+                    <div className="py-24 text-center">
+                        <PackageSearch size={56} className="mx-auto mb-4 text-gray-200" />
+                        <p className="text-sm font-bold text-gray-400">
+                            {language === "uz" ? "Mahsulot topilmadi" : "Товары не найдены"}
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5">
+                        {filteredProducts.map((p, i) => (
+                            <ProductCard
+                                key={p.id}
+                                item={p}
+                                language={language}
+                                t={t}
+                                cart={cart}
+                                wishlist={wishlist}
+                                toggleWishlist={toggleWishlist}
+                                addToCart={addToCart}
+                                updateQuantity={updateQuantity}
+                                removeFromCart={removeFromCart}
+                                priority={i < 4}
+                                brandLabel={brandName((p as any).brand || p.brand_id)}
                             />
-                        </div>
+                        ))}
                     </div>
+                )}
+            </div>
 
-                    <div className="md:hidden relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                        <input
-                            type="text"
-                            placeholder={language === 'uz' ? "Katalogdan izlash" : "Поиск по каталогу"}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && searchQuery.trim()) {
-                                    // Trigger global search for products
-                                    const searchTrigger = document.querySelector('form') as HTMLFormElement;
-                                    if (searchTrigger) {
-                                        const globalInput = searchTrigger.querySelector('input');
-                                        if (globalInput) {
-                                            globalInput.value = searchQuery;
-                                            globalInput.dispatchEvent(new Event('input', { bubbles: true }));
-                                            searchTrigger.requestSubmit();
-                                        }
-                                    } else {
-                                        // Fallback: router push with sync
-                                        router.push(`/${language}/?search=${encodeURIComponent(searchQuery)}`);
-                                    }
-                                }
-                            }}
-                            className="w-full bg-gray-100 rounded-[20px] py-4 pl-12 pr-4 text-sm font-bold border-none outline-none"
-                        />
+            {/* FILTER SHEET */}
+            <BottomSheet open={showFilters} onClose={() => setShowFilters(false)}
+                title={language === "uz" ? "Filtrlar" : "Фильтры"}
+                leftAction={<button onClick={clearFilters} className="text-sm font-bold text-gray-400">{language === "uz" ? "Tozalash" : "Сбросить"}</button>}
+            >
+                {/* Price */}
+                <Section title={language === "uz" ? "Narx" : "Цена"}>
+                    <div className="flex items-center justify-between mb-3 text-sm font-black">
+                        <span>{fmt(0)}</span>
+                        <span className="text-gray-300">—</span>
+                        <span>{fmt(draftMaxPrice || maxProductPrice)}</span>
                     </div>
-                </div>
+                    <input
+                        type="range"
+                        min={0}
+                        max={maxProductPrice}
+                        step={50000}
+                        value={draftMaxPrice || maxProductPrice}
+                        onChange={e => setDraftMaxPrice(Number(e.target.value))}
+                        className="w-full accent-[#2D6E3E]"
+                    />
+                </Section>
 
-                <div className="mt-8">
-                    {searchQuery.trim() && mainCategories.filter(c => (c[`name_${language}`] || c.name).toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
-                        <div className="mb-12 p-8 rounded-[32px] flex flex-col md:flex-row items-center justify-between gap-6" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff" }}>
-                            <div className="flex flex-col gap-2 text-center md:text-left">
-                                <h3 className="text-xl font-black uppercase tracking-tighter italic">Kategoriyalar topilmadi</h3>
-                                <p className="text-gray-400 text-sm font-bold">"{searchQuery}" bo'yicha mahsulotlarni izlab ko'rasizmi?</p>
-                            </div>
-                            <button 
-                                onClick={async () => {
-                                    useStore.setState({ isSearchLoading: true });
-                                    router.push(`/${language}`);
-                                    try {
-                                        const res = await fetch('/api/search', {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ query: searchQuery })
-                                        });
-                                        const data = await res.json();
-                                        useStore.getState().setSearchResults(data.results || []);
-                                        useStore.getState().setHomeSearchQuery(searchQuery);
-                                    } catch (e) {
-                                        console.error("Catalog global search failed", e);
-                                    } finally {
-                                        useStore.setState({ isSearchLoading: false });
-                                    }
-                                }}
-                                className="bg-white text-black px-10 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-white/10"
-                            >
-                                Mahsulotlarni izlash
-                            </button>
-                        </div>
-                    )}
-                    {!selectedCategory ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-8">
-                            {mainCategories.filter(c => (c[`name_${language}`] || c.name).toLowerCase().includes(searchQuery.toLowerCase())).map((cat, index) => (
-                                <button
-                                    key={cat.id}
-                                    onClick={() => handleCategoryClick(cat)}
-                                    className="group flex flex-col items-center gap-4 p-4 md:p-8 bg-gray-50/50 rounded-[40px] border border-transparent hover:border-gray-100 hover:bg-white hover:shadow-2xl hover:shadow-black/5 transition-all duration-500"
-                                >
-                                    <div className="w-20 h-20 md:w-32 md:h-32 rounded-[32px] overflow-hidden bg-white shadow-xl shadow-black/5 group-hover:scale-105 transition-transform duration-500 relative">
-                                        {cat.image ? (() => {
-                                            const meta = cat.image_meta ? { [cat.image]: cat.image_meta } : undefined;
-                                            return <Image
-                                                src={cat.image}
-                                                alt={cat.name}
-                                                fill
-                                                className="object-cover"
-                                                sizes="(max-width: 768px) 80px, 128px"
-                                                priority={index < 12}
-                                                fetchPriority={index < 12 ? "high" : "auto"}
-                                                loader={hasVariants(meta, cat.image) ? makeVariantLoader(meta) : undefined}
-                                            />;
-                                        })() : (
-                                            <div className="w-full h-full flex items-center justify-center text-gray-100"><LayoutGrid size={40} /></div>
-                                        )}
-                                    </div>
-                                    <div className="text-center">
-                                        <span className="text-xs md:text-[13px] font-black uppercase tracking-widest text-gray-800 group-hover:text-black transition-colors">
-                                            {cat[`name_${language}`] || cat.name}
-                                        </span>
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="space-y-12">
-                            <button
-                                onClick={() => router.push(`/${language}/?category=${selectedCategory.id}`)}
-                                className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all"
-                                style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", boxShadow: "0 8px 20px rgba(45,110,62,0.28)" }}
-                            >
-                                <Grid3X3 size={18} />
-                                {language === 'uz' ? 'Turkumdagi barcha mahsulotlar' : 'Все товары категории'}
-                            </button>
-
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-8">
-                                {subCategories.filter(c => (c[`name_${language}`] || c.name).toLowerCase().includes(searchQuery.toLowerCase())).map((sub, index) => (
-                                    <button
-                                        key={sub.id}
-                                        onClick={() => handleCategoryClick(sub)}
-                                        className="group flex flex-col items-center gap-4 p-4 md:p-8 bg-gray-50/50 rounded-[40px] border border-transparent hover:border-gray-100 hover:bg-white hover:shadow-2xl hover:shadow-black/5 transition-all duration-500"
+                {/* Brands */}
+                {brands.length > 0 && (
+                    <Section title={language === "uz" ? "Brendlar" : "Бренды"}>
+                        <div className="flex flex-wrap gap-2.5">
+                            {brands.map(b => {
+                                const on = draftBrands.includes(b.id);
+                                return (
+                                    <button key={b.id}
+                                        onClick={() => setDraftBrands(on ? draftBrands.filter(x => x !== b.id) : [...draftBrands, b.id])}
+                                        className={`px-4 py-2.5 rounded-full text-xs font-bold border transition-colors ${on ? "text-white border-transparent" : "bg-white text-gray-700 border-gray-200"}`}
+                                        style={on ? { background: GREEN } : undefined}
                                     >
-                                        <div className="w-16 h-16 md:w-24 md:h-24 rounded-[28px] overflow-hidden bg-white shadow-lg shadow-black/5 group-hover:scale-110 transition-transform relative">
-                                            {sub.image ? (() => {
-                                                const meta = sub.image_meta ? { [sub.image]: sub.image_meta } : undefined;
-                                                return <Image
-                                                    src={sub.image}
-                                                    alt={sub.name}
-                                                    fill
-                                                    className="object-cover"
-                                                    sizes="(max-width: 768px) 64px, 96px"
-                                                    priority={index < 12}
-                                                    fetchPriority={index < 12 ? "high" : "auto"}
-                                                    loader={hasVariants(meta, sub.image) ? makeVariantLoader(meta) : undefined}
-                                                />;
-                                            })() : (
-                                                <div className="w-full h-full flex items-center justify-center text-gray-100"><ShoppingBag size={32} /></div>
-                                            )}
-                                        </div>
-                                        <span className="text-xs font-black uppercase tracking-widest text-gray-600 text-center leading-tight group-hover:text-black transition-colors">
-                                            {sub[`name_${language}`] || sub.name}
-                                        </span>
+                                        {(language === "uz" ? b.name_uz : b.name_ru) || b.name}
                                     </button>
-                                ))}
-                            </div>
-
-                            {subCategories.length === 0 && searchQuery === "" && (
-                                <div className="py-20 text-center opacity-20">
-                                    <ShoppingBag size={64} className="mx-auto mb-6" />
-                                    <p className="text-sm font-black uppercase tracking-widest">
-                                        {language === 'uz' ? 'Sub-turkumlar yo\'q' : 'Подкатегорий нет'}
-                                    </p>
-                                </div>
-                            )}
+                                );
+                            })}
                         </div>
-                    )}
+                    </Section>
+                )}
+
+                {/* Rating */}
+                <Section title={language === "uz" ? "Reyting" : "Рейтинг"}>
+                    {[4.5, 4, 3.5, 0].map(r => (
+                        <button key={r} onClick={() => setDraftRating(r)}
+                            className="w-full flex items-center gap-3 py-3 border-b border-gray-50 last:border-0">
+                            <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${draftRating === r ? "border-transparent" : "border-gray-200"}`}
+                                style={draftRating === r ? { background: GREEN } : undefined}>
+                                {draftRating === r && <Check size={12} color="#fff" strokeWidth={3} />}
+                            </span>
+                            <span className="text-sm font-bold">
+                                {r === 0 ? (language === "uz" ? "Har qanday" : "Любой") : `${r}+ ⭐`}
+                            </span>
+                        </button>
+                    ))}
+                </Section>
+
+                <button onClick={applyFilters}
+                    className="w-full py-4 rounded-2xl text-white font-bold text-sm mt-2"
+                    style={{ background: GREEN, boxShadow: "0 8px 20px rgba(45,110,62,0.28)" }}>
+                    {language === "uz" ? "Natijalarni ko'rsatish" : "Показать результаты"}
+                </button>
+            </BottomSheet>
+
+            {/* SORT SHEET */}
+            <BottomSheet open={showSort} onClose={() => setShowSort(false)}
+                title={language === "uz" ? "Saralash" : "Сортировка"}
+            >
+                {sortOptions.map(o => (
+                    <button key={o.key}
+                        onClick={() => { setSortBy(o.key); setShowSort(false); }}
+                        className="w-full flex items-center justify-between py-4 border-b border-gray-50 last:border-0">
+                        <span className={`text-sm ${sortBy === o.key ? "font-black" : "font-medium text-gray-600"}`}>
+                            {language === "uz" ? o.label_uz : o.label_ru}
+                        </span>
+                        {sortBy === o.key && <Check size={18} color={GREEN} strokeWidth={3} />}
+                    </button>
+                ))}
+            </BottomSheet>
+        </div>
+    );
+}
+
+function Pill({ children, active, onClick, small }: { children: React.ReactNode; active: boolean; onClick: () => void; small?: boolean }) {
+    return (
+        <button onClick={onClick}
+            className={`shrink-0 rounded-full font-bold transition-colors whitespace-nowrap ${small ? "px-4 py-2 text-xs" : "px-5 py-2.5 text-sm"} ${active ? "bg-black text-white" : "bg-white text-gray-600 border border-gray-100"}`}>
+            {children}
+        </button>
+    );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+    return (
+        <div className="mb-6">
+            <p className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-3">{title}</p>
+            {children}
+        </div>
+    );
+}
+
+function BottomSheet({ open, onClose, title, leftAction, children }: {
+    open: boolean; onClose: () => void; title: string; leftAction?: React.ReactNode; children: React.ReactNode;
+}) {
+    if (!open) return null;
+    return (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center" onClick={onClose}>
+            <div className="absolute inset-0 bg-black/40 animate-in fade-in duration-200" />
+            <div
+                onClick={e => e.stopPropagation()}
+                className="relative w-full max-w-[480px] bg-white rounded-t-[32px] p-6 pb-8 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300"
+            >
+                <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+                <div className="flex items-center justify-between mb-6">
+                    <div className="w-16">{leftAction}</div>
+                    <h3 className="text-base font-black">{title}</h3>
+                    <button onClick={onClose} className="w-16 flex justify-end">
+                        <X size={20} className="text-gray-400" />
+                    </button>
                 </div>
+                {children}
             </div>
         </div>
     );
