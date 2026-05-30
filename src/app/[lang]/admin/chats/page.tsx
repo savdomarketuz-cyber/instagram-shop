@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { adminSelect, adminInsert, adminUpdate, adminDelete } from "@/lib/admin-api";
 import { MessageSquare, Users, Star, Trash2, Reply, Send, CheckCircle2, Search, Headphones, AlertCircle, Loader2, ChevronRight, Paperclip, ChevronLeft, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -26,15 +27,12 @@ export default function AdminChatPage() {
 
     const fetchData = async () => {
         try {
-            const [chatsRes, commentsRes] = await Promise.all([
-                supabase.from("support_chats").select("*").order("last_timestamp", { ascending: false }),
-                supabase.from("comments").select("*").order("created_at", { ascending: false })
+            const [chatsData, commentsData] = await Promise.all([
+                adminSelect<any[]>("support_chats", { orderBy: { column: "last_timestamp", ascending: false } }),
+                adminSelect<any[]>("comments", { orderBy: { column: "created_at", ascending: false } })
             ]);
 
-            if (chatsRes.error) throw chatsRes.error;
-            if (commentsRes.error) throw commentsRes.error;
-
-            setSupportChats(chatsRes.data.map(c => ({
+            setSupportChats((chatsData || []).map(c => ({
                 id: c.id,
                 username: c.username,
                 lastMessage: c.last_message,
@@ -42,7 +40,7 @@ export default function AdminChatPage() {
                 unreadByAdmin: c.unread_by_admin
             })));
 
-            setComments(commentsRes.data.map(c => ({
+            setComments((commentsData || []).map(c => ({
                 id: c.id,
                 username: c.username,
                 text: c.text,
@@ -77,14 +75,12 @@ export default function AdminChatPage() {
 
     const fetchMessages = async (chatId: string) => {
         try {
-            const { data, error } = await supabase
-                .from("support_messages")
-                .select("*")
-                .eq("chat_id", chatId)
-                .order("created_at", { ascending: true });
-            
-            if (error) throw error;
-            setMessages(data.map(m => ({
+            const data = await adminSelect<any[]>("support_messages", {
+                match: { column: "chat_id", value: chatId },
+                orderBy: { column: "created_at", ascending: true },
+            });
+
+            setMessages((data || []).map(m => ({
                 id: m.id,
                 text: m.text,
                 image: m.image,
@@ -94,7 +90,7 @@ export default function AdminChatPage() {
             })));
 
             // Mark as read
-            await supabase.from("support_chats").update({ unread_by_admin: 0 }).eq("id", chatId);
+            await adminUpdate("support_chats", { unread_by_admin: 0 }, { column: "id", value: chatId });
         } catch (error) {
             console.error("Fetch messages error:", error);
         }
@@ -148,30 +144,21 @@ export default function AdminChatPage() {
 
 
             const messageId = crypto.randomUUID();
-            const { error: msgError } = await supabase
-                .from("support_messages")
-                .insert([{
-                    id: messageId,
-                    chat_id: selectedChat.id,
-                    text: replyText,
-                    image: fileType === 'image' ? uploadedUrl : null,
-                    video: fileType === 'video' ? uploadedUrl : null,
-                    sender_type: "admin",
-                }]);
-
-            if (msgError) throw msgError;
+            await adminInsert("support_messages", [{
+                id: messageId,
+                chat_id: selectedChat.id,
+                text: replyText,
+                image: fileType === 'image' ? uploadedUrl : null,
+                video: fileType === 'video' ? uploadedUrl : null,
+                sender_type: "admin",
+            }]);
 
             const lastMsgText = uploadedUrl ? (fileType === 'image' ? "🖼️ Rasm" : "🎥 Video") : replyText;
-            const { error: chatError } = await supabase
-                .from("support_chats")
-                .update({
-                    last_message: lastMsgText,
-                    last_timestamp: new Date().toISOString(),
-                    unread_by_admin: 0
-                })
-                .eq("id", selectedChat.id);
-            
-            if (chatError) throw chatError;
+            await adminUpdate("support_chats", {
+                last_message: lastMsgText,
+                last_timestamp: new Date().toISOString(),
+                unread_by_admin: 0
+            }, { column: "id", value: selectedChat.id });
 
             setReplyText("");
             setSelectedFile(null);
@@ -188,9 +175,12 @@ export default function AdminChatPage() {
 
     const deleteComment = async (id: string) => {
         if (confirm("Ushbu sharhni o'chirishni tasdiqlaysizmi?")) {
-            const { error } = await supabase.from("comments").delete().eq("id", id);
-            if (error) console.error("Delete comment error:", error);
-            else fetchData();
+            try {
+                await adminDelete("comments", { column: "id", value: id });
+                fetchData();
+            } catch (error) {
+                console.error("Delete comment error:", error);
+            }
         }
     };
 
