@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { mapProduct, mapComment } from "@/lib/mappers";
 import { translations } from "@/lib/translations";
-import { Loader2, Plus, Minus, ShoppingBag, Heart, Star, Check, Truck, Clock, ShieldCheck, RefreshCw, ChevronLeft } from "lucide-react";
+import { Loader2, Plus, Minus, ShoppingBag, Heart, Star, Check, Truck, Clock, ShieldCheck, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { getDeliveryDateText } from "@/lib/date-utils";
 import Image from "next/image";
@@ -625,30 +625,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
 
             {/* Mobile View */}
             <div className="md:hidden" style={{ overscrollBehavior: 'none', touchAction: 'pan-x pan-y' }}>
-                {/* Floating back + wishlist buttons */}
-                <div style={{ position: "absolute", top: 56, left: 16, right: 16, zIndex: 20, display: "flex", justifyContent: "space-between", pointerEvents: "none" }} className="md:hidden">
-                    <Link href={`/${language}/catalog`} style={{
-                        width: 40, height: 40, borderRadius: 20,
-                        background: "rgba(255,255,255,0.9)", backdropFilter: "blur(12px)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        boxShadow: "0 2px 8px rgba(15,20,16,0.08)", pointerEvents: "auto",
-                    }}>
-                        <ChevronLeft size={20} color="#0F1410" />
-                    </Link>
-                    <button
-                        onClick={() => toggleWishlist(product)}
-                        style={{
-                            width: 40, height: 40, borderRadius: 20,
-                            background: "rgba(255,255,255,0.9)", backdropFilter: "blur(12px)",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            border: "none", cursor: "pointer",
-                            boxShadow: "0 2px 8px rgba(15,20,16,0.08)", pointerEvents: "auto",
-                        }}
-                    >
-                        <Heart size={18} fill={isWishlisted ? "#FF3B30" : "none"} color={isWishlisted ? "#FF3B30" : "#0F1410"} />
-                    </button>
-                </div>
-                <ProductMedia 
+                <ProductMedia
                     allMedia={allMedia}
                     activeImage={activeImage}
                     setActiveImage={setActiveImage}
