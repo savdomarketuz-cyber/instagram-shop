@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { adminSelect } from "@/lib/admin-api";
 import { Users, Monitor, Smartphone, Globe, MapPin, MousePointer2, Clock, Zap, UserCheck, Activity } from "lucide-react";
 
 interface ActiveUser {
@@ -22,13 +23,10 @@ export default function AdminLiveMonitoring() {
 
     const fetchData = async () => {
         try {
-            const { data, error } = await supabase
-                .from("user_status")
-                .select("*")
-                .eq("is_online", true);
-            
-            if (error) throw error;
-            
+            const data = await adminSelect<any[]>("user_status", {
+                match: { column: "is_online", value: true },
+            });
+
             const now = Date.now();
             const fetched = (data || []).map(u => ({
                 id: u.id,
@@ -60,11 +58,15 @@ export default function AdminLiveMonitoring() {
     useEffect(() => {
         fetchData();
 
+        // Realtime RLS tufayli ishlamasligi mumkin — ishonchli polling fallback
+        const interval = setInterval(fetchData, 8000);
+
         const sub = supabase.channel('user_status_live')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'user_status' }, () => fetchData())
             .subscribe();
 
         return () => {
+            clearInterval(interval);
             supabase.removeChannel(sub);
         };
     }, []);
