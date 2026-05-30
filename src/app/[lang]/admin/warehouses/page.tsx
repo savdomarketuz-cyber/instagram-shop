@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { adminSelect } from "@/lib/admin-api";
 import { Plus, Trash2, Edit2, Save, X, Loader2, Home as WarehouseIcon, MapPin, Truck, Clock, Calendar } from "lucide-react";
 
 interface Warehouse {
@@ -43,12 +43,8 @@ export default function AdminWarehouses() {
 
     const fetchWarehouses = async () => {
         try {
-            const { data, error } = await supabase
-                .from("warehouses")
-                .select("*")
-                .order("name", { ascending: true });
-            
-            if (error) throw error;
+            const data = await adminSelect<any[]>("warehouses", { orderBy: { column: "name", ascending: true } });
+
             setWarehouses(data.map(w => ({
                 id: w.id,
                 name: w.name,

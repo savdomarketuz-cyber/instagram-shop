@@ -21,7 +21,15 @@ export async function POST(req: NextRequest) {
     if (!(await verifyAdmin(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
-        const { table, action, payload, matchConfig, inConfig, onConflict } = await req.json();
+        const { table, action, payload, matchConfig, inConfig, onConflict, fn, args, orderBy, limit } = await req.json();
+
+        // RPC chaqiruvi (admin RLS chetlab o'tib funksiya bajaradi, masalan hamyon balansini o'zgartirish)
+        if (action === "rpc") {
+            if (!fn) return NextResponse.json({ error: "Function name (fn) is required" }, { status: 400 });
+            const { data, error } = await supabaseAdmin.rpc(fn, args || {});
+            if (error) throw error;
+            return NextResponse.json({ success: true, data });
+        }
 
         if (!table) return NextResponse.json({ error: "Table is required" }, { status: 400 });
 
@@ -32,6 +40,8 @@ export async function POST(req: NextRequest) {
             let selectQuery: any = query.select(payload?.columns || "*");
             if (matchConfig) selectQuery = selectQuery.eq(matchConfig.column, matchConfig.value);
             if (inConfig) selectQuery = selectQuery.in(inConfig.column, inConfig.values);
+            if (orderBy) selectQuery = selectQuery.order(orderBy.column, { ascending: orderBy.ascending ?? true });
+            if (limit) selectQuery = selectQuery.limit(limit);
             const { data, error } = payload?.single
                 ? await selectQuery.maybeSingle()
                 : await selectQuery;

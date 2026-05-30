@@ -20,7 +20,7 @@ import {
     ShieldCheck as ShieldCheckIcon,
     AlertTriangle
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { adminSelect, adminRpc } from "@/lib/admin-api";
 
 export default function AdminWalletsPage() {
     const [wallets, setWallets] = useState<any[]>([]);
@@ -45,12 +45,9 @@ export default function AdminWalletsPage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [
-                { data: wData },
-                { data: tData }
-            ] = await Promise.all([
-                supabase.from("user_wallets").select("*").order("balance", { ascending: false }),
-                supabase.from("cashback_transactions").select("*").order("created_at", { ascending: false }).limit(50)
+            const [wData, tData] = await Promise.all([
+                adminSelect<any[]>("user_wallets", { orderBy: { column: "balance", ascending: false } }),
+                adminSelect<any[]>("cashback_transactions", { orderBy: { column: "created_at", ascending: false }, limit: 50 }),
             ]);
 
             if (wData) setWallets(wData);
@@ -67,23 +64,20 @@ export default function AdminWalletsPage() {
         if (!selectedWallet || !adjustment.amount) return;
 
         const amount = Number(adjustment.amount);
-        const finalAmount = amount; // Negative is handled by the description/logic
 
         try {
-            const { data, error } = await supabase.rpc('adjust_wallet_balance', {
+            await adminRpc("adjust_wallet_balance", {
                 p_user_phone: selectedWallet.user_phone,
-                p_amount: finalAmount,
+                p_amount: amount,
                 p_description: adjustment.description || "Admin tomonidan hisob o'zgartirildi",
-                p_type: adjustment.type
+                p_type: adjustment.type,
             });
-
-        } catch (e) {
-            console.error(e);
-            alert("Xatolik yuz berdi");
-        } finally {
             setIsAdjustModalOpen(false);
             setAdjustment({ amount: "", description: "", type: "earned" });
             fetchData();
+        } catch (err: any) {
+            console.error(err);
+            alert(err?.message || "Balansni o'zgartirishda xatolik yuz berdi");
         }
     };
 
@@ -91,12 +85,11 @@ export default function AdminWalletsPage() {
         setIsAuditing(true);
         setIsAuditModalOpen(true);
         try {
-            const { data, error } = await supabase.rpc('get_global_wallet_audit');
-            if (error) throw error;
+            const data = await adminRpc("get_global_wallet_audit");
             setAuditResults(data);
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
-            alert("Audit vaqtida xatolik yuz berdi");
+            alert(e?.message || "Audit vaqtida xatolik yuz berdi");
         } finally {
             setIsAuditing(false);
         }

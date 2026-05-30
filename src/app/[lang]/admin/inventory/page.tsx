@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { adminSelect, adminUpdate } from "@/lib/admin-api";
 import { Database, Search, Package, Home as WarehouseIcon, Save, Loader2, CheckCircle2, History, AlertCircle, FileSpreadsheet, Download, X, Upload } from "lucide-react";
 
 interface Product {
@@ -32,15 +32,12 @@ export default function AdminInventory() {
 
     const fetchData = async () => {
         try {
-            const [productsRes, warehousesRes] = await Promise.all([
-                supabase.from("products").select("*"),
-                supabase.from("warehouses").select("id, name")
+            const [productsData, warehousesData] = await Promise.all([
+                adminSelect<any[]>("products"),
+                adminSelect<any[]>("warehouses", { columns: "id, name" })
             ]);
 
-            if (productsRes.error) throw productsRes.error;
-            if (warehousesRes.error) throw warehousesRes.error;
-
-            setProducts(productsRes.data.map(p => ({
+            setProducts(productsData.map(p => ({
                 id: p.id,
                 name: p.name,
                 image: p.image,
@@ -49,7 +46,7 @@ export default function AdminInventory() {
                 stockDetails: p.stock_details
             })) as Product[]);
 
-            setWarehouses(warehousesRes.data as Warehouse[]);
+            setWarehouses(warehousesData as Warehouse[]);
             setLoading(false);
         } catch (error) {
             console.error("Fetch inventory error:", error);
@@ -80,15 +77,10 @@ export default function AdminInventory() {
             const newStockDetails = { ...(product.stockDetails || {}), ...updates };
             const totalStock = Object.values(newStockDetails).reduce((a, b: any) => a + (Number(b) || 0), 0);
 
-            const { error } = await supabase
-                .from("products")
-                .update({
-                    stock_details: newStockDetails,
-                    stock: totalStock
-                })
-                .eq("id", product.id);
-            
-            if (error) throw error;
+            await adminUpdate("products", {
+                stock_details: newStockDetails,
+                stock: totalStock
+            }, { column: "id", value: product.id });
 
             const newChanging = { ...changingStock };
             delete newChanging[product.id];
@@ -191,16 +183,15 @@ export default function AdminInventory() {
 
                         const totalStock = Object.values(newStockDetails).reduce((a, b: any) => a + (Number(b) || 0), 0);
 
-                        const { error } = await supabase
-                            .from("products")
-                            .update({
+                        try {
+                            await adminUpdate("products", {
                                 stock_details: newStockDetails,
                                 stock: totalStock
-                            })
-                            .eq("id", product.id);
-                        
-                        if (error) console.error("Error updating product stock:", error);
-                        else updateCount++;
+                            }, { column: "id", value: product.id });
+                            updateCount++;
+                        } catch (err) {
+                            console.error("Error updating product stock:", err);
+                        }
                     }
                 }
 
