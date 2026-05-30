@@ -51,6 +51,7 @@ export async function POST(req: Request) {
 
         // 1. Insert Message
         const { error: msgErr } = await supabaseAdmin.from("support_messages").insert([{
+            id: crypto.randomUUID(),
             chat_id,
             text,
             image,

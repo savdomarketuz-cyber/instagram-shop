@@ -42,7 +42,7 @@ export default function WalletClient() {
         const myPhoneClean = user.phone.replace(/\D/g, '');
         
         // Fetch Balance
-        const { data: wData } = await supabase.from("user_wallets").select("*").eq("phone", myPhoneClean).single();
+        const { data: wData } = await supabase.from("user_wallets").select("*").eq("user_phone", myPhoneClean).single();
         
         // Fetch Combined History (Cashback + Transfers)
         const { data: cData } = await supabase.from("cashback_transactions").select("*").eq("user_phone", user.phone);

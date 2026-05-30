@@ -86,7 +86,7 @@ export default function AccountPage() {
             try {
                 const [userRes, walletRes, cashbackRes, ordersRes] = await Promise.all([
                     supabase.from("users").select("*").eq("phone", user.phone).single(),
-                    supabase.from("user_wallets").select("balance").eq("phone", myPhoneClean).single(),
+                    supabase.from("user_wallets").select("balance").eq("user_phone", myPhoneClean).single(),
                     supabase.from("orders").select("potential_cashback").eq("user_phone", user.phone).neq("status", "Yetkazildi").neq("status", "Bekor qilingan").gt("potential_cashback", 0),
                     supabase.from("orders").select("id").eq("user_phone", user.phone)
                 ]);
