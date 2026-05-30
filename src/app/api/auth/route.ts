@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
                 sub: ADMIN_ID,
                 role: "admin",
                 iat: now,
-                exp: now + 86400, // 24h
+                exp: now + 604800, // 7 kun
                 vault_level: 5
             }, ADMIN_SECRET);
 
@@ -175,9 +175,9 @@ export async function POST(req: NextRequest) {
             // Set cookie with maximum compatibility
             response.cookies.set("admin_token", token, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === "production", 
+                secure: process.env.NODE_ENV === "production",
                 sameSite: "lax",
-                maxAge: 86400,
+                maxAge: 604800, // 7 kun
                 path: "/"
             });
 

@@ -110,21 +110,38 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         setIsMounted(true);
     }, []);
 
-    // Admin autentifikatsiya tekshiruvi
+    // Admin autentifikatsiya tekshiruvi.
+    // MUHIM: zustand `user` localStorage'da abadiy turadi, lekin `admin_token`
+    // cookie 7 kunda tugaydi. Faqat zustandga ishonsak, cookie tugagach panel
+    // ochiq ko'rinadi-yu, har bir /api/admin/* chaqiruvi jimgina 401 qaytaradi.
+    // Shuning uchun haqiqiy cookie'ni serverda tekshiramiz va tugagan bo'lsa
+    // qayta kirishga yo'naltiramiz (yangi cookie olinadi).
     useEffect(() => {
         if (!isMounted) return;
+        let cancelled = false;
 
-        const timer = setTimeout(() => {
+        const verify = async () => {
             const isAdmin = user?.isAdmin || user?.phone === "ADMIN" || user?.id === "ADMIN";
-            
             if (!user || !isAdmin) {
                 router.replace("/login");
-            } else {
-                setIsAuthorized(true);
+                return;
             }
-        }, 300);
+            try {
+                const res = await fetch("/api/auth", { method: "GET", cache: "no-store" });
+                if (cancelled) return;
+                if (res.ok) {
+                    setIsAuthorized(true);
+                } else {
+                    // Cookie tugagan/yaroqsiz — qayta kirish kerak
+                    router.replace("/login");
+                }
+            } catch {
+                if (!cancelled) router.replace("/login");
+            }
+        };
 
-        return () => clearTimeout(timer);
+        verify();
+        return () => { cancelled = true; };
     }, [user, router, isMounted]);
 
     const language = pathname.split('/')[1] || 'uz';
