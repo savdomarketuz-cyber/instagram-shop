@@ -78,7 +78,7 @@ export default function CartPage() {
         <div className="min-h-screen" style={{ background: "#FAFAF6" }}>
 
             {/* ── MOBILE ── */}
-            <div className="md:hidden pb-40">
+            <div className="md:hidden pb-48">
                 {/* Header */}
                 <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "20px 20px 12px" }}>
                     <Link href={`/${language}/catalog`} style={{ width: 40, height: 40, borderRadius: 20, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", textDecoration: "none", color: "#0F1410", flexShrink: 0 }}>
@@ -261,13 +261,14 @@ export default function CartPage() {
                 {/* Sticky bottom bar — Buyurtma berish */}
                 {cart.length > 0 && (
                     <div style={{
-                        position: "fixed", bottom: 0, left: 0, right: 0,
+                        position: "fixed",
+                        bottom: "calc(60px + max(env(safe-area-inset-bottom, 8px), 8px))",
+                        left: 0, right: 0,
                         background: "rgba(250,250,246,0.9)",
                         backdropFilter: "blur(20px)",
                         WebkitBackdropFilter: "blur(20px)",
                         borderTop: "0.5px solid rgba(15,20,16,0.08)",
-                        padding: "16px 20px",
-                        paddingBottom: "calc(16px + env(safe-area-inset-bottom))",
+                        padding: "14px 20px",
                         zIndex: 50,
                     }}>
                         <Link href="/checkout" style={{

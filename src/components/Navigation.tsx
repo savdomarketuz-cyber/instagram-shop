@@ -341,9 +341,9 @@ export default function Navigation() {
             </header>
 
             {/* Velari — iOS-style Glass Bottom Tab Bar.
-                Savat (cart) sahifasida yashiriladi: u yerda o'zining "Buyurtma berish"
-                tugmasi pastda turadi, tab bar uni to'sib qo'ymasligi kerak. */}
-            {!pathname?.includes('/admin') && !pathname?.endsWith('/cart') && <nav
+                Savat (cart) sahifasida ham ko'rinadi: u yerdagi "Buyurtma berish"
+                tugmasi tab bar ustida turadi (ustma-ust tushmaydi). */}
+            {!pathname?.includes('/admin') && <nav
                 className="md:hidden fixed bottom-0 left-0 right-0 w-screen max-w-full z-[110]"
                 style={{
                     background: "rgba(255,255,255,0.82)",
