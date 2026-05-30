@@ -59,6 +59,7 @@ export default function CatalogClient({ initialCategories }: CatalogClientProps)
     const [brands, setBrands] = useState<Brand[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
     const [loadingProducts, setLoadingProducts] = useState(true);
+    const [productCatIds, setProductCatIds] = useState<Set<string>>(new Set());
 
     const [searchQuery, setSearchQuery] = useState("");
     const [mainCat, setMainCat] = useState<string>("all");
@@ -76,10 +77,29 @@ export default function CatalogClient({ initialCategories }: CatalogClientProps)
     // Draft state for the filter sheet (apply on confirm)
     const [draftBrands, setDraftBrands] = useState<string[]>([]);
     const [draftRating, setDraftRating] = useState<number>(0);
+    const [draftMinPrice, setDraftMinPrice] = useState<number>(0);
     const [draftMaxPrice, setDraftMaxPrice] = useState<number>(0);
 
-    const mainCategories = allCategories.filter(c => !c.parentId);
-    const subCategories = mainCat !== "all" ? allCategories.filter(c => c.parentId === mainCat) : [];
+    // Categories that actually contain products (incl. ancestors of any category with products)
+    const categoriesWithProducts = useMemo(() => {
+        const set = new Set<string>();
+        if (productCatIds.size === 0) return set;
+        const byId = new Map(allCategories.map(c => [c.id, c]));
+        productCatIds.forEach(cid => {
+            let cur: string | undefined = cid;
+            let guard = 0;
+            while (cur && guard < 20) {
+                set.add(cur);
+                cur = byId.get(cur)?.parentId;
+                guard++;
+            }
+        });
+        return set;
+    }, [productCatIds, allCategories]);
+
+    const hasCat = (id: string) => productCatIds.size === 0 || categoriesWithProducts.has(id);
+    const mainCategories = allCategories.filter(c => !c.parentId && hasCat(c.id));
+    const subCategories = mainCat !== "all" ? allCategories.filter(c => c.parentId === mainCat && hasCat(c.id)) : [];
 
     // Fetch categories (if not provided) + brands
     useEffect(() => {
@@ -102,6 +122,13 @@ export default function CatalogClient({ initialCategories }: CatalogClientProps)
 
             const { data: bData } = await supabase.from("brands").select("id, name, name_uz, name_ru").eq("is_deleted", false).order("name");
             if (bData) setBrands(bData as Brand[]);
+
+            // Which categories actually have products — to hide empty ones
+            const { data: pcData } = await supabase
+                .from("products").select("category_id").eq("is_deleted", false);
+            if (pcData) {
+                setProductCatIds(new Set(pcData.map((r: any) => r.category_id).filter(Boolean)));
+            }
         };
         load();
     }, []);
@@ -164,8 +191,12 @@ export default function CatalogClient({ initialCategories }: CatalogClientProps)
         if (minRating > 0) {
             list = list.filter(p => (p.rating || 0) >= minRating);
         }
-        if (priceRange[1] > 0) {
-            list = list.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
+        if (priceRange[0] > 0 || priceRange[1] > 0) {
+            list = list.filter(p => {
+                const okMin = priceRange[0] <= 0 || p.price >= priceRange[0];
+                const okMax = priceRange[1] <= 0 || p.price <= priceRange[1];
+                return okMin && okMax;
+            });
         }
 
         const sorted = [...list];
@@ -179,23 +210,26 @@ export default function CatalogClient({ initialCategories }: CatalogClientProps)
         return sorted;
     }, [products, searchQuery, selectedBrands, minRating, priceRange, sortBy, brands, language]);
 
-    const activeFilterCount = (selectedBrands.length > 0 ? 1 : 0) + (minRating > 0 ? 1 : 0) + (priceRange[1] > 0 ? 1 : 0);
+    const activeFilterCount = (selectedBrands.length > 0 ? 1 : 0) + (minRating > 0 ? 1 : 0) + (priceRange[0] > 0 || priceRange[1] > 0 ? 1 : 0);
 
     const openFilters = () => {
         setDraftBrands(selectedBrands);
         setDraftRating(minRating);
+        setDraftMinPrice(priceRange[0] > 0 ? priceRange[0] : 0);
         setDraftMaxPrice(priceRange[1] > 0 ? priceRange[1] : maxProductPrice);
         setShowFilters(true);
     };
     const applyFilters = () => {
         setSelectedBrands(draftBrands);
         setMinRating(draftRating);
-        setPriceRange([0, draftMaxPrice >= maxProductPrice ? 0 : draftMaxPrice]);
+        const max = draftMaxPrice >= maxProductPrice ? 0 : draftMaxPrice;
+        setPriceRange([draftMinPrice, max]);
         setShowFilters(false);
     };
     const clearFilters = () => {
         setDraftBrands([]);
         setDraftRating(0);
+        setDraftMinPrice(0);
         setDraftMaxPrice(maxProductPrice);
     };
 
@@ -321,17 +355,38 @@ export default function CatalogClient({ initialCategories }: CatalogClientProps)
                 {/* Price */}
                 <Section title={language === "uz" ? "Narx" : "Цена"}>
                     <div className="flex items-center justify-between mb-3 text-sm font-black">
-                        <span>{fmt(0)}</span>
+                        <span>{fmt(draftMinPrice)}</span>
                         <span className="text-gray-300">—</span>
                         <span>{fmt(draftMaxPrice || maxProductPrice)}</span>
                     </div>
+                    <label className="block text-[11px] font-bold text-gray-400 mb-1">
+                        {language === "uz" ? "Eng kam" : "Минимум"}
+                    </label>
+                    <input
+                        type="range"
+                        min={0}
+                        max={maxProductPrice}
+                        step={50000}
+                        value={draftMinPrice}
+                        onChange={e => {
+                            const v = Math.min(Number(e.target.value), (draftMaxPrice || maxProductPrice));
+                            setDraftMinPrice(v);
+                        }}
+                        className="w-full accent-[#2D6E3E] mb-4"
+                    />
+                    <label className="block text-[11px] font-bold text-gray-400 mb-1">
+                        {language === "uz" ? "Eng ko'p" : "Максимум"}
+                    </label>
                     <input
                         type="range"
                         min={0}
                         max={maxProductPrice}
                         step={50000}
                         value={draftMaxPrice || maxProductPrice}
-                        onChange={e => setDraftMaxPrice(Number(e.target.value))}
+                        onChange={e => {
+                            const v = Math.max(Number(e.target.value), draftMinPrice);
+                            setDraftMaxPrice(v);
+                        }}
                         className="w-full accent-[#2D6E3E]"
                     />
                 </Section>
@@ -372,11 +427,13 @@ export default function CatalogClient({ initialCategories }: CatalogClientProps)
                     ))}
                 </Section>
 
-                <button onClick={applyFilters}
-                    className="w-full py-4 rounded-2xl text-white font-bold text-sm mt-2"
-                    style={{ background: GREEN, boxShadow: "0 8px 20px rgba(45,110,62,0.28)" }}>
-                    {language === "uz" ? "Natijalarni ko'rsatish" : "Показать результаты"}
-                </button>
+                <div className="sticky bottom-0 -mx-6 px-6 pt-3 pb-2 bg-white border-t border-gray-50">
+                    <button onClick={applyFilters}
+                        className="w-full py-4 rounded-2xl text-white font-bold text-sm"
+                        style={{ background: GREEN, boxShadow: "0 8px 20px rgba(45,110,62,0.28)" }}>
+                        {language === "uz" ? "Natijalarni ko'rsatish" : "Показать результаты"}
+                    </button>
+                </div>
             </BottomSheet>
 
             {/* SORT SHEET */}
@@ -421,11 +478,11 @@ function BottomSheet({ open, onClose, title, leftAction, children }: {
 }) {
     if (!open) return null;
     return (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center" onClick={onClose}>
+        <div className="fixed inset-0 z-[130] flex items-end justify-center" onClick={onClose}>
             <div className="absolute inset-0 bg-black/40 animate-in fade-in duration-200" />
             <div
                 onClick={e => e.stopPropagation()}
-                className="relative w-full max-w-[480px] bg-white rounded-t-[32px] p-6 pb-8 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300"
+                className="relative w-full max-w-[480px] bg-white rounded-t-[32px] px-6 pt-6 pb-4 max-h-[88vh] overflow-y-auto animate-in slide-in-from-bottom duration-300"
             >
                 <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
                 <div className="flex items-center justify-between mb-6">
