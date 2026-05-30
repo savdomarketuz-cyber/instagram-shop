@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { adminSelect } from "@/lib/admin-api";
 import { Search, User, Phone, ShoppingBag, DollarSign, Calendar, Loader2, Globe, Monitor, MapPin, X, Heart, Eye, TrendingUp, Sparkles, Clock, ShoppingCart, History, Ban, Unlock } from "lucide-react";
 
 interface Customer {
@@ -35,21 +35,14 @@ export default function AdminCustomers() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [usersRes, ordersRes, statusRes, productsRes] = await Promise.all([
-                    supabase.from("users").select("*"),
-                    supabase.from("orders").select("user_phone, total, id, created_at, items, status"),
-                    supabase.from("user_status").select("*"),
-                    supabase.from("products").select("id, name")
+                const [usersData, ordersData, statusRows, productsData] = await Promise.all([
+                    adminSelect<any[]>("users"),
+                    adminSelect<any[]>("orders", { columns: "user_phone, total, id, created_at, items, status" }),
+                    adminSelect<any[]>("user_status"),
+                    adminSelect<any[]>("products", { columns: "id, name" })
                 ]);
 
-                if (usersRes.error) throw usersRes.error;
-                if (ordersRes.error) throw ordersRes.error;
-                if (statusRes.error) throw statusRes.error;
-                if (productsRes.error) throw productsRes.error;
-
-                const usersData = usersRes.data;
-                const ordersData = ordersRes.data;
-                const statusData = statusRes.data.reduce((acc: any, s) => {
+                const statusData = statusRows.reduce((acc: any, s) => {
                     acc[s.id] = s;
                     return acc;
                 }, {});
@@ -78,7 +71,7 @@ export default function AdminCustomers() {
 
                 merged.sort((a, b) => b.totalSpent - a.totalSpent);
                 setCustomers(merged as Customer[]);
-                setAllProducts(productsRes.data);
+                setAllProducts(productsData);
             } catch (error) {
                 console.error("Error fetching customers data:", error);
             } finally {
@@ -93,18 +86,18 @@ export default function AdminCustomers() {
         setSelectedCustomer(customer);
         setLoadingDetails(true);
         try {
-            const [interestsRes, walletRes, ordersRes] = await Promise.all([
-                supabase.from("user_interests").select("*").eq("id", customer.phone).single(),
-                supabase.from("user_wallets").select("balance").eq("user_phone", customer.phone).single(),
-                supabase.from("orders").select("*").eq("user_phone", customer.phone).order('created_at', { ascending: false })
+            const [interestsData, walletData, ordersData] = await Promise.all([
+                adminSelect<any>("user_interests", { match: { column: "id", value: customer.phone }, single: true }),
+                adminSelect<any>("user_wallets", { columns: "balance", match: { column: "user_phone", value: customer.phone }, single: true }),
+                adminSelect<any[]>("orders", { match: { column: "user_phone", value: customer.phone }, orderBy: { column: "created_at", ascending: false } })
             ]);
-            
-            if (interestsRes.data) setCustomerInterests(interestsRes.data);
-            
+
+            if (interestsData) setCustomerInterests(interestsData);
+
             setSelectedCustomer(prev => prev ? ({
                 ...prev,
-                walletBalance: walletRes.data?.balance || 0,
-                ordersList: ordersRes.data || []
+                walletBalance: walletData?.balance || 0,
+                ordersList: ordersData || []
             }) : null);
 
         } catch (e) {

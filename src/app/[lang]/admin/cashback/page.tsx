@@ -14,7 +14,7 @@ import {
     Calculator,
     Check
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { adminSelect } from "@/lib/admin-api";
 
 export default function AdminCashbackPage() {
     const [globalSettings, setGlobalSettings] = useState({ rate: 0.02, enabled: true });
@@ -46,8 +46,9 @@ export default function AdminCashbackPage() {
             }).then(r => r.json()).catch(() => null);
             if (settJson?.data?.value) setGlobalSettings(settJson.data.value);
 
-            const { data: prodData } = await supabase.from("products").select("*").neq("cashback_type", "global").eq("is_deleted", false);
-            if (prodData) setExceptions(prodData);
+            // Maxsus cashback belgilangan mahsulotlar (global emas) — RLS chetlab admin API orqali
+            const prodData = await adminSelect<any[]>("products", { match: { column: "is_deleted", value: false } });
+            if (prodData) setExceptions(prodData.filter(p => p.cashback_type && p.cashback_type !== "global"));
         } catch (e) {
             console.error(e);
         } finally {

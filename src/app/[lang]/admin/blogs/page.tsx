@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { adminSelect } from "@/lib/admin-api";
 import { mapBlog, mapProduct } from "@/lib/mappers";
 import { 
     Plus, Search, Edit, Trash2, LayoutGrid, List, 
@@ -36,19 +36,40 @@ export default function AdminBlogs() {
 
     async function fetchData() {
         setLoading(true);
-        const { data: bData } = await supabase.from("blogs").select("*").order("created_at", { ascending: false });
-        if (bData) setBlogs(bData.map(mapBlog));
+        try {
+            const bData = await adminSelect<any[]>("blogs", { orderBy: { column: "created_at", ascending: false } });
+            if (bData) setBlogs(bData.map(mapBlog));
 
-        const { data: pData } = await supabase.from("products").select("*").eq("is_deleted", false);
-        if (pData) setProducts(pData.map(mapProduct));
-        setLoading(false);
+            const pData = await adminSelect<any[]>("products", { match: { column: "is_deleted", value: false } });
+            if (pData) setProducts(pData.map(mapProduct));
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
     }
 
+    // Sarlavhadan URL-uchun mos slug yasaydi (slug bo'sh qoldirilsa)
+    const makeSlug = (s: string) =>
+        (s || "")
+            .toLowerCase()
+            .trim()
+            .replace(/['’`]/g, "")
+            .replace(/[^a-z0-9\s-]/g, "")
+            .replace(/\s+/g, "-")
+            .replace(/-+/g, "-")
+            .replace(/^-|-$/g, "");
+
     const handleSave = async () => {
-        if (!editingBlog.title_uz || !editingBlog.slug) {
-            alert("Kamida sarlavha va slug bo'lishi shart!");
+        if (!editingBlog.title_uz) {
+            alert("Sarlavha (O'zbekcha) shart!");
             return;
         }
+
+        // Slug kiritilmagan bo'lsa — sarlavhadan avtomatik yasaymiz
+        let slug = makeSlug(editingBlog.slug || "");
+        if (!slug) slug = makeSlug(editingBlog.title_uz || "");
+        if (!slug) slug = `maqola-${Date.now()}`;
 
         setIsSaving(true);
         // Map camelCase UI state back to snake_case for Database
@@ -59,7 +80,7 @@ export default function AdminBlogs() {
             excerpt_ru: editingBlog.excerpt_ru || editingBlog.excerpt_uz,
             content_uz: editingBlog.content_uz,
             content_ru: editingBlog.content_ru || editingBlog.content_uz,
-            slug: editingBlog.slug.toLowerCase().replace(/\s+/g, '-'),
+            slug,
             image: editingBlog.image,
             category: editingBlog.category,
             read_time: editingBlog.readTime || 5,
