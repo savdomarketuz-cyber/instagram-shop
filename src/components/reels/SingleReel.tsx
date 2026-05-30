@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Heart, MessageSquare, Share2, ShoppingBag, Plus, Sparkles, ChevronRight, Volume2, VolumeX, Play, Loader2 } from "lucide-react";
+import { Heart, MessageSquare, Share2, ShoppingBag, Plus, Sparkles, Volume2, VolumeX, Play, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useStore } from "@/store/store";
 import { supabase } from "@/lib/supabase";
@@ -18,41 +18,53 @@ interface SingleReelProps {
     t: any;
 }
 
-export const SingleReel = ({ 
-    reel, isActive, isNearby, isMuted, toggleMute, onCommentOpen, language, t 
+export const SingleReel = ({
+    reel, isActive, isNearby, isMuted, toggleMute, onCommentOpen, language, t
 }: SingleReelProps) => {
     const videoRef = useRef<HTMLVideoElement>(null);
+    const progressRef = useRef<HTMLDivElement>(null); // progress'ni state'siz, to'g'ridan-to'g'ri DOM orqali
+    const rafRef = useRef<number | null>(null);
     const { user, showToast, addToCart, cart } = useStore();
     const [liked, setLiked] = useState(false);
     const [likesCount, setLikesCount] = useState(reel.likesCount || 0);
-    const [progress, setProgress] = useState(0);
     const [isPlaying, setIsPlaying] = useState(true);
     const [isBuffering, setIsBuffering] = useState(false);
 
+    // Active bo'lganda o'ynaydi. NON-active bo'lganda faqat pauza.
+    // currentTime reset YO'Q => orqaga scroll qilganda video qoldigan joyidan davom etadi, sakramaydi.
     useEffect(() => {
-        if (videoRef.current) {
-            if (isActive) {
-                videoRef.current.play().catch(() => setIsPlaying(false));
-                setIsPlaying(true);
-            } else {
-                videoRef.current.pause();
-                videoRef.current.currentTime = 0;
-            }
+        const v = videoRef.current;
+        if (!v) return;
+        if (isActive) {
+            v.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+        } else {
+            v.pause();
         }
     }, [isActive]);
 
     useEffect(() => {
-        if (videoRef.current) {
-            videoRef.current.muted = isMuted;
-        }
+        if (videoRef.current) videoRef.current.muted = isMuted;
     }, [isMuted]);
 
-    const handleTimeUpdate = () => {
-        if (videoRef.current) {
-            const p = (videoRef.current.currentTime / videoRef.current.duration) * 100;
-            setProgress(p);
-        }
-    };
+    // Progress'ni requestAnimationFrame bilan, DOM'ni to'g'ridan-to'g'ri yangilab boramiz.
+    // setState YO'Q => sekundiga 4 marta qayta-render bo'lmaydi => scroll silliq qoladi.
+    useEffect(() => {
+        const v = videoRef.current;
+        if (!v || !isActive) return;
+
+        const tick = () => {
+            if (v.duration > 0 && progressRef.current) {
+                const p = (v.currentTime / v.duration) * 100;
+                progressRef.current.style.width = `${p}%`;
+            }
+            rafRef.current = requestAnimationFrame(tick);
+        };
+        rafRef.current = requestAnimationFrame(tick);
+
+        return () => {
+            if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        };
+    }, [isActive]);
 
     const handleLike = async () => {
         if (!user) {
@@ -64,10 +76,7 @@ export const SingleReel = ({
         setLiked(newLiked);
         setLikesCount((prev: number) => prev + diff);
         try {
-            await supabase.rpc('increment_reel_likes', { 
-                reel_id: reel.id, 
-                diff: diff 
-            });
+            await supabase.rpc('increment_reel_likes', { reel_id: reel.id, diff: diff });
         } catch (error) {
             console.error(error);
         }
@@ -83,51 +92,52 @@ export const SingleReel = ({
     };
 
     const togglePlay = () => {
-        if (videoRef.current) {
-            if (isPlaying) videoRef.current.pause();
-            else videoRef.current.play();
-            setIsPlaying(!isPlaying);
-        }
+        const v = videoRef.current;
+        if (!v) return;
+        if (isPlaying) { v.pause(); setIsPlaying(false); }
+        else { v.play(); setIsPlaying(true); }
     };
 
     const inCart = cart.find(item => item.id === reel.id);
 
+    // Video manbasini faqat kerak bo'lganda beramiz (preload tejaladi)
+    const videoSrc = (isActive || isNearby) ? reel.videoUrl : "";
+
     return (
-        <div className="relative w-full h-full snap-start bg-black overflow-hidden flex flex-col items-center justify-center">
+        <div className="relative w-full h-full bg-black overflow-hidden flex flex-col items-center justify-center">
             {/* Video Player - Optimized for 3:4 and 9:16 */}
             <div className="relative w-full h-full bg-black flex items-center justify-center">
-                {/* 1. Static Poster Background (Instant) */}
-                <img 
-                    src={reel.image} 
-                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${isBuffering || !isPlaying ? 'opacity-50 blur-xl' : 'opacity-0'}`} 
+                {/* 1. Static Poster Background (Instant) -- blur faqat shu yagona elementda */}
+                <img
+                    src={reel.image}
+                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${isBuffering || !isPlaying ? 'opacity-40 blur-lg' : 'opacity-0'}`}
                     alt=""
+                    loading="lazy"
                 />
-                
+
                 {/* 2. Optimized Video Layer */}
                 <video
                     ref={videoRef}
-                    src={(isActive || isNearby) ? reel.videoUrl : ""}
-                    className="relative max-w-full max-h-full object-contain pointer-events-auto cursor-pointer shadow-[0_0_100px_rgba(255,255,255,0.05)]"
+                    src={videoSrc}
+                    className="relative max-w-full max-h-full object-contain pointer-events-auto cursor-pointer"
+                    style={{ transform: 'translateZ(0)' }} // video'ni alohida GPU qatlamiga
                     loop
                     playsInline
                     poster={reel.image}
-                    preload={isActive ? "auto" : "metadata"}
-                    onTimeUpdate={handleTimeUpdate}
+                    preload={isActive ? "auto" : (isNearby ? "metadata" : "none")}
                     onClick={togglePlay}
                     onWaiting={() => setIsBuffering(true)}
                     onPlaying={() => setIsBuffering(false)}
+                    onCanPlay={() => setIsBuffering(false)}
                 />
             </div>
 
             {/* Content Top Overlay */}
             <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
-            
-            {/* Progress Bar */}
+
+            {/* Progress Bar -- transition YO'Q, rAF orqali silliq yuradi */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-white/20 z-50">
-                <div 
-                    className="h-full bg-white transition-all duration-300"
-                    style={{ width: `${progress}%` }}
-                />
+                <div ref={progressRef} className="h-full bg-white" style={{ width: '0%' }} />
             </div>
 
             {/* Buffering Indicator */}
@@ -149,17 +159,17 @@ export const SingleReel = ({
             {/* Side Actions */}
             <div className="absolute bottom-24 right-4 flex flex-col items-center gap-6 z-40">
                 {/* Mute Toggle */}
-                <button 
+                <button
                     onClick={toggleMute}
-                    className="w-12 h-12 bg-white/10 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/10 active:scale-90 transition-all text-white"
+                    className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 active:scale-90 transition-transform text-white"
                 >
                     {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
                 </button>
 
                 <div className="flex flex-col items-center gap-1 group">
-                    <button 
+                    <button
                         onClick={handleLike}
-                        className={`w-12 h-12 bg-white/10 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/10 active:scale-90 transition-all ${liked ? 'text-red-500 bg-red-500/10 border-red-500/20' : 'text-white'}`}
+                        className={`w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 active:scale-90 transition-transform ${liked ? 'text-red-500 bg-red-500/10 border-red-500/20' : 'text-white'}`}
                     >
                         <Heart size={24} fill={liked ? 'currentColor' : 'none'} strokeWidth={liked ? 0 : 2.5} />
                     </button>
@@ -167,9 +177,9 @@ export const SingleReel = ({
                 </div>
 
                 <div className="flex flex-col items-center gap-1 group">
-                    <button 
+                    <button
                         onClick={() => onCommentOpen(reel.productId || reel.id)}
-                        className="w-12 h-12 bg-white/10 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/10 active:scale-90 transition-all text-white"
+                        className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 active:scale-90 transition-transform text-white"
                     >
                         <MessageSquare size={22} strokeWidth={2.5} />
                     </button>
@@ -177,9 +187,9 @@ export const SingleReel = ({
                 </div>
 
                 <div className="flex flex-col items-center gap-1">
-                    <button 
+                    <button
                         onClick={handleShare}
-                        className="w-12 h-12 bg-white/10 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/10 active:scale-90 transition-all text-white"
+                        className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 active:scale-90 transition-transform text-white"
                     >
                         <Share2 size={22} strokeWidth={2.5} />
                     </button>
@@ -190,26 +200,26 @@ export const SingleReel = ({
             {/* Product Card & Info */}
             <div className="absolute bottom-4 left-4 right-20 z-40 space-y-4">
                 {/* Product Float Card */}
-                <div className="inline-flex items-center gap-3 bg-white/90 backdrop-blur-2xl p-3 pr-5 rounded-[24px] border border-white shadow-[0_20px_50px_rgba(0,0,0,0.3)] animate-in slide-in-from-left duration-700">
+                <div className="inline-flex items-center gap-3 bg-white/90 backdrop-blur-xl p-3 pr-5 rounded-[24px] border border-white shadow-[0_20px_50px_rgba(0,0,0,0.3)] animate-in slide-in-from-left duration-700">
                     <Link href={`/products/${getProductSlug(reel)}`} className="flex items-center gap-3">
                         <div className="relative w-12 h-12 rounded-2xl overflow-hidden border border-gray-100 shrink-0">
-                            <img src={reel.image} className="w-full h-full object-cover" alt={reel.name} />
+                            <img src={reel.image} className="w-full h-full object-cover" alt={reel.name} loading="lazy" />
                             <div className="absolute top-0 right-0 p-1 bg-yellow-400 rounded-bl-lg shrink-0">
                                 <Sparkles size={8} className="text-white fill-white" />
                             </div>
                         </div>
                         <div className="flex flex-col">
                             <h4 className="text-[11px] font-black text-black uppercase tracking-tighter line-clamp-1 w-32">{reel[`name_${language}`] || reel.name}</h4>
-                            <span className="text-[13px] font-black italic text-[#6335ED] italic">{reel.price.toLocaleString()} so'm</span>
+                            <span className="text-[13px] font-black italic text-[#6335ED]">{reel.price?.toLocaleString()} so'm</span>
                         </div>
                     </Link>
                     <div className="h-8 w-[1px] bg-gray-200/50 mx-1 shrink-0" />
                     {inCart ? (
                         <Link href="/cart" className="p-3 bg-[#E4D9FF] text-[#6335ED] rounded-2xl shrink-0"><ShoppingBag size={18} strokeWidth={3} /></Link>
                     ) : (
-                        <button 
+                        <button
                             onClick={() => addToCart({ ...reel, quantity: 1 })}
-                            className="p-3 bg-black text-white rounded-2xl shadow-lg active:scale-90 transition-all shrink-0"
+                            className="p-3 bg-black text-white rounded-2xl shadow-lg active:scale-90 transition-transform shrink-0"
                         >
                             <Plus size={18} strokeWidth={3} />
                         </button>
@@ -230,7 +240,7 @@ export const SingleReel = ({
             </div>
 
             {/* Bottom Gradient overlay */}
-             <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
+            <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
         </div>
     );
 };
