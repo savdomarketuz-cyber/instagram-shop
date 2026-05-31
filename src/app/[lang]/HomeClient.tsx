@@ -534,22 +534,14 @@ export default function HomeClient({
                             position: "relative", borderRadius: 24, overflow: "hidden",
                             aspectRatio: "16/10",
                         }} onClick={() => setCurrentBanner((currentBanner + 1) % banners.length)}>
-                            <img
-                                src={language === "ru" ? banners[currentBanner]?.imageUrl_ru : banners[currentBanner]?.imageUrl_uz}
-                                alt={language === "ru" ? (banners[currentBanner]?.title_ru || "Banner") : (banners[currentBanner]?.title_uz || "Banner")}
-                                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                            <div
+                                style={{ width: "100%", height: "100%", position: "relative", overflow: "hidden" }}
+                                dangerouslySetInnerHTML={{
+                                    __html: (language === "ru"
+                                        ? banners[currentBanner]?.html_ru
+                                        : banners[currentBanner]?.html_uz) || ""
+                                }}
                             />
-                            <div style={{
-                                position: "absolute", inset: 0,
-                                background: "linear-gradient(to top, rgba(15,20,16,0.55) 0%, transparent 55%)",
-                            }} />
-                            {(language === "ru" ? banners[currentBanner]?.title_ru : banners[currentBanner]?.title_uz) && (
-                                <div style={{ position: "absolute", bottom: 16, left: 16, right: 16 }}>
-                                    <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: -0.4, lineHeight: 1.2 }}>
-                                        {language === "ru" ? banners[currentBanner].title_ru : banners[currentBanner].title_uz}
-                                    </h2>
-                                </div>
-                            )}
                             {banners.length > 1 && (
                                 <div style={{ position: "absolute", bottom: 12, right: 16, display: "flex", gap: 5 }}>
                                     {banners.map((_, i) => (

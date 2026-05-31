@@ -1,25 +1,7 @@
 "use client";
 
-import { useRef, useEffect } from "react";
-import { Loader2 } from "lucide-react";
-import Image from "next/image";
-import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
-
-type BannerImgMeta = { xs?: string; md?: string; lg?: string; lowResUrl?: string; blurDataURL?: string };
-
-interface Banner {
-    id: string;
-    imageUrl_uz: string;
-    imageUrl_ru: string;
-    blurDataURL_uz?: string;
-    blurDataURL_ru?: string;
-    title_uz?: string;
-    title_ru?: string;
-    tabName_uz?: string;
-    tabName_ru?: string;
-    order?: number;
-    image_meta?: { uz?: BannerImgMeta; ru?: BannerImgMeta };
-}
+import { useRef } from "react";
+import type { Banner } from "@/types";
 
 interface BannerSectionProps {
     banners: Banner[];
@@ -39,6 +21,13 @@ export const BannerSection = ({ banners, bannerSettings, currentBanner, setCurre
         }
     };
 
+    // Faqat HTML kontenti bor bannerlarni ko'rsatamiz
+    const visible = banners
+        .filter(b => (language === "uz" ? b.html_uz : b.html_ru))
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    if (visible.length === 0) return null;
+
     return (
         <div className="mt-8 px-0 md:px-10 overflow-hidden">
             <div
@@ -48,62 +37,32 @@ export const BannerSection = ({ banners, bannerSettings, currentBanner, setCurre
                     borderRadius: `${bannerSettings.borderRadius}px`
                 }}
             >
-                {banners.length > 0 ? (
-                    <>
-                        <div 
-                            ref={bannerRef} 
-                            onScroll={handleScroll} 
-                            className="flex h-full overflow-x-auto snap-x snap-mandatory no-scrollbar"
-                        >
-                            {banners
-                                .sort((a, b) => (a.order || 0) - (b.order || 0))
-                                .map((banner, index) => {
-                                    const title = language === 'uz' ? banner.title_uz : banner.title_ru;
-                                    const imageUrl = language === 'uz' ? banner.imageUrl_uz : banner.imageUrl_ru;
-                                    const blurUrl = language === 'uz' ? banner.blurDataURL_uz : banner.blurDataURL_ru;
-                                    const tabName = language === 'uz' ? banner.tabName_uz : banner.tabName_ru;
-
-                                    if (!imageUrl) return null;
-
-                                    const meta = banner.image_meta?.[language];
-                                    const metaForUrl = meta ? { [imageUrl]: meta } : undefined;
-                                    const hasV = hasVariants(metaForUrl, imageUrl);
-
-                                    return (
-                                         <div key={banner.id} className="min-w-full h-full snap-center relative">
-                                             <Image
-                                                 src={imageUrl}
-                                                 fill
-                                                 className="object-cover"
-                                                 alt={title || ""}
-                                                 priority={index === 0}
-                                                 sizes="100vw"
-                                                 loader={hasV ? makeVariantLoader(metaForUrl) : undefined}
-                                                 placeholder={blurUrl ? "blur" : "empty"}
-                                                 blurDataURL={blurUrl}
-                                                 fetchPriority={index === 0 ? "high" : "auto"}
-                                             />
-                                            {tabName && (
-                                                <div className="absolute bottom-6 left-6 bg-white/20 backdrop-blur-xl px-6 py-2 rounded-full border border-white/30 text-white font-black text-[10px] uppercase tracking-widest shadow-2xl">
-                                                    {tabName}
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                        </div>
-                        {banners.length > 1 && (
-                            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5 pointer-events-none">
-                                {banners.map((_, i) => (
-                                    <div 
-                                        key={i} 
-                                        className={`h-1 rounded-full transition-all duration-300 ${currentBanner === i ? 'w-4 bg-white shadow-sm' : 'w-1.5 bg-white/40'}`} 
-                                    />
-                                ))}
-                            </div>
-                        )}
-                    </>
-                ) : null}
+                <div
+                    ref={bannerRef}
+                    onScroll={handleScroll}
+                    className="flex h-full overflow-x-auto snap-x snap-mandatory no-scrollbar"
+                >
+                    {visible.map((banner) => {
+                        const html = language === "uz" ? banner.html_uz : banner.html_ru;
+                        return (
+                            <div
+                                key={banner.id}
+                                className="min-w-full h-full snap-center relative overflow-hidden"
+                                dangerouslySetInnerHTML={{ __html: html || "" }}
+                            />
+                        );
+                    })}
+                </div>
+                {visible.length > 1 && (
+                    <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5 pointer-events-none">
+                        {visible.map((_, i) => (
+                            <div
+                                key={i}
+                                className={`h-1 rounded-full transition-all duration-300 ${currentBanner === i ? 'w-4 bg-white shadow-sm' : 'w-1.5 bg-white/40'}`}
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -34,16 +34,14 @@ export const mapCategory = (c: any): Category => ({
 });
 
 export const mapBanner = (b: any): Banner => ({
-    ...b,
-    imageUrl_uz: b.image_url_uz,
-    imageUrl_ru: b.image_url_ru,
-    linkType: b.link_type,
-    linkIds: b.link_ids,
-    buttonText: b.button_text,
-    order: b.order_index,
+    id: b.id,
+    html_uz: b.html_uz,
+    html_ru: b.html_ru,
+    title_uz: b.title_uz,
+    title_ru: b.title_ru,
     tabName_uz: b.tab_name_uz,
     tabName_ru: b.tab_name_ru,
-    image_meta: b.image_meta || undefined
+    order: b.order_index,
 });
 
 export const mapUser = (u: any) => ({

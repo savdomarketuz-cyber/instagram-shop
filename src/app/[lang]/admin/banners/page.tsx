@@ -2,97 +2,42 @@
 
 import { useState, useEffect } from "react";
 import { adminSelect } from "@/lib/admin-api";
-import { Plus, Trash2, Edit2, Save, X, Image as ImageIcon, Link as LinkIcon, Loader2, Search, Check } from "lucide-react";
-import Image from "next/image";
+import { Plus, Trash2, Edit2, Save, X, Code2, Loader2, Copy, Sparkles } from "lucide-react";
 
 interface Banner {
     id: string;
     title_uz: string;
     title_ru: string;
-    subtitle_uz: string;
-    subtitle_ru: string;
-    imageUrl_uz: string;
-    imageUrl_ru: string;
-    blurDataURL_uz?: string;
-    blurDataURL_ru?: string;
-    image_meta?: { uz?: any; ru?: any };
-    linkType: "product" | "category" | "brand" | "none";
-    linkIds: string[];
-    buttonText: string;
+    html_uz: string;
+    html_ru: string;
     active: boolean;
     order: number;
     tabName_uz?: string;
     tabName_ru?: string;
 }
 
-interface Product {
-    id: string;
-    name: string;
-    price: number;
-}
-
-interface Category {
-    id: string;
-    name: string;
-}
-
-interface Brand {
-    id: string;
-    name: string;
-}
-
-import { uploadToYandexS3 } from "@/lib/yandex-s3";
+// Responsive HTML banner uchun boshlang'ich andoza (clamp() bilan har qurilmaga moslashadi)
+const STARTER_TEMPLATE = `<a href="/uz/catalog" style="display:flex;width:100%;height:100%;box-sizing:border-box;text-decoration:none;align-items:center;justify-content:space-between;gap:16px;padding:clamp(16px,4vw,48px);background:linear-gradient(135deg,#1F5A30,#2D6E3E);color:#fff;">
+  <div style="max-width:65%;">
+    <div style="font-size:clamp(10px,1.4vw,13px);font-weight:700;letter-spacing:1px;opacity:.8;">YANGI KOLLEKSIYA</div>
+    <h2 style="margin:8px 0 14px;font-size:clamp(20px,4vw,44px);font-weight:800;line-height:1.05;">Sarlavhani shu yerga yozing</h2>
+    <span style="display:inline-block;background:#fff;color:#1F5A30;padding:clamp(8px,1.2vw,14px) clamp(16px,2vw,28px);border-radius:100px;font-weight:700;font-size:clamp(12px,1.4vw,15px);">Hozir xarid qiling →</span>
+  </div>
+</a>`;
 
 export default function AdminBanners() {
     const [banners, setBanners] = useState<Banner[]>([]);
-    const [products, setProducts] = useState<Product[]>([]);
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [brands, setBrands] = useState<Brand[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
     const [editId, setEditId] = useState<string | null>(null);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [globalHeight, setGlobalHeight] = useState(450); // Default desktop height
-    const [globalRadius, setGlobalRadius] = useState(40); // Default corner radius
+    const [globalHeight, setGlobalHeight] = useState(450);
+    const [globalRadius, setGlobalRadius] = useState(40);
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, lang: "uz" | "ru") => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        setIsUploading(true);
-        try {
-            const { url, blurDataURL, lowResUrl, xs, md, lg } = await uploadToYandexS3(file);
-            setNewBanner(prev => ({
-                ...prev,
-                [lang === "uz" ? "imageUrl_uz" : "imageUrl_ru"]: url,
-                [lang === "uz" ? "blurDataURL_uz" : "blurDataURL_ru"]: blurDataURL,
-                image_meta: {
-                    ...((prev as any).image_meta || {}),
-                    [lang]: { xs, md, lg, lowResUrl, blurDataURL },
-                }
-            }));
-        } catch (error: any) {
-            console.error("Upload failed:", error);
-            alert("Rasm yuklashda xatolik: " + (error.message || "Noma'lum xato"));
-        } finally {
-            setIsUploading(false);
-        }
-    };
-
-    // Form State
     const [newBanner, setNewBanner] = useState({
         title_uz: "",
         title_ru: "",
-        subtitle_uz: "",
-        subtitle_ru: "",
-        imageUrl_uz: "",
-        imageUrl_ru: "",
-        blurDataURL_uz: "",
-        blurDataURL_ru: "",
-        linkType: "none" as "product" | "category" | "brand" | "none",
-        linkIds: [] as string[],
-        buttonText: "Sotib olish",
+        html_uz: "",
+        html_ru: "",
         active: true,
         order: 0,
         tabName_uz: "",
@@ -105,12 +50,8 @@ export default function AdminBanners() {
 
     const fetchData = async () => {
         try {
-            const [bannersData, productsData, catsData, brandsData, settingsRes] = await Promise.all([
+            const [bannersData, settingsRes] = await Promise.all([
                 adminSelect<any[]>("banners", { orderBy: { column: "order_index", ascending: true } }),
-                adminSelect<any[]>("products", { columns: "id, name, price" }),
-                adminSelect<any[]>("categories", { columns: "id, name" }),
-                adminSelect<any[]>("brands", { columns: "id, name", orderBy: { column: "name", ascending: true } }),
-                // settings jadvali anon o'qishdan RLS bilan yopiq — server (service role) orqali o'qiymiz.
                 fetch("/api/admin/crud", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -125,27 +66,15 @@ export default function AdminBanners() {
 
             setBanners((bannersData || []).map(b => ({
                 id: b.id,
-                title_uz: b.title_uz,
-                title_ru: b.title_ru,
-                subtitle_uz: b.subtitle_uz,
-                subtitle_ru: b.subtitle_ru,
-                imageUrl_uz: b.image_url_uz,
-                imageUrl_ru: b.image_url_ru,
-                blurDataURL_uz: b.blur_data_url_uz,
-                blurDataURL_ru: b.blur_data_url_ru,
-                image_meta: b.image_meta || undefined,
-                linkType: b.link_type,
-                linkIds: b.link_ids || [],
-                buttonText: b.button_text,
+                title_uz: b.title_uz || "",
+                title_ru: b.title_ru || "",
+                html_uz: b.html_uz || "",
+                html_ru: b.html_ru || "",
                 active: b.active,
                 order: b.order_index,
                 tabName_uz: b.tab_name_uz,
                 tabName_ru: b.tab_name_ru
             })) as Banner[]);
-
-            setProducts((productsData || []) as Product[]);
-            setCategories((catsData || []) as Category[]);
-            setBrands((brandsData || []) as Brand[]);
 
             const settingsVal = settingsRes?.data?.data;
             if (settingsVal) {
@@ -167,15 +96,8 @@ export default function AdminBanners() {
         setNewBanner({
             title_uz: "",
             title_ru: "",
-            subtitle_uz: "",
-            subtitle_ru: "",
-            imageUrl_uz: "",
-            imageUrl_ru: "",
-            blurDataURL_uz: "",
-            blurDataURL_ru: "",
-            linkType: "none",
-            linkIds: [],
-            buttonText: "Sotib olish",
+            html_uz: "",
+            html_ru: "",
             active: true,
             order: 0,
             tabName_uz: "",
@@ -189,16 +111,8 @@ export default function AdminBanners() {
         setNewBanner({
             title_uz: banner.title_uz || "",
             title_ru: banner.title_ru || "",
-            subtitle_uz: banner.subtitle_uz || "",
-            subtitle_ru: banner.subtitle_ru || "",
-            imageUrl_uz: banner.imageUrl_uz || "",
-            imageUrl_ru: banner.imageUrl_ru || "",
-            blurDataURL_uz: banner.blurDataURL_uz || "",
-            blurDataURL_ru: banner.blurDataURL_ru || "",
-            ...(banner.image_meta && { image_meta: banner.image_meta }) as any,
-            linkType: banner.linkType,
-            linkIds: banner.linkIds || [],
-            buttonText: banner.buttonText,
+            html_uz: banner.html_uz || "",
+            html_ru: banner.html_ru || "",
             active: banner.active,
             order: banner.order,
             tabName_uz: banner.tabName_uz || "",
@@ -209,24 +123,16 @@ export default function AdminBanners() {
     };
 
     const handleSave = async () => {
-        if (!newBanner.imageUrl_uz && !newBanner.imageUrl_ru) {
-            alert("Iltimos, kamida bitta rasm yuklang");
+        if (!newBanner.html_uz.trim() && !newBanner.html_ru.trim()) {
+            alert("Iltimos, kamida bitta til uchun HTML kod kiriting");
             return;
         }
         try {
             const payload = {
                 title_uz: newBanner.title_uz,
                 title_ru: newBanner.title_ru,
-                subtitle_uz: newBanner.subtitle_uz,
-                subtitle_ru: newBanner.subtitle_ru,
-                image_url_uz: newBanner.imageUrl_uz,
-                image_url_ru: newBanner.imageUrl_ru,
-                blur_data_url_uz: newBanner.blurDataURL_uz,
-                blur_data_url_ru: newBanner.blurDataURL_ru,
-                image_meta: (newBanner as any).image_meta || null,
-                link_type: newBanner.linkType,
-                link_ids: newBanner.linkIds,
-                button_text: newBanner.buttonText,
+                html_uz: newBanner.html_uz,
+                html_ru: newBanner.html_ru,
                 active: newBanner.active,
                 order_index: editId ? newBanner.order : banners.length,
                 tab_name_uz: newBanner.tabName_uz,
@@ -336,22 +242,6 @@ export default function AdminBanners() {
         }
     };
 
-    const toggleLinkId = (id: string) => {
-        setNewBanner(prev => ({
-            ...prev,
-            linkIds: prev.linkIds.includes(id)
-                ? prev.linkIds.filter(li => li !== id)
-                : [...prev.linkIds, id]
-        }));
-    };
-
-    const linkSource = newBanner.linkType === "product"
-        ? products
-        : newBanner.linkType === "brand"
-            ? brands
-            : categories;
-    const filteredTargets = linkSource.filter(t => (t.name || "").toLowerCase().includes(searchQuery.toLowerCase()));
-
     if (loading) {
         return (
             <div className="flex justify-center items-center h-[60vh]">
@@ -365,7 +255,7 @@ export default function AdminBanners() {
             <div className="flex justify-between items-end">
                 <div>
                     <h1 className="text-5xl font-black tracking-tighter mb-4 italic">Bannerlar</h1>
-                    <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px]">Asosiy sahifa reklamalari</p>
+                    <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px]">HTML asosiy sahifa reklamalari</p>
                 </div>
                 <div className="flex gap-4">
                     <button
@@ -386,7 +276,7 @@ export default function AdminBanners() {
             {/* Modal Overlay */}
             {isAdding && (
                 <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6">
-                    <div className="bg-white rounded-[40px] p-10 w-full max-w-4xl shadow-2xl animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto no-scrollbar">
+                    <div className="bg-white rounded-[40px] p-10 w-full max-w-5xl shadow-2xl animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto no-scrollbar">
                         <div className="flex justify-between items-center mb-8">
                             <h2 className="text-3xl font-black italic tracking-tighter uppercase">
                                 {editId ? "Bannerni Tahrirlash" : "Yangi Banner"}
@@ -397,196 +287,103 @@ export default function AdminBanners() {
                         </div>
 
                         <div className="space-y-8">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                {/* Uzbek Content */}
-                                <div className="space-y-6 p-6 bg-purple-50/30 rounded-[32px] border border-purple-100/50">
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-[#7000FF] mb-2">Uzbek Interfeysi</h4>
-                                    <div className="space-y-4">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Sarlavha (UZ)</label>
-                                            <input
-                                                type="text"
-                                                value={newBanner.title_uz}
-                                                onChange={e => setNewBanner({ ...newBanner, title_uz: e.target.value })}
-                                                className="w-full bg-white border-none rounded-2xl py-4 px-6 font-bold shadow-sm"
-                                                placeholder="Sarlavha (UZ)"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Subtitle (UZ)</label>
-                                            <input
-                                                type="text"
-                                                value={newBanner.subtitle_uz}
-                                                onChange={e => setNewBanner({ ...newBanner, subtitle_uz: e.target.value })}
-                                                className="w-full bg-white border-none rounded-2xl py-4 px-6 font-bold shadow-sm"
-                                                placeholder="Subtitle (UZ)"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Tab nomi (UZ)</label>
-                                            <input
-                                                type="text"
-                                                value={newBanner.tabName_uz}
-                                                onChange={e => setNewBanner({ ...newBanner, tabName_uz: e.target.value })}
-                                                className="w-full bg-white border-none rounded-2xl py-4 px-6 font-bold shadow-sm"
-                                                placeholder="Masalan: Siz uchun"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4 text-center block">Banner Rasmi (UZ)</label>
-                                            {newBanner.imageUrl_uz ? (
-                                                <div className="relative group rounded-3xl overflow-hidden aspect-video border-4 border-white shadow-xl">
-                                                    <img src={newBanner.imageUrl_uz} alt="Preview UZ" className="w-full h-full object-cover" />
-                                                    <button
-                                                        onClick={() => setNewBanner({ ...newBanner, imageUrl_uz: "" })}
-                                                        className="absolute top-4 right-4 p-2 bg-black/60 text-white rounded-xl backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all hover:bg-black"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <div className="relative group h-[180px]">
-                                                    <input
-                                                        type="file"
-                                                        onChange={(e) => handleFileUpload(e, "uz")}
-                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                                        accept="image/*"
-                                                        disabled={isUploading}
-                                                    />
-                                                    <div className="w-full h-full bg-white/50 border-4 border-dashed border-gray-100 rounded-[30px] flex flex-col items-center justify-center gap-4 transition-all hover:border-[#7000FF] hover:bg-white">
-                                                        {isUploading ? (
-                                                            <Loader2 className="animate-spin text-black" size={32} />
-                                                        ) : (
-                                                            <ImageIcon size={32} className="text-gray-300" />
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Russian Content */}
-                                <div className="space-y-6 p-6 bg-blue-50/30 rounded-[32px] border border-blue-100/50">
-                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-2">Russian Interfeysi</h4>
-                                    <div className="space-y-4">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Название (RU)</label>
-                                            <input
-                                                type="text"
-                                                value={newBanner.title_ru}
-                                                onChange={e => setNewBanner({ ...newBanner, title_ru: e.target.value })}
-                                                className="w-full bg-white border-none rounded-2xl py-4 px-6 font-bold shadow-sm"
-                                                placeholder="Sarlavha (RU)"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Подзаголовок (RU)</label>
-                                            <input
-                                                type="text"
-                                                value={newBanner.subtitle_ru}
-                                                onChange={e => setNewBanner({ ...newBanner, subtitle_ru: e.target.value })}
-                                                className="w-full bg-white border-none rounded-2xl py-4 px-6 font-bold shadow-sm"
-                                                placeholder="Subtitle (RU)"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Название таба (RU)</label>
-                                            <input
-                                                type="text"
-                                                value={newBanner.tabName_ru}
-                                                onChange={e => setNewBanner({ ...newBanner, tabName_ru: e.target.value })}
-                                                className="w-full bg-white border-none rounded-2xl py-4 px-6 font-bold shadow-sm"
-                                                placeholder="Tavsiya etc."
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4 text-center block">Banner Rasmi (RU)</label>
-                                            {newBanner.imageUrl_ru ? (
-                                                <div className="relative group rounded-3xl overflow-hidden aspect-video border-4 border-white shadow-xl">
-                                                    <img src={newBanner.imageUrl_ru} alt="Preview RU" className="w-full h-full object-cover" />
-                                                    <button
-                                                        onClick={() => setNewBanner({ ...newBanner, imageUrl_ru: "" })}
-                                                        className="absolute top-4 right-4 p-2 bg-black/60 text-white rounded-xl backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all hover:bg-black"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <div className="relative group h-[180px]">
-                                                    <input
-                                                        type="file"
-                                                        onChange={(e) => handleFileUpload(e, "ru")}
-                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                                        accept="image/*"
-                                                        disabled={isUploading}
-                                                    />
-                                                    <div className="w-full h-full bg-white/50 border-4 border-dashed border-gray-100 rounded-[30px] flex flex-col items-center justify-center gap-4 transition-all hover:border-blue-600 hover:bg-white">
-                                                        {isUploading ? (
-                                                            <Loader2 className="animate-spin text-black" size={32} />
-                                                        ) : (
-                                                            <ImageIcon size={32} className="text-gray-300" />
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Bog'lash turi (Umumiy)</label>
-                                <select
-                                    value={newBanner.linkType}
-                                    onChange={e => setNewBanner({ ...newBanner, linkType: e.target.value as any, linkIds: [] })}
-                                    className="w-full bg-gray-50 border-none rounded-[24px] py-5 px-8 font-black uppercase tracking-widest text-[10px] appearance-none cursor-pointer hover:bg-gray-100 transition-all shadow-sm"
-                                >
-                                    <option value="none">Hech narsa</option>
-                                    <option value="product">Mahsulotlar</option>
-                                    <option value="category">Kategoriyalar</option>
-                                    <option value="brand">Brendlar</option>
-                                </select>
-                            </div>
-
-                            {newBanner.linkType !== "none" && (
-                                <div className="space-y-4 p-8 bg-gray-50 rounded-[40px] animate-in fade-in slide-in-from-top-4 border border-gray-100">
-                                    <div className="flex justify-between items-center mb-6 px-4">
-                                        <div className="flex items-center gap-4 bg-white px-6 py-3 rounded-2xl shadow-sm border border-gray-100">
-                                            <Search size={18} className="text-gray-400" />
-                                            <input
-                                                type="text"
-                                                placeholder="Qidirish..."
-                                                value={searchQuery}
-                                                onChange={e => setSearchQuery(e.target.value)}
-                                                className="bg-transparent border-none focus:ring-0 font-bold text-sm"
-                                            />
-                                        </div>
-                                        <div className="bg-black text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl">
-                                            {newBanner.linkIds.length} TA TANLANDI
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[300px] overflow-y-auto pr-4 no-scrollbar">
-                                        {filteredTargets.map((target) => (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                {/* Uzbek HTML */}
+                                <div className="space-y-4 p-6 bg-purple-50/30 rounded-[32px] border border-purple-100/50">
+                                    <div className="flex items-center justify-between">
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-[#7000FF]">Uzbek banner (HTML)</h4>
+                                        <div className="flex gap-2">
                                             <button
-                                                key={target.id}
-                                                onClick={() => toggleLinkId(target.id)}
-                                                className={`flex items-center gap-4 p-5 rounded-[24px] transition-all border-2 text-left ${newBanner.linkIds.includes(target.id)
-                                                    ? "bg-black border-black text-white shadow-2xl scale-[1.02]"
-                                                    : "bg-white border-transparent hover:border-gray-200 text-gray-500 hover:bg-gray-50"
-                                                    }`}
+                                                onClick={() => setNewBanner(p => ({ ...p, html_uz: STARTER_TEMPLATE }))}
+                                                className="flex items-center gap-1.5 bg-[#7000FF] text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:opacity-80 transition-all"
+                                                title="Andoza joylash"
                                             >
-                                                <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${newBanner.linkIds.includes(target.id) ? "bg-white border-white" : "border-gray-200"
-                                                    }`}>
-                                                    {newBanner.linkIds.includes(target.id) && <Check size={16} className="text-black stroke-[4]" />}
-                                                </div>
-                                                <span className="text-xs font-black tracking-tight line-clamp-2 leading-tight">{target.name}</span>
+                                                <Sparkles size={12} /> Andoza
                                             </button>
-                                        ))}
+                                        </div>
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={newBanner.title_uz}
+                                        onChange={e => setNewBanner({ ...newBanner, title_uz: e.target.value })}
+                                        className="w-full bg-white border-none rounded-2xl py-3 px-5 font-bold shadow-sm text-sm"
+                                        placeholder="Ichki nom (UZ) — faqat admin uchun"
+                                    />
+                                    <textarea
+                                        value={newBanner.html_uz}
+                                        onChange={e => setNewBanner({ ...newBanner, html_uz: e.target.value })}
+                                        className="w-full bg-[#0d1117] text-[#c9d1d9] border-none rounded-2xl py-4 px-5 font-mono text-xs shadow-sm h-56 resize-y leading-relaxed"
+                                        placeholder="<a href='/uz/catalog' style='...'>...</a>"
+                                        spellCheck={false}
+                                    />
+                                    <div>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-2 ml-2">Jonli ko'rinish</p>
+                                        <div className="rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-gray-100" style={{ aspectRatio: "21/9" }}>
+                                            <div className="w-full h-full relative overflow-hidden" dangerouslySetInnerHTML={{ __html: newBanner.html_uz }} />
+                                        </div>
                                     </div>
                                 </div>
-                            )}
+
+                                {/* Russian HTML */}
+                                <div className="space-y-4 p-6 bg-blue-50/30 rounded-[32px] border border-blue-100/50">
+                                    <div className="flex items-center justify-between">
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-600">Russian banner (HTML)</h4>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setNewBanner(p => ({ ...p, html_ru: p.html_uz }))}
+                                                className="flex items-center gap-1.5 bg-gray-200 text-gray-600 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-gray-300 transition-all"
+                                                title="UZ dan nusxa olish"
+                                            >
+                                                <Copy size={12} /> UZ dan
+                                            </button>
+                                            <button
+                                                onClick={() => setNewBanner(p => ({ ...p, html_ru: STARTER_TEMPLATE }))}
+                                                className="flex items-center gap-1.5 bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:opacity-80 transition-all"
+                                                title="Andoza joylash"
+                                            >
+                                                <Sparkles size={12} /> Andoza
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={newBanner.title_ru}
+                                        onChange={e => setNewBanner({ ...newBanner, title_ru: e.target.value })}
+                                        className="w-full bg-white border-none rounded-2xl py-3 px-5 font-bold shadow-sm text-sm"
+                                        placeholder="Внутреннее имя (RU) — только для админа"
+                                    />
+                                    <textarea
+                                        value={newBanner.html_ru}
+                                        onChange={e => setNewBanner({ ...newBanner, html_ru: e.target.value })}
+                                        className="w-full bg-[#0d1117] text-[#c9d1d9] border-none rounded-2xl py-4 px-5 font-mono text-xs shadow-sm h-56 resize-y leading-relaxed"
+                                        placeholder="<a href='/ru/catalog' style='...'>...</a>"
+                                        spellCheck={false}
+                                    />
+                                    <div>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-2 ml-2">Жонли ko'rinish</p>
+                                        <div className="rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-gray-100" style={{ aspectRatio: "21/9" }}>
+                                            <div className="w-full h-full relative overflow-hidden" dangerouslySetInnerHTML={{ __html: newBanner.html_ru }} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex items-start gap-3 p-5 bg-amber-50 rounded-2xl border border-amber-100">
+                                <Code2 size={18} className="text-amber-500 shrink-0 mt-0.5" />
+                                <p className="text-[11px] font-bold text-amber-700 leading-relaxed">
+                                    Maslahat: o'lcham har qurilmada moslashishi uchun <code className="bg-amber-100 px-1.5 py-0.5 rounded">clamp()</code> va foiz (%) ishlatib, kenglik/balandlikni <code className="bg-amber-100 px-1.5 py-0.5 rounded">100%</code> qiling. Link uchun <code className="bg-amber-100 px-1.5 py-0.5 rounded">&lt;a href="/uz/..."&gt;</code> dan foydalaning.
+                                </p>
+                            </div>
+
+                            <label className="flex items-center gap-3 cursor-pointer select-none ml-2">
+                                <input
+                                    type="checkbox"
+                                    checked={newBanner.active}
+                                    onChange={e => setNewBanner({ ...newBanner, active: e.target.checked })}
+                                    className="w-5 h-5 accent-black rounded"
+                                />
+                                <span className="text-xs font-black uppercase tracking-widest text-gray-500">Faol (saytda ko'rsatilsin)</span>
+                            </label>
 
                             <button
                                 onClick={handleSave}
@@ -613,7 +410,7 @@ export default function AdminBanners() {
                         <div className="mb-10 p-8 bg-black text-white rounded-[32px] space-y-8">
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Global Banner Balandligi</label>
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Desktop Banner Balandligi</label>
                                     <span className="text-xl font-black italic">{globalHeight}px</span>
                                 </div>
                                 <input
@@ -719,18 +516,18 @@ export default function AdminBanners() {
                         key={banner.id}
                         className="bg-white rounded-[48px] overflow-hidden border border-gray-100 shadow-xl flex flex-col lg:flex-row relative group hover:shadow-2xl transition-all duration-500"
                     >
-                        {/* Dual Preview Screens */}
-                        <div className="w-full lg:w-[450px] flex bg-gray-50 h-[300px] lg:h-auto border-r border-gray-100">
-                            <div className="flex-1 relative group/uz overflow-hidden">
-                                <img src={banner.imageUrl_uz} alt="UZ" className="w-full h-full object-cover grayscale-[0.5] group-hover/uz:grayscale-0 transition-all duration-700" />
-                                <div className="absolute top-6 left-6 bg-[#7000FF] text-white px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl">
-                                    UZBEK
+                        {/* Dual Preview Screens (HTML render) */}
+                        <div className="w-full lg:w-[450px] flex flex-col bg-gray-50 border-r border-gray-100">
+                            <div className="relative" style={{ aspectRatio: "21/9" }}>
+                                <div className="absolute inset-0 overflow-hidden" dangerouslySetInnerHTML={{ __html: banner.html_uz }} />
+                                <div className="absolute top-4 left-4 bg-[#7000FF] text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-xl z-10 pointer-events-none">
+                                    UZ
                                 </div>
                             </div>
-                            <div className="flex-1 relative group/ru overflow-hidden border-l border-white/20">
-                                <img src={banner.imageUrl_ru} alt="RU" className="w-full h-full object-cover grayscale-[0.5] group-hover/ru:grayscale-0 transition-all duration-700" />
-                                <div className="absolute top-6 right-6 bg-blue-600 text-white px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl">
-                                    RUSSIAN
+                            <div className="relative border-t border-white/20" style={{ aspectRatio: "21/9" }}>
+                                <div className="absolute inset-0 overflow-hidden" dangerouslySetInnerHTML={{ __html: banner.html_ru }} />
+                                <div className="absolute top-4 left-4 bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-xl z-10 pointer-events-none">
+                                    RU
                                 </div>
                             </div>
                         </div>
@@ -741,14 +538,12 @@ export default function AdminBanners() {
                                     <div className="space-y-6 flex-1">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                             <div className="space-y-2">
-                                                <h3 className="text-2xl font-black italic tracking-tighter text-[#7000FF] uppercase line-clamp-1">{banner.title_uz}</h3>
-                                                <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">{banner.subtitle_uz}</p>
-                                                <span className="inline-block bg-purple-50 text-[#7000FF] px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border border-purple-100">TAB: {banner.tabName_uz}</span>
+                                                <h3 className="text-2xl font-black italic tracking-tighter text-[#7000FF] uppercase line-clamp-1">{banner.title_uz || "—"}</h3>
+                                                <span className="inline-block bg-purple-50 text-[#7000FF] px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border border-purple-100">TAB: {banner.tabName_uz || "—"}</span>
                                             </div>
                                             <div className="space-y-2 border-l border-gray-100 pl-8">
-                                                <h3 className="text-2xl font-black italic tracking-tighter text-blue-600 uppercase line-clamp-1">{banner.title_ru}</h3>
-                                                <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">{banner.subtitle_ru}</p>
-                                                <span className="inline-block bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border border-blue-100">TAB: {banner.tabName_ru}</span>
+                                                <h3 className="text-2xl font-black italic tracking-tighter text-blue-600 uppercase line-clamp-1">{banner.title_ru || "—"}</h3>
+                                                <span className="inline-block bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border border-blue-100">TAB: {banner.tabName_ru || "—"}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -769,17 +564,8 @@ export default function AdminBanners() {
                                 </div>
 
                                 <div className="flex flex-wrap gap-4 mt-8 pt-8 border-t border-gray-50">
-                                    <div className="flex items-center gap-4 bg-black text-white px-8 py-4 rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl">
-                                        <LinkIcon size={18} className="text-blue-400" />
-                                        {banner.linkType === "product" ? (
-                                            <span>{banner.linkIds?.length || 0} TA MAHSULOTGA BOG'LANGAN</span>
-                                        ) : banner.linkType === "category" ? (
-                                            <span>{banner.linkIds?.length || 0} TA KATEGORIYAGA BOG'LANGAN</span>
-                                        ) : banner.linkType === "brand" ? (
-                                            <span>{banner.linkIds?.length || 0} TA BRENDGA BOG'LANGAN</span>
-                                        ) : (
-                                            <span className="opacity-40 italic">BOG'LANMAGAN</span>
-                                        )}
+                                    <div className={`px-8 py-4 rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] border ${banner.active ? "bg-green-50 text-green-600 border-green-100" : "bg-gray-50 text-gray-400 border-gray-100"}`}>
+                                        {banner.active ? "FAOL" : "YASHIRIN"}
                                     </div>
                                     <div className="bg-gray-50 px-8 py-4 rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 border border-gray-100">
                                         Tartib: #{banner.order + 1}
@@ -792,7 +578,7 @@ export default function AdminBanners() {
 
                 {banners.length === 0 && (
                     <div className="py-32 text-center bg-gray-50/50 rounded-[50px] border-2 border-dashed border-gray-100 flex flex-col items-center">
-                        <ImageIcon size={64} className="text-gray-100 mb-4" />
+                        <Code2 size={64} className="text-gray-100 mb-4" />
                         <p className="text-gray-400 font-black uppercase tracking-[0.3em] text-xs">Bannerlar mavjud emas</p>
                     </div>
                 )}

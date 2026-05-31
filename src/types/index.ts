@@ -71,19 +71,13 @@ export interface Category {
 
 export interface Banner {
     id: string;
-    imageUrl_uz: string;
-    imageUrl_ru: string;
-    blurDataURL_uz?: string;
-    blurDataURL_ru?: string;
+    html_uz?: string;
+    html_ru?: string;
     title_uz?: string;
     title_ru?: string;
     tabName_uz?: string;
     tabName_ru?: string;
     order?: number;
-    image_meta?: {
-        uz?: { xs?: string; md?: string; lg?: string; lowResUrl?: string; blurDataURL?: string };
-        ru?: { xs?: string; md?: string; lg?: string; lowResUrl?: string; blurDataURL?: string };
-    };
 }
 
 export interface User {
