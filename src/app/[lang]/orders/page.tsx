@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useStore } from "@/store/store";
 import { supabase } from "@/lib/supabase";
 import { getProductSlug } from "@/lib/slugify";
-import { Package, ChevronRight, Clock, CheckCircle, Truck, XCircle, Loader2, Star, Camera, Video, MessageCircle, Play } from "lucide-react";
+import { Package, ChevronRight, Clock, CheckCircle, Truck, XCircle, Loader2, Star, Camera, Video, MessageCircle, Play, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { translations } from "@/lib/translations";
@@ -31,6 +31,11 @@ export default function OrdersPage() {
     const [enrichedItems, setEnrichedItems] = useState<any[]>([]);
     const [isCancelling, setIsCancelling] = useState(false);
     const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
+
+    // Qaytarish (vozvrat) holatlari
+    const [returnOrder, setReturnOrder] = useState<Order | null>(null);
+    const [returnReason, setReturnReason] = useState("");
+    const [isReturning, setIsReturning] = useState(false);
 
     // Review states
     const [reviewProduct, setReviewProduct] = useState<any>(null);
@@ -142,6 +147,35 @@ export default function OrdersPage() {
             alert(errorMsg);
         } finally {
             setIsCancelling(false);
+        }
+    };
+
+    const handleSubmitReturn = async () => {
+        if (!returnOrder || !user?.phone || !returnReason.trim()) return;
+        setIsReturning(true);
+        try {
+            const response = await fetch('/api/orders/return', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    order_id: returnOrder.id,
+                    user_phone: user.phone,
+                    items: returnOrder.items,
+                    reason: returnReason.trim(),
+                }),
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message || t.common.error);
+
+            showToast(language === 'uz' ? "Qaytarish so'rovi yuborildi" : "Запрос на возврат отправлен", 'success');
+            setReturnOrder(null);
+            setReturnReason("");
+        } catch (error: any) {
+            console.error("Return order error:", error);
+            showToast(t.common.error + ": " + (error.message || ""), 'error');
+        } finally {
+            setIsReturning(false);
         }
     };
 
@@ -435,6 +469,17 @@ export default function OrdersPage() {
                                 </button>
                             )}
 
+                            {/* Qaytarish (vozvrat) tugmasi — faqat yetkazilgan buyurtmalar */}
+                            {normalizeOrderStatus(selectedOrder.status) === 'delivered' && (
+                                <button
+                                    onClick={() => { setReturnOrder(selectedOrder); setReturnReason(""); }}
+                                    className="w-full mt-10 py-4 bg-orange-50 text-orange-600 rounded-3xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-orange-500 hover:text-white transition-all active:scale-95 border border-orange-100"
+                                >
+                                    <RefreshCw size={16} />
+                                    {language === 'uz' ? "Mahsulotni qaytarish" : "Вернуть товар"}
+                                </button>
+                            )}
+
                             {/* Total */}
                             <div className="mt-10 p-8 rounded-[32px] flex justify-between items-center" style={{ background: "#2D6E3E", color: "#fff" }}>
                                 <div className="text-xs font-black uppercase tracking-widest opacity-70">{t.common.total}</div>
@@ -618,6 +663,50 @@ export default function OrdersPage() {
                             </button>
                             <button
                                 onClick={() => setOrderToCancel(null)}
+                                className="w-full py-5 bg-gray-50 text-gray-400 rounded-[28px] font-black text-xs uppercase tracking-[0.2em] active:scale-95 transition-all"
+                            >
+                                {t.common.back}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Qaytarish (Return) Modal */}
+            {returnOrder && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
+                    <div className="bg-white w-full max-w-sm rounded-[48px] p-10 space-y-8 animate-in zoom-in duration-500 shadow-2xl">
+                        <div className="flex flex-col items-center text-center space-y-4">
+                            <div className="w-20 h-20 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center shadow-xl shadow-orange-500/10">
+                                <RefreshCw size={36} />
+                            </div>
+                            <h3 className="text-2xl font-black italic tracking-tighter uppercase leading-tight">
+                                {language === 'uz' ? "Mahsulotni qaytarish" : "Возврат товара"}
+                            </h3>
+                            <p className="text-sm font-bold text-gray-400">
+                                {language === 'uz'
+                                    ? "Qaytarish sababini yozing. So'rovingiz ko'rib chiqiladi."
+                                    : "Укажите причину возврата. Ваш запрос будет рассмотрен."}
+                            </p>
+                        </div>
+
+                        <textarea
+                            value={returnReason}
+                            onChange={(e) => setReturnReason(e.target.value)}
+                            placeholder={language === 'uz' ? "Qaytarish sababi..." : "Причина возврата..."}
+                            className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-[28px] p-6 text-sm font-bold h-28 outline-none transition-all resize-none shadow-inner"
+                        />
+
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={handleSubmitReturn}
+                                disabled={isReturning || !returnReason.trim()}
+                                className="w-full py-5 bg-orange-500 text-white rounded-[28px] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-orange-500/20 active:scale-95 transition-all disabled:opacity-40 flex items-center justify-center gap-3"
+                            >
+                                {isReturning ? <Loader2 className="animate-spin" size={16} /> : (language === 'uz' ? "So'rov yuborish" : "Отправить запрос")}
+                            </button>
+                            <button
+                                onClick={() => { setReturnOrder(null); setReturnReason(""); }}
                                 className="w-full py-5 bg-gray-50 text-gray-400 rounded-[28px] font-black text-xs uppercase tracking-[0.2em] active:scale-95 transition-all"
                             >
                                 {t.common.back}
