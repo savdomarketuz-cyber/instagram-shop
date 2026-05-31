@@ -185,6 +185,7 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
             updateActivity();
             fetchGlobalPromo();
             useStore.getState().fetchPersonalOffers();
+            useStore.getState().fetchWarehouses();
         });
         intervalId = setInterval(() => updateActivity(), 120000);
 

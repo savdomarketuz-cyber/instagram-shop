@@ -57,7 +57,7 @@ interface StoreState {
 
 export const useStore = create<StoreState>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             cart: [],
             wishlist: [],
             user: null,
@@ -156,6 +156,7 @@ export const useStore = create<StoreState>()(
             setCartPromo: (promo) => set({ cartPromo: promo }),
             warehouses: [],
             fetchWarehouses: async () => {
+                if (get().warehouses.length > 0) return; // ikki marta yuklamaymiz
                 try {
                     const { data } = await supabase
                         .from("warehouses")
