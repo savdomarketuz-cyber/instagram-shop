@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { mapProduct, mapComment } from "@/lib/mappers";
 import { translations } from "@/lib/translations";
-import { Loader2, Plus, Minus, ShoppingBag, Heart, Star, Check, Truck, Clock, ShieldCheck, RefreshCw } from "lucide-react";
+import { Loader2, Plus, Minus, ShoppingBag, Heart, Star, Check, Truck, Clock, ShieldCheck, RefreshCw, Store as StoreIcon, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { getDeliveryDateText } from "@/lib/date-utils";
 import Image from "next/image";
@@ -32,6 +32,39 @@ const RelatedProducts = dynamic(() => import("@/components/product/RelatedProduc
 
 import type { Product } from "@/types";
 import { trackProductView } from "@/components/velari/RecentlyViewed";
+
+// Mahsulot sahifasidagi "do'kon" kartasi (ombor do'kon sifatida) — logo, nom, do'konga o'tish
+function StoreCard({ store, language }: { store: { id: string; name: string; logo: string | null }; language: "uz" | "ru" }) {
+    return (
+        <Link
+            href={`/${language}/store/${store.id}`}
+            className="flex items-center gap-4 p-5 rounded-[28px] no-underline"
+            style={{ background: "linear-gradient(135deg,#FFFFFF 0%,#F2F8F3 100%)", border: "1px solid #E6EFE8" }}
+        >
+            <div
+                className="shrink-0 overflow-hidden flex items-center justify-center"
+                style={{ width: 56, height: 56, borderRadius: 18, background: store.logo ? "#fff" : "#2D6E3E", boxShadow: "0 4px 12px rgba(15,20,16,0.08)" }}
+            >
+                {store.logo ? (
+                    <img src={store.logo} alt={store.name} className="w-full h-full object-cover" />
+                ) : (
+                    <StoreIcon size={26} color="#fff" />
+                )}
+            </div>
+            <div className="flex-1 min-w-0">
+                <div style={{ fontSize: 10, fontWeight: 800, color: "#2D6E3E", letterSpacing: 0.5, textTransform: "uppercase" }}>
+                    {language === "uz" ? "Do'kon" : "Магазин"}
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#0F1410", letterSpacing: -0.3, lineHeight: 1.2 }} className="truncate">
+                    {store.name}
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#2D6E3E", marginTop: 2, display: "flex", alignItems: "center", gap: 2 }}>
+                    {language === "uz" ? "Do'konga o'tish" : "Перейти в магазин"} <ChevronRight size={13} />
+                </div>
+            </div>
+        </Link>
+    );
+}
 
 export default function ProductClient({ params, initialProduct }: { params: { id: string }, initialProduct?: Product | null }) {
     const router = useRouter();
@@ -124,6 +157,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
     const [deliverySettings, setDeliverySettings] = useState<{ cutoff: number; days: number; offDays: string[]; holidays: string[] } | null>(null);
+    const [store, setStore] = useState<{ id: string; name: string; logo: string | null } | null>(null);
 
     // --- MLM Referral Tracking ---
     useEffect(() => {
@@ -244,6 +278,10 @@ export default function ProductClient({ params, initialProduct }: { params: { id
 
         const availableWhId = Object.keys(productData.stockDetails || {}).find(id => (productData.stockDetails as Record<string, number>)[id] > 0);
         const warehouse = warehouses.find(w => w.id === availableWhId) || warehouses[0];
+
+        if (warehouse) {
+            setStore({ id: warehouse.id, name: warehouse.name, logo: warehouse.logo || null });
+        }
         
         // Sxema: warehouses.dbs_config (eski kod warehouse.data.dbs ni o'qigan — xato edi)
         const dbs = warehouse?.dbs_config || warehouse?.data?.dbs;
@@ -644,6 +682,12 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                     onDescriptionOpen={() => setIsDescriptionModalOpen(true)}
                     personalOffer={personalOffer}
                 />
+                {/* Do'kon kartasi (mobil) */}
+                {store && (
+                    <div className="md:hidden px-4 mt-4">
+                        <StoreCard store={store} language={language} />
+                    </div>
+                )}
             </div>
 
             {/* Desktop View (E-commerce Grid Style) */}
@@ -917,6 +961,8 @@ export default function ProductClient({ params, initialProduct }: { params: { id
 
                         {/* 2. Delivery Panel (Right Side as Yandex) */}
                         <div className="bg-[#F2F3F5] p-10 rounded-[40px] border border-gray-100 flex flex-col gap-8">
+                            {/* Do'kon kartasi (desktop) */}
+                            {store && <StoreCard store={store} language={language} />}
                             <div className="flex items-start gap-4">
                                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
                                     <Truck size={24} className="text-black" />

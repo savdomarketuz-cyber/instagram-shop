@@ -3,7 +3,7 @@
 import { memo, useState, useRef } from "react";
 import { Link } from "next-view-transitions";
 import Image from "next/image";
-import { Heart, Star, Minus, Plus, Sparkles, Truck } from "lucide-react";
+import { Heart, Star, Minus, Plus, Sparkles, Truck, Store } from "lucide-react";
 import { useStore } from "@/store/store";
 import { Product, CartItem } from "@/types";
 import { TranslationKeys } from "@/lib/translations";
@@ -233,6 +233,18 @@ export const ProductCard = memo(({
 
         {/* Info */}
         <div style={{ padding: "2px 14px 12px" }}>
+          {/* Do'kon (ombor) nomi — mahsulot nomidan tepada */}
+          {warehouse?.name && (
+            <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3 }}>
+              <Store size={11} color={GREEN} strokeWidth={2.2} style={{ flexShrink: 0 }} />
+              <span style={{
+                fontSize: 10.5, fontWeight: 700, color: GREEN, letterSpacing: -0.1,
+                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+              }}>
+                {warehouse.name}
+              </span>
+            </div>
+          )}
           {brandName && (
             <div style={{
               fontSize: 10,

@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { adminSelect } from "@/lib/admin-api";
-import { Plus, Trash2, Edit2, Save, X, Loader2, Home as WarehouseIcon, MapPin, Truck, Clock, Calendar } from "lucide-react";
+import { Plus, Trash2, Edit2, Save, X, Loader2, Home as WarehouseIcon, MapPin, Truck, Clock, Calendar, Image as ImageIcon } from "lucide-react";
+import { uploadToYandexS3 } from "@/lib/yandex-s3";
 
 interface Warehouse {
     id: string;
     name: string;
     address: string;
+    logo?: string;
     type: "DBS" | "FBS" | "FBO";
     dbs: {
         cutoffHour: number;
@@ -29,6 +31,7 @@ export default function AdminWarehouses() {
     const [formData, setFormData] = useState({
         name: "",
         address: "",
+        logo: "",
         type: "DBS" as "DBS" | "FBS" | "FBO",
         dbs: {
             cutoffHour: 16,
@@ -40,6 +43,21 @@ export default function AdminWarehouses() {
     });
 
     const [holidayInput, setHolidayInput] = useState("");
+    const [isUploading, setIsUploading] = useState(false);
+
+    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setIsUploading(true);
+        try {
+            const { url } = await uploadToYandexS3(file);
+            setFormData(prev => ({ ...prev, logo: url }));
+        } catch (err: any) {
+            alert("Logo yuklashda xatolik: " + (err.message || ""));
+        } finally {
+            setIsUploading(false);
+        }
+    };
 
     const fetchWarehouses = async () => {
         try {
@@ -49,6 +67,7 @@ export default function AdminWarehouses() {
                 id: w.id,
                 name: w.name,
                 address: w.address,
+                logo: w.logo,
                 type: w.type,
                 dbs: w.dbs_config,
                 active: w.active
@@ -68,6 +87,7 @@ export default function AdminWarehouses() {
         setFormData({
             name: "",
             address: "",
+            logo: "",
             type: "DBS" as "DBS" | "FBS" | "FBO",
             dbs: { cutoffHour: 16, deliveryDays: 1, offDays: [0], holidays: [] },
             active: true
@@ -83,6 +103,7 @@ export default function AdminWarehouses() {
             const payload = {
                 name: formData.name,
                 address: formData.address,
+                logo: formData.logo || null,
                 type: formData.type,
                 dbs_config: formData.dbs,
                 active: formData.active
@@ -190,6 +211,31 @@ export default function AdminWarehouses() {
                                         className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 font-bold"
                                         placeholder="Toshkent sh., Chilonzor..."
                                     />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Do'kon logosi</label>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-20 h-20 rounded-2xl bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center shrink-0">
+                                            {formData.logo ? (
+                                                <img src={formData.logo} alt="logo" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <WarehouseIcon size={26} className="text-gray-300" />
+                                            )}
+                                        </div>
+                                        <div className="relative flex-1">
+                                            <input type="file" accept="image/*" onChange={handleLogoUpload} disabled={isUploading}
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                                            <div className="w-full bg-gray-50 border-2 border-dashed border-gray-100 rounded-2xl py-4 px-6 flex items-center justify-center gap-2 text-gray-400 font-bold text-xs">
+                                                {isUploading ? <Loader2 size={16} className="animate-spin" /> : <ImageIcon size={16} />}
+                                                {isUploading ? "Yuklanmoqda..." : (formData.logo ? "Logoni almashtirish" : "Logo yuklash")}
+                                            </div>
+                                        </div>
+                                        {formData.logo && (
+                                            <button type="button" onClick={() => setFormData({ ...formData, logo: "" })}
+                                                className="p-2 text-gray-400 hover:text-red-500"><Trash2 size={18} /></button>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="space-y-4">
@@ -326,8 +372,12 @@ export default function AdminWarehouses() {
                 {warehouses.map(w => (
                     <div key={w.id} className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
                         <div className="flex justify-between items-start mb-6">
-                            <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-black group-hover:bg-black group-hover:text-white transition-all">
-                                <WarehouseIcon size={24} />
+                            <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-black group-hover:bg-black group-hover:text-white transition-all overflow-hidden">
+                                {w.logo ? (
+                                    <img src={w.logo} alt={w.name} className="w-full h-full object-cover" />
+                                ) : (
+                                    <WarehouseIcon size={24} />
+                                )}
                             </div>
                             <div className="flex gap-2">
                                 <button onClick={() => { setFormData(w as any); setEditId(w.id); setIsAdding(true); }} className="p-2 text-gray-400 hover:text-black"><Edit2 size={18} /></button>
