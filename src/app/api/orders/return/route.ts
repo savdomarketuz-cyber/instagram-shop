@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
             user_phone,
             items,
             reason,
-            status: "Kutilmoqda",
+            status: "pending", // admin tablari va status-update inglizcha kodlar bilan ishlaydi
             created_at: new Date().toISOString()
         });
 

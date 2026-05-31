@@ -17,13 +17,20 @@ export default function AdminReturns() {
 
     const fetchReturns = async () => {
         try {
-            const { data, error } = await supabase
-                .from("order_returns")
-                .select("*")
-                .order("created_at", { ascending: false });
-            
-            if (error) throw error;
-            setReturns(data || []);
+            // order_returns RLS bilan himoyalangan — anon client o'qiy olmaydi.
+            // Service-role orqali generic CRUD endpoint bilan o'qiymiz.
+            const res = await fetch("/api/admin/crud", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    table: "order_returns",
+                    action: "select",
+                    orderBy: { column: "created_at", ascending: false },
+                }),
+            });
+            const json = await res.json();
+            if (!json.success) throw new Error(json.error || "Qaytarishlarni yuklab bo'lmadi");
+            setReturns(json.data || []);
         } catch (error) {
             console.error("Fetch returns error:", error);
         } finally {
