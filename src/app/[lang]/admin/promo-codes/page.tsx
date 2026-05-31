@@ -16,6 +16,7 @@ export default function AdminPromoCodes() {
         min_order_amount: 0,
         max_discount_amount: 0,
         usage_limit: 100,
+        per_user_limit: 1,
         expires_at: "",
         active: true
     });
@@ -59,12 +60,17 @@ export default function AdminPromoCodes() {
                     min_order_amount: 0,
                     max_discount_amount: 0,
                     usage_limit: 100,
+                    per_user_limit: 1,
                     expires_at: "",
                     active: true
                 });
+            } else {
+                alert(data.error || "Saqlashda xatolik yuz berdi");
             }
         } catch (error) {
             console.error("Submit promo error:", error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -154,6 +160,9 @@ export default function AdminPromoCodes() {
                                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Foydalanilgan</p>
                                 <p className="text-xl font-black italic tracking-tighter text-black">
                                     {promo.usage_count} / {promo.usage_limit || '∞'}
+                                </p>
+                                <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mt-1">
+                                    Har biriga: {promo.per_user_limit ? `${promo.per_user_limit}x` : '∞'}
                                 </p>
                             </div>
                         </div>
@@ -264,7 +273,7 @@ export default function AdminPromoCodes() {
                                 </div>
                                 <div className="space-y-3">
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Amal qilish muddati</label>
-                                    <input 
+                                    <input
                                         type="date"
                                         value={formData.expires_at}
                                         onChange={(e) => setFormData({ ...formData, expires_at: e.target.value })}
@@ -273,7 +282,22 @@ export default function AdminPromoCodes() {
                                 </div>
                             </div>
 
-                            <button 
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Har bir foydalanuvchi uchun limit</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={(formData as any).per_user_limit ?? ""}
+                                    onChange={(e) => setFormData({ ...formData, per_user_limit: e.target.value === "" ? 0 : Number(e.target.value) } as any)}
+                                    placeholder="0"
+                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-3xl p-5 text-base font-bold outline-none transition-all"
+                                />
+                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-2">
+                                    Bitta odam necha marta ishlatishi mumkin. <span className="text-black">0 = cheksiz</span>
+                                </p>
+                            </div>
+
+                            <button
                                 type="submit"
                                 className="w-full bg-black text-white py-6 rounded-[32px] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-black/20 hover:scale-[1.02] active:scale-95 transition-all mt-4"
                             >

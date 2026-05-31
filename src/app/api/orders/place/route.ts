@@ -172,6 +172,27 @@ export async function POST(req: NextRequest) {
         }
         // ----------------------------------------------------------------------------------
 
+        // --- Per-user promo redemption (standart promo_codes) ---
+        // Har bir foydalanuvchining promo kodni necha marta ishlatganini yozamiz (per_user_limit nazorati uchun).
+        try {
+            const orderId = data?.orderId;
+            if (data?.success && orderId && validatedData.promoCode) {
+                const code = validatedData.promoCode.toUpperCase();
+                const { data: stdPromo } = await supabaseAdmin
+                    .from("promo_codes").select("id").eq("code", code).single();
+                if (stdPromo) {
+                    await supabaseAdmin.from("promo_redemptions").insert({
+                        code,
+                        user_phone: validatedData.userPhone,
+                        order_id: String(orderId),
+                    });
+                }
+            }
+        } catch (e) {
+            console.error("Promo redemption record error:", e);
+        }
+        // ----------------------------------
+
         // --- NEW: Check Low Stock Alert ---
         try {
             const productIds = validatedData.items.map((i: any) => i.id);

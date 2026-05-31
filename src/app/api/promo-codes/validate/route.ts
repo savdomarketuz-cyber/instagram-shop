@@ -27,9 +27,29 @@ export async function POST(req: Request) {
                 return NextResponse.json({ success: false, error: "Ushbu promo kodning muddati tugagan" });
             }
 
-            // Usage limit check
+            // Usage limit check (umumiy)
             if (promo.usage_limit && promo.usage_count >= promo.usage_limit) {
                 return NextResponse.json({ success: false, error: "Ushbu promo koddan foydalanish limiti tugagan" });
+            }
+
+            // Per-user limit check (har bir foydalanuvchi uchun)
+            if (promo.per_user_limit && promo.per_user_limit > 0) {
+                if (!userPhone) {
+                    return NextResponse.json({ success: false, error: "Promo kodni ishlatish uchun tizimga kiring" });
+                }
+                const { count } = await supabaseAdmin
+                    .from("promo_redemptions")
+                    .select("*", { count: "exact", head: true })
+                    .eq("code", normalizedCode)
+                    .eq("user_phone", userPhone);
+                if ((count || 0) >= promo.per_user_limit) {
+                    return NextResponse.json({
+                        success: false,
+                        error: promo.per_user_limit === 1
+                            ? "Siz bu promo kodni allaqachon ishlatgansiz"
+                            : `Siz bu promo kodni ${promo.per_user_limit} marta ishlatib bo'lgansiz`
+                    });
+                }
             }
 
             // Min amount check

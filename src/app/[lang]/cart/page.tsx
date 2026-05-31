@@ -51,7 +51,7 @@ export default function CartPage() {
             const res = await fetch("/api/promo-codes/validate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ code: promoCode, totalAmount: subtotal }),
+                body: JSON.stringify({ code: promoCode, totalAmount: subtotal, userPhone: useStore.getState().user?.phone || null }),
             });
             const data = await res.json();
             if (data.success) {
