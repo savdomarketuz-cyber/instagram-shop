@@ -65,6 +65,26 @@ interface Stats {
     active_affiliates_count: number;
 }
 
+interface AffiliateUser {
+    id: string;
+    name: string;
+    phone: string;
+    affiliate_role: string;
+    affiliate_code: string;
+    real_balance: number;
+    created_at: string;
+}
+
+interface AffiliateTransaction {
+    id: string;
+    amount: number;
+    status: string;
+    created_at: string;
+    order_stage: string;
+    orders?: { total: number; status: string };
+    products?: { name: string };
+}
+
 export default function AffiliateAdminPage() {
     const { showToast } = useStore();
     const [activeTab, setActiveTab] = useState<"overview" | "tariffs" | "hierarchy">("overview");
@@ -85,6 +105,13 @@ export default function AffiliateAdminPage() {
     const [saving, setSaving] = useState(false);
     const [showTariffModal, setShowTariffModal] = useState(false);
     const [editingTariff, setEditingTariff] = useState<Partial<PromoCodeTariff> | null>(null);
+    
+    // New states for users list
+    const [users, setUsers] = useState<AffiliateUser[]>([]);
+    const [loadingUsers, setLoadingUsers] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<AffiliateUser | null>(null);
+    const [userTransactions, setUserTransactions] = useState<AffiliateTransaction[]>([]);
+    const [loadingTransactions, setLoadingTransactions] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -110,6 +137,44 @@ export default function AffiliateAdminPage() {
             showToast("Ma'lumotlarni yuklashda xatolik", "error");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchUsers = async () => {
+        try {
+            setLoadingUsers(true);
+            const res = await fetch("/api/admin/affiliate/users");
+            const data = await res.json();
+            if (data.success) {
+                setUsers(data.data || []);
+            }
+        } catch (error) {
+            showToast("Foydalanuvchilarni yuklashda xatolik", "error");
+        } finally {
+            setLoadingUsers(false);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === "hierarchy" && users.length === 0) {
+            fetchUsers();
+        }
+    }, [activeTab]);
+
+    const handleUserClick = async (user: AffiliateUser) => {
+        setSelectedUser(user);
+        try {
+            setLoadingTransactions(true);
+            setUserTransactions([]);
+            const res = await fetch(`/api/admin/affiliate/users/${user.id}/transactions`);
+            const data = await res.json();
+            if (data.success) {
+                setUserTransactions(data.data.transactions || []);
+            }
+        } catch (error) {
+            showToast("Tranzaksiyalarni yuklashda xatolik", "error");
+        } finally {
+            setLoadingTransactions(false);
         }
     };
 
@@ -493,13 +558,141 @@ export default function AffiliateAdminPage() {
             )}
 
             {activeTab === 'hierarchy' && (
-                <div className="bg-white p-12 rounded-[40px] border border-gray-100 shadow-sm text-center space-y-4">
-                    <div className="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto text-blue-500">
-                        <Users size={40} />
+                <div className="bg-white rounded-[40px] border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+                        <div>
+                            <h2 className="text-2xl font-black italic tracking-tighter uppercase">Foydalanuvchilar va Hamkorlar</h2>
+                            <p className="text-gray-400 text-xs font-bold mt-1 uppercase tracking-widest">Tizimdagi barcha mijozlar va ularning faolligi</p>
+                        </div>
+                        <button onClick={fetchUsers} className="p-3 bg-white rounded-xl shadow-sm hover:scale-105 transition-all text-black border border-gray-100">
+                            {loadingUsers ? <Loader2 size={20} className="animate-spin" /> : <Activity size={20} />}
+                        </button>
                     </div>
-                    <h2 className="text-2xl font-black italic tracking-tighter uppercase">Ierarhiya Tahlili</h2>
-                    <p className="text-gray-400 max-w-md mx-auto font-medium">Ushbu bo'limda siz Top Menejerlardan boshlab barcha agentlargacha bo'lgan tarmoqni daraxtsimon ko'rinishda ko'rishingiz mumkin bo'ladi.</p>
-                    <button className="bg-black text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all">Tizimni yuklash</button>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="bg-white border-b border-gray-100">
+                                    <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Foydalanuvchi</th>
+                                    <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Rol</th>
+                                    <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Promo-kod</th>
+                                    <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Balans</th>
+                                    <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Amal</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                                {loadingUsers ? (
+                                    <tr><td colSpan={5} className="p-12 text-center text-gray-400 font-bold">Yuklanmoqda...</td></tr>
+                                ) : users.map(user => (
+                                    <tr 
+                                        key={user.id} 
+                                        className="hover:bg-gray-50/50 transition-colors cursor-pointer group"
+                                        onClick={() => handleUserClick(user)}
+                                    >
+                                        <td className="p-6">
+                                            <div className="font-black text-sm">{user.name || "Noma'lum"}</div>
+                                            <div className="text-[10px] text-gray-400 font-bold mt-1">{user.phone}</div>
+                                        </td>
+                                        <td className="p-6">
+                                            {user.affiliate_role ? (
+                                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                                                    user.affiliate_role.includes('manager') ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'
+                                                }`}>
+                                                    {user.affiliate_role.replace(/_/g, ' ')}
+                                                </span>
+                                            ) : (
+                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Oddiy Mijoz</span>
+                                            )}
+                                        </td>
+                                        <td className="p-6">
+                                            {user.affiliate_code ? (
+                                                <span className="font-mono text-xs font-black bg-gray-100 px-3 py-1.5 rounded-lg border border-gray-200">
+                                                    {user.affiliate_code}
+                                                </span>
+                                            ) : (
+                                                <span className="text-gray-300">-</span>
+                                            )}
+                                        </td>
+                                        <td className="p-6 font-black italic tracking-tighter">
+                                            {(user.real_balance || 0).toLocaleString()} <span className="text-[10px] text-gray-400">so'm</span>
+                                        </td>
+                                        <td className="p-6 text-right">
+                                            <button className="text-gray-300 group-hover:text-black transition-colors">
+                                                <ChevronRight size={20} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+
+            {/* User Transactions Modal */}
+            {selectedUser && (
+                <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xl animate-in fade-in duration-300">
+                    <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-[40px] shadow-2xl flex flex-col overflow-hidden relative animate-in zoom-in-95">
+                        <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50 relative">
+                            <button onClick={() => setSelectedUser(null)} className="absolute top-8 right-8 p-3 bg-white border border-gray-100 rounded-2xl hover:bg-black hover:text-white transition-all shadow-sm">
+                                <XCircle size={24} />
+                            </button>
+                            <div>
+                                <h2 className="text-3xl font-black italic tracking-tighter uppercase">{selectedUser.name || "Noma'lum Mijoz"}</h2>
+                                <p className="text-gray-400 font-bold mt-1">{selectedUser.phone} • {(selectedUser.real_balance || 0).toLocaleString()} so'm</p>
+                            </div>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-8 bg-white custom-scrollbar">
+                            <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-6">Tranzaksiyalar va Harakatlar</h3>
+                            
+                            {loadingTransactions ? (
+                                <div className="py-12 flex justify-center text-gray-400">
+                                    <Loader2 className="animate-spin w-8 h-8" />
+                                </div>
+                            ) : userTransactions.length === 0 ? (
+                                <div className="py-12 text-center border-2 border-dashed border-gray-100 rounded-3xl">
+                                    <Activity className="mx-auto text-gray-200 mb-4 w-12 h-12" />
+                                    <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Hozircha tranzaksiyalar yo'q</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {userTransactions.map(tx => (
+                                        <div key={tx.id} className="flex justify-between items-center p-6 bg-gray-50/50 rounded-3xl border border-gray-100 hover:bg-white hover:shadow-lg transition-all">
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                                                    tx.status === 'approved' ? 'bg-green-100 text-green-600' :
+                                                    tx.status === 'rejected' ? 'bg-red-100 text-red-600' :
+                                                    'bg-orange-100 text-orange-600'
+                                                }`}>
+                                                    <Banknote size={20} />
+                                                </div>
+                                                <div>
+                                                    <p className="font-black text-sm uppercase">{tx.products?.name || "Noma'lum mahsulot"}</p>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <span className="text-[10px] font-bold text-gray-400">{new Date(tx.created_at).toLocaleString('uz-UZ')}</span>
+                                                        <span className="w-1 h-1 rounded-full bg-gray-300" />
+                                                        <span className="text-[10px] font-bold text-blue-500 uppercase">{tx.order_stage}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className={`text-xl font-black italic tracking-tighter ${
+                                                    tx.status === 'approved' ? 'text-green-600' : 
+                                                    tx.status === 'rejected' ? 'text-red-500 line-through opacity-50' : ''
+                                                }`}>
+                                                    +{tx.amount?.toLocaleString()} so'm
+                                                </p>
+                                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                                                    {tx.status === 'approved' ? 'Tushdi' : tx.status === 'pending' ? 'Kutilmoqda' : 'Rad etildi'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
 
