@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { adminSelect } from "@/lib/admin-api";
-import { Plus, Trash2, Edit2, Save, X, Code2, Loader2, Copy, Sparkles } from "lucide-react";
+import { Plus, Trash2, Edit2, Save, X, Code2, Loader2, Copy, Sparkles, BookOpen, Check } from "lucide-react";
 
 interface Banner {
     id: string;
@@ -24,6 +24,41 @@ const STARTER_TEMPLATE = `<a href="/uz/catalog" style="display:flex;width:100%;h
     <span style="display:inline-block;background:#fff;color:#1F5A30;padding:clamp(8px,1.2vw,14px) clamp(16px,2vw,28px);border-radius:100px;font-weight:700;font-size:clamp(12px,1.4vw,15px);">Hozir xarid qiling →</span>
   </div>
 </a>`;
+
+// AIga (ChatGPT/Claude) beriladigan to'liq prompt. "Nusxalash" tugmasi shuni clipboardga oladi.
+const AI_PROMPT = `Sen Velari onlayn-do'koni uchun bosh sahifa bannerining HTML kodini yozasan.
+Banner dangerouslySetInnerHTML orqali render qilinadi va konteynerni to'ldiradi.
+Faqat tayyor HTML kodini qaytar — markdown (\`\`\`), izoh yoki tushuntirishsiz.
+
+KONTEYNER:
+- Kengligi o'zgaruvchan: telefon ~360px, planshet ~700px, desktop ~1100px+.
+- Balandligi ham o'zgaruvchan (desktopda ~450px, mobilda 16:10). Qat'iy piksel o'lcham ISHLATMA.
+- Burchaklar avtomatik yumaloqlanadi va overflow:hidden qo'llanadi.
+
+MAJBURIY QOIDALAR:
+1. Root element: width:100%; height:100%; box-sizing:border-box.
+2. Shrift/padding/bo'shliqlar clamp(min,vw,max) bilan. Masalan: font-size:clamp(20px,4vw,44px).
+3. Dekor uchun position:absolute mumkin — root elementga position:relative ber.
+4. 100vw/100vh ISHLATMA (% ishlat). position:fixed ISHLATMA.
+5. Tashqi CSS/JS fayl ulama — stil inline yoki <style> blok ichida.
+
+HAVOLA ULASH (butun bannerni <a href="..."> ga o'ra):
+- Bitta mahsulot:      /uz/products/<MAHSULOT_ID>
+- Kategoriya:          /uz/?category=<KATEGORIYA_ID>
+- Brend:               /uz/?brand=<BREND_ID>
+- To'liq katalog:      /uz/catalog
+(RU banner uchun /ru/... ishlat. https:// yozma, /uz/ dan boshla.)
+
+ANIMATSIYA (tavsiya etiladi):
+- CSS animatsiya ishlaydi: @keyframes, transition, transform, animation.
+- @keyframes va class nomlarini UNIKAL qil (masalan b1Float, promoShimmer) — global to'qnashuvni oldini olish.
+- @keyframes ni <style> blok ichida yoz.
+
+TAQIQLANGAN:
+- <script>, onclick va boshqa inline JS — ishlamaydi.
+- position:fixed, 100vw, 100vh, tashqi <link>/<script src>.
+
+Endi men xohlagan bannerni tasvirlab beraman, sen yuqoridagi qoidalarga rioya qilib HTML qaytar.`;
 
 export default function AdminBanners() {
     const [banners, setBanners] = useState<Banner[]>([]);
@@ -47,6 +82,18 @@ export default function AdminBanners() {
     const [isGlobalModalOpen, setIsGlobalModalOpen] = useState(false);
     const [globalBanners, setGlobalBanners] = useState<Banner[]>([]);
     const [isGlobalSaving, setIsGlobalSaving] = useState(false);
+    const [isGuideOpen, setIsGuideOpen] = useState(false);
+    const [copied, setCopied] = useState(false);
+
+    const copyPrompt = async () => {
+        try {
+            await navigator.clipboard.writeText(AI_PROMPT);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            alert("Nusxalashda xatolik — qo'lda belgilab nusxalang");
+        }
+    };
 
     const fetchData = async () => {
         try {
@@ -259,6 +306,12 @@ export default function AdminBanners() {
                 </div>
                 <div className="flex gap-4">
                     <button
+                        onClick={() => setIsGuideOpen(true)}
+                        className="bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white px-8 py-4 rounded-[24px] font-black text-xs uppercase tracking-widest flex items-center gap-3 transition-all border border-amber-100"
+                    >
+                        <BookOpen size={18} /> Qoidalar (AI)
+                    </button>
+                    <button
                         onClick={openGlobalModal}
                         className="bg-gray-100 text-gray-500 hover:bg-black hover:text-white px-8 py-4 rounded-[24px] font-black text-xs uppercase tracking-widest flex items-center gap-3 transition-all"
                     >
@@ -272,6 +325,59 @@ export default function AdminBanners() {
                     </button>
                 </div>
             </div>
+
+            {/* Guide / AI Prompt Modal */}
+            {isGuideOpen && (
+                <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 text-black">
+                    <div className="bg-white rounded-[40px] p-10 w-full max-w-3xl shadow-2xl animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto no-scrollbar">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-3xl font-black italic tracking-tighter uppercase flex items-center gap-3">
+                                <BookOpen size={28} className="text-amber-500" /> Qoidalar
+                            </h2>
+                            <button onClick={() => setIsGuideOpen(false)} className="p-3 bg-gray-50 rounded-2xl hover:bg-black hover:text-white transition-all">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <p className="text-sm font-bold text-gray-500 leading-relaxed mb-6">
+                            Banner HTML kodini AI (ChatGPT/Claude) yordamida yarating. Quyidagi promptni nusxalab AIga bering,
+                            keyin qanday banner xohlaganingizni yozing — masalan: <span className="text-black italic">"Yashil gradient fon, suzuvchi doiralar, 'VGR trimmerlar' sarlavhasi, katalogga link"</span>.
+                            AI qaytargan HTML ni "Yangi Banner" oynasidagi HTML maydoniga joylashtiring.
+                        </p>
+
+                        <div className="relative">
+                            <button
+                                onClick={copyPrompt}
+                                className={`absolute top-4 right-4 flex items-center gap-2 px-4 py-2.5 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all z-10 ${copied ? "bg-green-500 text-white" : "bg-white text-black shadow-lg hover:bg-black hover:text-white"}`}
+                            >
+                                {copied ? <><Check size={14} /> Nusxalandi</> : <><Copy size={14} /> Nusxalash</>}
+                            </button>
+                            <pre className="bg-[#0d1117] text-[#c9d1d9] rounded-2xl p-6 pt-16 font-mono text-xs leading-relaxed whitespace-pre-wrap break-words max-h-[55vh] overflow-y-auto">
+{AI_PROMPT}
+                            </pre>
+                        </div>
+
+                        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] font-bold">
+                            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                <p className="text-gray-400 uppercase tracking-widest text-[9px] mb-1">Mahsulot havolasi</p>
+                                <code className="text-black">/uz/products/&lt;ID&gt;</code>
+                            </div>
+                            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                <p className="text-gray-400 uppercase tracking-widest text-[9px] mb-1">Kategoriya havolasi</p>
+                                <code className="text-black">/uz/?category=&lt;ID&gt;</code>
+                            </div>
+                            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                <p className="text-gray-400 uppercase tracking-widest text-[9px] mb-1">Brend havolasi</p>
+                                <code className="text-black">/uz/?brand=&lt;ID&gt;</code>
+                            </div>
+                            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                <p className="text-gray-400 uppercase tracking-widest text-[9px] mb-1">To'liq katalog</p>
+                                <code className="text-black">/uz/catalog</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Modal Overlay */}
             {isAdding && (
@@ -370,9 +476,17 @@ export default function AdminBanners() {
 
                             <div className="flex items-start gap-3 p-5 bg-amber-50 rounded-2xl border border-amber-100">
                                 <Code2 size={18} className="text-amber-500 shrink-0 mt-0.5" />
-                                <p className="text-[11px] font-bold text-amber-700 leading-relaxed">
-                                    Maslahat: o'lcham har qurilmada moslashishi uchun <code className="bg-amber-100 px-1.5 py-0.5 rounded">clamp()</code> va foiz (%) ishlatib, kenglik/balandlikni <code className="bg-amber-100 px-1.5 py-0.5 rounded">100%</code> qiling. Link uchun <code className="bg-amber-100 px-1.5 py-0.5 rounded">&lt;a href="/uz/..."&gt;</code> dan foydalaning.
-                                </p>
+                                <div className="flex-1">
+                                    <p className="text-[11px] font-bold text-amber-700 leading-relaxed">
+                                        Maslahat: o'lcham har qurilmada moslashishi uchun <code className="bg-amber-100 px-1.5 py-0.5 rounded">clamp()</code> va foiz (%) ishlatib, kenglik/balandlikni <code className="bg-amber-100 px-1.5 py-0.5 rounded">100%</code> qiling. Link uchun <code className="bg-amber-100 px-1.5 py-0.5 rounded">&lt;a href="/uz/..."&gt;</code> dan foydalaning.
+                                    </p>
+                                    <button
+                                        onClick={() => setIsGuideOpen(true)}
+                                        className="mt-3 inline-flex items-center gap-2 bg-amber-500 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all"
+                                    >
+                                        <BookOpen size={12} /> To'liq qoidalar va AI prompt
+                                    </button>
+                                </div>
                             </div>
 
                             <label className="flex items-center gap-3 cursor-pointer select-none ml-2">
