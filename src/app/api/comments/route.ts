@@ -60,7 +60,9 @@ export async function POST(req: NextRequest) {
             }
 
             // 2. Insert Comment
+            // comments.id — text primary key (default yo'q), shuning uchun bu yerda generatsiya qilamiz.
             const { data, error } = await supabaseAdmin.from("comments").insert([{
+                id: (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`),
                 ...p_comment_data,
                 user_id: p_user_phone, // We use phone as identity for now
                 created_at: new Date().toISOString()
