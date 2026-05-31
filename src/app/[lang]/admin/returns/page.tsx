@@ -127,16 +127,36 @@ export default function AdminReturns() {
                                 <td className="p-8">
                                     <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
                                         ret.status === 'pending' ? 'bg-orange-100 text-orange-600' :
-                                        ret.status === 'approved' ? 'bg-green-100 text-green-600' :
+                                        ret.status === 'approved' ? 'bg-blue-100 text-blue-600' :
+                                        ret.status === 'processing' ? 'bg-indigo-100 text-indigo-600' :
+                                        ret.status === 'completed' ? 'bg-green-100 text-green-600' :
                                         ret.status === 'rejected' ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'
                                     }`}>
-                                        {ret.status}
+                                        {ret.status === 'pending' ? 'Kutilmoqda' :
+                                         ret.status === 'approved' ? 'Tasdiqlangan' :
+                                         ret.status === 'processing' ? 'Qayta ishlanmoqda' :
+                                         ret.status === 'completed' ? 'Yakunlangan' :
+                                         ret.status === 'rejected' ? 'Rad etilgan' : ret.status}
                                     </span>
                                 </td>
                                 <td className="p-8">
                                     <div className="flex gap-2">
-                                        <button onClick={(e) => { e.stopPropagation(); updateReturnStatus(ret.id, 'approved'); }} className="p-2.5 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all"><CheckCircle size={16} /></button>
-                                        <button onClick={(e) => { e.stopPropagation(); updateReturnStatus(ret.id, 'rejected'); }} className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all"><XCircle size={16} /></button>
+                                        {/* Bosqichli oqim: pending -> approved -> processing -> completed */}
+                                        {ret.status === 'pending' && (
+                                            <>
+                                                <button onClick={(e) => { e.stopPropagation(); updateReturnStatus(ret.id, 'approved'); }} title="Tasdiqlash" className="p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all"><CheckCircle size={16} /></button>
+                                                <button onClick={(e) => { e.stopPropagation(); updateReturnStatus(ret.id, 'rejected'); }} title="Rad etish" className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all"><XCircle size={16} /></button>
+                                            </>
+                                        )}
+                                        {ret.status === 'approved' && (
+                                            <button onClick={(e) => { e.stopPropagation(); updateReturnStatus(ret.id, 'processing'); }} className="px-3 py-2.5 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all text-[10px] font-black uppercase">Qayta ishlash</button>
+                                        )}
+                                        {ret.status === 'processing' && (
+                                            <button onClick={(e) => { e.stopPropagation(); updateReturnStatus(ret.id, 'completed'); }} className="px-3 py-2.5 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all text-[10px] font-black uppercase">Yakunlash</button>
+                                        )}
+                                        {(ret.status === 'completed' || ret.status === 'rejected') && (
+                                            <span className="text-[10px] font-black text-gray-300 uppercase">—</span>
+                                        )}
                                     </div>
                                 </td>
                             </tr>
@@ -178,11 +198,24 @@ export default function AdminReturns() {
                                     <div className="p-8 bg-orange-50/50 rounded-[40px] border border-orange-100 text-sm font-medium text-orange-900 leading-relaxed italic">
                                         "{selectedReturn.reason}"
                                     </div>
-                                    <div className="flex gap-4">
-                                        <button onClick={() => updateReturnStatus(selectedReturn.id, 'approved')} className="flex-1 py-4 bg-green-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-green-500/20 active:scale-95 transition-all">Tasdiqlash</button>
-                                        <button onClick={() => updateReturnStatus(selectedReturn.id, 'rejected')} className="flex-1 py-4 bg-red-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-red-500/20 active:scale-95 transition-all">Rad etish</button>
-                                    </div>
-                                    <button onClick={() => updateReturnStatus(selectedReturn.id, 'completed')} className="w-full py-4 border-2 border-gray-100 text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black hover:text-white hover:border-black transition-all">Yakunlangan deb belgilash</button>
+                                    {/* Bosqichli oqim: pending -> approved -> processing -> completed */}
+                                    {selectedReturn.status === 'pending' && (
+                                        <div className="flex gap-4">
+                                            <button onClick={() => updateReturnStatus(selectedReturn.id, 'approved')} className="flex-1 py-4 bg-blue-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all">Tasdiqlash</button>
+                                            <button onClick={() => updateReturnStatus(selectedReturn.id, 'rejected')} className="flex-1 py-4 bg-red-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-red-500/20 active:scale-95 transition-all">Rad etish</button>
+                                        </div>
+                                    )}
+                                    {selectedReturn.status === 'approved' && (
+                                        <button onClick={() => updateReturnStatus(selectedReturn.id, 'processing')} className="w-full py-4 bg-indigo-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-500/20 active:scale-95 transition-all">Qayta ishlashga o'tkazish</button>
+                                    )}
+                                    {selectedReturn.status === 'processing' && (
+                                        <button onClick={() => updateReturnStatus(selectedReturn.id, 'completed')} className="w-full py-4 bg-green-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-green-500/20 active:scale-95 transition-all">Yakunlash</button>
+                                    )}
+                                    {(selectedReturn.status === 'completed' || selectedReturn.status === 'rejected') && (
+                                        <div className="w-full py-4 bg-gray-50 text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest text-center">
+                                            {selectedReturn.status === 'completed' ? 'Yakunlangan' : 'Rad etilgan'}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

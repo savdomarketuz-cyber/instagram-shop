@@ -827,8 +827,8 @@ function ReturnsView({ user, t, language, onBack }: any) {
     return (
         <div className="bg-[#FAFAF6] min-h-screen pb-24 px-4 md:px-10">
             <div className="max-w-xl mx-auto pt-10">
-                <button onClick={selectedOrder ? () => setSelectedOrder(null) : onBack} className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8 hover:text-black transition-all">
-                    <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
+                <button onClick={selectedOrder ? () => setSelectedOrder(null) : onBack} className="flex items-center gap-2 mb-8 bg-white border border-gray-100 shadow-sm rounded-2xl pl-3 pr-5 py-3 text-gray-700 font-black uppercase tracking-widest text-[11px] hover:bg-black hover:text-white transition-all active:scale-95">
+                    <ChevronLeft size={18} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
                 </button>
 
                 {!selectedOrder ? (
