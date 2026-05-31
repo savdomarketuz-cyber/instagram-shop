@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import { supabaseAdminFresh } from "@/lib/supabase-admin";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { verifyJwt } from "@/lib/jwt-utils";
 
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: false, message: "Juda ko'p urinish." }, { status: 429 });
         }
 
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await supabaseAdminFresh
             .from("orders")
             .select("*")
             .eq("user_phone", userPhone)

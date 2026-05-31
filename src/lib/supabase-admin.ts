@@ -28,11 +28,24 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
     auth: {
         autoRefreshToken: false,
         persistSession: false
+    }
+});
+
+/**
+ * LIVE ma'lumotlar uchun (buyurtma holati kabi) — Next.js Data Cache'ni
+ * chetlab o'tadigan alohida klient.
+ *
+ * ⚠️ NEGA ALOHIDA: oddiy `supabaseAdmin` ommaviy ISR sahifalarda ham ishlatiladi
+ * (bosh sahifa, mahsulotlar, katalog — `export const revalidate`). Agar no-store'ni
+ * GLOBAL qilsak, o'sha sahifalar ISR'dan chiqib, "Dynamic server usage" xatosi bilan
+ * har so'rovda dinamik render bo'ladi (TTFB/SEO regressiyasi). Shuning uchun
+ * no-store FAQAT shu klientda — uni faqat buyurtma o'qish endpointlari ishlatadi.
+ */
+export const supabaseAdminFresh = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+        autoRefreshToken: false,
+        persistSession: false
     },
-    // ⚠️ KRITIK: Next.js App Router har bir ichki fetch'ni Data Cache'ga oladi.
-    // Busiz admin/mijoz buyurtma holatini o'qiganda Next eski keshlangan
-    // Supabase javobini qaytarardi (DB "Kutilmoqda" bo'lsa ham UI "Yetkazildi").
-    // Anon mijoz (supabase.ts) allaqachon shunday tuzatilgan — admin'da yo'q edi.
     global: {
         fetch: (url, init) => fetch(url, { ...init, cache: 'no-store' })
     }

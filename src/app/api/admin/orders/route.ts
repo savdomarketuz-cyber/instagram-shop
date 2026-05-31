@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import { supabaseAdminFresh } from "@/lib/supabase-admin";
 import { verifyJwt } from "@/lib/jwt-utils";
 
 export const dynamic = 'force-dynamic';
@@ -22,7 +22,7 @@ async function verifyAdmin(req: NextRequest) {
 export async function GET(req: NextRequest) {
     if (!(await verifyAdmin(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     try {
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await supabaseAdminFresh
             .from("orders")
             .select("id, user_phone, total, status, items, address, coords, created_at, smart_discount_amount, promo_code, discount_amount, wallet_amount")
             .order("created_at", { ascending: false })
