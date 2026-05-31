@@ -221,6 +221,8 @@ export default function AdminProducts() {
         additional_expenses: 0
     });
 
+    const [draggedImgIdx, setDraggedImgIdx] = useState<number | null>(null);
+
     useEffect(() => {
         fetchData(1, true);
     }, []);
@@ -1379,7 +1381,7 @@ export default function AdminProducts() {
             )}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-[40px] shadow-2xl animate-in zoom-in duration-300">
+                    <div className="bg-white w-full max-w-6xl max-h-[90vh] overflow-hidden rounded-[40px] shadow-2xl animate-in zoom-in duration-300">
                         <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 text-black">
                             <div className="flex items-center gap-4">
                                 <div>
@@ -1789,13 +1791,40 @@ export default function AdminProducts() {
                                             <span className="text-gray-300 italic">{newProduct.images?.length || 0} / 30</span>
                                         </label>
 
-                                        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                             {newProduct.images?.map((img, idx) => (
-                                                <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden group border-2 border-gray-50 bg-white shadow-sm">
-                                                    <img src={img} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                                <div 
+                                                    key={idx} 
+                                                    draggable
+                                                    onDragStart={() => setDraggedImgIdx(idx)}
+                                                    onDragOver={(e) => e.preventDefault()}
+                                                    onDrop={(e) => {
+                                                        e.preventDefault();
+                                                        if (draggedImgIdx === null || draggedImgIdx === idx) return;
+                                                        
+                                                        const newImages = [...(newProduct.images || [])];
+                                                        const draggedImg = newImages[draggedImgIdx];
+                                                        
+                                                        // Remove dragged image
+                                                        newImages.splice(draggedImgIdx, 1);
+                                                        // Insert at new position
+                                                        newImages.splice(idx, 0, draggedImg);
+                                                        
+                                                        setNewProduct({
+                                                            ...newProduct,
+                                                            images: newImages,
+                                                            image: newImages[0] || "",
+                                                            images_string: newImages.join(';')
+                                                        });
+                                                        setDraggedImgIdx(null);
+                                                    }}
+                                                    className="relative aspect-square rounded-2xl overflow-hidden group border-2 border-gray-50 bg-white shadow-sm cursor-move hover:border-emerald-400 transition-colors"
+                                                >
+                                                    <img src={img} className="w-full h-full object-cover pointer-events-none" referrerPolicy="no-referrer" />
                                                     <button
                                                         type="button"
-                                                        onClick={() => {
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
                                                             const newImages = [...(newProduct.images || [])];
                                                             newImages.splice(idx, 1);
                                                             setNewProduct({
@@ -1807,10 +1836,10 @@ export default function AdminProducts() {
                                                         }}
                                                         className="absolute inset-0 bg-red-500/80 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm"
                                                     >
-                                                        <Trash2 size={20} />
+                                                        <Trash2 size={30} />
                                                     </button>
                                                     {idx === 0 && (
-                                                        <div className="absolute top-2 left-2 bg-black text-white text-[7px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-widest shadow-lg">Asosiy</div>
+                                                        <div className="absolute top-3 left-3 bg-black text-white text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-widest shadow-lg">Asosiy</div>
                                                     )}
                                                 </div>
                                             ))}
