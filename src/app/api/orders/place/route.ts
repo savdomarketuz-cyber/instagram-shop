@@ -6,6 +6,7 @@ import { z } from "zod";
 import { sendLowStockAlert } from "@/lib/telegram";
 import { computeStandardDelivery, EXPRESS_FREE_THRESHOLD } from "@/lib/delivery";
 import { estimateExpressDelivery, formatEta } from "@/lib/yandex-delivery";
+import { applyGlobalPromo, type PromoSettings } from "@/lib/promo-utils";
 
 /**
  * Zod Schema for Order Validation
@@ -129,8 +130,41 @@ export async function POST(req: NextRequest) {
                     .single();
                 const baseTotal = Number(ord?.total) || 0;
                 const walletAmt = Number(ord?.wallet_amount) || 0;
-                // Barcha chegirmalardan keyingi tovarlar summasi (hamyon ta'sirisiz) — bepullik chegarasi uchun
-                const goodsBasis = baseTotal + walletAmt;
+
+                // --- promo-countdown (vaqtli kategoriya/mahsulot chegirmasi) ---
+                // RPC total'ni products.price (to'liq narx) dan hisoblaydi va countdown'ni
+                // bilmaydi -> payment to'liq narxni ko'rsatardi. Bu yerda chegirmani SERVER
+                // tomonida (DB narx+kategoriya bo'yicha, client narxiga ishonmasdan) hisoblab
+                // total'dan ayiramiz. Narx checkout (savat) bilan mos bo'ladi.
+                let countdownDiscount = 0;
+                try {
+                    const { data: promoRow } = await supabaseAdmin
+                        .from("site_settings").select("value").eq("key", "promo_countdown").maybeSingle();
+                    const promo = (promoRow?.value || null) as PromoSettings | null;
+                    if (promo?.enabled) {
+                        const itemIds = (validatedData.items || []).map((i: any) => i.id);
+                        const { data: priceRows } = await supabaseAdmin
+                            .from("products").select("id, price, category_id, brand_id").in("id", itemIds);
+                        const byId = new Map((priceRows || []).map((p: any) => [String(p.id), p]));
+                        for (const it of validatedData.items as any[]) {
+                            const p = byId.get(String(it.id));
+                            if (!p) continue;
+                            const realPrice = Number(p.price) || 0;
+                            // applyGlobalPromo Product oladi; kategoriya .category, brend .brand_id maydonida
+                            const discountedProduct = applyGlobalPromo(
+                                { id: String(p.id), category: p.category_id, brand_id: p.brand_id, price: realPrice } as any,
+                                promo
+                            );
+                            const discounted = Number(discountedProduct.price) || realPrice;
+                            countdownDiscount += (realPrice - discounted) * (Number(it.quantity) || 0);
+                        }
+                    }
+                } catch (pcErr) {
+                    console.error("Promo-countdown calc skipped:", pcErr);
+                }
+
+                // Countdown chegirmasidan keyingi tovarlar summasi (hamyon ta'sirisiz) — bepullik chegarasi uchun
+                const goodsBasis = Math.max(0, baseTotal + walletAmt - countdownDiscount);
 
                 let deliveryType: "standard" | "express" = "standard";
                 let deliveryFee = 0;
@@ -162,7 +196,8 @@ export async function POST(req: NextRequest) {
                         delivery_type: deliveryType,
                         delivery_fee: deliveryFee,
                         delivery_eta: deliveryEta,
-                        total: baseTotal + deliveryFee,
+                        // Countdown chegirmasi total'dan ayiriladi (RPC uni hisoblamagan)
+                        total: Math.max(0, baseTotal - countdownDiscount) + deliveryFee,
                     })
                     .eq("id", orderId);
                 if (updErr) console.error("Delivery update skipped:", updErr.message);
