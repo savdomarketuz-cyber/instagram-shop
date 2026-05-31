@@ -36,6 +36,8 @@ export default function OrdersPage() {
     const [returnOrder, setReturnOrder] = useState<Order | null>(null);
     const [returnReason, setReturnReason] = useState("");
     const [isReturning, setIsReturning] = useState(false);
+    // order_id -> eng so'nggi qaytarish so'rovi holati (badge va qayta yuborishni cheklash uchun)
+    const [returnsMap, setReturnsMap] = useState<Record<string, string>>({});
 
     // Review states
     const [reviewProduct, setReviewProduct] = useState<any>(null);
@@ -50,10 +52,32 @@ export default function OrdersPage() {
         setMounted(true);
         if (user) {
             fetchOrders();
+            fetchReturns();
         } else {
             setLoading(false);
         }
     }, [user]);
+
+    // Foydalanuvchining qaytarish so'rovlari -> order_id bo'yicha eng so'nggi holat
+    const fetchReturns = async () => {
+        try {
+            const res = await fetch(`/api/orders/return?phone=${encodeURIComponent(user?.phone || '')}`, {
+                credentials: "include",
+                cache: "no-store",
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.success && Array.isArray(data.returns)) {
+                // returns created_at bo'yicha kamayuvchi tartibda keladi — birinchisi eng so'nggi
+                const map: Record<string, string> = {};
+                for (const r of data.returns) {
+                    if (!map[r.order_id]) map[r.order_id] = r.status; // eng so'nggisi
+                }
+                setReturnsMap(map);
+            }
+        } catch (error) {
+            console.error("Fetch returns error:", error);
+        }
+    };
 
     useEffect(() => {
         if (selectedOrder) {
@@ -171,11 +195,32 @@ export default function OrdersPage() {
             showToast(language === 'uz' ? "Qaytarish so'rovi yuborildi" : "Запрос на возврат отправлен", 'success');
             setReturnOrder(null);
             setReturnReason("");
+            // Holatni yangilash — endi buyurtmada "so'rov yuborilgan" ko'rinadi
+            setReturnsMap(prev => ({ ...prev, [returnOrder.id]: 'pending' }));
+            fetchReturns();
         } catch (error: any) {
             console.error("Return order error:", error);
             showToast(t.common.error + ": " + (error.message || ""), 'error');
         } finally {
             setIsReturning(false);
+        }
+    };
+
+    // Qaytarish holati uchun yorliq va rang (badge)
+    const returnStatusInfo = (status: string): { label: string; cls: string } => {
+        switch (status) {
+            case 'pending':
+                return { label: language === 'uz' ? "Qaytarish so'ralgan" : "Возврат запрошен", cls: "bg-orange-100 text-orange-600" };
+            case 'approved':
+                return { label: language === 'uz' ? "Qaytarish tasdiqlandi" : "Возврат подтверждён", cls: "bg-blue-100 text-blue-600" };
+            case 'processing':
+                return { label: language === 'uz' ? "Qayta ishlanmoqda" : "В обработке", cls: "bg-indigo-100 text-indigo-600" };
+            case 'completed':
+                return { label: language === 'uz' ? "Qaytarish yakunlandi" : "Возврат завершён", cls: "bg-green-100 text-green-600" };
+            case 'rejected':
+                return { label: language === 'uz' ? "Qaytarish rad etildi" : "Возврат отклонён", cls: "bg-red-100 text-red-600" };
+            default:
+                return { label: status, cls: "bg-gray-100 text-gray-600" };
         }
     };
 
@@ -331,7 +376,7 @@ export default function OrdersPage() {
                                 </span>
                             </div>
 
-                            <div className="mb-5">
+                            <div className="mb-5 flex flex-wrap items-center gap-2">
                                 <div className={`inline-block text-[10px] px-3 py-1.5 rounded-full font-black uppercase tracking-tighter ${normalizeOrderStatus(order.status) === 'delivered' ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' :
                                     normalizeOrderStatus(order.status) === 'paid' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' :
                                         normalizeOrderStatus(order.status) === 'awaiting_payment' ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/20' :
@@ -340,6 +385,11 @@ export default function OrdersPage() {
                                     }`}>
                                     {getStatusLabel(order.status, language)}
                                 </div>
+                                {returnsMap[order.id] && (
+                                    <span className={`inline-flex items-center gap-1 text-[10px] px-3 py-1.5 rounded-full font-black uppercase tracking-tighter ${returnStatusInfo(returnsMap[order.id]).cls}`}>
+                                        <RefreshCw size={10} /> {returnStatusInfo(returnsMap[order.id]).label}
+                                    </span>
+                                )}
                             </div>
 
                             <div className="flex justify-between items-center pt-5 border-t border-gray-200/50">
@@ -469,16 +519,31 @@ export default function OrdersPage() {
                                 </button>
                             )}
 
-                            {/* Qaytarish (vozvrat) tugmasi — faqat yetkazilgan buyurtmalar */}
-                            {normalizeOrderStatus(selectedOrder.status) === 'delivered' && (
-                                <button
-                                    onClick={() => { setReturnOrder(selectedOrder); setReturnReason(""); }}
-                                    className="w-full mt-10 py-4 bg-orange-50 text-orange-600 rounded-3xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-orange-500 hover:text-white transition-all active:scale-95 border border-orange-100"
-                                >
-                                    <RefreshCw size={16} />
-                                    {language === 'uz' ? "Mahsulotni qaytarish" : "Вернуть товар"}
-                                </button>
-                            )}
+                            {/* Qaytarish (vozvrat) — faqat yetkazilgan buyurtmalar */}
+                            {normalizeOrderStatus(selectedOrder.status) === 'delivered' && (() => {
+                                const rStatus = returnsMap[selectedOrder.id];
+                                // Aktiv so'rov bor (rad etilmagan) -> holat ko'rsatamiz, qayta yuborishga ruxsat yo'q
+                                if (rStatus && rStatus !== 'rejected') {
+                                    const info = returnStatusInfo(rStatus);
+                                    return (
+                                        <div className={`w-full mt-10 py-4 rounded-3xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 ${info.cls}`}>
+                                            <RefreshCw size={16} /> {info.label}
+                                        </div>
+                                    );
+                                }
+                                // So'rov yo'q yoki rad etilgan -> qaytarishni so'rash mumkin
+                                return (
+                                    <button
+                                        onClick={() => { setReturnOrder(selectedOrder); setReturnReason(""); }}
+                                        className="w-full mt-10 py-4 bg-orange-50 text-orange-600 rounded-3xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-orange-500 hover:text-white transition-all active:scale-95 border border-orange-100"
+                                    >
+                                        <RefreshCw size={16} />
+                                        {rStatus === 'rejected'
+                                            ? (language === 'uz' ? "Qayta so'rov yuborish" : "Запросить снова")
+                                            : (language === 'uz' ? "Mahsulotni qaytarish" : "Вернуть товар")}
+                                    </button>
+                                );
+                            })()}
 
                             {/* Total */}
                             <div className="mt-10 p-8 rounded-[32px] flex justify-between items-center" style={{ background: "#2D6E3E", color: "#fff" }}>

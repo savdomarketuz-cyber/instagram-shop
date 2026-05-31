@@ -80,16 +80,17 @@ export default function AdminReturns() {
                 </div>
 
                 <div className="flex bg-white p-1.5 rounded-[24px] border border-gray-100 shadow-sm overflow-x-auto max-w-full">
-                    {["pending", "approved", "rejected", "completed", "all"].map((tab) => (
+                    {["pending", "approved", "processing", "rejected", "completed", "all"].map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setFilter(tab)}
                             className={`px-8 py-3.5 rounded-[20px] text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${filter === tab ? "bg-orange-500 text-white shadow-2xl shadow-orange-500/20" : "text-gray-400 hover:text-black"
                                 }`}
                         >
-                            {tab === 'pending' ? 'Kutilmoqda' : 
-                             tab === 'approved' ? 'Tasdiqlangan' : 
-                             tab === 'rejected' ? 'Rad etilgan' : 
+                            {tab === 'pending' ? 'Kutilmoqda' :
+                             tab === 'approved' ? 'Tasdiqlangan' :
+                             tab === 'processing' ? 'Qayta ishlanmoqda' :
+                             tab === 'rejected' ? 'Rad etilgan' :
                              tab === 'completed' ? 'Yakunlangan' : 'Barchasi'}
                         </button>
                     ))}

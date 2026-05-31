@@ -34,6 +34,22 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, message: "Ruxsat etilmadi." }, { status: 403 });
         }
 
+        // 🛡 BITTA AKTIV SO'ROV: rad etilmagan (pending/approved/processing/completed)
+        // so'rov mavjud bo'lsa, qayta yuborishga ruxsat bermaymiz. Faqat 'rejected'
+        // dan keyin qayta so'rash mumkin.
+        const { data: existing } = await supabaseAdmin
+            .from("order_returns")
+            .select("id, status")
+            .eq("order_id", order_id)
+            .neq("status", "rejected");
+
+        if (existing && existing.length > 0) {
+            return NextResponse.json(
+                { success: false, message: "Bu buyurtma uchun qaytarish so'rovi allaqachon yuborilgan." },
+                { status: 409 }
+            );
+        }
+
         // 1. Insert Return Request
         const { error } = await supabaseAdmin.from("order_returns").insert({
             order_id,
@@ -50,5 +66,35 @@ export async function POST(req: NextRequest) {
 
     } catch (error: any) {
         return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    }
+}
+
+export const dynamic = 'force-dynamic';
+
+// Foydalanuvchining qaytarish so'rovlari (buyurtmalar sahifasida holat ko'rsatish uchun).
+export async function GET(req: NextRequest) {
+    const { searchParams } = new URL(req.url);
+    const userPhone = searchParams.get("phone");
+    if (!userPhone) return NextResponse.json({ success: false, message: "Missing phone" }, { status: 400 });
+
+    const token = req.cookies.get("user_token")?.value;
+    if (!token) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+    const payload = await verifyJwt(token, JWT_SECRET);
+    if (!payload || payload.sub !== userPhone) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+
+    try {
+        const { data, error } = await supabaseAdmin
+            .from("order_returns")
+            .select("id, order_id, status, reason, created_at")
+            .eq("user_phone", userPhone)
+            .order("created_at", { ascending: false });
+        if (error) throw error;
+        return NextResponse.json(
+            { success: true, returns: data || [] },
+            { headers: { "Cache-Control": "no-store" } }
+        );
+    } catch (e: any) {
+        return NextResponse.json({ success: false, message: e.message }, { status: 500 });
     }
 }

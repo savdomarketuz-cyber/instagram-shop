@@ -55,6 +55,9 @@ async function notifyCustomerReturnStatus(phone: string, orderId: string, status
         if (status === "approved") {
             statusText = "tasdiqlandi ✅. Mahsulotni qaytarish yo'riqnomasi uchun admin bilan bog'laning.";
             emoji = "✅";
+        } else if (status === "processing") {
+            statusText = "qayta ishlanmoqda 🔄. Mahsulotni qaytarish jarayoni boshlandi.";
+            emoji = "🔄";
         } else if (status === "rejected") {
             statusText = "rad etildi ❌. Qo'shimcha ma'lumot uchun qo'llab-quvvatlash xizmatiga murojaat qiling.";
             emoji = "❌";
