@@ -6,7 +6,7 @@ export async function distributeCommissions(orderId: string) {
     // 1. Get order items to find products and their prices
     const { data: order } = await supabaseAdmin
         .from("orders")
-        .select("items, status, total, delivery_fee")
+        .select("items, status, total, delivery_fee, wallet_amount")
         .eq("id", orderId)
         .single();
 
@@ -19,7 +19,8 @@ export async function distributeCommissions(orderId: string) {
     let discountRatio = 1;
     if (order.total != null && order.delivery_fee != null && order.items && order.items.length > 0) {
         const originalGoodsTotal = order.items.reduce((sum: number, item: any) => sum + ((item.price || 0) * (item.quantity || 1)), 0);
-        const finalGoodsTotal = Math.max(0, order.total - order.delivery_fee);
+        const walletAmt = Number(order.wallet_amount) || 0;
+        const finalGoodsTotal = Math.max(0, order.total - order.delivery_fee + walletAmt);
         if (originalGoodsTotal > 0 && finalGoodsTotal < originalGoodsTotal) {
             discountRatio = finalGoodsTotal / originalGoodsTotal;
         }
