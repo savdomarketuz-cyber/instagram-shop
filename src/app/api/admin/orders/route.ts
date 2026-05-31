@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { verifyJwt } from "@/lib/jwt-utils";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Admin — buyurtmalar ro'yxati (service-role).
  *
@@ -26,7 +28,11 @@ export async function GET(req: NextRequest) {
             .order("created_at", { ascending: false })
             .limit(500);
         if (error) throw error;
-        return NextResponse.json({ success: true, orders: data || [] });
+        // Kesh yo'q — admin har doim eng so'nggi holatni ko'rishi shart (status o'zgarishi).
+        return NextResponse.json(
+            { success: true, orders: data || [] },
+            { headers: { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" } }
+        );
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }

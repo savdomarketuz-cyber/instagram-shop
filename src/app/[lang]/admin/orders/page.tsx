@@ -30,8 +30,10 @@ export default function AdminOrders() {
 
     const fetchOrders = async () => {
         try {
-            // orders RLS tufayli anon client o'qiy olmaydi — service-role API orqali
-            const res = await fetch("/api/admin/orders");
+            // orders RLS tufayli anon client o'qiy olmaydi — service-role API orqali.
+            // cache: "no-store" — har doim eng so'nggi holatni olamiz (eski keshlangan
+            // javob status o'zgarishini "qaytarib" yuborardi).
+            const res = await fetch("/api/admin/orders", { cache: "no-store" });
             const json = await res.json();
             if (!json.success) throw new Error(json.error || "Buyurtmalarni yuklab bo'lmadi");
 
@@ -62,12 +64,15 @@ export default function AdminOrders() {
             });
             
             const data = await res.json();
-            if (!data.success) throw new Error(data.error);
+            if (!data.success) throw new Error(data.error || "Holatni yangilab bo'lmadi");
 
-            // Optimistik yangilash + serverdan qayta o'qish (manba haqiqiy holat)
-            setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-            if (selectedOrder?.id === orderId) setSelectedOrder({ ...selectedOrder, status: newStatus });
-            fetchOrders();
+            // Optimistik yangilash (funksional updater — bir nechta tez bosishda
+            // eski closure'dagi `orders` ustidan yozib yubormaslik uchun).
+            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+            setSelectedOrder(prev => (prev && prev.id === orderId ? { ...prev, status: newStatus } : prev));
+            // Serverdan tasdiq (no-store) — optimistik holatni eski kesh bilan
+            // qaytarib yubormaydi.
+            await fetchOrders();
         } catch (error) {
             console.error("Update status error:", error);
             alert("Holatni yangilashda xatolik yuz berdi.");

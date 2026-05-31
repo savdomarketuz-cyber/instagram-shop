@@ -1,8 +1,22 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { ClickAPI } from "@/lib/click";
+import { verifyJwt } from "@/lib/jwt-utils";
 
-export async function POST(req: Request) {
+export const dynamic = 'force-dynamic';
+
+async function verifyAdmin(req: NextRequest) {
+    const adminToken = req.cookies.get("admin_token")?.value;
+    const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim();
+    if (!ADMIN_SECRET || !adminToken) return false;
+    const payload = await verifyJwt(adminToken, ADMIN_SECRET);
+    return payload && payload.role === "admin";
+}
+
+export async function POST(req: NextRequest) {
+    if (!(await verifyAdmin(req))) {
+        return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
     try {
         const { orderId, status } = await req.json();
 
