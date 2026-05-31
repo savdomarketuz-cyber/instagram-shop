@@ -70,13 +70,12 @@ export default function AdminOrders() {
             const data = await res.json();
             if (!data.success) throw new Error(data.error || "Holatni yangilab bo'lmadi");
 
-            // Optimistik yangilash (funksional updater — bir nechta tez bosishda
-            // eski closure'dagi `orders` ustidan yozib yubormaslik uchun).
+            // POST muvaffaqiyatli => DB allaqachon yangilangan (Telegram ham shuni
+            // tasdiqlaydi). Optimistik qiymat aynan yozilgan status, shuning uchun
+            // u yagona haqiqat. DARHOL qayta o'qimaymiz: keshlangan eski GET javobi
+            // statusni 0.1s ichida "qaytarib" yuborardi (race condition).
             setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
             setSelectedOrder(prev => (prev && prev.id === orderId ? { ...prev, status: newStatus } : prev));
-            // Serverdan tasdiq (no-store) — optimistik holatni eski kesh bilan
-            // qaytarib yubormaydi.
-            await fetchOrders();
         } catch (error) {
             console.error("Update status error:", error);
             alert("Holatni yangilashda xatolik yuz berdi.");
