@@ -299,7 +299,7 @@ export default function CheckoutPage() {
                     const cookieStr = document.cookie.split('; ').find(row => row.startsWith('affiliate_data='));
                     if (cookieStr) {
                         const cookieData = JSON.parse(decodeURIComponent(cookieStr.split('=')[1]));
-                        cartItems.forEach(i => delete cookieData[i.id]);
+                        displayProducts.forEach(i => delete cookieData[i.id]);
                         const expires = new Date();
                         expires.setTime(expires.getTime() + (30 * 24 * 60 * 60 * 1000));
                         document.cookie = `affiliate_data=${encodeURIComponent(JSON.stringify(cookieData))};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
