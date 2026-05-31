@@ -28,5 +28,12 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
     auth: {
         autoRefreshToken: false,
         persistSession: false
+    },
+    // ⚠️ KRITIK: Next.js App Router har bir ichki fetch'ni Data Cache'ga oladi.
+    // Busiz admin/mijoz buyurtma holatini o'qiganda Next eski keshlangan
+    // Supabase javobini qaytarardi (DB "Kutilmoqda" bo'lsa ham UI "Yetkazildi").
+    // Anon mijoz (supabase.ts) allaqachon shunday tuzatilgan — admin'da yo'q edi.
+    global: {
+        fetch: (url, init) => fetch(url, { ...init, cache: 'no-store' })
     }
 });
