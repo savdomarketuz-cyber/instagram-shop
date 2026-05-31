@@ -125,7 +125,7 @@ export const ProductCard = memo(({
   const stockEntries = item.stockDetails ? Object.entries(item.stockDetails) : [];
   const whId = stockEntries.find(([, q]) => Number(q) > 0)?.[0] || stockEntries[0]?.[0];
   const warehouse = warehouses.find((w: any) => String(w.id) === String(whId)) || warehouses[0];
-  const deliveryText = warehouse?.dbs_config ? getDeliveryCardText(language, warehouse.dbs_config) : null;
+  const deliveryText = getDeliveryCardText(language, warehouse?.dbs_config || { cutoffHour: 16, deliveryDays: 1, offDays: [], holidays: [] });
 
   const mainMedia = item.images?.[0] || item.image || "/placeholder.png";
   const isVideo = mainMedia.toLowerCase().endsWith(".mp4");

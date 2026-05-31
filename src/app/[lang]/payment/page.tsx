@@ -3,7 +3,7 @@
 import { useStore } from "@/store/store";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
-import { CheckCircle, QrCode, Banknote, Clock, Info, AlertCircle, ArrowLeft } from "lucide-react";
+import { CheckCircle, QrCode, Banknote, Clock, Info, AlertCircle, ArrowLeft, Truck } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { translations } from "@/lib/translations";
@@ -216,11 +216,41 @@ function PaymentContent() {
                 </div>
             )}
 
+            {/* Buyurtma tafsilotlari — yetkazish narxi bilan */}
             <div style={{ padding: "20px 24px", borderRadius: 24, background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", marginBottom: 20, color: "#fff" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", opacity: 0.7 }}>{t.common.total}</span>
-                    <span style={{ fontSize: 22, fontWeight: 900, fontStyle: "italic", letterSpacing: -0.5 }}>{order?.total?.toLocaleString() || 0} so'm</span>
-                </div>
+                {/* Tovarlar summasi */}
+                {order?.delivery_fee != null && (
+                    <>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, opacity: 0.8, fontSize: 13 }}>
+                            <span>{language === 'uz' ? 'Tovarlar' : 'Товары'}</span>
+                            <span>{((order.total || 0) - (order.delivery_fee || 0)).toLocaleString()} {language === 'uz' ? "so'm" : 'сум'}</span>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, opacity: 0.8, fontSize: 13 }}>
+                            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <Truck size={13} />
+                                {language === 'uz'
+                                    ? (order.delivery_type === 'express' ? 'Tezkor yetkazish' : 'Standart yetkazish')
+                                    : (order.delivery_type === 'express' ? 'Экспресс-доставка' : 'Стандартная доставка')}
+                            </span>
+                            <span style={{ color: (order.delivery_fee || 0) > 0 ? "#fff" : "#A3F0B8", fontWeight: 700 }}>
+                                {(order.delivery_fee || 0) > 0
+                                    ? `${(order.delivery_fee || 0).toLocaleString()} ${language === 'uz' ? "so'm" : 'сум'}`
+                                    : (language === 'uz' ? 'Bepul' : 'Бесплатно')}
+                            </span>
+                        </div>
+                        <div style={{ borderTop: "1px solid rgba(255,255,255,0.2)", paddingTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", opacity: 0.7 }}>{t.common.total}</span>
+                            <span style={{ fontSize: 22, fontWeight: 900, fontStyle: "italic", letterSpacing: -0.5 }}>{order?.total?.toLocaleString() || 0} {language === 'uz' ? "so'm" : 'сум'}</span>
+                        </div>
+                    </>
+                )}
+                {/* delivery_fee yo'q bo'lsa (eski buyurtmalar) — oddiy ko'rinish */}
+                {order?.delivery_fee == null && (
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", opacity: 0.7 }}>{t.common.total}</span>
+                        <span style={{ fontSize: 22, fontWeight: 900, fontStyle: "italic", letterSpacing: -0.5 }}>{order?.total?.toLocaleString() || 0} {language === 'uz' ? "so'm" : 'сум'}</span>
+                    </div>
+                )}
             </div>
 
             <button

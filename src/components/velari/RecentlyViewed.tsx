@@ -7,6 +7,8 @@ import { supabase } from "@/lib/supabase";
 import { mapProduct } from "@/lib/mappers";
 import { getProductSlug } from "@/lib/slugify";
 import { Product } from "@/types";
+import { useStore } from "@/store/store";
+import { applyGlobalPromo } from "@/lib/promo-utils";
 
 const STORAGE_KEY = "velari_recently_viewed";
 const MAX_ITEMS = 10;
@@ -42,6 +44,8 @@ interface RecentlyViewedProps {
 
 export default function RecentlyViewed({ language, currentProductId }: RecentlyViewedProps) {
     const [products, setProducts] = useState<Product[]>([]);
+    const globalPromo = useStore(s => s.globalPromo);
+    const personalOffers = useStore(s => s.personalOffers);
 
     useEffect(() => {
         const ids = getRecentlyViewedIds().filter(id => id !== currentProductId);
@@ -67,6 +71,7 @@ export default function RecentlyViewed({ language, currentProductId }: RecentlyV
 
     const fmtPrice = (n: number) =>
         n.toLocaleString("ru-RU") + (language === "ru" ? " сум" : " so'm");
+
 
     return (
         <div className="md:hidden mt-8 mb-2">
@@ -130,9 +135,43 @@ export default function RecentlyViewed({ language, currentProductId }: RecentlyV
                                 }}>
                                     {name}
                                 </div>
-                                <div style={{ fontSize: 13, fontWeight: 700, color: "#0F1410", letterSpacing: -0.2 }}>
-                                    {fmtPrice(product.price)}
-                                </div>
+                                {(() => {
+                                    // Smart chegirma (globalPromo) va shaxsiy chegirma (personalOffers) ni qo'llamiz
+                                    const promoProduct = applyGlobalPromo(product, globalPromo);
+                                    const personalPct = personalOffers[product.id] || 0;
+                                    const hasPersonal = personalPct > 0;
+                                    const displayPrice = hasPersonal
+                                        ? Math.round(promoProduct.price * (1 - personalPct / 100))
+                                        : promoProduct.price;
+                                    const struckPrice = hasPersonal
+                                        ? (promoProduct.oldPrice && promoProduct.oldPrice > promoProduct.price ? promoProduct.oldPrice : promoProduct.price)
+                                        : (promoProduct.oldPrice && promoProduct.oldPrice > promoProduct.price ? promoProduct.oldPrice : null);
+                                    const hasDiscount = displayPrice < product.price || !!struckPrice;
+                                    return (
+                                        <>
+                                            <div style={{ display: "flex", alignItems: "baseline", gap: 4, flexWrap: "wrap" }}>
+                                                <span style={{
+                                                    fontSize: 13,
+                                                    fontWeight: 700,
+                                                    color: (hasPersonal || (promoProduct.price < product.price)) ? "#4F46E5" : "#0F1410",
+                                                    letterSpacing: -0.2
+                                                }}>
+                                                    {fmtPrice(displayPrice)}
+                                                </span>
+                                                {struckPrice && (
+                                                    <span style={{ fontSize: 10, color: "#9AA29C", textDecoration: "line-through" }}>
+                                                        {fmtPrice(struckPrice)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {hasPersonal && (
+                                                <div style={{ fontSize: 9, fontWeight: 800, color: "#4F46E5", letterSpacing: 0.2, textTransform: "uppercase", marginTop: 1 }}>
+                                                    {language === "uz" ? `Siz uchun −${personalPct}%` : `Для вас −${personalPct}%`}
+                                                </div>
+                                            )}
+                                        </>
+                                    );
+                                })()}
                             </div>
                         </Link>
                     );
