@@ -29,7 +29,7 @@ export default function MessagesPage() {
     useEffect(() => {
         if (!mounted) return;
         if (!user) {
-            router.push("/login");
+            router.push(`/${language}/login?redirect=${encodeURIComponent(window.location.pathname)}`);
             return;
         }
         const myPhoneClean = user.phone.replace(/\D/g, '');

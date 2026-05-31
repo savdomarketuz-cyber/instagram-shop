@@ -41,7 +41,7 @@ export default function ChatPage() {
     useEffect(() => {
         if (!mounted) return;
         if (!user) {
-            router.push("/login");
+            router.push(`/${language}/login?redirect=${encodeURIComponent(window.location.pathname)}`);
             return;
         }
 

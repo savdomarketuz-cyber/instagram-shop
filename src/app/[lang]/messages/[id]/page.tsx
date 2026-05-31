@@ -38,7 +38,7 @@ export default function P2PChatPage() {
     useEffect(() => {
         if (!mounted) return;
         if (!user || !targetPhone) {
-            router.push("/login");
+            router.push(`/${language}/login?redirect=${encodeURIComponent(window.location.pathname)}`);
             return;
         }
 

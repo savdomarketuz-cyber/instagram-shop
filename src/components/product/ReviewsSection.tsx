@@ -47,7 +47,7 @@ export const ReviewsSection = ({
     };
 
     const submitComment = async () => {
-        if (!user) { router.push("/login"); return; }
+        if (!user) { router.push(`/${language}/login?redirect=${encodeURIComponent(window.location.pathname)}`); return; }
         if (!user.username) {
             alert(language === 'uz' ? "Sharh qoldirish uchun profil sozlangan bo'lishi kerak (username kiritilmagan)" : "Для того чтобы оставить комментарий должен быть настроен профиль (не введено имя пользователя)");
             router.push("/account");
@@ -101,7 +101,7 @@ export const ReviewsSection = ({
     };
 
     const handleUpdateComment = async (commentId: string) => {
-        if (!user) { router.push("/login"); return; }
+        if (!user) { router.push(`/${language}/login?redirect=${encodeURIComponent(window.location.pathname)}`); return; }
         if (!editingText.trim()) return;
         try {
             const response = await fetch('/api/comments', {
@@ -130,7 +130,7 @@ export const ReviewsSection = ({
     };
 
     const confirmDelete = async () => {
-        if (!user) { router.push("/login"); return; }
+        if (!user) { router.push(`/${language}/login?redirect=${encodeURIComponent(window.location.pathname)}`); return; }
         if (!commentToDelete) return;
         try {
             const response = await fetch('/api/comments', {
@@ -153,7 +153,7 @@ export const ReviewsSection = ({
     };
 
     const handleReaction = async (commentId: string, emoji: string) => {
-        if (!user) { router.push("/login"); return; }
+        if (!user) { router.push(`/${language}/login?redirect=${encodeURIComponent(window.location.pathname)}`); return; }
         const currentId = user.id || user.phone;
         const comment = comments.find(c => c.id === commentId);
         if (!comment) return;

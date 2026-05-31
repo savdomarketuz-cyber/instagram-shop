@@ -244,7 +244,7 @@ export default function CheckoutPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user) {
-            router.push(`/${language}/login`);
+            router.push(`/${language}/login?redirect=/${language}/checkout`);
             return;
         }
 

@@ -69,7 +69,7 @@ export default function WalletClient() {
 
     useEffect(() => {
         if (user) fetchWalletData();
-        else router.push("/login");
+        else router.push(`/${language}/login?redirect=${encodeURIComponent(window.location.pathname)}`);
     }, [user]);
 
     const totalPending = pendingOrders.reduce((sum: number, o: any) => sum + Number(o.potential_cashback), 0);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Send, Key, Loader2, ChevronLeft, ShieldCheck, User } from "lucide-react";
 import { useStore } from "@/store/store";
 import { translations } from "@/lib/translations";
@@ -11,13 +11,26 @@ const GREEN_DEEP = "#1F5A30";
 const GREEN_TINT = "#EAF3EC";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
-const BOT_URL = "https://t.me/velari_uz_xabarnoma_bot?start=register";
+const BOT_USERNAME = "velari_uz_xabarnoma_bot";
+
+// Brauzerda base64url (Telegram /start payload uchun)
+function toB64Url(s: string): string {
+    return btoa(unescape(encodeURIComponent(s)))
+        .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
 
 export default function LoginPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const setUser = useStore((state) => state.setUser);
     const { language, showToast } = useStore();
     const t = translations[language];
+
+    // Login majburlangan joydan kelgan bo'lsa — o'sha manzilga qaytamiz
+    const redirectRaw = searchParams.get("redirect");
+    const redirect = redirectRaw && redirectRaw.startsWith("/") && !redirectRaw.startsWith("//") ? redirectRaw : null;
+    // Telegram bot ham shu manzilni bilib, ro'yxatdan o'tgach o'sha joyga qaytaradi
+    const BOT_URL = `https://t.me/${BOT_USERNAME}?start=${redirect ? toB64Url(redirect) : "register"}`;
 
     const [id, setId] = useState("");
     const [password, setPassword] = useState("");
@@ -79,7 +92,7 @@ export default function LoginPage() {
             if (userAuthRes.ok && userAuthData.success) {
                 setUser(userAuthData.user);
                 showToast(language === 'uz' ? "Xush kelibsiz!" : "Добро пожаловать!");
-                router.push("/");
+                router.push(redirect || "/");
             } else {
                 const errorMsg = userAuthData.error;
                 if (errorMsg === "User not found") {
