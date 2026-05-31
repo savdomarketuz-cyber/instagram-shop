@@ -245,8 +245,9 @@ export default function ProductClient({ params, initialProduct }: { params: { id
         const availableWhId = Object.keys(productData.stockDetails || {}).find(id => (productData.stockDetails as Record<string, number>)[id] > 0);
         const warehouse = warehouses.find(w => w.id === availableWhId) || warehouses[0];
         
-        if (warehouse?.data?.dbs) {
-            const dbs = warehouse.data.dbs;
+        // Sxema: warehouses.dbs_config (eski kod warehouse.data.dbs ni o'qigan — xato edi)
+        const dbs = warehouse?.dbs_config || warehouse?.data?.dbs;
+        if (dbs) {
             setDeliverySettings({
                 cutoff: Number(dbs.cutoffHour) || 16,
                 days: Number(dbs.deliveryDays) || 1,

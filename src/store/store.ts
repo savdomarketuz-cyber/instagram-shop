@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { supabase } from "@/lib/supabase";
 import type { Product, CartItem, User, Category, Toast, Language, SearchFacets } from "@/types";
 
 // Re-export for backward compatibility
@@ -46,6 +47,9 @@ interface StoreState {
     // Global Promo Countdown settings
     globalPromo: any | null;
     fetchGlobalPromo: () => Promise<void>;
+    // Omborlar (do'konlar) — yetkazish vaqti va do'kon nomi uchun
+    warehouses: any[];
+    fetchWarehouses: () => Promise<void>;
     // Savatda qo'llangan promo-kod (checkout sahifasiga uzatiladi)
     cartPromo: { code: string; discount: number } | null;
     setCartPromo: (promo: { code: string; discount: number } | null) => void;
@@ -150,6 +154,16 @@ export const useStore = create<StoreState>()(
             },
             cartPromo: null,
             setCartPromo: (promo) => set({ cartPromo: promo }),
+            warehouses: [],
+            fetchWarehouses: async () => {
+                try {
+                    const { data } = await supabase
+                        .from("warehouses")
+                        .select("id,name,logo,dbs_config,active")
+                        .eq("active", true);
+                    if (data) set({ warehouses: data });
+                } catch { /* offline — e'tibordan chetda */ }
+            },
         }),
         {
             name: "velari-store",

@@ -3,12 +3,13 @@
 import { memo, useState, useRef } from "react";
 import { Link } from "next-view-transitions";
 import Image from "next/image";
-import { Heart, Star, Minus, Plus, Sparkles } from "lucide-react";
+import { Heart, Star, Minus, Plus, Sparkles, Truck } from "lucide-react";
 import { useStore } from "@/store/store";
 import { Product, CartItem } from "@/types";
 import { TranslationKeys } from "@/lib/translations";
 import { getProductSlug } from "@/lib/slugify";
 import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
+import { getDeliveryCardText } from "@/lib/date-utils";
 
 const GREEN = "#2D6E3E";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
@@ -118,6 +119,13 @@ export const ProductCard = memo(({
   const totalStock = item.stockDetails
     ? Object.values(item.stockDetails).reduce((a, b) => a + (Number(b) || 0), 0)
     : 0;
+
+  // Mahsulot omborini (do'konini) aniqlab, yetkazish vaqtini hisoblaymiz
+  const warehouses = useStore(s => s.warehouses);
+  const stockEntries = item.stockDetails ? Object.entries(item.stockDetails) : [];
+  const whId = stockEntries.find(([, q]) => Number(q) > 0)?.[0] || stockEntries[0]?.[0];
+  const warehouse = warehouses.find((w: any) => String(w.id) === String(whId)) || warehouses[0];
+  const deliveryText = warehouse?.dbs_config ? getDeliveryCardText(language, warehouse.dbs_config) : null;
 
   const mainMedia = item.images?.[0] || item.image || "/placeholder.png";
   const isVideo = mainMedia.toLowerCase().endsWith(".mp4");
@@ -313,6 +321,12 @@ export const ProductCard = memo(({
 
       {/* Cart controls */}
       <div style={{ padding: "0 12px 12px" }}>
+        {deliveryText && (
+          <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+            <Truck size={12} color={GREEN} strokeWidth={2.2} style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: 11, fontWeight: 600, color: GREEN, letterSpacing: -0.1 }}>{deliveryText}</span>
+          </div>
+        )}
         {isInCart ? (
           <div style={{
             width: "100%",

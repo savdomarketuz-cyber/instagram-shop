@@ -184,6 +184,11 @@ export default function HomeClient({
         }
     }, [user?.phone]);
 
+    // Omborlar (yetkazish vaqti + do'kon nomi uchun) — bir marta
+    useEffect(() => {
+        useStore.getState().fetchWarehouses();
+    }, []);
+
     // Shaxsiy tavsiya — persona-asosli moslashtirish (mehmon + login, sabab bilan).
     // attentionIds: yaqinda ko'rilgan (mehmon ham) + server (login) signali endpoint'da qo'shiladi.
     useEffect(() => {
