@@ -64,7 +64,7 @@ function ctaHref(lang: string, s: Story): string | null {
     return null;
 }
 
-export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
+export default function StoriesRow({ language, device = "both" }: { language: "uz" | "ru"; device?: "mobile" | "desktop" | "both" }) {
     const [groups, setGroups] = useState<StoryGroup[]>([]);
     const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
 
@@ -369,8 +369,8 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
 
     return (
         <>
-            {/* — Story pufaklari qatori — */}
-            <div className="md:hidden mt-4 mb-0">
+            {/* — Story pufaklari qatori (MOBIL) — */}
+            {device !== "desktop" && <div className="md:hidden mt-4 mb-0">
                 <div
                     style={{ display: "flex", gap: 14, overflowX: "auto", padding: "4px 20px 8px", scrollbarWidth: "none" }}
                     className="no-scrollbar"
@@ -427,7 +427,64 @@ export default function StoriesRow({ language }: { language: "uz" | "ru" }) {
                         );
                     })}
                 </div>
-            </div>
+            </div>}
+
+            {/* — Story pufaklari (DESKTOP, kattaroq) — */}
+            {device !== "mobile" && <div className="hidden md:block px-10 mt-10">
+                <div style={{ display: "flex", gap: 22, overflowX: "auto", paddingBottom: 6 }} className="no-scrollbar">
+                    {groups.map((g, idx) => {
+                        const seen = g.slides.every(s => seenIds.has(s.id));
+                        const name = language === "uz" ? g.title_uz : g.title_ru;
+                        const hasVideo = g.coverIsVideo;
+                        return (
+                            <button
+                                key={g.key}
+                                onClick={() => openGroup(idx)}
+                                style={{
+                                    flexShrink: 0, display: "flex", flexDirection: "column",
+                                    alignItems: "center", gap: 10, background: "none", border: "none",
+                                    padding: 0, cursor: "pointer",
+                                    animation: `velari-cart-in ${200 + idx * 50}ms ${EASE} both`,
+                                }}
+                            >
+                                <div style={{
+                                    width: 100, height: 100, borderRadius: "50%", padding: 4,
+                                    background: seen ? "rgba(15,20,16,0.08)" : `conic-gradient(${GREEN} 0%, #7DC492 50%, ${GREEN} 100%)`,
+                                    boxSizing: "border-box", position: "relative",
+                                }}>
+                                    <div style={{
+                                        width: "100%", height: "100%", borderRadius: "50%",
+                                        border: "3px solid #FAFAF6", overflow: "hidden",
+                                        position: "relative", background: "#F0F0EC",
+                                    }}>
+                                        {g.coverImage ? (
+                                            <Image src={g.coverImage} alt={name} fill sizes="100px" style={{ objectFit: "cover" }} />
+                                        ) : hasVideo ? (
+                                            <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#111" }}>
+                                                <span style={{ fontSize: 26, color: "#fff" }}>▶</span>
+                                            </div>
+                                        ) : null}
+                                    </div>
+                                    {g.slides.length > 1 && (
+                                        <div style={{
+                                            position: "absolute", bottom: 2, right: 2, minWidth: 24, height: 24,
+                                            padding: "0 6px", borderRadius: 12, background: GREEN, color: "#fff",
+                                            fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center",
+                                            justifyContent: "center", border: "2.5px solid #FAFAF6",
+                                        }}>{g.slides.length}</div>
+                                    )}
+                                </div>
+                                <span style={{
+                                    fontSize: 13, fontWeight: seen ? 500 : 700,
+                                    color: seen ? "#9AA29C" : "#0F1410", letterSpacing: -0.1,
+                                    maxWidth: 104, textAlign: "center", whiteSpace: "nowrap",
+                                    overflow: "hidden", textOverflow: "ellipsis",
+                                }}>{name}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>}
 
             {/* — Story viewer — */}
             {open && curGroup && (

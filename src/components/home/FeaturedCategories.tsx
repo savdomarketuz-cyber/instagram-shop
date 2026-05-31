@@ -98,84 +98,106 @@ export default function FeaturedCategories({ language, initial }: { language: "u
     if (loading) return null;
     if (categories.length === 0) return null;
 
-    return (
-        <div className="md:hidden" style={{ padding: "16px 20px 0" }}>
-            {/* Sarlavha */}
-            <div style={{
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                marginBottom: 14,
-            }}>
-                <h2 style={{
-                    fontSize: 18, fontWeight: 700, color: "#0F1410",
-                    letterSpacing: -0.4, margin: 0,
-                }}>
-                    {language === "uz" ? "Kategoriyalar" : "Категории"}
-                </h2>
-                <Link
-                    href={`/${language}/catalog`}
-                    style={{
-                        fontSize: 13, fontWeight: 600, color: "#2D6E3E",
-                        textDecoration: "none", display: "flex", alignItems: "center", gap: 2,
-                    }}
-                >
-                    {language === "uz" ? "Barchasi" : "Все"}
-                    <ChevronRight size={14} color="#2D6E3E" />
-                </Link>
-            </div>
-
-            {/* Kategoriyalar qatori */}
-            <div
-                style={{
-                    display: "flex", gap: 14, overflowX: "auto",
-                    paddingBottom: 4, scrollbarWidth: "none",
-                }}
-                className="no-scrollbar"
+    const HeaderRow = ({ fontSize, mb }: { fontSize: number; mb: number }) => (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: mb }}>
+            <h2 style={{ fontSize, fontWeight: 800, color: "#0F1410", letterSpacing: -0.4, margin: 0 }}>
+                {language === "uz" ? "Kategoriyalar" : "Категории"}
+            </h2>
+            <Link
+                href={`/${language}/catalog`}
+                style={{ fontSize: 14, fontWeight: 600, color: "#2D6E3E", textDecoration: "none", display: "flex", alignItems: "center", gap: 2 }}
             >
-                {categories.map((cat, idx) => {
-                    const bg = cat.color || PALETTE[idx % PALETTE.length];
-                    const name = language === "uz"
-                        ? (cat.name_uz || cat.name)
-                        : (cat.name_ru || cat.name);
-
-                    return (
-                        <Link
-                            key={cat.id}
-                            href={`/${language}/?category=${cat.id}`}
-                            style={{
-                                flexShrink: 0, display: "flex", flexDirection: "column",
-                                alignItems: "center", gap: 8, textDecoration: "none",
-                                WebkitTapHighlightColor: "transparent",
-                                animation: `velari-cart-in ${200 + idx * 60}ms ${EASE} both`,
-                            }}
-                        >
-                            <div style={{
-                                width: 64, height: 64, borderRadius: 20,
-                                background: cat.image ? "#fff" : bg,
-                                display: "flex", alignItems: "center", justifyContent: "center",
-                                fontSize: 28, lineHeight: 1, overflow: "hidden",
-                                boxShadow: "0 4px 12px rgba(15,20,16,0.08)",
-                                transition: "transform 200ms ease, box-shadow 200ms ease",
-                            }}>
-                                {cat.image ? (
-                                    <img
-                                        src={cat.image}
-                                        alt={name}
-                                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                                    />
-                                ) : (cat.icon || "📦")}
-                            </div>
-                            <span style={{
-                                fontSize: 11, fontWeight: 600, color: "#0F1410",
-                                letterSpacing: -0.1, maxWidth: 72,
-                                textAlign: "center", whiteSpace: "nowrap",
-                                overflow: "hidden", textOverflow: "ellipsis",
-                            }}>
-                                {name}
-                            </span>
-                        </Link>
-                    );
-                })}
-            </div>
+                {language === "uz" ? "Barchasi" : "Все"}
+                <ChevronRight size={16} color="#2D6E3E" />
+            </Link>
         </div>
+    );
+
+    return (
+        <>
+            {/* ── MOBIL ── */}
+            <div className="md:hidden" style={{ padding: "16px 20px 0" }}>
+                <HeaderRow fontSize={18} mb={14} />
+                <div
+                    style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none" }}
+                    className="no-scrollbar"
+                >
+                    {categories.map((cat, idx) => {
+                        const bg = cat.color || PALETTE[idx % PALETTE.length];
+                        const name = language === "uz" ? (cat.name_uz || cat.name) : (cat.name_ru || cat.name);
+                        return (
+                            <Link
+                                key={cat.id}
+                                href={`/${language}/?category=${cat.id}`}
+                                style={{
+                                    flexShrink: 0, display: "flex", flexDirection: "column",
+                                    alignItems: "center", gap: 8, textDecoration: "none",
+                                    WebkitTapHighlightColor: "transparent",
+                                    animation: `velari-cart-in ${200 + idx * 60}ms ${EASE} both`,
+                                }}
+                            >
+                                <div style={{
+                                    width: 64, height: 64, borderRadius: 20,
+                                    background: cat.image ? "#fff" : bg,
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                    fontSize: 28, lineHeight: 1, overflow: "hidden",
+                                    boxShadow: "0 4px 12px rgba(15,20,16,0.08)",
+                                }}>
+                                    {cat.image ? (
+                                        <img src={cat.image} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                                    ) : (cat.icon || "📦")}
+                                </div>
+                                <span style={{
+                                    fontSize: 11, fontWeight: 600, color: "#0F1410", letterSpacing: -0.1,
+                                    maxWidth: 72, textAlign: "center", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                                }}>{name}</span>
+                            </Link>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* ── DESKTOP (kattaroq) ── */}
+            <div className="hidden md:block px-10 mt-10">
+                <HeaderRow fontSize={26} mb={20} />
+                <div style={{ display: "flex", gap: 22, overflowX: "auto", paddingBottom: 6 }} className="no-scrollbar">
+                    {categories.map((cat, idx) => {
+                        const bg = cat.color || PALETTE[idx % PALETTE.length];
+                        const name = language === "uz" ? (cat.name_uz || cat.name) : (cat.name_ru || cat.name);
+                        return (
+                            <Link
+                                key={cat.id}
+                                href={`/${language}/?category=${cat.id}`}
+                                className="group"
+                                style={{
+                                    flexShrink: 0, display: "flex", flexDirection: "column",
+                                    alignItems: "center", gap: 12, textDecoration: "none",
+                                    animation: `velari-cart-in ${200 + idx * 60}ms ${EASE} both`,
+                                }}
+                            >
+                                <div
+                                    className="group-hover:-translate-y-1 group-hover:shadow-xl transition-all duration-300"
+                                    style={{
+                                        width: 104, height: 104, borderRadius: 32,
+                                        background: cat.image ? "#fff" : bg,
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                        fontSize: 46, lineHeight: 1, overflow: "hidden",
+                                        boxShadow: "0 6px 18px rgba(15,20,16,0.08)",
+                                    }}
+                                >
+                                    {cat.image ? (
+                                        <img src={cat.image} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                                    ) : (cat.icon || "📦")}
+                                </div>
+                                <span style={{
+                                    fontSize: 14, fontWeight: 700, color: "#0F1410", letterSpacing: -0.2,
+                                    maxWidth: 112, textAlign: "center", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                                }}>{name}</span>
+                            </Link>
+                        );
+                    })}
+                </div>
+            </div>
+        </>
     );
 }

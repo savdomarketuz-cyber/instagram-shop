@@ -39,7 +39,7 @@ function pad(n: number) {
     return String(n).padStart(2, "0");
 }
 
-export default function PromoCountdown({ language, initialSettings }: { language: "uz" | "ru"; initialSettings?: any }) {
+export default function PromoCountdown({ language, initialSettings, variant = "strip" }: { language: "uz" | "ru"; initialSettings?: any; variant?: "strip" | "card" }) {
     const [settings] = useState<PromoSettings | null>(() => {
         if (!initialSettings) return null;
         const s = initialSettings as PromoSettings;
@@ -80,6 +80,47 @@ export default function PromoCountdown({ language, initialSettings }: { language
     let text = language === "uz" ? settings.text_uz : settings.text_ru;
     if (status === "waiting") {
         text = language === "uz" ? "Aksiya boshlanishiga" : "До начала акции";
+    }
+
+    // ── Desktop vertikal karta (o'ng ustun uchun) ──
+    if (variant === "card") {
+        const card = (
+            <div
+                className="flex flex-col justify-between h-full w-full"
+                style={{ background: bg, borderRadius: 24, padding: "20px 22px", overflow: "hidden", position: "relative" }}
+            >
+                <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.08)" }} />
+                <div style={{ position: "relative" }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.8)", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                        ⚡ {label}
+                    </div>
+                    {settings.discount_percent > 0 && status === "active" ? (
+                        <div style={{ fontSize: 40, fontWeight: 900, color: "#fff", lineHeight: 1, letterSpacing: -1 }}>
+                            −{settings.discount_percent}%
+                        </div>
+                    ) : (
+                        <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", lineHeight: 1.1, letterSpacing: -0.4 }}>
+                            {text}
+                        </div>
+                    )}
+                    {settings.discount_percent > 0 && status === "active" && (
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.85)", marginTop: 6 }}>{text}</div>
+                    )}
+                </div>
+                <div style={{ display: "flex", gap: 6, alignItems: "center", position: "relative", marginTop: 14 }}>
+                    {timeLeft.days > 0 && (<><TimeBlock value={timeLeft.days} label={language === "uz" ? "kun" : "д"} /><Colon /></>)}
+                    <TimeBlock value={timeLeft.hours} label={language === "uz" ? "soat" : "ч"} />
+                    <Colon />
+                    <TimeBlock value={timeLeft.minutes} label={language === "uz" ? "daq" : "м"} />
+                    <Colon />
+                    <TimeBlock value={timeLeft.seconds} label={language === "uz" ? "son" : "с"} />
+                </div>
+            </div>
+        );
+        if (settings.link && status === "active") {
+            return <a href={settings.link} className="hidden md:flex flex-1 min-h-0" style={{ textDecoration: "none" }}>{card}</a>;
+        }
+        return <div className="hidden md:flex flex-1 min-h-0">{card}</div>;
     }
 
     const inner = (

@@ -40,9 +40,9 @@ export default function Logo({ className = "", size = "md", showSmile = true }: 
 
     return (
         <div className={`flex flex-col items-center justify-center ${className}`}>
-            <div className={`font-['Helvetica_Neue',_Helvetica,_Arial,_sans-serif] font-bold tracking-tighter leading-none text-black select-none flex items-baseline ${sizeClasses[size]}`}>
+            <div className={`font-['Helvetica_Neue',_Helvetica,_Arial,_sans-serif] font-black tracking-tighter leading-none text-black select-none flex items-baseline ${sizeClasses[size]}`}>
                 VELARI
-                <span className={`text-[#2d6e3e] font-bold ${dotSizes[size]}`} style={{ verticalAlign: 'baseline', position: 'relative', top: size === 'xl' ? '8px' : '2px' }}>.</span>
+                <span className={`text-[#2d6e3e] font-black ${dotSizes[size]}`} style={{ verticalAlign: 'baseline', position: 'relative', top: size === 'xl' ? '8px' : '2px' }}>.</span>
             </div>
             
             {showSmile && (

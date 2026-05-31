@@ -184,7 +184,7 @@ export default function Navigation() {
                         </div>
                         <div className="hidden md:block">
                             <Link href={l("/")} className="transition-transform active:scale-95 flex">
-                                <Logo size="md" className="!items-start" />
+                                <Logo size="md" showSmile={false} className="!items-start" />
                             </Link>
                         </div>
                     </div>

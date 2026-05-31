@@ -9,9 +9,11 @@ interface BannerSectionProps {
     currentBanner: number;
     setCurrentBanner: (index: number) => void;
     language: "uz" | "ru";
+    /** bare=true bo'lsa tashqi margin/padding (mt-8 px-10) berilmaydi — grid ustuni ichida ishlatish uchun */
+    bare?: boolean;
 }
 
-export const BannerSection = ({ banners, bannerSettings, currentBanner, setCurrentBanner, language }: BannerSectionProps) => {
+export const BannerSection = ({ banners, bannerSettings, currentBanner, setCurrentBanner, language, bare = false }: BannerSectionProps) => {
     const bannerRef = useRef<HTMLDivElement>(null);
 
     const handleScroll = () => {
@@ -29,7 +31,7 @@ export const BannerSection = ({ banners, bannerSettings, currentBanner, setCurre
     if (visible.length === 0) return null;
 
     return (
-        <div className="mt-8 px-0 md:px-10 overflow-hidden">
+        <div className={bare ? "overflow-hidden h-full" : "mt-8 px-0 md:px-10 overflow-hidden"}>
             <div
                 className="relative overflow-hidden bg-gray-50 transition-all duration-700 shadow-2xl shadow-black/5"
                 style={{

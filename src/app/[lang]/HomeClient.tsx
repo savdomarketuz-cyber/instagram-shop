@@ -512,19 +512,57 @@ export default function HomeClient({
                 </div>
             )}
 
-            {!searchResults && !urlCategory && <StoriesRow language={language} />}
+            {/* Stories: mobilda yuqorida; desktopda pastda (kategoriyalardan keyin) ko'rsatiladi */}
+            {!searchResults && !urlCategory && <StoriesRow language={language} device="mobile" />}
             {!searchResults && !urlCategory && <PromoCountdown language={language} initialSettings={initialPromo} />}
 
-            {/* ── BANNER: desktop original, mobile Velari style ── */}
-            {banners.length > 0 && !searchResults && !urlCategory && (
-                <div className="hidden md:block">
-                    <BannerSection
-                        banners={banners}
-                        bannerSettings={bannerSettings}
-                        currentBanner={currentBanner}
-                        setCurrentBanner={setCurrentBanner}
-                        language={language}
-                    />
+            {/* ── DESKTOP HERO: chapda asosiy banner, o'ngda promo + bonus ── */}
+            {!searchResults && !urlCategory && (
+                <div className="hidden md:block px-10 mt-8">
+                    <div className="grid grid-cols-3 gap-5" style={{ height: bannerSettings.desktopHeight }}>
+                        {/* Chap: asosiy HTML banner */}
+                        <div className="col-span-2 h-full">
+                            {banners.length > 0 && (
+                                <BannerSection
+                                    banners={banners}
+                                    bannerSettings={bannerSettings}
+                                    currentBanner={currentBanner}
+                                    setCurrentBanner={setCurrentBanner}
+                                    language={language}
+                                    bare
+                                />
+                            )}
+                        </div>
+                        {/* O'ng: tepada vaqtli chegirma (promo), pastda ro'yxatdan o'tish bonusi */}
+                        <div className="col-span-1 h-full flex flex-col gap-5">
+                            <PromoCountdown language={language} initialSettings={initialPromo} variant="card" />
+                            <Link
+                                href={`/${language}/login`}
+                                className="flex flex-1 min-h-0 flex-col justify-between transition-transform hover:-translate-y-0.5"
+                                style={{
+                                    background: "linear-gradient(135deg,#FBF4E6 0%,#F7ECD4 100%)",
+                                    borderRadius: 24, padding: "20px 22px", textDecoration: "none",
+                                    border: "1px solid #F0E3C8", position: "relative", overflow: "hidden",
+                                }}
+                            >
+                                <div style={{ position: "absolute", bottom: -28, right: -20, fontSize: 110, lineHeight: 1, opacity: 0.12 }}>🎁</div>
+                                <div style={{ position: "relative" }}>
+                                    <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", color: "#C99A2E" }}>
+                                        🎁 {language === "uz" ? "Bonus" : "Бонус"}
+                                    </div>
+                                    <div style={{ fontSize: 36, fontWeight: 900, color: "#0F1410", lineHeight: 1, marginTop: 8, letterSpacing: -1 }}>
+                                        +30 000
+                                    </div>
+                                    <div style={{ fontSize: 13.5, fontWeight: 600, color: "#7A6A45", marginTop: 7, maxWidth: "85%" }}>
+                                        {language === "uz" ? "Ro'yxatdan o'ting va so'mlik promokodga ega bo'ling" : "Зарегистрируйтесь и получите промокод"}
+                                    </div>
+                                </div>
+                                <div style={{ position: "relative", alignSelf: "flex-start", background: "#0F1410", color: "#fff", padding: "11px 22px", borderRadius: 14, fontSize: 13, fontWeight: 700 }}>
+                                    {language === "uz" ? "Olish →" : "Получить →"}
+                                </div>
+                            </Link>
+                        </div>
+                    </div>
                 </div>
             )}
             {!searchResults && !urlCategory && (
@@ -583,8 +621,11 @@ export default function HomeClient({
                 </div>
             )}
 
-            {/* Kategoriya vitrinasi — mobilda banner tagida ko'rinadi (komponent o'zi md:hidden) */}
+            {/* Kategoriya vitrinasi — mobilda banner tagida, desktopda hero tagida (komponent o'zi mos blokni ko'rsatadi) */}
             {!searchResults && !urlCategory && <FeaturedCategories language={language} initial={initialFeaturedCategories} />}
+
+            {/* Stories — desktopda kategoriyalardan keyin (kattaroq) */}
+            {!searchResults && !urlCategory && <StoriesRow language={language} device="desktop" />}
 
             {/* CategoryFilter faqat desktopda — mobilda o'rnini kategoriya vitrinasi bosadi */}
             {!searchResults && (
