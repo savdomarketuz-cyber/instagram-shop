@@ -235,7 +235,9 @@ export async function POST(req: NextRequest) {
                     if (tariff.affiliate_reward_type === 'fixed_per_use') {
                         rewardAmount = tariff.affiliate_reward_value;
                     } else if (tariff.affiliate_reward_type === 'percent_of_final_price') {
-                        rewardAmount = (validatedData.total * tariff.affiliate_reward_value) / 100;
+                        const discount = tariff.type === 'fixed' ? tariff.discount_value : (validatedData.total * tariff.discount_value) / 100;
+                        const finalPrice = Math.max(0, validatedData.total - discount);
+                        rewardAmount = (finalPrice * tariff.affiliate_reward_value) / 100;
                     } else if (tariff.affiliate_reward_type === 'percent_of_discount') {
                         const discount = tariff.type === 'fixed' ? tariff.discount_value : (validatedData.total * tariff.discount_value) / 100;
                         rewardAmount = (discount * tariff.affiliate_reward_value) / 100;
@@ -309,6 +311,16 @@ export async function POST(req: NextRequest) {
                             order_stage: 'Referal havola orqali'
                         });
                     }
+                }
+
+                // Clear used attributions from database
+                const usedProductIds = Object.keys(referralData);
+                if (usedProductIds.length > 0) {
+                    await supabaseAdmin
+                        .from("referral_attributions")
+                        .delete()
+                        .eq("user_phone", validatedData.userPhone)
+                        .in("product_id", usedProductIds);
                 }
             }
         } catch (mlmError) {

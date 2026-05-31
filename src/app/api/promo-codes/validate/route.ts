@@ -71,7 +71,37 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: true, discount, code: promo.code, isAffiliate: false });
         }
 
-        // 2. Check for Affiliate Promo Code (Referral)
+        // 2. Check for Advanced Affiliate Promo Code
+        const { data: advPromo } = await supabaseAdmin
+            .from("affiliate_promo_codes")
+            .select("*, promo_code_tariffs(*)")
+            .eq("code", normalizedCode)
+            .single();
+
+        if (advPromo && advPromo.is_active) {
+            const tariff = advPromo.promo_code_tariffs;
+            
+            if (advPromo.usage_limit && advPromo.usage_count >= advPromo.usage_limit) {
+                return NextResponse.json({ success: false, error: "Ushbu promo koddan foydalanish limiti tugagan" });
+            }
+            
+            let discount = 0;
+            if (tariff) {
+                discount = tariff.type === 'fixed' 
+                    ? tariff.discount_value 
+                    : (totalAmount * tariff.discount_value) / 100;
+            }
+
+            return NextResponse.json({ 
+                success: true, 
+                discount, 
+                code: advPromo.code, 
+                isAffiliate: true,
+                affiliateName: advPromo.title || "Hamkor" 
+            });
+        }
+
+        // 3. Check for Legacy Affiliate Promo Code (Referral)
         const { data: affiliateUser } = await supabaseAdmin
             .from("users")
             .select("phone, name")

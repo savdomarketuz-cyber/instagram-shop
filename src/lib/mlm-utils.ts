@@ -6,13 +6,23 @@ export async function distributeCommissions(orderId: string) {
     // 1. Get order items to find products and their prices
     const { data: order } = await supabaseAdmin
         .from("orders")
-        .select("items, status")
+        .select("items, status, total, delivery_fee")
         .eq("id", orderId)
         .single();
 
     if (!order || order.status !== 'Yetkazildi') {
         console.log("Order not delivered or not found.");
         return;
+    }
+
+    // Calculate global discount ratio for the order (if promo code was used)
+    let discountRatio = 1;
+    if (order.total != null && order.delivery_fee != null && order.items && order.items.length > 0) {
+        const originalGoodsTotal = order.items.reduce((sum: number, item: any) => sum + ((item.price || 0) * (item.quantity || 1)), 0);
+        const finalGoodsTotal = Math.max(0, order.total - order.delivery_fee);
+        if (originalGoodsTotal > 0 && finalGoodsTotal < originalGoodsTotal) {
+            discountRatio = finalGoodsTotal / originalGoodsTotal;
+        }
     }
 
     // 2. Atomically claim pending transactions (prevents double-processing)
@@ -43,7 +53,7 @@ export async function distributeCommissions(orderId: string) {
             const item = order.items.find((i: any) => i.id === trans.product_id);
             const price = item?.price || product.price;
             const quantity = item?.quantity || 1;
-            const totalItemPrice = price * quantity;
+            const totalItemPrice = Math.floor((price * quantity) * discountRatio);
 
             // Get the seller (link owner)
             const { data: seller } = await supabaseAdmin

@@ -295,6 +295,17 @@ export default function CheckoutPage() {
             }
 
             if (data.success && data.orderId) {
+                try {
+                    const cookieStr = document.cookie.split('; ').find(row => row.startsWith('affiliate_data='));
+                    if (cookieStr) {
+                        const cookieData = JSON.parse(decodeURIComponent(cookieStr.split('=')[1]));
+                        cartItems.forEach(i => delete cookieData[i.id]);
+                        const expires = new Date();
+                        expires.setTime(expires.getTime() + (30 * 24 * 60 * 60 * 1000));
+                        document.cookie = `affiliate_data=${encodeURIComponent(JSON.stringify(cookieData))};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+                    }
+                } catch(e) {}
+                
                 // Do NOT call clearCart here because it triggers the useEffect that redirects to '/'
                 router.push(`/${language}/payment?orderId=${data.orderId}`);
             }
