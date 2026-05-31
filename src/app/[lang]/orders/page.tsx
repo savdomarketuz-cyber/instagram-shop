@@ -81,9 +81,10 @@ export default function OrdersPage() {
 
     const fetchOrders = async () => {
         try {
-            const response = await fetch(`/api/orders/user?phone=${encodeURIComponent(user?.phone || '')}`, {
+            const response = await fetch(`/api/orders/user?phone=${encodeURIComponent(user?.phone || '')}&_=${Date.now()}`, {
                 credentials: "include",
                 cache: "no-store",
+                headers: { "Cache-Control": "no-cache" },
             });
             const data = await response.json().catch(() => ({}));
 

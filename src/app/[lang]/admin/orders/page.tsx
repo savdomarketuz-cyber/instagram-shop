@@ -31,9 +31,13 @@ export default function AdminOrders() {
     const fetchOrders = async () => {
         try {
             // orders RLS tufayli anon client o'qiy olmaydi — service-role API orqali.
-            // cache: "no-store" — har doim eng so'nggi holatni olamiz (eski keshlangan
-            // javob status o'zgarishini "qaytarib" yuborardi).
-            const res = await fetch("/api/admin/orders", { cache: "no-store" });
+            // cache: "no-store" + noyob URL (?_=ts) — brauzer/CDN/service worker
+            // keshini to'liq chetlab o'tamiz. Eski keshlangan javob status
+            // o'zgarishini "qaytarib" yuborardi.
+            const res = await fetch(`/api/admin/orders?_=${Date.now()}`, {
+                cache: "no-store",
+                headers: { "Cache-Control": "no-cache" },
+            });
             const json = await res.json();
             if (!json.success) throw new Error(json.error || "Buyurtmalarni yuklab bo'lmadi");
 
