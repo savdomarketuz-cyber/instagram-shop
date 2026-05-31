@@ -1,66 +1,160 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import type { Banner } from "@/types";
 
 interface BannerSectionProps {
     banners: Banner[];
-    bannerSettings: { desktopHeight: number; borderRadius: number };
-    currentBanner: number;
-    setCurrentBanner: (index: number) => void;
     language: "uz" | "ru";
-    /** bare=true bo'lsa tashqi margin/padding (mt-8 px-10) berilmaydi — grid ustuni ichida ishlatish uchun */
+    /** Desktop uchun qat'iy balandlik (px) */
+    heightPx?: number;
+    /** Mobil uchun nisbat (masalan "16/10") — heightPx o'rniga ishlatiladi */
+    aspectRatio?: string;
+    borderRadius?: number;
+    /** bare=true bo'lsa tashqi margin/padding berilmaydi (grid ustuni ichida) */
     bare?: boolean;
+    /** Avtomatik almashinish oralig'i (ms). 0 bo'lsa avtomatik o'chadi. */
+    intervalMs?: number;
+    /** Mobil ko'rinish uchun tashqi padding (px qiymat string) */
+    outerPadding?: string;
 }
 
-export const BannerSection = ({ banners, bannerSettings, currentBanner, setCurrentBanner, language, bare = false }: BannerSectionProps) => {
-    const bannerRef = useRef<HTMLDivElement>(null);
+const TRANSITION = "transform 650ms cubic-bezier(0.22,1,0.36,1)";
 
-    const handleScroll = () => {
-        if (bannerRef.current) {
-            const index = Math.round(bannerRef.current.scrollLeft / bannerRef.current.offsetWidth);
-            setCurrentBanner(index);
+export const BannerSection = ({
+    banners,
+    language,
+    heightPx,
+    aspectRatio,
+    borderRadius = 32,
+    bare = false,
+    intervalMs = 3000,
+    outerPadding,
+}: BannerSectionProps) => {
+    // Faqat HTML kontenti bor bannerlar
+    const visible = banners
+        .filter((b) => (language === "uz" ? b.html_uz : b.html_ru))
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    const n = visible.length;
+    const loop = n > 1;
+    // Cheksiz loop uchun oxiriga birinchi slaydning nusxasi qo'shiladi
+    const slides = loop ? [...visible, visible[0]] : visible;
+
+    const [idx, setIdx] = useState(0);
+    const [anim, setAnim] = useState(true);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const touchX = useRef<number | null>(null);
+
+    const realIdx = ((idx % n) + n) % n; // dot/holat uchun
+
+    const startAuto = useCallback(() => {
+        if (timerRef.current) clearInterval(timerRef.current);
+        if (!loop || !intervalMs) return;
+        timerRef.current = setInterval(() => {
+            setAnim(true);
+            setIdx((i) => i + 1);
+        }, intervalMs);
+    }, [loop, intervalMs]);
+
+    useEffect(() => {
+        startAuto();
+        return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    }, [startAuto]);
+
+    // Klon slaydga yetganda — animatsiyasiz boshiga qaytamiz (seamless loop)
+    useEffect(() => {
+        if (!anim) {
+            const r = requestAnimationFrame(() => requestAnimationFrame(() => setAnim(true)));
+            return () => cancelAnimationFrame(r);
+        }
+    }, [anim]);
+
+    const handleTransitionEnd = () => {
+        if (loop && idx >= n) {
+            setAnim(false);
+            setIdx(0);
         }
     };
 
-    // Faqat HTML kontenti bor bannerlarni ko'rsatamiz
-    const visible = banners
-        .filter(b => (language === "uz" ? b.html_uz : b.html_ru))
-        .sort((a, b) => (a.order || 0) - (b.order || 0));
+    const goTo = (i: number) => {
+        setAnim(true);
+        setIdx(i);
+        startAuto(); // qo'lda o'zgartirilganda taymerni qayta boshlash
+    };
+    const next = () => goTo(idx + 1);
+    const prev = () => {
+        if (idx <= 0) {
+            // animatsiyasiz klon (oxirgi) holatga o'tib, keyin oldingisiga silliq qaytamiz
+            setAnim(false);
+            setIdx(n);
+            requestAnimationFrame(() => requestAnimationFrame(() => { setAnim(true); setIdx(n - 1); startAuto(); }));
+        } else {
+            goTo(idx - 1);
+        }
+    };
 
-    if (visible.length === 0) return null;
+    const onTouchStart = (e: React.TouchEvent) => { touchX.current = e.touches[0].clientX; };
+    const onTouchEnd = (e: React.TouchEvent) => {
+        if (touchX.current === null) return;
+        const dx = e.changedTouches[0].clientX - touchX.current;
+        if (Math.abs(dx) > 40) { dx < 0 ? next() : prev(); }
+        touchX.current = null;
+    };
+
+    if (n === 0) return null;
+
+    const innerStyle: React.CSSProperties = {
+        position: "relative",
+        overflow: "hidden",
+        borderRadius,
+        background: "#f3f4f6",
+        ...(aspectRatio ? { aspectRatio } : { height: heightPx ? `${heightPx}px` : "100%" }),
+    };
 
     return (
-        <div className={bare ? "overflow-hidden h-full" : "mt-8 px-0 md:px-10 overflow-hidden"}>
-            <div
-                className="relative overflow-hidden bg-gray-50 transition-all duration-700 shadow-2xl shadow-black/5"
-                style={{
-                    height: `${bannerSettings.desktopHeight}px`,
-                    borderRadius: `${bannerSettings.borderRadius}px`
-                }}
-            >
+        <div
+            className={bare ? "overflow-hidden h-full" : "mt-8 px-0 md:px-10 overflow-hidden"}
+            style={outerPadding ? { padding: outerPadding } : undefined}
+        >
+            <div style={innerStyle} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+                {/* Track */}
                 <div
-                    ref={bannerRef}
-                    onScroll={handleScroll}
-                    className="flex h-full overflow-x-auto snap-x snap-mandatory no-scrollbar"
+                    className="flex h-full"
+                    style={{
+                        width: `${slides.length * 100}%`,
+                        transform: `translateX(-${(idx * 100) / slides.length}%)`,
+                        transition: anim ? TRANSITION : "none",
+                    }}
+                    onTransitionEnd={handleTransitionEnd}
                 >
-                    {visible.map((banner) => {
+                    {slides.map((banner, i) => {
                         const html = language === "uz" ? banner.html_uz : banner.html_ru;
                         return (
                             <div
-                                key={banner.id}
-                                className="min-w-full h-full snap-center relative overflow-hidden"
+                                key={`${banner.id}-${i}`}
+                                style={{ width: `${100 / slides.length}%`, height: "100%", position: "relative", overflow: "hidden" }}
                                 dangerouslySetInnerHTML={{ __html: html || "" }}
                             />
                         );
                     })}
                 </div>
-                {visible.length > 1 && (
-                    <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5 pointer-events-none">
+
+                {/* Dots (qo'lda boshqaruv) */}
+                {loop && (
+                    <div style={{ position: "absolute", bottom: 14, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 6, zIndex: 5 }}>
                         {visible.map((_, i) => (
-                            <div
+                            <button
                                 key={i}
-                                className={`h-1 rounded-full transition-all duration-300 ${currentBanner === i ? 'w-4 bg-white shadow-sm' : 'w-1.5 bg-white/40'}`}
+                                onClick={() => goTo(i)}
+                                aria-label={`Banner ${i + 1}`}
+                                style={{
+                                    height: 6, borderRadius: 3, border: "none", cursor: "pointer", padding: 0,
+                                    width: realIdx === i ? 22 : 6,
+                                    background: realIdx === i ? "#fff" : "rgba(255,255,255,0.5)",
+                                    boxShadow: realIdx === i ? "0 1px 4px rgba(0,0,0,0.2)" : "none",
+                                    transition: "all 300ms cubic-bezier(0.22,1,0.36,1)",
+                                }}
                             />
                         ))}
                     </div>

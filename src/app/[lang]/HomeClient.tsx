@@ -100,7 +100,6 @@ export default function HomeClient({
     const [isFetchingMore, setIsFetchingMore] = useState(false);
     const [pageNumber, setPageNumber] = useState(0);
     const [hasMore, setHasMore] = useState(initialProducts.length >= 20);
-    const [currentBanner, setCurrentBanner] = useState(0);
     const [bannerSettings, setBannerSettings] = useState(initialBannerSettings);
     const [catalogCategoryCount, setCatalogCategoryCount] = useState(0);
     const [catalogProductCount, setCatalogProductCount] = useState(0);
@@ -530,10 +529,10 @@ export default function HomeClient({
                             {banners.length > 0 && (
                                 <BannerSection
                                     banners={banners}
-                                    bannerSettings={bannerSettings}
-                                    currentBanner={currentBanner}
-                                    setCurrentBanner={setCurrentBanner}
                                     language={language}
+                                    heightPx={bannerSettings.desktopHeight}
+                                    borderRadius={bannerSettings.borderRadius}
+                                    intervalMs={3000}
                                     bare
                                 />
                             )}
@@ -571,34 +570,18 @@ export default function HomeClient({
                 </div>
             )}
             {!searchResults && !urlCategory && (
-                <div className="md:hidden" style={{ padding: "12px 20px 0" }}>
+                <div className="md:hidden">
                     {banners.length > 0 ? (
-                        <div style={{
-                            position: "relative", borderRadius: 24, overflow: "hidden",
-                            aspectRatio: "16/10",
-                        }} onClick={() => setCurrentBanner((currentBanner + 1) % banners.length)}>
-                            <div
-                                style={{ width: "100%", height: "100%", position: "relative", overflow: "hidden" }}
-                                dangerouslySetInnerHTML={{
-                                    __html: (language === "ru"
-                                        ? banners[currentBanner]?.html_ru
-                                        : banners[currentBanner]?.html_uz) || ""
-                                }}
-                            />
-                            {banners.length > 1 && (
-                                <div style={{ position: "absolute", bottom: 12, right: 16, display: "flex", gap: 5 }}>
-                                    {banners.map((_, i) => (
-                                        <div key={i} style={{
-                                            width: i === currentBanner ? 20 : 6, height: 6, borderRadius: 3,
-                                            background: i === currentBanner ? "#fff" : "rgba(255,255,255,0.5)",
-                                            transition: "all 320ms cubic-bezier(0.22,1,0.36,1)",
-                                        }} />
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                        <BannerSection
+                            banners={banners}
+                            language={language}
+                            aspectRatio="16/10"
+                            borderRadius={24}
+                            intervalMs={3000}
+                            outerPadding="12px 20px 0"
+                        />
                     ) : (
-                        <div style={{
+                        <div style={{ margin: "12px 20px 0" }}><div style={{
                             position: "relative", borderRadius: 24, overflow: "hidden", aspectRatio: "16/10",
                             background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)",
                             boxShadow: "0 16px 40px rgba(45,110,62,0.25)",
@@ -621,7 +604,7 @@ export default function HomeClient({
                                     {language === "uz" ? "Ko'rish →" : "Смотреть →"}
                                 </Link>
                             </div>
-                        </div>
+                        </div></div>
                     )}
                 </div>
             )}

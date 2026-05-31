@@ -27,6 +27,8 @@ interface PricingProduct {
     comm_seller: number;
     comm_manager: number;
     comm_tm: number;
+    cost_price: number;
+    additional_expenses: number;
     // Track if edited locally
     _isEdited?: boolean;
 }
@@ -62,7 +64,7 @@ export default function PricingAdminPage() {
 
             let query = supabase
                 .from("products")
-                .select("id, name, image, price, old_price, cashback_type, cashback_value, comm_seller, comm_manager, comm_tm, is_deleted", { count: "exact" })
+                .select("id, name, image, price, old_price, cashback_type, cashback_value, comm_seller, comm_manager, comm_tm, cost_price, additional_expenses, is_deleted", { count: "exact" })
                 .eq("is_deleted", false);
 
             if (searchTerm) {
@@ -87,6 +89,8 @@ export default function PricingAdminPage() {
                     comm_seller: p.comm_seller || 0,
                     comm_manager: p.comm_manager || 0,
                     comm_tm: p.comm_tm || 0,
+                    cost_price: p.cost_price || 0,
+                    additional_expenses: p.additional_expenses || 0,
                     _isEdited: false
                 }));
                 setProducts(mapped);
@@ -120,7 +124,9 @@ export default function PricingAdminPage() {
                                orig.cashback_value !== updated.cashback_value ||
                                orig.comm_seller !== updated.comm_seller ||
                                orig.comm_manager !== updated.comm_manager ||
-                               orig.comm_tm !== updated.comm_tm;
+                               orig.comm_tm !== updated.comm_tm ||
+                               orig.cost_price !== updated.cost_price ||
+                               orig.additional_expenses !== updated.additional_expenses;
                 }
                 return { ...updated, _isEdited: isEdited };
             }
@@ -144,7 +150,9 @@ export default function PricingAdminPage() {
                         cashback_value: Number(product.cashback_value),
                         comm_seller: Number(product.comm_seller),
                         comm_manager: Number(product.comm_manager),
-                        comm_tm: Number(product.comm_tm)
+                        comm_tm: Number(product.comm_tm),
+                        cost_price: Number(product.cost_price),
+                        additional_expenses: Number(product.additional_expenses)
                     },
                     matchConfig: { column: 'id', value: product.id }
                 })
@@ -172,7 +180,7 @@ export default function PricingAdminPage() {
             // Fetch all products (not just current page) to export
             const { data, error } = await supabase
                 .from("products")
-                .select("id, name, price, old_price, cashback_type, cashback_value, comm_seller, comm_manager, comm_tm")
+                .select("id, name, price, old_price, cashback_type, cashback_value, comm_seller, comm_manager, comm_tm, cost_price, additional_expenses")
                 .eq("is_deleted", false);
 
             if (error) throw error;
@@ -190,7 +198,8 @@ export default function PricingAdminPage() {
                 const headers = [
                     "ID (TEGMINLMASTIN)", "Nomi", "Hozirgi Narx", "Eski Narx", 
                     "Cashback Turi (global/percent/fixed)", "Cashback Qiymati", 
-                    "Sotuvchi Komissiyasi (%)", "Manager Komissiyasi (%)", "Top Manager Komissiyasi (%)"
+                    "Sotuvchi Komissiyasi (%)", "Manager Komissiyasi (%)", "Top Manager Komissiyasi (%)",
+                    "Tan Narx", "Qo'shimcha Xarajatlar"
                 ];
 
                 const rows = data.map((p: any) => [
@@ -202,7 +211,9 @@ export default function PricingAdminPage() {
                     p.cashback_value || 0,
                     p.comm_seller || 0,
                     p.comm_manager || 0,
-                    p.comm_tm || 0
+                    p.comm_tm || 0,
+                    p.cost_price || 0,
+                    p.additional_expenses || 0
                 ]);
 
                 const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
@@ -217,7 +228,9 @@ export default function PricingAdminPage() {
                     { wch: 18 }, // Cashback Qiymati
                     { wch: 22 }, // Sotuvchi
                     { wch: 22 }, // Manager
-                    { wch: 25 }  // Top Manager
+                    { wch: 25 },  // Top Manager
+                    { wch: 15 }, // Tan Narx
+                    { wch: 20 }  // Qo'shimcha Xarajatlar
                 ];
 
                 const wb = XLSX.utils.book_new();
@@ -284,6 +297,8 @@ export default function PricingAdminPage() {
                             comm_seller: Number(row[6]) || 0,
                             comm_manager: Number(row[7]) || 0,
                             comm_tm: Number(row[8]) || 0,
+                            cost_price: Number(row[9]) || 0,
+                            additional_expenses: Number(row[10]) || 0,
                         };
 
                         const res = await fetch('/api/admin/crud', {
@@ -394,8 +409,8 @@ export default function PricingAdminPage() {
                     <thead className="bg-gray-50 border-b border-gray-100">
                         <tr>
                             <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest w-64">Mahsulot</th>
-                            <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Narx (joriy)</th>
-                            <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Eski Narx</th>
+                            <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Narx / Eski Narx</th>
+                            <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Tan Narx / Xarajat</th>
                             <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Cashback Sozlamalari</th>
                             <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Komissiya (%)</th>
                             <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Amal</th>
@@ -431,21 +446,41 @@ export default function PricingAdminPage() {
                                     </td>
                                     
                                     <td className="px-6 py-4">
-                                        <input 
-                                            type="number"
-                                            value={p.price}
-                                            onChange={(e) => handleFieldChange(p.id, 'price', Number(e.target.value))}
-                                            className="w-28 bg-gray-50 border-2 border-transparent focus:border-black rounded-xl px-3 py-2 text-sm font-black italic outline-none"
-                                        />
+                                        <div className="flex flex-col gap-2">
+                                            <input 
+                                                type="number"
+                                                value={p.price}
+                                                onChange={(e) => handleFieldChange(p.id, 'price', Number(e.target.value))}
+                                                placeholder="Joriy narx"
+                                                className="w-28 bg-gray-50 border-2 border-transparent focus:border-black rounded-xl px-3 py-2 text-sm font-black italic outline-none"
+                                            />
+                                            <input 
+                                                type="number"
+                                                value={p.oldPrice}
+                                                onChange={(e) => handleFieldChange(p.id, 'oldPrice', Number(e.target.value))}
+                                                placeholder="Eski narx"
+                                                className="w-28 bg-gray-50 border-2 border-transparent focus:border-black rounded-xl px-3 py-2 text-sm font-black italic outline-none text-gray-500"
+                                            />
+                                        </div>
                                     </td>
 
                                     <td className="px-6 py-4">
-                                        <input 
-                                            type="number"
-                                            value={p.oldPrice}
-                                            onChange={(e) => handleFieldChange(p.id, 'oldPrice', Number(e.target.value))}
-                                            className="w-28 bg-gray-50 border-2 border-transparent focus:border-black rounded-xl px-3 py-2 text-sm font-black italic outline-none text-gray-500"
-                                        />
+                                        <div className="flex flex-col gap-2">
+                                            <input 
+                                                type="number"
+                                                value={p.cost_price}
+                                                onChange={(e) => handleFieldChange(p.id, 'cost_price', Number(e.target.value))}
+                                                placeholder="Tan narx"
+                                                className="w-28 bg-blue-50 text-blue-900 border-2 border-transparent focus:border-blue-500 rounded-xl px-3 py-2 text-xs font-black italic outline-none"
+                                            />
+                                            <input 
+                                                type="number"
+                                                value={p.additional_expenses}
+                                                onChange={(e) => handleFieldChange(p.id, 'additional_expenses', Number(e.target.value))}
+                                                placeholder="Qo'sh. xarajat"
+                                                className="w-28 bg-red-50 text-red-900 border-2 border-transparent focus:border-red-500 rounded-xl px-3 py-2 text-xs font-black italic outline-none"
+                                            />
+                                        </div>
                                     </td>
 
                                     <td className="px-6 py-4">

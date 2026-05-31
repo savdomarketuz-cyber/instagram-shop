@@ -81,6 +81,8 @@ interface Product {
     comm_seller?: number;
     comm_tm?: number;
     comm_manager?: number;
+    cost_price?: number;
+    additional_expenses?: number;
 }
 
 import { uploadToYandexS3, uploadFromUrlToYandexS3 } from "@/lib/yandex-s3";
@@ -214,7 +216,9 @@ export default function AdminProducts() {
         model: "",
         comm_seller: 0,
         comm_tm: 0,
-        comm_manager: 0
+        comm_manager: 0,
+        cost_price: 0,
+        additional_expenses: 0
     });
 
     useEffect(() => {
@@ -658,7 +662,9 @@ export default function AdminProducts() {
                 model: newProduct.model || "",
                 comm_seller: newProduct.comm_seller || 0,
                 comm_tm: newProduct.comm_tm || 0,
-                comm_manager: newProduct.comm_manager || 0
+                comm_manager: newProduct.comm_manager || 0,
+                cost_price: newProduct.cost_price ? Number(newProduct.cost_price) : 0,
+                additional_expenses: newProduct.additional_expenses ? Number(newProduct.additional_expenses) : 0
             };
 
             let finalId = newProduct.id;
@@ -703,7 +709,7 @@ export default function AdminProducts() {
 
             setIsModalOpen(false);
             setProductSelectionPath([]);
-            setNewProduct({ name: "", name_uz: "", name_ru: "", price: 0, oldPrice: 0, category: "", image: "", images: [], description: "", description_uz: "", description_ru: "", tag: "", sku: "", groupId: "", colorName: "", article: "", isDeleted: false, isOriginal: false, images_string: "", brand: "", height: "", width: "", length: "", weight: "", barcode: "", videoUrl: "", cashback_type: "global", cashback_value: 0, model: "" });
+            setNewProduct({ name: "", name_uz: "", name_ru: "", price: 0, oldPrice: 0, category: "", image: "", images: [], description: "", description_uz: "", description_ru: "", tag: "", sku: "", groupId: "", colorName: "", article: "", isDeleted: false, isOriginal: false, images_string: "", brand: "", height: "", width: "", length: "", weight: "", barcode: "", videoUrl: "", cashback_type: "global", cashback_value: 0, model: "", cost_price: 0, additional_expenses: 0 });
             fetchData(currentPage);
         } catch (error) {
             console.error("Error saving product:", error);
@@ -951,7 +957,7 @@ export default function AdminProducts() {
                     </button>
                     <button
                         onClick={() => {
-                            setNewProduct({ name: "", name_uz: "", name_ru: "", price: 0, oldPrice: 0, category: "", image: "", images: [], description: "", description_uz: "", description_ru: "", tag: "", sku: "", groupId: "", colorName: "", article: "", isDeleted: false, isOriginal: false, images_string: "", brand: "", height: "", width: "", length: "", weight: "", barcode: "", videoUrl: "", model: "" });
+                            setNewProduct({ name: "", name_uz: "", name_ru: "", price: 0, oldPrice: 0, category: "", image: "", images: [], description: "", description_uz: "", description_ru: "", tag: "", sku: "", groupId: "", colorName: "", article: "", isDeleted: false, isOriginal: false, images_string: "", brand: "", height: "", width: "", length: "", weight: "", barcode: "", videoUrl: "", model: "", cost_price: 0, additional_expenses: 0 });
                             setProductSelectionPath([]);
                             setIsModalOpen(true);
                         }}
@@ -1524,6 +1530,26 @@ export default function AdminProducts() {
                                                 value={newProduct.oldPrice || ""}
                                                 onChange={(e) => setNewProduct({ ...newProduct, oldPrice: e.target.value ? Number(e.target.value) : 0 })}
                                                 placeholder="0 bo'lsa ko'rinmaydi"
+                                                className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all shadow-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4 mt-4">
+                                        <div>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Tan Narx (faqat admin uchun)</label>
+                                            <input
+                                                type="number"
+                                                value={newProduct.cost_price || ""}
+                                                onChange={(e) => setNewProduct({ ...newProduct, cost_price: e.target.value ? Number(e.target.value) : 0 })}
+                                                className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all shadow-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Qo'shimcha xarajat (faqat admin uchun)</label>
+                                            <input
+                                                type="number"
+                                                value={newProduct.additional_expenses || ""}
+                                                onChange={(e) => setNewProduct({ ...newProduct, additional_expenses: e.target.value ? Number(e.target.value) : 0 })}
                                                 className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all shadow-sm"
                                             />
                                         </div>
