@@ -20,6 +20,9 @@ interface PricingProduct {
     id: string;
     name: string;
     image: string;
+    brand_id: string | null;
+    brandName: string;
+    model: string;
     price: number;
     oldPrice: number;
     cashback_type: "global" | "percent" | "fixed";
@@ -40,7 +43,9 @@ export default function PricingAdminPage() {
     const [loading, setLoading] = useState(true);
     const [savingId, setSavingId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
-    
+    // Brendlar (brand_id -> nom) — jadval va Excelda nom ko'rsatish uchun
+    const [brandsMap, setBrandsMap] = useState<Record<string, string>>({});
+
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
@@ -53,8 +58,22 @@ export default function PricingAdminPage() {
     const [showLogModal, setShowLogModal] = useState(false);
 
     useEffect(() => {
+        fetchBrands();
         fetchProducts(1);
     }, []);
+
+    const fetchBrands = async () => {
+        try {
+            const { data } = await supabase.from("brands").select("id, name").eq("is_deleted", false);
+            if (data) {
+                const map: Record<string, string> = {};
+                data.forEach((b: any) => { map[String(b.id)] = b.name; });
+                setBrandsMap(map);
+            }
+        } catch (e) {
+            console.error("Fetch brands error:", e);
+        }
+    };
 
     const fetchProducts = async (page = 1) => {
         setLoading(true);
@@ -64,7 +83,7 @@ export default function PricingAdminPage() {
 
             let query = supabase
                 .from("products")
-                .select("id, name, image, price, old_price, cashback_type, cashback_value, comm_seller, comm_manager, comm_tm, cost_price, additional_expenses, is_deleted", { count: "exact" })
+                .select("id, name, image, brand_id, model, price, old_price, cashback_type, cashback_value, comm_seller, comm_manager, comm_tm, cost_price, additional_expenses, is_deleted", { count: "exact" })
                 .eq("is_deleted", false);
 
             if (searchTerm) {
@@ -82,6 +101,9 @@ export default function PricingAdminPage() {
                     id: p.id,
                     name: p.name,
                     image: p.image,
+                    brand_id: p.brand_id || null,
+                    brandName: p.brand_id ? (brandsMap[String(p.brand_id)] || "") : "",
+                    model: p.model || "",
                     price: p.price || 0,
                     oldPrice: p.old_price || 0,
                     cashback_type: p.cashback_type || "global",
@@ -118,7 +140,8 @@ export default function PricingAdminPage() {
                 const orig = originalProducts.find(op => op.id === id);
                 let isEdited = false;
                 if (orig) {
-                    isEdited = orig.price !== updated.price ||
+                    isEdited = orig.model !== updated.model ||
+                               orig.price !== updated.price ||
                                orig.oldPrice !== updated.oldPrice ||
                                orig.cashback_type !== updated.cashback_type ||
                                orig.cashback_value !== updated.cashback_value ||
@@ -144,6 +167,7 @@ export default function PricingAdminPage() {
                     table: 'products',
                     action: 'update',
                     payload: {
+                        model: product.model || null,
                         price: Number(product.price),
                         old_price: Number(product.oldPrice),
                         cashback_type: product.cashback_type,
@@ -180,7 +204,7 @@ export default function PricingAdminPage() {
             // Fetch all products (not just current page) to export
             const { data, error } = await supabase
                 .from("products")
-                .select("id, name, price, old_price, cashback_type, cashback_value, comm_seller, comm_manager, comm_tm, cost_price, additional_expenses")
+                .select("id, name, brand_id, model, price, old_price, cashback_type, cashback_value, comm_seller, comm_manager, comm_tm, cost_price, additional_expenses")
                 .eq("is_deleted", false);
 
             if (error) throw error;
@@ -196,8 +220,8 @@ export default function PricingAdminPage() {
                 const XLSX = (window as any).XLSX;
                 
                 const headers = [
-                    "ID (TEGMINLMASTIN)", "Nomi", "Hozirgi Narx", "Eski Narx", 
-                    "Cashback Turi (global/percent/fixed)", "Cashback Qiymati", 
+                    "ID (TEGMINLMASTIN)", "Nomi", "Brend", "Model", "Hozirgi Narx", "Eski Narx",
+                    "Cashback Turi (global/percent/fixed)", "Cashback Qiymati",
                     "Sotuvchi Komissiyasi (%)", "Manager Komissiyasi (%)", "Top Manager Komissiyasi (%)",
                     "Tan Narx", "Qo'shimcha Xarajatlar"
                 ];
@@ -205,6 +229,8 @@ export default function PricingAdminPage() {
                 const rows = data.map((p: any) => [
                     p.id,
                     p.name,
+                    p.brand_id ? (brandsMap[String(p.brand_id)] || "") : "",
+                    p.model || "",
                     p.price || 0,
                     p.old_price || 0,
                     p.cashback_type || "global",
@@ -222,6 +248,8 @@ export default function PricingAdminPage() {
                 ws['!cols'] = [
                     { wch: 36 }, // ID
                     { wch: 50 }, // Nomi
+                    { wch: 20 }, // Brend
+                    { wch: 20 }, // Model
                     { wch: 15 }, // Narx
                     { wch: 15 }, // Eski Narx
                     { wch: 25 }, // Cashback Turi
@@ -284,22 +312,35 @@ export default function PricingAdminPage() {
 
                 setImportLog(prev => [...prev, `${rows.length} ta qator topildi. Yangilash boshlandi...`]);
 
+                // Brend nomi -> brand_id (kichik harfda solishtirish)
+                const nameToBrandId: Record<string, string> = {};
+                Object.entries(brandsMap).forEach(([bid, bname]) => {
+                    nameToBrandId[String(bname).toLowerCase().trim()] = bid;
+                });
+
                 for (const row of rows) {
                     const id = row[0];
                     if (!id) continue;
 
                     try {
-                        const payload = {
-                            price: Number(row[2]) || 0,
-                            old_price: Number(row[3]) || 0,
-                            cashback_type: String(row[4]).toLowerCase().trim() === 'fixed' || String(row[4]).toLowerCase().trim() === 'percent' ? String(row[4]).toLowerCase().trim() : 'global',
-                            cashback_value: Number(row[5]) || 0,
-                            comm_seller: Number(row[6]) || 0,
-                            comm_manager: Number(row[7]) || 0,
-                            comm_tm: Number(row[8]) || 0,
-                            cost_price: Number(row[9]) || 0,
-                            additional_expenses: Number(row[10]) || 0,
+                        const payload: any = {
+                            model: row[3] != null ? String(row[3]).trim() : "",
+                            price: Number(row[4]) || 0,
+                            old_price: Number(row[5]) || 0,
+                            cashback_type: String(row[6]).toLowerCase().trim() === 'fixed' || String(row[6]).toLowerCase().trim() === 'percent' ? String(row[6]).toLowerCase().trim() : 'global',
+                            cashback_value: Number(row[7]) || 0,
+                            comm_seller: Number(row[8]) || 0,
+                            comm_manager: Number(row[9]) || 0,
+                            comm_tm: Number(row[10]) || 0,
+                            cost_price: Number(row[11]) || 0,
+                            additional_expenses: Number(row[12]) || 0,
                         };
+
+                        // Brend nomi berilgan va bazadagi brendga mos kelsa, brand_id yangilanadi
+                        const brandName = row[2] != null ? String(row[2]).toLowerCase().trim() : "";
+                        if (brandName && nameToBrandId[brandName]) {
+                            payload.brand_id = nameToBrandId[brandName];
+                        }
 
                         const res = await fetch('/api/admin/crud', {
                             method: 'POST',
@@ -409,6 +450,7 @@ export default function PricingAdminPage() {
                     <thead className="bg-gray-50 border-b border-gray-100">
                         <tr>
                             <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest w-64">Mahsulot</th>
+                            <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Brend / Model</th>
                             <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Narx / Eski Narx</th>
                             <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Tan Narx / Xarajat</th>
                             <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Cashback Sozlamalari</th>
@@ -419,13 +461,13 @@ export default function PricingAdminPage() {
                     <tbody className="divide-y divide-gray-50">
                         {loading ? (
                             <tr>
-                                <td colSpan={6} className="px-6 py-20 text-center">
+                                <td colSpan={7} className="px-6 py-20 text-center">
                                     <Loader2 size={40} className="animate-spin text-gray-300 mx-auto" />
                                 </td>
                             </tr>
                         ) : products.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="px-6 py-20 text-center font-bold text-gray-400">
+                                <td colSpan={7} className="px-6 py-20 text-center font-bold text-gray-400">
                                     Mahsulotlar topilmadi
                                 </td>
                             </tr>
@@ -444,10 +486,25 @@ export default function PricingAdminPage() {
                                             <p className="font-bold text-xs uppercase line-clamp-2 leading-relaxed max-w-[200px]">{p.name}</p>
                                         </div>
                                     </td>
-                                    
+
                                     <td className="px-6 py-4">
                                         <div className="flex flex-col gap-2">
-                                            <input 
+                                            <span className="inline-flex items-center w-fit px-3 py-1.5 bg-gray-100 rounded-lg text-[10px] font-black uppercase tracking-tighter text-gray-700">
+                                                {(p.brand_id ? (brandsMap[String(p.brand_id)] || p.brandName) : "") || "—"}
+                                            </span>
+                                            <input
+                                                type="text"
+                                                value={p.model}
+                                                onChange={(e) => handleFieldChange(p.id, 'model', e.target.value)}
+                                                placeholder="Model"
+                                                className="w-32 bg-gray-50 border-2 border-transparent focus:border-black rounded-xl px-3 py-2 text-xs font-bold outline-none"
+                                            />
+                                        </div>
+                                    </td>
+
+                                    <td className="px-6 py-4">
+                                        <div className="flex flex-col gap-2">
+                                            <input
                                                 type="number"
                                                 value={p.price}
                                                 onChange={(e) => handleFieldChange(p.id, 'price', Number(e.target.value))}
