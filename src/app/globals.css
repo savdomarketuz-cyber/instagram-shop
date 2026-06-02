@@ -154,6 +154,10 @@ body {
   from { width: 0%; }
   to { width: 100%; }
 }
+@keyframes velari-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
 
 @layer utilities {
   /* No Scrollbar utility — ikkala nom bilan ishlaydi */
