@@ -134,8 +134,26 @@ export const BannerSection = ({
                             <div
                                 key={`${banner.id}-${i}`}
                                 style={{ width: `${100 / slides.length}%`, height: "100%", position: "relative", overflow: "hidden" }}
-                                dangerouslySetInnerHTML={{ __html: html || "" }}
-                            />
+                            >
+                                {/* Banner HTML'i alohida iframe ichida — o'zining <style>/body qoidalari
+                                    sahifaga oqib o'tmasligi uchun (aks holda body'ga padding qo'shilib
+                                    sayt chetlaridan siqilib qolardi). pointer-events:none — surish (swipe)
+                                    va avto-almashinish ishlashda davom etadi. */}
+                                <iframe
+                                    title={`banner-${banner.id}`}
+                                    srcDoc={html || ""}
+                                    scrolling="no"
+                                    tabIndex={-1}
+                                    style={{
+                                        display: "block",
+                                        width: "100%",
+                                        height: "100%",
+                                        border: "none",
+                                        pointerEvents: "none",
+                                        background: "transparent",
+                                    }}
+                                />
+                            </div>
                         );
                     })}
                 </div>
