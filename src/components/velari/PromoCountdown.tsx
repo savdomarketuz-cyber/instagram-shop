@@ -193,7 +193,9 @@ function TimeBlock({ value, label }: { value: number; label: string }) {
             padding: "5px 6px",
             textAlign: "center",
         }}>
-            <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", lineHeight: 1, letterSpacing: -0.5 }}>
+            {/* suppressHydrationWarning — soniya/daqiqa server va client'da bir xil bo'lmasligi normal
+                (orada vaqt o'tadi). React matn farqiga e'tibor bermaydi, keyingi tickda to'g'rilanadi. */}
+            <div suppressHydrationWarning style={{ fontSize: 18, fontWeight: 800, color: "#fff", lineHeight: 1, letterSpacing: -0.5 }}>
                 {pad(value)}
             </div>
             <div style={{ fontSize: 9, color: "rgba(255,255,255,0.65)", fontWeight: 600, marginTop: 2, textTransform: "uppercase", letterSpacing: 0.3 }}>
