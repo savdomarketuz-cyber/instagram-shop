@@ -100,7 +100,7 @@ export default function AiMonitoring() {
                         <div className="bg-[#7000FF] p-3 rounded-2xl text-white shadow-lg shadow-[#7000FF]/20 animate-pulse">
                             <Brain size={28} />
                         </div>
-                        <h1 className="text-5xl font-black tracking-tighter italic uppercase">AI Monitoring</h1>
+                        <h1 className="text-2xl md:text-5xl font-black tracking-tighter italic uppercase">AI Monitoring</h1>
                     </div>
                     <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px]">Neural Interface • Real-time AI logs</p>
                 </div>

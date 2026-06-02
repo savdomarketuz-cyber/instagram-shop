@@ -255,7 +255,7 @@ export default function PromoCountdownAdmin() {
             )}
 
             <div>
-                <h1 className="text-5xl font-black tracking-tighter mb-4 italic uppercase flex items-center gap-4">
+                <h1 className="text-2xl md:text-5xl font-black tracking-tighter mb-1 md:mb-4 italic uppercase flex items-center gap-4">
                     <Timer size={40} /> Promo Countdown
                 </h1>
                 <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px]">Aksiya banneri va avtomatik chegirmalar tizimi</p>
