@@ -159,7 +159,7 @@ export default function AdminCustomers() {
         <div className="space-y-12 animate-in fade-in duration-700 pb-20">
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
                 <div>
-                    <h1 className="text-5xl font-black tracking-tighter mb-4 italic uppercase">Mijozlar</h1>
+                    <h1 className="text-2xl md:text-5xl font-black tracking-tighter mb-1 md:mb-4 italic uppercase">Mijozlar</h1>
                     <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px]">Mijozlar • {customers.length} ta umumiy</p>
                 </div>
 
@@ -175,12 +175,12 @@ export default function AdminCustomers() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
                 {filteredCustomers.map((customer) => (
                     <div
                         key={customer.id}
                         onClick={() => fetchCustomerDetails(customer)}
-                        className="bg-white rounded-[40px] p-8 border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group relative overflow-hidden cursor-pointer"
+                        className="bg-white rounded-[28px] md:rounded-[40px] p-5 md:p-8 border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group relative overflow-hidden cursor-pointer"
                     >
                         <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:scale-150 group-hover:rotate-12 transition-transform duration-1000">
                             <User size={120} strokeWidth={1} />

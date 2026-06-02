@@ -126,19 +126,19 @@ export default function AdminOrders() {
     }
 
     return (
-        <div className="space-y-12">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
+        <div className="space-y-6 md:space-y-12">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4 md:gap-6">
                 <div>
-                    <h1 className="text-5xl font-black tracking-tighter mb-4">Buyurtmalar</h1>
-                    <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px]">Ma'lumotlar bazasi • {orders.length} ta buyurtma</p>
+                    <h1 className="text-2xl md:text-5xl font-black tracking-tighter mb-1 md:mb-4">Buyurtmalar</h1>
+                    <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px]">{orders.length} ta buyurtma</p>
                 </div>
 
-                <div className="flex bg-white p-1.5 rounded-[24px] border border-gray-100 shadow-sm overflow-x-auto max-w-full">
+                <div className="flex bg-white p-1 md:p-1.5 rounded-[20px] md:rounded-[24px] border border-gray-100 shadow-sm overflow-x-auto max-w-full">
                     {["Barchasi", "Kutilmoqda", "Yetkazilmoqda", "Yetkazildi", "Bekor qilingan"].map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setFilter(tab)}
-                            className={`px-8 py-3.5 rounded-[20px] text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${filter === tab ? "bg-black text-white shadow-2xl shadow-black/20" : "text-gray-400 hover:text-black"
+                            className={`px-4 md:px-8 py-2.5 md:py-3.5 rounded-[16px] md:rounded-[20px] text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${filter === tab ? "bg-black text-white shadow-2xl shadow-black/20" : "text-gray-400 hover:text-black"
                                 }`}
                         >
                             {tab}
