@@ -52,6 +52,7 @@ export default function Navigation() {
     const [isSuggesting, setIsSuggesting] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+    const suggestAbortRef = useRef<AbortController | null>(null);
     const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
 
@@ -87,6 +88,9 @@ export default function Navigation() {
         const activeQuery = forceQuery || search;
         
         setShowSuggestions(false);
+        // Enter bosilganda kutilayotgan suggest debounce/so'rov takror ishlamasin
+        if (debounceTimer.current) { clearTimeout(debounceTimer.current); debounceTimer.current = null; }
+        if (suggestAbortRef.current) { suggestAbortRef.current.abort(); suggestAbortRef.current = null; }
         if (!activeQuery.trim()) {
             setSearchResults(null);
             return;
@@ -118,26 +122,39 @@ export default function Navigation() {
             setSuggestions([]);
             setShowSuggestions(false);
             if (debounceTimer.current) clearTimeout(debounceTimer.current);
+            if (suggestAbortRef.current) { suggestAbortRef.current.abort(); suggestAbortRef.current = null; }
             return;
         }
 
         setShowSuggestions(true);
         if (debounceTimer.current) clearTimeout(debounceTimer.current);
-        
+
         debounceTimer.current = setTimeout(async () => {
+            // Oldingi uchayotgan suggest so'rovini bekor qilamiz — aks holda eskirgan
+            // (sekin) javob keyin kelib yangi natijani ustiga yozadi (dropdown miltillashi).
+            if (suggestAbortRef.current) suggestAbortRef.current.abort();
+            const controller = new AbortController();
+            suggestAbortRef.current = controller;
             setIsSuggesting(true);
             try {
                 const res = await fetch('/api/search', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: val, suggest: true, userPhone: user?.phone })
+                    body: JSON.stringify({ query: val, suggest: true, userPhone: user?.phone }),
+                    signal: controller.signal,
                 });
+                // Bu so'rov eskirgan bo'lsa — natijani qo'llamaymiz
+                if (suggestAbortRef.current !== controller) return;
                 const data = await res.json();
                 if (data.results) setSuggestions(data.results);
             } catch (err) {
+                if ((err as any)?.name === "AbortError") return; // bekor qilingan — sokin
                 console.error("Live suggest failed: ", err);
             } finally {
-                setIsSuggesting(false);
+                if (suggestAbortRef.current === controller) {
+                    suggestAbortRef.current = null;
+                    setIsSuggesting(false);
+                }
             }
         }, 300);
     };

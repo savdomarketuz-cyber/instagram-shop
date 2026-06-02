@@ -68,12 +68,14 @@ export async function POST(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
 
     try {
-        // 0. RATE LIMITING (10 searches per minute)
-        if (!await checkRateLimit(ip, 10, 60)) {
-            return NextResponse.json({ success: false, message: "Juda ko'p urinish." }, { status: 429 });
-        }
-
         const { query, image, suggest, userPhone } = await req.json();
+
+        // 0. RATE LIMITING — typeahead (suggest) har keystroke'da chaqirilgani uchun
+        // yumshoqroq cheklov; to'liq qidiruv qattiqroq.
+        const rlMax = suggest ? 40 : 12;
+        if (!await checkRateLimit(suggest ? `${ip}:s` : ip, rlMax, 60)) {
+            return NextResponse.json({ success: false, message: "Juda ko'p urinish.", results: [] }, { status: 429 });
+        }
 
         let searchQuery = (query || "").trim();
 
@@ -90,12 +92,19 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ results: [] });
         }
 
+        // Typeahead uchun bitta belgi RPC chaqirmasin
+        if (suggest && searchQuery.length < 2) {
+            return NextResponse.json({ success: true, results: [], count: 0 });
+        }
+
         // 1.5 Identify User for Affinity Profiling
         const userPhoneCookie = req.cookies.get('user_phone')?.value;
         const userIdentifier = userPhone || userPhoneCookie || null;
 
-        // 2. Normalize query — avval admin sinonim lug'ati (DB), keyin kod ichidagi typo/transliteratsiya xaritasi
-        const dbNormalized = await applyDbSynonyms(searchQuery);
+        // 2. Normalize query — kod ichidagi typo/transliteratsiya xaritasi (0ms, sinxron).
+        // Admin DB sinonim lug'ati faqat to'liq qidiruvda (suggest emas) — typeahead'da
+        // har keystroke'ga DB roundtrip qo'shmaslik uchun.
+        const dbNormalized = suggest ? searchQuery : await applyDbSynonyms(searchQuery);
         const normalizedQuery = normalizeQuery(dbNormalized);
 
         // 3. Behavioral + affinity ranked search (text + trigram + telemetry + user profile)
