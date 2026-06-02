@@ -104,8 +104,15 @@ export default function HomeClient({
     const [catalogCategoryCount, setCatalogCategoryCount] = useState(0);
     const [catalogProductCount, setCatalogProductCount] = useState(0);
     const [locationLabel, setLocationLabel] = useState(language === "ru" ? "Ташкент, Юнусабад" : "Toshkent, Yunusobod");
+    // Sticky header ko'rinishi (blur) — darhol yangilanadigan, debounce QILINMAGAN holat.
+    // (homeScrollPosition 300ms debounce bilan yangilangani uchun header'ni unga bog'lab bo'lmaydi.)
+    const [scrolled, setScrolled] = useState(homeScrollPosition > 30);
+    // Qidiruv natijalarida tanlangan kategoriya chipi (facet bo'yicha filtr)
+    const [activeFacet, setActiveFacet] = useState<string | null>(null);
 
     const observerTarget = useRef(null);
+    // Birinchi mount default ko'rinish bo'lsa (server initialProducts) qayta yuklamaslik uchun
+    const didFilterMountRef = useRef(false);
 
     // Sync activeFilter with URL category if it changes
     useEffect(() => {
@@ -120,7 +127,7 @@ export default function HomeClient({
         const fetchCounts = async () => {
             try {
                 const [catRes, prodRes] = await Promise.all([
-                    supabase.from("categories").select("id", { count: "exact", head: true }),
+                    supabase.from("categories").select("id", { count: "exact", head: true }).eq("is_deleted", false),
                     supabase.from("products").select("id", { count: "exact", head: true }).eq("is_deleted", false),
                 ]);
                 if (catRes.count != null) setCatalogCategoryCount(catRes.count);
@@ -224,7 +231,14 @@ export default function HomeClient({
 
     // "Siz uchun" tabida mahsulotlarni shaxsiy tartibga ko'ra qayta saralash.
     const displayProducts = useMemo(() => {
-        if (searchResults) return searchResults;
+        if (searchResults) {
+            // Qidiruvda kategoriya chipi tanlangan bo'lsa — natijalarni shu kategoriya bo'yicha filtrlaymiz.
+            // (facet kaliti API'da p.category || p.category_id || p.category_uz || "Boshqa" sifatida hisoblanadi.)
+            if (activeFacet) {
+                return searchResults.filter((p: any) => (p.category || p.category_id || p.category_uz || "Boshqa") === activeFacet);
+            }
+            return searchResults;
+        }
         if (activeTab === "for_you" && personalOrder.length > 0) {
             const rank = new Map(personalOrder.map((id, i) => [id, i]));
             return [...allProducts].sort((a, b) => {
@@ -234,7 +248,7 @@ export default function HomeClient({
             });
         }
         return allProducts;
-    }, [searchResults, activeTab, personalOrder, allProducts]);
+    }, [searchResults, activeFacet, activeTab, personalOrder, allProducts]);
 
     // Real-time updates for Banners and Settings (Supabase Realtime)
     useEffect(() => {
@@ -264,6 +278,9 @@ export default function HomeClient({
 
         let timeoutId: NodeJS.Timeout;
         const handleScrollEvent = () => {
+            // Header blur uchun — darhol (debounce'siz)
+            setScrolled(window.scrollY > 30);
+            // Scroll pozitsiyasini eslab qolish — debounce bilan (tez-tez yozmaslik uchun)
             clearTimeout(timeoutId);
             timeoutId = setTimeout(() => {
                 setHomeScrollPosition(window.scrollY);
@@ -282,9 +299,14 @@ export default function HomeClient({
     // Re-fetch when filters change (reset pagination)
     useEffect(() => {
         const isDefault = activeFilter === 'all' && activeTab === 'for_you' && !search && !urlBrand;
-        if (!isDefault || allProducts.length === 0) {
-            fetchProducts(false);
+        // Faqat BIRINCHI mount'da, default ko'rinish va server initialProducts bor bo'lsa — qayta yuklamaymiz.
+        // Keyingi har qanday o'zgarishda (jumladan qidiruvni tozalab default'ga qaytishda) qayta yuklaymiz,
+        // aks holda qidiruvdan keyin allProducts eski subset bo'lib qolardi.
+        if (!didFilterMountRef.current) {
+            didFilterMountRef.current = true;
+            if (isDefault && allProducts.length > 0) return;
         }
+        fetchProducts(false);
         // fetchProducts is intentionally omitted — it's defined below and stable enough
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeFilter, activeTab, search, urlBrand]);
@@ -403,6 +425,7 @@ export default function HomeClient({
         setSearch("");
         setSearchResults(null);
         setHomeSearchQuery("");
+        setActiveFacet(null);
         useStore.setState({ isSearchLoading: false });
     };
 
@@ -429,6 +452,7 @@ export default function HomeClient({
             // Bu so'rov eskirgan (yangi qidiruv yoki tozalash bo'lgan) bo'lsa — natijani qo'llamaymiz
             if (searchAbortRef.current !== controller) return;
             const data = res.ok ? await res.json() : { results: [], facets: null, didYouMean: null };
+            setActiveFacet(null); // yangi qidiruv — oldingi kategoriya filtri tushadi
             setSearchResults(data.results || [], data.facets || null, data.didYouMean || null);
             setHomeSearchQuery(q);
         } catch (err) {
@@ -457,10 +481,10 @@ export default function HomeClient({
             {/* ── MOBILE: Velari sticky header ── */}
             <div className="md:hidden" style={{
                 position: "sticky", top: 0, zIndex: 100,
-                background: homeScrollPosition > 30 ? "rgba(250,250,246,0.92)" : "#FAFAF6",
-                backdropFilter: homeScrollPosition > 30 ? "blur(20px) saturate(180%)" : "none",
-                WebkitBackdropFilter: homeScrollPosition > 30 ? "blur(20px) saturate(180%)" : "none",
-                borderBottom: homeScrollPosition > 30 ? "0.5px solid rgba(15,20,16,0.06)" : "none",
+                background: scrolled ? "rgba(250,250,246,0.92)" : "#FAFAF6",
+                backdropFilter: scrolled ? "blur(20px) saturate(180%)" : "none",
+                WebkitBackdropFilter: scrolled ? "blur(20px) saturate(180%)" : "none",
+                borderBottom: scrolled ? "0.5px solid rgba(15,20,16,0.06)" : "none",
                 transition: "background 240ms ease",
                 padding: "12px 20px 12px",
             }}>
@@ -689,6 +713,7 @@ export default function HomeClient({
                                                         body: JSON.stringify({ query: didYouMean }),
                                                     });
                                                     const data = await res.json();
+                                                    setActiveFacet(null);
                                                     setSearchResults(data.results || [], data.facets || null, data.didYouMean || null);
                                                 } catch (e) {
                                                     console.error("Did you mean search failed", e);
@@ -704,7 +729,7 @@ export default function HomeClient({
                                 )}
                             </div>
                             <button
-                                onClick={() => { setSearchResults(null); setHomeSearchQuery(""); }}
+                                onClick={clearMobileSearch}
                                 style={{ padding: "10px 18px", borderRadius: 20, background: "#fff", border: "1px solid rgba(15,20,16,0.08)", fontSize: 13, fontWeight: 600, color: "#5A625C", cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}
                             >
                                 {language === "uz" ? "Tozalash" : "Очистить"}
@@ -712,11 +737,18 @@ export default function HomeClient({
                         </div>
                         {searchFacets?.categories && Object.keys(searchFacets.categories).length > 0 && (
                             <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }} className="scrollbar-hide">
-                                {Object.entries(searchFacets.categories).map(([cat, count]) => (
-                                    <button key={cat} style={{ padding: "8px 14px", borderRadius: 18, whiteSpace: "nowrap", background: "#EAF3EC", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 500, color: "#2D6E3E" }}>
-                                        {cat} <span style={{ opacity: 0.6 }}>({count as number})</span>
-                                    </button>
-                                ))}
+                                {Object.entries(searchFacets.categories).map(([cat, count]) => {
+                                    const on = activeFacet === cat;
+                                    return (
+                                        <button
+                                            key={cat}
+                                            onClick={() => setActiveFacet(prev => prev === cat ? null : cat)}
+                                            style={{ padding: "8px 14px", borderRadius: 18, whiteSpace: "nowrap", background: on ? "#2D6E3E" : "#EAF3EC", border: "none", cursor: "pointer", fontSize: 13, fontWeight: on ? 700 : 500, color: on ? "#fff" : "#2D6E3E", transition: "background 160ms ease, color 160ms ease" }}
+                                        >
+                                            {cat} <span style={{ opacity: 0.6 }}>({count as number})</span>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

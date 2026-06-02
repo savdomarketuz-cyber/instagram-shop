@@ -579,12 +579,33 @@ export default function StoriesRow({ language, device = "both" }: { language: "u
                                         ? (language === "uz" ? "Xarid qilish" : "Купить")
                                         : (language === "uz" ? "Ko'rish" : "Смотреть"))}
                             </a>
-                            <div style={{
-                                width: 52, height: 52, borderRadius: 26, background: "rgba(255,255,255,0.16)",
-                                backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                            }}>
+                            <button
+                                type="button"
+                                aria-label={language === "uz" ? "Ulashish" : "Поделиться"}
+                                onClick={async (e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const rel = ctaHref(language, curSlide) || `/${language}`;
+                                    const url = /^https?:\/\//.test(rel)
+                                        ? rel
+                                        : (typeof window !== "undefined" ? window.location.origin + rel : rel);
+                                    const title = language === "uz" ? curGroup.title_uz : curGroup.title_ru;
+                                    try {
+                                        if (typeof navigator !== "undefined" && (navigator as any).share) {
+                                            await (navigator as any).share({ title, url });
+                                        } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+                                            await navigator.clipboard.writeText(url);
+                                        }
+                                    } catch { /* foydalanuvchi bekor qildi yoki qo'llab-quvvatlanmaydi */ }
+                                }}
+                                style={{
+                                    width: 52, height: 52, borderRadius: 26, background: "rgba(255,255,255,0.16)",
+                                    backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center",
+                                    flexShrink: 0, border: "none", cursor: "pointer", WebkitTapHighlightColor: "transparent",
+                                }}
+                            >
                                 <Send size={20} color="#fff" />
-                            </div>
+                            </button>
                         </div>
                     )}
                 </div>

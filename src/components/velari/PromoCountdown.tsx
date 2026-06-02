@@ -47,29 +47,32 @@ export default function PromoCountdown({ language, initialSettings, variant = "s
         return s;
     });
 
-    const [status, setStatus] = useState<"waiting" | "active" | "ended">("ended");
-    const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(null);
+    // Holatni darhol (sinxron) hisoblaymiz — birinchi interval tick'ini kutmasdan.
+    // Aks holda komponent ~1s davomida null qaytarib, keyin "sakrab" paydo bo'lardi (layout shift).
+    const computeState = (s: PromoSettings | null): { status: "waiting" | "active" | "ended"; timeLeft: TimeLeft | null } => {
+        if (!s) return { status: "ended", timeLeft: null };
+        const now = Date.now();
+        const start = new Date(s.start_time).getTime();
+        const end = new Date(s.end_time).getTime();
+        if (now < start) return { status: "waiting", timeLeft: calcTimeLeft(s.start_time) };
+        if (now <= end) return { status: "active", timeLeft: calcTimeLeft(s.end_time) };
+        return { status: "ended", timeLeft: null };
+    };
+
+    const initialState = computeState(settings);
+    const [status, setStatus] = useState(initialState.status);
+    const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(initialState.timeLeft);
 
     useEffect(() => {
         if (!settings) return;
         const id = setInterval(() => {
-            const now = Date.now();
-            const start = new Date(settings.start_time).getTime();
-            const end = new Date(settings.end_time).getTime();
-
-            if (now < start) {
-                setStatus("waiting");
-                setTimeLeft(calcTimeLeft(settings.start_time));
-            } else if (now <= end) {
-                setStatus("active");
-                setTimeLeft(calcTimeLeft(settings.end_time));
-            } else {
-                setStatus("ended");
-                setTimeLeft(null);
-                clearInterval(id);
-            }
+            const next = computeState(settings);
+            setStatus(next.status);
+            setTimeLeft(next.timeLeft);
+            if (next.status === "ended") clearInterval(id);
         }, 1000);
         return () => clearInterval(id);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [settings]);
 
     if (!settings || !timeLeft || status === "ended") return null;
