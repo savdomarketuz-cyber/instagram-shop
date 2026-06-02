@@ -111,7 +111,7 @@ export default function AdminWalletsPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-5xl font-black italic tracking-tighter uppercase mb-2">HAMYON TIZIMI</h1>
+                    <h1 className="text-2xl md:text-5xl font-black italic tracking-tighter uppercase mb-2">HAMYON TIZIMI</h1>
                     <p className="text-xs font-black text-gray-400 uppercase tracking-[0.3em] flex items-center gap-2">
                         <Wallet size={14} className="text-black" /> Foydalanuvchilar balansini boshqarish
                     </p>

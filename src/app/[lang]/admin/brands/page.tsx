@@ -179,7 +179,7 @@ export default function AdminBrands() {
         <div className="space-y-12 pb-20 p-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
-                    <h1 className="text-5xl font-black tracking-tighter mb-4 italic text-black uppercase">Brendlar</h1>
+                    <h1 className="text-2xl md:text-5xl font-black tracking-tighter mb-1 md:mb-4 italic text-black uppercase">Brendlar</h1>
                     <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px]">Brendlar Boshqaruvi • {brands.length} ta umumiy</p>
                 </div>
                 <div className="flex bg-white rounded-3xl p-1 shadow-xl border border-gray-50">

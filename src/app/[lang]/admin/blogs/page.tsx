@@ -166,7 +166,7 @@ export default function AdminBlogs() {
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
                 <div>
-                    <h1 className="text-4xl font-black tracking-tighter uppercase italic flex items-center gap-4">
+                    <h1 className="text-2xl md:text-4xl font-black tracking-tighter uppercase italic flex items-center gap-4">
                         <BookOpen size={32} className="text-emerald-500" /> Maqolalar Boshqaruvi
                     </h1>
                     <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px] mt-2">Kontent va marketing markazi</p>

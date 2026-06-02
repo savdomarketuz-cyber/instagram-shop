@@ -193,7 +193,7 @@ export default function AdminSmartDiscountPage() {
     return (
         <div className="p-4 md:p-10 space-y-12 max-w-[1200px] mx-auto">
             <div>
-                <h1 className="text-5xl font-black italic tracking-tighter uppercase mb-4 text-indigo-600">SMART CHEGIRMA</h1>
+                <h1 className="text-2xl md:text-5xl font-black italic tracking-tighter uppercase mb-1 md:mb-4 text-indigo-600">SMART CHEGIRMA</h1>
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Sotib olishga yaqinlashgan mijozga shaxsiy, vaqtli bonus taklif — to'liq nazorat va audit</p>
             </div>
 

@@ -286,7 +286,7 @@ export default function AffiliateAdminPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-4xl font-black tracking-tight italic uppercase">HAMKORLIK TIZIMI</h1>
+                    <h1 className="text-2xl md:text-4xl font-black tracking-tight italic uppercase">HAMKORLIK TIZIMI</h1>
                     <p className="text-gray-500 mt-2 font-medium">Marketing tariflari va MLM tarmog'ini boshqarish</p>
                 </div>
                 

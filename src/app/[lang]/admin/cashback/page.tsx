@@ -119,7 +119,7 @@ export default function AdminCashbackPage() {
         <div className="p-4 md:p-10 space-y-12 max-w-[1200px] mx-auto">
             {/* Header */}
             <div>
-                <h1 className="text-5xl font-black italic tracking-tighter uppercase mb-4 text-emerald-600">MUKOFOTLAR TIZIMI</h1>
+                <h1 className="text-2xl md:text-5xl font-black italic tracking-tighter uppercase mb-1 md:mb-4 text-emerald-600">MUKOFOTLAR TIZIMI</h1>
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Cashback va maxsus mukofotlash qoidalarini boshqaring</p>
             </div>
 

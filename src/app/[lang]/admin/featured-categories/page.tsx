@@ -168,7 +168,7 @@ export default function AdminFeaturedCategoriesPage() {
             )}
 
             <div>
-                <h1 className="text-5xl font-black tracking-tighter mb-4 italic uppercase">Kategoriya Vitrina</h1>
+                <h1 className="text-2xl md:text-5xl font-black tracking-tighter mb-1 md:mb-4 italic uppercase">Kategoriya Vitrina</h1>
                 <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px]">
                     Bosh sahifada ko'rinadigan kategoriyalarni tanlang va tartibini belgilang
                 </p>

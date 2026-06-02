@@ -74,7 +74,7 @@ export default function AdminSettings() {
     return (
         <div className="space-y-12 pb-20 max-w-4xl">
             <div>
-                <h1 className="text-5xl font-black tracking-tighter mb-4 italic uppercase">Sozlamalar</h1>
+                <h1 className="text-2xl md:text-5xl font-black tracking-tighter mb-1 md:mb-4 italic uppercase">Sozlamalar</h1>
                 <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px]">Do'kon profili va asosiy ma'lumotlarni boshqarish</p>
             </div>
 
