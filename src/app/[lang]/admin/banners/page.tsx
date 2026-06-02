@@ -298,24 +298,24 @@ export default function AdminBanners() {
     }
 
     return (
-        <div className="space-y-12">
-            <div className="flex justify-between items-end">
+        <div className="space-y-6 md:space-y-12">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                 <div>
-                    <h1 className="text-5xl font-black tracking-tighter mb-4 italic">Bannerlar</h1>
+                    <h1 className="text-2xl md:text-5xl font-black tracking-tighter mb-1 md:mb-4 italic">Bannerlar</h1>
                     <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px]">HTML asosiy sahifa reklamalari</p>
                 </div>
-                <div className="flex gap-4">
+                <div className="flex gap-2 md:gap-4">
                     <button
                         onClick={() => setIsGuideOpen(true)}
-                        className="bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white px-8 py-4 rounded-[24px] font-black text-xs uppercase tracking-widest flex items-center gap-3 transition-all border border-amber-100"
+                        className="bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white px-4 md:px-8 py-3 md:py-4 rounded-[20px] md:rounded-[24px] font-black text-[10px] md:text-xs uppercase tracking-widest flex items-center gap-2 transition-all border border-amber-100"
                     >
-                        <BookOpen size={18} /> Qoidalar (AI)
+                        <BookOpen size={16} /> <span className="hidden sm:inline">Qoidalar (AI)</span>
                     </button>
                     <button
                         onClick={openGlobalModal}
-                        className="bg-gray-100 text-gray-500 hover:bg-black hover:text-white px-8 py-4 rounded-[24px] font-black text-xs uppercase tracking-widest flex items-center gap-3 transition-all"
+                        className="bg-gray-100 text-gray-500 hover:bg-black hover:text-white px-4 md:px-8 py-3 md:py-4 rounded-[20px] md:rounded-[24px] font-black text-[10px] md:text-xs uppercase tracking-widest flex items-center gap-2 transition-all"
                     >
-                        Umumiy sozlamalar
+                        <span className="hidden sm:inline">Umumiy sozlamalar</span><span className="sm:hidden">Sozlama</span>
                     </button>
                     <button
                         onClick={() => { resetForm(); setIsAdding(true); }}

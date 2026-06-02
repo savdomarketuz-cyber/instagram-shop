@@ -460,7 +460,7 @@ export default function AdminCategories() {
         <div className="space-y-12 pb-20">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
-                    <h1 className="text-5xl font-black tracking-tighter mb-4 italic text-black uppercase">Kategoriyalar</h1>
+                    <h1 className="text-2xl md:text-5xl font-black tracking-tighter mb-1 md:mb-4 italic text-black uppercase">Kategoriyalar</h1>
                     <div className="flex items-center gap-4">
                         <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px]">Ierarxiya va Boshqaruv • {categories.length} ta umumiy</p>
                         <button
@@ -489,9 +489,9 @@ export default function AdminCategories() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10 items-start">
                 {/* Form Section */}
-                <div className="lg:col-span-1 bg-white p-10 rounded-[48px] border border-gray-100 shadow-xl shadow-black/5 sticky top-32">
+                <div className="lg:col-span-1 bg-white p-5 md:p-10 rounded-[32px] md:rounded-[48px] border border-gray-100 shadow-xl shadow-black/5 lg:sticky lg:top-32">
                     <div className="flex justify-between items-center mb-8">
                         <h2 className="text-2xl font-black tracking-tight text-black">{editingId ? "Tahrirlash" : "Yangi qo'shish"}</h2>
                         {editingId && (

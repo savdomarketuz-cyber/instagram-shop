@@ -920,11 +920,11 @@ export default function AdminProducts() {
     };
 
     return (
-        <div className="p-8 text-black">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
+        <div className="p-0 text-black">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 md:gap-4 mb-6 md:mb-10">
                 <div>
-                    <h1 className="text-3xl font-black tracking-tighter uppercase italic">Mahsulotlar boshqaruvi</h1>
-                    <p className="text-gray-400 text-sm font-medium">Barcha mahsulotlarni ko'rish, qo'shish va tahrirlash</p>
+                    <h1 className="text-2xl md:text-3xl font-black tracking-tighter uppercase italic">Mahsulotlar boshqaruvi</h1>
+                    <p className="text-gray-400 text-xs md:text-sm font-medium">Barcha mahsulotlarni ko'rish, qo'shish va tahrirlash</p>
                 </div>
                 <div className="flex gap-4">
                     <div className="flex bg-white rounded-2xl p-1 shadow-sm border border-gray-100">
@@ -1059,7 +1059,7 @@ export default function AdminProducts() {
                     </div>
 
                     {view === "grid" ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-8">
                             {products.map((p) => (
                                 <div key={p.id} className={`bg-white rounded-[40px] overflow-hidden group border border-gray-50 shadow-sm hover:shadow-2xl transition-all duration-500 text-black relative ${selectedIds.includes(p.id) ? 'ring-2 ring-black' : ''}`}>
                                     <div className="absolute top-4 left-4 z-40">
