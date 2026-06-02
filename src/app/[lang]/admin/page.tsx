@@ -94,40 +94,40 @@ export default function AdminDashboard() {
     }
 
     return (
-        <div className="space-y-10">
+        <div className="space-y-6 md:space-y-10">
             <div>
-                <h1 className="text-4xl font-black tracking-tighter mb-2">Dashboard</h1>
-                <p className="text-gray-500 font-medium">Do'koningizdagi bugungi holat bilan tanishing.</p>
+                <h1 className="text-2xl md:text-4xl font-black tracking-tighter mb-1 md:mb-2">Dashboard</h1>
+                <p className="text-sm md:text-base text-gray-500 font-medium">Do'koningizdagi bugungi holat bilan tanishing.</p>
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
                 {cards.map((card) => {
                     const Icon = card.icon;
                     return (
-                        <div key={card.name} className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100 group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                            <div className={`w-12 h-12 ${card.color} text-white rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-${card.color.split('-')[1]}-200`}>
-                                <Icon size={24} />
+                        <div key={card.name} className="bg-white p-4 md:p-6 rounded-[24px] md:rounded-[32px] shadow-sm border border-gray-100 group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                            <div className={`w-10 h-10 md:w-12 md:h-12 ${card.color} text-white rounded-xl md:rounded-2xl flex items-center justify-center mb-3 md:mb-4`}>
+                                <Icon size={20} />
                             </div>
-                            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-1">{card.name}</p>
-                            <h3 className="text-2xl font-black">{card.value}</h3>
+                            <p className="text-[10px] md:text-sm font-bold text-gray-400 uppercase tracking-widest mb-1">{card.name}</p>
+                            <h3 className="text-lg md:text-2xl font-black">{card.value}</h3>
                         </div>
                     );
                 })}
             </div>
 
             {/* Analytics Chart */}
-            <div className="bg-white p-6 md:p-8 rounded-[40px] shadow-sm border border-gray-100">
-                <div className="mb-6 flex items-center justify-between">
+            <div className="bg-white p-4 md:p-8 rounded-[28px] md:rounded-[40px] shadow-sm border border-gray-100">
+                <div className="mb-4 md:mb-6 flex items-center justify-between">
                     <div>
-                        <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
-                            <TrendingUp size={20} className="text-blue-500" />
+                        <h2 className="text-base md:text-xl font-black tracking-tight flex items-center gap-2">
+                            <TrendingUp size={18} className="text-blue-500" />
                             So'nggi 7 kunlik daromad
                         </h2>
-                        <p className="text-sm text-gray-400 font-medium mt-1">Sotuvlar dinamikasini kuzatib boring</p>
+                        <p className="text-xs md:text-sm text-gray-400 font-medium mt-1">Sotuvlar dinamikasi</p>
                     </div>
                 </div>
-                <div className="h-[300px] w-full">
+                <div className="h-[220px] md:h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                             <defs>
@@ -170,15 +170,34 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            {/* Recent Orders Table */}
-            <div className="bg-white rounded-[40px] shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-8 border-b border-gray-50 flex justify-between items-center">
-                    <h2 className="text-xl font-black tracking-tight">Oxirgi Buyurtmalar</h2>
-                    <Link href="/admin/orders" className="text-sm font-bold text-gray-400 hover:text-black flex items-center gap-2 group">
-                        Barchasini ko'rish <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+            {/* Recent Orders */}
+            <div className="bg-white rounded-[28px] md:rounded-[40px] shadow-sm border border-gray-100 overflow-hidden">
+                <div className="p-4 md:p-8 border-b border-gray-50 flex justify-between items-center">
+                    <h2 className="text-base md:text-xl font-black tracking-tight">Oxirgi Buyurtmalar</h2>
+                    <Link href="/admin/orders" className="text-xs md:text-sm font-bold text-gray-400 hover:text-black flex items-center gap-1 md:gap-2 group">
+                        Barchasi <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                     </Link>
                 </div>
-                <div className="overflow-x-auto">
+                {/* Mobile: card view */}
+                <div className="divide-y divide-gray-50 md:hidden">
+                    {recentOrders.map((order) => (
+                        <div key={order.id} className="p-4 flex items-center justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                                <div className="font-bold text-sm text-gray-900 truncate">{order.userPhone}</div>
+                                <div className="text-[10px] text-gray-400 font-bold">#{order.id?.slice(0, 8)}</div>
+                            </div>
+                            <div className="text-right">
+                                <div className="font-black text-sm">{order.total?.toLocaleString()} so'm</div>
+                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${order.status === 'Kutilmoqda' ? 'bg-orange-100 text-orange-600' :
+                                    order.status === 'Yetkazildi' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
+                                    {order.status}
+                                </span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                {/* Desktop: table view */}
+                <div className="overflow-x-auto hidden md:block">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-gray-50">
@@ -198,7 +217,7 @@ export default function AdminDashboard() {
                                     <td className="p-6 font-black text-lg">{order.total?.toLocaleString()} so'm</td>
                                     <td className="p-6 text-sm text-gray-500 font-medium">
                                         {order.createdAt ? new Date(order.createdAt).toLocaleDateString('uz-UZ') : ""}
-                                     </td>
+                                    </td>
                                     <td className="p-6">
                                         <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tighter ${order.status === 'Kutilmoqda' ? 'bg-orange-100 text-orange-600' :
                                             order.status === 'Yetkazildi' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'

@@ -223,6 +223,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         );
     }
 
+    const mobileBottomNav = [
+        { name: "Bosh", href: l("/admin"), icon: LayoutDashboard },
+        { name: "Buyurtma", href: l("/admin/orders"), icon: ShoppingCart },
+        { name: "Mahsulot", href: l("/admin/products"), icon: Package },
+        { name: "Mijozlar", href: l("/admin/customers"), icon: Users },
+        { name: "Sozlama", href: l("/admin/settings"), icon: Settings },
+    ];
+
     return (
         <div className="min-h-screen bg-[#F8F9FB] flex">
             <AdminNotificationListener />
@@ -276,23 +284,47 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 lg:ml-72 min-h-screen">
+            <main className="flex-1 lg:ml-72 min-h-screen pb-20 lg:pb-0">
                 {/* Header for Mobile */}
-                <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 p-6 flex justify-between items-center sticky top-0 z-40 lg:hidden">
+                <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-3 flex justify-between items-center sticky top-0 z-40 lg:hidden">
                     <button onClick={() => setIsSidebarOpen(true)} className="p-2 bg-gray-50 rounded-xl">
-                        <Menu size={24} />
+                        <Menu size={22} />
                     </button>
-                    <h1 className="font-black tracking-tighter italic">ADMIN PANEL</h1>
-                    <div className="w-10"></div>
+                    <h1 className="font-black tracking-tighter italic text-sm">ADMIN PANEL</h1>
+                    <div className="w-9"></div>
                 </header>
 
                 {/* Desktop top bar — guruh menyulari (hover ochadi, bosilsa qotadi) */}
                 <AdminTopNav groups={menuGroups} pathname={pathname} />
 
-                <div className="p-6 md:p-12 lg:p-16 max-w-[1600px] mx-auto">
+                <div className="p-4 md:p-8 lg:p-16 max-w-[1600px] mx-auto">
                     {children}
                 </div>
             </main>
+
+            {/* Mobile Bottom Navigation */}
+            <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white border-t border-gray-100 safe-area-pb">
+                <div className="flex items-center justify-around px-2 py-2">
+                    {mobileBottomNav.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = pathname === item.href;
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all"
+                            >
+                                <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-black' : ''}`}>
+                                    <Icon size={20} className={isActive ? 'text-white' : 'text-gray-400'} />
+                                </div>
+                                <span className={`text-[10px] font-bold ${isActive ? 'text-black' : 'text-gray-400'}`}>
+                                    {item.name}
+                                </span>
+                            </Link>
+                        );
+                    })}
+                </div>
+            </nav>
 
             {/* Overlay for mobile sidebar */}
             {isSidebarOpen && (
