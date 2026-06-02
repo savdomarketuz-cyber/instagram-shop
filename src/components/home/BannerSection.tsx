@@ -130,6 +130,10 @@ export const BannerSection = ({
                 >
                     {slides.map((banner, i) => {
                         const html = language === "uz" ? banner.html_uz : banner.html_ru;
+                        // Banner HTML'ini to'liq hujjatga o'raymiz: html/body to'liq balandlikni egallasin.
+                        // Aks holda `height:100%` yoki `container-type:size` ishlatadigan bannerlar
+                        // iframe ichida nol balandlikka tushib, ko'rinmay qolardi.
+                        const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{height:100%;width:100%;margin:0;padding:0;overflow:hidden;background:transparent}</style></head><body>${html || ""}</body></html>`;
                         return (
                             <div
                                 key={`${banner.id}-${i}`}
@@ -141,7 +145,7 @@ export const BannerSection = ({
                                     va avto-almashinish ishlashda davom etadi. */}
                                 <iframe
                                     title={`banner-${banner.id}`}
-                                    srcDoc={html || ""}
+                                    srcDoc={doc}
                                     scrolling="no"
                                     tabIndex={-1}
                                     style={{
