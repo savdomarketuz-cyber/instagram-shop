@@ -393,30 +393,61 @@ export default function HomeClient({
     }, [hasMore, loading, isFetchingMore, pageNumber]);
 
     const mobileSearchTimer = useRef<NodeJS.Timeout | null>(null);
+    const searchAbortRef = useRef<AbortController | null>(null);
 
-    const handleMobileSearch = async (e?: React.FormEvent) => {
+    // Qidiruvni to'liq tozalash: kutilayotgan debounce + uchayotgan so'rovni bekor qiladi.
+    // Aks holda eskirgan javob qaytib, o'chirilgan so'zni qidiruv maydoniga tiklab qo'yardi.
+    const clearMobileSearch = () => {
+        if (mobileSearchTimer.current) { clearTimeout(mobileSearchTimer.current); mobileSearchTimer.current = null; }
+        if (searchAbortRef.current) { searchAbortRef.current.abort(); searchAbortRef.current = null; }
+        setSearch("");
+        setSearchResults(null);
+        setHomeSearchQuery("");
+        useStore.setState({ isSearchLoading: false });
+    };
+
+    const handleMobileSearch = async (e?: React.FormEvent, queryArg?: string) => {
         if (e) e.preventDefault();
-        if (!search.trim()) { setSearchResults(null); return; }
+        // Enter bosilganda kutilayotgan debounce takror qidiruv qilmasin
+        if (mobileSearchTimer.current) { clearTimeout(mobileSearchTimer.current); mobileSearchTimer.current = null; }
+        const q = (queryArg ?? search).trim();
+        if (!q) { setSearchResults(null); return; }
+
+        // Oldingi uchayotgan so'rovni bekor qilamiz
+        if (searchAbortRef.current) searchAbortRef.current.abort();
+        const controller = new AbortController();
+        searchAbortRef.current = controller;
+
         useStore.setState({ isSearchLoading: true });
         try {
             const res = await fetch("/api/search", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ query: search, userPhone: user?.phone }),
+                body: JSON.stringify({ query: q, userPhone: user?.phone }),
+                signal: controller.signal,
             });
+            // Bu so'rov eskirgan (yangi qidiruv yoki tozalash bo'lgan) bo'lsa — natijani qo'llamaymiz
+            if (searchAbortRef.current !== controller) return;
             const data = res.ok ? await res.json() : { results: [], facets: null, didYouMean: null };
             setSearchResults(data.results || [], data.facets || null, data.didYouMean || null);
-            setHomeSearchQuery(search);
-        } catch (e) { console.error(e); }
-        finally { useStore.setState({ isSearchLoading: false }); }
+            setHomeSearchQuery(q);
+        } catch (err) {
+            if ((err as any)?.name === "AbortError") return; // bekor qilingan — sokin
+            console.error(err);
+        } finally {
+            if (searchAbortRef.current === controller) {
+                searchAbortRef.current = null;
+                useStore.setState({ isSearchLoading: false });
+            }
+        }
     };
 
     const handleMobileSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
         setSearch(val);
-        if (!val.trim()) { setSearchResults(null); setHomeSearchQuery(""); return; }
+        if (!val.trim()) { clearMobileSearch(); return; }
         if (mobileSearchTimer.current) clearTimeout(mobileSearchTimer.current);
-        mobileSearchTimer.current = setTimeout(() => handleMobileSearch(), 600);
+        mobileSearchTimer.current = setTimeout(() => handleMobileSearch(undefined, val), 600);
     };
 
     return (
@@ -471,7 +502,7 @@ export default function HomeClient({
                             style={{ flex: 1, fontSize: 14, color: "#0F1410", background: "none", border: "none", outline: "none", fontWeight: 500 }}
                         />
                         {search && (
-                            <button type="button" onClick={() => { setSearch(""); setSearchResults(null); setHomeSearchQuery(""); }}
+                            <button type="button" onClick={clearMobileSearch}
                                 style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
                                 <X size={16} color="#9AA29C" />
                             </button>
