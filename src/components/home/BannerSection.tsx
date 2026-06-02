@@ -133,7 +133,8 @@ export const BannerSection = ({
                         // Banner HTML'ini to'liq hujjatga o'raymiz: html/body to'liq balandlikni egallasin.
                         // Aks holda `height:100%` yoki `container-type:size` ishlatadigan bannerlar
                         // iframe ichida nol balandlikka tushib, ko'rinmay qolardi.
-                        const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{height:100%;width:100%;margin:0;padding:0;overflow:hidden;background:transparent}</style></head><body>${html || ""}</body></html>`;
+                        // <base target="_top"> — banner ichidagi havolalar iframe emas, BUTUN sahifada ochilsin.
+                        const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_top"><style>html,body{height:100%;width:100%;margin:0;padding:0;overflow:hidden;background:transparent}</style></head><body>${html || ""}</body></html>`;
                         return (
                             <div
                                 key={`${banner.id}-${i}`}
@@ -141,19 +142,20 @@ export const BannerSection = ({
                             >
                                 {/* Banner HTML'i alohida iframe ichida — o'zining <style>/body qoidalari
                                     sahifaga oqib o'tmasligi uchun (aks holda body'ga padding qo'shilib
-                                    sayt chetlaridan siqilib qolardi). pointer-events:none — surish (swipe)
-                                    va avto-almashinish ishlashda davom etadi. */}
+                                    sayt chetlaridan siqilib qolardi). pointer-events:auto — banner
+                                    ichidagi havolalar bosiladi (base target=_top bilan butun sahifada
+                                    ochiladi). Bir nechta banner orasida o'tish — nuqtalar (dots) va
+                                    avto-almashinish orqali. */}
                                 <iframe
                                     title={`banner-${banner.id}`}
                                     srcDoc={doc}
                                     scrolling="no"
-                                    tabIndex={-1}
                                     style={{
                                         display: "block",
                                         width: "100%",
                                         height: "100%",
                                         border: "none",
-                                        pointerEvents: "none",
+                                        pointerEvents: "auto",
                                         background: "transparent",
                                     }}
                                 />
