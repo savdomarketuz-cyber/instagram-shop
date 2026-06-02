@@ -19,7 +19,6 @@ import RecentlyViewed, { getRecentlyViewedIds } from "@/components/velari/Recent
 import PromoCountdown from "@/components/velari/PromoCountdown";
 import StoriesRow from "@/components/velari/StoriesRow";
 import FeaturedCategories from "@/components/home/FeaturedCategories";
-import PopularMarquee from "@/components/velari/PopularMarquee";
 
 import type { Product, Category, Banner } from "@/types";
 
@@ -667,13 +666,6 @@ export default function HomeClient({
 
             {/* Kategoriya vitrinasi — mobilda banner tagida, desktopda hero tagida (komponent o'zi mos blokni ko'rsatadi) */}
             {!searchResults && !urlCategory && <FeaturedCategories language={language} initial={initialFeaturedCategories} />}
-
-            {/* "Velari'da mashhur" — bazadagi real mashhur mahsulotlar (avto-aylanuvchi lenta) */}
-            {!searchResults && !urlCategory && (
-                <div className="px-5 md:px-10 mt-6 md:mt-10">
-                    <PopularMarquee products={allProducts} language={language} />
-                </div>
-            )}
 
             {/* Stories — desktopda kategoriyalardan keyin (kattaroq) */}
             {!searchResults && !urlCategory && <StoriesRow language={language} device="desktop" />}
