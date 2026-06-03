@@ -4,7 +4,8 @@ import { CheckCircle, Sparkles, Gift, ArrowRight, Wallet, History } from "lucide
 import Link from "next/link";
 import { useStore } from "@/store/store";
 import { useSearchParams } from "next/navigation";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { ymGoal } from "@/lib/metrika";
 
 const GREEN = "#2D6E3E";
 const GREEN_DEEP = "#1F5A30";
@@ -16,9 +17,15 @@ function SuccessContent() {
     const orderId = searchParams.get("orderId");
     const [potentialCashback, setPotentialCashback] = useState<number>(0);
     const [loading, setLoading] = useState(true);
+    const trackedRef = useRef<string | null>(null);
 
     useEffect(() => {
         if (orderId) {
+            // Analytics: yakuniy konversiya (har orderId uchun bir marta)
+            if (trackedRef.current !== orderId) {
+                trackedRef.current = orderId;
+                ymGoal('order_success', { order_id: orderId });
+            }
             fetchOrderReward();
         } else {
             setLoading(false);

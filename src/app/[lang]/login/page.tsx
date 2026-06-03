@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Send, Key, Loader2, ChevronLeft, ShieldCheck, User } from "lucide-react";
 import { useStore } from "@/store/store";
 import { translations } from "@/lib/translations";
+import { ymGoal } from "@/lib/metrika";
 
 const GREEN = "#2D6E3E";
 const GREEN_DEEP = "#1F5A30";
@@ -91,6 +92,7 @@ export default function LoginPage() {
 
             if (userAuthRes.ok && userAuthData.success) {
                 setUser(userAuthData.user);
+                ymGoal('login'); // Analytics: muvaffaqiyatli kirish
                 showToast(language === 'uz' ? "Xush kelibsiz!" : "Добро пожаловать!");
                 router.push(redirect || "/");
             } else {

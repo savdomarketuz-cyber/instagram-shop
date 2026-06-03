@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useStore } from "@/store/store";
+import { ymGoal } from "@/lib/metrika";
 
 const GREEN = "#2D6E3E";
 
@@ -40,6 +41,7 @@ export default function TelegramAuthPage() {
 
                 if (res.ok && data.success) {
                     setUser(data.user);
+                    ymGoal('login', { method: 'telegram' }); // Analytics: Telegram orqali kirish
                     setStatus("ok");
                     const next = data.next && data.next.startsWith("/") ? data.next : `/${lang}`;
                     setTimeout(() => router.replace(next), 700);

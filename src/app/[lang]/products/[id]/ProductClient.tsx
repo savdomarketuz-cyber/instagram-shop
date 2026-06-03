@@ -13,6 +13,7 @@ import Image from "next/image";
 import { getProductIdFromSlug, getProductSlug } from "@/lib/slugify";
 import { useTelemetry } from "@/hooks/useTelemetry";
 import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
+import { ymViewProduct } from "@/lib/metrika";
 
 // Components
 import { ProductMedia } from "@/components/product/ProductMedia";
@@ -110,7 +111,11 @@ export default function ProductClient({ params, initialProduct }: { params: { id
 
     // Track recently viewed
     useEffect(() => {
-        if (product?.id) trackProductView(product.id);
+        if (product?.id) {
+            trackProductView(product.id);
+            // Analytics: e-commerce mahsulot ko'rinishi
+            ymViewProduct({ id: product.id, name: product.name, price: product.price, category: (product as any).category, brand: (product as any).brand });
+        }
     }, [product?.id]);
 
     // Shaxsiy chegirma (smart/manual offer) — login mijozga ko'rsatiladi

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { supabase } from "@/lib/supabase";
 import type { Product, CartItem, User, Category, Toast, Language, SearchFacets } from "@/types";
+import { ymGoal, ymAddToCart, ymRemoveFromCart } from "@/lib/metrika";
 
 // Re-export for backward compatibility
 export type { Product, CartItem };
@@ -68,6 +69,10 @@ export const useStore = create<StoreState>()(
                 const existing = state.cart.find((item) => item.id === product.id);
                 const maxStock = product.stock ?? 999;
 
+                // Analytics: savatga qo'shish goal + e-commerce
+                ymGoal('add_to_cart', { product_id: product.id });
+                ymAddToCart({ id: product.id, name: product.name, price: product.price, category: (product as any).category, brand: (product as any).brand });
+
                 if (existing) {
                     if (existing.quantity >= maxStock) return {};
                     return {
@@ -78,9 +83,11 @@ export const useStore = create<StoreState>()(
                 }
                 return { cart: [...state.cart, { ...product, quantity: 1 }] };
             }),
-            removeFromCart: (productId) => set((state) => ({
-                cart: state.cart.filter((item) => item.id !== productId)
-            })),
+            removeFromCart: (productId) => set((state) => {
+                const item = state.cart.find((i) => i.id === productId);
+                if (item) ymRemoveFromCart({ id: item.id, name: item.name, price: item.price, quantity: item.quantity });
+                return { cart: state.cart.filter((i) => i.id !== productId) };
+            }),
             updateQuantity: (productId, quantity) => set((state) => {
                 if (quantity <= 0) {
                     return { cart: state.cart.filter((item) => item.id !== productId) };

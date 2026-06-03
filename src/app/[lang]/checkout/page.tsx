@@ -13,6 +13,7 @@ const YandexMapPicker = dynamic(() => import("@/components/YandexMapPicker"), {
     ssr: false,
 });
 import { translations } from "@/lib/translations";
+import { ymGoal, ymPurchase } from "@/lib/metrika";
 
 export default function CheckoutPage() {
     const router = useRouter();
@@ -251,6 +252,7 @@ export default function CheckoutPage() {
         if (isSubmitting || isValidating) return;
 
         setIsSubmitting(true);
+        ymGoal('begin_checkout'); // Analytics: rasmiylashtirishni boshladi
         try {
             // Using secure API instead of direct RPC
             const response = await fetch(`/api/orders/place`, {
@@ -295,6 +297,12 @@ export default function CheckoutPage() {
             }
 
             if (data.success && data.orderId) {
+                // Analytics: konversiya (buyurtma) goal + e-commerce purchase (daromad)
+                ymGoal('order', { order_id: data.orderId });
+                ymPurchase(
+                    displayProducts.map(item => ({ id: item.id, name: item.name, price: item.price, quantity: item.quantity })),
+                    { id: String(data.orderId), revenue: total }
+                );
                 try {
                     const cookieStr = document.cookie.split('; ').find(row => row.startsWith('affiliate_data='));
                     if (cookieStr) {
