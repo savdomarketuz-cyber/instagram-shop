@@ -48,8 +48,8 @@ export default function HomeClient({
         cart, wishlist, language, user, addToCart, updateQuantity, removeFromCart, 
         toggleWishlist, setCachedProducts, homeScrollPosition, setHomeScrollPosition, 
         homeSearchQuery, setHomeSearchQuery, homeActiveFilter, setHomeActiveFilter, 
-        homeActiveTab, setHomeActiveTab, searchResults, searchFacets, didYouMean, 
-        isSearchLoading, setSearchResults 
+        homeActiveTab, setHomeActiveTab, searchResults, searchFacets, didYouMean, isFallback,
+        isSearchLoading, setSearchResults
     } = useStore(useShallow(state => ({
         cart: state.cart,
         wishlist: state.wishlist,
@@ -71,6 +71,7 @@ export default function HomeClient({
         searchResults: state.searchResults,
         searchFacets: state.searchFacets,
         didYouMean: state.didYouMean,
+        isFallback: state.isFallback,
         isSearchLoading: state.isSearchLoading,
         setSearchResults: state.setSearchResults,
     })));
@@ -451,9 +452,9 @@ export default function HomeClient({
             });
             // Bu so'rov eskirgan (yangi qidiruv yoki tozalash bo'lgan) bo'lsa — natijani qo'llamaymiz
             if (searchAbortRef.current !== controller) return;
-            const data = res.ok ? await res.json() : { results: [], facets: null, didYouMean: null };
+            const data = res.ok ? await res.json() : { results: [], facets: null, didYouMean: null, isFallback: false };
             setActiveFacet(null); // yangi qidiruv — oldingi kategoriya filtri tushadi
-            setSearchResults(data.results || [], data.facets || null, data.didYouMean || null);
+            setSearchResults(data.results || [], data.facets || null, data.didYouMean || null, !!data.isFallback);
             setHomeSearchQuery(q);
         } catch (err) {
             if ((err as any)?.name === "AbortError") return; // bekor qilingan — sokin
@@ -694,10 +695,14 @@ export default function HomeClient({
                         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
                             <div>
                                 <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.5, color: "#0F1410", margin: 0 }}>
-                                    {language === "uz" ? "Qidiruv natijalari" : "Результаты поиска"}
+                                    {isFallback && searchResults.length > 0
+                                        ? (language === "uz" ? "Aniq moslik topilmadi" : "Точных совпадений нет")
+                                        : (language === "uz" ? "Qidiruv natijalari" : "Результаты поиска")}
                                 </h2>
                                 <p style={{ fontSize: 13, color: "#9AA29C", marginTop: 4, fontWeight: 500 }}>
-                                    {searchResults.length} {language === "uz" ? "ta mahsulot" : "товаров"}
+                                    {isFallback && searchResults.length > 0
+                                        ? (language === "uz" ? "Shunga o'xshash mahsulotlar:" : "Похожие товары:")
+                                        : `${searchResults.length} ${language === "uz" ? "ta mahsulot" : "товаров"}`}
                                 </p>
                                 {didYouMean && searchResults.length > 0 && (
                                     <p style={{ marginTop: 8, fontSize: 13, color: "#5A625C" }}>
@@ -714,7 +719,7 @@ export default function HomeClient({
                                                     });
                                                     const data = await res.json();
                                                     setActiveFacet(null);
-                                                    setSearchResults(data.results || [], data.facets || null, data.didYouMean || null);
+                                                    setSearchResults(data.results || [], data.facets || null, data.didYouMean || null, !!data.isFallback);
                                                 } catch (e) {
                                                     console.error("Did you mean search failed", e);
                                                 } finally {

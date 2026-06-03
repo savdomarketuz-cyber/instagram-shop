@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { mapProduct } from '@/lib/mappers';
 import { checkRateLimit } from '@/lib/rate-limiter';
-import { normalizeQuery } from '@/lib/query-normalize';
+import { normalizeQuery, transliterateLatin } from '@/lib/query-normalize';
 
 /**
  * Admin "Qidiruv Lug'ati" (search_synonyms) jadvalidagi sinonimlarni qo'llaydi.
@@ -107,16 +107,20 @@ export async function POST(req: NextRequest) {
         const dbNormalized = suggest ? searchQuery : await applyDbSynonyms(searchQuery);
         const normalizedQuery = normalizeQuery(dbNormalized);
 
-        // 3. Behavioral + affinity ranked search (text + trigram + telemetry + user profile)
+        // 3. Behavioral + affinity ranked search (tokenized + word_similarity + telemetry + profile)
         let finalResults: any[] = [];
+        let isFallback = false;
 
-        const { data: results, error } = await supabase.rpc('advanced_smart_search', {
-            search_query: normalizedQuery,
+        const runRpc = (q: string, threshold: number) => supabase.rpc('advanced_smart_search', {
+            search_query: q,
             query_embedding: null,
-            match_threshold: 0.15,
+            match_threshold: threshold,
             match_count: suggest ? 6 : 50,
             p_user_identifier: suggest ? null : userIdentifier,
         });
+
+        // match_threshold endi word_similarity chegarasi (token darajasida fuzzy).
+        const { data: results, error } = await runRpc(normalizedQuery, 0.30);
 
         if (error) {
             console.error("advanced_smart_search RPC error:", error);
@@ -131,6 +135,21 @@ export async function POST(req: NextRequest) {
             if (textResults) finalResults = textResults;
         } else {
             finalResults = results || [];
+        }
+
+        // 3.1 FALLBACK — hech narsa topilmasa, hech qachon bo'sh ko'cha bermaslik.
+        // (a) kirillcha so'rovni lotinga o'girib qayta sinash (klipper→clipper),
+        // (b) word_similarity chegarasini pasaytirib eng yaqin mahsulotlarni ko'rsatish.
+        if (!error && finalResults.length === 0 && searchQuery) {
+            const translit = normalizeQuery(transliterateLatin(dbNormalized));
+            if (translit && translit.toLowerCase() !== normalizedQuery.toLowerCase()) {
+                const { data: tr } = await runRpc(translit, 0.30);
+                if (tr && tr.length > 0) finalResults = tr;
+            }
+            if (finalResults.length === 0) {
+                const { data: relaxed } = await runRpc(normalizedQuery, 0.18);
+                if (relaxed && relaxed.length > 0) { finalResults = relaxed; isFallback = true; }
+            }
         }
 
         // Map results consistently with the rest of the app
@@ -178,18 +197,11 @@ export async function POST(req: NextRequest) {
                 }
             });
 
-            if (mappedResults.length > 0 && searchQuery.length >= 3) {
-                const topName = mappedResults[0].name.toLowerCase();
-                const originalLower = searchQuery.toLowerCase();
-                // If it's a fuzzy match (query not inside the top result name exactly)
-                if (!topName.includes(originalLower)) {
-                    // Propose the first word of the top item (often the brand / exact product)
-                    const words = mappedResults[0].name.split(' ');
-                    // e.g. "Ayfon" -> "iPhone"
-                    if (words.length > 0 && words[0].toLowerCase() !== originalLower) {
-                        didYouMean = words[0];
-                    }
-                }
+            // "Balki shuni nazarda tutdingizmi?" — normalizatsiya/transliteratsiya
+            // so'rovni o'zgartirgan bo'lsa (ayrpods→AirPods, клиппер→clipper), shuni taklif qilamiz.
+            // Mahsulot nomidan tasodifiy so'z olishdan ko'ra ishonchli signal.
+            if (searchQuery.length >= 3 && normalizedQuery.toLowerCase() !== searchQuery.toLowerCase()) {
+                didYouMean = normalizedQuery;
             }
         }
 
@@ -203,11 +215,12 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        return NextResponse.json({ 
-            success: true, 
+        return NextResponse.json({
+            success: true,
             results: mappedResults,
             facets,
             didYouMean,
+            isFallback,
             count: mappedResults.length
         });
 

@@ -103,8 +103,8 @@ export default function Navigation() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ query: activeQuery, userPhone: user?.phone })
             });
-            const data = res.ok ? await res.json() : { results: [], facets: null, didYouMean: null };
-            setSearchResults(data.results || [], data.facets || null, data.didYouMean || null);
+            const data = res.ok ? await res.json() : { results: [], facets: null, didYouMean: null, isFallback: false };
+            setSearchResults(data.results || [], data.facets || null, data.didYouMean || null, !!data.isFallback);
             setStoreGlobalQuery(activeQuery);
             if (!isHomePage) router.push(`/${language}`);
         } catch (err) {
@@ -175,7 +175,7 @@ export default function Navigation() {
                 body: JSON.stringify({ image: base64 })
             });
             const data = await res.json();
-            setSearchResults(data.results || []);
+            setSearchResults(data.results || [], data.facets || null, data.didYouMean || null, !!data.isFallback);
             setSearch("");
             useStore.setState({ isSearchLoading: false });
         } catch (err) {

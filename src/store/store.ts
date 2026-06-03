@@ -37,8 +37,9 @@ interface StoreState {
     searchResults: Product[] | null;
     searchFacets: SearchFacets | null;
     didYouMean: string | null;
+    isFallback: boolean;
     isSearchLoading: boolean;
-    setSearchResults: (results: Product[] | null, facets?: SearchFacets | null, didYouMean?: string | null) => void;
+    setSearchResults: (results: Product[] | null, facets?: SearchFacets | null, didYouMean?: string | null, isFallback?: boolean) => void;
     prefetchedProducts: Record<string, Product>;
     setPrefetchedProduct: (product: Product) => void;
     // Shaxsiy smart-chegirma: productId -> foiz (login mijoz uchun aktiv offerlar)
@@ -124,8 +125,9 @@ export const useStore = create<StoreState>()(
             searchResults: null,
             searchFacets: null,
             didYouMean: null,
+            isFallback: false,
             isSearchLoading: false,
-            setSearchResults: (results, facets = null, didYouMean = null) => set({ searchResults: results, searchFacets: facets, didYouMean: didYouMean }),
+            setSearchResults: (results, facets = null, didYouMean = null, isFallback = false) => set({ searchResults: results, searchFacets: facets, didYouMean: didYouMean, isFallback: isFallback }),
             personalOffers: {},
             fetchPersonalOffers: async () => {
                 try {

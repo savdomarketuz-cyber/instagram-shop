@@ -9,7 +9,9 @@ const BRAND_MAP: Record<string, string> = {
     "ayfon": "iPhone", "айфон": "iPhone", "iphone": "iPhone", "ifon": "iPhone",
     "apple": "Apple", "айпад": "iPad", "ipad": "iPad", "aypad": "iPad",
     "макбук": "MacBook", "makbuk": "MacBook", "macbook": "MacBook",
-    "эйрподс": "AirPods", "airpods": "AirPods", "erpods": "AirPods", "airpod": "AirPods",
+    "эйрподс": "AirPods", "эирподс": "AirPods", "airpods": "AirPods", "erpods": "AirPods",
+    "airpod": "AirPods", "arpods": "AirPods", "arpod": "AirPods", "ayrpods": "AirPods", "ayrpod": "AirPods",
+    "podsmax": "Pods Max", "клиппер": "clipper", "клипер": "clipper", "kliper": "clipper",
     // Samsung
     "самсунг": "Samsung", "samsung": "Samsung", "samsng": "Samsung", "самсунк": "Samsung",
     "галакси": "Galaxy", "galaxy": "Galaxy", "galaksi": "Galaxy",
@@ -33,6 +35,30 @@ const SYNONYM_MAP: Record<string, string> = {
     "soch olish": "trimmer", "soch kesish": "trimmer", "mashinka": "trimmer", "стрижка": "trimmer",
     "fen": "fen", "фен": "fen", "hairdryer": "fen",
 };
+
+// Kirill → lotin transliteratsiya jadvali (uz/ru). Fallback uchun:
+// agar kirillcha so'rov natija bermasa, lotincha shaklini ham sinaymiz
+// (mahsulot nomlari ko'pincha lotin: "клиппер" → "klipper" ≈ "clipper").
+const CYRILLIC_MAP: Record<string, string> = {
+    "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ё": "yo",
+    "ж": "j", "з": "z", "и": "i", "й": "y", "к": "k", "л": "l", "м": "m",
+    "н": "n", "о": "o", "п": "p", "р": "r", "с": "s", "т": "t", "у": "u",
+    "ф": "f", "х": "x", "ц": "ts", "ч": "ch", "ш": "sh", "щ": "sh",
+    "ъ": "", "ы": "i", "ь": "", "э": "e", "ю": "yu", "я": "ya",
+    "қ": "q", "ғ": "g", "ҳ": "h", "ў": "o",
+};
+
+/** Matndagi kirill harflarni lotinga o'giradi. Lotin/raqamlar tegmaydi. */
+export function transliterateLatin(raw: string): string {
+    const s = (raw || "").toLowerCase();
+    let out = "";
+    let hadCyrillic = false;
+    for (const ch of s) {
+        if (CYRILLIC_MAP[ch] !== undefined) { out += CYRILLIC_MAP[ch]; hadCyrillic = true; }
+        else out += ch;
+    }
+    return hadCyrillic ? out : raw;
+}
 
 export function normalizeQuery(raw: string): string {
     const q = (raw || "").trim();
