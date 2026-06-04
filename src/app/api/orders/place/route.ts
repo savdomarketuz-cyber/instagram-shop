@@ -336,13 +336,25 @@ export async function POST(req: NextRequest) {
                             .update({ conversions: (curLink?.conversions || 0) + 1 })
                             .eq("id", linkData.id);
 
-                        // Create pending commission transaction (amount=0, calculated on delivery)
+                        // Pending komissiyani ORDER vaqtida hisoblaymiz (sotuvchi foizi).
+                        // Yetkazilganda distributeCommissions buni chegirma bo'yicha QAYTA
+                        // hisoblab (overwrite) tasdiqlaydi — ikki marta sanalmaydi.
+                        const { data: prod } = await supabaseAdmin
+                            .from("products")
+                            .select("price, comm_seller")
+                            .eq("id", prodId)
+                            .single();
+                        const item = (validatedData.items as any[]).find(i => i.id === prodId);
+                        const unitPrice = Number(item?.price ?? prod?.price ?? 0);
+                        const qty = Number(item?.quantity || 1);
+                        const pendingAmount = Math.floor(unitPrice * qty * (Number(prod?.comm_seller) || 0) / 100);
+
                         await supabaseAdmin.from("affiliate_transactions").insert({
                             user_id: linkData.user_id,
                             order_id: orderId,
                             product_id: prodId,
                             status: 'pending',
-                            amount: 0,
+                            amount: pendingAmount,
                             order_stage: 'Referal havola orqali'
                         });
                     }

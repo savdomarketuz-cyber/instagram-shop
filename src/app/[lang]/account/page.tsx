@@ -1625,7 +1625,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                             <div className="relative h-48 overflow-hidden">
                                                 <Image src={p.image} alt={p.name} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
                                                 <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-black uppercase italic">
-                                                    {p.myCommission?.toLocaleString()} so'm foyda
+                                                    {p.myCommission}% {language === 'uz' ? 'foyda' : 'выгода'}
                                                 </div>
                                             </div>
                                             <div className="p-6 space-y-4">
