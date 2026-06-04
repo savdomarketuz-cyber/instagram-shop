@@ -236,15 +236,14 @@ export async function POST(req: NextRequest) {
 
         // --- CREATE REFERRAL LINK ---
         if (action === "create_link") {
-            const { data: user } = await supabaseAdmin.from("users").select("id, affiliate_code").eq("phone", userPhone).single();
+            const { data: user } = await supabaseAdmin.from("users").select("id").eq("phone", userPhone).single();
             if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-            // Generate unique slug with collision retry
+            // Anonim, URL-xavfsiz slug (hamkor ismi ko'rinmasligi uchun) + collision retry
             let slug = "";
             for (let i = 0; i < 5; i++) {
-                const rand = crypto.randomBytes(3).toString('hex');
-                const candidate = `${user.affiliate_code || rand}-${rand}`;
-                const { data: existing } = await supabaseAdmin.from("affiliate_links").select("id").eq("slug", candidate).single();
+                const candidate = crypto.randomBytes(5).toString('hex');
+                const { data: existing } = await supabaseAdmin.from("affiliate_links").select("id").eq("slug", candidate).maybeSingle();
                 if (!existing) { slug = candidate; break; }
             }
             if (!slug) return NextResponse.json({ error: "Urinib ko'ring (slug collision)" }, { status: 500 });

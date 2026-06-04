@@ -40,12 +40,17 @@ export async function POST(req: NextRequest) {
         const { productId } = await req.json();
         if (!productId) return NextResponse.json({ error: "Product ID required" }, { status: 400 });
 
-        const { data: user } = await supabaseAdmin.from("users").select("id, affiliate_code").eq("phone", phone).single();
+        const { data: user } = await supabaseAdmin.from("users").select("id").eq("phone", phone).single();
         if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-        // Generate a unique slug
-        const randomStr = crypto.randomBytes(3).toString('hex');
-        const slug = `${user.affiliate_code || randomStr}-${randomStr}`;
+        // Anonim, URL-xavfsiz slug (hamkor ismi/kodi ko'rinmasligi uchun) + collision retry
+        let slug = "";
+        for (let i = 0; i < 5; i++) {
+            const candidate = crypto.randomBytes(5).toString('hex'); // 10 belgili
+            const { data: existing } = await supabaseAdmin.from("affiliate_links").select("id").eq("slug", candidate).maybeSingle();
+            if (!existing) { slug = candidate; break; }
+        }
+        if (!slug) return NextResponse.json({ error: "Qayta urinib ko'ring (slug collision)" }, { status: 500 });
 
         const { data, error } = await supabaseAdmin
             .from("affiliate_links")

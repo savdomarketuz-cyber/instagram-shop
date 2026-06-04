@@ -42,6 +42,8 @@ import {
     History,
     KeyRound,
     LayoutGrid,
+    Search,
+    Copy,
     Link as LinkIcon
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -1033,6 +1035,8 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
     const [showCreatePromo, setShowCreatePromo] = useState(false);
     const [selectedTariff, setSelectedTariff] = useState<any>(null);
     const [customPromoCode, setCustomPromoCode] = useState("");
+    const [productSearch, setProductSearch] = useState("");
+    const [linkModal, setLinkModal] = useState<{ slug: string; name: string } | null>(null);
 
     useEffect(() => {
         fetchData();
@@ -1315,18 +1319,20 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
         }
     }, [activeTab, authorized]);
 
-    const handleCreateLink = async (productId: string) => {
+    const handleCreateLink = async (product: any) => {
         setIsActionLoading(true);
         try {
             const res = await fetch("/api/affiliate/links", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ productId })
+                body: JSON.stringify({ productId: product.id })
             });
             const d = await res.json();
             if (d.success) {
-                showToast(language === 'uz' ? "Referal link yaratildi!" : "Реферальная ссылка создана!", "success");
-                setActiveTab("links");
+                const pName = language === 'uz' ? (product.name_uz || product.name) : (product.name_ru || product.name);
+                setLinkModal({ slug: d.data.slug, name: pName });
+            } else {
+                showToast(d.error || (language === 'uz' ? "Xatolik" : "Ошибка"), "error");
             }
         } finally {
             setIsActionLoading(false);
@@ -1568,30 +1574,78 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
 
                 {activeTab === 'products' && (
                     <div className="space-y-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {affProducts.map(p => (
-                                <div key={p.id} className="bg-white rounded-[40px] overflow-hidden shadow-sm border border-gray-100 group">
-                                    <div className="relative h-48 overflow-hidden">
-                                        <Image src={p.image} alt={p.name} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
-                                        <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-black uppercase italic">
-                                            {p.myCommission?.toLocaleString()} so'm foyda
-                                        </div>
-                                    </div>
-                                    <div className="p-6 space-y-4">
-                                        <h3 className="font-black italic tracking-tighter text-sm uppercase line-clamp-1">{language === 'uz' ? p.name_uz || p.name : p.name_ru || p.name}</h3>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-lg font-black italic tracking-tighter">{p.price?.toLocaleString()} so'm</span>
-                                            <button 
-                                                onClick={() => handleCreateLink(p.id)}
-                                                className="p-3 rounded-2xl hover:scale-110 active:scale-95 transition-all velari-green-btn"
-                                            >
-                                                <LinkIcon size={18} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
+                        {/* Qidiruv */}
+                        <div className="relative">
+                            <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300" />
+                            <input
+                                value={productSearch}
+                                onChange={(e) => setProductSearch(e.target.value)}
+                                placeholder={language === 'uz' ? 'Mahsulot qidirish...' : 'Поиск товара...'}
+                                className="w-full bg-white border border-gray-100 rounded-[28px] pl-14 pr-12 py-4 text-sm font-bold text-black placeholder:text-gray-300 outline-none focus:border-[#2D6E3E]/30 transition-all"
+                            />
+                            {productSearch && (
+                                <button onClick={() => setProductSearch("")} className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-gray-300 hover:text-black transition-colors">
+                                    <X size={16} />
+                                </button>
+                            )}
                         </div>
+
+                        {isDataLoading && affProducts.length === 0 ? (
+                            // Yuklanish skeleti
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {[...Array(6)].map((_, i) => (
+                                    <div key={i} className="bg-white rounded-[40px] overflow-hidden shadow-sm border border-gray-100 animate-pulse">
+                                        <div className="h-48 bg-gray-100" />
+                                        <div className="p-6 space-y-4">
+                                            <div className="h-4 bg-gray-100 rounded-full w-3/4" />
+                                            <div className="flex justify-between items-center">
+                                                <div className="h-6 bg-gray-100 rounded-full w-1/3" />
+                                                <div className="h-11 w-11 bg-gray-100 rounded-2xl" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (() => {
+                            const q = productSearch.trim().toLowerCase();
+                            const filtered = q
+                                ? affProducts.filter(p => `${p.name || ''} ${p.name_uz || ''} ${p.name_ru || ''}`.toLowerCase().includes(q))
+                                : affProducts;
+                            if (filtered.length === 0) {
+                                return (
+                                    <div className="bg-white p-16 rounded-[40px] text-center text-gray-300 font-bold italic text-sm border border-dashed border-gray-200">
+                                        {language === 'uz' ? 'Mahsulot topilmadi' : 'Товары не найдены'}
+                                    </div>
+                                );
+                            }
+                            return (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {filtered.map(p => (
+                                        <div key={p.id} className="bg-white rounded-[40px] overflow-hidden shadow-sm border border-gray-100 group">
+                                            <div className="relative h-48 overflow-hidden">
+                                                <Image src={p.image} alt={p.name} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
+                                                <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-black uppercase italic">
+                                                    {p.myCommission?.toLocaleString()} so'm foyda
+                                                </div>
+                                            </div>
+                                            <div className="p-6 space-y-4">
+                                                <h3 className="font-black italic tracking-tighter text-sm uppercase line-clamp-1">{language === 'uz' ? p.name_uz || p.name : p.name_ru || p.name}</h3>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-lg font-black italic tracking-tighter">{p.price?.toLocaleString()} so'm</span>
+                                                    <button
+                                                        onClick={() => handleCreateLink(p)}
+                                                        disabled={isActionLoading}
+                                                        className="p-3 rounded-2xl hover:scale-110 active:scale-95 transition-all velari-green-btn disabled:opacity-50"
+                                                    >
+                                                        <LinkIcon size={18} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            );
+                        })()}
                     </div>
                 )}
 
@@ -1843,6 +1897,38 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
             </div>
 
             {/* Modals */}
+            {linkModal && (() => {
+                const fullUrl = `${window.location.origin}/${language}/ref/${linkModal.slug}`;
+                return (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md" onClick={() => setLinkModal(null)}>
+                        <div className="bg-white w-full max-w-md p-8 rounded-[40px] shadow-2xl space-y-6 relative animate-in fade-in zoom-in duration-300" onClick={e => e.stopPropagation()}>
+                            <button onClick={() => setLinkModal(null)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-all"><X size={18} /></button>
+                            <div className="w-16 h-16 bg-[#EAF3EC] rounded-3xl flex items-center justify-center mx-auto">
+                                <LinkIcon className="text-[#2D6E3E]" size={30} />
+                            </div>
+                            <div className="text-center space-y-1">
+                                <h2 className="text-xl font-black italic tracking-tighter uppercase">{language === 'uz' ? 'Havola tayyor' : 'Ссылка готова'}</h2>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest line-clamp-1">{linkModal.name}</p>
+                            </div>
+                            <div className="flex items-center gap-2 bg-gray-50 rounded-2xl p-2 pl-5 border border-gray-100">
+                                <span className="flex-1 text-xs font-bold text-gray-600 font-mono truncate">{fullUrl}</span>
+                                <button
+                                    onClick={() => copyToClipboard(fullUrl)}
+                                    className="shrink-0 flex items-center gap-2 px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all velari-green-btn"
+                                >
+                                    <Copy size={14} /> {language === 'uz' ? 'Nusxa' : 'Копир.'}
+                                </button>
+                            </div>
+                            <button
+                                onClick={() => { setLinkModal(null); setActiveTab("links"); }}
+                                className="w-full py-4 rounded-2xl bg-gray-50 text-gray-500 font-black text-[10px] uppercase tracking-widest border border-gray-100 hover:bg-black hover:text-white transition-all"
+                            >
+                                {language === 'uz' ? 'Havolalarim' : 'Мои ссылки'}
+                            </button>
+                        </div>
+                    </div>
+                );
+            })()}
             {showAddMember && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
                     <div className="bg-white w-full max-w-md p-10 rounded-[40px] shadow-2xl space-y-6 relative animate-in fade-in zoom-in duration-300">
