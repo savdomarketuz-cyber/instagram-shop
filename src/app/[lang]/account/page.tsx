@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/store/store";
 import { 
     ChevronRight, 
@@ -52,15 +52,37 @@ import { uploadToYandexS3 } from "@/lib/yandex-s3";
 import { useShallow } from "zustand/react/shallow";
 import { PinKeypad } from "@/components/PinKeypad";
 
-export default function AccountPage() {
+const ACCOUNT_VIEWS = ["edit-profile", "language", "returns", "promo-codes", "reviews", "affiliate"] as const;
+type AccountView = "menu" | typeof ACCOUNT_VIEWS[number];
+
+function AccountContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { user, setUser, logout, language, setLanguage, showToast, wishlist } = useStore(useShallow(s => ({
         user: s.user, setUser: s.setUser, logout: s.logout, language: s.language,
         setLanguage: s.setLanguage, showToast: s.showToast, wishlist: s.wishlist
     })));
     const t = translations[language];
 
-    const [view, setView] = useState<"menu" | "edit-profile" | "language" | "returns" | "promo-codes" | "reviews" | "affiliate">("menu");
+    const [view, setViewState] = useState<AccountView>(() => {
+        const v = searchParams?.get("view");
+        return (v && (ACCOUNT_VIEWS as readonly string[]).includes(v) ? v : "menu") as AccountView;
+    });
+
+    // Holatni URL bilan sinxronlash: sahifa yangilanganda ham bo'lim saqlanadi
+    const setView = (v: AccountView) => {
+        setViewState(v);
+        const params = new URLSearchParams(window.location.search);
+        if (v === "menu") {
+            params.delete("view");
+            params.delete("tab");
+        } else {
+            params.set("view", v);
+            if (v !== "affiliate") params.delete("tab");
+        }
+        const qs = params.toString();
+        router.replace(qs ? `${window.location.pathname}?${qs}` : window.location.pathname, { scroll: false });
+    };
     const [name, setName] = useState(user?.name || "");
     const [username, setUsername] = useState(user?.username || "");
     const [password, setPassword] = useState("");
@@ -446,6 +468,14 @@ export default function AccountPage() {
 
             </div>
         </div>
+    );
+}
+
+export default function AccountPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-[#FAFAF6] flex items-center justify-center"><Loader2 className="animate-spin" /></div>}>
+            <AccountContent />
+        </Suspense>
     );
 }
 
@@ -941,7 +971,11 @@ function PromoCodesView({ t, language, onBack }: any) {
     );
 }
 
+const AFFILIATE_TABS = ["products", "promos", "links"] as const;
+
 function AffiliateView({ user, language, showToast, onBack }: any) {
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
@@ -970,7 +1004,20 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
     const [recoveryError, setRecoveryError] = useState("");
 
     // NEW Affiliate states
-    const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "promos" | "links">("dashboard");
+    const [activeTab, setActiveTabState] = useState<"dashboard" | "products" | "promos" | "links">(() => {
+        const tab = searchParams?.get("tab");
+        return (tab && (AFFILIATE_TABS as readonly string[]).includes(tab) ? tab : "dashboard") as any;
+    });
+
+    // Ichki bo'limni (mahsulotlar/promo-kod/silka) URL'ga yozish — yangilashda saqlanadi
+    const setActiveTab = (tab: "dashboard" | "products" | "promos" | "links") => {
+        setActiveTabState(tab);
+        const params = new URLSearchParams(window.location.search);
+        params.set("view", "affiliate");
+        if (tab === "dashboard") params.delete("tab");
+        else params.set("tab", tab);
+        router.replace(`${window.location.pathname}?${params.toString()}`, { scroll: false });
+    };
     const [affProducts, setAffProducts] = useState<any[]>([]);
     const [affTariffs, setAffTariffs] = useState<any[]>([]);
     const [myPromoCodes, setMyPromoCodes] = useState<any[]>([]);
