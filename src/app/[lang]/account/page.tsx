@@ -1290,13 +1290,13 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
             if (activeTab === "products") {
                 const res = await fetch("/api/affiliate/products");
                 const d = await res.json();
-                if (d.success) setAffProducts(d.products);
+                if (d.success) setAffProducts(d.products || []);
             } else if (activeTab === "promos") {
                 const res = await fetch("/api/affiliate/promo-codes");
                 const d = await res.json();
                 if (d.success) {
-                    setAffTariffs(d.tariffs);
-                    setMyPromoCodes(d.myCodes);
+                    setAffTariffs(d.tariffs || []);
+                    setMyPromoCodes(d.myCodes || []);
                 }
             } else if (activeTab === "links") {
                 const [linksRes, analyticsRes] = await Promise.all([
@@ -1305,7 +1305,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                 ]);
                 const linksD = await linksRes.json();
                 const analyticsD = await analyticsRes.json();
-                if (linksD.success) setMyReferralLinks(linksD.data);
+                if (linksD.success) setMyReferralLinks(linksD.data || []);
                 if (analyticsD.success) setAnalytics(analyticsD);
             }
         } finally {

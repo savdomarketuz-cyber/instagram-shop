@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
             .select("*")
             .eq("is_active", true);
 
-        return NextResponse.json({ success: true, myCodes, tariffs });
+        return NextResponse.json({ success: true, myCodes: myCodes || [], tariffs: tariffs || [] });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
