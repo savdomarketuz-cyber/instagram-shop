@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
             .from("products")
             .select("id, name, name_uz, name_ru, price, image, comm_seller, comm_tm, comm_manager")
             .eq("is_deleted", false)
+            .gt("comm_seller", 0) // faqat hamkorlik komissiyasi belgilangan mahsulotlar
             .order("created_at", { ascending: false });
 
         if (error) throw error;
