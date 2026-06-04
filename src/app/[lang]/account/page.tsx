@@ -83,6 +83,12 @@ function AccountContent() {
         const qs = params.toString();
         router.replace(qs ? `${window.location.pathname}?${qs}` : window.location.pathname, { scroll: false });
     };
+
+    // Hamkorlik bo'limida global footer ("Biz haqimizda") yashiriladi
+    useEffect(() => {
+        document.body.classList.toggle("affiliate-active", view === "affiliate");
+        return () => document.body.classList.remove("affiliate-active");
+    }, [view]);
     const [name, setName] = useState(user?.name || "");
     const [username, setUsername] = useState(user?.username || "");
     const [password, setPassword] = useState("");

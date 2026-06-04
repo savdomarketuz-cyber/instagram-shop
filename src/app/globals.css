@@ -187,3 +187,8 @@ body {
     opacity: 0.5;
   }
 }
+
+/* Hamkorlik bo'limida pastdagi "Biz haqimizda" footer'ini yashirish */
+body.affiliate-active footer {
+  display: none !important;
+}
