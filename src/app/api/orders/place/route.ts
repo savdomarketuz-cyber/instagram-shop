@@ -125,11 +125,12 @@ export async function POST(req: NextRequest) {
                 // RPC hisoblagan haqiqiy summani o'qiymiz
                 const { data: ord } = await supabaseAdmin
                     .from("orders")
-                    .select("total, wallet_amount")
+                    .select("total, wallet_amount, discount_amount")
                     .eq("id", orderId)
                     .single();
                 const baseTotal = Number(ord?.total) || 0;
                 const walletAmt = Number(ord?.wallet_amount) || 0;
+                const baseDiscount = Number(ord?.discount_amount) || 0;
 
                 // --- promo-countdown (vaqtli kategoriya/mahsulot chegirmasi) ---
                 // RPC total'ni products.price (to'liq narx) dan hisoblaydi va countdown'ni
@@ -163,8 +164,37 @@ export async function POST(req: NextRequest) {
                     console.error("Promo-countdown calc skipped:", pcErr);
                 }
 
-                // Countdown chegirmasidan keyingi tovarlar summasi (hamyon ta'sirisiz) — bepullik chegarasi uchun
-                const goodsBasis = Math.max(0, baseTotal + walletAmt - countdownDiscount);
+                // --- Advanced affiliate promo-kod chegirmasi (affiliate_promo_codes + tarif) ---
+                // place_order RPC bu jadvalni bilmaydi (faqat promo_codes + eski affiliate_code) ->
+                // tarif bo'yicha mijoz chegirmasi total'ga tushmасди. Shu yerda SERVER tomonida
+                // qo'llaymiz, shunda checkout'da ko'rsatilgan chegirma haqiqiy summaga mos bo'ladi.
+                let affPromoDiscount = 0;
+                try {
+                    if (validatedData.promoCode) {
+                        const code = validatedData.promoCode.toUpperCase();
+                        const { data: advPromo } = await supabaseAdmin
+                            .from("affiliate_promo_codes")
+                            .select("usage_limit, usage_count, is_active, promo_code_tariffs(type, discount_value, min_order_value)")
+                            .eq("code", code)
+                            .maybeSingle();
+                        const tariff: any = (advPromo as any)?.promo_code_tariffs;
+                        // Chegirma countdown'dan keyingi tovarlar summasidan hisoblanadi
+                        const goodsForPromo = Math.max(0, baseTotal + walletAmt - countdownDiscount);
+                        if (advPromo && advPromo.is_active && tariff
+                            && (!advPromo.usage_limit || advPromo.usage_count < advPromo.usage_limit)
+                            && goodsForPromo >= (Number(tariff.min_order_value) || 0)) {
+                            const raw = tariff.type === "fixed"
+                                ? (Number(tariff.discount_value) || 0)
+                                : Math.floor(goodsForPromo * (Number(tariff.discount_value) || 0) / 100);
+                            affPromoDiscount = Math.min(Math.max(0, raw), goodsForPromo);
+                        }
+                    }
+                } catch (apErr) {
+                    console.error("Affiliate promo discount calc skipped:", apErr);
+                }
+
+                // Countdown + affiliate-promo chegirmalaridan keyingi tovarlar summasi (hamyon ta'sirisiz) — bepullik chegarasi uchun
+                const goodsBasis = Math.max(0, baseTotal + walletAmt - countdownDiscount - affPromoDiscount);
 
                 let deliveryType: "standard" | "express" = "standard";
                 let deliveryFee = 0;
@@ -196,8 +226,10 @@ export async function POST(req: NextRequest) {
                         delivery_type: deliveryType,
                         delivery_fee: deliveryFee,
                         delivery_eta: deliveryEta,
-                        // Countdown chegirmasi total'dan ayiriladi (RPC uni hisoblamagan)
-                        total: Math.max(0, baseTotal - countdownDiscount) + deliveryFee,
+                        // Countdown + advanced affiliate-promo chegirmalari total'dan ayiriladi (RPC ularni hisoblamagan)
+                        total: Math.max(0, baseTotal - countdownDiscount - affPromoDiscount) + deliveryFee,
+                        // discount_amount hujjatlashtirish uchun yangilanadi (affiliate-promo qo'shiladi)
+                        discount_amount: baseDiscount + affPromoDiscount,
                     })
                     .eq("id", orderId);
                 if (updErr) console.error("Delivery update skipped:", updErr.message);

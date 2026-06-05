@@ -79,25 +79,33 @@ export async function POST(req: Request) {
             .single();
 
         if (advPromo && advPromo.is_active) {
-            const tariff = advPromo.promo_code_tariffs;
-            
+            const tariff: any = advPromo.promo_code_tariffs;
+
             if (advPromo.usage_limit && advPromo.usage_count >= advPromo.usage_limit) {
                 return NextResponse.json({ success: false, error: "Ushbu promo koddan foydalanish limiti tugagan" });
             }
-            
-            let discount = 0;
-            if (tariff) {
-                discount = tariff.type === 'fixed' 
-                    ? tariff.discount_value 
-                    : (totalAmount * tariff.discount_value) / 100;
+
+            // Minimal buyurtma sharti — order tomonida ham shu tekshiriladi (mos bo'lishi uchun)
+            const minOrder = Number(tariff?.min_order_value) || 0;
+            if (minOrder > 0 && totalAmount < minOrder) {
+                return NextResponse.json({ success: false, error: `Minimal buyurtma summasi: ${minOrder.toLocaleString()} so'm` });
             }
 
-            return NextResponse.json({ 
-                success: true, 
-                discount, 
-                code: advPromo.code, 
+            let discount = 0;
+            if (tariff) {
+                // Server (orders/place) bilan bir xil: percent uchun floor, tovardan oshmaydi
+                const raw = tariff.type === 'fixed'
+                    ? (Number(tariff.discount_value) || 0)
+                    : Math.floor(totalAmount * (Number(tariff.discount_value) || 0) / 100);
+                discount = Math.min(Math.max(0, raw), totalAmount);
+            }
+
+            return NextResponse.json({
+                success: true,
+                discount,
+                code: advPromo.code,
                 isAffiliate: true,
-                affiliateName: advPromo.title || "Hamkor" 
+                affiliateName: advPromo.title || "Hamkor"
             });
         }
 
