@@ -876,6 +876,25 @@ function ReturnsView({ user, t, language, onBack }: any) {
                             {language === 'uz' ? 'Yetkazib berilganidan so\'ng 14 kun ichida mahsulotlarni qaytarishingiz mumkin.' : 'Вы можете вернуть товары в течение 14 дней после доставки.'}
                         </p>
 
+                        {/* Qaytarish shartlari (return-policy) — chiroyli havola tugma */}
+                        <Link
+                            href={`/${language}/return-policy`}
+                            className="group flex items-center gap-4 rounded-[28px] p-5 text-white overflow-hidden relative active:scale-[0.98] transition-all"
+                            style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", boxShadow: "0 8px 24px rgba(45,110,62,0.25)" }}
+                        >
+                            <div className="absolute -bottom-6 -right-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                                <ShieldCheck size={90} />
+                            </div>
+                            <div className="w-12 h-12 bg-white/15 backdrop-blur-sm rounded-2xl flex items-center justify-center shrink-0">
+                                <ShieldCheck size={24} />
+                            </div>
+                            <div className="flex-1 min-w-0 relative">
+                                <p className="text-sm font-black italic tracking-tighter uppercase">{language === 'uz' ? 'Qaytarish shartlari' : 'Условия возврата'}</p>
+                                <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mt-0.5">{language === 'uz' ? 'To\'liq qoidalar bilan tanishing' : 'Ознакомьтесь с полными правилами'}</p>
+                            </div>
+                            <ChevronRight className="text-white/80 group-hover:translate-x-1 transition-transform relative shrink-0" size={20} />
+                        </Link>
+
                         {loading ? (
                             <div className="flex justify-center py-20"><Loader2 className="animate-spin text-black" /></div>
                         ) : orders.length === 0 ? (
