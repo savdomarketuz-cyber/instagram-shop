@@ -261,7 +261,7 @@ export default function Navigation() {
                                         {suggestions.map((item, idx) => (
                                             <Link 
                                                 key={item.id} 
-                                                href={`/${language}/products/${getProductSlug(item)}`}
+                                                href={`/${language}/products/${getProductSlug(item, language)}`}
                                                 onClick={() => { 
                                                     setShowSuggestions(false); 
                                                     if (search.trim().length >= 2) {

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getProductSlug } from "@/lib/slugify";
 
 export default async function ReferralRedirect({ params }: { params: { slug: string, lang: string } }) {
     const { slug, lang } = params;
@@ -21,7 +22,16 @@ export default async function ReferralRedirect({ params }: { params: { slug: str
                 .update({ clicks: (link.clicks || 0) + 1 })
                 .eq("id", link.id);
 
-            target = `/${lang}/products/${link.product_id}?ref=${slug}`;
+            // Mijozni to'g'ridan-to'g'ri SEO slug (canonical) sahifasiga yuboramiz,
+            // UUID emas — tez (pre-rendered) va to'g'ri URL. ?ref tracking saqlanadi.
+            const { data: prod } = await supabaseAdmin
+                .from("products")
+                .select("id, article, name, name_uz, name_ru")
+                .eq("id", link.product_id)
+                .single();
+
+            const productPath = prod ? getProductSlug(prod, lang) : link.product_id;
+            target = `/${lang}/products/${productPath}?ref=${slug}`;
         }
     } catch (e) {
         // DB xatosi — target bosh sahifa bo'lib qoladi

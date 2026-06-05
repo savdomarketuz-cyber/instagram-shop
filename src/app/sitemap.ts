@@ -42,7 +42,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         // 1. Dynamic product routes — THE MOST IMPORTANT PART
         const { data: products, error: productsError } = await supabaseAdmin
             .from('products')
-            .select('id, name, name_uz, article, updated_at')
+            .select('id, name, name_uz, name_ru, article, updated_at')
             .eq('is_deleted', false);
 
         if (productsError) {
@@ -51,17 +51,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
         if (products && products.length > 0) {
             console.log(`Sitemap: Adding ${products.length} products`);
-            // Each product is added ONCE with canonical locale, alternates point to all locales
+            // Har mahsulot bir marta, har til O'Z slug'i bilan (uz=name_uz, ru=name_ru-translit)
             products.forEach((product) => {
-                const slug = getProductSlug(product);
+                const slugByLocale: Record<string, string> = {
+                    uz: getProductSlug(product, 'uz'),
+                    ru: getProductSlug(product, 'ru'),
+                };
                 const languages = locales.reduce((acc, loc) => ({
                     ...acc,
-                    [loc]: `${baseUrl}/${loc}/products/${slug}`
+                    [loc]: `${baseUrl}/${loc}/products/${slugByLocale[loc] || slugByLocale.uz}`
                 }), {} as Record<string, string>);
 
-                // Add canonical (uz) version with alternates
+                // Canonical (uz) versiya + hreflang alternates
                 routes.push({
-                    url: `${baseUrl}/uz/products/${slug}`,
+                    url: `${baseUrl}/uz/products/${slugByLocale.uz}`,
                     lastModified: product.updated_at ? new Date(product.updated_at) : new Date(),
                     changeFrequency: 'weekly' as const,
                     priority: 0.9,

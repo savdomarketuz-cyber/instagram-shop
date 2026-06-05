@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import ProductClient from './ProductClient';
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { mapProduct } from "@/lib/mappers";
-import { getProductIdFromSlug } from "@/lib/slugify";
+import { getProductIdFromSlug, getProductSlug } from "@/lib/slugify";
 import BrandedEmptyState from "@/components/common/BrandedEmptyState";
 
 import { cache } from 'react';
@@ -22,11 +22,13 @@ const getProductData = cache(async (identifier: string) => {
     return data ? mapProduct(data) : null;
 });
 
-// ⚡ Pre-render top 50 popular products for INSTANT (0ms) loading from CDN
+// ⚡ Eng mashhur 200 mahsulotni SEO slug shaklida pre-render (CDN'dan 0ms).
+// Har mahsulot uchun uz va ru slug — sitemap/canonical bilan AYNAN mos bo'ladi.
+// (Avval UUID + artikul render qilinardi: UUID dublikat, artikul esa buzilgan 404 edi.)
 export async function generateStaticParams() {
     const { data: products } = await supabaseAdmin
         .from("products")
-        .select("id, article")
+        .select("id, article, name, name_uz, name_ru")
         .eq("is_deleted", false)
         .order("sales", { ascending: false })
         .limit(200);
@@ -34,9 +36,9 @@ export async function generateStaticParams() {
     if (!products) return [];
 
     return products.flatMap((p) => [
-        { id: p.id },
-        { id: p.article?.toString() }
-    ].filter(v => v.id));
+        { id: getProductSlug(p, 'uz') },
+        { id: getProductSlug(p, 'ru') },
+    ]);
 }
 
 export async function generateMetadata({ params }: { params: { lang: string, id: string } }): Promise<Metadata> {
@@ -51,16 +53,32 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
             };
         }
         const baseUrl = "https://velari.uz";
-        
+        const isRu = params.lang === 'ru';
+
+        // Tilga mos canonical slug — UUID/artikul/eski-slug bilan kelsa ham
+        // DOIM bitta to'g'ri shaklga normallashtiriladi (dublikat kontentni yo'qotadi).
+        const uzSlug = getProductSlug(product, 'uz');
+        const ruSlug = getProductSlug(product, 'ru');
+        const canonicalSlug = isRu ? ruSlug : uzSlug;
+        const canonicalUrl = `${baseUrl}/${params.lang}/products/${canonicalSlug}`;
+
+        // Til bo'yicha nom (ru sahifa uchun ruscha nom — Yandex/Google ruscha qidiruvi uchun)
+        const productName = isRu
+            ? (product.name_ru || product.name_uz || product.name)
+            : (product.name_uz || product.name);
+
         const ogUrl = new URL(`${baseUrl}/api/og`);
-        ogUrl.searchParams.set('name', product.name_uz || product.name);
+        ogUrl.searchParams.set('name', productName);
         ogUrl.searchParams.set('price', product.price.toString());
         ogUrl.searchParams.set('image', product.image);
 
         // Title template in layout.tsx already adds "| Velari", so don't add it here
-        const productName = product.name_uz || product.name;
-        const title = `${productName} - Narxi, Muddatli to'lov va Kafolat`;
-        const description = `${productName} O'zbekistonda eng hamyonbop narxlarda. Muddatli to'lov, rasmiy kafolat va tekin yetkazib berish. ${product.description_uz || product.description || ""}`.substring(0, 160);
+        const title = isRu
+            ? `${productName} - Цена, Рассрочка и Гарантия`
+            : `${productName} - Narxi, Muddatli to'lov va Kafolat`;
+        const description = isRu
+            ? `${productName} по самым выгодным ценам в Узбекистане. Рассрочка, официальная гарантия и бесплатная доставка. ${product.description_ru || product.description || ""}`.substring(0, 160)
+            : `${productName} O'zbekistonda eng hamyonbop narxlarda. Muddatli to'lov, rasmiy kafolat va tekin yetkazib berish. ${product.description_uz || product.description || ""}`.substring(0, 160);
 
         return {
             title: title,
@@ -68,10 +86,10 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
             openGraph: {
                 title: title,
                 description: description,
-                url: `${baseUrl}/${params.lang}/products/${params.id}`,
+                url: canonicalUrl,
                 siteName: 'Velari',
                 images: [{ url: ogUrl.toString(), width: 1200, height: 630, alt: productName }],
-                locale: params.lang === 'ru' ? 'ru_RU' : 'uz_UZ',
+                locale: isRu ? 'ru_RU' : 'uz_UZ',
                 type: 'website',
             },
             twitter: {
@@ -80,12 +98,12 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
                 description: description,
                 images: [ogUrl.toString()],
             },
-            alternates: { 
-                canonical: `${baseUrl}/${params.lang}/products/${params.id}`,
+            alternates: {
+                canonical: canonicalUrl,
                 languages: {
-                    'uz-UZ': `${baseUrl}/uz/products/${params.id}`,
-                    'ru-RU': `${baseUrl}/ru/products/${params.id}`,
-                    'x-default': `${baseUrl}/uz/products/${params.id}`,
+                    'uz-UZ': `${baseUrl}/uz/products/${uzSlug}`,
+                    'ru-RU': `${baseUrl}/ru/products/${ruSlug}`,
+                    'x-default': `${baseUrl}/uz/products/${uzSlug}`,
                 },
             },
             keywords: [
@@ -114,8 +132,13 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
     
     if (!product) return <BrandedEmptyState type="not-found" showPopular={true} />;
 
+    // Canonical slug (JSON-LD offers.url uchun) — tilga mos, normallashtirilgan
+    const canonicalProductUrl = `https://velari.uz/${params.lang}/products/${getProductSlug(product, params.lang)}`;
+
     // Structured Data (Schema.org) for Google to understand this is a PRODUCT
-    const productName = product.name_uz || product.name;
+    const productName = (params.lang === 'ru')
+        ? (product.name_ru || product.name_uz || product.name)
+        : (product.name_uz || product.name);
     
     // Extract brand name from product name (first word is usually the brand)
     const brandName = product.brand || (productName.split(' ')[0]) || "Velari";
@@ -143,7 +166,7 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
         "brand": { "@type": "Brand", "name": brandName },
         "offers": {
             "@type": "Offer",
-            "url": `https://velari.uz/${params.lang}/products/${params.id}`,
+            "url": canonicalProductUrl,
             "priceCurrency": "UZS",
             "price": product.price,
             "priceValidUntil": priceValidDate.toISOString().split('T')[0],

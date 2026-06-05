@@ -29,7 +29,7 @@ export async function GET(req: Request) {
         
         const { data: updatedProducts, error: productsError } = await supabaseAdmin
             .from("products")
-            .select("id, name, name_uz, article, updated_at")
+            .select("id, name, name_uz, name_ru, article, updated_at")
             .eq("is_deleted", false)
             .gte("updated_at", since);
 
@@ -44,9 +44,8 @@ export async function GET(req: Request) {
 
         if (updatedProducts && updatedProducts.length > 0) {
             for (const product of updatedProducts) {
-                const slug = getProductSlug(product);
-                updatedUrls.push(`${baseUrl}/uz/products/${slug}`);
-                updatedUrls.push(`${baseUrl}/ru/products/${slug}`);
+                updatedUrls.push(`${baseUrl}/uz/products/${getProductSlug(product, 'uz')}`);
+                updatedUrls.push(`${baseUrl}/ru/products/${getProductSlug(product, 'ru')}`);
             }
             results.updatedProducts = updatedProducts.length;
             results.urlsGenerated = updatedUrls.length;
@@ -80,15 +79,15 @@ export async function GET(req: Request) {
         // 6. Oxirgi yangilangan mahsulotlarni topish — yangi qo'shilganlar
         const { data: newProducts, error: newError } = await supabaseAdmin
             .from("products")
-            .select("id, name, name_uz, article")
+            .select("id, name, name_uz, name_ru, article")
             .eq("is_deleted", false)
             .gte("created_at", since);
 
         if (newProducts && newProducts.length > 0) {
-            const newUrls = newProducts.map(p => {
-                const slug = getProductSlug(p);
-                return `${baseUrl}/uz/products/${slug}`;
-            });
+            const newUrls = newProducts.flatMap(p => [
+                `${baseUrl}/uz/products/${getProductSlug(p, 'uz')}`,
+                `${baseUrl}/ru/products/${getProductSlug(p, 'ru')}`,
+            ]);
             
             // Yangi mahsulotlar uchun alohida IndexNow
             await submitToIndexNow(newUrls);

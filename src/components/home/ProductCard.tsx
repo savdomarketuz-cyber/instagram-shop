@@ -158,7 +158,7 @@ export const ProductCard = memo(({
     }}>
       {/* Image area */}
       <Link
-        href={`/${language}/products/${getProductSlug(item)}`}
+        href={`/${language}/products/${getProductSlug(item, language)}`}
         style={{ display: "block", textDecoration: "none", color: "inherit" }}
         prefetch={true}
         onPointerEnter={() => prefetchFirstImage(item)}

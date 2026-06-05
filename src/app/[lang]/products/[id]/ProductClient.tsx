@@ -897,7 +897,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                             <Link 
                                                 replace 
                                                 key={v.id} 
-                                                href={`/products/${getProductSlug(v)}`} 
+                                                href={`/products/${getProductSlug(v, language)}`}
                                                 className={`aspect-[3/4] rounded-3xl overflow-hidden border-2 transition-all flex-shrink-0 shadow-sm relative group/v ${v.id === product.id ? "border-black scale-105 shadow-xl z-10" : "border-white opacity-60 hover:opacity-100 hover:border-gray-200"}`}
                                             >
                                                 <Image

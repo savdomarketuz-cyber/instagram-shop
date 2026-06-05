@@ -459,7 +459,7 @@ export default function OrdersPage() {
 
                                         <div className="flex gap-2 w-full">
                                             <Link
-                                                href={`/products/${getProductSlug(item)}`}
+                                                href={`/products/${getProductSlug(item, language)}`}
                                                 className="flex-1 py-3 bg-white border border-gray-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-2 hover:bg-gray-50 transition-all active:scale-95"
                                             >
                                                 {t.common.inMarket}

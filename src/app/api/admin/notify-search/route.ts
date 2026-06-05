@@ -3,7 +3,6 @@ import { submitToIndexNow } from "@/lib/index-now";
 import { submitToGoogleIndexing } from "@/lib/google-indexing";
 import { getProductSlug } from "@/lib/slugify";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { mapProduct } from "@/lib/mappers";
 
 /**
  * API to notify search engines about new or updated products.
@@ -19,11 +18,10 @@ export async function POST(req: NextRequest) {
         // 1. Handle Products
         const pIds = [...(productId ? [productId] : []), ...(productIds || [])];
         if (pIds.length > 0) {
-            const { data: pData } = await supabaseAdmin.from("products").select("name, article").in("id", pIds.slice(0, 1000));
+            const { data: pData } = await supabaseAdmin.from("products").select("id, name, name_uz, name_ru, article").in("id", pIds.slice(0, 1000));
             pData?.forEach(p => {
-                const slug = getProductSlug(mapProduct(p));
-                urls.push(`${baseUrl}/uz/products/${slug}`);
-                urls.push(`${baseUrl}/ru/products/${slug}`);
+                urls.push(`${baseUrl}/uz/products/${getProductSlug(p, 'uz')}`);
+                urls.push(`${baseUrl}/ru/products/${getProductSlug(p, 'ru')}`);
             });
         }
 

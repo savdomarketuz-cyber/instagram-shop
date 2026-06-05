@@ -72,7 +72,7 @@ export default function WishlistPage() {
                     <div style={{ padding: "0 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                         {wishlist.map((item, idx) => {
                             const name = (language === "uz" ? item.name_uz : item.name_ru) || item.name;
-                            const slug = getProductSlug(item);
+                            const slug = getProductSlug(item, language);
                             const cartItem = cart.find(c => c.id === item.id);
                             return (
                                 <div key={item.id} style={{
@@ -148,9 +148,10 @@ export default function WishlistPage() {
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
                         {wishlist.map((item) => {
                             const name = (language === "uz" ? item.name_uz : item.name_ru) || item.name;
+                            const slug = getProductSlug(item, language);
                             return (
                                 <div key={item.id} className="relative group">
-                                    <Link href={`/${language}/products/${getProductSlug(item)}`} className="block">
+                                    <Link href={`/${language}/products/${slug}`} className="block">
                                         <div className="aspect-[3/4] overflow-hidden rounded-[24px] bg-gray-50 mb-3 shadow-sm relative">
                                             {(() => {
                                                 const u = item.image || item.imageUrl || "";

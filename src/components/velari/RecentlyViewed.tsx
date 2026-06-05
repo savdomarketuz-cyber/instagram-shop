@@ -90,7 +90,7 @@ export default function RecentlyViewed({ language, currentProductId }: RecentlyV
                 {products.map((product, idx) => {
                     const name = (language === "uz" ? product.name_uz : product.name_ru) || product.name;
                     const mainImg = product.images?.[0] || product.image || "/placeholder.png";
-                    const slug = getProductSlug(product);
+                    const slug = getProductSlug(product, language);
 
                     return (
                         <Link

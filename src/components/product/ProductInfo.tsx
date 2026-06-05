@@ -114,7 +114,7 @@ export const ProductInfo = ({
                     </p>
                     <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }} className="no-scrollbar">
                         {groupProducts.map(v => (
-                            <Link replace key={v.id} href={`/products/${getProductSlug(v)}`}
+                            <Link replace key={v.id} href={`/products/${getProductSlug(v, language)}`}
                                 style={{ flexShrink: 0, width: 56, height: 72, borderRadius: 16, overflow: "hidden", border: v.id === product.id ? `2.5px solid ${GREEN}` : "2px solid rgba(15,20,16,0.08)", textDecoration: "none", display: "block", transform: v.id === product.id ? "scale(1.06)" : undefined, boxShadow: v.id === product.id ? "0 4px 12px rgba(45,110,62,0.18)" : "none" }}
                             >
                                 <img src={v.image} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={v.colorName} />

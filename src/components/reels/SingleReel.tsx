@@ -201,7 +201,7 @@ export const SingleReel = ({
             <div className="absolute bottom-4 left-4 right-20 z-40 space-y-4">
                 {/* Product Float Card */}
                 <div className="inline-flex items-center gap-3 bg-white/90 backdrop-blur-xl p-3 pr-5 rounded-[24px] border border-white shadow-[0_20px_50px_rgba(0,0,0,0.3)] animate-in slide-in-from-left duration-700">
-                    <Link href={`/products/${getProductSlug(reel)}`} className="flex items-center gap-3">
+                    <Link href={`/products/${getProductSlug(reel, language)}`} className="flex items-center gap-3">
                         <div className="relative w-12 h-12 rounded-2xl overflow-hidden border border-gray-100 shrink-0">
                             <img src={reel.image} className="w-full h-full object-cover" alt={reel.name} loading="lazy" />
                             <div className="absolute top-0 right-0 p-1 bg-yellow-400 rounded-bl-lg shrink-0">
