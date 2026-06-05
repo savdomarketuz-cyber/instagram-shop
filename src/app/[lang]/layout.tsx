@@ -83,6 +83,9 @@ export const metadata = {
     },
     verification: {
         google: "LTHMhrgHGixfKuNRWuOnvLrkiUHaTuTiy1kCG",
+        // Yandex Webmaster tasdig'i — public/yandex_878ca82305d690c8.html bilan bir xil kod.
+        // Next.js buni <meta name="yandex-verification" content="..."> qilib render qiladi.
+        yandex: "878ca82305d690c8",
     },
 };
 
