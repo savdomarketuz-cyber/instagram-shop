@@ -82,7 +82,11 @@ export const metadata = {
         title: "Velari",
     },
     verification: {
-        google: "LTHMhrgHGixfKuNRWuOnvLrkiUHaTuTiy1kCG",
+        // Bir nechta Google Search Console mulki/egasi tasdig'i — massiv => bir nechta meta-teg.
+        google: [
+            "LTHMhrgHGixfKuNRWuOnvLrkiUHaTuTiy1kCG",
+            "5mBCVxCoaxs77dV8KxCXZg7IOPa0ue7NKGB1C-6gS1A",
+        ],
         // Yandex Webmaster tasdig'i — public/yandex_878ca82305d690c8.html bilan bir xil kod.
         // Next.js buni <meta name="yandex-verification" content="..."> qilib render qiladi.
         yandex: "878ca82305d690c8",
