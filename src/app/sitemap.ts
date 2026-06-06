@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getProductSlug } from '@/lib/slugify';
+import { getProductSlug, getCategorySlug } from '@/lib/slugify';
 import { i18n } from '@/lib/i18n-config';
 
 export const revalidate = 3600; // Regenerate sitemap every hour
@@ -79,10 +79,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             console.warn('Sitemap: No products found! Check supabaseAdmin connection.');
         }
 
-        // 2. Dynamic category routes
+        // 2. Dynamic category routes — TOZA URL (/catalog/<slug>), har til o'z slug'i
         const { data: categories, error: categoriesError } = await supabaseAdmin
             .from('categories')
-            .select('id, updated_at')
+            .select('id, name, name_uz, name_ru, updated_at')
             .eq('is_deleted', false);
 
         if (categoriesError) {
@@ -91,13 +91,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
         if (categories && categories.length > 0) {
             categories.forEach((cat) => {
+                const slugByLocale: Record<string, string> = {
+                    uz: getCategorySlug(cat, 'uz'),
+                    ru: getCategorySlug(cat, 'ru'),
+                };
                 const languages = locales.reduce((acc, loc) => ({
                     ...acc,
-                    [loc]: `${baseUrl}/${loc}/catalog?category=${cat.id}`
+                    [loc]: `${baseUrl}/${loc}/catalog/${slugByLocale[loc] || slugByLocale.uz}`
                 }), {} as Record<string, string>);
 
                 routes.push({
-                    url: `${baseUrl}/uz/catalog?category=${cat.id}`,
+                    url: `${baseUrl}/uz/catalog/${slugByLocale.uz}`,
                     lastModified: cat.updated_at ? new Date(cat.updated_at) : new Date(),
                     changeFrequency: 'monthly' as const,
                     priority: 0.6,

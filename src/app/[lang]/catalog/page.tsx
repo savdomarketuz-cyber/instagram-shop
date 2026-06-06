@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { redirect } from 'next/navigation';
 import CatalogClient from './CatalogClient';
+import { getCatalogCategories } from '@/lib/categories';
+import { getCategorySlug } from '@/lib/slugify';
 
 export async function generateMetadata({ params }: { params: { lang: string } }): Promise<Metadata> {
     const lang = params.lang || 'uz';
@@ -40,36 +42,22 @@ export async function generateMetadata({ params }: { params: { lang: string } })
 
 export const revalidate = 3600; // 1 hour
 
-async function getCategories() {
-    try {
-        const { data, error } = await supabaseAdmin
-            .from("categories")
-            .select("id,name,name_uz,name_ru,parent_id,image,image_meta")
-            .eq("is_deleted", false)
-            .order("name");
+export default async function CatalogPage({ params, searchParams }: {
+    params: { lang: string };
+    searchParams?: { category?: string };
+}) {
+    const categories = await getCatalogCategories();
 
-        if (error) {
-            console.error("Catalog SSR: Failed to fetch categories:", error.message);
-            return [];
+    // Eski `?category=ID` havolalarni toza URL'ga 301-redirect (SEO + indekslangan URL'lar)
+    const catId = searchParams?.category;
+    if (catId) {
+        const cat = categories.find((c) => c.id === catId);
+        if (cat) {
+            const lang = params.lang === 'ru' ? 'ru' : 'uz';
+            redirect(`/${lang}/catalog/${getCategorySlug(cat, lang)}`);
         }
-
-        return (data || []).map(c => ({
-            id: c.id,
-            name: c.name,
-            name_uz: c.name_uz,
-            name_ru: c.name_ru,
-            parentId: c.parent_id,
-            image: c.image,
-            image_meta: c.image_meta || undefined,
-        }));
-    } catch (error) {
-        console.error("Catalog SSR error:", error);
-        return [];
     }
-}
 
-export default async function CatalogPage() {
-    const categories = await getCategories();
     return <CatalogClient initialCategories={categories} />;
 }
 

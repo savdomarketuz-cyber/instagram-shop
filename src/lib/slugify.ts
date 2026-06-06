@@ -55,6 +55,20 @@ export const getProductSlug = (item: any, lang: string = 'uz') => {
 };
 
 /**
+ * Kategoriya uchun toza SEO slug (identifikatorsiz, faqat nom).
+ * Til bo'yicha: ru→name_ru (kirill→lotin), aks→name_uz.
+ * Misol:  "Отпариватели" → "otparivateli",  "Quloqchinlar" → "quloqchinlar"
+ * Resolve qilish: route barcha kategoriyalar slug'ini hisoblab, mos kelganini topadi.
+ */
+export const getCategorySlug = (cat: any, lang: string = 'uz') => {
+    if (!cat) return '';
+    const rawName = lang === 'ru'
+        ? (cat.name_ru || cat.name_uz || cat.name || 'category')
+        : (cat.name_uz || cat.name || 'category');
+    return slugifyName(rawName) || 'category';
+};
+
+/**
  * Slug'dan mahsulot identifikatorini (article yoki id) ajratib oladi.
  * BARCHA shakllarni qo'llab-quvvatlaydi: yangi slug ("nom--ID"), UUID, xom artikul.
  */

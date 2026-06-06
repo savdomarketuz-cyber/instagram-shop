@@ -31,11 +31,12 @@ interface Brand {
 
 interface CatalogClientProps {
     initialCategories?: Category[];
+    initialCategory?: string; // toza URL (/catalog/[slug]) orqali oldindan tanlangan kategoriya id
 }
 
 type SortKey = "popular" | "new" | "price_asc" | "price_desc" | "rating";
 
-export default function CatalogClient({ initialCategories }: CatalogClientProps) {
+export default function CatalogClient({ initialCategories, initialCategory }: CatalogClientProps) {
     const router = useRouter();
     const {
         language, cachedCategories, setCachedCategories,
@@ -62,8 +63,19 @@ export default function CatalogClient({ initialCategories }: CatalogClientProps)
     const [productCatIds, setProductCatIds] = useState<Set<string>>(new Set());
 
     const [searchQuery, setSearchQuery] = useState("");
-    const [mainCat, setMainCat] = useState<string>("all");
-    const [subCat, setSubCat] = useState<string>("all");
+    // Toza URL (/catalog/[slug]) orqali kelgan kategoriyani oldindan tanlaymiz.
+    // Subkategoriya bo'lsa: asosiy = ota, sub = o'zi; aks holda asosiy = o'zi.
+    const [mainCat, setMainCat] = useState<string>(() => {
+        if (!initialCategory) return "all";
+        const cat = (initialCategories || []).find(c => c.id === initialCategory);
+        if (!cat) return initialCategory;
+        return cat.parentId || cat.id;
+    });
+    const [subCat, setSubCat] = useState<string>(() => {
+        if (!initialCategory) return "all";
+        const cat = (initialCategories || []).find(c => c.id === initialCategory);
+        return cat?.parentId ? cat.id : "all";
+    });
 
     const [showFilters, setShowFilters] = useState(false);
     const [showSort, setShowSort] = useState(false);

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { submitToIndexNow } from "@/lib/index-now";
 import { submitToGoogleIndexing } from "@/lib/google-indexing";
-import { getProductSlug } from "@/lib/slugify";
+import { getProductSlug, getCategorySlug } from "@/lib/slugify";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 /**
@@ -35,12 +35,13 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        // 3. Handle Categories
+        // 3. Handle Categories — TOZA URL (/catalog/<slug>)
         const cIds = [...(categoryId ? [categoryId] : []), ...(categoryIds || [])];
         if (cIds.length > 0) {
-            cIds.forEach(id => {
-                urls.push(`${baseUrl}/uz/catalog?category=${id}`);
-                urls.push(`${baseUrl}/ru/catalog?category=${id}`);
+            const { data: cData } = await supabaseAdmin.from("categories").select("id, name, name_uz, name_ru").in("id", cIds.slice(0, 1000));
+            cData?.forEach(cat => {
+                urls.push(`${baseUrl}/uz/catalog/${getCategorySlug(cat, 'uz')}`);
+                urls.push(`${baseUrl}/ru/catalog/${getCategorySlug(cat, 'ru')}`);
             });
         }
 

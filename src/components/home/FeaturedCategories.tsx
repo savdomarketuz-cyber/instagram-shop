@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { getCategorySlug } from "@/lib/slugify";
 
 interface FeaturedCat {
     id: string;
@@ -128,7 +129,7 @@ export default function FeaturedCategories({ language, initial }: { language: "u
                         return (
                             <Link
                                 key={cat.id}
-                                href={`/${language}/?category=${cat.id}`}
+                                href={`/${language}/catalog/${getCategorySlug(cat, language)}`}
                                 style={{
                                     flexShrink: 0, display: "flex", flexDirection: "column",
                                     alignItems: "center", gap: 8, textDecoration: "none",
@@ -167,7 +168,7 @@ export default function FeaturedCategories({ language, initial }: { language: "u
                         return (
                             <Link
                                 key={cat.id}
-                                href={`/${language}/?category=${cat.id}`}
+                                href={`/${language}/catalog/${getCategorySlug(cat, language)}`}
                                 className="group"
                                 style={{
                                     flexShrink: 0, display: "flex", flexDirection: "column",
