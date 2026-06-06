@@ -72,8 +72,8 @@ export async function GET() {
                     ? `\n        <oldprice>${p.old_price}</oldprice>`
                     : "";
 
-                // RU offer (asosiy — Yandex Business ko'proq ruscha indekslaydi)
-                const ruOffer = `    <offer id="${p.id}-ru" available="${available}">
+                // Yandex Business uchun bitta offer — rus tilida (Yandex asosan ruscha indekslaydi)
+                const offer = `    <offer id="${p.id}" available="${available}">
         <url>${BASE_URL}/ru/products/${ruSlug}</url>
         <name>${nameRu}</name>
         <price>${p.price}</price>${oldPriceLine}
@@ -82,23 +82,9 @@ export async function GET() {
 ${pictureLines}
         <vendor>${vendor}</vendor>
         <description>${descRu}</description>
-        <param name="Язык">ru</param>
     </offer>`;
 
-                // UZ offer
-                const uzOffer = `    <offer id="${p.id}-uz" available="${available}">
-        <url>${BASE_URL}/uz/products/${uzSlug}</url>
-        <name>${nameUz}</name>
-        <price>${p.price}</price>${oldPriceLine}
-        <currencyId>UZS</currencyId>
-        <categoryId>${catId}</categoryId>
-${pictureLines}
-        <vendor>${vendor}</vendor>
-        <description>${descUz}</description>
-        <param name="Til">uz</param>
-    </offer>`;
-
-                return `${ruOffer}\n${uzOffer}`;
+                return offer;
             })
             .join("\n");
 
