@@ -361,7 +361,7 @@ export default function Navigation() {
                 Savat (cart) sahifasida ham ko'rinadi: u yerdagi "Buyurtma berish"
                 tugmasi tab bar ustida turadi (ustma-ust tushmaydi). */}
             {!pathname?.includes('/admin') && <nav
-                className="md:hidden fixed bottom-0 left-0 right-0 w-screen max-w-full z-[110]"
+                className="flex md:hidden fixed bottom-0 left-0 right-0 w-screen max-w-full z-[110]"
                 style={{
                     background: "rgba(255,255,255,0.82)",
                     backdropFilter: "blur(24px) saturate(180%)",
@@ -369,7 +369,6 @@ export default function Navigation() {
                     borderTop: "0.5px solid rgba(15,20,16,0.08)",
                     paddingBottom: "max(env(safe-area-inset-bottom, 8px), 8px)",
                     paddingTop: 6,
-                    display: "flex",
                     justifyContent: "space-around",
                 }}
             >

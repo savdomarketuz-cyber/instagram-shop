@@ -47,7 +47,6 @@ interface PromoCodeTariff {
     max_discount?: number;
     affiliate_reward_type: "fixed_per_use" | "percent_of_final_price" | "percent_of_discount";
     affiliate_reward_value: number;
-    usage_limit: number;
     is_active: boolean;
     created_at: string;
 }
@@ -507,7 +506,6 @@ export default function AffiliateAdminPage() {
                                     min_order_value: 0,
                                     affiliate_reward_type: "fixed_per_use",
                                     affiliate_reward_value: 0,
-                                    usage_limit: 1000,
                                     is_active: true
                                 });
                                 setShowTariffModal(true);
@@ -547,8 +545,7 @@ export default function AffiliateAdminPage() {
                                         </p>
                                     </div>
                                 </div>
-                                <div className="flex justify-between items-center pt-2">
-                                    <div className="text-[10px] font-bold text-gray-400 uppercase">Limit: {t.usage_limit}</div>
+                                <div className="flex justify-end items-center pt-2">
                                     <div className="text-[10px] font-bold text-gray-400 uppercase">Min: {t.min_order_value.toLocaleString()} so'm</div>
                                 </div>
                             </div>
