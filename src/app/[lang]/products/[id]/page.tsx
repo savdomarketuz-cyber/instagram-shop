@@ -155,6 +155,56 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
     const ratingValue = Number(product.rating || product.avg_rating || 0);
     const reviewCount = Number(product.reviewCount || product.review_count || 0);
 
+    const oldPrice = product.oldPrice || product.old_price || null;
+    const inStock = (product.stock ?? (product.stockDetails ? Object.values(product.stockDetails as Record<string,number>).reduce((a,b)=>a+b,0) : 1)) > 0;
+
+    const offerBase: any = {
+        "@type": "Offer",
+        "url": canonicalProductUrl,
+        "priceCurrency": "UZS",
+        "price": product.price,
+        "priceValidUntil": priceValidDate.toISOString().split('T')[0],
+        "itemCondition": "https://schema.org/NewCondition",
+        "availability": inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+        "seller": { "@type": "Organization", "name": "Velari" },
+        "shippingDetails": {
+            "@type": "OfferShippingDetails",
+            "shippingRate": { "@type": "MonetaryAmount", "value": 0, "currency": "UZS" },
+            "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "UZ" },
+            "deliveryTime": {
+                "@type": "ShippingDeliveryTime",
+                "handlingTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 1, "unitCode": "DAY" },
+                "transitTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 1, "unitCode": "DAY" }
+            }
+        },
+        "hasMerchantReturnPolicy": {
+            "@type": "MerchantReturnPolicy",
+            "applicableCountry": "UZ",
+            "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+            "merchantReturnDays": 14,
+            "returnMethod": "https://schema.org/ReturnByMail",
+            "returnFees": "https://schema.org/FreeReturn"
+        }
+    };
+
+    // Chegirma bo'lsa — Google eski narxni ham ko'rsatadi (crossed-out price)
+    if (oldPrice && oldPrice > product.price) {
+        offerBase.priceSpecification = [
+            {
+                "@type": "UnitPriceSpecification",
+                "priceType": "https://schema.org/ListPrice",
+                "price": oldPrice,
+                "priceCurrency": "UZS"
+            },
+            {
+                "@type": "UnitPriceSpecification",
+                "priceType": "https://schema.org/SalePrice",
+                "price": product.price,
+                "priceCurrency": "UZS"
+            }
+        ];
+    }
+
     const jsonLd: any = {
         "@context": "https://schema.org",
         "@type": "Product",
@@ -164,36 +214,7 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
         "sku": product.sku || product.article || product.id,
         "mpn": product.model || product.article || product.id,
         "brand": { "@type": "Brand", "name": brandName },
-        "offers": {
-            "@type": "Offer",
-            "url": canonicalProductUrl,
-            "priceCurrency": "UZS",
-            "price": product.price,
-            "priceValidUntil": priceValidDate.toISOString().split('T')[0],
-            "itemCondition": "https://schema.org/NewCondition",
-            "availability": product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-            "seller": { "@type": "Organization", "name": "Velari" },
-            // Google Merchant — bepul yetkazib berish (Toshkent)
-            "shippingDetails": {
-                "@type": "OfferShippingDetails",
-                "shippingRate": { "@type": "MonetaryAmount", "value": 0, "currency": "UZS" },
-                "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "UZ" },
-                "deliveryTime": {
-                    "@type": "ShippingDeliveryTime",
-                    "handlingTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 1, "unitCode": "DAY" },
-                    "transitTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 1, "unitCode": "DAY" }
-                }
-            },
-            // 14 kunlik qaytarish siyosati
-            "hasMerchantReturnPolicy": {
-                "@type": "MerchantReturnPolicy",
-                "applicableCountry": "UZ",
-                "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
-                "merchantReturnDays": 14,
-                "returnMethod": "https://schema.org/ReturnByMail",
-                "returnFees": "https://schema.org/FreeReturn"
-            }
-        }
+        "offers": offerBase
     };
 
     // AggregateRating — FAQAT haqiqiy review bo'lganda (Google policy)
