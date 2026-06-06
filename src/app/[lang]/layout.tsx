@@ -32,7 +32,10 @@ export const metadata = {
         telephone: false,
     },
     icons: {
-        icon: "/favicon.ico",
+        icon: [
+            { url: "/favicon.ico" },
+            { url: "/favicon-120x120.png", sizes: "120x120", type: "image/png" },
+        ],
         apple: "/apple-touch-icon.png",
     },
     metadataBase: new URL("https://velari.uz"),
