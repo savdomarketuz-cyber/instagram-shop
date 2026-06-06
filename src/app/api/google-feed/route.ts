@@ -77,9 +77,13 @@ export async function GET() {
                 : "";
 
             // Chegirma bo'lsa price = eski narx, sale_price = yangi narx
+            const actualPrice = p.price;
             const displayPrice = p.old_price && p.old_price > p.price
                 ? gPrice(p.old_price)
                 : gPrice(p.price);
+
+            // 150 000 so'm va undan yuqori — bepul yetkazish (Toshkent)
+            const shippingPrice = actualPrice >= 150000 ? "0 UZS" : "25000 UZS";
 
             return `    <item>
       <g:id>${esc(p.id)}</g:id>
@@ -97,7 +101,7 @@ ${salePriceLine ? salePriceLine + "\n" : ""}\
       <g:product_type>${catPath}</g:product_type>
       <g:shipping>
         <g:country>UZ</g:country>
-        <g:price>0 UZS</g:price>
+        <g:price>${shippingPrice}</g:price>
       </g:shipping>
     </item>`;
         }).join("\n");
