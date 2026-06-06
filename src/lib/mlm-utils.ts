@@ -41,6 +41,16 @@ export async function distributeCommissions(orderId: string) {
 
     for (const trans of transactions) {
         try {
+            // For promo-code rewards or other flat rewards without a specific product,
+            // the amount is already calculated and fixed. Just approve it.
+            if (!trans.product_id) {
+                await supabaseAdmin.from("affiliate_transactions").update({
+                    order_stage: 'Yetkazildi',
+                    status: 'approved' // Enters the 14-day frozen period
+                }).eq("id", trans.id);
+                continue;
+            }
+
             // Get product commission settings
             const { data: product } = await supabaseAdmin
                 .from("products")
