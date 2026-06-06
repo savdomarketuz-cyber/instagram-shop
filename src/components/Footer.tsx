@@ -11,7 +11,7 @@ export default function Footer() {
 
     return (
         <footer className="bg-white border-t border-gray-100 pt-16 pb-32 md:pb-12 px-4 md:px-10 mt-20">
-            <div className="max-w-[1440px] mx-auto">
+            <div className="max-w-[1600px] mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-8 mb-16">
                     {/* Column 1: Biz haqimizda */}
                     <div className="space-y-4">

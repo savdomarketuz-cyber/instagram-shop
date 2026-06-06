@@ -133,7 +133,7 @@ export default function BrandedEmptyState({
 
             {/* Popular Products Section */}
             {showPopular && (
-                <div className="max-w-[1440px] mx-auto px-6 md:px-10 pb-32">
+                <div className="max-w-[1600px] mx-auto px-6 md:px-10 pb-32">
                     <div className="flex items-center justify-between mb-12">
                         <div className="space-y-1">
                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Velari Trend</p>

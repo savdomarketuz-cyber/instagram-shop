@@ -476,7 +476,7 @@ export default function HomeClient({
     };
 
     return (
-        <main style={{ minHeight: "100svh", background: "#FAFAF6", paddingBottom: 100 }} className="max-w-[1440px] mx-auto">
+        <main style={{ minHeight: "100svh", background: "#FAFAF6", paddingBottom: 100 }} className="max-w-[1600px] mx-auto">
             <h1 className="sr-only">{t.common.homeTitle}</h1>
 
             {/* ── MOBILE: Velari sticky header ── */}

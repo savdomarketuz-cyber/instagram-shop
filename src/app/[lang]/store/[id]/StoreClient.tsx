@@ -33,7 +33,7 @@ export default function StoreClient({ warehouse, products, language }: Props) {
 
     return (
         <div style={{ minHeight: "100vh", background: "#FAFAF6" }}>
-            <div className="max-w-[1440px] mx-auto px-4 md:px-10 pt-6 md:pt-28 pb-24">
+            <div className="max-w-[1600px] mx-auto px-4 md:px-10 pt-6 md:pt-28 pb-24">
                 {/* Orqaga */}
                 <button
                     onClick={() => router.back()}

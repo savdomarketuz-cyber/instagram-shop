@@ -320,7 +320,7 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
 
     return (
         <div className={`
-            mx-auto bg-white min-h-screen relative w-full max-w-full lg:max-w-[1440px] overflow-x-clip
+            mx-auto bg-white min-h-screen relative w-full max-w-full lg:max-w-[1600px] overflow-x-clip
             ${showNav ? ((pathWithoutLocale === '/' || isProductDetail) ? 'md:pt-28' : 'pt-16 md:pt-28') : ''}
         `}>
             <ConnectivityListener />

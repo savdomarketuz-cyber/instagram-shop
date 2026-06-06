@@ -14,7 +14,7 @@ export default function Loading() {
             `}</style>
 
             {/* Desktop Skeleton */}
-            <div className="hidden md:block max-w-[1440px] mx-auto px-10 py-12">
+            <div className="hidden md:block max-w-[1600px] mx-auto px-10 py-12">
                 <div className="h-4 skeleton-shimmer rounded-full w-48 mb-10" />
                 <div className="grid grid-cols-12 gap-16">
                     <div className="col-span-12 lg:col-span-7 flex gap-6 h-[700px]">

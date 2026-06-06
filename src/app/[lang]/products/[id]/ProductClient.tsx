@@ -456,7 +456,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                 }
             `}</style>
             {/* Desktop Skeleton */}
-            <div className="hidden md:block max-w-[1440px] mx-auto px-10 py-12">
+            <div className="hidden md:block max-w-[1600px] mx-auto px-10 py-12">
                 <div className="h-4 skeleton-shimmer rounded-full w-48 mb-10" />
                 <div className="grid grid-cols-12 gap-16">
                     <div className="col-span-12 lg:col-span-7 flex gap-6 h-[700px]">
@@ -532,7 +532,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
             
             {/* Sticky Quick-Buy Bar (Desktop) */}
             <div className={`hidden md:flex fixed top-20 md:top-24 left-0 right-0 bg-white/95 backdrop-blur-2xl z-[90] border-b border-gray-100 py-4 shadow-2xl transition-all duration-500 transform ${isScrolledPast ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
-                <div className="max-w-[1440px] mx-auto px-10 flex items-center justify-between w-full h-16">
+                <div className="max-w-[1600px] mx-auto px-10 flex items-center justify-between w-full h-16">
                     <div className="flex items-center gap-6 flex-1 min-w-0">
                         <div className="relative w-14 h-14 rounded-2xl overflow-hidden shrink-0 border border-gray-100 shadow-sm">
                             <Image
@@ -696,7 +696,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
             </div>
 
             {/* Desktop View (E-commerce Grid Style) */}
-            <div className="hidden md:block max-w-[1440px] mx-auto px-10 py-12">
+            <div className="hidden md:block max-w-[1600px] mx-auto px-10 py-12">
                 <div className="flex items-center gap-2 text-xs text-gray-400 font-bold uppercase tracking-widest mb-10 overflow-x-auto no-scrollbar whitespace-nowrap">
                     <Link href={`/${language}`} className="hover:text-black transition-colors">MAHSULOTLAR</Link>
                     {categoryData && (
@@ -1041,7 +1041,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
 
             {infiniteProducts.length > 0 && (
                 <section className="mt-8 pb-8" style={{ background: "#FAFAF6" }}>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-2 md:gap-x-6 gap-y-6 md:gap-y-10 px-4 max-w-[1440px] mx-auto">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-2 md:gap-x-6 gap-y-6 md:gap-y-10 px-4 max-w-[1600px] mx-auto">
                         {infiniteProducts.map(p => (
                             <ProductCard
                                 key={p.id}
