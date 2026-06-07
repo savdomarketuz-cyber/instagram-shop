@@ -333,12 +333,7 @@ export const ProductCard = memo(({
 
       {/* Cart controls */}
       <div style={{ padding: "0 12px 12px" }}>
-        {deliveryText && (
-          <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
-            <Truck size={12} color={GREEN} strokeWidth={2.2} style={{ flexShrink: 0 }} />
-            <span style={{ fontSize: 11, fontWeight: 600, color: GREEN, letterSpacing: -0.1 }}>{deliveryText}</span>
-          </div>
-        )}
+
         {isInCart ? (
           <div style={{
             width: "100%",
@@ -404,7 +399,13 @@ export const ProductCard = memo(({
             onPointerUp={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
             onPointerLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
           >
-            {language === "uz" ? "Savatga" : "В корзину"}
+            {deliveryText ? (
+              <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                <Truck size={15} strokeWidth={2.2} /> {deliveryText}
+              </span>
+            ) : (
+              language === "uz" ? "Savatga" : "В корзину"
+            )}
           </button>
         )}
       </div>
