@@ -744,13 +744,15 @@ export default function HomeClient({
                             <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }} className="scrollbar-hide">
                                 {Object.entries(searchFacets.categories).map(([cat, count]) => {
                                     const on = activeFacet === cat;
+                                    // ID o'rniga kategoriya NOMI (til bo'yicha); nom topilmasa ID fallback
+                                    const label = searchFacets.categoryNames?.[cat]?.[language] || cat;
                                     return (
                                         <button
                                             key={cat}
                                             onClick={() => setActiveFacet(prev => prev === cat ? null : cat)}
                                             style={{ padding: "8px 14px", borderRadius: 18, whiteSpace: "nowrap", background: on ? "#2D6E3E" : "#EAF3EC", border: "none", cursor: "pointer", fontSize: 13, fontWeight: on ? 700 : 500, color: on ? "#fff" : "#2D6E3E", transition: "background 160ms ease, color 160ms ease" }}
                                         >
-                                            {cat} <span style={{ opacity: 0.6 }}>({count as number})</span>
+                                            {label} <span style={{ opacity: 0.6 }}>({count as number})</span>
                                         </button>
                                     );
                                 })}

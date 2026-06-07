@@ -155,6 +155,35 @@ export async function POST(req: NextRequest) {
         // Map results consistently with the rest of the app
         let mappedResults = finalResults.map(mapProduct);
 
+        // Kategoriya ID -> NOM boyitish. mapProduct `category` ni category_id ga
+        // o'rnatadi, shuning uchun UI'da ID (masalan "406") ko'rinardi. Bu yerda har
+        // mahsulotga category_uz / category_ru NOMINI qo'shamiz (dropdown shu maydonni
+        // o'qiydi) va facet chiplari uchun categoryNames lookup tayyorlaymiz.
+        const categoryNames: Record<string, { uz: string; ru: string }> = {};
+        const catIds = Array.from(new Set(
+            mappedResults
+                .map((p: any) => p.category ?? p.category_id)
+                .filter((v: any) => v !== null && v !== undefined && v !== '')
+        ));
+        if (catIds.length > 0) {
+            const { data: cats } = await supabase
+                .from('categories')
+                .select('id, name, name_uz, name_ru')
+                .in('id', catIds);
+            if (cats) {
+                for (const c of cats) {
+                    categoryNames[String(c.id)] = {
+                        uz: c.name_uz || c.name || '',
+                        ru: c.name_ru || c.name_uz || c.name || '',
+                    };
+                }
+                mappedResults = mappedResults.map((p: any) => {
+                    const nm = categoryNames[String(p.category ?? p.category_id)];
+                    return nm ? { ...p, category_uz: nm.uz, category_ru: nm.ru } : p;
+                });
+            }
+        }
+
         // 3.5 Personalization logic
         if (userPhone && mappedResults.length > 0 && !suggest) {
             const { data: interests } = await supabase
@@ -184,7 +213,10 @@ export async function POST(req: NextRequest) {
         let didYouMean = null;
         const facets = {
             categories: {} as Record<string, number>,
-            tags: {} as Record<string, number>
+            tags: {} as Record<string, number>,
+            // ID -> {uz, ru} — frontend facet chipida ID o'rniga NOM ko'rsatish uchun.
+            // Filtr hamon ID (kalit) bo'yicha ishlaydi, faqat ko'rsatish nomga aylanadi.
+            categoryNames,
         };
 
         if (!suggest) {

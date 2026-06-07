@@ -204,6 +204,8 @@ export interface Blog {
 export interface SearchFacets {
     categories: Record<string, number>;
     tags: Record<string, number>;
+    // Kategoriya ID -> {uz, ru} nomlari (facet chipida ID o'rniga nom ko'rsatish uchun)
+    categoryNames?: Record<string, { uz: string; ru: string }>;
 }
 
 // Promo kod uchun tip
