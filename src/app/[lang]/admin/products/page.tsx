@@ -24,8 +24,11 @@ import {
     ChevronRight,
     Video,
     DollarSign,
-    Sparkles
+    Sparkles,
+    SlidersHorizontal
 } from "lucide-react";
+import ProductParamsEditor from "@/components/admin/ProductParamsEditor";
+import { normalizeQuery, transliterateLatin } from "@/lib/query-normalize";
 
 interface Category {
     id: string;
@@ -115,6 +118,18 @@ export default function AdminProducts() {
     const [brandLabels, setBrandLabels] = useState<{ [key: string]: string }>({});
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isBulkActionLoading, setIsBulkActionLoading] = useState(false);
+    const [paramValues, setParamValues] = useState<{param_id: string; value: string}[]>([]);
+
+    // Filtrlar (admin) — har qanday parametr bo'yicha
+    const [filterCategory, setFilterCategory] = useState<string>("");
+    const [filterBrand, setFilterBrand] = useState<string>("");
+    const [filterStock, setFilterStock] = useState<"all" | "in" | "out">("all");
+    const [filterPriceMin, setFilterPriceMin] = useState<string>("");
+    const [filterPriceMax, setFilterPriceMax] = useState<string>("");
+    const [filterOriginal, setFilterOriginal] = useState<"all" | "yes" | "no">("all");
+    const [filterDiscount, setFilterDiscount] = useState<boolean>(false);
+    const [sortBy, setSortBy] = useState<"new" | "old" | "price_asc" | "price_desc" | "name" | "stock_desc" | "sales_desc">("new");
+    const [showFilters, setShowFilters] = useState(false);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isGallery = false) => {
         const file = e.target.files?.[0];
@@ -227,6 +242,28 @@ export default function AdminProducts() {
         fetchData(1, true);
     }, []);
 
+    // Kategoriya + barcha ichki (rekursiv) kategoriya ID'lari — filtr uchun
+    const getCategoryWithChildren = (catId: string): string[] => {
+        const ids = [catId];
+        const children = rawCategories.filter((c: DBCategory) => c.parent_id === catId);
+        for (const child of children) ids.push(...getCategoryWithChildren(child.id));
+        return ids;
+    };
+
+    const clearFilters = () => {
+        setFilterCategory(""); setFilterBrand(""); setFilterStock("all");
+        setFilterPriceMin(""); setFilterPriceMax(""); setFilterOriginal("all");
+        setFilterDiscount(false); setSortBy("new"); setSearchTerm("");
+    };
+
+    const activeFilterCount = [
+        filterCategory, filterBrand,
+        filterStock !== "all" ? "1" : "",
+        filterPriceMin, filterPriceMax,
+        filterOriginal !== "all" ? "1" : "",
+        filterDiscount ? "1" : "",
+    ].filter(Boolean).length;
+
     const getPathForCategory = (catId: string): string[] => {
         const path: string[] = [];
         let curr = rawCategories.find((c: DBCategory) => c.id === catId);
@@ -253,13 +290,57 @@ export default function AdminProducts() {
             // Tab filter (Trash vs Active)
             query = query.eq("is_deleted", activeTab === "trash");
 
-            // Apply search filter on server side if possible
-            if (searchTerm) {
-                query = query.ilike("name", `%${searchTerm}%`);
+            // KUCHLI QIDIRUV (foydalanuvchidagidek, personalizatsiyasiz):
+            // ko'p maydon (nom/SKU/tavsif/artikul/model/barkod), uz/ru aralash (translit),
+            // qism-so'z ("pods" -> "airpods"), brend/sinonim normalizatsiya.
+            const rawTerm = searchTerm.trim();
+            if (rawTerm) {
+                const fields = ["name", "name_uz", "name_ru", "sku", "description", "description_uz", "description_ru", "article", "model", "barcode"];
+                const clean = (s: string) => (s || "").replace(/[,()"'%\\]/g, " ").trim();
+                const tokens = clean(rawTerm).split(/\s+/).filter(Boolean);
+                // Har token AND (chained .or), token ichida (maydon × variant) OR.
+                for (const tok of tokens) {
+                    const variants = Array.from(new Set([
+                        tok,
+                        transliterateLatin(tok),
+                        normalizeQuery(tok).toLowerCase(),
+                    ].map(clean).filter(Boolean)));
+                    const orParts: string[] = [];
+                    for (const v of variants) {
+                        for (const f of fields) orParts.push(`${f}.ilike.%${v}%`);
+                    }
+                    if (orParts.length) query = query.or(orParts.join(","));
+                }
             }
 
+            // FILTRLAR — har qanday parametr bo'yicha
+            if (filterCategory) {
+                query = query.in("category_id", getCategoryWithChildren(filterCategory));
+            }
+            if (filterBrand) query = query.eq("brand_id", filterBrand);
+            const pMin = Number(filterPriceMin), pMax = Number(filterPriceMax);
+            if (filterPriceMin && !isNaN(pMin)) query = query.gte("price", pMin);
+            if (filterPriceMax && !isNaN(pMax)) query = query.lte("price", pMax);
+            if (filterStock === "in") query = query.gt("stock", 0);
+            else if (filterStock === "out") query = query.lte("stock", 0);
+            if (filterOriginal === "yes") query = query.eq("is_original", true);
+            else if (filterOriginal === "no") query = query.eq("is_original", false);
+            if (filterDiscount) query = query.gt("old_price", 0);
+
+            // SARALASH
+            const sortMap: Record<string, { col: string; asc: boolean }> = {
+                new: { col: "created_at", asc: false },
+                old: { col: "created_at", asc: true },
+                price_asc: { col: "price", asc: true },
+                price_desc: { col: "price", asc: false },
+                name: { col: "name", asc: true },
+                stock_desc: { col: "stock", asc: false },
+                sales_desc: { col: "sales", asc: false },
+            };
+            const srt = sortMap[sortBy] || sortMap.new;
+
             const { data: pData, count, error: pError } = await query
-                .order("created_at", { ascending: false })
+                .order(srt.col, { ascending: srt.asc })
                 .range(from, to);
             
             if (pError) throw pError;
@@ -700,6 +781,18 @@ export default function AdminProducts() {
                 if (!res.ok) throw new Error("Mahsulot yaratishda xatolik");
             }
 
+            // Save product parameters
+            if (finalId && paramValues.length > 0) {
+                const validParams = paramValues.filter(pv => pv.value && pv.value.trim());
+                if (validParams.length > 0) {
+                    fetch('/api/admin/product-params', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ product_id: finalId, params: validParams })
+                    }).catch(err => console.error("Save product params failed:", err));
+                }
+            }
+
             // Trigger Recursive AI Background Worker for Image SEO
             if (finalId) {
                 triggerAiAnalysis(finalId).catch(err => console.error("Auto AI trigger failed:", err));
@@ -712,6 +805,7 @@ export default function AdminProducts() {
             setIsModalOpen(false);
             setProductSelectionPath([]);
             setNewProduct({ name: "", name_uz: "", name_ru: "", price: 0, oldPrice: 0, category: "", image: "", images: [], description: "", description_uz: "", description_ru: "", tag: "", sku: "", groupId: "", colorName: "", article: "", isDeleted: false, isOriginal: false, images_string: "", brand: "", height: "", width: "", length: "", weight: "", barcode: "", videoUrl: "", cashback_type: "global", cashback_value: 0, model: "", cost_price: 0, additional_expenses: 0 });
+            setParamValues([]);
             fetchData(currentPage);
         } catch (error) {
             console.error("Error saving product:", error);
@@ -896,7 +990,7 @@ export default function AdminProducts() {
         fetchData(currentPage, false);
     }, [currentPage, activeTab, itemsPerPage]);
 
-    // Reset to page 1 and fetch when search term changes
+    // Reset to page 1 and fetch when search term OR any filter changes
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
             if (currentPage !== 1) {
@@ -904,10 +998,10 @@ export default function AdminProducts() {
             } else {
                 fetchData(1, false);
             }
-        }, 500);
+        }, 400);
 
         return () => clearTimeout(delayDebounceFn);
-    }, [searchTerm]);
+    }, [searchTerm, filterCategory, filterBrand, filterStock, filterPriceMin, filterPriceMax, filterOriginal, filterDiscount, sortBy]);
 
     const totalPages = Math.ceil(totalCount / itemsPerPage);
 
@@ -1006,17 +1100,32 @@ export default function AdminProducts() {
             )}
 
             {/* Search and Filters */}
-            <div className="flex flex-col md:flex-row gap-4 mb-8">
+            <div className="flex flex-col md:flex-row gap-4 mb-4">
                 <div className="relative flex-1 group">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={20} />
                     <input
                         type="text"
-                        placeholder="Nomi yoki kategoriyasi bo'yicha qidirish..."
+                        placeholder="Nom, SKU, tavsif, artikul bo'yicha qidirish (uz/ru aralash)..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full bg-white border border-gray-100 rounded-2xl py-4 pl-12 pr-4 text-sm font-medium focus:ring-2 focus:ring-black outline-none shadow-sm transition-all"
+                        className="w-full bg-white border border-gray-100 rounded-2xl py-4 pl-12 pr-10 text-sm font-medium focus:ring-2 focus:ring-black outline-none shadow-sm transition-all"
                     />
+                    {searchTerm && (
+                        <button onClick={() => setSearchTerm("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-black transition-colors">
+                            <X size={18} />
+                        </button>
+                    )}
                 </div>
+                <button
+                    onClick={() => setShowFilters(v => !v)}
+                    className={`relative flex items-center gap-2 px-5 rounded-2xl text-sm font-bold transition-all shadow-sm border ${showFilters || activeFilterCount > 0 ? "bg-black text-white border-black" : "bg-white text-black border-gray-100 hover:border-black"}`}
+                >
+                    <SlidersHorizontal size={18} />
+                    Filtrlar
+                    {activeFilterCount > 0 && (
+                        <span className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center">{activeFilterCount}</span>
+                    )}
+                </button>
                 <div className="flex bg-white rounded-2xl p-1 shadow-sm border border-gray-100">
                     <button
                         onClick={() => setView("grid")}
@@ -1032,6 +1141,71 @@ export default function AdminProducts() {
                     </button>
                 </div>
             </div>
+
+            {/* Filtrlar paneli — har qanday parametr bo'yicha */}
+            {showFilters && (
+                <div className="bg-white border border-gray-100 rounded-[28px] p-5 mb-6 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div>
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">Kategoriya</label>
+                        <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-3 text-sm font-medium focus:ring-2 focus:ring-black outline-none">
+                            <option value="">Barchasi</option>
+                            {categories.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">Brend</label>
+                        <select value={filterBrand} onChange={e => setFilterBrand(e.target.value)} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-3 text-sm font-medium focus:ring-2 focus:ring-black outline-none">
+                            <option value="">Barchasi</option>
+                            {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">Qoldiq</label>
+                        <select value={filterStock} onChange={e => setFilterStock(e.target.value as any)} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-3 text-sm font-medium focus:ring-2 focus:ring-black outline-none">
+                            <option value="all">Barchasi</option>
+                            <option value="in">Sotuvda (&gt; 0)</option>
+                            <option value="out">Tugagan (0)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">Saralash</label>
+                        <select value={sortBy} onChange={e => setSortBy(e.target.value as any)} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-3 text-sm font-medium focus:ring-2 focus:ring-black outline-none">
+                            <option value="new">Yangi qo'shilgan</option>
+                            <option value="old">Eski qo'shilgan</option>
+                            <option value="price_asc">Narx: arzon → qimmat</option>
+                            <option value="price_desc">Narx: qimmat → arzon</option>
+                            <option value="name">Nom (A–Z)</option>
+                            <option value="stock_desc">Qoldiq (ko'p → kam)</option>
+                            <option value="sales_desc">Sotuvlar (ko'p → kam)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">Narx (dan)</label>
+                        <input type="number" inputMode="numeric" value={filterPriceMin} onChange={e => setFilterPriceMin(e.target.value)} placeholder="0" className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-3 text-sm font-medium focus:ring-2 focus:ring-black outline-none" />
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">Narx (gacha)</label>
+                        <input type="number" inputMode="numeric" value={filterPriceMax} onChange={e => setFilterPriceMax(e.target.value)} placeholder="∞" className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-3 text-sm font-medium focus:ring-2 focus:ring-black outline-none" />
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">Originallik</label>
+                        <select value={filterOriginal} onChange={e => setFilterOriginal(e.target.value as any)} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-3 text-sm font-medium focus:ring-2 focus:ring-black outline-none">
+                            <option value="all">Barchasi</option>
+                            <option value="yes">Original</option>
+                            <option value="no">Original emas</option>
+                        </select>
+                    </div>
+                    <div className="flex items-end gap-2">
+                        <label className="flex items-center gap-2 flex-1 bg-gray-50 border border-gray-100 rounded-xl px-3 py-3 cursor-pointer select-none">
+                            <input type="checkbox" checked={filterDiscount} onChange={e => setFilterDiscount(e.target.checked)} className="w-4 h-4 accent-black" />
+                            <span className="text-sm font-bold">Chegirmali</span>
+                        </label>
+                        {(activeFilterCount > 0 || searchTerm) && (
+                            <button onClick={clearFilters} className="px-4 py-3 rounded-xl bg-red-50 text-red-600 text-xs font-black uppercase tracking-wider hover:bg-red-100 transition-all whitespace-nowrap">Tozalash</button>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-32 text-gray-400">
@@ -1706,6 +1880,17 @@ export default function AdminProducts() {
                                             })}
                                         </div>
                                     </div>
+
+                                    {/* Xususiyatlar (Parametrlar) — Yandex Market uslubida */}
+                                    {newProduct.category && (
+                                        <ProductParamsEditor
+                                            categoryId={newProduct.category}
+                                            productId={newProduct.id}
+                                            paramValues={paramValues}
+                                            onParamValuesChange={setParamValues}
+                                        />
+                                    )}
+
                                     <div className="bg-white p-6 rounded-[32px] border border-gray-100 flex items-center justify-between shadow-sm">
                                         <div>
                                             <h4 className="text-[10px] font-black uppercase tracking-widest text-black">Original Sifat</h4>

@@ -26,6 +26,7 @@ const ReviewsSection = dynamic(() => import("@/components/product/ReviewsSection
     ssr: false,
 });
 import { ProductDescriptionModal } from "@/components/product/ProductDescriptionModal";
+import { ProductSpecifications } from "@/components/product/ProductSpecifications";
 const RelatedProducts = dynamic(() => import("@/components/product/RelatedProducts").then(mod => ({ default: mod.RelatedProducts })), {
     loading: () => <div className="h-80 animate-pulse bg-gray-50 rounded-[50px] mx-10 my-20" />,
     ssr: false,
@@ -1011,6 +1012,8 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                     </div>
                 </div>
             </div>
+
+            <ProductSpecifications productId={product.id} language={language} />
 
             <ReviewsSection 
                 productId={product.id}
