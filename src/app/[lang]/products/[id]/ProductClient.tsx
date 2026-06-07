@@ -374,7 +374,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                 .eq("is_deleted", false)
                 .order("sales", { ascending: false })
                 .range(from, from + PAGE_SIZE - 1);
-            if (excludeIds.length) q = q.not("id", "in", `(${excludeIds.map(i => `"${i}"`).join(",")})`);
+            if (excludeIds.length) q = q.not("id", "in", `(${excludeIds.join(",")})`);
             const { data } = await q;
             if (!data || data.length === 0) {
                 setInfiniteHasMore(false);

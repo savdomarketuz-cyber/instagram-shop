@@ -400,14 +400,14 @@ export const ProductCard = memo(({
             onPointerLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
           >
             {item.express_delivery ? (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", lineHeight: "1.2" }}>
+              <span style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", lineHeight: "1.2" }}>
                 <span style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4, fontWeight: 700 }}>
                   <Truck size={14} strokeWidth={2.5} /> {language === "uz" ? "Tezkor yetkazish" : "Экспресс доставка"}
                 </span>
                 <span style={{ fontSize: 9.5, opacity: 0.9, marginTop: 1, fontWeight: 600 }}>
                   {language === "uz" ? "2 soatda" : "за 2 часа"}
                 </span>
-              </div>
+              </span>
             ) : deliveryText ? (
               <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                 <Truck size={15} strokeWidth={2.2} /> {deliveryText}
