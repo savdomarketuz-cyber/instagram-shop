@@ -329,7 +329,8 @@ export default function HomeClient({
             let query = supabase
                 .from("products")
                 .select("*")
-                .eq("is_deleted", false);
+                .eq("is_deleted", false)
+                .gt("stock", 0);
 
             if (activeFilter !== 'all') {
                 const targetCategory = allCategories.find(c => c.id === activeFilter || c.name === activeFilter);

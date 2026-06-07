@@ -137,7 +137,7 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
 
             // Which categories actually have products — to hide empty ones
             const { data: pcData } = await supabase
-                .from("products").select("category_id").eq("is_deleted", false);
+                .from("products").select("category_id").eq("is_deleted", false).gt("stock", 0);
             if (pcData) {
                 setProductCatIds(new Set(pcData.map((r: any) => r.category_id).filter(Boolean)));
             }
@@ -150,7 +150,7 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
         const fetchProducts = async () => {
             setLoadingProducts(true);
             try {
-                let query = supabase.from("products").select("*").eq("is_deleted", false);
+                let query = supabase.from("products").select("*").eq("is_deleted", false).gt("stock", 0);
 
                 const activeCat = subCat !== "all" ? subCat : mainCat;
                 if (activeCat !== "all") {
@@ -187,6 +187,15 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
 
     const filteredProducts = useMemo(() => {
         let list = products;
+
+        // Faqat HAQIQIY qoldig'i bor mahsulotlar — ombor (stock_details) yig'indisi manba.
+        // SQL .gt("stock",0) allaqachon filtrlaydi; bu drift'ga (stock != ombor) qarshi himoya.
+        list = list.filter((p: any) => {
+            const sd = p.stockDetails
+                ? Object.values(p.stockDetails).reduce((a: number, b: any) => a + (Number(b) || 0), 0)
+                : (p.stock || 0);
+            return sd > 0;
+        });
 
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
