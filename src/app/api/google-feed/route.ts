@@ -37,6 +37,9 @@ export async function GET() {
             return NextResponse.json({ error: "No products" }, { status: 500 });
         }
 
+        // Narxsiz mahsulotlarni chiqarib tashlaymiz — Google "price not specified" xatosi beradi
+        const validProducts = products.filter(p => p.price && p.price > 0 && p.image);
+
         const catMap = new Map((categories || []).map((c) => [c.id, c]));
 
         const getCategoryPath = (catId: string): string => {
@@ -51,7 +54,7 @@ export async function GET() {
 
         const now = new Date().toUTCString();
 
-        const items = products.map((p) => {
+        const items = validProducts.map((p) => {
             const ruSlug = getProductSlug(p, "ru");
             const link = `${BASE_URL}/ru/products/${ruSlug}`;
 
