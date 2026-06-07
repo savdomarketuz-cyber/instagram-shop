@@ -26,6 +26,7 @@ export interface Product {
     tags?: string[];
     features?: string[];
     isDeleted?: boolean;
+    express_delivery?: boolean;
     isOriginal?: boolean;
     stockDetails?: Record<string, number>;
     stock?: number;
