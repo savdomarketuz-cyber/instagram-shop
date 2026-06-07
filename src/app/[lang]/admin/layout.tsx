@@ -207,6 +207,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {
             title: "Tizim",
             items: [
+                { name: "Foydalanuvchilar", href: l("/admin/users"), icon: Users },
                 { name: "Sozlamalar", href: l("/admin/settings"), icon: Settings },
                 { name: "Qidiruv Lug'ati", href: l("/admin/synonyms"), icon: BookA },
             ],
