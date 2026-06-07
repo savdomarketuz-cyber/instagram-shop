@@ -155,6 +155,16 @@ export async function POST(req: NextRequest) {
         // Map results consistently with the rest of the app
         let mappedResults = finalResults.map(mapProduct);
 
+        // Tugagan (qoldiq 0) mahsulotlarni qidiruvdan ham yashiramiz — sotib bo'lmaydi.
+        // Ombor (stock_details) yig'indisi manba; bo'lmasa denormalizatsiya stock.
+        // (place_order RPC checkout'da qoldiqni kamaytiradi; restore_expired_orders qaytaradi.)
+        mappedResults = mappedResults.filter((p: any) => {
+            const sd = p.stockDetails
+                ? Object.values(p.stockDetails).reduce((a: number, b: any) => a + (Number(b) || 0), 0)
+                : (p.stock || 0);
+            return sd > 0;
+        });
+
         // Kategoriya ID -> NOM boyitish. mapProduct `category` ni category_id ga
         // o'rnatadi, shuning uchun UI'da ID (masalan "406") ko'rinardi. Bu yerda har
         // mahsulotga category_uz / category_ru NOMINI qo'shamiz (dropdown shu maydonni
