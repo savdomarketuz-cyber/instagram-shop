@@ -312,7 +312,19 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
                     </ol>
                 </nav>
                 <span itemProp="brand">{brandName}</span>
-                <img itemProp="image" src={productImages[0]} alt={productName} width={1} height={1} />
+                {/* Barcha xom rasm URL'lari SSR HTML'da — image-sitemap bilan mos, Yandex/Google
+                    JS render qilmasa ham real rasm manzillarini va alt matnini ko'radi. */}
+                {productImages.map((img: string, i: number) => (
+                    <img
+                        key={i}
+                        itemProp="image"
+                        src={img}
+                        alt={i === 0 ? productName : `${productName} - ${i + 1}`}
+                        width={1080}
+                        height={1440}
+                        loading="lazy"
+                    />
+                ))}
                 <div itemProp="offers" itemScope itemType="https://schema.org/Offer">
                     <span itemProp="price" content={String(product.price)}>{product.price?.toLocaleString()} so'm</span>
                     <span itemProp="priceCurrency" content="UZS">UZS</span>
