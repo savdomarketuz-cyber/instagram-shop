@@ -45,3 +45,4 @@ Disallow: /*/orders
 Disallow: /*/wallet
 
 Sitemap: https://velari.uz/sitemap.xml
+Sitemap: https://velari.uz/image-sitemap.xml
