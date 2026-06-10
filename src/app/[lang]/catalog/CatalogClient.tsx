@@ -150,7 +150,11 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
         const fetchProducts = async () => {
             setLoadingProducts(true);
             try {
-                let query = supabase.from("products").select("*").eq("is_deleted", false).gt("stock", 0);
+                // Karta uchun kerakli ustunlargina — select("*") uzun tavsiflar/paramlar bilan
+                // payload'ni bir necha baravar katta qilardi (bosh sahifa bilan bir xil ro'yxat).
+                let query = supabase.from("products")
+                    .select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,avg_rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,express_delivery,created_at")
+                    .eq("is_deleted", false).gt("stock", 0);
 
                 const activeCat = subCat !== "all" ? subCat : mainCat;
                 if (activeCat !== "all") {

@@ -8,27 +8,41 @@ import { normalizeQuery, transliterateLatin } from '@/lib/query-normalize';
 /**
  * Admin "Qidiruv Lug'ati" (search_synonyms) jadvalidagi sinonimlarni qo'llaydi.
  * keyword (xaridor yozadigan) → maps_to (asl izlanadigan). RLS chetlab service role bilan o'qiladi.
+ *
+ * Lug'at kichik va kam o'zgaradi — butun jadval funksiya xotirasida 5 daqiqa
+ * keshlanadi. Aks holda suggest har keystroke'da bitta qo'shimcha DB so'rov
+ * (ketma-ket, qidiruvdan OLDIN) qilardi.
  */
+const SYNONYMS_TTL_MS = 5 * 60 * 1000;
+let synonymsCache: { map: Record<string, string>; expires: number } | null = null;
+
+async function getSynonymsMap(): Promise<Record<string, string>> {
+    const now = Date.now();
+    if (synonymsCache && synonymsCache.expires > now) return synonymsCache.map;
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('search_synonyms')
+            .select('keyword, maps_to')
+            .limit(2000);
+        if (error) throw error;
+        const map: Record<string, string> = {};
+        for (const row of data || []) map[(row.keyword || '').toLowerCase()] = row.maps_to;
+        synonymsCache = { map, expires: now + SYNONYMS_TTL_MS };
+        return map;
+    } catch {
+        // DB xatosida muddati o'tgan bo'lsa ham eski keshni ishlatamiz
+        return synonymsCache?.map || {};
+    }
+}
+
 async function applyDbSynonyms(raw: string): Promise<string> {
     const lower = (raw || '').toLowerCase().trim();
     if (!lower) return raw;
-    const words = lower.split(/\s+/);
-    const candidates = Array.from(new Set([lower, ...words]));
-    try {
-        const { data } = await supabaseAdmin
-            .from('search_synonyms')
-            .select('keyword, maps_to')
-            .in('keyword', candidates);
-        if (!data || data.length === 0) return raw;
-        const map: Record<string, string> = {};
-        for (const row of data) map[(row.keyword || '').toLowerCase()] = row.maps_to;
-        // To'liq so'rov mosligi ustuvor
-        if (map[lower]) return map[lower];
-        // So'zma-so'z almashtirish
-        return words.map(w => map[w] || w).join(' ');
-    } catch {
-        return raw;
-    }
+    const map = await getSynonymsMap();
+    // To'liq so'rov mosligi ustuvor
+    if (map[lower]) return map[lower];
+    // So'zma-so'z almashtirish
+    return lower.split(/\s+/).map(w => map[w] || w).join(' ');
 }
 
 // Rasmdan qidiruv kalit so'zlarini chiqarish (Groq vision)
@@ -102,9 +116,10 @@ export async function POST(req: NextRequest) {
         const userIdentifier = userPhone || userPhoneCookie || null;
 
         // 2. Normalize query — kod ichidagi typo/transliteratsiya xaritasi (0ms, sinxron).
-        // Admin DB sinonim lug'ati faqat to'liq qidiruvda (suggest emas) — typeahead'da
-        // har keystroke'ga DB roundtrip qo'shmaslik uchun.
-        const dbNormalized = suggest ? searchQuery : await applyDbSynonyms(searchQuery);
+        // Admin DB sinonim lug'ati endi xotirada keshlanadi (5 min TTL), shuning uchun
+        // suggest'da ham qo'llash bepul — avval har keystroke'ga DB roundtrip bo'lgani
+        // uchun faqat to'liq qidiruvda ishlatilardi.
+        const dbNormalized = await applyDbSynonyms(searchQuery);
         const normalizedQuery = normalizeQuery(dbNormalized);
 
         // 3. Behavioral + affinity ranked search (tokenized + word_similarity + telemetry + profile)
