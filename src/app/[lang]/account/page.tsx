@@ -1890,17 +1890,22 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                             <tr key={t.id} className="hover:bg-gray-50/50 transition-colors">
                                                 <td className="p-6">
                                                     <div className="flex items-center gap-3">
-                                                        <div className={`w-2 h-2 rounded-full ${t.status === 'released' ? 'bg-[#EAF3EC]0' : t.status === 'approved' ? 'bg-blue-500' : t.status === 'pending' ? 'bg-orange-500' : 'bg-red-500'} animate-pulse`} />
+                                                        <div className={`w-2 h-2 rounded-full ${t.status === 'released' ? 'bg-[#EAF3EC]0' : t.status === 'approved' ? 'bg-blue-500' : t.status === 'pending' ? 'bg-orange-500' : 'bg-red-500'} ${t.status === 'rejected' ? '' : 'animate-pulse'}`} />
                                                         <div>
-                                                            <p className="text-xs font-black italic tracking-tighter uppercase">{t.order_stage || 'Jarayonda'}</p>
-                                                            <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">
-                                                                {t.status === 'released' ? 'Hamyonda' : t.status === 'approved' ? 'Muzlatilgan' : 'Kutilmoqda'}
+                                                            <p className="text-xs font-black italic tracking-tighter uppercase">
+                                                                {t.status === 'rejected'
+                                                                    ? (language === 'uz' ? 'Buyurtma bekor qilindi' : 'Заказ отменён')
+                                                                    : (t.order_stage || 'Jarayonda')}
+                                                            </p>
+                                                            <p className={`text-[8px] font-bold uppercase tracking-widest ${t.status === 'rejected' ? 'text-red-400' : 'text-gray-400'}`}>
+                                                                {t.status === 'released' ? 'Hamyonda' : t.status === 'approved' ? 'Muzlatilgan' : t.status === 'rejected' ? (language === 'uz' ? 'Bekor qilingan' : 'Отменён') : 'Kutilmoqda'}
+                                                                {t.order_id ? ` · #${String(t.order_id).slice(-4)}` : ''}
                                                             </p>
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td className="p-6">
-                                                    <p className="text-sm font-black italic tracking-tighter">+{t.amount.toLocaleString()} so'm</p>
+                                                    <p className={`text-sm font-black italic tracking-tighter ${t.status === 'rejected' ? 'text-gray-300 line-through' : ''}`}>+{t.amount.toLocaleString()} so'm</p>
                                                 </td>
                                                 <td className="p-6">
                                                     <p className="text-[10px] text-gray-400 font-bold italic">{new Date(t.created_at).toLocaleDateString()}</p>

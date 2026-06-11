@@ -44,6 +44,10 @@ BEGIN
         
         -- Mark as cancelled
         UPDATE orders SET status = 'bekor_qilingan' WHERE id = v_order.id;
+
+        -- Reject pending affiliate commissions for this order
+        UPDATE affiliate_transactions SET status = 'rejected'
+        WHERE order_id = v_order.id::text AND status = 'pending';
     END LOOP;
 END;
 $$ LANGUAGE plpgsql;
