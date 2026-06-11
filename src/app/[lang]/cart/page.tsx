@@ -35,7 +35,8 @@ export default function CartPage() {
     const smartDiscount = cart.reduce((sum, item) => sum + lineDiscount(item), 0);
     const promoDiscount = cartPromo?.discount || 0;
     const goodsTotal = Math.max(0, subtotal - smartDiscount - promoDiscount);
-    const deliveryFee = computeStandardDelivery(goodsTotal);
+    // Bepul yetkazish chegarasi PROMO-KODSIZ hisoblanadi (promo narx chegirmasi emas)
+    const deliveryFee = computeStandardDelivery(Math.max(0, subtotal - smartDiscount));
     const total = goodsTotal + deliveryFee;
     const fmtPrice = (n: number) => n.toLocaleString("ru-RU") + (language === "ru" ? " сум" : " so'm");
 

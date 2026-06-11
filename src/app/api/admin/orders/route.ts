@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     try {
         const { data, error } = await supabaseAdminFresh
             .from("orders")
-            .select("id, user_phone, total, status, items, address, coords, created_at, smart_discount_amount, promo_code, discount_amount, wallet_amount")
+            .select("id, user_phone, total, status, items, address, coords, created_at, smart_discount_amount, promo_code, discount_amount, wallet_amount, delivery_fee, delivery_type")
             .order("created_at", { ascending: false })
             .limit(500);
         if (error) throw error;

@@ -170,13 +170,16 @@ export default function CheckoutPage() {
     const [promoCode, setPromoCode] = useState(cartPromo?.code || "");
     const [promoData, setPromoData] = useState<any>(cartPromo ? { code: cartPromo.code, discount: cartPromo.discount, success: true } : null);
     const [isApplyingPromo, setIsApplyingPromo] = useState(false);
-    // Tovarlar summasi (barcha chegirmalardan keyin) — hamyon va bepullik chegarasi shunga asoslanadi
+    // Tovarlar summasi (barcha chegirmalardan keyin) — hamyon shunga asoslanadi
     const goodsTotal = Math.max(0, subtotal - (promoData?.discount || 0) - smartDiscount);
+    // Bepul yetkazish chegarasi PROMO-KODSIZ hisoblanadi (promo narx chegirmasi emas) —
+    // faqat haqiqiy narx chegirmalari (smart) kamaytiradi
+    const deliveryBasis = Math.max(0, subtotal - smartDiscount);
 
     // Yetkazib berish narxi
     const expressEligible = !!expressInfo?.eligible;
     const expressUsable = expressEligible && !!coords && expressInfo?.price != null;
-    const standardFee = computeStandardDelivery(goodsTotal);
+    const standardFee = computeStandardDelivery(deliveryBasis);
     const expressFee = expressInfo?.free ? 0 : (expressInfo?.price || 0);
     const useExpress = deliveryType === "express" && expressUsable;
     const deliveryFee = useExpress ? expressFee : standardFee;
@@ -195,7 +198,7 @@ export default function CheckoutPage() {
                     body: JSON.stringify({
                         items: displayProducts.map(i => ({ id: i.id })),
                         coords: coords || null,
-                        orderAmount: goodsTotal,
+                        orderAmount: deliveryBasis,
                         language,
                     }),
                 });
@@ -214,7 +217,7 @@ export default function CheckoutPage() {
             }
         })();
         return () => { cancelled = true; };
-    }, [displayProducts, coords, goodsTotal, language]);
+    }, [displayProducts, coords, deliveryBasis, language]);
 
     const handleApplyPromo = async () => {
         if (!promoCode.trim()) return;

@@ -193,8 +193,11 @@ export async function POST(req: NextRequest) {
                     console.error("Affiliate promo discount calc skipped:", apErr);
                 }
 
-                // Countdown + affiliate-promo chegirmalaridan keyingi tovarlar summasi (hamyon ta'sirisiz) — bepullik chegarasi uchun
-                const goodsBasis = Math.max(0, baseTotal + walletAmt - countdownDiscount - affPromoDiscount);
+                // Bepul yetkazish chegarasi uchun tovarlar summasi. PROMO-KOD chegirmasi bu
+                // chegaraga TA'SIR QILMAYDI (promo narx chegirmasi emas, xaridor rag'bati) —
+                // shuning uchun RPC ayirgan promo (baseDiscount) qaytarib qo'shiladi va
+                // affPromoDiscount ayirilmaydi. Faqat haqiqiy narx chegirmalari (countdown) kamaytiradi.
+                const goodsBasis = Math.max(0, baseTotal + walletAmt + baseDiscount - countdownDiscount);
 
                 let deliveryType: "standard" | "express" = "standard";
                 let deliveryFee = 0;

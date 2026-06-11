@@ -45,7 +45,13 @@ export default function AdminOrders() {
                 createdAt: o.created_at,
                 items: o.items,
                 address: o.address,
-                coords: o.coords
+                coords: o.coords,
+                promoCode: o.promo_code,
+                discountAmount: o.discount_amount,
+                smartDiscountAmount: o.smart_discount_amount,
+                walletAmount: o.wallet_amount,
+                deliveryFee: o.delivery_fee,
+                deliveryType: o.delivery_type
             })) as Order[];
             setOrders(fetchedOrders);
         } catch (error) {
@@ -340,6 +346,43 @@ export default function AdminOrders() {
                                             <p className="text-xl font-black italic tracking-tighter uppercase">{getStatusLabel(selectedOrder.status, 'uz')}</p>
                                             <p className="text-[10px] font-bold opacity-40">#{selectedOrder.id}</p>
                                         </div>
+                                    </div>
+                                </div>
+
+                                {/* Moliyaviy taqsimot */}
+                                <div className="p-6 bg-white rounded-[32px] border border-gray-100 shadow-sm space-y-3">
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Hisob-kitob</p>
+                                    {(selectedOrder as any).promoCode && (
+                                        <div className="flex justify-between items-center text-xs font-bold">
+                                            <span className="text-gray-400">Promo-kod:</span>
+                                            <span className="font-black text-purple-600 uppercase">{(selectedOrder as any).promoCode}</span>
+                                        </div>
+                                    )}
+                                    {Number((selectedOrder as any).discountAmount) > 0 && (
+                                        <div className="flex justify-between items-center text-xs font-bold">
+                                            <span className="text-gray-400">Chegirma:</span>
+                                            <span className="font-black text-red-500">-{Number((selectedOrder as any).discountAmount).toLocaleString()} so'm</span>
+                                        </div>
+                                    )}
+                                    {Number((selectedOrder as any).smartDiscountAmount) > 0 && (
+                                        <div className="flex justify-between items-center text-xs font-bold">
+                                            <span className="text-gray-400">Smart-chegirma:</span>
+                                            <span className="font-black text-red-500">-{Number((selectedOrder as any).smartDiscountAmount).toLocaleString()} so'm</span>
+                                        </div>
+                                    )}
+                                    {Number((selectedOrder as any).walletAmount) > 0 && (
+                                        <div className="flex justify-between items-center text-xs font-bold">
+                                            <span className="text-gray-400">Hamyondan:</span>
+                                            <span className="font-black text-blue-500">-{Number((selectedOrder as any).walletAmount).toLocaleString()} so'm</span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between items-center text-xs font-bold">
+                                        <span className="text-gray-400">Yetkazish{(selectedOrder as any).deliveryType === 'express' ? ' (tezkor)' : ''}:</span>
+                                        <span className="font-black">{Number((selectedOrder as any).deliveryFee) > 0 ? `+${Number((selectedOrder as any).deliveryFee).toLocaleString()} so'm` : 'Bepul'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm font-black pt-2 border-t border-gray-100">
+                                        <span>JAMI:</span>
+                                        <span className="italic tracking-tighter">{selectedOrder.total?.toLocaleString()} so'm</span>
                                     </div>
                                 </div>
                             </div>
