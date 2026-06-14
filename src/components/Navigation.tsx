@@ -309,14 +309,14 @@ export default function Navigation() {
                             <div className="relative p-2 rounded-xl group-hover:bg-gray-50 transition-colors">
                                 <Clapperboard size={22} strokeWidth={pathname === l('/reels') ? 3 : 2} className="group-hover:scale-110 group-hover:-rotate-12 group-hover:text-black transition-all duration-300" />
                             </div>
-                            <span className="text-[9px] font-black uppercase tracking-tighter hidden xl:block">Reels</span>
+                            <span className="text-[9px] font-black uppercase tracking-tighter hidden xl:block">{t.nav.reels}</span>
                         </Link>
 
                         <Link href={l("/blog")} className={`flex flex-col items-center gap-1 group transition-all ${pathname === l('/blog') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
                             <div className="relative p-2 rounded-xl group-hover:bg-gray-50 transition-colors">
                                 <BookOpen size={22} strokeWidth={pathname === l('/blog') ? 3 : 2} className="group-hover:scale-110 group-hover:text-black transition-all duration-300" />
                             </div>
-                            <span className="text-[9px] font-black uppercase tracking-tighter hidden xl:block">Blog</span>
+                            <span className="text-[9px] font-black uppercase tracking-tighter hidden xl:block">{t.nav.blog}</span>
                         </Link>
 
                         <Link href={l("/orders")} className={`flex flex-col items-center gap-1 group transition-all ${pathname === l('/orders') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
@@ -373,11 +373,11 @@ export default function Navigation() {
                 }}
             >
                 {[
-                    { href: l("/"), label: language === "uz" ? "Asosiy" : "Главная", active: isHomePage, icon: (on: boolean) => <LayoutGrid size={26} strokeWidth={on ? 2.5 : 1.8} /> },
-                    { href: l("/cart"), label: language === "uz" ? "Savat" : "Корзина", active: pathname === l("/cart"), badge: cartCount, icon: (on: boolean) => <ShoppingCart size={26} strokeWidth={on ? 2.5 : 1.8} /> },
-                    { href: l("/reels"), label: "Video", active: pathname === l("/reels"), icon: (on: boolean) => <Clapperboard size={26} strokeWidth={on ? 2.5 : 1.8} /> },
-                    { href: l("/wishlist"), label: language === "uz" ? "Saralangan" : "Избранное", active: pathname === l("/wishlist"), icon: (on: boolean) => <Heart size={26} strokeWidth={on ? 2.5 : 1.8} fill={on ? "currentColor" : "none"} /> },
-                    { href: user ? l("/account") : l("/login"), label: language === "uz" ? "Profil" : "Профиль", active: !!pathname?.includes("/account"), icon: (on: boolean) => <User size={26} strokeWidth={on ? 2.5 : 1.8} /> },
+                    { href: l("/"), label: t.nav.home, active: isHomePage, icon: (on: boolean) => <LayoutGrid size={26} strokeWidth={on ? 2.5 : 1.8} /> },
+                    { href: l("/cart"), label: t.nav.cart, active: pathname === l("/cart"), badge: cartCount, icon: (on: boolean) => <ShoppingCart size={26} strokeWidth={on ? 2.5 : 1.8} /> },
+                    { href: l("/reels"), label: t.nav.reels, active: pathname === l("/reels"), icon: (on: boolean) => <Clapperboard size={26} strokeWidth={on ? 2.5 : 1.8} /> },
+                    { href: l("/wishlist"), label: t.nav.wishlist, active: pathname === l("/wishlist"), icon: (on: boolean) => <Heart size={26} strokeWidth={on ? 2.5 : 1.8} fill={on ? "currentColor" : "none"} /> },
+                    { href: user ? l("/account") : l("/login"), label: t.nav.profile, active: !!pathname?.includes("/account"), icon: (on: boolean) => <User size={26} strokeWidth={on ? 2.5 : 1.8} /> },
                 ].map((tab) => (
                     <Link
                         key={tab.href}

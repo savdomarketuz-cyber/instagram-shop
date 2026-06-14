@@ -7,7 +7,8 @@ export const translations = {
             wishlist: "Saralangan",
             cart: "Savat",
             profile: "Profil",
-            messages: "Xabarlar"
+            messages: "Xabarlar",
+            blog: "Blog"
         },
         common: {
             search: "Qidirish...",
@@ -136,7 +137,8 @@ export const translations = {
             writeComment: "Sharh qoldiring...",
             noComments: "Hozircha sharhlar yo'q",
             share: "Ulashish",
-            like: "Yoqtirish"
+            like: "Yoqtirish",
+            save: "Saqlash"
         },
         product: {
             original: "Original Sifat",
@@ -257,7 +259,8 @@ export const translations = {
             wishlist: "Избранное",
             cart: "Корзина",
             profile: "Профиль",
-            messages: "Сообщения"
+            messages: "Сообщения",
+            blog: "Блог"
         },
         common: {
             search: "Поиск...",
@@ -386,7 +389,8 @@ export const translations = {
             writeComment: "Оставить комментарий...",
             noComments: "Пока нет комментариев",
             share: "Поделиться",
-            like: "Нравится"
+            like: "Нравится",
+            save: "Сохранить"
         },
         product: {
             original: "Оригинальное качество",

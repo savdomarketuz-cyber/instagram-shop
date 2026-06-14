@@ -213,7 +213,7 @@ export const SingleReel = ({
                     >
                         <Share2 size={22} strokeWidth={2.5} />
                     </button>
-                    <span className="text-[10px] font-black uppercase text-white drop-shadow-lg">SHARE</span>
+                    <span className="text-[10px] font-black uppercase text-white drop-shadow-lg">{t.reels?.share || "SHARE"}</span>
                 </div>
 
                 <div className="flex flex-col items-center gap-1">
@@ -224,7 +224,7 @@ export const SingleReel = ({
                     >
                         <Download size={22} strokeWidth={2.5} />
                     </button>
-                    <span className="text-[10px] font-black uppercase text-white drop-shadow-lg">SAVE</span>
+                    <span className="text-[10px] font-black uppercase text-white drop-shadow-lg">{t.reels?.save || "SAVE"}</span>
                 </div>
             </div>
 
@@ -264,7 +264,9 @@ export const SingleReel = ({
                             <Volume2 size={12} className="text-white" />
                         </div>
                         <p className="text-[10px] font-black text-white uppercase tracking-widest drop-shadow-lg marquee-text overflow-hidden whitespace-nowrap">
-                            Original Sound • {reel.category} Collection
+                            {language === 'uz' 
+                                ? `Original ovoz • ${reel.category} to'plami` 
+                                : `Оригинальный звук • Коллекция ${reel.category}`}
                         </p>
                     </div>
                 </div>

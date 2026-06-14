@@ -149,7 +149,7 @@ export default function BrandedEmptyState({
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-20">
                             <Loader2 className="animate-spin text-black mb-4" size={40} />
-                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Yuklanmoqda...</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">{t.common.loading}</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-8">
