@@ -1008,7 +1008,14 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                 <div className="mt-24 max-w-4xl">
                     <h2 className="text-3xl font-black tracking-tighter mb-8 italic uppercase">Batafsil ma'lumot</h2>
                     <div className="prose prose-lg max-w-none text-gray-600 font-medium leading-relaxed bg-gray-50 p-12 rounded-[50px] border border-gray-100">
-                        {product[language === 'uz' ? 'description_uz' : 'description_ru'] || product.description}
+                        {(() => {
+                            const desc = product[language === 'uz' ? 'description_uz' : 'description_ru'] || product.description || '';
+                            const hasHtml = /<[a-z][\s\S]*>/i.test(desc);
+                            if (hasHtml) {
+                                return <div dangerouslySetInnerHTML={{ __html: desc }} />;
+                            }
+                            return <div style={{ whiteSpace: 'pre-line' }}>{desc}</div>;
+                        })()}
                     </div>
                 </div>
             </div>

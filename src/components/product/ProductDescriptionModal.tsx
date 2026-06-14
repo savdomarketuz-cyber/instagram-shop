@@ -36,10 +36,21 @@ export const ProductDescriptionModal = ({
                         <h3 className="text-xl font-bold text-gray-900 leading-tight">
                             {product[`name_${language}`] || product.name}
                         </h3>
-                        <div className="text-gray-600 text-sm leading-relaxed font-medium space-y-4">
-                            {(product[`description_${language}`] || product.description || "").split('\n').map((line: string, i: number) => (
-                                <p key={i}>{line}</p>
-                            ))}
+                        <div className="text-gray-600 text-sm leading-relaxed font-medium">
+                            {(() => {
+                                const desc = product[`description_${language}`] || product.description || '';
+                                const hasHtml = /<[a-z][\s\S]*>/i.test(desc);
+                                if (hasHtml) {
+                                    return <div dangerouslySetInnerHTML={{ __html: desc }} />;
+                                }
+                                return (
+                                    <div className="space-y-4">
+                                        {desc.split('\n').map((line: string, i: number) => (
+                                            <p key={i}>{line}</p>
+                                        ))}
+                                    </div>
+                                );
+                            })()}
                         </div>
                     </div>
 
