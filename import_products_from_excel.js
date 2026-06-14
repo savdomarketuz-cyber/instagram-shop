@@ -106,7 +106,7 @@ async function processAndUploadImage(url) {
         const blurBuffer = await image.clone().resize(20, 20, { fit: "cover" }).blur(5).toFormat("webp", { quality: 20 }).toBuffer();
         const blurDataURL = `data:image/webp;base64,${blurBuffer.toString("base64")}`;
 
-        const originalBuffer = await image.clone().resize(1080, 1440, { fit: "cover" }).toFormat("avif", { quality: 75, effort: 3 }).toBuffer();
+        const originalBuffer = await image.clone().resize(1080, 1440, { fit: "inside", withoutEnlargement: true }).toFormat("avif", { quality: 75, effort: 3 }).toBuffer();
         const lowResBuffer = await image.clone().resize(360, 480, { fit: "cover" }).toFormat("webp", { quality: 40, effort: 6 }).toBuffer();
         const xsBuffer = await image.clone().resize({ width: 640, withoutEnlargement: true }).toFormat("webp", { quality: 78 }).toBuffer();
         const mdBuffer = await image.clone().resize({ width: 828, withoutEnlargement: true }).toFormat("webp", { quality: 80 }).toBuffer();
@@ -212,8 +212,10 @@ async function run() {
 
             for (let imgUrl of imageURLs) {
                 if (imgUrl.startsWith('//')) imgUrl = 'https:' + imgUrl;
-                // If it's already uploaded to our S3, skip re-upload
-                if (imgUrl.includes("yandexcloud.net")) {
+                // If it's already uploaded to our S3 or is a video (.mp4), keep as-is without Sharp processing
+                const isS3 = imgUrl.includes("yandexcloud.net");
+                const isVideo = imgUrl.toLowerCase().includes(".mp4");
+                if (isS3 || isVideo) {
                     finalImages.push(imgUrl);
                     continue;
                 }

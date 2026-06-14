@@ -1,0 +1,769 @@
+[
+  {
+    "id": "356175",
+    "title_uz": "Kapsulali kofe mashinasi Sonifer 3B1, 600 ml, 1450 Vt, black-red",
+    "brand": "Sonifer",
+    "model": "3B1",
+    "parameters": {
+      "Power": "1450 Вт",
+      "Pressure": "19 бар",
+      "Water Reservoir Capacity": "600 мл",
+      "Coffee Compatibility": [
+        "NESPRESSO",
+        "DOLCE GUSTO",
+        "Молотый кофе"
+      ]
+    }
+  },
+  {
+    "id": "476678",
+    "title_uz": "Tomchili kofe qaynatgich BQ CM1000, 1.2 L, 900 Vt, qora",
+    "brand": "BQ",
+    "model": "CM1000",
+    "parameters": {
+      "capacity": "1.2 liters",
+      "display": "Yes, digital",
+      "timer": "Yes",
+      "auto-heating": "Yes",
+      "clock": "Yes"
+    }
+  },
+  {
+    "id": "753522",
+    "title_uz": "Tomchili kofe qaynatgich BQ CM2002, 1.5 L, 900 Vt, kumushrang",
+    "brand": "BQ",
+    "model": "CM2002",
+    "parameters": {
+      "volume": "1.5 л",
+      "coffee_strength_control": true,
+      "automatic_heating": true,
+      "digital_display": true,
+      "drip_prevention_system": true,
+      "ergonomic_design": true
+    }
+  },
+  {
+    "id": "824951",
+    "title_uz": "Elektr turka-kofe qaynatgich Marta MT-2140, 500 ml, qora",
+    "brand": "Marta",
+    "model": "MT2140",
+    "parameters": {
+      "power_rating": "600 W",
+      "capacity": "500 мл",
+      "material": "Glass and Plastic",
+      "indicator_light": true,
+      "water_level_indicators": true,
+      "handle": true
+    }
+  },
+  {
+    "id": "825231",
+    "title_uz": "Elektr turka-kofe qaynatgich Marta MT-2141, yalpiz rang",
+    "brand": "marta",
+    "model": "MT2141",
+    "parameters": {
+      "material": "stainless steel and plastic",
+      "handle": "soft grip handle",
+      "base_color": "mint green",
+      "button": "red button with indicator light",
+      "power": "",
+      "capacity": "",
+      "special_features": ""
+    }
+  },
+  {
+    "id": "899389",
+    "title_uz": "Tomchili kofe qaynatgich Blackton CM1113, 0.3 L, 450 Vt, oq-qora",
+    "brand": "Blackton",
+    "model": "CM1113",
+    "parameters": {
+      "capacity": "300 мл",
+      "number_of_cups_at_once": "2",
+      "power_consumption": "450 Вт",
+      "protection": "защита от перегрева",
+      "indication": "индикация включения",
+      "included_items": "2 керамические чашки"
+    }
+  },
+  {
+    "id": "910567",
+    "title_uz": "Kofe maydalagichli kofe qaynatgich Ardesto YCM-D1200, 1.2 L",
+    "brand": "Ardesto",
+    "model": "YCM-D1200",
+    "parameters": {
+      "capacity": "1000 ml",
+      "power": "1050 W",
+      "features": [
+        "auto-shutoff",
+        "drip-stop function",
+        "cooking timer",
+        "overheat protection"
+      ],
+      "display": "digital",
+      "buttons": [
+        "Prog",
+        "HR",
+        "MIN",
+        "delay start button"
+      ],
+      "grinder": "built-in"
+    }
+  },
+  {
+    "id": "989787",
+    "title_uz": "Tomchili kofe qaynatgich BQ CM1008, 1.25 L, 1000 Vt, black-red",
+    "brand": "BQ",
+    "model": "CM1008",
+    "parameters": {
+      "volume": "1.25 L",
+      "anti-drip system": true,
+      "automatic heating": true,
+      "water level indicator": true,
+      "keep warm function": true
+    }
+  },
+  {
+    "id": "989801",
+    "title_uz": "Kapsulali kofe mashinasi BQ CM3000, 600 ml, 1450 Vt, qora",
+    "brand": "BQ",
+    "model": "CM3000",
+    "parameters": {
+      "compatibility": [
+        "Nespresso",
+        "Dolce Gusto",
+        "ground coffee"
+      ],
+      "pressure": "19 bar",
+      "included_accessories": [
+        "measuring spoon",
+        "water pump"
+      ]
+    }
+  },
+  {
+    "id": "989804",
+    "title_uz": "Rojogli kofe qaynatgich BQ CM3001, ULKA pompasi, 1.0 L",
+    "brand": "BQ",
+    "model": "CM3001",
+    "parameters": {
+      "volume": "1L",
+      "built-in_cappuccino_maker": true,
+      "pump": "Italian ULKA pump",
+      "buttons": [
+        {
+          "type": "power_button",
+          "symbol": ""
+        },
+        {
+          "type": "coffee_button",
+          "symbol": ""
+        },
+        {
+          "type": "cappuccino_button",
+          "symbol": ""
+        }
+      ],
+      "controls": [
+        {
+          "type": "dial",
+          "function": "coffee_flow_control"
+        }
+      ],
+      "special_features": [
+        "Built-in cappuccino maker",
+        "Italian ULKA pump"
+      ]
+    }
+  },
+  {
+    "id": "1081206",
+    "title_uz": "Rojogli kofe qaynatgich Sonifer SF-3575, 20 bar, 1.8 L, qora",
+    "brand": "Sonifer",
+    "model": "SF-3575",
+    "parameters": {
+      "modes": [
+        "Auto",
+        "Manual",
+        "Espresso",
+        "Cappuccino",
+        "Latte"
+      ],
+      "buttons": [
+        "Auto",
+        "Manual",
+        "Espresso",
+        "Cappuccino",
+        "Latte",
+        "Clean"
+      ],
+      "power_rating": "1350W",
+      "water_tank_capacity": "1.8L",
+      "milk_tank_capacity": "500ML",
+      "pressure": "20Bar",
+      "special_features": [
+        "Fully automatic milk frothing system",
+        "Colorful touch screen"
+      ]
+    }
+  },
+  {
+    "id": "1183408",
+    "title_uz": "Kofe maydalagichli kofe qaynatgich BQ BQ-MX840 2 tasi 1 da, 600 ml",
+    "brand": "BQ",
+    "model": "BQ-MX840",
+    "parameters": {
+      "autopodogrev": true,
+      "built-in_coffee_grinder": true,
+      "coffee_beans_reservoir": 32,
+      "regulation_of крепости": true
+    }
+  },
+  {
+    "id": "1256331",
+    "title_uz": "Tomchili kofe qaynatgich BOSCH TKA8011, oq",
+    "brand": "BOSCH",
+    "model": "TKA8011",
+    "parameters": {
+      "auto_off": "",
+      "calc": "",
+      "water_level_indicator": "Yes, on water tank and on filter container",
+      "water_tank_capacity": "More than 10 cups (exact not clear)",
+      "filter_container_capacity": "More than 15 cups (exact not clear)",
+      "control_type": "Button and slider",
+      "indicator_lights": "Yes"
+    }
+  },
+  {
+    "id": "1339279",
+    "title_uz": "Tomchili kofe qaynatgich Moulinex Uno FG121811, 1.25 L, qora",
+    "brand": "Moulinex",
+    "model": "Uno",
+    "parameters": {
+      "capacity": "12 cups",
+      "button_features": "On/off button with backlight",
+      "special_features": "Drip-free system, 1.25L water tank"
+    }
+  },
+  {
+    "id": "1352443",
+    "title_uz": "Tomchili kofe qaynatgich Moulinex subito, 1.25 L, qora-kumushrang",
+    "brand": "Moulinex",
+    "model": "subito",
+    "parameters": {
+      "capacity": "10 cups",
+      "water level indicator": "present",
+      "coffee filter": "paper filter",
+      "carafe material": "glass",
+      "carafe capacity": "1.25 L",
+      "power button": "present",
+      "power rating": "not specified"
+    }
+  },
+  {
+    "id": "1454459",
+    "title_uz": "Tomchili kofe qaynatgich Blackton Bt CM1111, 0.6 L, qora",
+    "brand": "Blackton",
+    "model": "CM1111",
+    "parameters": {
+      "volume": "0.6 liters",
+      "water level indicator": "yes",
+      "water level markings": "2, 3, 4, 5, 6 cups",
+      "coffee maker type": "drip",
+      "carafe material": "glass",
+      "carafe capacity": "6 cups",
+      "heating plate": "yes",
+      "auto-heating function": "yes",
+      "anti-drip system": "yes",
+      "overheat protection": "yes",
+      "rubber feet": "yes",
+      "power button": "red",
+      "power button location": "front bottom"
+    }
+  },
+  {
+    "id": "1719997",
+    "title_uz": "Tomchili kofe qaynatgich Tefal CM361838, qora",
+    "brand": "Tefal",
+    "model": "CM361838",
+    "parameters": {
+      "capacity": "10-15 cups",
+      "filter_type": "Reusable",
+      "water_level_indicator": true,
+      "control_type": "Simple switch",
+      "material": "Plastic and stainless steel",
+      "special_features": "No specific features mentioned"
+    }
+  },
+  {
+    "id": "1738162",
+    "title_uz": "Kofe mashinasi Sonifer SF-3573, sensorli displey, 20 bar, kumush",
+    "brand": "Sonifer",
+    "model": "SF-3573",
+    "parameters": {
+      "modes": [
+        "Espresso",
+        "Cappuccino",
+        "Latte",
+        "Clean",
+        "Froth"
+      ],
+      "power_rating": "1350 Вт",
+      "pressure": "20 бар",
+      "display": "Сенсорный дисплей",
+      "boilers": "Два бойлера 1350 Вт + 1000 Вт",
+      "temperature_control": "Постоянная температура экстракции 96°C",
+      "preparation_time": "Быстрое приготовление эспрессо за 30 секунд",
+      "special_features": [
+        "Стабильная подача пара",
+        "Гарантирует шелковистую молочную пену",
+        "Двойная система бойлеров"
+      ]
+    }
+  },
+  {
+    "id": "1782928",
+    "title_uz": "Rojogli kofe qaynatgich Polaris PCM 1542E Adore Crema, 15 bar",
+    "brand": "Polaris",
+    "model": "PCM 1542E",
+    "parameters": {
+      "pressure": "15 bar",
+      "pump": "Italian pump",
+      "led_lighting": "Yes",
+      "control_type": "Button and knob",
+      "functions": "Espresso, cappuccino"
+    }
+  },
+  {
+    "id": "1813350",
+    "title_uz": "Kofe mashinalarini tozalash tabletkalari DrPurity.Ru, 100 dona",
+    "brand": "DrPurity.Ru",
+    "model": "CM6000",
+    "parameters": {
+      "product_name": "Coffee Washer Tabs",
+      "quantity": "100",
+      "weight": "2g",
+      "description": "Таблетки для очистки кофемашин от кофейных масел"
+    }
+  },
+  {
+    "id": "2045864",
+    "title_uz": "Rojogli kofe mashinasi Sonifer SF-3535 Barista Pro, 15 bar, 1.6 L",
+    "brand": "Sonifer",
+    "model": "SF-3535",
+    "parameters": {
+      "water_tank_capacity": "1.6L",
+      "power_rating": "850W",
+      "pressure": "15 Bar",
+      "number_of_cups": "2",
+      "grain_steel_ball": "14"
+    }
+  },
+  {
+    "id": "2162610",
+    "title_uz": "Kapuchinatorli kofe mashinasi Sonifer SF-3599, 15 bar, oq-qora",
+    "brand": "HOME TECHNO",
+    "model": "SF-3599",
+    "parameters": {
+      "pressure": "15 бар",
+      "coffee_types": [
+        "эспрессо",
+        "американо",
+        "капучино",
+        "латте",
+        "горячее молоко"
+      ],
+      "control_type": "Сенсорное управление",
+      "guarantee": "365 дней",
+      "functions": "5 в 1",
+      "pump": "Немецкая помпа"
+    }
+  },
+  {
+    "id": "2166623",
+    "title_uz": "Rojogli kofe qaynatgich Sonifer SF-3534, 3.5 bar, 240 ml, qora",
+    "brand": "Sonifer",
+    "model": "SF-3534",
+    "parameters": {
+      "double handle": "",
+      "water container": "glass",
+      "water level indicator": "yes",
+      "measurements": {
+        "height": "33cm",
+        "width": "22cm",
+        "depth": "18cm",
+        "cord length": "0.9m"
+      },
+      "material": "plastic and metal"
+    }
+  },
+  {
+    "id": "2167278",
+    "title_uz": "Kapsulali kofe qaynatgich Sonifer SF-3579 4 tasi 1 da, 20 bar, qora",
+    "brand": "Kiwi Home",
+    "model": "SF-3579",
+    "parameters": {
+      "power": "1400w",
+      "pressure": "20 bar",
+      "coffee_modes": [
+        "NESPRESSO",
+        "DOLCE GUSTO",
+        "mолотый КОФЕ",
+        "КОФЕ в ЧАЛДАХ"
+      ],
+      "coffee_types": [
+        "ЭСПРЕССО",
+        "АМЕРИКАНО",
+        "ЛУНГО",
+        "РИСТРЕТТО"
+      ],
+      "portion_capacity": "2 порций",
+      "adapters": [
+        "адаптер для капсул DOLCE GUSTO",
+        "адаптер для капсул NESPRESSO",
+        "адаптер для молотого КОФЕ"
+      ],
+      "filters": [
+        "фильтры для молотого КОФЕ на двойную порцию",
+        "фильтры для молотого КОФЕ на одну порцию КОФЕ в ЧАЛДАХ"
+      ]
+    }
+  },
+  {
+    "id": "2216862",
+    "title_uz": "Kofe mashinasi Sonifer SF-3589, raqamli displey, qora",
+    "brand": "Sonifer",
+    "model": "SF-3589",
+    "parameters": {
+      "modes": [
+        "Espresso",
+        "Cappuccino",
+        "Latte",
+        "Hot Milk"
+      ],
+      "control_panel": "Digital display with icons",
+      "water_tank": "Removable and transparent",
+      "water_tank_capacity": "Not specified",
+      "coffee_output": "Double shot capability",
+      "coffee_grinds_container": "Included",
+      "steam_wand": "Present",
+      "power_button": "Present",
+      "cleaning_button": "Present"
+    }
+  },
+  {
+    "id": "2229659",
+    "title_uz": "Elektr turka-kofe qaynatgich Starlux SF-3604, 500 ml, yashil",
+    "brand": "Starlux",
+    "model": "SF-3604",
+    "parameters": {
+      "material": "Metal",
+      "power_rating": "600 W",
+      "capacity": "500ml",
+      "button": "Red",
+      "modes": "On/Off",
+      "special_features": "BPA Free, Double protection against overheating"
+    }
+  },
+  {
+    "id": "2315454",
+    "title_uz": "Tomchili kofe qaynatgich StarLux SL-29024, 1.8 ml, 1350 Vt, qora",
+    "brand": "StarLux",
+    "model": "SL-29024",
+    "parameters": {
+      "power": "1350 W",
+      "pressure": "20 bar",
+      "water_tank_capacity": "1.8 l + 500 ml",
+      "number_of_automatic_modes": "3",
+      "coffee_modes": [
+        "Single",
+        "Double"
+      ],
+      "additional_functions": [
+        "Cockie",
+        "Steam",
+        "Milk",
+        "Teaprouse"
+      ],
+      "control_type": "Electronic",
+      "display": "No display shown but clock symbol present"
+    }
+  },
+  {
+    "id": "2387976",
+    "title_uz": "Kapsulali kofe qaynatgich BQ BQ-MG2005, 20 bar, 1400 Vt, qora",
+    "brand": "BQ",
+    "model": "BQ-MG2005",
+    "parameters": {
+      "compatible_capsules": [
+        "Dolce Gusto",
+        "Nespresso",
+        "ground coffee",
+        "coffee pods"
+      ],
+      "pressure": "20 bar",
+      "display": "digital",
+      "dimensions": {
+        "width": "300 mm",
+        "depth": "115 mm",
+        "height": "225 mm"
+      }
+    }
+  },
+  {
+    "id": "2388309",
+    "title_uz": "Tomchili kofe qaynatgich Sonifer SF-3574, 5 L, stainless steel-qora",
+    "brand": "Sonifer",
+    "model": "SF-3574",
+    "parameters": {
+      "pump_pressure": "20 bar",
+      "water_reservoir_capacity": "1.5 liters",
+      "water_reservoir_type": "removable",
+      "adjustable_cappuccino_attachment": true,
+      "coffee_types": [
+        "espresso",
+        "cappuccino",
+        "latte"
+      ]
+    }
+  },
+  {
+    "id": "2438998",
+    "title_uz": "Tomchili kofe qaynatgich Sonifer SF-3564, 0.75 L, 650 Vt, qora",
+    "brand": "Sonifer",
+    "model": "SF-3564",
+    "parameters": {
+      "capacity": "1.25L",
+      "power": "800W",
+      "cup_capacity": "12 cups",
+      "water_level_mark": "Yes",
+      "anti_drip_valve": "Yes",
+      "breathable_stainless_steel_sheet": "Yes",
+      "high_quality_filters_and_scoop": "Yes",
+      "warranty": "14 months"
+    }
+  },
+  {
+    "id": "2527141",
+    "title_uz": "Kapsulali kofe qaynatgich Polaris PCM 2034 3 tasi 1 da, 20 bar",
+    "brand": "Polaris",
+    "model": "PCM 2034",
+    "parameters": {
+      "compatible_capsules": [
+        "Nespresso",
+        "Dolce-Gusto",
+        "ground coffee"
+      ],
+      "pump_pressure": "20 bar",
+      "power_consumption": "1450 W",
+      "guarantee": "2 years",
+      "controlled_by": "Swiss Company"
+    }
+  },
+  {
+    "id": "2582888",
+    "title_uz": "Tomchili kofe qaynatgich Sonifer SF3587, 0.5 L, kumushrang",
+    "brand": "Sonifer",
+    "model": "SF3587",
+    "parameters": {
+      "modes": [
+        "Espresso",
+        "Cappuccino",
+        "Latte",
+        "Hot Milk"
+      ],
+      "milk_reservoir_capacity": "0.5 L",
+      "pressure_system": "15 Bar",
+      "automatic_cleaning_function": true,
+      "professional_portafilter": true,
+      "adjustable_milk_foam": true,
+      "energy_efficiency": true,
+      "stainless_steel_body": true,
+      "easy_drainage": true
+    }
+  },
+  {
+    "id": "2626758",
+    "title_uz": "Kapsulali kofe qaynatgich Sonifer SF-3580 4 tasi 1 da, kumush-qora",
+    "brand": "Sonifer",
+    "model": "SF-3580",
+    "parameters": {
+      "power_rating": "1450W",
+      "number_of_adapters": "4",
+      "special_features": "4 in 1",
+      "coffee_making_modes": "Multiple ( icons indicating different coffee types )",
+      "design_description": "Compact and modern"
+    }
+  },
+  {
+    "id": "2626873",
+    "title_uz": "Kapsulali kofe qaynatgich Sonifer SF-3539 3 tasi 1 da, 19 bar",
+    "brand": "Sonifer",
+    "model": "SF-3539",
+    "parameters": {
+      "coffee_modes": [
+        "Nespresso",
+        "Dolce Gusto",
+        "Ground Coffee"
+      ],
+      "pressure": "19 bar",
+      "power": "1450 W",
+      "water_reservoir": "600 ml",
+      "compatible_pods": [
+        "Nespresso",
+        "Dolce Gusto"
+      ]
+    }
+  },
+  {
+    "id": "2627082",
+    "title_uz": "Elektr turka Sonifer SF-3604, turk kofesi uchun, 0.5 L, kumush",
+    "brand": "Sonifer",
+    "model": "SF-3604",
+    "parameters": {
+      "capacity": "0.5L",
+      "power": "600W",
+      "material": "Stainless Steel",
+      "button": "Single Button",
+      "features": [
+        "Automatic Shut-off",
+        "Dry Protection"
+      ],
+      "additional_features": [
+        "Zanglamas po'lat korpus",
+        "Qurib qolishdan himoya"
+      ]
+    }
+  },
+  {
+    "id": "2629276",
+    "title_uz": "Kapsulali kofe mashinasi Sonifer SF-3555, 7 L, 1400 Vt, qora-kumushrang",
+    "brand": "Sonifer",
+    "model": "SF-3555",
+    "parameters": {
+      "type": "Multi-functional Capsule Coffee Machine",
+      "functions": "4 in 1",
+      "compatible capsules": [
+        "Nespresso",
+        "Dolce Gusto",
+        "molded coffee",
+        "coffee pods"
+      ],
+      "temperature control": "Yes, digital display shows 90°",
+      "water tank capacity": "700ml",
+      "power rating": "not specified",
+      "special features": [
+        "multi-functional",
+        "capsule compatibility",
+        "digital temperature display"
+      ]
+    }
+  },
+  {
+    "id": "2629508",
+    "title_uz": "Kapsulali kofe qaynatgich Sonifer SF-3601 4 tasi 1 da, 19 bar, sariq-qora",
+    "brand": "Sonifer",
+    "model": "SF-3601",
+    "parameters": {
+      "power_rating": "1350 Вт",
+      "format": "4 в 1",
+      "water_tank_capacity": "600 мл",
+      "pressure": "19 бар",
+      "dimensions": "27 × 12 × 25 см",
+      "special_features": "4-in-1 capsule coffee machine, suitable for different types of capsules, 19bar high-pressure extraction, NTC engine temperature control, efficient heating element"
+    }
+  },
+  {
+    "id": "2631591",
+    "title_uz": "Kofe mashinasi Sonifer SF-3610 5 tasi 1 da, 20 bar, 1.5 L",
+    "brand": "Sonifer",
+    "model": "SF-3610",
+    "parameters": {
+      "Pressure": "20 Bar",
+      "Water Tank Capacity": "1.5L",
+      "Milk Tank Capacity": "400mL",
+      "Power": "1450W",
+      "Heating Speed": "Fast",
+      "Temperature Control": "Dual NTC",
+      "Coffee Compatibility": "Nespresso Capsules, Dolce Gusto Capsules, Ground Coffee",
+      "Special Features": "Auto Cleaning, Integrated Milk Frothing System, Overheat Protection",
+      "Modes": "5 in 1"
+    }
+  },
+  {
+    "id": "2712631",
+    "title_uz": "Tomchili kofe qaynatgich Sonifer SF-3597, 0.6 L, 600 Vt, qora",
+    "brand": "Sonifer",
+    "model": "SF-3597",
+    "parameters": {
+      "power_rating": "600W",
+      "capacity": "0.6L",
+      "product_code": "SF-3597",
+      "package_quantity": "6PCS",
+      "volume": "0.070CBM",
+      "warranty": "14 months"
+    }
+  },
+  {
+    "id": "2838740",
+    "title_uz": "Kapsulali kofe qaynatgich Sonifer SF-3585 Premium 4 tasi 1 da, 20 bar",
+    "brand": "Sonifer",
+    "model": "SF-3585",
+    "parameters": {
+      "power": "1400W",
+      "pressure": "20 Bar",
+      "temperature": "90°C",
+      "compatibility": [
+        "Nespresso",
+        "Dolce Gusto",
+        "Ground Coffee",
+        "ESE Pod"
+      ],
+      "functions": [
+        "Espresso",
+        "Americano",
+        "Cappuccino",
+        "Latte",
+        "Hot Water"
+      ],
+      "capsule compatibility": [
+        "Nespresso",
+        "Dolce Gusto",
+        "ESE Pod Bowl"
+      ],
+      "display": "Digital Display",
+      "buttons": [
+        "Power Button",
+        "Mode Buttons"
+      ],
+      "special features": [
+        "Ecologically Safe Materials",
+        "14 Months Warranty"
+      ]
+    }
+  },
+  {
+    "id": "2850784",
+    "title_uz": "Kapsulali kofe qaynatgich FRYBORG SF-3585 4 tasi 1 da, 20 bar, qora",
+    "brand": "FRYBORG",
+    "model": "SF-3585",
+    "parameters": {
+      "water_reservoir_capacity": "700 ml",
+      "water_heating": true,
+      "coffee_modes": [
+        "Nespresso",
+        "Dolce Gusto",
+        "Ground coffee",
+        "Capsule coffee"
+      ],
+      "display": {
+        "type": "Digital",
+        "temperature_display": true,
+        "water_level_indicator": true,
+        "process_indicator": true
+      },
+      "safety_lock": true,
+      "detachable_drip_tray": true,
+      "detachable_water_reservoir": true
+    }
+  }
+]

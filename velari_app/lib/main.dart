@@ -1,62 +1,60 @@
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hive_ce/hive_ce.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:cookie_jar/cookie_jar.dart';
+import 'core/theme/app_theme.dart';
+import 'core/router/app_router.dart';
+import 'core/api/api_client.dart';
+import 'core/supabase/supabase_client.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 1. Initialize Hive DB (local cache)
+  final appDocumentDir = await getApplicationDocumentsDirectory();
+  Hive.init(appDocumentDir.path);
+  
+  // Open necessary Hive boxes for settings, local cart, wishlist, etc.
+  await Hive.openBox('settings');
+  await Hive.openBox('cart');
+  await Hive.openBox('wishlist');
+
+  // 2. Initialize Supabase
+  await Supabase.initialize(
+    url: SupabaseConfig.url,
+    publishableKey: SupabaseConfig.anonKey,
+  );
+
+  // 3. Initialize Persistent Cookie Jar
+  final cookieJar = PersistCookieJar(
+    storage: FileStorage('${appDocumentDir.path}/.cookies/'),
+  );
+
+  runApp(
+    ProviderScope(
+      overrides: [
+        cookieJarProvider.overrideWithValue(cookieJar),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
+
+    return MaterialApp.router(
       title: 'Velari',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2D6E3E)),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.lightTheme,
       debugShowCheckedModeBanner: false,
-      home: const WebViewApp(),
-    );
-  }
-}
-
-class WebViewApp extends StatefulWidget {
-  const WebViewApp({super.key});
-
-  @override
-  State<WebViewApp> createState() => _WebViewAppState();
-}
-
-class _WebViewAppState extends State<WebViewApp> {
-  late final WebViewController controller;
-
-  @override
-  void initState() {
-    super.initState();
-    controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0xFFFFFFFF))
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onProgress: (int progress) {},
-          onPageStarted: (String url) {},
-          onPageFinished: (String url) {},
-          onWebResourceError: (WebResourceError error) {},
-        ),
-      )
-      ..loadRequest(Uri.parse('https://velari.uz'));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Scaffold allows WebView to take full screen within safe boundaries
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: WebViewWidget(controller: controller),
-      ),
+      routerConfig: router,
+      scaffoldMessengerKey: globalMessengerKey,
     );
   }
 }

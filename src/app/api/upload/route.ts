@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
 
                 originalBuffer = await image
                     .clone()
-                    .resize(1080, 1440, { fit: "cover" })
+                    .resize(1080, 1440, { fit: "inside", withoutEnlargement: true })
                     .toFormat("avif", { quality: 75, effort: 3 })
                     .toBuffer();
 

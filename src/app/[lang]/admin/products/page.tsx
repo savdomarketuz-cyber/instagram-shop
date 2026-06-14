@@ -25,10 +25,13 @@ import {
     Video,
     DollarSign,
     Sparkles,
-    SlidersHorizontal
+    SlidersHorizontal,
+    ExternalLink
 } from "lucide-react";
 import ProductParamsEditor from "@/components/admin/ProductParamsEditor";
 import { normalizeQuery, transliterateLatin } from "@/lib/query-normalize";
+import { useParams } from "next/navigation";
+import { getProductSlug } from "@/lib/slugify";
 
 interface Category {
     id: string;
@@ -91,6 +94,8 @@ interface Product {
 import { uploadToYandexS3, uploadFromUrlToYandexS3 } from "@/lib/yandex-s3";
 
 export default function AdminProducts() {
+    const params = useParams();
+    const lang = params?.lang || "uz";
     const [view, setView] = useState<"grid" | "list">("grid");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
@@ -1279,6 +1284,16 @@ export default function AdminProducts() {
                                                     >
                                                         {isActionLoading ? <Loader2 className="animate-spin" size={20} /> : <Trash2 size={20} />}
                                                     </button>
+                                                    <a
+                                                        href={`/${lang}/products/${getProductSlug(p, lang as string)}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        className="p-4 bg-white/90 backdrop-blur-md text-blue-600 rounded-2xl shadow-xl hover:bg-white transition-all border border-gray-100 active:scale-90 flex items-center justify-center"
+                                                        title="Saytda ko'rish"
+                                                    >
+                                                        <ExternalLink size={20} />
+                                                    </a>
                                                 </>
                                             ) : (
                                                 <>
@@ -1390,6 +1405,16 @@ export default function AdminProducts() {
                                                 <div className="flex justify-end gap-3">
                                                     {activeTab === "active" ? (
                                                         <>
+                                                            <a
+                                                                href={`/${lang}/products/${getProductSlug(p, lang as string)}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                className="p-3 text-gray-400 hover:text-blue-600 hover:bg-white rounded-xl hover:shadow-lg transition-all flex items-center justify-center"
+                                                                title="Saytda ko'rish"
+                                                            >
+                                                                <ExternalLink size={18} />
+                                                            </a>
                                                             <button 
                                                                 onClick={(e) => { e.stopPropagation(); triggerAiAnalysis(p.id); }} 
                                                                 disabled={aiStatus[p.id]?.active}
