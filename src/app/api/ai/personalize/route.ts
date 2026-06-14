@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
         const clientAttentionIds: string[] = Array.isArray(body.attentionIds) ? body.attentionIds.slice(0, 20) : [];
         const excludeIds = new Set<string>(Array.isArray(body.excludeIds) ? body.excludeIds : []);
         const limit = Math.min(Number(body.limit) || 12, 30);
+        const lastSearch = typeof body.lastSearch === "string" ? body.lastSearch.trim() : "";
 
         // Login holatini aniqlash (ixtiyoriy)
         const token = req.cookies.get("user_token")?.value;
@@ -28,8 +29,22 @@ export async function POST(req: NextRequest) {
         const payload = token ? await verifyJwt(token, JWT_SECRET) : null;
         const userPhone = payload?.sub || null;
 
+        // Oxirgi qidiruv bo'yicha mahsulotlarni aniqlash
+        let searchAttentionIds: string[] = [];
+        if (lastSearch) {
+            const { data: searchProducts } = await supabaseAdmin
+                .from("products")
+                .select("id")
+                .or(`name.ilike.%${lastSearch}%,name_uz.ilike.%${lastSearch}%,name_ru.ilike.%${lastSearch}%`)
+                .eq("is_deleted", false)
+                .limit(5);
+            if (searchProducts?.length) {
+                searchAttentionIds = searchProducts.map(p => String(p.id));
+            }
+        }
+
         // 1. Niyat manbalari: attention IDlar + affinity
-        let attentionIds: string[] = [...clientAttentionIds];
+        let attentionIds: string[] = [...searchAttentionIds, ...clientAttentionIds];
         let affinity: AffinitySignals | undefined;
 
         if (userPhone) {

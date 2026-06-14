@@ -96,6 +96,10 @@ export default function Navigation() {
             return;
         }
 
+        try {
+            localStorage.setItem("velari_last_search", activeQuery.trim());
+        } catch {}
+
         useStore.setState({ isSearchLoading: true });
         try {
             const res = await fetch('/api/search', {

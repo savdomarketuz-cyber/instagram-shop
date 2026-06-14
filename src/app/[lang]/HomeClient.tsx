@@ -207,10 +207,15 @@ export default function HomeClient({
         const run = async () => {
             try {
                 const attentionIds = getRecentlyViewedIds();
+                let lastSearch = "";
+                try {
+                    lastSearch = localStorage.getItem("velari_last_search") || "";
+                } catch {}
+
                 const res = await fetch("/api/ai/personalize", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ attentionIds, limit: 24 }),
+                    body: JSON.stringify({ attentionIds, lastSearch, limit: 24 }),
                 });
                 if (!res.ok) return;
                 const data = await res.json();
