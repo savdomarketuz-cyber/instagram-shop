@@ -226,7 +226,7 @@ export default function RootLayout({
                     </AppWrapper>
                 </div>
                 <YandexMetrika ymid="107383008" />
-                <GoogleAnalytics gaId="G-J64EWYYMTY" />
+                <GoogleAnalytics gaId="G-26H8F7XC2T" />
                 <Analytics />
                 <SpeedInsights />
                 <script dangerouslySetInnerHTML={{ __html: `

@@ -29,7 +29,7 @@ function GAPageTracker({ gaId }: { gaId: string }) {
 }
 
 export default function GoogleAnalytics({ gaId }: { gaId?: string }) {
-  const id = gaId || process.env.NEXT_PUBLIC_GA_ID || 'G-J64EWYYMTY';
+  const id = gaId || process.env.NEXT_PUBLIC_GA_ID || 'G-26H8F7XC2T';
 
   return (
     <>
