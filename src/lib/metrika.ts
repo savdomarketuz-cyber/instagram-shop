@@ -19,6 +19,14 @@ function callYm(...args: any[]) {
     }
 }
 
+function callGtag(...args: any[]) {
+    if (typeof window === 'undefined') return;
+    const gtag = (window as any).gtag;
+    if (typeof gtag === 'function') {
+        try { gtag(...args); } catch { /* jim */ }
+    }
+}
+
 /** SPA sahifa ko'rinishi (route o'zgarganda). */
 export function ymHit(url?: string, options?: Params) {
     const href = url || (typeof window !== 'undefined' ? window.location.href : '');
@@ -29,6 +37,8 @@ export function ymHit(url?: string, options?: Params) {
 /** Maqsad (konversiya): savatga qo'shish, buyurtma, to'lov va h.k. */
 export function ymGoal(goal: string, params?: Params) {
     callYm('reachGoal', goal, params);
+    // Google Analytics goal tracking
+    callGtag('event', goal, params);
 }
 
 // ── E-commerce (dataLayer) ─────────────────────────────────────────────
@@ -51,13 +61,78 @@ function pushEcom(action: string, payload: Params) {
 
 export function ymViewProduct(product: EcomProduct) {
     pushEcom('detail', { products: [product] });
+    
+    // GA4 view_item event
+    callGtag('event', 'view_item', {
+        currency: YM_CURRENCY,
+        value: product.price,
+        items: [{
+            item_id: String(product.id),
+            item_name: product.name,
+            price: product.price,
+            item_category: product.category,
+            item_brand: product.brand,
+            item_variant: product.variant,
+            quantity: product.quantity || 1
+        }]
+    });
 }
+
 export function ymAddToCart(product: EcomProduct) {
     pushEcom('add', { products: [{ ...product, quantity: product.quantity || 1 }] });
+
+    // GA4 add_to_cart event
+    callGtag('event', 'add_to_cart', {
+        currency: YM_CURRENCY,
+        value: (product.price || 0) * (product.quantity || 1),
+        items: [{
+            item_id: String(product.id),
+            item_name: product.name,
+            price: product.price,
+            item_category: product.category,
+            item_brand: product.brand,
+            item_variant: product.variant,
+            quantity: product.quantity || 1
+        }]
+    });
 }
+
 export function ymRemoveFromCart(product: EcomProduct) {
     pushEcom('remove', { products: [{ ...product, quantity: product.quantity || 1 }] });
+
+    // GA4 remove_from_cart event
+    callGtag('event', 'remove_from_cart', {
+        currency: YM_CURRENCY,
+        value: (product.price || 0) * (product.quantity || 1),
+        items: [{
+            item_id: String(product.id),
+            item_name: product.name,
+            price: product.price,
+            item_category: product.category,
+            item_brand: product.brand,
+            item_variant: product.variant,
+            quantity: product.quantity || 1
+        }]
+    });
 }
+
 export function ymPurchase(products: EcomProduct[], order: { id: string; revenue: number }) {
     pushEcom('purchase', { actionField: { id: order.id, revenue: order.revenue }, products });
+
+    // GA4 purchase event
+    callGtag('event', 'purchase', {
+        transaction_id: order.id,
+        value: order.revenue,
+        currency: YM_CURRENCY,
+        items: products.map(product => ({
+            item_id: String(product.id),
+            item_name: product.name,
+            price: product.price,
+            item_category: product.category,
+            item_brand: product.brand,
+            item_variant: product.variant,
+            quantity: product.quantity || 1
+        }))
+    });
 }
+
