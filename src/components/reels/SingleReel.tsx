@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Heart, MessageSquare, Share2, ShoppingBag, Plus, Sparkles, Volume2, VolumeX, Play, Loader2 } from "lucide-react";
+import { Heart, MessageSquare, Share2, ShoppingBag, Plus, Sparkles, Volume2, VolumeX, Play, Loader2, Download } from "lucide-react";
 import Link from "next/link";
 import { useStore } from "@/store/store";
 import { supabase } from "@/lib/supabase";
@@ -88,6 +88,26 @@ export const SingleReel = ({
                 title: reel[`name_${language}`] || reel.name,
                 url: window.location.href
             });
+        }
+    };
+
+    const handleDownload = async () => {
+        if (!reel.videoUrl) return;
+        try {
+            showToast(language === 'uz' ? "Yuklab olinmoqda..." : "Скачивание...", 'info');
+            const response = await fetch(reel.videoUrl);
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${reel[`name_${language}`] || reel.name || 'reel-video'}.mp4`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Video download failed:", error);
+            window.open(reel.videoUrl, '_blank');
         }
     };
 
@@ -194,6 +214,17 @@ export const SingleReel = ({
                         <Share2 size={22} strokeWidth={2.5} />
                     </button>
                     <span className="text-[10px] font-black uppercase text-white drop-shadow-lg">SHARE</span>
+                </div>
+
+                <div className="flex flex-col items-center gap-1">
+                    <button
+                        onClick={handleDownload}
+                        className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 active:scale-90 transition-transform text-white"
+                        title={language === 'uz' ? "Yuklab olish" : "Скачать"}
+                    >
+                        <Download size={22} strokeWidth={2.5} />
+                    </button>
+                    <span className="text-[10px] font-black uppercase text-white drop-shadow-lg">SAVE</span>
                 </div>
             </div>
 
