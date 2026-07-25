@@ -719,7 +719,7 @@ export default function AdminProducts() {
             });
 
             const finalData: any = {
-                name: newProduct.name,
+                name: newProduct.name_uz || newProduct.name,
                 name_uz: newProduct.name_uz,
                 name_ru: newProduct.name_ru,
                 image: imagesArray[0] || "",
@@ -1328,7 +1328,7 @@ export default function AdminProducts() {
                                         </div>
                                         <div className="flex flex-col mb-1 overflow-hidden">
                                             {(p.brand && brandLabels[p.brand]) && <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest truncate">{brandLabels[p.brand]}</span>}
-                                            <h3 className="font-black text-gray-900 group-hover:text-black transition-colors truncate">{p.name}</h3>
+                                            <h3 className="font-black text-gray-900 group-hover:text-black transition-colors truncate">{(lang === 'ru' ? p.name_ru : p.name_uz) || p.name_uz || p.name_ru || p.name}</h3>
                                         </div>
                                         <div className="flex items-end justify-between">
                                             <div className="flex flex-col">
@@ -1384,7 +1384,7 @@ export default function AdminProducts() {
                                                         />
                                                     </div>
                                                     <div className="flex flex-col">
-                                                        <span className="font-bold text-sm text-gray-900 line-clamp-1">{p.name}</span>
+                                                        <span className="font-bold text-sm text-gray-900 line-clamp-1">{(lang === 'ru' ? p.name_ru : p.name_uz) || p.name_uz || p.name_ru || p.name}</span>
                                                         <div className="flex items-center gap-2">
                                                             {(p.brand && brandLabels[p.brand]) && <span className="text-[8px] font-black text-[#7000FF] bg-[#7000FF]/5 px-1.5 py-0.5 rounded uppercase tracking-widest">{brandLabels[p.brand]}</span>}
                                                             <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{p.images?.length || 1} TA RASM</span>
