@@ -217,7 +217,7 @@ export const ReviewsSection = ({
                     )}
                     {!replyTo && activeCommentTab === 'review' && (
                         <div className="flex items-center gap-4 mb-6 bg-white p-4 rounded-2xl border border-gray-50">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Baholang:</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{language === 'uz' ? 'Baholang:' : 'Оцените:'}</span>
                             <div className="flex gap-1">
                                 {[1, 2, 3, 4, 5].map(star => (
                                     <button key={star} onClick={() => setCommentRating(star)}>

@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { mapProduct, mapComment } from "@/lib/mappers";
 import { translations } from "@/lib/translations";
-import { Loader2, Plus, Minus, ShoppingBag, Heart, Star, Check, Truck, Clock, ShieldCheck, RefreshCw, Store as StoreIcon, ChevronRight } from "lucide-react";
+import { Loader2, Plus, Minus, ShoppingBag, Heart, Star, Check, Truck, Clock, ShieldCheck, RefreshCw, Store as StoreIcon, ChevronRight, ChevronLeft, Maximize2, X } from "lucide-react";
 import Link from "next/link";
 import { getDeliveryDateText } from "@/lib/date-utils";
 import Image from "next/image";
@@ -100,6 +100,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
     const [activeImage, setActiveImage] = useState(0);
     const [isScrolledPast, setIsScrolledPast] = useState(false);
     const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
+    const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
     const [popularLoading, setPopularLoading] = useState(false);
     const [maxDesktopLoadIndex, setMaxDesktopLoadIndex] = useState(0);
 
@@ -443,6 +444,22 @@ export default function ProductClient({ params, initialProduct }: { params: { id
         ...(product?.videoUrl ? [{ type: 'video' as const, url: product.videoUrl }] : [])
     ], [product]);
 
+    // Lightbox keyboard navigation
+    useEffect(() => {
+        if (lightboxIndex === null) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setLightboxIndex(null);
+            if (e.key === "ArrowLeft") setLightboxIndex(prev => (prev === null || prev === 0 ? allMedia.length - 1 : prev - 1));
+            if (e.key === "ArrowRight") setLightboxIndex(prev => (prev === null || prev === allMedia.length - 1 ? 0 : prev + 1));
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        document.body.style.overflow = "hidden";
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+            document.body.style.overflow = "";
+        };
+    }, [lightboxIndex, allMedia.length]);
+
     if (loading) return (
         <div className="min-h-screen bg-white font-sans">
             <style>{`
@@ -758,7 +775,8 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                             ))}
                         </div>
                         <div
-                            className="flex-1 bg-gray-50 rounded-[40px] overflow-hidden relative group/hero shadow-2xl shadow-black/5"
+                            onClick={() => setLightboxIndex(activeImage)}
+                            className="flex-1 bg-white rounded-[40px] overflow-hidden relative group/hero shadow-xl shadow-black/5 border border-gray-100/80 cursor-pointer"
                             style={{ viewTransitionName: `product-img-${product.id}` } as React.CSSProperties}
                         >
                             {allMedia[activeImage]?.type === 'video' ? (
@@ -774,36 +792,28 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                     />
                                 </div>
                             ) : (
-                                <>
-                                    {/* 1. Low-Res Background (Instant) */}
-                                    {product.image_metadata?.[allMedia[activeImage]?.url]?.lowResUrl && (
-                                        <Image 
-                                            src={product.image_metadata[allMedia[activeImage].url].lowResUrl as string} 
-                                            fill
-                                            className="object-contain p-10 blur-sm scale-110 opacity-40" 
-                                            alt="" 
-                                            priority
-                                        />
-                                    )}
-                                    
-                                    {/* 2. High-Res Foreground (Gradual) */}
-                                    <Image
-                                        src={allMedia[activeImage]?.url || ""}
-                                        fill
-                                        className="object-contain p-10 animate-in fade-in zoom-in-95 duration-500"
-                                        alt={(product.image_metadata?.[allMedia[activeImage]?.url]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || `${(product[`name_${language}` as keyof typeof product] as string) || product.name} - ${language === 'uz' ? 'Asosiy rasm' : 'Основное изображение'}`}
-                                        priority
-                                        sizes="(max-width: 1024px) 100vw, 60vw"
-                                        quality={65}
-                                        fetchPriority="high"
-                                        loader={hasVariants(product.image_metadata, allMedia[activeImage]?.url || "") ? makeVariantLoader(product.image_metadata) : undefined}
-                                        onLoad={() => setMaxDesktopLoadIndex(prev => Math.max(prev, 1))}
-                                    />
-                                </>
+                                <Image
+                                    src={allMedia[activeImage]?.url || ""}
+                                    fill
+                                    className="object-contain p-4 md:p-6 group-hover:scale-105 transition-transform duration-500"
+                                    alt={(product.image_metadata?.[allMedia[activeImage]?.url]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || `${(product[`name_${language}` as keyof typeof product] as string) || product.name} - ${language === 'uz' ? 'Asosiy rasm' : 'Основное изображение'}`}
+                                    priority
+                                    sizes="(max-width: 1024px) 100vw, 60vw"
+                                    quality={85}
+                                    fetchPriority="high"
+                                    loader={hasVariants(product.image_metadata, allMedia[activeImage]?.url || "") ? makeVariantLoader(product.image_metadata) : undefined}
+                                    onLoad={() => setMaxDesktopLoadIndex(prev => Math.max(prev, 1))}
+                                />
                             )}
                             
+                            {/* Zoom hint badge */}
+                            <div className="absolute top-8 left-8 p-3 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg opacity-0 group-hover/hero:opacity-100 transition-opacity text-gray-700 border border-white flex items-center gap-2 text-xs font-bold">
+                                <Maximize2 size={16} />
+                                <span>{language === 'uz' ? "Kattalashtirish" : "Увеличить"}</span>
+                            </div>
+
                             <button 
-                                onClick={() => toggleWishlist({ ...product, imageUrl: product.image } as any)}
+                                onClick={(e) => { e.stopPropagation(); toggleWishlist({ ...product, imageUrl: product.image } as any); }}
                                 className="absolute top-8 right-8 p-5 bg-white/80 backdrop-blur-xl rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all text-black border border-white z-10"
                             >
                                 <Heart size={24} fill={isWishlisted ? "black" : "none"} />
@@ -1001,21 +1011,33 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                             </div>
                         </div>
 
-
-                    </div>
-                </div>
-
-                <div className="mt-24 max-w-4xl">
-                    <h2 className="text-3xl font-black tracking-tighter mb-8 italic uppercase">{language === 'uz' ? "Batafsil ma'lumot" : "Подробная информация"}</h2>
-                    <div className="prose prose-lg max-w-none text-gray-600 font-medium leading-relaxed bg-gray-50 p-12 rounded-[50px] border border-gray-100">
-                        {(() => {
-                            const desc = product[language === 'uz' ? 'description_uz' : 'description_ru'] || product.description || '';
-                            const hasHtml = /<[a-z][\s\S]*>/i.test(desc);
-                            if (hasHtml) {
-                                return <div dangerouslySetInnerHTML={{ __html: desc }} />;
-                            }
-                            return <div style={{ whiteSpace: 'pre-line' }}>{desc}</div>;
-                        })()}
+                        {/* 3. Description Truncated Preview Box (Fills space directly under Delivery Panel) */}
+                        <div className="bg-[#F2F3F5] p-8 md:p-10 rounded-[40px] border border-gray-100 relative flex flex-col justify-between">
+                            <div>
+                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">
+                                    {language === 'uz' ? "Batafsil ma'lumot" : "Подробная информация"}
+                                </h3>
+                                <div className="relative max-h-[160px] overflow-hidden text-sm font-medium text-gray-700 leading-relaxed">
+                                    {(() => {
+                                        const desc = product[language === 'uz' ? 'description_uz' : 'description_ru'] || product.description || '';
+                                        const hasHtml = /<[a-z][\s\S]*>/i.test(desc);
+                                        if (hasHtml) {
+                                            return <div dangerouslySetInnerHTML={{ __html: desc }} />;
+                                        }
+                                        return <div style={{ whiteSpace: 'pre-line' }}>{desc}</div>;
+                                    })()}
+                                    {/* Fade out mask */}
+                                    <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#F2F3F5] via-[#F2F3F5]/80 to-transparent pointer-events-none" />
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setIsDescriptionModalOpen(true)}
+                                className="mt-6 w-full py-4 bg-white hover:bg-black hover:text-white text-black font-black text-xs uppercase tracking-widest rounded-2xl transition-all shadow-sm border border-gray-200/60 flex items-center justify-center gap-2 group active:scale-95"
+                            >
+                                <span>{language === 'uz' ? "Batafsil ko'rish" : "Подробнее"}</span>
+                                <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1132,6 +1154,77 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                     )}
                 </div>
             </div>
+
+            {/* Fullscreen Lightbox Modal */}
+            {lightboxIndex !== null && (
+                <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-2xl flex flex-col justify-between p-4 md:p-8 animate-in fade-in duration-300">
+                    {/* Top Bar */}
+                    <div className="flex items-center justify-between z-10">
+                        <span className="text-white/70 text-xs font-black uppercase tracking-widest bg-white/10 px-4 py-2 rounded-full backdrop-blur-md">
+                            {lightboxIndex + 1} / {allMedia.length}
+                        </span>
+                        <p className="text-white/90 text-sm font-bold truncate max-w-md hidden md:block">
+                            {product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name}
+                        </p>
+                        <button
+                            onClick={() => setLightboxIndex(null)}
+                            className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all backdrop-blur-md"
+                        >
+                            <X size={24} />
+                        </button>
+                    </div>
+
+                    {/* Main Stage with Nav Arrows */}
+                    <div className="relative flex-1 flex items-center justify-center my-4 overflow-hidden">
+                        {allMedia.length > 1 && (
+                            <button
+                                onClick={() => setLightboxIndex(prev => (prev === null || prev === 0 ? allMedia.length - 1 : prev - 1))}
+                                className="absolute left-2 md:left-6 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all backdrop-blur-md z-20 hover:scale-110 active:scale-95"
+                            >
+                                <ChevronLeft size={32} />
+                            </button>
+                        )}
+
+                        <div className="relative w-full h-full flex items-center justify-center p-2 md:p-6">
+                            {allMedia[lightboxIndex]?.type === 'video' ? (
+                                <video src={allMedia[lightboxIndex].url} controls autoPlay className="max-h-full max-w-full rounded-2xl object-contain shadow-2xl" />
+                            ) : (
+                                <img src={allMedia[lightboxIndex]?.url} alt="" className="max-h-full max-w-full object-contain rounded-2xl shadow-2xl animate-in zoom-in-95 duration-300" />
+                            )}
+                        </div>
+
+                        {allMedia.length > 1 && (
+                            <button
+                                onClick={() => setLightboxIndex(prev => (prev === null || prev === allMedia.length - 1 ? 0 : prev + 1))}
+                                className="absolute right-2 md:right-6 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all backdrop-blur-md z-20 hover:scale-110 active:scale-95"
+                            >
+                                <ChevronRight size={32} />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Bottom Thumbnails */}
+                    {allMedia.length > 1 && (
+                        <div className="flex justify-center gap-3 overflow-x-auto no-scrollbar py-2 z-10">
+                            {allMedia.map((m, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => setLightboxIndex(idx)}
+                                    className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all shrink-0 ${
+                                        lightboxIndex === idx ? "border-white scale-110" : "border-transparent opacity-50 hover:opacity-100"
+                                    }`}
+                                >
+                                    {m.type === 'video' ? (
+                                        <div className="w-full h-full bg-gray-900 flex items-center justify-center text-white text-[9px] font-bold">VIDEO</div>
+                                    ) : (
+                                        <img src={m.url} alt="" className="w-full h-full object-cover" />
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
