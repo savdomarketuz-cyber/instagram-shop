@@ -67,10 +67,19 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
             ? (product.name_ru || product.name_uz || product.name)
             : (product.name_uz || product.name);
 
+        // Ensure raw direct product image URL is absolute for Google Search Thumbnail Indexing
+        const rawProductImage = product.image?.startsWith('http') 
+            ? product.image 
+            : `${baseUrl}${product.image || ''}`;
+            
+        const productImages = (product.images && product.images.length > 0) 
+            ? product.images.map((img: string) => img.startsWith('http') ? img : `${baseUrl}${img}`)
+            : [rawProductImage];
+
         const ogUrl = new URL(`${baseUrl}/api/og`);
         ogUrl.searchParams.set('name', productName);
         ogUrl.searchParams.set('price', product.price.toString());
-        ogUrl.searchParams.set('image', product.image);
+        ogUrl.searchParams.set('image', rawProductImage);
 
         // Title template in layout.tsx already adds "| Velari", so don't add it here
         const title = isRu
@@ -88,7 +97,11 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
                 description: description,
                 url: canonicalUrl,
                 siteName: 'Velari',
-                images: [{ url: ogUrl.toString(), width: 1200, height: 630, alt: productName }],
+                images: [
+                    { url: rawProductImage, width: 800, height: 800, alt: productName },
+                    ...productImages.slice(1, 4).map(img => ({ url: img, width: 800, height: 800, alt: productName })),
+                    { url: ogUrl.toString(), width: 1200, height: 630, alt: productName }
+                ],
                 locale: isRu ? 'ru_RU' : 'uz_UZ',
                 type: 'website',
             },
@@ -96,7 +109,7 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
                 card: 'summary_large_image',
                 title: title,
                 description: description,
-                images: [ogUrl.toString()],
+                images: [rawProductImage, ogUrl.toString()],
             },
             alternates: {
                 canonical: canonicalUrl,
@@ -284,6 +297,8 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
 
     return (
         <>
+            <link rel="image_src" href={productImages[0]} />
+            <meta property="og:image:secure_url" content={productImages[0]} />
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -322,7 +337,8 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
                         alt={i === 0 ? productName : `${productName} - ${i + 1}`}
                         width={1080}
                         height={1440}
-                        loading="lazy"
+                        loading={i === 0 ? "eager" : "lazy"}
+                        {...(i === 0 ? { fetchPriority: "high" } : {})}
                     />
                 ))}
                 <div itemProp="offers" itemScope itemType="https://schema.org/Offer">
