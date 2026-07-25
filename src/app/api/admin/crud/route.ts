@@ -4,6 +4,35 @@ import { verifyJwt } from "@/lib/jwt-utils";
 import { revalidatePath } from "next/cache";
 import { sendOrderStatusNotification } from "@/lib/telegram";
 
+function performSmartRevalidation(table: string, payload: any, matchConfig: any) {
+    try {
+        if (table === "products") {
+            const id = payload?.id || (matchConfig?.column === "id" ? matchConfig.value : null);
+            if (id) {
+                revalidatePath(`/uz/products/${id}`);
+                revalidatePath(`/ru/products/${id}`);
+            }
+            revalidatePath("/uz/catalog");
+            revalidatePath("/ru/catalog");
+            revalidatePath("/uz");
+            revalidatePath("/ru");
+            revalidatePath("/sitemap.xml");
+        } else if (table === "categories") {
+            revalidatePath("/uz/catalog");
+            revalidatePath("/ru/catalog");
+            revalidatePath("/uz");
+            revalidatePath("/ru");
+            revalidatePath("/sitemap.xml");
+        } else if (table === "banners" || table === "site_settings" || table === "settings") {
+            revalidatePath("/uz");
+            revalidatePath("/ru");
+        }
+    } catch (e) {
+        console.error("Smart revalidation error:", e);
+    }
+}
+
+
 /**
  * Universal Admin CRUD API
  * supabaseAdmin orqali RLS ni chetlab o'tib, barcha jadvallar uchun umumiy yozish operatsiyalari.

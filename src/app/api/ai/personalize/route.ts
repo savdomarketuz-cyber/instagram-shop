@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
                     priceSegment: aff.price_segment,
                     avgPriceAffinity: aff.avg_price_affinity,
                     nightOwl: aff.night_owl,
-                    discount_seeker: aff.discount_seeker,
+                    discountSeeker: aff.discount_seeker,
                     topCategories: aff.top_categories || (interests?.categories ?? undefined),
                 };
             } else if (interests?.categories) {
