@@ -912,7 +912,7 @@ function ReturnsView({ user, t, language, onBack }: any) {
                                         <div className="flex justify-between items-start mb-4">
                                             <div>
                                                 <p className="text-[10px] font-black text-gray-400 uppercase">#{order.id.slice(0,8)}</p>
-                                                <p className="font-black text-lg italic tracking-tighter">{order.total.toLocaleString()} so'm</p>
+                                                <p className="font-black text-lg italic tracking-tighter">{order.total.toLocaleString()} {language === 'uz' ? "so'm" : "сум"}</p>
                                             </div>
                                             <ChevronRight className="text-gray-300 group-hover:text-black transition-all" />
                                         </div>
@@ -1650,7 +1650,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                             <div className="p-6 space-y-4">
                                                 <h3 className="font-black italic tracking-tighter text-sm uppercase line-clamp-1">{language === 'uz' ? p.name_uz || p.name : p.name_ru || p.name}</h3>
                                                 <div className="flex justify-between items-center">
-                                                    <span className="text-lg font-black italic tracking-tighter">{p.price?.toLocaleString()} so'm</span>
+                                                    <span className="text-lg font-black italic tracking-tighter">{p.price?.toLocaleString()} {language === 'uz' ? "so'm" : "сум"}</span>
                                                     <button
                                                         onClick={() => handleCreateLink(p)}
                                                         disabled={isActionLoading}

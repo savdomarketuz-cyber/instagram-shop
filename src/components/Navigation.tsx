@@ -287,7 +287,7 @@ export default function Navigation() {
                                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">{item[`category_${language}`] || item.category}</p>
                                                 </div>
                                                 <div className="shrink-0 text-right">
-                                                    <p className="text-xs font-black italic">{item.price?.toLocaleString()} so'm</p>
+                                                    <p className="text-xs font-black italic">{item.price?.toLocaleString()} {language === 'uz' ? "so'm" : "сум"}</p>
                                                 </div>
                                             </Link>
                                         ))}
@@ -296,7 +296,7 @@ export default function Navigation() {
                                             onClick={() => handleSearch()}
                                             className="w-full p-4 bg-gray-50 hover:bg-gray-100 text-xs font-black text-black uppercase tracking-widest transition-colors"
                                         >
-                                            Barcha natijalarni ko'rish
+                                            {language === 'uz' ? "Barcha natijalarni ko'rish" : "Посмотреть все результаты"}
                                         </button>
                                     </div>
                                 ) : (

@@ -549,7 +549,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                             <h2 className="text-sm font-black italic uppercase truncate tracking-tight">{product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name}</h2>
                             <div className="flex items-center gap-3">
                                 <span className={`text-lg font-black italic ${personalOffer ? 'text-indigo-700' : ''}`}>
-                                    {Number((personalOffer ? Math.round(product.price * (1 - personalOffer.percent / 100)) : product.price) || 0).toLocaleString()} <span className="text-[10px] not-italic">so&apos;m</span>
+                                    {Number((personalOffer ? Math.round(product.price * (1 - personalOffer.percent / 100)) : product.price) || 0).toLocaleString()} <span className="text-[10px] not-italic">{language === 'uz' ? "so'm" : "сум"}</span>
                                 </span>
                                 {personalOffer ? (
                                     <span className="text-xs text-gray-300 line-through font-bold">{Number((product.oldPrice && product.oldPrice > product.price ? product.oldPrice : product.price) || 0).toLocaleString()}</span>
@@ -636,7 +636,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                         <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
                             <span style={{ fontSize: 14, fontWeight: 800, color: personalOffer ? "#4338CA" : "#0F1410" }}>
                                 {Number((personalOffer ? Math.round(product.price * (1 - personalOffer.percent / 100)) : product.price) || 0).toLocaleString()}
-                                <span style={{ fontSize: 10, fontWeight: 600 }}> so&apos;m</span>
+                                <span style={{ fontSize: 10, fontWeight: 600 }}> {language === 'uz' ? "so'm" : "сум"}</span>
                             </span>
                             {product.oldPrice && product.oldPrice > product.price && (
                                 <span style={{ fontSize: 11, color: "#9AA29C", textDecoration: "line-through", fontWeight: 600 }}>{Number(product.oldPrice).toLocaleString()}</span>
@@ -699,7 +699,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
             {/* Desktop View (E-commerce Grid Style) */}
             <div className="hidden md:block max-w-[1600px] mx-auto px-10 py-12">
                 <div className="flex items-center gap-2 text-xs text-gray-400 font-bold uppercase tracking-widest mb-10 overflow-x-auto no-scrollbar whitespace-nowrap">
-                    <Link href={`/${language}`} className="hover:text-black transition-colors">MAHSULOTLAR</Link>
+                    <Link href={`/${language}`} className="hover:text-black transition-colors">{language === 'uz' ? 'MAHSULOTLAR' : 'ТОВАРЫ'}</Link>
                     {categoryData && (
                         <>
                             <span>/</span>
@@ -791,7 +791,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                         src={allMedia[activeImage]?.url || ""}
                                         fill
                                         className="object-contain p-10 animate-in fade-in zoom-in-95 duration-500"
-                                        alt={(product.image_metadata?.[allMedia[activeImage]?.url]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || `${(product[`name_${language}` as keyof typeof product] as string) || product.name} - Asosiy rasm`}
+                                        alt={(product.image_metadata?.[allMedia[activeImage]?.url]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || `${(product[`name_${language}` as keyof typeof product] as string) || product.name} - ${language === 'uz' ? 'Asosiy rasm' : 'Основное изображение'}`}
                                         priority
                                         sizes="(max-width: 1024px) 100vw, 60vw"
                                         quality={65}
@@ -821,7 +821,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                             <div className="flex items-center gap-2 mb-8 bg-gray-50/50 w-fit px-4 py-2 rounded-2xl">
                                 <Star size={16} className="text-yellow-400 fill-yellow-400" />
                                 <span className="font-black text-sm">{product.rating || 4.9}</span>
-                                <span className="text-xs text-gray-400 font-bold uppercase tracking-widest ml-2">({product.reviewCount || 0} sharh)</span>
+                                <span className="text-xs text-gray-400 font-bold uppercase tracking-widest ml-2">({product.reviewCount || 0} {language === 'uz' ? 'sharh' : 'отзыв'})</span>
                             </div>
 
                              <div className="flex flex-col gap-1 mb-8">
@@ -837,7 +837,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                         </div>
                                         <div className="flex items-baseline gap-4">
                                             <div className="text-6xl font-black italic tracking-tighter text-indigo-700">
-                                                {Math.round(product.price * (1 - personalOffer.percent / 100)).toLocaleString()} <span className="text-2xl not-italic">so'm</span>
+                                                {Math.round(product.price * (1 - personalOffer.percent / 100)).toLocaleString()} <span className="text-2xl not-italic">{language === 'uz' ? "so'm" : "сум"}</span>
                                             </div>
                                             <span className="text-gray-300 line-through font-bold text-2xl">
                                                 {Number((product.oldPrice && product.oldPrice > product.price ? product.oldPrice : product.price) || 0).toLocaleString()}
@@ -856,7 +856,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                 ) : (
                                     <div className="flex items-baseline gap-4">
                                         <div className="text-6xl font-black italic tracking-tighter text-black">
-                                            {Number(product.price || 0).toLocaleString()} <span className="text-2xl not-italic">so'm</span>
+                                            {Number(product.price || 0).toLocaleString()} <span className="text-2xl not-italic">{language === 'uz' ? "so'm" : "сум"}</span>
                                         </div>
                                         {product.oldPrice && product.oldPrice > product.price && (
                                             <span className="text-gray-300 line-through font-bold text-2xl">{Number(product.oldPrice || 0).toLocaleString()}</span>
@@ -878,11 +878,11 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                             {/* Short Specs Summary */}
                             <div className="grid grid-cols-2 gap-4 mb-10">
                                 <div className="space-y-1">
-                                    <p className="text-[9px] text-gray-400 font-black uppercase">Mahsulot kodi</p>
+                                    <p className="text-[9px] text-gray-400 font-black uppercase">{language === 'uz' ? 'Mahsulot kodi' : 'Код товара'}</p>
                                     <p className="text-xs font-bold text-gray-800">#{product.article || product.sku || product.id.slice(0, 8)}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-[9px] text-gray-400 font-black uppercase">Asosiy</p>
+                                    <p className="text-[9px] text-gray-400 font-black uppercase">{language === 'uz' ? 'Asosiy' : 'Основное'}</p>
                                     <p className="text-xs font-bold text-green-600">Original / Brand New</p>
                                 </div>
                             </div>
