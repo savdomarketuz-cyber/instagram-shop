@@ -30,7 +30,8 @@ import {
 } from "lucide-react";
 import ProductParamsEditor from "@/components/admin/ProductParamsEditor";
 import { normalizeQuery, transliterateLatin } from "@/lib/query-normalize";
-import { useParams } from "next/navigation";
+import { useParams, usePathname, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { getProductSlug } from "@/lib/slugify";
 
 interface Category {
@@ -93,9 +94,12 @@ interface Product {
 
 import { uploadToYandexS3, uploadFromUrlToYandexS3 } from "@/lib/yandex-s3";
 
-export default function AdminProducts() {
+function AdminProducts() {
     const params = useParams();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
     const lang = params?.lang || "uz";
+    const [isStateInitialized, setIsStateInitialized] = useState(false);
     const [view, setView] = useState<"grid" | "list">("grid");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
@@ -243,9 +247,90 @@ export default function AdminProducts() {
 
     const [draggedImgIdx, setDraggedImgIdx] = useState<number | null>(null);
 
+    // 1. Initial State Restoration from URL SearchParams or sessionStorage
     useEffect(() => {
-        fetchData(1, true);
+        let saved: any = {};
+        try {
+            const sessionData = sessionStorage.getItem("admin_products_state");
+            if (sessionData) saved = JSON.parse(sessionData);
+        } catch {}
+
+        const getParam = (key: string, fallback: string = "") => {
+            return searchParams?.get(key) ?? saved[key] ?? fallback;
+        };
+
+        const sTerm = getParam("search", "");
+        const fCat = getParam("category", "");
+        const fBrand = getParam("brand", "");
+        const fStock = getParam("stock", "all") as any;
+        const fPMin = getParam("priceMin", "");
+        const fPMax = getParam("priceMax", "");
+        const fOrig = getParam("original", "all") as any;
+        const fDisc = getParam("discount", "false") === "true";
+        const sBy = getParam("sortBy", "new") as any;
+        const sFilters = getParam("showFilters", "false") === "true";
+        const vMode = getParam("view", "grid") as any;
+        const aTab = getParam("tab", "active") as any;
+        const pNum = Number(getParam("page", "1")) || 1;
+
+        if (sTerm) setSearchTerm(sTerm);
+        if (fCat) setFilterCategory(fCat);
+        if (fBrand) setFilterBrand(fBrand);
+        if (fStock) setFilterStock(fStock);
+        if (fPMin) setFilterPriceMin(fPMin);
+        if (fPMax) setFilterPriceMax(fPMax);
+        if (fOrig) setFilterOriginal(fOrig);
+        if (fDisc) setFilterDiscount(fDisc);
+        if (sBy) setSortBy(sBy);
+        if (sFilters || fCat || fBrand || fStock !== "all" || fPMin || fPMax || fOrig !== "all" || fDisc) setShowFilters(true);
+        if (vMode) setView(vMode);
+        if (aTab) setActiveTab(aTab);
+        if (pNum) setCurrentPage(pNum);
+
+        setIsStateInitialized(true);
     }, []);
+
+    // 2. URL SearchParams & sessionStorage sync when state changes
+    useEffect(() => {
+        if (!isStateInitialized) return;
+
+        const paramsObj: Record<string, string> = {};
+        if (searchTerm) paramsObj.search = searchTerm;
+        if (filterCategory) paramsObj.category = filterCategory;
+        if (filterBrand) paramsObj.brand = filterBrand;
+        if (filterStock !== "all") paramsObj.stock = filterStock;
+        if (filterPriceMin) paramsObj.priceMin = filterPriceMin;
+        if (filterPriceMax) paramsObj.priceMax = filterPriceMax;
+        if (filterOriginal !== "all") paramsObj.original = filterOriginal;
+        if (filterDiscount) paramsObj.discount = "true";
+        if (sortBy !== "new") paramsObj.sortBy = sortBy;
+        if (showFilters) paramsObj.showFilters = "true";
+        if (view !== "grid") paramsObj.view = view;
+        if (activeTab !== "active") paramsObj.tab = activeTab;
+        if (currentPage > 1) paramsObj.page = String(currentPage);
+
+        try {
+            sessionStorage.setItem("admin_products_state", JSON.stringify(paramsObj));
+        } catch {}
+
+        const queryStr = new URLSearchParams(paramsObj).toString();
+        const newUrl = queryStr ? `${pathname}?${queryStr}` : pathname;
+        window.history.replaceState(null, "", newUrl);
+    }, [
+        searchTerm, filterCategory, filterBrand, filterStock, filterPriceMin,
+        filterPriceMax, filterOriginal, filterDiscount, sortBy, showFilters,
+        view, activeTab, currentPage, isStateInitialized, pathname
+    ]);
+
+    // 3. Reactive Data Fetching
+    useEffect(() => {
+        if (isStateInitialized) {
+            fetchData(currentPage, false);
+        }
+    }, [
+        searchTerm, filterCategory, filterBrand, filterStock, filterPriceMin,
+        filterPriceMax, filterOriginal, filterDiscount, sortBy, activeTab, currentPage, isStateInitialized
+    ]);
 
     // Kategoriya + barcha ichki (rekursiv) kategoriya ID'lari — filtr uchun
     const getCategoryWithChildren = (catId: string): string[] => {
@@ -259,6 +344,9 @@ export default function AdminProducts() {
         setFilterCategory(""); setFilterBrand(""); setFilterStock("all");
         setFilterPriceMin(""); setFilterPriceMax(""); setFilterOriginal("all");
         setFilterDiscount(false); setSortBy("new"); setSearchTerm("");
+        setCurrentPage(1);
+        try { sessionStorage.removeItem("admin_products_state"); } catch {}
+        window.history.replaceState(null, "", pathname);
     };
 
     const activeFilterCount = [
@@ -2122,5 +2210,18 @@ export default function AdminProducts() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function AdminProductsPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex flex-col items-center justify-center py-32 text-gray-400">
+                <Loader2 className="animate-spin mb-4" size={32} />
+                <p className="font-black uppercase tracking-widest text-xs">Yuklanmoqda...</p>
+            </div>
+        }>
+            <AdminProducts />
+        </Suspense>
     );
 }
