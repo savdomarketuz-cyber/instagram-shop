@@ -27,37 +27,61 @@ final shellNavigatorKey = GlobalKey<NavigatorState>();
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: rootNavigatorKey,
+    debugLogDiagnostics: true,
     initialLocation: '/',
     routes: [
-      ShellRoute(
-        navigatorKey: shellNavigatorKey,
-        builder: (context, state, child) {
-          return MainNavigationScreen(child: child);
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return MainNavigationScreen(navigationShell: navigationShell);
         },
-        routes: [
-          GoRoute(
-            path: '/',
-            builder: (context, state) => const HomeScreen(),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/',
+                builder: (context, state) => const HomeScreen(),
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/cart',
-            builder: (context, state) => const CartScreen(),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/cart',
+                builder: (context, state) => const CartScreen(),
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/reels',
-            builder: (context, state) => const ReelsScreen(),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/reels',
+                builder: (context, state) => const ReelsScreen(),
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/wishlist',
-            builder: (context, state) => const WishlistScreen(),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/wishlist',
+                builder: (context, state) => const WishlistScreen(),
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/profile',
-            builder: (context, state) => const ProfileScreen(),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/profile',
+                builder: (context, state) => const ProfileScreen(),
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/catalog',
-            builder: (context, state) => const CatalogScreen(),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/catalog',
+                builder: (context, state) => const CatalogScreen(),
+              ),
+            ],
           ),
         ],
       ),

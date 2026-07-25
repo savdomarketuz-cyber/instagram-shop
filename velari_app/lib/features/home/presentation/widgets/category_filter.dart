@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/models/category.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/l10n/localization.dart';
+import 'package:go_router/go_router.dart';
 
 class CategoryFilter extends ConsumerWidget {
   final List<Category> allCategories;
@@ -28,67 +29,81 @@ class CategoryFilter extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Top level/parent categories (those where parentId is null or empty)
+    // Only use top-level categories
     final parentCategories = allCategories.where((c) => c.parentId == null || c.parentId!.isEmpty).toList();
+
+    if (parentCategories.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Main categories list
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Text(
+            language == 'ru' ? 'Категории' : 'Kategoriyalar',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimaryColor,
+            ),
+          ),
+        ),
         SizedBox(
-          height: 48,
+          height: 115,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: parentCategories.length + 1,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            itemCount: parentCategories.length,
             itemBuilder: (context, index) {
-              final isAll = index == 0;
-              final category = isAll ? null : parentCategories[index - 1];
-              final categoryId = isAll ? 'all' : category!.id;
-              final name = isAll
-                  ? (language == 'ru' ? 'Все' : 'Barchasi')
-                  : category!.getLocalizedName(language);
+              final category = parentCategories[index];
+              final categoryId = category.id;
+              final name = category.getLocalizedName(language);
               
               final isSelected = activeFilter == categoryId || activeParent == categoryId;
 
               return GestureDetector(
                 onTap: () {
-                  if (isAll) {
-                    setActiveFilter('all');
-                    setActiveParent('all');
-                    setHomeActiveFilter('all');
-                  } else {
-                    setActiveParent(categoryId);
-                    setActiveFilter(categoryId);
-                    setHomeActiveFilter(categoryId);
-                  }
+                  context.push('/catalog?categoryId=$categoryId');
                 },
                 child: Container(
-                  margin: const EdgeInsets.only(right: 10, top: 6, bottom: 6),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.primaryColor : Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isSelected ? AppTheme.primaryColor : Colors.grey.shade200,
-                    ),
-                    boxShadow: [
-                      if (isSelected)
-                        BoxShadow(
-                          color: AppTheme.primaryColor.withOpacity(0.2),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+                  width: 85,
+                  margin: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          color: isSelected ? AppTheme.primaryColor.withOpacity(0.1) : Colors.grey.shade100,
+                          shape: BoxShape.circle,
+                          border: isSelected ? Border.all(color: AppTheme.primaryColor, width: 2) : null,
                         ),
+                        clipBehavior: Clip.antiAlias,
+                        child: category.icon != null && category.icon!.isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: category.icon!,
+                                fit: BoxFit.cover,
+                                errorWidget: (context, url, error) => const Icon(Icons.category, color: Colors.grey),
+                                placeholder: (context, url) => const Center(
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              )
+                            : const Icon(Icons.category, color: Colors.grey, size: 30),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        name,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: isSelected ? AppTheme.primaryColor : AppTheme.textPrimaryColor,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                          fontSize: 11,
+                          height: 1.1,
+                        ),
+                      ),
                     ],
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    name,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                      fontSize: 13,
-                    ),
                   ),
                 ),
               );

@@ -7,6 +7,8 @@ import '../../../core/supabase/supabase_client.dart';
 import '../../../core/models/product.dart';
 import '../../../shared/widgets/product_card.dart';
 
+import '../../../core/api/data_repository.dart';
+
 class StoreScreen extends ConsumerStatefulWidget {
   final String warehouseId;
 
@@ -46,7 +48,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
         // 2. Fetch products associated with this warehouse
         final prodRes = await supabase
             .from('products')
-            .select('*')
+            .select(DataRepository.productSelectFields)
             .eq('warehouse_id', widget.warehouseId)
             .eq('is_deleted', false)
             .gt('stock', 0);
@@ -239,8 +241,8 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.65,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 0.44,
                 ),
                 itemCount: _products.length,
                 itemBuilder: (context, index) {

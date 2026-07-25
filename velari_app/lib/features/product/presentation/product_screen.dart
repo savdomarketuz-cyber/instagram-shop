@@ -10,6 +10,7 @@ import '../../../core/providers/cart_wishlist_providers.dart';
 import '../../../core/l10n/localization.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatter.dart';
+import '../../../core/utils/delivery_calculator.dart';
 
 class ProductScreen extends ConsumerStatefulWidget {
   final String id;
@@ -70,7 +71,7 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
         repo.fetchProductSpecifications(widget.id),
         repo.fetchProductComments(widget.id),
         if (product.groupId != null && product.groupId!.isNotEmpty)
-          repo.supabase.from('products').select('*').eq('group_id', product.groupId!)
+          repo.supabase.from('products').select(DataRepository.productSelectFields).eq('group_id', product.groupId!)
         else
           Future.value(null),
       ]);
@@ -99,6 +100,8 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
   Widget build(BuildContext context) {
     final lang = ref.watch(localeProvider);
     final isFavorite = _product != null && ref.watch(wishlistProvider).contains(_product!.id);
+    final warehousesAsync = ref.watch(warehousesProvider);
+    final warehouses = warehousesAsync.value ?? [];
 
     if (_isLoading) {
       return const Scaffold(
@@ -257,11 +260,12 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.textPrimaryColor,
+                            height: 1.3,
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         
-                        // Rating & Stock Info
+                        // Rating, Reviews & Stock Info
                         Row(
                           children: [
                             const Icon(Icons.star, color: Colors.amber, size: 18),
@@ -270,32 +274,128 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
                               (_product!.rating ?? 5.0).toStringAsFixed(1),
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 8),
                             Text(
-                              '${_product!.reviewCount ?? 0} sharhlar',
-                              style: const TextStyle(color: AppTheme.textSecondaryColor),
+                              '(${_product!.reviewCount ?? 0} sharhlar)',
+                              style: const TextStyle(color: AppTheme.textSecondaryColor, fontSize: 13),
                             ),
                             const Spacer(),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
-                                color: AppTheme.primaryColor.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
+                                color: AppTheme.primaryColor.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
                               ),
-                              child: Text(
-                                lang == 'ru'
-                                    ? 'В наличии: ${_product!.calculatedStock}'
-                                    : 'Omborda: ${_product!.calculatedStock} dona',
-                                style: const TextStyle(
-                                  color: AppTheme.primaryColor,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.inventory_2_outlined, color: AppTheme.primaryColor, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    lang == 'ru'
+                                        ? 'В наличии: ${_product!.calculatedStock}'
+                                        : 'Omborda: ${_product!.calculatedStock} dona',
+                                    style: const TextStyle(
+                                      color: AppTheme.primaryColor,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                        const Divider(height: 32),
+                        const SizedBox(height: 20),
+
+                        // Delivery & Returns Professional Panel
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+                                        ],
+                                      ),
+                                      child: const Icon(Icons.local_shipping_outlined, color: AppTheme.primaryColor, size: 24),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            lang == 'ru' ? 'Быстрая доставка' : 'Tezkor yetkazib berish',
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            _product?.expressDelivery == true
+                                                ? (lang == 'ru' ? 'Срочно (за 2 часа)' : 'Darhol (2-soatda)')
+                                                : (lang == 'ru' 
+                                                    ? 'Доставим: ${DeliveryCalculator.getDeliveryDateText(lang, _product?.stockDetails, warehouses)}' 
+                                                    : 'Yetkazib beriladi: ${DeliveryCalculator.getDeliveryDateText(lang, _product?.stockDetails, warehouses)}'),
+                                            style: const TextStyle(color: AppTheme.textSecondaryColor, fontSize: 12),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Divider(height: 1, indent: 16, endIndent: 16),
+                              Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+                                        ],
+                                      ),
+                                      child: const Icon(Icons.replay_outlined, color: AppTheme.accentColor, size: 24),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            lang == 'ru' ? 'Легкий возврат 14 дней' : '14 kun ichida oson qaytarish',
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            lang == 'ru' ? 'Если товар не подошел' : 'Agar mahsulot yoqmasa yoki mos kelmasa',
+                                            style: const TextStyle(color: AppTheme.textSecondaryColor, fontSize: 12),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
                         
                         // Variants Selector (color_name/model grouped)
                         if (_variants.length > 1) ...[

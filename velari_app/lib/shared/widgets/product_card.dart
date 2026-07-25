@@ -8,16 +8,24 @@ import '../../core/providers/cart_wishlist_providers.dart';
 import '../../core/l10n/localization.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatter.dart';
+import '../../core/utils/delivery_calculator.dart';
+import '../../core/api/data_repository.dart';
 
 class ProductCard extends ConsumerWidget {
   final Product product;
-
   const ProductCard({super.key, required this.product});
+
+  String _getWarehouseDeliveryText(BuildContext context, WidgetRef ref, List<Map<String, dynamic>> warehouses) {
+    final lang = ref.watch(localeProvider);
+    return DeliveryCalculator.getDeliveryCardText(lang, product.stockDetails, warehouses);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(localeProvider);
     final isFavorite = ref.watch(wishlistProvider).contains(product.id);
+    final warehousesAsync = ref.watch(warehousesProvider);
+    final warehouses = warehousesAsync.value ?? [];
     
     // Check if there is a discount
     final hasDiscount = product.oldPrice != null && product.oldPrice! > product.price;
@@ -37,13 +45,16 @@ class ProductCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Product Image & Badges
-            Expanded(
+            AspectRatio(
+              aspectRatio: 3 / 4,
               child: Stack(
                 children: [
                   // Image
                   Positioned.fill(
                     child: CachedNetworkImage(
                       imageUrl: product.image,
+                      memCacheWidth: 300,
+                      memCacheHeight: 400,
                       fit: BoxFit.cover,
                       placeholder: (context, url) => Container(
                         color: Colors.grey.shade100,
@@ -93,26 +104,35 @@ class ProductCard extends ConsumerWidget {
                             const SizedBox(height: 4),
                             if (product.expressDelivery == true)
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primaryColor,
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFF00C853), Color(0xFF009624)],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
                                   borderRadius: BorderRadius.circular(6),
+                                  boxShadow: [
+                                    BoxShadow(color: Colors.green.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 2))
+                                  ],
                                 ),
                                 child: const Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.flash_on, color: Colors.white, size: 8),
+                                    Icon(Icons.bolt, color: Colors.white, size: 10),
                                     SizedBox(width: 2),
                                     Text(
-                                      'Express',
+                                      'Tezkor',
                                       style: TextStyle(
                                         color: Colors.white,
-                                        fontSize: 8,
-                                        fontWeight: FontWeight.bold,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.3,
                                       ),
                                     ),
                                   ],
-                                ),
+                                ).animate(onPlay: (controller) => controller.repeat(reverse: true))
+                                 .shimmer(duration: 1500.ms, color: Colors.white54),
                               ),
                           ],
                         ),
@@ -172,110 +192,155 @@ class ProductCard extends ConsumerWidget {
             ),
             
             // Product Info
-            Padding(
-              padding: const EdgeInsets.all(10),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Product Name
-                  Text(
-                    product.getLocalizedName(lang),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimaryColor,
-                      height: 1.25,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  
-                  // Rating & Sales Row
-                  Row(
-                    children: [
-                      const Icon(Icons.star, color: Colors.amber, size: 12),
-                      const SizedBox(width: 2),
-                      Text(
-                        (product.rating ?? 5.0).toStringAsFixed(1),
-                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryColor),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '(${product.reviewCount ?? 0})',
-                        style: const TextStyle(fontSize: 10, color: AppTheme.textSecondaryColor),
-                      ),
-                      const Spacer(),
-                      Text(
-                        '${product.sales} sotildi',
-                        style: const TextStyle(fontSize: 10, color: AppTheme.textSecondaryColor),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Pricing Row
+                        Text(
+                          Formatter.formatPrice(product.price, lang),
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                        if (hasDiscount) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            Formatter.formatPrice(product.oldPrice!, lang),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.textSecondaryColor,
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                        ] else ...[
+                          const SizedBox(height: 16), // space to keep alignment
+                        ],
+                        const SizedBox(height: 6),
 
-                  // Pricing & Add to Cart Row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Pricing column
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (hasDiscount)
+                        // Product Name
+                        Text(
+                          product.getLocalizedName(lang),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            color: AppTheme.textPrimaryColor,
+                            height: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        
+                        // Rating Row
+                        if ((product.rating ?? 0.0) == 0.0 || (product.reviewCount ?? 0) == 0)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.star, color: AppTheme.primaryColor, size: 10),
+                              const SizedBox(width: 4),
                               Text(
-                                Formatter.formatPrice(product.oldPrice!, lang),
+                                lang == 'ru' ? 'Новинка' : 'Yangilik',
                                 style: const TextStyle(
-                                  fontSize: 10,
-                                  color: AppTheme.textSecondaryColor,
-                                  decoration: TextDecoration.lineThrough,
+                                  fontSize: 10, 
+                                  color: AppTheme.primaryColor, 
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            Text(
-                              Formatter.formatPrice(product.price, lang),
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.primaryColor,
+                            ],
+                          ).animate(onPlay: (controller) => controller.repeat())
+                           .shimmer(duration: 5000.ms, color: Colors.white.withOpacity(0.85))
+                        else
+                          Row(
+                            children: [
+                              const Icon(Icons.star, color: Colors.amber, size: 12),
+                              const SizedBox(width: 4),
+                              Text(
+                                (product.rating!).toStringAsFixed(1),
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryColor),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '(${product.reviewCount} ${lang == 'ru' ? 'отзывов' : 'sharhlar'})',
+                                style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryColor),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                  
+                  const Spacer(),
 
-                      // Add to Cart Action Button
-                      GestureDetector(
-                        onTap: () {
-                          ref.read(cartProvider.notifier).addToCart(product);
-                          ScaffoldMessenger.of(context).clearSnackBars();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                lang == 'ru' ? 'Товар добавлен в корзину' : 'Mahsulot savatga qoʻshildi',
-                                style: const TextStyle(color: Colors.white),
+                  // Delivery / Add to Cart Button
+                  GestureDetector(
+                    onTap: () {
+                      ref.read(cartProvider.notifier).addToCart(product);
+                      ScaffoldMessenger.of(context).clearSnackBars();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              const Icon(Icons.check_circle, color: Colors.white),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  lang == 'ru' ? 'Товар добавлен в корзину' : 'Mahsulot savatga qoʻshildi',
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                ),
                               ),
-                              backgroundColor: AppTheme.primaryColor,
-                              duration: const Duration(seconds: 2),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withOpacity(0.1),
-                            shape: BoxShape.circle,
+                            ],
                           ),
-                          child: const Icon(
-                            Icons.add_shopping_cart,
-                            color: AppTheme.primaryColor,
-                            size: 18,
-                          ),
+                          backgroundColor: AppTheme.primaryColor,
+                          duration: const Duration(seconds: 2),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
+                      );
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      height: 42,
+                      alignment: Alignment.center,
+                      decoration: const BoxDecoration(
+                        color: AppTheme.primaryColor,
+                        borderRadius: BorderRadius.zero,
                       ),
-                    ],
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(
+                            product.expressDelivery == true ? Icons.bolt : Icons.local_shipping,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 6),
+                          Transform.translate(
+                            offset: const Offset(0, -3.5),
+                            child: Text(
+                              product.expressDelivery == true
+                                  ? (lang == 'ru' ? 'Срочно (за 2 часа)' : 'Darhol (2-soatda)')
+                                  : _getWarehouseDeliveryText(context, ref, warehouses),
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ).animate(target: 1.0)
+                     .scale(begin: const Offset(0.98, 0.98), end: const Offset(1.0, 1.0), duration: 200.ms, curve: Curves.easeOutBack),
                   ),
                 ],
               ),

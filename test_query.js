@@ -5,19 +5,23 @@ require('dotenv').config({ path: '.env.local' });
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 async function testAnonQuery() {
-    console.log("Running fetch products query with ANON KEY...");
-    const { data: products, error } = await supabase
-        .from('products')
+    console.log("Fetching categories...");
+    const { data: categories, error } = await supabase
+        .from('categories')
         .select('*')
-        .eq('is_deleted', false)
-        .gt('stock', 0);
+        .eq('is_deleted', false);
         
     if (error) {
-        console.error('Error:', error);
+        console.error('Error fetching categories:', error);
         return;
     }
     
-    console.log(`Total products returned with ANON KEY: ${products.length}`);
+    console.log(`Categories count: ${categories.length}`);
+    for (const c of categories) {
+        if (c.image_meta !== null) {
+            console.log(`Category ${c.name} has image_meta: type=${typeof c.image_meta}, value=${JSON.stringify(c.image_meta)}`);
+        }
+    }
 }
 
 testAnonQuery();

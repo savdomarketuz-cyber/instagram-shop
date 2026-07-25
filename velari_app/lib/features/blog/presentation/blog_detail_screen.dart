@@ -6,6 +6,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/supabase/supabase_client.dart';
 import '../../../core/models/product.dart';
 
+import '../../../core/api/data_repository.dart';
+
 class BlogDetailScreen extends ConsumerStatefulWidget {
   final String slug;
 
@@ -48,7 +50,7 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
         if (linkedIds != null && linkedIds.isNotEmpty) {
           final pRes = await supabase
               .from('products')
-              .select('*')
+              .select(DataRepository.productSelectFields)
               .inFilter('id', linkedIds)
               .eq('is_deleted', false);
 
@@ -87,7 +89,7 @@ class _BlogDetailScreenState extends ConsumerState<BlogDetailScreen> {
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (Match m) => '${m[1]} ',
         );
-    return '$formatted ${lang == 'ru' ? 'сум' : "so'm"}';
+    return formatted;
   }
 
   @override

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
+import 'package:video_player/video_player.dart';
 import 'package:hive_ce/hive_ce.dart';
 import '../../../../core/api/data_repository.dart';
 import '../../../../core/models/story.dart';
@@ -31,8 +32,10 @@ class _StoriesRowState extends ConsumerState<StoriesRow> {
   }
 
   void _loadSeenStories() {
-    final list = _settingsBox.get('seen_stories', defaultValue: <dynamic>[]);
-    _seenIds.addAll(list.map((e) => e.toString()));
+    final list = _settingsBox.get('seen_stories', defaultValue: []);
+    if (list is List) {
+      _seenIds.addAll(list.map((e) => e.toString()).cast<String>());
+    }
   }
 
   void _markStorySeen(String id) {
@@ -247,7 +250,9 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> with Sing
 
   void _startStory() {
     final story = widget.groups[_currentGroupIndex].slides[_currentSlideIndex];
-    widget.onStorySeen(story.id);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onStorySeen(story.id);
+    });
     _slideProgress = 0.0;
     _elapsedBeforePause = 0.0;
     _slideStartTime = DateTime.now();
@@ -346,8 +351,8 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> with Sing
     final ids = s.ctaIds ?? [];
     final type = s.ctaType ?? 'none';
     if (type == 'product' && ids.isNotEmpty) return '/products/${ids[0]}';
-    if (type == 'category' && ids.isNotEmpty) return '/?category=${ids[0]}';
-    if (type == 'brand' && ids.isNotEmpty) return '/?brand=${ids[0]}';
+    if (type == 'category' && ids.isNotEmpty) return '/catalog?categoryId=${ids[0]}';
+    if (type == 'brand' && ids.isNotEmpty) return '/catalog?brandId=${ids[0]}';
     return s.link;
   }
 
@@ -368,12 +373,18 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> with Sing
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Background Image Slide
+          // Background Image or Video Slide
           Positioned.fill(
-            child: CachedNetworkImage(
-              imageUrl: slide.image,
-              fit: BoxFit.cover,
-            ),
+            child: slide.video != null && slide.video!.isNotEmpty
+                ? StoryVideoPlayer(
+                    url: slide.video!,
+                    onFinished: _nextSlide,
+                    isActive: true,
+                  )
+                : CachedNetworkImage(
+                    imageUrl: slide.image,
+                    fit: BoxFit.cover,
+                  ),
           ),
           
           // Gesture Touch Areas
@@ -526,3 +537,82 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> with Sing
     );
   }
 }
+
+class StoryVideoPlayer extends StatefulWidget {
+  final String url;
+  final VoidCallback onFinished;
+  final bool isActive;
+
+  const StoryVideoPlayer({
+    super.key,
+    required this.url,
+    required this.onFinished,
+    required this.isActive,
+  });
+
+  @override
+  State<StoryVideoPlayer> createState() => _StoryVideoPlayerState();
+}
+
+class _StoryVideoPlayerState extends State<StoryVideoPlayer> {
+  late VideoPlayerController _controller;
+  bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url))
+      ..initialize().then((_) {
+        setState(() {
+          _initialized = true;
+        });
+        if (widget.isActive) {
+          _controller.play();
+        }
+      });
+    _controller.addListener(_checkFinished);
+  }
+
+  void _checkFinished() {
+    if (_initialized && _controller.value.position >= _controller.value.duration) {
+      widget.onFinished();
+    }
+  }
+
+  @override
+  void didUpdateWidget(StoryVideoPlayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive != oldWidget.isActive) {
+      if (widget.isActive) {
+        _controller.play();
+      } else {
+        _controller.pause();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_checkFinished);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_initialized) {
+      return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
+    }
+    return SizedBox.expand(
+      child: FittedBox(
+        fit: BoxFit.contain,
+        child: SizedBox(
+          width: _controller.value.size.width,
+          height: _controller.value.size.height,
+          child: VideoPlayer(_controller),
+        ),
+      ),
+    );
+  }
+}
+

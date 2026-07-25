@@ -7,9 +7,9 @@ import '../core/l10n/localization.dart';
 import '../core/theme/app_theme.dart';
 
 class MainNavigationScreen extends ConsumerStatefulWidget {
-  final Widget child;
+  final StatefulNavigationShell navigationShell;
 
-  const MainNavigationScreen({super.key, required this.child});
+  const MainNavigationScreen({super.key, required this.navigationShell});
 
   @override
   ConsumerState<MainNavigationScreen> createState() => _MainNavigationScreenState();
@@ -71,39 +71,16 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     super.dispose();
   }
 
-  int _getSelectedIndex(BuildContext context) {
-    final location = GoRouterState.of(context).uri.path;
-    if (location == '/') return 0;
-    if (location.startsWith('/cart')) return 1;
-    if (location.startsWith('/reels')) return 2;
-    if (location.startsWith('/wishlist')) return 3;
-    if (location.startsWith('/profile')) return 4;
-    return 0;
-  }
-
   void _onItemTapped(int index, BuildContext context) {
-    switch (index) {
-      case 0:
-        context.go('/');
-        break;
-      case 1:
-        context.go('/cart');
-        break;
-      case 2:
-        context.go('/reels');
-        break;
-      case 3:
-        context.go('/wishlist');
-        break;
-      case 4:
-        context.go('/profile');
-        break;
-    }
+    widget.navigationShell.goBranch(
+      index,
+      initialLocation: index == widget.navigationShell.currentIndex,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final selectedIndex = _getSelectedIndex(context);
+    final selectedIndex = widget.navigationShell.currentIndex;
     final lang = ref.watch(localeProvider);
 
     return Scaffold(
@@ -149,7 +126,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 ),
               ),
             ),
-          Expanded(child: widget.child),
+          Expanded(child: widget.navigationShell),
         ],
       ),
       bottomNavigationBar: Container(

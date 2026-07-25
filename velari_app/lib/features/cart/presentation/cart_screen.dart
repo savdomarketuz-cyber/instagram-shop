@@ -193,7 +193,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (Match m) => '${m[1]} ',
         );
-    return '$formatted ${lang == 'ru' ? 'сум' : "so'm"}';
+    return formatted;
   }
 
   @override
@@ -335,6 +335,8 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                           borderRadius: BorderRadius.circular(14),
                           child: CachedNetworkImage(
                             imageUrl: item.product.image,
+                            memCacheWidth: 200,
+                            memCacheHeight: 300,
                             width: 80,
                             height: 80,
                             fit: BoxFit.cover,

@@ -77,7 +77,7 @@ class CartItem {
 
   factory CartItem.fromJson(Map<String, dynamic> json) {
     return CartItem(
-      product: Product.fromJson(json['product'] as Map<String, dynamic>),
+      product: Product.fromJson(Map<String, dynamic>.from(json['product'] as Map)),
       quantity: json['quantity'] as int,
       selectedColor: json['selectedColor'] as String?,
       selectedSize: json['selectedSize'] as String?,

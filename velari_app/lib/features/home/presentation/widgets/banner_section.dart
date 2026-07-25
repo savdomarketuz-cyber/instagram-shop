@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../../core/models/banner.dart';
 import '../../../../core/theme/app_theme.dart';
+import 'package:go_router/go_router.dart';
 
 class BannerSection extends StatefulWidget {
   final List<PromotionBanner> banners;
@@ -52,6 +53,7 @@ class _BannerSectionState extends State<BannerSection> {
     final children = widget.banners.map((b) {
       final html = b.getLocalizedHtml(widget.language) ?? '';
       return BannerWebViewItem(
+        key: ValueKey(b.id),
         html: html,
         borderRadius: widget.borderRadius ?? 16,
       );
@@ -119,6 +121,30 @@ class _BannerWebViewItemState extends State<BannerWebViewItem> {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.transparent)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onNavigationRequest: (NavigationRequest request) {
+            try {
+              Uri uri = Uri.parse(request.url);
+              // Handle deep link or internal routing
+              String path = uri.path;
+              if (path.isEmpty && uri.host.isNotEmpty) path = '/${uri.host}';
+              if (path.isNotEmpty) {
+                String fullPath = path;
+                if (uri.query.isNotEmpty) {
+                  fullPath += '?${uri.query}';
+                }
+                if (mounted) {
+                  context.push(fullPath);
+                }
+              }
+            } catch (e) {
+              debugPrint('Banner click error: $e');
+            }
+            return NavigationDecision.prevent;
+          },
+        ),
+      )
       ..loadHtmlString(_wrapHtml(widget.html));
   }
 

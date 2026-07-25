@@ -235,3 +235,104 @@ export async function sendMemberVerificationCode(phone: string, senderName: stri
         console.error("Member verification Telegram notification error:", e);
     }
 }
+
+export async function getUserOrdersForBot(telegramId: string) {
+    try {
+        const { data: user } = await supabaseAdmin
+            .from('users')
+            .select('phone, name')
+            .eq('telegram_id', telegramId)
+            .single();
+
+        if (!user || !user.phone) {
+            return {
+                found: false,
+                text: "⚠️ Siz hali saytimizda yoki botda ro'yxatdan o'tmagansiz.\n\nIltimos, avval 📱 <b>Ro'yxatdan o'tish</b> tugmasini bosib telefon raqamingizni tasdiqlang."
+            };
+        }
+
+        const { data: orders } = await supabaseAdmin
+            .from('orders')
+            .select('*')
+            .eq('user_phone', user.phone)
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+        if (!orders || orders.length === 0) {
+            return {
+                found: true,
+                text: `📦 <b>Mening buyurtmalarim</b>\n\nFoydalanuvchi: <b>${user.name || user.phone}</b>\n\nSizda hozircha hech qanday buyurtmalar mavjud emas.`
+            };
+        }
+
+        let text = `📦 <b>Sizning oxirgi buyurtmalaringiz:</b>\n\n`;
+        orders.forEach((order: any, index: number) => {
+            let statusEmoji = "⏳";
+            const st = (order.status || "").toLowerCase();
+            if (st.includes("yolda") || st.includes("yo'lda")) statusEmoji = "🚚";
+            else if (st.includes("yetkazildi")) statusEmoji = "✅";
+            else if (st.includes("bekor")) statusEmoji = "❌";
+            else if (st.includes("qabul")) statusEmoji = "📦";
+
+            const itemsStr = (order.items || []).map((i: any) => `${i.name} (x${i.quantity || 1})`).join(", ");
+            text += `${index + 1}. <b>Buyurtma #${order.id}</b>\n`;
+            text += `   ${statusEmoji} Holat: <b>${order.status || 'Qabul qilindi'}</b>\n`;
+            text += `   🛍 Mahsulotlar: ${itemsStr}\n`;
+            text += `   💰 Summa: ${Number(order.total || 0).toLocaleString()} so'm\n\n`;
+        });
+
+        return { found: true, text };
+    } catch (e: any) {
+        console.error("getUserOrdersForBot error:", e);
+        return { found: false, text: "Xatolik yuz berdi. Iltimos keyinroq qayta urinib ko'ring." };
+    }
+}
+
+export async function forwardCustomerSupportMessage(customerChatId: string, customerPhone: string | null, customerName: string | null, messageText: string) {
+    try {
+        if (!ADMIN_BOT_TOKEN || !ADMIN_ID) return false;
+
+        let text = `💬 <b>MIJOZ KUTISH / SUPPORT XABARI</b>\n\n`;
+        text += `👤 <b>Mijoz:</b> ${customerName || 'Noma\'lum'}\n`;
+        text += `📞 <b>Raqam:</b> <code>${customerPhone || 'Kiritilmagan'}</code>\n`;
+        text += `🆔 <b>Telegram ID:</b> <code>${customerChatId}</code>\n\n`;
+        text += `📝 <b>Xabar:</b>\n<i>"${messageText}"</i>\n\n`;
+        text += `───────────────\n`;
+        text += `↩️ <b>Javob berish uchun:</b>\n`;
+        text += `Ushbu xabarga <b>Reply</b> qiling yoki quyidagi komandadan foydalaning:\n`;
+        text += `<code>/reply ${customerChatId} <javobingiz></code>`;
+
+        const res = await fetch(`https://api.telegram.org/bot${ADMIN_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: ADMIN_ID, text, parse_mode: 'HTML' })
+        });
+        const data = await res.json();
+        return data.ok;
+    } catch (e) {
+        console.error("forwardCustomerSupportMessage error:", e);
+        return false;
+    }
+}
+
+export async function sendSupportReplyToCustomer(customerChatId: string, replyText: string) {
+    try {
+        if (!CUSTOMER_BOT_TOKEN) return false;
+
+        let text = `🎧 <b>Operator javobi:</b>\n\n`;
+        text += `${replyText}\n\n`;
+        text += `<i>Yana savollaringiz bo'lsa, bemalol yozishingiz mumkin!</i>`;
+
+        const res = await fetch(`https://api.telegram.org/bot${CUSTOMER_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: customerChatId, text, parse_mode: 'HTML' })
+        });
+        const data = await res.json();
+        return data.ok;
+    } catch (e) {
+        console.error("sendSupportReplyToCustomer error:", e);
+        return false;
+    }
+}
+

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
@@ -8,6 +9,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/supabase/supabase_client.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/api/api_client.dart';
+
+import '../../../core/api/data_repository.dart';
 
 class ReelsScreen extends ConsumerStatefulWidget {
   const ReelsScreen({super.key});
@@ -35,7 +38,7 @@ class _ReelsScreenState extends ConsumerState<ReelsScreen> {
       final reelsRes = await supabase.from('reels').select('*').limit(20);
       final productsRes = await supabase
           .from('products')
-          .select('*')
+          .select(DataRepository.productSelectFields)
           .not('video_url', 'is', null)
           .neq('video_url', '')
           .limit(20);
@@ -200,6 +203,7 @@ class _ReelPageItemState extends ConsumerState<ReelPageItem> {
   bool _isInitialized = false;
   bool _hasError = false;
   bool _liked = false;
+  bool _isVisible = true;
 
   @override
   void initState() {
@@ -211,7 +215,7 @@ class _ReelPageItemState extends ConsumerState<ReelPageItem> {
   void didUpdateWidget(covariant ReelPageItem oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (_controller != null) {
-      if (widget.isActive) {
+      if (widget.isActive && _isVisible) {
         _controller!.play();
       } else {
         _controller!.pause();
@@ -239,7 +243,7 @@ class _ReelPageItemState extends ConsumerState<ReelPageItem> {
       _controller!.setLooping(true);
       _controller!.setVolume(widget.isMuted ? 0.0 : 1.0);
       
-      if (widget.isActive) {
+      if (widget.isActive && _isVisible) {
         _controller!.play();
       }
 
@@ -267,7 +271,19 @@ class _ReelPageItemState extends ConsumerState<ReelPageItem> {
     final lang = ref.watch(localeProvider);
     final isImage = widget.reel['image'] != null && widget.reel['image'].isNotEmpty;
 
-    return Stack(
+    return VisibilityDetector(
+      key: Key('reel_${widget.reel['id']}'),
+      onVisibilityChanged: (info) {
+        _isVisible = info.visibleFraction > 0.5;
+        if (_controller != null) {
+          if (_isVisible && widget.isActive) {
+            _controller!.play();
+          } else {
+            _controller!.pause();
+          }
+        }
+      },
+      child: Stack(
       children: [
         // Video View
         GestureDetector(
@@ -294,14 +310,10 @@ class _ReelPageItemState extends ConsumerState<ReelPageItem> {
             child: _hasError
                 ? const Icon(Icons.error_outline, color: Colors.white, size: 48)
                 : _isInitialized
-                    ? SizedBox.expand(
-                        child: FittedBox(
-                          fit: BoxFit.cover,
-                          child: SizedBox(
-                            width: _controller!.value.size.width,
-                            height: _controller!.value.size.height,
-                            child: VideoPlayer(_controller!),
-                          ),
+                    ? Center(
+                        child: AspectRatio(
+                          aspectRatio: _controller!.value.aspectRatio,
+                          child: VideoPlayer(_controller!),
                         ),
                       )
                     : const CircularProgressIndicator(color: Colors.white),
@@ -460,6 +472,7 @@ class _ReelPageItemState extends ConsumerState<ReelPageItem> {
           ),
         ),
       ],
+    ),
     );
   }
 
@@ -468,7 +481,7 @@ class _ReelPageItemState extends ConsumerState<ReelPageItem> {
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (Match m) => '${m[1]} ',
         );
-    return '$formatted ${lang == 'ru' ? 'сум' : "so'm"}';
+    return formatted;
   }
 }
 

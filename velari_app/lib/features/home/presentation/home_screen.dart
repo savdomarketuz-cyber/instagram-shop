@@ -47,6 +47,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _isFetchingMore = false;
   int _pageNumber = 0;
   bool _hasMore = true;
+  String? _errorMessage;
 
   Timer? _debounceTimer;
 
@@ -74,25 +75,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _loadInitialData() async {
-    setState(() => _isLoading = true);
-    final repo = ref.read(dataRepositoryProvider);
-    
-    // Load categories, banners and initial products in parallel
-    final results = await Future.wait([
-      repo.fetchCategories(),
-      repo.fetchBanners(),
-      repo.fetchProducts(orderByPopular: _activeTab == 'popular', limit: 20, offset: 0),
-    ]);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final repo = ref.read(dataRepositoryProvider);
+      
+      // Load categories, banners and initial products in parallel
+      final results = await Future.wait([
+        repo.fetchCategories(),
+        repo.fetchBanners(),
+        repo.fetchProducts(orderByPopular: _activeTab == 'popular', limit: 20, offset: 0),
+      ]);
 
-    if (mounted) {
-      setState(() {
-        _categories = results[0] as List<Category>;
-        _banners = results[1] as List<PromotionBanner>;
-        _products = results[2] as List<Product>;
-        _hasMore = _products.length == 20;
-        _pageNumber = 0;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _categories = results[0] as List<Category>;
+          _banners = results[1] as List<PromotionBanner>;
+          _products = results[2] as List<Product>;
+          _hasMore = _products.length == 20;
+          _pageNumber = 0;
+          _isLoading = false;
+        });
+      }
+    } catch (e, stack) {
+      debugPrint('Error loading initial data: $e\n$stack');
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -289,7 +303,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ],
               ),
             ),
-            
             // Scrollable Content
             Expanded(
               child: RefreshIndicator(
@@ -304,138 +317,128 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: CustomScrollView(
                   controller: _scrollController,
                   slivers: [
-                    if (_searchResults == null) ...[
-                      // Stories Bubbles Row
-                      const SliverToBoxAdapter(
-                        child: StoriesRow(),
-                      ),
-
-                      // Interactive Catalog CTA Banner
+                    if (_searchResults == null)
                       SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                          child: InkWell(
-                            onTap: () => context.push('/catalog'),
-                            borderRadius: BorderRadius.circular(16),
-                            child: Container(
-                              height: 52,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [AppTheme.primaryColor, Color(0xFF1F5A30)],
-                                ),
+                        key: const ValueKey('home_feed_headers'),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Stories Bubbles Row
+                            const StoriesRow(),
+
+                            // Interactive Catalog CTA Banner
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                              child: InkWell(
+                                onTap: () => context.push('/catalog'),
                                 borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppTheme.primaryColor.withOpacity(0.25),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
-                                  )
-                                ],
-                              ),
-                              padding: const EdgeInsets.symmetric(horizontal: 18),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.grid_view_rounded, color: Colors.white, size: 20),
-                                      const SizedBox(width: 12),
-                                      Text(
-                                        lang == 'ru' ? 'Каталог товаров' : 'Mahsulotlar katalogi',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                          letterSpacing: -0.2,
-                                        ),
-                                      ),
+                                child: Container(
+                                  height: 52,
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [AppTheme.primaryColor, Color(0xFF1F5A30)],
+                                    ),
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppTheme.primaryColor.withOpacity(0.25),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 4),
+                                      )
                                     ],
                                   ),
-                                  const Icon(Icons.chevron_right_rounded, color: Colors.white, size: 22),
+                                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.grid_view_rounded, color: Colors.white, size: 20),
+                                          const SizedBox(width: 12),
+                                          Text(
+                                            lang == 'ru' ? 'Каталог товаров' : 'Mahsulotlar katalogi',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
+                                              letterSpacing: -0.2,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const Icon(Icons.chevron_right_rounded, color: Colors.white, size: 22),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            
+                            // HTML sliding banners
+                            if (_banners.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: BannerSection(
+                                  banners: _banners,
+                                  language: lang,
+                                  heightPx: 160,
+                                  borderRadius: 20,
+                                ),
+                              ),
+                            
+                            // Categories horizontal chips bar
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: CategoryFilter(
+                                allCategories: _categories,
+                                activeFilter: _activeFilter,
+                                setActiveFilter: (val) {
+                                  setState(() {
+                                    _activeFilter = val;
+                                  });
+                                  _loadProducts();
+                                },
+                                activeParent: _activeParent,
+                                setActiveParent: (val) {
+                                  setState(() {
+                                    _activeParent = val;
+                                  });
+                                },
+                                language: lang,
+                                setHomeActiveFilter: (val) {
+                                  setState(() {
+                                    _activeFilter = val;
+                                  });
+                                  _loadProducts();
+                                },
+                              ),
+                            ),
+                            
+                            // Trust Badges Banner
+                            TrustStrip(language: lang),
+                            
+                            // Recently Viewed Slider
+                            RecentlyViewed(language: lang),
+                            
+                            // Popular / For You Tab Selectors
+                            Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              decoration: const BoxDecoration(
+                                border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1.5)),
+                              ),
+                              child: Row(
+                                children: [
+                                  _buildTabItem('for_you', lang == 'ru' ? 'Для вас' : 'Siz uchun'),
+                                  _buildTabItem('popular', lang == 'ru' ? 'Популярное' : 'Ommabop'),
                                 ],
                               ),
                             ),
-                          ),
+                          ],
                         ),
-                      ),
-                      
-                      // Daily Deal Countdown Timer Card
-                      SliverToBoxAdapter(
-                        child: PromoCountdown(language: lang),
-                      ),
-                      
-                      // HTML sliding banners
-                      if (_banners.isNotEmpty)
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: BannerSection(
-                              banners: _banners,
-                              language: lang,
-                              heightPx: 160,
-                              borderRadius: 20,
-                            ),
-                          ),
-                        ),
-                      
-                      // Categories horizontal chips bar
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: CategoryFilter(
-                            allCategories: _categories,
-                            activeFilter: _activeFilter,
-                            setActiveFilter: (val) {
-                              setState(() {
-                                _activeFilter = val;
-                              });
-                              _loadProducts();
-                            },
-                            activeParent: _activeParent,
-                            setActiveParent: (val) {
-                              setState(() {
-                                _activeParent = val;
-                              });
-                            },
-                            language: lang,
-                            setHomeActiveFilter: (val) {
-                              setState(() {
-                                _activeFilter = val;
-                              });
-                              _loadProducts();
-                            },
-                          ),
-                        ),
-                      ),
-                      
-                      // Trust Badges Banner
-                      SliverToBoxAdapter(
-                        child: TrustStrip(language: lang),
-                      ),
-                      
-                      // Recently Viewed Slider
-                      SliverToBoxAdapter(
-                        child: RecentlyViewed(language: lang),
-                      ),
-                      
-                      // Popular / For You Tab Selectors
-                      SliverToBoxAdapter(
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          decoration: const BoxDecoration(
-                            border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1.5)),
-                          ),
-                          child: Row(
-                            children: [
-                              _buildTabItem('for_you', lang == 'ru' ? 'Для вас' : 'Siz uchun'),
-                              _buildTabItem('popular', lang == 'ru' ? 'Популярное' : 'Ommabop'),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ] else ...[
+                      )
+                    else ...[
                       // Search Results Header & Facet Categories Filters
                       SliverToBoxAdapter(
+                        key: const ValueKey('search_results_headers'),
                         child: Padding(
                           padding: const EdgeInsets.all(16),
                           child: Column(
@@ -535,12 +538,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     // Main Grid View of Products
                     _isLoading && displayedProducts.isEmpty
                         ? const SliverFillRemaining(
+                            key: ValueKey('loading_sliver'),
                             child: Center(
                               child: CircularProgressIndicator(color: AppTheme.primaryColor),
                             ),
                           )
                         : displayedProducts.isEmpty
                             ? SliverFillRemaining(
+                                key: const ValueKey('empty_sliver'),
                                 child: Center(
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -556,17 +561,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 ),
                               )
                             : SliverPadding(
+                                key: const ValueKey('grid_sliver'),
                                 padding: const EdgeInsets.symmetric(horizontal: 16),
                                 sliver: SliverGrid(
                                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: 2,
                                     crossAxisSpacing: 12,
                                     mainAxisSpacing: 12,
-                                    childAspectRatio: 0.65,
+                                    childAspectRatio: 0.44,
                                   ),
                                   delegate: SliverChildBuilderDelegate(
                                     (context, index) {
-                                      return ProductCard(product: displayedProducts[index]);
+                                      return ProductCard(
+                                        key: ValueKey(displayedProducts[index].id),
+                                        product: displayedProducts[index],
+                                      );
                                     },
                                     childCount: displayedProducts.length,
                                   ),
@@ -576,6 +585,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     // Fetching More Spinner
                     if (_isFetchingMore)
                       const SliverToBoxAdapter(
+                        key: ValueKey('fetching_more_sliver'),
                         child: Padding(
                           padding: EdgeInsets.symmetric(vertical: 24),
                           child: Center(

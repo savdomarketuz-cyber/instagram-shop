@@ -50,7 +50,13 @@ class ApiClient {
       final responseData = e.response!.data;
 
       if (statusCode == 401) {
-        message = "Sessiya muddati tugadi. Iltimos, qaytadan kiring.";
+        final path = e.requestOptions.path;
+        if (!path.contains('/api/discount') && !path.contains('/api/user') && !path.contains('/api/affiliate') && !path.contains('/api/admin')) {
+          message = "Sessiya muddati tugadi. Iltimos, qaytadan kiring.";
+          showToast(message, isError: true);
+        } else {
+          return; // Jimgina yopamiz
+        }
       } else if (statusCode == 429) {
         message = "So'rovlar soni juda ko'p. Iltimos, birozdan so'ng urunib ko'ring.";
       } else if (responseData is Map && responseData.containsKey('message')) {

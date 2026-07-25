@@ -20,6 +20,7 @@ void main() async {
   await Hive.openBox('settings');
   await Hive.openBox('cart');
   await Hive.openBox('wishlist');
+  await Hive.openBox('api_cache');
 
   // 2. Initialize Supabase
   await Supabase.initialize(

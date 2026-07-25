@@ -161,7 +161,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (Match m) => '${m[1]} ',
         );
-    return '$formatted ${lang == 'ru' ? 'сум' : "so'm"}';
+    return formatted;
   }
 
   @override

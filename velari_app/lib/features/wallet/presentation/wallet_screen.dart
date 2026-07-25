@@ -135,7 +135,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (Match m) => '${m[1]} ',
         );
-    return '$formatted ${lang == 'ru' ? 'сум' : "so'm"}';
+    return formatted;
   }
 
   void _openTransferSheet() {
