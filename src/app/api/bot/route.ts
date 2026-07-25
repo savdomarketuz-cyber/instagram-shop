@@ -59,9 +59,25 @@ async function answerCallbackQuery(callbackQueryId: string, text?: string) {
     });
 }
 
-async function deleteTelegramMessage(chatId: number | string, messageId?: number | null) {
+async function animateAndDeletePasswordMessage(chatId: number | string, messageId?: number | null) {
     if (!messageId) return;
     try {
+        // 1. Matnni xavfsiz holatga o'zgartirib animatsion visual effekt berish
+        await fetch(`${TELEGRAM_API}/editMessageText`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                chat_id: chatId,
+                message_id: messageId,
+                text: "🔒 <i>Parol shifrlanmoqda va xavfsiz o'chirilmoqda... ✨</i>",
+                parse_mode: "HTML"
+            }),
+        });
+
+        // 2. Kichik taymer (efektni ko'rish uchun)
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // 3. Telegram chatidan to'liq o'chirish
         await fetch(`${TELEGRAM_API}/deleteMessage`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -69,6 +85,7 @@ async function deleteTelegramMessage(chatId: number | string, messageId?: number
         });
     } catch { /* ignore error */ }
 }
+
 
 function decodeNextPath(payload?: string): string | null {
     if (!payload || payload === "register") return null;
@@ -275,8 +292,8 @@ export async function POST(req: Request) {
                     telegram_id: chatId.toString(),
                 }, { onConflict: 'phone' });
 
-                await deleteTelegramMessage(chatId, session.pwd_msg_id);
-                await deleteTelegramMessage(chatId, message_id);
+                await animateAndDeletePasswordMessage(chatId, session.pwd_msg_id);
+                await animateAndDeletePasswordMessage(chatId, message_id);
 
                 const loginToken = crypto.randomBytes(24).toString("hex");
                 await supabaseAdmin.from("login_tokens").insert({
