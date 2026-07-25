@@ -52,12 +52,7 @@ export async function POST(req: NextRequest) {
             const { data, error } = await query.insert(payload).select();
             if (error) throw error;
             
-            if (table === "products" || table === "banners" || table === "categories" || table === "site_settings" || table === "settings") {
-                revalidatePath("/", "layout");
-                revalidatePath("/uz", "layout");
-                revalidatePath("/ru", "layout");
-                revalidatePath("/sitemap.xml");
-            }
+            performSmartRevalidation(table, payload, matchConfig);
             
             return NextResponse.json({ success: true, data });
         } 
@@ -78,12 +73,7 @@ export async function POST(req: NextRequest) {
             const { data, error } = await updateQuery.select();
             if (error) throw error;
             
-            if (table === "products" || table === "banners" || table === "categories" || table === "site_settings" || table === "settings") {
-                revalidatePath("/", "layout");
-                revalidatePath("/uz", "layout");
-                revalidatePath("/ru", "layout");
-                revalidatePath("/sitemap.xml");
-            }
+            performSmartRevalidation(table, payload, matchConfig);
 
             // Mijozga Telegram orqali xabar yuborish (Buyurtma holati o'zgarganda)
             if (table === "orders" && payload.status) {
@@ -106,12 +96,7 @@ export async function POST(req: NextRequest) {
             const { data, error } = await upsertQuery.select();
             if (error) throw error;
             
-            if (table === "products" || table === "banners" || table === "categories" || table === "site_settings" || table === "settings") {
-                revalidatePath("/", "layout");
-                revalidatePath("/uz", "layout");
-                revalidatePath("/ru", "layout");
-                revalidatePath("/sitemap.xml");
-            }
+            performSmartRevalidation(table, payload, matchConfig);
             
             return NextResponse.json({ success: true, data });
         }
@@ -129,12 +114,7 @@ export async function POST(req: NextRequest) {
             const { data, error } = await deleteQuery;
             if (error) throw error;
             
-            if (table === "products" || table === "banners" || table === "categories" || table === "site_settings" || table === "settings") {
-                revalidatePath("/", "layout");
-                revalidatePath("/uz", "layout");
-                revalidatePath("/ru", "layout");
-                revalidatePath("/sitemap.xml");
-            }
+            performSmartRevalidation(table, payload, matchConfig);
             
             return NextResponse.json({ success: true });
         }

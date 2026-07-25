@@ -8,7 +8,7 @@ import BrandedEmptyState from "@/components/common/BrandedEmptyState";
 
 import { cache } from 'react';
 
-export const revalidate = 60;
+export const revalidate = 3600; // 1 soat cache (Admin panelda mahsulot ozgarsa revalidatePath orqali darhol yangilanadi)
 
 // 🚀 Memoize the database call to prevent double-fetching in Metadata & Page
 const getProductData = cache(async (identifier: string) => {

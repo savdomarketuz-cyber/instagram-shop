@@ -14,8 +14,25 @@ type MenuGroup = { title: string; items: MenuItem[] };
 function AdminTopNav({ groups, pathname }: { groups: MenuGroup[]; pathname: string }) {
     const [hoverGroup, setHoverGroup] = useState<string | null>(null);
     const [pinnedGroup, setPinnedGroup] = useState<string | null>(null);
+    const [isRevalidating, setIsRevalidating] = useState(false);
     const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const navRef = useRef<HTMLElement | null>(null);
+
+    const handleRevalidateAll = async () => {
+        setIsRevalidating(true);
+        try {
+            const res = await fetch("/api/admin/revalidate-all", { method: "POST" });
+            if (res.ok) {
+                alert("✅ Sayt keshi to'liq yangilandi!");
+            } else {
+                alert("❌ Keshni yangilashda xatolik yuz berdi");
+            }
+        } catch {
+            alert("❌ Xatolik yuz berdi");
+        } finally {
+            setIsRevalidating(false);
+        }
+    };
 
     const openGroup = (title: string) => {
         if (closeTimer.current) clearTimeout(closeTimer.current);
@@ -29,7 +46,6 @@ function AdminTopNav({ groups, pathname }: { groups: MenuGroup[]; pathname: stri
         setPinnedGroup((prev) => (prev === title ? null : title));
     };
 
-    // Tashqariga bosilsa — qotirilgan menyu yopiladi
     useEffect(() => {
         const onDocClick = (e: MouseEvent) => {
             if (navRef.current && !navRef.current.contains(e.target as Node)) {
@@ -94,9 +110,20 @@ function AdminTopNav({ groups, pathname }: { groups: MenuGroup[]; pathname: stri
                     </div>
                 );
             })}
+
+            <button
+                onClick={handleRevalidateAll}
+                disabled={isRevalidating}
+                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200 transition-all disabled:opacity-50"
+                title="Butun sayt keshini majburiy yangilash"
+            >
+                <RotateCcw size={14} className={isRevalidating ? "animate-spin" : ""} />
+                {isRevalidating ? "Yangilanmoqda..." : "🔄 Keshni Yangilash"}
+            </button>
         </nav>
     );
 }
+
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
