@@ -974,9 +974,9 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                     <Truck size={24} className="text-black" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Etkazib berish</p>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{language === 'uz' ? 'Yetkazib berish' : 'Доставка'}</p>
                                     <p className="text-base font-black italic">{getDeliveryDateText(language, deliverySettings)}</p>
-                                    <p className="text-[11px] text-gray-500 font-medium">Toshkent bo&apos;ylab tekin</p>
+                                    <p className="text-[11px] text-gray-500 font-medium">{language === 'uz' ? "Toshkent bo'ylab tekin" : 'Бесплатно по Ташкенту'}</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-4">
@@ -985,8 +985,8 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{language === 'uz' ? 'Qaytarib berish' : 'Возврат товара'}</p>
-                                    <p className="text-base font-black italic">14 kun ichida oson va tez</p>
-                                    <p className="text-[11px] text-gray-500 font-medium">Shartlar asosida qaytarish</p>
+                                    <p className="text-base font-black italic">{language === 'uz' ? '14 kun ichida oson va tez' : 'Просто и быстро за 14 дней'}</p>
+                                    <p className="text-[11px] text-gray-500 font-medium">{language === 'uz' ? 'Shartlar asosida qaytarish' : 'Возврат по условиям'}</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-4">
@@ -994,9 +994,9 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                     <ShieldCheck size={24} className="text-green-500" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black text-green-600/50 uppercase tracking-widest mb-1">Kafolat</p>
-                                    <p className="text-base font-black italic">1 yil rasmiy kafolat</p>
-                                    <p className="text-[11px] text-gray-500 font-medium">Original mahsulot 100%</p>
+                                    <p className="text-[10px] font-black text-green-600/50 uppercase tracking-widest mb-1">{language === 'uz' ? 'Kafolat' : 'Гарантия'}</p>
+                                    <p className="text-base font-black italic">{language === 'uz' ? '1 yil rasmiy kafolat' : '1 год официальной гарантии'}</p>
+                                    <p className="text-[11px] text-gray-500 font-medium">{language === 'uz' ? 'Original mahsulot 100%' : '100% Оригинальный товар'}</p>
                                 </div>
                             </div>
                         </div>
@@ -1006,7 +1006,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                 </div>
 
                 <div className="mt-24 max-w-4xl">
-                    <h2 className="text-3xl font-black tracking-tighter mb-8 italic uppercase">Batafsil ma'lumot</h2>
+                    <h2 className="text-3xl font-black tracking-tighter mb-8 italic uppercase">{language === 'uz' ? "Batafsil ma'lumot" : "Подробная информация"}</h2>
                     <div className="prose prose-lg max-w-none text-gray-600 font-medium leading-relaxed bg-gray-50 p-12 rounded-[50px] border border-gray-100">
                         {(() => {
                             const desc = product[language === 'uz' ? 'description_uz' : 'description_ru'] || product.description || '';
