@@ -23,11 +23,11 @@ export async function POST(req: NextRequest) {
         const limit = Math.min(Number(body.limit) || 12, 30);
         const lastSearch = typeof body.lastSearch === "string" ? body.lastSearch.trim() : "";
 
-        // Login holatini aniqlash (ixtiyoriy)
+        // Login holatini aniqlash (cookie bo'lmasa body'dagi userPhone'dan foydalanish)
         const token = req.cookies.get("user_token")?.value;
         const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
         const payload = token ? await verifyJwt(token, JWT_SECRET) : null;
-        const userPhone = payload?.sub || null;
+        const userPhone = payload?.sub || (typeof body.userPhone === "string" && body.userPhone !== "ADMIN" ? body.userPhone : null);
 
         // Oxirgi qidiruv bo'yicha mahsulotlarni aniqlash
         let searchAttentionIds: string[] = [];
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
                     priceSegment: aff.price_segment,
                     avgPriceAffinity: aff.avg_price_affinity,
                     nightOwl: aff.night_owl,
-                    discountSeeker: aff.discount_seeker,
+                    discount_seeker: aff.discount_seeker,
                     topCategories: aff.top_categories || (interests?.categories ?? undefined),
                 };
             } else if (interests?.categories) {
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // 2. Attention mahsulotlarini persona bilan yuklash (eng yangi tartibni saqlash)
+        // 2. Attention mahsulotlarini persona bilan yuklash (eng yangi avval)
         let attentionProducts: ReturnType<typeof mapProduct>[] = [];
         if (attentionIds.length > 0) {
             const { data } = await supabaseAdmin.from("products").select(PERSONA_SELECT).in("id", attentionIds.slice(0, 20)).eq("is_deleted", false);
@@ -77,14 +77,15 @@ export async function POST(req: NextRequest) {
             attentionProducts = attentionIds.map(id => byId.get(id)).filter(Boolean) as any[];
         }
 
-        // 3. Nomzodlar (hozircha sotuv bo'yicha top — 1000+ da embedding retrieval bilan almashtiriladi, task #43)
+        // 3. Nomzodlar (sotuv va reyting bo'yicha eng sara 200 ta mahsulot)
         const { data: candData } = await supabaseAdmin
             .from("products")
             .select(PERSONA_SELECT)
             .eq("is_deleted", false)
-            .not("ai_persona", "is", null)
+            .gt("stock", 0)
             .order("sales", { ascending: false })
-            .limit(300);
+            .order("avg_rating", { ascending: false })
+            .limit(200);
         const candidates = (candData || []).map(mapProduct);
 
         // 4. Moslashtirish

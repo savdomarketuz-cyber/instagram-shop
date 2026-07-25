@@ -215,7 +215,7 @@ export default function HomeClient({
                 const res = await fetch("/api/ai/personalize", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ attentionIds, lastSearch, limit: 24 }),
+                    body: JSON.stringify({ attentionIds, lastSearch, userPhone: user?.phone || null, limit: 24 }),
                 });
                 if (!res.ok) return;
                 const data = await res.json();

@@ -177,10 +177,24 @@ export function scoreProduct(
         contributions.push({ kind: "discount", value: null, weight: WEIGHTS.discountSeeker });
     }
 
-    // Obyektiv qadr (cold-start fallback hissasi)
-    const rating = Number(product.rating || 0);
-    if (rating >= 4.5) { score += WEIGHTS.merit; }
-    if ((product as any).isOriginal) { score += WEIGHTS.merit; }
+    // Obyektiv qadr & Ommaboplik (Sales, Rating, Reviews, Merit)
+    const sales = Number((product as any).sales || 0);
+    const rating = Number(product.rating || (product as any).avg_rating || 0);
+    const reviews = Number((product as any).reviewCount || (product as any).review_count || 0);
+
+    if (sales > 0) {
+        score += Math.min(sales * 0.1, 2.5); // Sotuvlar ommabopligi (2.5 gacha)
+        contributions.push({ kind: "merit", value: null, weight: Math.min(sales * 0.1, 2.5) });
+    }
+    if (rating >= 4.0) {
+        score += WEIGHTS.merit * (rating / 5); // Reyting hissasi
+    }
+    if (reviews > 0) {
+        score += Math.min(reviews * 0.05, 1.0); // Sharhlar ommabopligi
+    }
+    if ((product as any).isOriginal) {
+        score += WEIGHTS.merit;
+    }
 
     // Eng kuchli hissa = sabab
     contributions.sort((a, b) => b.weight - a.weight);
@@ -218,6 +232,7 @@ export function buildReasonText(product: Product, reason: MatchReason): { uz: st
         case "discount":
             return { uz: `Siz uchun foydali narx`, ru: `Выгодная цена для вас` };
         case "merit":
+            return { uz: `Ommabop va yuqori reytingli`, ru: `Популярный выбор` };
         case "generic":
         default:
             return fallback(product, persona);
@@ -236,6 +251,35 @@ function fallback(product: Product, persona: AiPersona | null): { uz: string; ru
         return { uz: "Original, rasmiy kafolat bilan", ru: "Оригинал, с официальной гарантией" };
     }
     return { uz: "Velari tanlovi", ru: "Выбор Velari" };
+}
+
+/**
+ * Bir xil kategoriyadan ketma-ket 2-3 tadan ortiq mahsulot to'planib qolmasligi uchun
+ * kategoriyalar bo'yicha xilma-xillik (diversity) beruvchi qayta saralash funksiyasi.
+ */
+export function applyCategoryDiversity(items: ScoredProduct[], maxPerCategory = 2): ScoredProduct[] {
+    const result: ScoredProduct[] = [];
+    const pool = [...items];
+    const categoryCounts: Record<string, number> = {};
+
+    while (pool.length > 0) {
+        let pickedIdx = -1;
+        for (let i = 0; i < pool.length; i++) {
+            const cat = String(pool[i].product.category || "unknown");
+            if ((categoryCounts[cat] || 0) < maxPerCategory) {
+                pickedIdx = i;
+                break;
+            }
+        }
+        if (pickedIdx === -1) {
+            pickedIdx = 0;
+        }
+        const item = pool.splice(pickedIdx, 1)[0];
+        const cat = String(item.product.category || "unknown");
+        categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+        result.push(item);
+    }
+    return result;
 }
 
 /**
@@ -259,15 +303,20 @@ export function personalize(
             return { product: p, score, reason, reasonText: buildReasonText(p, reason) };
         });
 
-    // Cold-start: niyat profili bo'sh bo'lsa — obyektiv qadr bo'yicha (rating/sotuv).
+    // Cold-start: niyat profili bo'sh bo'lsa — obyektiv qadr bo'yicha (rating/sotuv/merit).
     if (intent.isEmpty) {
         scored.sort((a, b) =>
-            (Number(b.product.rating || 0) - Number(a.product.rating || 0)) ||
-            ((b.product.sales || 0) - (a.product.sales || 0)),
+            (Number(b.product.rating || (b.product as any).avg_rating || 0) - Number(a.product.rating || (a.product as any).avg_rating || 0)) ||
+            ((b.product.sales || 0) - (a.product.sales || 0)) ||
+            (b.score - a.score)
         );
     } else {
         scored.sort((a, b) => b.score - a.score);
     }
 
-    return scored.slice(0, opts?.limit ?? 12);
+    // Kategoriyalar bo'yicha xilma-xillik filtrini qo'llash
+    const diversified = applyCategoryDiversity(scored, 2);
+
+    return diversified.slice(0, opts?.limit ?? 12);
 }
+
