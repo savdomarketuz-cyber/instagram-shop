@@ -4,7 +4,7 @@ import { hashPassword } from "@/lib/auth-utils";
 import crypto from "crypto";
 import { getUserOrdersForBot, forwardCustomerSupportMessage } from "@/lib/telegram";
 
-const BOT_TOKEN = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN;
+const BOT_TOKEN = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN || "8679198732:AAFnTD1-pKA-UYTaG_Hnapd2NIjICPMNMOE";
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://velari.uz";
 const PROMO_CODE = "VELARI2026";
@@ -14,6 +14,14 @@ const MAIN_KEYBOARD = {
     keyboard: [
         [{ text: "📱 Ro'yxatdan o'tish / Saytga kirish" }, { text: "🛍 Mening buyurtmalarim" }],
         [{ text: "💬 Operatorga yozish" }, { text: "❓ Savol-javob (FAQ)" }]
+    ],
+    resize_keyboard: true
+};
+
+// Jarayonlarni bekor qilish tugmasi
+const CANCEL_KEYBOARD = {
+    keyboard: [
+        [{ text: "❌ Bekor qilish / Orqaga" }]
     ],
     resize_keyboard: true
 };
@@ -34,7 +42,7 @@ async function sendTelegramMessage(chatId: number | string, text: string, replyM
         body: JSON.stringify({
             chat_id: chatId,
             text,
-            reply_markup: replyMarkup || MAIN_KEYBOARD,
+            reply_markup: replyMarkup !== undefined ? replyMarkup : MAIN_KEYBOARD,
             parse_mode: "HTML"
         }),
     });
@@ -119,7 +127,8 @@ export async function POST(req: Request) {
                 });
                 await sendTelegramMessage(chatId,
                     "✍️ <b>Operatorga murojaat qilish:</b>\n\n" +
-                    "Savolingiz yoki murojaatingizni yozib yuboring. Operatorlarimiz tez orada sizga javob qaytarishadi."
+                    "Savolingiz yoki murojaatingizni yozib yuboring. Operatorlarimiz tez orada sizga javob qaytarishadi.",
+                    CANCEL_KEYBOARD
                 );
             }
             return NextResponse.json({ ok: true });
@@ -130,6 +139,16 @@ export async function POST(req: Request) {
         const { chat, text, contact, message_id } = body.message;
         const chatId = chat.id;
 
+        // 2. Bekor qilish / Orqaga tugmasi bosilganda
+        if (text === "❌ Bekor qilish / Orqaga" || text === "/cancel") {
+            await supabaseAdmin.from("bot_sessions").delete().eq("chat_id", chatId.toString());
+            await sendTelegramMessage(chatId,
+                "❌ Jarayon bekor qilindi. Bosh menyuga qaytildi:",
+                MAIN_KEYBOARD
+            );
+            return NextResponse.json({ ok: true });
+        }
+
         // Bot sessiyasini Supabase orqali olish
         const { data: session } = await supabaseAdmin
             .from("bot_sessions")
@@ -137,7 +156,7 @@ export async function POST(req: Request) {
             .eq("chat_id", chatId.toString())
             .single();
 
-        // 2. /start buyrug'i
+        // 3. /start buyrug'i
         if (text?.startsWith("/start")) {
             const payload = text.split(" ")[1];
             const nextPath = decodeNextPath(payload);
@@ -153,7 +172,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ ok: true });
         }
 
-        // 3. Menyu tugmalari
+        // 4. Menyu tugmalari
         if (text === "📱 Ro'yxatdan o'tish / Saytga kirish" || text === "📱 Ro'yxatdan o'tish") {
             await supabaseAdmin.from("bot_sessions").upsert({
                 chat_id: chatId.toString(),
@@ -164,9 +183,11 @@ export async function POST(req: Request) {
             await sendTelegramMessage(chatId,
                 "Ro'yxatdan o'tish yoki parolni tiklash uchun quyidagi tugmani bosib telefon raqamingizni yuboring:",
                 {
-                    keyboard: [[{ text: "📱 Kontaktni yuborish", request_contact: true }]],
-                    resize_keyboard: true,
-                    one_time_keyboard: true
+                    keyboard: [
+                        [{ text: "📱 Kontaktni yuborish", request_contact: true }],
+                        [{ text: "❌ Bekor qilish / Orqaga" }]
+                    ],
+                    resize_keyboard: true
                 }
             );
             return NextResponse.json({ ok: true });
@@ -194,13 +215,13 @@ export async function POST(req: Request) {
             });
 
             await sendTelegramMessage(chatId,
-                "✍️ <b>Operatorga murojaat qilish:</b>\n\nSavolingiz yoki murojaatingizni shu yerga yozib yuboring. Operatorlarimiz tez orada javob berishadi.",
-                MAIN_KEYBOARD
+                "✍️ <b>Operatorga murojaat qilish:</b>\n\nSavolingiz yoki murojaatingizni shu yerga yozib yuboring. Operatorlarimiz tez orada javob berishadi.\n\n<i>(Chiqish uchun '❌ Bekor qilish / Orqaga' tugmasini bosing)</i>",
+                CANCEL_KEYBOARD
             );
             return NextResponse.json({ ok: true });
         }
 
-        // 4. Kontakt yuborilganda (Ro'yxatdan o'tish bosqichi)
+        // 5. Kontakt yuborilganda (Ro'yxatdan o'tish bosqichi)
         if (contact) {
             if (contact.user_id !== chatId) {
                 await sendTelegramMessage(chatId, "Xatolik! ❌ Iltimos, o'z raqamingizni '📱 Kontaktni yuborish' tugmasi orqali yuboring.");
@@ -217,17 +238,15 @@ export async function POST(req: Request) {
                 updated_at: new Date().toISOString()
             });
 
-            await sendTelegramMessage(chatId, "Yaxshi! Endi saytga kirish uchun yangi parol o'rnating (kamida 6 ta belgi):", {
-                remove_keyboard: true
-            });
+            await sendTelegramMessage(chatId, "Yaxshi! Endi saytga kirish uchun yangi parol o'rnating (kamida 6 ta belgi):", CANCEL_KEYBOARD);
             return NextResponse.json({ ok: true });
         }
 
-        // 5. Parol va Tasdiqlash bosqichlari
+        // 6. Parol va Tasdiqlash bosqichlari
         if (session) {
             if (session.step === "password") {
                 if (!text || text.length < 6) {
-                    await sendTelegramMessage(chatId, "Parol juda qisqa. Kamida 6 ta belgidan iborat parol kiriting:");
+                    await sendTelegramMessage(chatId, "Parol juda qisqa. Kamida 6 ta belgidan iborat parol kiriting:", CANCEL_KEYBOARD);
                     return NextResponse.json({ ok: true });
                 }
 
@@ -237,13 +256,13 @@ export async function POST(req: Request) {
                     step: "confirm_password"
                 }).eq("chat_id", chatId.toString());
 
-                await sendTelegramMessage(chatId, "Parolni tasdiqlash uchun qayta kiriting:");
+                await sendTelegramMessage(chatId, "Parolni tasdiqlash uchun qayta kiriting:", CANCEL_KEYBOARD);
                 return NextResponse.json({ ok: true });
             }
 
             if (session.step === "confirm_password") {
                 if (!text || hashPassword(text) !== session.temp_password_hash) {
-                    await sendTelegramMessage(chatId, "Xatolik! Parollar mos kelmadi. Qaytadan parol kiriting:");
+                    await sendTelegramMessage(chatId, "Xatolik! Parollar mos kelmadi. Qaytadan parol kiriting:", CANCEL_KEYBOARD);
                     await supabaseAdmin.from("bot_sessions").update({ step: "password", pwd_msg_id: null }).eq("chat_id", chatId.toString());
                     return NextResponse.json({ ok: true });
                 }
@@ -284,7 +303,7 @@ export async function POST(req: Request) {
             }
         }
 
-        // 6. Odatiy matnli xabarlar (Support/Operatorga uzatish)
+        // 7. Odatiy matnli xabarlar (Support/Operatorga uzatish)
         if (text) {
             const { data: user } = await supabaseAdmin.from("users").select("phone, name").eq("telegram_id", chatId.toString()).single();
 
@@ -298,7 +317,7 @@ export async function POST(req: Request) {
             if (sent) {
                 await sendTelegramMessage(chatId,
                     "📩 <b>Xabaringiz operatorga yetkazildi!</b>\n\nTez orada operatorimiz sizga ushbu bot orqali javob beradi.",
-                    MAIN_KEYBOARD
+                    CANCEL_KEYBOARD
                 );
             } else {
                 await sendTelegramMessage(chatId,

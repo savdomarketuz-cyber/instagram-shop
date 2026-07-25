@@ -290,7 +290,9 @@ export async function getUserOrdersForBot(telegramId: string) {
 
 export async function forwardCustomerSupportMessage(customerChatId: string, customerPhone: string | null, customerName: string | null, messageText: string) {
     try {
-        if (!ADMIN_BOT_TOKEN || !ADMIN_ID) return false;
+        const adminId = process.env.TELEGRAM_ADMIN_ID || "5572037414";
+        const adminBotToken = process.env.TELEGRAM_ADMIN_BOT_TOKEN || "7895692869:AAEypl6y4Y6XpIsNonPJPscCDHCCxvK060E";
+        const customerBotToken = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN || "8679198732:AAFnTD1-pKA-UYTaG_Hnapd2NIjICPMNMOE";
 
         let text = `💬 <b>MIJOZ KUTISH / SUPPORT XABARI</b>\n\n`;
         text += `👤 <b>Mijoz:</b> ${customerName || 'Noma\'lum'}\n`;
@@ -302,12 +304,22 @@ export async function forwardCustomerSupportMessage(customerChatId: string, cust
         text += `Ushbu xabarga <b>Reply</b> qiling yoki quyidagi komandadan foydalaning:\n`;
         text += `<code>/reply ${customerChatId} <javobingiz></code>`;
 
-        const res = await fetch(`https://api.telegram.org/bot${ADMIN_BOT_TOKEN}/sendMessage`, {
+        // 1-urinish: Admin Bot orqali yuborish
+        let res = await fetch(`https://api.telegram.org/bot${adminBotToken}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: ADMIN_ID, text, parse_mode: 'HTML' })
+            body: JSON.stringify({ chat_id: adminId, text, parse_mode: 'HTML' })
         });
-        const data = await res.json();
+        let data = await res.json();
+        if (data.ok) return true;
+
+        // 2-urinish (Zaxira): Customer Bot orqali Admin ID ga yuborish
+        res = await fetch(`https://api.telegram.org/bot${customerBotToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: adminId, text, parse_mode: 'HTML' })
+        });
+        data = await res.json();
         return data.ok;
     } catch (e) {
         console.error("forwardCustomerSupportMessage error:", e);
@@ -317,13 +329,13 @@ export async function forwardCustomerSupportMessage(customerChatId: string, cust
 
 export async function sendSupportReplyToCustomer(customerChatId: string, replyText: string) {
     try {
-        if (!CUSTOMER_BOT_TOKEN) return false;
+        const customerBotToken = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN || "8679198732:AAFnTD1-pKA-UYTaG_Hnapd2NIjICPMNMOE";
 
         let text = `🎧 <b>Operator javobi:</b>\n\n`;
         text += `${replyText}\n\n`;
         text += `<i>Yana savollaringiz bo'lsa, bemalol yozishingiz mumkin!</i>`;
 
-        const res = await fetch(`https://api.telegram.org/bot${CUSTOMER_BOT_TOKEN}/sendMessage`, {
+        const res = await fetch(`https://api.telegram.org/bot${customerBotToken}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ chat_id: customerChatId, text, parse_mode: 'HTML' })
@@ -335,4 +347,5 @@ export async function sendSupportReplyToCustomer(customerChatId: string, replyTe
         return false;
     }
 }
+
 
