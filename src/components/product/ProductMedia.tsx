@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { MediaItem } from "./MediaItem";
 
 import { Product, MediaItemType } from "@/types";
+import { useStore } from "@/store/store";
 
 interface ProductMediaProps {
     allMedia: MediaItemType[];
@@ -25,6 +26,7 @@ export const ProductMedia = ({
     product
 }: ProductMediaProps) => {
     const router = useRouter();
+    const language = useStore(s => s.language);
     const carouselRef = useRef<HTMLDivElement>(null);
     const lightboxCarouselRef = useRef<HTMLDivElement>(null);
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
@@ -147,7 +149,7 @@ export const ProductMedia = ({
                         <button onClick={() => router.back()} className="p-3 bg-white/40 backdrop-blur-xl text-black rounded-full shadow-lg active:scale-90 transition-all border border-white/50 pointer-events-auto">
                             <ChevronLeft size={20} strokeWidth={3} />
                         </button>
-                        <button onClick={() => router.push('/?focus=true')} className="p-3 bg-white/40 backdrop-blur-xl text-black rounded-full shadow-lg active:scale-90 transition-all border border-white/50 pointer-events-auto">
+                        <button onClick={() => router.push(`/${language}/?focus=true`)} className="p-3 bg-white/40 backdrop-blur-xl text-black rounded-full shadow-lg active:scale-90 transition-all border border-white/50 pointer-events-auto">
                             <Search size={20} strokeWidth={3} />
                         </button>
                     </div>

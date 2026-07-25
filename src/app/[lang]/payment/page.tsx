@@ -131,7 +131,7 @@ function PaymentContent() {
                 });
             }
 
-            router.push(`/order-success?orderId=${orderId}`);
+            router.push(`/${language}/order-success?orderId=${orderId}`);
         } catch (err: any) {
             console.error("Payment error:", err);
             setError(err.message || (language === 'uz' ? "Xatolik yuz berdi." : "Произошла ошибка."));

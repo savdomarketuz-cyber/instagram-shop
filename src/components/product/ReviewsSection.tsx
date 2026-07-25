@@ -50,7 +50,7 @@ export const ReviewsSection = ({
         if (!user) { router.push(`/${language}/login?redirect=${encodeURIComponent(window.location.pathname)}`); return; }
         if (!user.username) {
             alert(language === 'uz' ? "Sharh qoldirish uchun profil sozlangan bo'lishi kerak (username kiritilmagan)" : "Для того чтобы оставить комментарий должен быть настроен профиль (не введено имя пользователя)");
-            router.push("/account");
+            router.push(`/${language}/account`);
             return;
         }
         if (!commentText.trim()) return;

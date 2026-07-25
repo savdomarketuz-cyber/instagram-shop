@@ -273,7 +273,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                     fetchCat()
                 ]);
 
-            } else { router.push("/"); }
+            } else { router.push(`/${language}`); }
         } catch (e) {
             console.error("Fetch Product failed", e);
         } finally { setLoading(false); }
@@ -434,7 +434,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
             imageUrl: product.image
         };
         sessionStorage.setItem('fast_buy_item', JSON.stringify(item));
-        router.push('/checkout?fast=true');
+        router.push(`/${language}/checkout?fast=true`);
     };
 
     const isWishlisted = product ? wishlist.some(item => item.id === product.id) : false;
