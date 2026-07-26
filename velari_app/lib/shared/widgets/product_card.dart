@@ -52,7 +52,7 @@ class ProductCard extends ConsumerWidget {
           children: [
             // Product Image & Badges
             AspectRatio(
-              aspectRatio: 3 / 4,
+              aspectRatio: 1 / 1.1,
               child: Stack(
                 children: [
                   // Image
@@ -227,7 +227,7 @@ class ProductCard extends ConsumerWidget {
                             ),
                           ),
                         ] else ...[
-                          const SizedBox(height: 16), // space to keep alignment
+                          const SizedBox(height: 4),
                         ],
                         const SizedBox(height: 6),
 
