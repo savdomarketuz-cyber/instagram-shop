@@ -202,10 +202,13 @@ class ProductCard extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const NeverScrollableScrollPhysics(),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Pricing Row
                         Text(
@@ -315,8 +318,10 @@ class ProductCard extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  
-                  const Spacer(),
+                ),
+              ),
+              
+              const Spacer(),
 
                   // Delivery / Add to Cart Button
                   GestureDetector(
