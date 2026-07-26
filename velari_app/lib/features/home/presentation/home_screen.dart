@@ -15,6 +15,7 @@ import 'widgets/banner_section.dart';
 import 'widgets/category_filter.dart';
 import 'widgets/trust_strip.dart';
 import 'widgets/recently_viewed.dart';
+import 'widgets/featured_categories.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -30,6 +31,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<Product> _products = [];
   List<Category> _categories = [];
   List<PromotionBanner> _banners = [];
+  List<Category> _featuredCategories = [];
+  List<String> _aiProductOrder = [];
+  Map<String, Map<String, String>> _aiReasons = {};
   
   // Search state
   List<Product>? _searchResults;
@@ -82,18 +86,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     try {
       final repo = ref.read(dataRepositoryProvider);
       
-      // Load categories, banners and initial products in parallel
+      // Load categories, banners, products, featured categories, and AI personalize in parallel
       final results = await Future.wait([
         repo.fetchCategories(),
         repo.fetchBanners(),
         repo.fetchProducts(orderByPopular: _activeTab == 'popular', limit: 20, offset: 0),
+        repo.fetchFeaturedCategories(),
+        repo.fetchPersonalizedProducts(),
       ]);
 
       if (mounted) {
+        final loadedCats = results[0] as List<Category>;
+        final loadedBanners = results[1] as List<PromotionBanner>;
+        var loadedProducts = results[2] as List<Product>;
+        final loadedFeatured = results[3] as List<Category>;
+        final aiData = results[4] as Map<String, dynamic>;
+
+        final order = aiData['order'] as List<String>? ?? [];
+        final reasons = aiData['reasons'] as Map<String, Map<String, String>>? ?? {};
+
+        // If in 'for_you' tab and AI recommendations exist, re-order products
+        if (order.isNotEmpty && _activeTab == 'for_you') {
+          final Map<String, Product> pMap = { for (var p in loadedProducts) p.id : p };
+          final List<Product> sorted = [];
+          for (var id in order) {
+            if (pMap.containsKey(id)) {
+              sorted.add(pMap.remove(id)!);
+            }
+          }
+          sorted.addAll(pMap.values);
+          loadedProducts = sorted;
+        }
+
         setState(() {
-          _categories = results[0] as List<Category>;
-          _banners = results[1] as List<PromotionBanner>;
-          _products = results[2] as List<Product>;
+          _categories = loadedCats;
+          _banners = loadedBanners;
+          _products = loadedProducts;
+          _featuredCategories = loadedFeatured;
+          _aiProductOrder = order;
+          _aiReasons = reasons;
           _hasMore = _products.length == 20;
           _pageNumber = 0;
           _isLoading = false;
@@ -373,7 +404,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               ),
                             ),
                             
-                            // HTML sliding banners
+                            // HTML / Sliding banners
                             if (_banners.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 8),
@@ -383,6 +414,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   heightPx: 160,
                                   borderRadius: 20,
                                 ),
+                              ),
+
+                            // Promo Countdown Flash Sale Card
+                            PromoCountdown(
+                              language: lang,
+                              variant: 'card',
+                            ),
+
+                            // Featured Top Categories Grid
+                            if (_featuredCategories.isNotEmpty)
+                              FeaturedCategories(
+                                categories: _featuredCategories,
+                                language: lang,
+                                onCategoryTap: (catId) {
+                                  setState(() {
+                                    _activeFilter = catId;
+                                  });
+                                  _loadProducts();
+                                },
                               ),
                             
                             // Categories horizontal chips bar
@@ -572,9 +622,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   ),
                                   delegate: SliverChildBuilderDelegate(
                                     (context, index) {
+                                      final productItem = displayedProducts[index];
+                                      final aiReasonText = _aiReasons[productItem.id]?[lang];
+
                                       return ProductCard(
-                                        key: ValueKey(displayedProducts[index].id),
-                                        product: displayedProducts[index],
+                                        key: ValueKey(productItem.id),
+                                        product: productItem,
+                                        aiReason: aiReasonText,
                                       );
                                     },
                                     childCount: displayedProducts.length,

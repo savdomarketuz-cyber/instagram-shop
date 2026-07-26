@@ -13,7 +13,13 @@ import '../../core/api/data_repository.dart';
 
 class ProductCard extends ConsumerWidget {
   final Product product;
-  const ProductCard({super.key, required this.product});
+  final String? aiReason;
+
+  const ProductCard({
+    super.key,
+    required this.product,
+    this.aiReason,
+  });
 
   String _getWarehouseDeliveryText(BuildContext context, WidgetRef ref, List<Map<String, dynamic>> warehouses) {
     final lang = ref.watch(localeProvider);
@@ -237,6 +243,39 @@ class ProductCard extends ConsumerWidget {
                             height: 1.2,
                           ),
                         ),
+                        
+                        // AI Recommendation Reason Badge
+                        if (aiReason != null && aiReason!.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF3C7),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFFFDE68A)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.lightbulb_outline, size: 10, color: Color(0xFFD97706)),
+                                const SizedBox(width: 3),
+                                Expanded(
+                                  child: Text(
+                                    aiReason!,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF92400E),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+
                         const SizedBox(height: 4),
                         
                         // Rating Row
