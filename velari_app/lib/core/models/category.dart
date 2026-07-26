@@ -50,7 +50,4 @@ class Category {
     if (lang == 'ru') return nameRu ?? name;
     return name;
   }
-
-  String? get imageUrl => icon ?? imageMeta?['url']?.toString();
-  String? get image => imageUrl;
 }
