@@ -105,7 +105,7 @@ function AdminProducts() {
     const [searchTerm, setSearchTerm] = useState("");
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
