@@ -418,7 +418,7 @@ export default function CartPage() {
                             {language === "uz" ? "Promokod" : "Промокод"}
                         </h2>
                         <p style={{ fontSize: 13, fontWeight: 500, color: "#9AA29C", margin: 0 }}>
-                            {language === "uz" ? "Sinab ko'ring:" : "Попробуйте:"} <strong style={{ color: GREEN }}>VELARI25</strong>
+                            {language === "uz" ? "Chegirmaga ega bo'lish uchun kodni kiriting" : "Введите код для получения скидки"}
                         </p>
                     </div>
 
