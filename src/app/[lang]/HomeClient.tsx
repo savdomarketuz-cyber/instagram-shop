@@ -611,20 +611,20 @@ export default function HomeClient({
                                     border: "1px solid #F0E3C8", position: "relative", overflow: "hidden",
                                 }}
                             >
-                                <div style={{ position: "absolute", bottom: -28, right: -20, fontSize: 110, lineHeight: 1, opacity: 0.12 }}>🎁</div>
+                                <div style={{ position: "absolute", bottom: -28, right: -20, fontSize: 110, lineHeight: 1, opacity: 0.12 }}>🛍️</div>
                                 <div style={{ position: "relative" }}>
                                     <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", color: "#C99A2E" }}>
-                                        🎁 {language === "uz" ? "Bonus" : "Бонус"}
+                                        ✨ {language === "uz" ? "Velari Do'koni" : "Магазин Velari"}
                                     </div>
-                                    <div style={{ fontSize: 36, fontWeight: 900, color: "#0F1410", lineHeight: 1, marginTop: 8, letterSpacing: -1 }}>
-                                        +30 000
+                                    <div style={{ fontSize: 24, fontWeight: 900, color: "#0F1410", lineHeight: 1.2, marginTop: 8, letterSpacing: -0.5 }}>
+                                        {language === "uz" ? "Shaxsiy kabinet" : "Личный кабинет"}
                                     </div>
-                                    <div style={{ fontSize: 13.5, fontWeight: 600, color: "#7A6A45", marginTop: 7, maxWidth: "85%" }}>
-                                        {language === "uz" ? "Ro'yxatdan o'ting va so'mlik promokodga ega bo'ling" : "Зарегистрируйтесь и получите промокод"}
+                                    <div style={{ fontSize: 13.5, fontWeight: 600, color: "#7A6A45", marginTop: 7, maxWidth: "90%" }}>
+                                        {language === "uz" ? "Xaridlarni va buyurtmalaringizni qulay boshqaring" : "Удобно управляйте вашими покупками и заказами"}
                                     </div>
                                 </div>
                                 <div style={{ position: "relative", alignSelf: "flex-start", background: "#0F1410", color: "#fff", padding: "11px 22px", borderRadius: 14, fontSize: 13, fontWeight: 700 }}>
-                                    {language === "uz" ? "Olish →" : "Получить →"}
+                                    {language === "uz" ? "Kirish →" : "Войти →"}
                                 </div>
                             </Link>
                         </div>

@@ -202,7 +202,7 @@ export default function AdminPromoCodes() {
                                     type="text"
                                     value={formData.code}
                                     onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                                    placeholder="MASALAN: VELARI2026"
+                                    placeholder="MASALAN: CHEGIRMA10"
                                     className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-3xl p-6 text-xl font-black italic outline-none transition-all uppercase tracking-tighter"
                                 />
                             </div>

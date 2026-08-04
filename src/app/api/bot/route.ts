@@ -7,7 +7,6 @@ import { getUserOrdersForBot, forwardCustomerSupportMessage } from "@/lib/telegr
 const BOT_TOKEN = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN || "8679198732:AAFnTD1-pKA-UYTaG_Hnapd2NIjICPMNMOE";
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://velari.uz";
-const PROMO_CODE = "VELARI2026";
 
 // Bosh menyu (Reply Keyboard)
 const MAIN_KEYBOARD = {
@@ -133,7 +132,7 @@ export async function POST(req: Request) {
             } else if (data === "faq_promo") {
                 await sendTelegramMessage(chatId,
                     `🎁 <b>Promokodlar va Chegirmalar:</b>\n\n` +
-                    `Velari do'konidan xarid qilish uchun <code>${PROMO_CODE}</code> promokodidan foydalanib <b>30 000 so'm</b> chegirmaga ega bo'ling!`,
+                    `Hozirda faol ommaviy promokodlar mavjud emas. Yangi chegirma va aksiya promokodlarini ijtimoiy tarmoqlarimiz hamda botimiz orqali kuzatib boring!`,
                     FAQ_INLINE_KEYBOARD
                 );
             } else if (data === "start_support") {
@@ -308,7 +307,6 @@ export async function POST(req: Request) {
                 await sendTelegramMessage(chatId,
                     `✅ <b>Parolingiz muvaffaqiyatli saqlandi!</b>\n\n` +
                     `Telefon: <code>${session.phone}</code>\n\n` +
-                    `🎁 <b>Sovg'a:</b> sizga <code>${PROMO_CODE}</code> promokodi berildi — <b>30 000 so'm</b> chegirma.\n\n` +
                     `Quyidagi tugma orqali saytga <b>avtomatik kirgan holda</b> o'tishingiz mumkin:`,
                     {
                         inline_keyboard: [[{ text: "🌐 Saytga kirish", url: returnUrl }]]
