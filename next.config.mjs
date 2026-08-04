@@ -69,7 +69,7 @@ const nextConfig = {
         serverComponentsExternalPackages: ['sharp'],
     },
     images: {
-        unoptimized: false,
+        unoptimized: true,
         formats: ['image/webp'],
         minimumCacheTTL: 31536000,
         deviceSizes: [640, 828, 1080],
