@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getProductSlug } from '@/lib/slugify';
 
@@ -10,8 +10,11 @@ function escapeCdata(text: string = ''): string {
   return text.replace(/\]\]>/g, ']]&gt;');
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const lang = searchParams.get('lang') === 'ru' ? 'ru' : 'uz';
+
     const { data: brands } = await supabaseAdmin.from('brands').select('id, name');
     const brandMap: Record<string, string> = {};
     (brands || []).forEach((b) => {
@@ -20,7 +23,7 @@ export async function GET() {
 
     const { data: products, error } = await supabaseAdmin
       .from('products')
-      .select('id, name, name_uz, name_ru, price, old_price, stock, image, images, description, description_uz, description_ru, sku, model, brand_id, category_id')
+      .select('id, name, name_uz, name_ru, price, old_price, stock, image, images, description, description_uz, description_ru, sku, model, brand_id, category_id, group_id')
       .eq('is_deleted', false);
 
     if (error) {
@@ -31,10 +34,10 @@ export async function GET() {
     let itemsXml = '';
 
     for (const p of products || []) {
-      const title = p.name_uz || p.name || p.name_ru || 'Mahsulot';
-      const description = p.description_uz || p.description || p.description_ru || title;
+      const title = (lang === 'ru' ? (p.name_ru || p.name || p.name_uz) : (p.name_uz || p.name || p.name_ru)) || 'Mahsulot';
+      const description = (lang === 'ru' ? (p.description_ru || p.description || p.description_uz) : (p.description_uz || p.description || p.description_ru)) || title;
       const slug = getProductSlug(p);
-      const link = `${BASE_URL}/uz/products/${slug}`;
+      const link = `${BASE_URL}/${lang}/products/${slug}`;
       const mainImage = p.image || (Array.isArray(p.images) && p.images[0]) || '';
       
       if (!mainImage) continue; // Meta requires main image
@@ -45,9 +48,18 @@ export async function GET() {
       const priceVal = p.price || 0;
       const oldPriceVal = p.old_price && p.old_price > priceVal ? p.old_price : null;
 
+      // Meta Standard:
+      // <g:price> is the regular list price (e.g. 2236000 UZS)
+      // <g:sale_price> is the actual discounted price (e.g. 1115070 UZS)
       let priceXml = `<g:price>${oldPriceVal ? oldPriceVal : priceVal} UZS</g:price>`;
       if (oldPriceVal) {
         priceXml += `\n        <g:sale_price>${priceVal} UZS</g:sale_price>`;
+      }
+
+      // Group ID for variants (e.g. color/size options)
+      let groupIdXml = '';
+      if (p.group_id) {
+        groupIdXml = `\n        <g:item_group_id>${p.group_id}</g:item_group_id>`;
       }
 
       // Secondary images (up to 10)
@@ -61,7 +73,7 @@ export async function GET() {
 
       itemsXml += `
     <item>
-      <g:id>${p.sku || p.id}</g:id>
+      <g:id>${p.sku || p.id}</g:id>${groupIdXml}
       <g:title><![CDATA[${escapeCdata(title)}]]></g:title>
       <g:description><![CDATA[${escapeCdata(description.substring(0, 4900))}]]></g:description>
       <g:link>${link}</g:link>
@@ -76,7 +88,7 @@ export async function GET() {
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
   <channel>
-    <title>Velari Market Meta Product Feed</title>
+    <title>Velari Market Meta Product Feed (${lang.toUpperCase()})</title>
     <link>${BASE_URL}</link>
     <description>Velari Market Products Catalog Feed for Meta Facebook/Instagram Commerce</description>
     ${itemsXml}
