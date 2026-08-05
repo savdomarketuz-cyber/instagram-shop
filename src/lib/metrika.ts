@@ -27,6 +27,14 @@ function callGtag(...args: any[]) {
     }
 }
 
+function callFbq(...args: any[]) {
+    if (typeof window === 'undefined') return;
+    const fbq = (window as any).fbq;
+    if (typeof fbq === 'function') {
+        try { fbq(...args); } catch { /* jim */ }
+    }
+}
+
 /** SPA sahifa ko'rinishi (route o'zgarganda). */
 export function ymHit(url?: string, options?: Params) {
     const href = url || (typeof window !== 'undefined' ? window.location.href : '');
@@ -39,6 +47,7 @@ export function ymGoal(goal: string, params?: Params) {
     callYm('reachGoal', goal, params);
     // Google Analytics goal tracking
     callGtag('event', goal, params);
+    callFbq('trackCustom', goal, params);
 }
 
 // ── E-commerce (dataLayer) ─────────────────────────────────────────────
@@ -76,6 +85,15 @@ export function ymViewProduct(product: EcomProduct) {
             quantity: product.quantity || 1
         }]
     });
+
+    // Meta Pixel ViewContent event
+    callFbq('track', 'ViewContent', {
+        content_name: product.name,
+        content_ids: [String(product.id)],
+        content_type: 'product',
+        value: product.price || 0,
+        currency: YM_CURRENCY
+    });
 }
 
 export function ymAddToCart(product: EcomProduct) {
@@ -94,6 +112,15 @@ export function ymAddToCart(product: EcomProduct) {
             item_variant: product.variant,
             quantity: product.quantity || 1
         }]
+    });
+
+    // Meta Pixel AddToCart event
+    callFbq('track', 'AddToCart', {
+        content_name: product.name,
+        content_ids: [String(product.id)],
+        content_type: 'product',
+        value: (product.price || 0) * (product.quantity || 1),
+        currency: YM_CURRENCY
     });
 }
 
@@ -133,6 +160,14 @@ export function ymPurchase(products: EcomProduct[], order: { id: string; revenue
             item_variant: product.variant,
             quantity: product.quantity || 1
         }))
+    });
+
+    // Meta Pixel Purchase event
+    callFbq('track', 'Purchase', {
+        value: order.revenue,
+        currency: YM_CURRENCY,
+        content_ids: products.map(p => String(p.id)),
+        content_type: 'product'
     });
 }
 

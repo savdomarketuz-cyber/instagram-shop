@@ -106,6 +106,7 @@ export const viewport = {
 import AppWrapper from "@/components/AppWrapper";
 import YandexMetrika from "@/components/YandexMetrika";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import MetaPixel from "@/components/MetaPixel";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ViewTransitions } from "next-view-transitions";
@@ -227,6 +228,7 @@ export default function RootLayout({
                 </div>
                 <YandexMetrika ymid="107383008" />
                 <GoogleAnalytics gaId="G-26H8F7XC2T" />
+                <MetaPixel pixelId="159382815426388" />
                 <Analytics />
                 <SpeedInsights />
                 <script dangerouslySetInnerHTML={{ __html: `
