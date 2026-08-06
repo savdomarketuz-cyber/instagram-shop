@@ -50,6 +50,16 @@ export async function GET(req: NextRequest) {
 
     let itemsXml = '';
 
+    // Meta faqat JPEG/PNG qabul qiladi. AVIF/WebP rasmlarni proxy orqali JPEG ga o'tkazish.
+    const metaImageUrl = (url: string): string => {
+      if (!url) return url;
+      const lower = url.toLowerCase();
+      if (lower.endsWith('.avif') || lower.endsWith('.webp')) {
+        return `${BASE_URL}/api/meta-image?url=${encodeURIComponent(url)}`;
+      }
+      return url;
+    };
+
     for (const p of products || []) {
       const title = (lang === 'ru' ? (p.name_ru || p.name || p.name_uz) : (p.name_uz || p.name || p.name_ru)) || 'Mahsulot';
       const description = (lang === 'ru' ? (p.description_ru || p.description || p.description_uz) : (p.description_uz || p.description || p.description_ru)) || title;
@@ -84,7 +94,7 @@ export async function GET(req: NextRequest) {
       if (Array.isArray(p.images)) {
         const extraImgs = p.images.filter((img: string) => img && img !== mainImage).slice(0, 10);
         extraImgs.forEach((img: string) => {
-          addImgsXml += `\n        <g:additional_image_link>${img}</g:additional_image_link>`;
+          addImgsXml += `\n        <g:additional_image_link>${metaImageUrl(img)}</g:additional_image_link>`;
         });
       }
 
@@ -94,7 +104,7 @@ export async function GET(req: NextRequest) {
       <g:title><![CDATA[${escapeCdata(title)}]]></g:title>
       <g:description><![CDATA[${escapeCdata(stripHtml(description).substring(0, 4900))}]]></g:description>
       <g:link>${link}</g:link>
-      <g:image_link>${mainImage}</g:image_link>${addImgsXml}
+      <g:image_link>${metaImageUrl(mainImage)}</g:image_link>${addImgsXml}
       <g:brand><![CDATA[${escapeCdata(brand)}]]></g:brand>
       <g:condition>new</g:condition>
       <g:availability>${isAvailable}</g:availability>
