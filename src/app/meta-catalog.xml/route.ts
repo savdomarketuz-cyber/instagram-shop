@@ -10,6 +10,23 @@ function escapeCdata(text: string = ''): string {
   return text.replace(/\]\]>/g, ']]&gt;');
 }
 
+function stripHtml(html: string = ''): string {
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')       // <br> -> yangi qator
+    .replace(/<\/p>/gi, '\n')             // </p> -> yangi qator
+    .replace(/<[^>]*>/g, '')              // barcha HTML teglarni o'chirish
+    .replace(/&nbsp;/gi, ' ')             // &nbsp; -> bo'sh joy
+    .replace(/&amp;/gi, '&')              // &amp; -> &
+    .replace(/&lt;/gi, '<')               // &lt; -> <
+    .replace(/&gt;/gi, '>')               // &gt; -> >
+    .replace(/&quot;/gi, '"')             // &quot; -> "
+    .replace(/&#039;/gi, "'")             // &#039; -> '
+    .replace(/[✅✔️☑️🔥⭐💥🎁🎉🚀💡⚡🔹🔸▪️●•]/gu, '')  // emojilarni o'chirish
+    .replace(/\n{3,}/g, '\n\n')           // 3+ yangi qatorni 2 taga kamaytirish
+    .replace(/[ \t]+/g, ' ')              // ortiqcha bo'sh joylarni tozalash
+    .trim();
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -75,7 +92,7 @@ export async function GET(req: NextRequest) {
     <item>
       <g:id>${p.sku || p.id}</g:id>${groupIdXml}
       <g:title><![CDATA[${escapeCdata(title)}]]></g:title>
-      <g:description><![CDATA[${escapeCdata(description.substring(0, 4900))}]]></g:description>
+      <g:description><![CDATA[${escapeCdata(stripHtml(description).substring(0, 4900))}]]></g:description>
       <g:link>${link}</g:link>
       <g:image_link>${mainImage}</g:image_link>${addImgsXml}
       <g:brand><![CDATA[${escapeCdata(brand)}]]></g:brand>
