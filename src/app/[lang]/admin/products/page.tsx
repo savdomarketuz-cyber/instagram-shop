@@ -123,7 +123,7 @@ function AdminProducts() {
     const [categoryLabels, setCategoryLabels] = useState<{ [key: string]: string }>({});
     const [productSelectionPath, setProductSelectionPath] = useState<string[]>([]);
     const [aiStatus, setAiStatus] = useState<Record<string, { processed: number, total: number, active: boolean }>>({});
-    const [brands, setBrands] = useState<{ id: string; name: string }[]>([]);
+    const [brands, setBrands] = useState<{ id: string; name: string; productCount?: number }[]>([]);
     const [brandLabels, setBrandLabels] = useState<{ [key: string]: string }>({});
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isBulkActionLoading, setIsBulkActionLoading] = useState(false);
@@ -481,17 +481,30 @@ function AdminProducts() {
 
             setCategories(cData);
 
-            // Fetch Brands
+            // Fetch Brands + product counts per brand
             const { data: bList } = await supabase
                 .from("brands")
                 .select("*")
                 .eq("is_deleted", false)
                 .order("name");
             
+            // Count products per brand_id
+            const { data: allProds } = await supabase
+                .from("products")
+                .select("brand_id")
+                .eq("is_deleted", false);
+            
+            const brandCountMap: { [key: string]: number } = {};
+            (allProds || []).forEach((p: any) => {
+                if (p.brand_id) brandCountMap[p.brand_id] = (brandCountMap[p.brand_id] || 0) + 1;
+            });
+
             if (bList) {
-                setBrands(bList);
+                // Faqat mahsulotlari bor brendlarni ko'rsatish
+                const brandsWithProducts = bList.filter(b => (brandCountMap[b.id] || 0) > 0);
+                setBrands(brandsWithProducts.map(b => ({ ...b, productCount: brandCountMap[b.id] || 0 })));
                 const bLabels: { [key: string]: string } = {};
-                bList.forEach(b => { bLabels[b.id] = b.name; });
+                brandsWithProducts.forEach(b => { bLabels[b.id] = b.name; });
                 setBrandLabels(bLabels);
             }
         } catch (error) {
@@ -1249,7 +1262,7 @@ function AdminProducts() {
                         <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 ml-1">Brend</label>
                         <select value={filterBrand} onChange={e => setFilterBrand(e.target.value)} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-3 text-sm font-medium focus:ring-2 focus:ring-black outline-none">
                             <option value="">Barchasi</option>
-                            {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                            {brands.map(b => <option key={b.id} value={b.id}>{b.name} ({b.productCount || 0})</option>)}
                         </select>
                     </div>
                     <div>
