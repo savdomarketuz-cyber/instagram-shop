@@ -217,7 +217,7 @@ export default function RootLayout({
                 />
                 <script
                     dangerouslySetInnerHTML={{
-                        __html: `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','159382815426388');fbq('track','PageView');`
+                        __html: `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','1593828215426388');fbq('track','PageView');`
                     }}
                 />
             </head>
@@ -233,7 +233,7 @@ export default function RootLayout({
                 </div>
                 <YandexMetrika ymid="107383008" />
                 <GoogleAnalytics gaId="G-26H8F7XC2T" />
-                <MetaPixel pixelId="159382815426388" />
+                <MetaPixel pixelId="1593828215426388" />
                 <Analytics />
                 <SpeedInsights />
                 <script dangerouslySetInnerHTML={{ __html: `

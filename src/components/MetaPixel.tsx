@@ -4,7 +4,7 @@ import Script from 'next/script';
 import { Suspense, useEffect, useRef } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
-export const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || '159382815426388';
+export const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || '1593828215426388';
 
 function MetaPixelTracker({ pixelId }: { pixelId: string }) {
   const pathname = usePathname();
