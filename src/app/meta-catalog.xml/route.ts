@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getProductSlug } from '@/lib/slugify';
 
-export const revalidate = 3600; // 1 soatda kesh yangilanadi
+export const revalidate = 86400; // 24 soatda kesh yangilanadi
 
 const BASE_URL = 'https://velari.uz';
 

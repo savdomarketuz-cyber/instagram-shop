@@ -5,7 +5,7 @@ import { getProductSlug } from '@/lib/slugify';
 // Google Images / Yandex Images uchun maxsus IMAGE sitemap.
 // Next 14 ning built-in sitemap.ts'i <image:image> teglarini chiqarmaydi,
 // shuning uchun XML ni qo'lda generatsiya qilamiz.
-export const revalidate = 3600; // har soatda qayta generatsiya
+export const revalidate = 86400; // 24 soatda qayta generatsiya
 
 const BASE_URL = 'https://velari.uz';
 
@@ -93,7 +93,7 @@ export async function GET() {
     return new NextResponse(xml, {
         headers: {
             'Content-Type': 'application/xml; charset=utf-8',
-            'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
+            'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800',
         },
     });
 }

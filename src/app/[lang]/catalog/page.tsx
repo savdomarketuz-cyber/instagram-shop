@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: { params: { lang: string } })
     };
 }
 
-export const revalidate = 3600; // 1 hour
+export const revalidate = 86400; // 24 hours
 
 export default async function CatalogPage({ params, searchParams }: {
     params: { lang: string };

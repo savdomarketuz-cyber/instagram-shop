@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getProductSlug, getCategorySlug } from '@/lib/slugify';
 import { i18n } from '@/lib/i18n-config';
 
-export const revalidate = 3600; // Regenerate sitemap every hour
+export const revalidate = 86400; // Regenerate sitemap every 24 hours
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const baseUrl = 'https://velari.uz';

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { getProductSlug } from "@/lib/slugify";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 const BASE_URL = "https://velari.uz";
 
@@ -124,7 +124,7 @@ ${items}
             status: 200,
             headers: {
                 "Content-Type": "application/xml; charset=utf-8",
-                "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+                "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800",
             },
         });
     } catch (err) {

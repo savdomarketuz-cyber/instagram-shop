@@ -4,7 +4,7 @@ import CatalogClient from '../CatalogClient';
 import { getCatalogCategories, resolveCategoryBySlug } from '@/lib/categories';
 import { getCategorySlug } from '@/lib/slugify';
 
-export const revalidate = 3600; // 1 soat
+export const revalidate = 86400; // 24 soat
 
 export async function generateMetadata({ params }: { params: { lang: string; slug: string } }): Promise<Metadata> {
     const lang = params.lang === 'ru' ? 'ru' : 'uz';
