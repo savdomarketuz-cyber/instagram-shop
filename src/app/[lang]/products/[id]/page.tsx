@@ -94,9 +94,11 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
             url: canonicalUrl,
             siteName: 'Velari',
             images: [
-                { url: ogUrl.toString(), width: 1200, height: 630, alt: productName },
+                // ⚡ Birinchi o'rinda mahsulotning HAQIQIY rasmi — Google shu rasmni oladi
                 { url: rawProductImage, width: 800, height: 800, alt: productName },
-                ...productImages.slice(1, 4).map(img => ({ url: img, width: 800, height: 800, alt: productName }))
+                ...productImages.slice(1, 3).map(img => ({ url: img, width: 800, height: 800, alt: productName })),
+                // OG brend rasmi oxirida (Facebook/WhatsApp uchun)
+                { url: ogUrl.toString(), width: 1200, height: 630, alt: productName },
             ],
             locale: isRu ? 'ru_RU' : 'uz_UZ',
             type: 'website',
@@ -105,7 +107,7 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
             card: 'summary_large_image',
             title: title,
             description: description,
-            images: [ogUrl.toString(), rawProductImage],
+            images: [rawProductImage, ogUrl.toString()],
         },
         alternates: {
             canonical: canonicalUrl,
