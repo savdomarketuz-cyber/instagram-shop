@@ -27,7 +27,17 @@ import {
     DollarSign,
     Sparkles,
     SlidersHorizontal,
-    ExternalLink
+    ExternalLink,
+    Copy,
+    Eye,
+    TrendingUp,
+    Percent,
+    CheckCircle2,
+    Wand2,
+    Globe,
+    Tag,
+    Layers,
+    Check
 } from "lucide-react";
 import ProductParamsEditor from "@/components/admin/ProductParamsEditor";
 import { normalizeQuery, transliterateLatin } from "@/lib/query-normalize";
@@ -247,6 +257,65 @@ function AdminProducts() {
     });
 
     const [draggedImgIdx, setDraggedImgIdx] = useState<number | null>(null);
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [refiningField, setRefiningField] = useState<{ field: 'uz' | 'ru'; mode: string } | null>(null);
+
+    const handleRefineText = async (field: 'uz' | 'ru', mode: 'enhance' | 'bullets' | 'fix_grammar') => {
+        const text = field === 'uz' ? (newProduct.description_uz || newProduct.description || '') : (newProduct.description_ru || '');
+        if (!text.trim()) {
+            alert(field === 'uz' ? "Avval o'zbekcha tavsif matnini kiriting!" : "Сначала введите текст описания на русском!");
+            return;
+        }
+
+        setRefiningField({ field, mode });
+        try {
+            const res = await fetch("/api/ai", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "refine_text",
+                    context: {
+                        text,
+                        mode,
+                        lang: field,
+                        productName: field === 'uz' ? (newProduct.name_uz || newProduct.name) : (newProduct.name_ru || newProduct.name)
+                    }
+                })
+            });
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            const resultText = data.result || data.content;
+            if (typeof resultText === 'string' && resultText.trim()) {
+                if (field === 'uz') {
+                    setNewProduct(prev => ({ ...prev, description_uz: resultText.trim(), description: resultText.trim() }));
+                } else {
+                    setNewProduct(prev => ({ ...prev, description_ru: resultText.trim() }));
+                }
+            }
+        } catch (err: any) {
+            console.error("Refine text failed:", err);
+            alert("AI tahrirlashda xatolik: " + err.message);
+        } finally {
+            setRefiningField(null);
+        }
+    };
+
+    const handleCloneProduct = () => {
+        if (!newProduct.name && !newProduct.name_uz) return;
+        const clonedSku = newProduct.sku ? `${newProduct.sku}-NUSXA` : `SKU-${Date.now().toString().slice(-4)}`;
+        const newArt = generateArticle();
+        setNewProduct(prev => ({
+            ...prev,
+            id: undefined,
+            name: `${prev.name_uz || prev.name} (Nusxa)`,
+            name_uz: prev.name_uz ? `${prev.name_uz} (Nusxa)` : "",
+            name_ru: prev.name_ru ? `${prev.name_ru} (Копия)` : "",
+            sku: clonedSku,
+            article: newArt,
+        }));
+        alert("✅ Yangi mahsulot nusxasi yaratildi! Kerakli maydonlarni tahrirlab 'Saqlash' tugmasini bosing.");
+    };
 
     // 1. Initial State Restoration from URL SearchParams or sessionStorage
     useEffect(() => {
@@ -1689,10 +1758,13 @@ function AdminProducts() {
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-3">
                     <div className="bg-white w-full h-full md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
+                        {/* Modal Header */}
                         <div className="px-8 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/70 text-black shrink-0">
                             <div className="flex items-center gap-4">
                                 <div>
-                                    <h2 className="text-2xl font-black italic tracking-tighter uppercase">{newProduct.id ? "Tahrirlash" : "Yangi mahsulot"}</h2>
+                                    <h2 className="text-2xl font-black italic tracking-tighter uppercase">
+                                        {newProduct.id ? (newProduct.name_uz || newProduct.name ? `Tahrirlash: ${newProduct.name_uz || newProduct.name}` : "Tahrirlash") : "Yangi mahsulot"}
+                                    </h2>
                                     <p className="text-gray-400 text-xs font-black uppercase tracking-widest">Barcha ma'lumotlarni kiriting</p>
                                 </div>
                                 {newProduct.id && aiStatus[newProduct.id]?.active && (
@@ -1704,528 +1776,861 @@ function AdminProducts() {
                                     </div>
                                 )}
                             </div>
-                            <button onClick={() => { setIsModalOpen(false); setProductSelectionPath([]); }} className="p-4 hover:bg-white rounded-full transition-all shadow-sm"><X size={20} /></button>
+                            <div className="flex items-center gap-3">
+                                {newProduct.id && (
+                                    <button
+                                        type="button"
+                                        onClick={handleCloneProduct}
+                                        className="flex items-center gap-1.5 px-4 py-2.5 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-sm border border-purple-200 active:scale-95"
+                                        title="Ushbu mahsulotdan nusxa olib yangi mahsulot yaratish"
+                                    >
+                                        <Copy size={14} />
+                                        <span>Nusxa olish</span>
+                                    </button>
+                                )}
+                                <button onClick={() => { setIsModalOpen(false); setProductSelectionPath([]); }} className="p-3 hover:bg-white rounded-full transition-all shadow-sm border border-transparent hover:border-gray-200">
+                                    <X size={20} />
+                                </button>
+                            </div>
                         </div>
 
-                        <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-8 text-black flex flex-col justify-between">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                <div className="space-y-6">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2 relative">
-                                            <div className="flex justify-between items-center mr-2">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Nomi (UZ)</label>
-                                                <button
-                                                    type="button"
-                                                    onClick={handleAiVision}
-                                                    disabled={isActionLoading || !newProduct.image}
-                                                    className="flex items-center gap-1.5 px-2.5 py-1 bg-black text-white rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-gray-800 transition-all disabled:opacity-30 shadow-xl shadow-black/10"
-                                                >
-                                                    {isActionLoading ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
-                                                    Vision AI
-                                                </button>
-                                            </div>
-                                            <input
-                                                required
-                                                value={newProduct.name_uz}
-                                                onChange={e => setNewProduct({ ...newProduct, name_uz: e.target.value, name: e.target.value })}
-                                                className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-black outline-none shadow-sm"
-                                                placeholder="Masalan: iPhone 15 Pro"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2 italic">Mahsulot Brendi</label>
-                                            <div className="relative">
-                                                <select
-                                                    value={newProduct.brand || ""}
-                                                    onChange={e => setNewProduct({ ...newProduct, brand: e.target.value })}
-                                                    className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-black outline-none appearance-none cursor-pointer shadow-sm text-black"
-                                                >
-                                                    <option value="">Brendni tanlang...</option>
-                                                    {brands.map(brand => (
-                                                        <option key={brand.id} value={brand.id}>{brand.name}</option>
-                                                    ))}
-                                                </select>
-                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" size={18} />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Название (RU)</label>
-                                        <input
-                                            required
-                                            value={newProduct.name_ru}
-                                            onChange={e => setNewProduct({ ...newProduct, name_ru: e.target.value })}
-                                            className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-black outline-none shadow-sm text-black"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2 italic">Bar-kod (EAN)</label>
-                                            <input
-                                                value={newProduct.barcode || ""}
-                                                onChange={e => setNewProduct({ ...newProduct, barcode: e.target.value })}
-                                                className="w-full bg-blue-50/30 border-none rounded-2xl py-3 px-5 text-xs font-bold focus:ring-2 focus:ring-black outline-none shadow-sm text-black"
-                                                placeholder="Masalan: 697..."
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2 italic">Og'irlik (gr)</label>
-                                            <input
-                                                value={newProduct.weight || ""}
-                                                onChange={e => setNewProduct({ ...newProduct, weight: e.target.value })}
-                                                className="w-full bg-gray-50 border-none rounded-2xl py-3 px-5 text-xs font-bold focus:ring-2 focus:ring-black outline-none shadow-sm text-black"
-                                                placeholder="Masalan: 500"
-                                            />
-                                        </div>
-                                    </div>
+                        {/* Modal Form Body */}
+                        {(() => {
+                            const sellingPrice = Number(newProduct.price) || 0;
+                            const oldPriceVal = Number(newProduct.oldPrice) || 0;
+                            const costPrice = Number(newProduct.cost_price) || 0;
+                            const additionalExpenses = Number(newProduct.additional_expenses) || 0;
+                            const totalCost = costPrice + additionalExpenses;
+                            const netProfit = sellingPrice > 0 ? sellingPrice - totalCost : 0;
+                            const marginPercent = (sellingPrice > 0 && costPrice > 0)
+                                ? Math.round(((sellingPrice - totalCost) / sellingPrice) * 100)
+                                : 0;
+                            const discountPercent = (oldPriceVal > sellingPrice && oldPriceVal > 0)
+                                ? Math.round(((oldPriceVal - sellingPrice) / oldPriceVal) * 100)
+                                : 0;
 
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2 italic">Model</label>
-                                        <input
-                                            value={newProduct.model || ""}
-                                            onChange={e => setNewProduct({ ...newProduct, model: e.target.value })}
-                                            className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-black outline-none shadow-sm text-black"
-                                            placeholder="Masalan: VGR-V937"
-                                        />
-                                    </div>
-
-                                    <div className="bg-gray-50/50 p-6 rounded-[32px] border border-gray-100 space-y-4">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2 italic">Gabaritlar (O'lchamlar)</label>
-                                        <div className="grid grid-cols-3 gap-3">
-                                            <div className="space-y-1">
-                                                <span className="text-[8px] font-black text-gray-300 uppercase ml-2">Balandlik</span>
-                                                <input
-                                                    value={newProduct.height || ""}
-                                                    onChange={e => setNewProduct({ ...newProduct, height: e.target.value })}
-                                                    className="w-full bg-white border-none rounded-xl py-3 px-4 text-xs font-bold focus:ring-2 focus:ring-black outline-none shadow-sm text-black"
-                                                    placeholder="h"
-                                                />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <span className="text-[8px] font-black text-gray-300 uppercase ml-2">Kenglik</span>
-                                                <input
-                                                    value={newProduct.width || ""}
-                                                    onChange={e => setNewProduct({ ...newProduct, width: e.target.value })}
-                                                    className="w-full bg-white border-none rounded-xl py-3 px-4 text-xs font-bold focus:ring-2 focus:ring-black outline-none shadow-sm text-black"
-                                                    placeholder="w"
-                                                />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <span className="text-[8px] font-black text-gray-300 uppercase ml-2">Uzunlik</span>
-                                                <input
-                                                    value={newProduct.length || ""}
-                                                    onChange={e => setNewProduct({ ...newProduct, length: e.target.value })}
-                                                    className="w-full bg-white border-none rounded-xl py-3 px-4 text-xs font-bold focus:ring-2 focus:ring-black outline-none shadow-sm text-black"
-                                                    placeholder="l"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Hozirgi Narx (so'm)</label>
-                                            <input
-                                                required
-                                                type="number"
-                                                value={newProduct.price}
-                                                onChange={(e) => setNewProduct({ ...newProduct, price: Number(e.target.value) })}
-                                                className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all shadow-sm"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Eski Narx (so'm)</label>
-                                            <input
-                                                type="number"
-                                                value={newProduct.oldPrice || ""}
-                                                onChange={(e) => setNewProduct({ ...newProduct, oldPrice: e.target.value ? Number(e.target.value) : 0 })}
-                                                placeholder="0 bo'lsa ko'rinmaydi"
-                                                className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all shadow-sm"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4 mt-4">
-                                        <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Tan Narx (faqat admin uchun)</label>
-                                            <input
-                                                type="number"
-                                                value={newProduct.cost_price || ""}
-                                                onChange={(e) => setNewProduct({ ...newProduct, cost_price: e.target.value ? Number(e.target.value) : 0 })}
-                                                className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all shadow-sm"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Qo'shimcha xarajat (faqat admin uchun)</label>
-                                            <input
-                                                type="number"
-                                                value={newProduct.additional_expenses || ""}
-                                                onChange={(e) => setNewProduct({ ...newProduct, additional_expenses: e.target.value ? Number(e.target.value) : 0 })}
-                                                className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all shadow-sm"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Cashback Sub-Section */}
-                                    <div className="bg-emerald-50/40 p-8 rounded-[40px] border border-emerald-100 space-y-6">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className="w-8 h-8 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                                                <DollarSign size={16} />
-                                            </div>
-                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Cashback Sozlamalari</h4>
-                                        </div>
-                                        
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Hisoblash turi</label>
-                                                <select
-                                                    value={newProduct.cashback_type || "global"}
-                                                    onChange={e => setNewProduct({ ...newProduct, cashback_type: e.target.value as any })}
-                                                    className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm text-black"
-                                                >
-                                                    <option value="global">Global (% )</option>
-                                                    <option value="percent">Maxsus % (Foiz)</option>
-                                                    <option value="fixed">Maxsus Summa (Fixed)</option>
-                                                </select>
-                                            </div>
-                                            {newProduct.cashback_type !== 'global' && (
-                                                <div className="space-y-2 animate-in zoom-in-95 duration-300">
-                                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">
-                                                        {newProduct.cashback_type === 'percent' ? 'Foiz (%)' : 'Summa (so\'m)'}
-                                                    </label>
-                                                    <div className="relative">
-                                                        <input
-                                                            type="number"
-                                                            value={newProduct.cashback_value || ""}
-                                                            onChange={e => setNewProduct({ ...newProduct, cashback_value: Number(e.target.value) })}
-                                                            className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm text-black pr-10"
-                                                            placeholder="0"
-                                                        />
-                                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-black">
-                                                            {newProduct.cashback_type === 'percent' ? '%' : '∑'}
-                                                        </span>
+                            return (
+                                <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-6 md:p-8 text-black flex flex-col justify-between">
+                                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-10">
+                                        {/* LEFT COLUMN: 60% (7 cols) - Content & Media */}
+                                        <div className="lg:col-span-7 space-y-6">
+                                            {/* Card 1: Asosiy Ma'lumotlar */}
+                                            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-5">
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-8 h-8 bg-black text-white rounded-xl flex items-center justify-center shadow-md">
+                                                        <Package size={16} />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-xs font-black uppercase tracking-wider text-black">Asosiy Ma'lumotlar</h4>
+                                                        <p className="text-[9px] text-gray-400 font-bold uppercase">Nomi, brend va toifasi</p>
                                                     </div>
                                                 </div>
-                                            )}
-                                        </div>
-                                    </div>
 
-                                    {/* MLM Commission Sub-Section */}
-                                    <div className="bg-purple-50/40 p-8 rounded-[40px] border border-purple-100 space-y-6">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className="w-8 h-8 bg-purple-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
-                                                <Sparkles size={16} />
-                                            </div>
-                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-purple-600">Hamkorlik Komissiyasi (%)</h4>
-                                        </div>
-                                        
-                                        <div className="grid grid-cols-3 gap-4">
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Sotuvchi (%)</label>
-                                                <input
-                                                    type="number"
-                                                    value={newProduct.comm_seller || ""}
-                                                    onChange={e => setNewProduct({ ...newProduct, comm_seller: Number(e.target.value) })}
-                                                    className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-purple-500 outline-none shadow-sm text-black"
-                                                    placeholder="5"
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Manager (%)</label>
-                                                <input
-                                                    type="number"
-                                                    value={newProduct.comm_manager || ""}
-                                                    onChange={e => setNewProduct({ ...newProduct, comm_manager: Number(e.target.value) })}
-                                                    className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-purple-500 outline-none shadow-sm text-black"
-                                                    placeholder="2"
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Top Manager (%)</label>
-                                                <input
-                                                    type="number"
-                                                    value={newProduct.comm_tm || ""}
-                                                    onChange={e => setNewProduct({ ...newProduct, comm_tm: Number(e.target.value) })}
-                                                    className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-purple-500 outline-none shadow-sm text-black"
-                                                    placeholder="1"
-                                                />
-                                            </div>
-                                        </div>
-                                        <p className="text-[8px] font-medium text-gray-400 uppercase italic px-2">
-                                            * Foizlar mahsulot narxidan kelib chiqib hisoblanadi.
-                                        </p>
-                                    </div>
-                                    <div className="space-y-4">
-                                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 italic">Tovar Toifasi (Uzum Market uslubida)</label>
-
-                                        <div className="space-y-3">
-                                            {/* Level 1 dropdown */}
-                                            <div className="relative">
-                                                <select
-                                                    value={productSelectionPath[0] || ""}
-                                                    onChange={(e) => {
-                                                        const val = e.target.value;
-                                                        setProductSelectionPath(val ? [val] : []);
-                                                        setNewProduct({ ...newProduct, category: val });
-                                                    }}
-                                                    className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-black outline-none appearance-none cursor-pointer shadow-sm"
-                                                >
-                                                    <option value="">Toifani tanlang...</option>
-                                                    {rawCategories
-                                                        .filter(c => (!c.parent_id || c.parent_id === "none") && !c.is_deleted)
-                                                        .map(cat => (
-                                                            <option key={cat.id} value={cat.id}>{cat.name_uz || cat.name}</option>
-                                                        ))}
-                                                </select>
-                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" size={18} />
-                                            </div>
-
-                                            {/* Subsequent Levels */}
-                                            {productSelectionPath.map((selectedId, idx) => {
-                                                const children = rawCategories.filter(c => c.parent_id === selectedId && !c.is_deleted);
-                                                if (children.length === 0) return null;
-
-                                                return (
-                                                    <div key={idx} className="pl-4 border-l-2 border-gray-100 space-y-3 animate-in fade-in slide-in-from-left-2 duration-300">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div className="space-y-1.5 relative">
+                                                        <div className="flex justify-between items-center mr-1">
+                                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Nomi (UZ)*</label>
+                                                            <button
+                                                                type="button"
+                                                                onClick={handleAiVision}
+                                                                disabled={isActionLoading || !newProduct.image}
+                                                                className="flex items-center gap-1.5 px-2.5 py-1 bg-black text-white rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-gray-800 transition-all disabled:opacity-30 shadow-sm"
+                                                            >
+                                                                {isActionLoading ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
+                                                                Vision AI
+                                                            </button>
+                                                        </div>
+                                                        <input
+                                                            required
+                                                            value={newProduct.name_uz || ""}
+                                                            onChange={e => setNewProduct({ ...newProduct, name_uz: e.target.value, name: e.target.value })}
+                                                            className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3.5 px-5 text-sm font-bold focus:ring-2 focus:ring-black outline-none shadow-sm"
+                                                            placeholder="Masalan: iPhone 15 Pro Max"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1 italic">Mahsulot Brendi</label>
                                                         <div className="relative">
                                                             <select
-                                                                value={productSelectionPath[idx + 1] || ""}
-                                                                onChange={(e) => {
-                                                                    const val = e.target.value;
-                                                                    const newPath = productSelectionPath.slice(0, idx + 1);
-                                                                    if (val) {
-                                                                        newPath.push(val);
-                                                                        setNewProduct({ ...newProduct, category: val });
-                                                                    } else {
-                                                                        setNewProduct({ ...newProduct, category: selectedId });
-                                                                    }
-                                                                    setProductSelectionPath(newPath);
-                                                                }}
-                                                                className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-black outline-none appearance-none cursor-pointer shadow-sm"
+                                                                value={newProduct.brand || ""}
+                                                                onChange={e => setNewProduct({ ...newProduct, brand: e.target.value })}
+                                                                className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3.5 px-5 text-sm font-bold focus:ring-2 focus:ring-black outline-none appearance-none cursor-pointer shadow-sm text-black"
                                                             >
-                                                                <option value="">Ichki toifani tanlang...</option>
-                                                                {children.map(cat => (
-                                                                    <option key={cat.id} value={cat.id}>{cat.name_uz || cat.name}</option>
+                                                                <option value="">Brendni tanlang...</option>
+                                                                {brands.map(brand => (
+                                                                    <option key={brand.id} value={brand.id}>{brand.name}</option>
                                                                 ))}
                                                             </select>
                                                             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" size={18} />
                                                         </div>
                                                     </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
+                                                </div>
 
-                                    {/* Xususiyatlar (Parametrlar) — Yandex Market uslubida */}
-                                    {newProduct.category && (
-                                        <ProductParamsEditor
-                                            categoryId={newProduct.category}
-                                            productId={newProduct.id}
-                                            paramValues={paramValues}
-                                            onParamValuesChange={setParamValues}
-                                        />
-                                    )}
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Название (RU)*</label>
+                                                        <input
+                                                            required
+                                                            value={newProduct.name_ru || ""}
+                                                            onChange={e => setNewProduct({ ...newProduct, name_ru: e.target.value })}
+                                                            className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3.5 px-5 text-sm font-bold focus:ring-2 focus:ring-black outline-none shadow-sm text-black"
+                                                            placeholder="Например: Смартфон iPhone 15 Pro"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1 italic">Model</label>
+                                                        <input
+                                                            value={newProduct.model || ""}
+                                                            onChange={e => setNewProduct({ ...newProduct, model: e.target.value })}
+                                                            className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3.5 px-5 text-sm font-bold focus:ring-2 focus:ring-black outline-none shadow-sm text-black"
+                                                            placeholder="Masalan: A3106 / VGR-V937"
+                                                        />
+                                                    </div>
+                                                </div>
 
-                                    <div className="bg-white p-6 rounded-[32px] border border-gray-100 flex items-center justify-between shadow-sm">
-                                        <div>
-                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-black">Original Sifat</h4>
-                                            <p className="text-[8px] text-gray-400 font-bold uppercase mt-1 italic">"Original" belgisini ko'rsatish</p>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setNewProduct({ ...newProduct, isOriginal: !newProduct.isOriginal })}
-                                            className={`w-14 h-8 rounded-full transition-all relative flex items-center ${newProduct.isOriginal ? "bg-green-500" : "bg-gray-200"}`}
-                                        >
-                                            <div className={`absolute w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-sm ${newProduct.isOriginal ? "left-[28px]" : "left-1"}`} />
-                                        </button>
-                                    </div>
-                                    <div className="pt-4 border-t border-gray-50 mt-6 bg-gray-50/50 p-6 rounded-[32px] space-y-4">
-                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-black mb-4">Guruhlash va SKU (Unikal)</h4>
-                                        <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Mahsulot SKU kod</label>
-                                            <input
-                                                required
-                                                type="text"
-                                                value={newProduct.sku}
-                                                onChange={(e) => setNewProduct({ ...newProduct, sku: e.target.value })}
-                                                placeholder="Masalan: VGR-706-BLUE"
-                                                className="w-full bg-white border-none rounded-2xl py-3 px-5 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all shadow-sm"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Guruh SKU (GroupId) - 100 tagacha</label>
-                                            <input
-                                                type="text"
-                                                value={newProduct.groupId}
-                                                onChange={(e) => setNewProduct({ ...newProduct, groupId: e.target.value })}
-                                                placeholder="Masalan: VGR-706-GROUP"
-                                                className="w-full bg-white border-none rounded-2xl py-3 px-5 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all shadow-sm"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Rang yoki Variant nomi</label>
-                                            <input
-                                                type="text"
-                                                value={newProduct.colorName}
-                                                onChange={(e) => setNewProduct({ ...newProduct, colorName: e.target.value })}
-                                                placeholder="Masalan: Och ko'k"
-                                                className="w-full bg-white border-none rounded-2xl py-3 px-5 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all shadow-sm"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex justify-between items-center">
-                                                <span>Video havola (URL)</span>
-                                                {isUploading && <Loader2 className="animate-spin text-black" size={14} />}
-                                            </label>
-                                            <div className="flex gap-3">
-                                                <input
-                                                    type="text"
-                                                    value={newProduct.videoUrl}
-                                                    onChange={(e) => setNewProduct({ ...newProduct, videoUrl: e.target.value })}
-                                                    placeholder="URL yoki Kompyuterdan yuklang"
-                                                    className="flex-1 bg-white border-none rounded-2xl py-3 px-5 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all shadow-sm"
-                                                />
-                                                <label className={`w-12 h-12 flex items-center justify-center rounded-2xl border-2 border-dashed transition-all cursor-pointer shadow-sm ${isUploading ? 'bg-gray-50 border-gray-200' : 'bg-white border-gray-200 hover:border-black'}`}>
-                                                    <Video size={18} className={isUploading ? 'text-gray-300' : 'text-gray-500'} />
-                                                    <input
-                                                        type="file"
-                                                        className="hidden"
-                                                        onChange={handleVideoUpload}
-                                                        accept="video/*"
-                                                        disabled={isUploading}
-                                                    />
-                                                </label>
+                                                {/* Kaskadli Toifa Tanlash */}
+                                                <div className="space-y-3 pt-2">
+                                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest italic">
+                                                        Tovar Toifasi (Uzum Market uslubida kaskadli)
+                                                    </label>
+                                                    <div className="space-y-3">
+                                                        {/* Level 1 dropdown */}
+                                                        <div className="relative">
+                                                            <select
+                                                                value={productSelectionPath[0] || ""}
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value;
+                                                                    setProductSelectionPath(val ? [val] : []);
+                                                                    setNewProduct({ ...newProduct, category: val });
+                                                                }}
+                                                                className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3.5 px-5 text-sm font-bold focus:ring-2 focus:ring-black outline-none appearance-none cursor-pointer shadow-sm"
+                                                            >
+                                                                <option value="">Bosh toifani tanlang...</option>
+                                                                {rawCategories
+                                                                    .filter(c => (!c.parent_id || c.parent_id === "none") && !c.is_deleted)
+                                                                    .map(cat => (
+                                                                        <option key={cat.id} value={cat.id}>{cat.name_uz || cat.name}</option>
+                                                                    ))}
+                                                            </select>
+                                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" size={18} />
+                                                        </div>
+
+                                                        {/* Subsequent Levels */}
+                                                        {productSelectionPath.map((selectedId, idx) => {
+                                                            const children = rawCategories.filter(c => c.parent_id === selectedId && !c.is_deleted);
+                                                            if (children.length === 0) return null;
+
+                                                            return (
+                                                                <div key={idx} className="pl-4 border-l-2 border-emerald-500/30 space-y-3 animate-in fade-in slide-in-from-left-2 duration-300">
+                                                                    <div className="relative">
+                                                                        <select
+                                                                            value={productSelectionPath[idx + 1] || ""}
+                                                                            onChange={(e) => {
+                                                                                const val = e.target.value;
+                                                                                const newPath = productSelectionPath.slice(0, idx + 1);
+                                                                                if (val) {
+                                                                                    newPath.push(val);
+                                                                                    setNewProduct({ ...newProduct, category: val });
+                                                                                } else {
+                                                                                    setNewProduct({ ...newProduct, category: selectedId });
+                                                                                }
+                                                                                setProductSelectionPath(newPath);
+                                                                            }}
+                                                                            className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3.5 px-5 text-sm font-bold focus:ring-2 focus:ring-black outline-none appearance-none cursor-pointer shadow-sm"
+                                                                        >
+                                                                            <option value="">Ichki toifani tanlang...</option>
+                                                                            {children.map(cat => (
+                                                                                <option key={cat.id} value={cat.id}>{cat.name_uz || cat.name}</option>
+                                                                            ))}
+                                                                        </select>
+                                                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" size={18} />
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
                                             </div>
-                                            {newProduct.videoUrl && (
-                                                <p className="text-[7px] font-black text-green-500 uppercase mt-2 tracking-widest italic flex items-center gap-1">
-                                                    <div className="w-1 h-1 bg-green-500 rounded-full" /> Video biriktirildi
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="space-y-6">
-                                    <div className="space-y-4">
-                                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex justify-between items-center">
-                                            <span>Mahsulot Rasmlari (Max 30)</span>
-                                            <span className="text-gray-300 italic">{newProduct.images?.length || 0} / 30</span>
-                                        </label>
 
-                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                            {newProduct.images?.map((img, idx) => (
-                                                <div 
-                                                    key={idx} 
-                                                    draggable
-                                                    onDragStart={() => setDraggedImgIdx(idx)}
-                                                    onDragOver={(e) => e.preventDefault()}
-                                                    onDrop={(e) => {
-                                                        e.preventDefault();
-                                                        if (draggedImgIdx === null || draggedImgIdx === idx) return;
-                                                        
-                                                        const newImages = [...(newProduct.images || [])];
-                                                        const draggedImg = newImages[draggedImgIdx];
-                                                        
-                                                        // Remove dragged image
-                                                        newImages.splice(draggedImgIdx, 1);
-                                                        // Insert at new position
-                                                        newImages.splice(idx, 0, draggedImg);
-                                                        
-                                                        setNewProduct({
-                                                            ...newProduct,
-                                                            images: newImages,
-                                                            image: newImages[0] || "",
-                                                            images_string: newImages.join(';')
-                                                        });
-                                                        setDraggedImgIdx(null);
-                                                    }}
-                                                    className="relative aspect-square rounded-2xl overflow-hidden group border-2 border-gray-50 bg-white shadow-sm cursor-move hover:border-emerald-400 transition-colors"
-                                                >
-                                                    <img src={img} className="w-full h-full object-cover pointer-events-none" referrerPolicy="no-referrer" />
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            const newImages = [...(newProduct.images || [])];
-                                                            newImages.splice(idx, 1);
-                                                            setNewProduct({
-                                                                ...newProduct,
-                                                                images: newImages,
-                                                                image: newImages[0] || "",
-                                                                images_string: newImages.join(';')
-                                                            });
-                                                        }}
-                                                        className="absolute inset-0 bg-red-500/80 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm"
-                                                    >
-                                                        <Trash2 size={30} />
-                                                    </button>
-                                                    {idx === 0 && (
-                                                        <div className="absolute top-3 left-3 bg-black text-white text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-widest shadow-lg">Asosiy</div>
+                                            {/* Card 2: Mahsulot Rasmlari & Video */}
+                                            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-5">
+                                                <div className="flex items-center justify-between flex-wrap gap-2">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className="w-8 h-8 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-md shadow-emerald-500/20">
+                                                            <ImageIcon size={16} />
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="text-xs font-black uppercase tracking-wider text-black">Mahsulot Rasmlari (Max 30)</h4>
+                                                            <p className="text-[9px] text-gray-400 font-bold uppercase">{newProduct.images?.length || 0} / 30 ta yuklangan</p>
+                                                        </div>
+                                                    </div>
+                                                    <span className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 border border-emerald-200/50">
+                                                        <CheckCircle2 size={12} /> ⚡ WebP Optimizatsiya
+                                                    </span>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
+                                                    {newProduct.images?.map((img, idx) => (
+                                                        <div 
+                                                            key={idx} 
+                                                            draggable
+                                                            onDragStart={() => setDraggedImgIdx(idx)}
+                                                            onDragOver={(e) => e.preventDefault()}
+                                                            onDrop={(e) => {
+                                                                e.preventDefault();
+                                                                if (draggedImgIdx === null || draggedImgIdx === idx) return;
+                                                                
+                                                                const newImages = [...(newProduct.images || [])];
+                                                                const draggedImg = newImages[draggedImgIdx];
+                                                                
+                                                                newImages.splice(draggedImgIdx, 1);
+                                                                newImages.splice(idx, 0, draggedImg);
+                                                                
+                                                                setNewProduct({
+                                                                    ...newProduct,
+                                                                    images: newImages,
+                                                                    image: newImages[0] || "",
+                                                                    images_string: newImages.join(';')
+                                                                });
+                                                                setDraggedImgIdx(null);
+                                                            }}
+                                                            className="relative aspect-square rounded-2xl overflow-hidden group border-2 border-gray-100 bg-gray-50 shadow-sm cursor-move hover:border-emerald-500 transition-all"
+                                                        >
+                                                            <img src={img} alt={`Product ${idx}`} className="w-full h-full object-cover pointer-events-none" referrerPolicy="no-referrer" />
+                                                            
+                                                            {/* Action overlay */}
+                                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all backdrop-blur-xs flex items-center justify-center gap-2 p-2">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setPreviewImage(img);
+                                                                    }}
+                                                                    className="w-9 h-9 bg-white/90 hover:bg-white text-black rounded-xl flex items-center justify-center transition-transform hover:scale-110 shadow-lg"
+                                                                    title="Kattalashtirib ko'rish"
+                                                                >
+                                                                    <Eye size={16} />
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        const newImages = [...(newProduct.images || [])];
+                                                                        newImages.splice(idx, 1);
+                                                                        setNewProduct({
+                                                                            ...newProduct,
+                                                                            images: newImages,
+                                                                            image: newImages[0] || "",
+                                                                            images_string: newImages.join(';')
+                                                                        });
+                                                                    }}
+                                                                    className="w-9 h-9 bg-rose-500 hover:bg-rose-600 text-white rounded-xl flex items-center justify-center transition-transform hover:scale-110 shadow-lg"
+                                                                    title="O'chirish"
+                                                                >
+                                                                    <Trash2 size={16} />
+                                                                </button>
+                                                            </div>
+
+                                                            {idx === 0 && (
+                                                                <div className="absolute top-2 left-2 bg-black text-white text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-md">
+                                                                    Asosiy
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                    {(!newProduct.images || newProduct.images.length < 30) && (
+                                                        <div className={`relative aspect-square rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 hover:border-black hover:bg-gray-50/50 transition-all group ${isUploading ? 'bg-gray-50' : 'bg-white cursor-pointer'}`}>
+                                                            {isUploading ? (
+                                                                <div className="flex flex-col items-center gap-1.5">
+                                                                    <Loader2 className="animate-spin text-black" size={22} />
+                                                                    <span className="text-[8px] font-black text-gray-400 uppercase">Yuklanmoqda</span>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                                        <Plus size={20} className="text-gray-500 group-hover:text-black" />
+                                                                    </div>
+                                                                    <span className="text-[9px] font-black uppercase tracking-wider text-gray-500 group-hover:text-black">Rasm qo'shish</span>
+                                                                    <input
+                                                                        type="file"
+                                                                        className="absolute inset-0 opacity-0 cursor-pointer"
+                                                                        onChange={(e) => handleFileUpload(e, true)}
+                                                                        accept="image/*"
+                                                                        disabled={isUploading}
+                                                                    />
+                                                                </>
+                                                            )}
+                                                        </div>
                                                     )}
                                                 </div>
-                                            ))}
-                                            {(!newProduct.images || newProduct.images.length < 30) && (
-                                                <div className={`relative aspect-square rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 hover:border-black transition-all group ${isUploading ? 'bg-gray-50' : 'bg-white cursor-pointer'}`}>
-                                                    {isUploading ? (
-                                                        <div className="flex flex-col items-center gap-1">
-                                                            <Loader2 className="animate-spin text-black" size={20} />
-                                                            <span className="text-[6px] font-black text-gray-400 uppercase">Yuklanmoqda</span>
-                                                        </div>
-                                                    ) : (
-                                                        <>
-                                                            <Plus size={20} className="text-gray-400 group-hover:text-black transition-colors" />
-                                                            <span className="text-[7px] font-black uppercase tracking-widest text-gray-400 group-hover:text-black transition-colors">Yangi qo'shish</span>
+
+                                                {/* Video Upload & URL */}
+                                                <div className="pt-3 border-t border-gray-100 space-y-2">
+                                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest flex justify-between items-center">
+                                                        <span>Mahsulot Videosi (URL yoki Fayl)</span>
+                                                        {isUploading && <Loader2 className="animate-spin text-black" size={14} />}
+                                                    </label>
+                                                    <div className="flex gap-3">
+                                                        <input
+                                                            type="text"
+                                                            value={newProduct.videoUrl || ""}
+                                                            onChange={(e) => setNewProduct({ ...newProduct, videoUrl: e.target.value })}
+                                                            placeholder="Video URL yoki tugma orqali yuklang"
+                                                            className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl py-3 px-5 text-xs font-bold focus:ring-2 focus:ring-black outline-none transition-all shadow-sm"
+                                                        />
+                                                        <label className={`w-12 h-12 flex items-center justify-center rounded-2xl border-2 border-dashed transition-all cursor-pointer shrink-0 shadow-sm ${isUploading ? 'bg-gray-50 border-gray-200' : 'bg-white border-gray-200 hover:border-black'}`}>
+                                                            <Video size={18} className={isUploading ? 'text-gray-300' : 'text-gray-500'} />
                                                             <input
                                                                 type="file"
-                                                                className="absolute inset-0 opacity-0 cursor-pointer"
-                                                                onChange={(e) => handleFileUpload(e, true)}
-                                                                accept="image/*"
+                                                                className="hidden"
+                                                                onChange={handleVideoUpload}
+                                                                accept="video/*"
                                                                 disabled={isUploading}
                                                             />
-                                                        </>
+                                                        </label>
+                                                    </div>
+                                                    {newProduct.videoUrl && (
+                                                        <p className="text-[8px] font-black text-emerald-600 uppercase tracking-wider flex items-center gap-1.5 pt-1">
+                                                            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" /> Video biriktirildi
+                                                        </p>
                                                     )}
+                                                </div>
+                                            </div>
+
+                                            {/* Card 3: Mahsulot Tavsiflari & AI Copywriting Toolbar */}
+                                            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-6">
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-8 h-8 bg-violet-600 text-white rounded-xl flex items-center justify-center shadow-md shadow-violet-600/20">
+                                                        <Wand2 size={16} />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-xs font-black uppercase tracking-wider text-black">Mahsulot Tavsiflari</h4>
+                                                        <p className="text-[9px] text-gray-400 font-bold uppercase">AI Yordamchi Kopirayter bilan</p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Tavsif UZ */}
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center justify-between flex-wrap gap-2">
+                                                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider">Tavsif (UZ)</label>
+                                                        {/* AI Copywriting Toolbar (UZ) */}
+                                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                                            <button
+                                                                type="button"
+                                                                disabled={!!refiningField || !newProduct.description_uz}
+                                                                onClick={() => handleRefineText('uz', 'enhance')}
+                                                                className="flex items-center gap-1 px-2.5 py-1 bg-violet-50 text-violet-700 hover:bg-violet-100 rounded-lg text-[9px] font-bold transition-all disabled:opacity-40"
+                                                                title="Matnni yanada jozibador va xaridorgir qilish"
+                                                            >
+                                                                {refiningField?.field === 'uz' && refiningField.mode === 'enhance' ? <Loader2 size={11} className="animate-spin" /> : <Wand2 size={11} />}
+                                                                <span>Jozibador qilish</span>
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                disabled={!!refiningField || !newProduct.description_uz}
+                                                                onClick={() => handleRefineText('uz', 'bullets')}
+                                                                className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-[9px] font-bold transition-all disabled:opacity-40"
+                                                                title="Matnni xususiyatlar bo'yicha punktlarga ajratish"
+                                                            >
+                                                                {refiningField?.field === 'uz' && refiningField.mode === 'bullets' ? <Loader2 size={11} className="animate-spin" /> : <List size={11} />}
+                                                                <span>Punktlar</span>
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                disabled={!!refiningField || !newProduct.description_uz}
+                                                                onClick={() => handleRefineText('uz', 'fix_grammar')}
+                                                                className="flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-[9px] font-bold transition-all disabled:opacity-40"
+                                                                title="Imlo va tinish belgilarini to'g'rilash"
+                                                            >
+                                                                {refiningField?.field === 'uz' && refiningField.mode === 'fix_grammar' ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle2 size={11} />}
+                                                                <span>Imlo</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <textarea
+                                                        rows={4}
+                                                        value={newProduct.description_uz || ""}
+                                                        onChange={(e) => setNewProduct({ ...newProduct, description_uz: e.target.value, description: e.target.value })}
+                                                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3.5 px-5 text-sm font-medium focus:ring-2 focus:ring-black outline-none transition-all shadow-sm resize-y"
+                                                        placeholder="Batafsil ma'lumot (UZ)..."
+                                                    />
+                                                </div>
+
+                                                {/* Описание RU */}
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center justify-between flex-wrap gap-2">
+                                                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider">Описание (RU)</label>
+                                                        {/* AI Copywriting Toolbar (RU) */}
+                                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                                            <button
+                                                                type="button"
+                                                                disabled={!!refiningField || !newProduct.description_ru}
+                                                                onClick={() => handleRefineText('ru', 'enhance')}
+                                                                className="flex items-center gap-1 px-2.5 py-1 bg-violet-50 text-violet-700 hover:bg-violet-100 rounded-lg text-[9px] font-bold transition-all disabled:opacity-40"
+                                                                title="Сделать описание более продающим и привлекательным"
+                                                            >
+                                                                {refiningField?.field === 'ru' && refiningField.mode === 'enhance' ? <Loader2 size={11} className="animate-spin" /> : <Wand2 size={11} />}
+                                                                <span>Улучшить</span>
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                disabled={!!refiningField || !newProduct.description_ru}
+                                                                onClick={() => handleRefineText('ru', 'bullets')}
+                                                                className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-[9px] font-bold transition-all disabled:opacity-40"
+                                                                title="Разбить по пунктам"
+                                                            >
+                                                                {refiningField?.field === 'ru' && refiningField.mode === 'bullets' ? <Loader2 size={11} className="animate-spin" /> : <List size={11} />}
+                                                                <span>Пункты</span>
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                disabled={!!refiningField || !newProduct.description_ru}
+                                                                onClick={() => handleRefineText('ru', 'fix_grammar')}
+                                                                className="flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-[9px] font-bold transition-all disabled:opacity-40"
+                                                                title="Исправить грамматику и пунктуацию"
+                                                            >
+                                                                {refiningField?.field === 'ru' && refiningField.mode === 'fix_grammar' ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle2 size={12} />}
+                                                                <span>Грамматика</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <textarea
+                                                        rows={4}
+                                                        value={newProduct.description_ru || ""}
+                                                        onChange={(e) => setNewProduct({ ...newProduct, description_ru: e.target.value })}
+                                                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3.5 px-5 text-sm font-medium focus:ring-2 focus:ring-black outline-none transition-all shadow-sm resize-y"
+                                                        placeholder="Описание товара (RU)..."
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Card 4: Google SERP Preview */}
+                                            <div className="bg-gradient-to-br from-gray-50 to-blue-50/20 p-5 rounded-3xl border border-gray-100 space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-sm">
+                                                            <Globe size={13} className="text-blue-600" />
+                                                        </div>
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Google Qidiruv Ko'rinishi (SERP Preview)</span>
+                                                    </div>
+                                                    <span className="text-[9px] font-bold px-2 py-0.5 bg-blue-100/60 text-blue-700 rounded-full">Jonli Snippet</span>
+                                                </div>
+                                                <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-1">
+                                                    <div className="flex items-center gap-1.5 text-[11px] text-gray-500 truncate">
+                                                        <span className="text-gray-700 font-medium">https://velari.uz</span>
+                                                        <span>›</span>
+                                                        <span>products</span>
+                                                        <span>›</span>
+                                                        <span className="text-gray-400 truncate">{newProduct.name_uz ? getProductSlug(newProduct.name_uz) : 'product-slug'}</span>
+                                                    </div>
+                                                    <h4 className="text-sm font-semibold text-[#1a0dab] hover:underline cursor-pointer line-clamp-1 leading-snug">
+                                                        {newProduct.name_uz || newProduct.name || "Mahsulot nomi kiritilmagan"} - eng qulay narxda | Velari.uz
+                                                    </h4>
+                                                    <p className="text-xs text-[#4d5156] line-clamp-2 leading-relaxed">
+                                                        {newProduct.description_uz || newProduct.description
+                                                            ? (newProduct.description_uz || newProduct.description)?.replace(/<[^>]*>?/gm, '').slice(0, 160) + "..."
+                                                            : "Tavsif yozilmagan. Mahsulot haqida ma'lumot, rasmlar, xususiyatlari va yetkazib berish xizmati bilan Velari online do'konida tanishing."}
+                                                    </p>
+                                                    {sellingPrice > 0 && (
+                                                        <div className="pt-1.5 flex items-center gap-2 text-[11px] text-emerald-700 font-bold">
+                                                            <span>Narxi: {sellingPrice.toLocaleString()} so'm</span>
+                                                            <span className="text-gray-300">•</span>
+                                                            <span className="text-gray-500 font-normal">Mavjud: Do'konda</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Card 5: Kategoriya Parametrlari — Yandex Market uslubida */}
+                                            {newProduct.category && (
+                                                <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                                                    <ProductParamsEditor
+                                                        categoryId={newProduct.category}
+                                                        productId={newProduct.id}
+                                                        paramValues={paramValues}
+                                                        onParamValuesChange={setParamValues}
+                                                    />
                                                 </div>
                                             )}
                                         </div>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Tavsif (UZ)</label>
-                                            <textarea
-                                                rows={4}
-                                                value={newProduct.description_uz}
-                                                onChange={(e) => setNewProduct({ ...newProduct, description_uz: e.target.value, description: e.target.value })}
-                                                className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all shadow-sm resize-none"
-                                                placeholder="Batafsil ma'lumot (UZ)..."
-                                            ></textarea>
+
+                                        {/* RIGHT COLUMN: 40% (5 cols) - Pricing, Profit Calc & SKU Specs */}
+                                        <div className="lg:col-span-5 space-y-6">
+                                            {/* Card 1: Narxlar va Jonli Foyda/Marja Kalkulyatori */}
+                                            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-5">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className="w-8 h-8 bg-blue-500 text-white rounded-xl flex items-center justify-center shadow-md shadow-blue-500/20">
+                                                            <TrendingUp size={16} />
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="text-xs font-black uppercase tracking-wider text-black">Narx & Marja Kalkulyatori</h4>
+                                                            <p className="text-[9px] text-gray-400 font-bold uppercase">Jonli moliyaviy hisob-kitob</p>
+                                                        </div>
+                                                    </div>
+                                                    {discountPercent > 0 && (
+                                                        <span className="px-2.5 py-1 bg-rose-500 text-white text-[10px] font-black rounded-full uppercase tracking-wider animate-pulse">
+                                                            -{discountPercent}% Chegirma
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div className="space-y-1">
+                                                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider">Sotuv Narxi (so'm)*</label>
+                                                        <input
+                                                            required
+                                                            type="number"
+                                                            value={newProduct.price || ""}
+                                                            onChange={(e) => setNewProduct({ ...newProduct, price: Number(e.target.value) })}
+                                                            placeholder="100 000"
+                                                            className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 text-sm font-black focus:ring-2 focus:ring-black outline-none transition-all shadow-inner"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider">Eski Narx (so'm)</label>
+                                                        <input
+                                                            type="number"
+                                                            value={newProduct.oldPrice || ""}
+                                                            onChange={(e) => setNewProduct({ ...newProduct, oldPrice: e.target.value ? Number(e.target.value) : 0 })}
+                                                            placeholder="0 bo'lsa yo'q"
+                                                            className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <label className="block text-[10px] font-black text-amber-600 uppercase tracking-wider">Tannarx (so'm)</label>
+                                                        <input
+                                                            type="number"
+                                                            value={newProduct.cost_price || ""}
+                                                            onChange={(e) => setNewProduct({ ...newProduct, cost_price: e.target.value ? Number(e.target.value) : 0 })}
+                                                            placeholder="Masalan: 60 000"
+                                                            className="w-full bg-amber-50/40 border border-amber-100 rounded-xl py-3 px-4 text-sm font-bold focus:ring-2 focus:ring-amber-500 outline-none transition-all"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <label className="block text-[10px] font-black text-amber-600 uppercase tracking-wider">Qo'shimcha Xarajat</label>
+                                                        <input
+                                                            type="number"
+                                                            value={newProduct.additional_expenses || ""}
+                                                            onChange={(e) => setNewProduct({ ...newProduct, additional_expenses: e.target.value ? Number(e.target.value) : 0 })}
+                                                            placeholder="Yetkazish, qadoq..."
+                                                            className="w-full bg-amber-50/40 border border-amber-100 rounded-xl py-3 px-4 text-sm font-bold focus:ring-2 focus:ring-amber-500 outline-none transition-all"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Live Summary Box */}
+                                                <div className="p-4 rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 text-white space-y-3 shadow-lg">
+                                                    <div className="flex items-center justify-between text-xs">
+                                                        <span className="text-gray-400 uppercase font-black tracking-wider text-[10px]">Jami Xarajat:</span>
+                                                        <span className="font-bold text-gray-200">{totalCost.toLocaleString()} so'm</span>
+                                                    </div>
+                                                    <div className="h-px bg-white/10" />
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <span className="block text-[9px] font-black uppercase tracking-widest text-gray-400">Sof Foyda (dona)</span>
+                                                            <span className={`text-base font-black ${netProfit > 0 ? 'text-emerald-400' : netProfit < 0 ? 'text-rose-400' : 'text-gray-300'}`}>
+                                                                {netProfit > 0 ? '+' : ''}{netProfit.toLocaleString()} so'm
+                                                            </span>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <span className="block text-[9px] font-black uppercase tracking-widest text-gray-400">Rentabellik (Marja)</span>
+                                                            <span className={`text-base font-black ${marginPercent > 30 ? 'text-emerald-400' : marginPercent > 10 ? 'text-amber-400' : 'text-rose-400'}`}>
+                                                                {marginPercent}%
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Card 2: SKU, Guruhlash & Identifikatorlar */}
+                                            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-8 h-8 bg-indigo-500 text-white rounded-xl flex items-center justify-center shadow-md shadow-indigo-500/20">
+                                                        <Tag size={16} />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-xs font-black uppercase tracking-wider text-black">SKU va Identifikatorlar</h4>
+                                                        <p className="text-[9px] text-gray-400 font-bold uppercase">Mahsulot kodi va guruhlash</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Mahsulot SKU kod (Unikal)*</label>
+                                                        <input
+                                                            required
+                                                            type="text"
+                                                            value={newProduct.sku || ""}
+                                                            onChange={(e) => setNewProduct({ ...newProduct, sku: e.target.value })}
+                                                            placeholder="Masalan: VGR-706-BLUE"
+                                                            className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 text-xs font-bold focus:ring-2 focus:ring-black outline-none transition-all shadow-sm"
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <div>
+                                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Guruh SKU (GroupId)</label>
+                                                            <input
+                                                                type="text"
+                                                                value={newProduct.groupId || ""}
+                                                                onChange={(e) => setNewProduct({ ...newProduct, groupId: e.target.value })}
+                                                                placeholder="Masalan: VGR-706-GRP"
+                                                                className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 text-xs font-bold focus:ring-2 focus:ring-black outline-none transition-all shadow-sm"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Rang / Variant nomi</label>
+                                                            <input
+                                                                type="text"
+                                                                value={newProduct.colorName || ""}
+                                                                onChange={(e) => setNewProduct({ ...newProduct, colorName: e.target.value })}
+                                                                placeholder="Masalan: Qora matviy"
+                                                                className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 text-xs font-bold focus:ring-2 focus:ring-black outline-none transition-all shadow-sm"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Bar-kod (EAN)</label>
+                                                        <input
+                                                            value={newProduct.barcode || ""}
+                                                            onChange={e => setNewProduct({ ...newProduct, barcode: e.target.value })}
+                                                            className="w-full bg-blue-50/30 border border-blue-100 rounded-xl py-3 px-4 text-xs font-bold focus:ring-2 focus:ring-black outline-none shadow-sm text-black"
+                                                            placeholder="Masalan: 6970234567890"
+                                                        />
+                                                    </div>
+                                                    
+                                                    {/* Original Sifat Toggle */}
+                                                    <div className="pt-2">
+                                                        <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex items-center justify-between shadow-sm">
+                                                            <div>
+                                                                <h4 className="text-[10px] font-black uppercase tracking-widest text-black">Original Sifat</h4>
+                                                                <p className="text-[8px] text-gray-400 font-bold uppercase mt-0.5 italic">"Original" belgisini ko'rsatish</p>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setNewProduct({ ...newProduct, isOriginal: !newProduct.isOriginal })}
+                                                                className={`w-12 h-7 rounded-full transition-all relative flex items-center ${newProduct.isOriginal ? "bg-emerald-500" : "bg-gray-300"}`}
+                                                            >
+                                                                <div className={`absolute w-5 h-5 bg-white rounded-full transition-all duration-300 shadow-sm ${newProduct.isOriginal ? "left-[24px]" : "left-1"}`} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Card 3: Gabaritlar va Og'irlik */}
+                                            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-8 h-8 bg-amber-500 text-white rounded-xl flex items-center justify-center shadow-md shadow-amber-500/20">
+                                                        <Layers size={16} />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-xs font-black uppercase tracking-wider text-black">Gabaritlar & Og'irlik</h4>
+                                                        <p className="text-[9px] text-gray-400 font-bold uppercase">Yetkazib berish o'lchamlari</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1 italic">Og'irlik (gr)</label>
+                                                        <input
+                                                            value={newProduct.weight || ""}
+                                                            onChange={e => setNewProduct({ ...newProduct, weight: e.target.value })}
+                                                            className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 text-xs font-bold focus:ring-2 focus:ring-black outline-none shadow-sm text-black"
+                                                            placeholder="Masalan: 450"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1 italic">O'lchamlar (sm / mm)</label>
+                                                        <div className="grid grid-cols-3 gap-2 pt-1">
+                                                            <div className="space-y-1">
+                                                                <span className="text-[8px] font-black text-gray-400 uppercase ml-1">Balandlik</span>
+                                                                <input
+                                                                    value={newProduct.height || ""}
+                                                                    onChange={e => setNewProduct({ ...newProduct, height: e.target.value })}
+                                                                    className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2.5 px-3 text-xs font-bold focus:ring-2 focus:ring-black outline-none shadow-sm text-black"
+                                                                    placeholder="h"
+                                                                />
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <span className="text-[8px] font-black text-gray-400 uppercase ml-1">Kenglik</span>
+                                                                <input
+                                                                    value={newProduct.width || ""}
+                                                                    onChange={e => setNewProduct({ ...newProduct, width: e.target.value })}
+                                                                    className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2.5 px-3 text-xs font-bold focus:ring-2 focus:ring-black outline-none shadow-sm text-black"
+                                                                    placeholder="w"
+                                                                />
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <span className="text-[8px] font-black text-gray-400 uppercase ml-1">Uzunlik</span>
+                                                                <input
+                                                                    value={newProduct.length || ""}
+                                                                    onChange={e => setNewProduct({ ...newProduct, length: e.target.value })}
+                                                                    className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2.5 px-3 text-xs font-bold focus:ring-2 focus:ring-black outline-none shadow-sm text-black"
+                                                                    placeholder="l"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Card 4: Cashback Sozlamalari */}
+                                            <div className="bg-emerald-50/40 p-6 rounded-3xl border border-emerald-100 space-y-4">
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-8 h-8 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-md shadow-emerald-500/20">
+                                                        <DollarSign size={16} />
+                                                    </div>
+                                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Cashback Sozlamalari</h4>
+                                                </div>
+                                                
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div className="space-y-1">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Hisoblash turi</label>
+                                                        <select
+                                                            value={newProduct.cashback_type || "global"}
+                                                            onChange={e => setNewProduct({ ...newProduct, cashback_type: e.target.value as any })}
+                                                            className="w-full bg-white border border-emerald-100 rounded-xl py-3 px-4 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm text-black"
+                                                        >
+                                                            <option value="global">Global (%)</option>
+                                                            <option value="percent">Maxsus % (Foiz)</option>
+                                                            <option value="fixed">Maxsus Summa</option>
+                                                        </select>
+                                                    </div>
+                                                    {newProduct.cashback_type !== 'global' && (
+                                                        <div className="space-y-1 animate-in zoom-in-95 duration-200">
+                                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">
+                                                                {newProduct.cashback_type === 'percent' ? 'Foiz (%)' : 'Summa (so\'m)'}
+                                                            </label>
+                                                            <div className="relative">
+                                                                <input
+                                                                    type="number"
+                                                                    value={newProduct.cashback_value || ""}
+                                                                    onChange={e => setNewProduct({ ...newProduct, cashback_value: Number(e.target.value) })}
+                                                                    className="w-full bg-white border border-emerald-100 rounded-xl py-3 px-4 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm text-black pr-8"
+                                                                    placeholder="0"
+                                                                />
+                                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-black text-xs">
+                                                                    {newProduct.cashback_type === 'percent' ? '%' : '∑'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Card 5: Hamkorlik MLM Komissiyalari */}
+                                            <div className="bg-purple-50/40 p-6 rounded-3xl border border-purple-100 space-y-4">
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-8 h-8 bg-purple-500 text-white rounded-xl flex items-center justify-center shadow-md shadow-purple-500/20">
+                                                        <Sparkles size={16} />
+                                                    </div>
+                                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-purple-700">Hamkorlik Komissiyasi (%)</h4>
+                                                </div>
+                                                
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    <div className="space-y-1">
+                                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 ml-1">Sotuvchi (%)</label>
+                                                        <input
+                                                            type="number"
+                                                            value={newProduct.comm_seller || ""}
+                                                            onChange={e => setNewProduct({ ...newProduct, comm_seller: Number(e.target.value) })}
+                                                            className="w-full bg-white border border-purple-100 rounded-xl py-2.5 px-3 text-xs font-bold focus:ring-2 focus:ring-purple-500 outline-none shadow-sm text-black"
+                                                            placeholder="5"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 ml-1">Manager (%)</label>
+                                                        <input
+                                                            type="number"
+                                                            value={newProduct.comm_manager || ""}
+                                                            onChange={e => setNewProduct({ ...newProduct, comm_manager: Number(e.target.value) })}
+                                                            className="w-full bg-white border border-purple-100 rounded-xl py-2.5 px-3 text-xs font-bold focus:ring-2 focus:ring-purple-500 outline-none shadow-sm text-black"
+                                                            placeholder="2"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 ml-1">Top Mng (%)</label>
+                                                        <input
+                                                            type="number"
+                                                            value={newProduct.comm_tm || ""}
+                                                            onChange={e => setNewProduct({ ...newProduct, comm_tm: Number(e.target.value) })}
+                                                            className="w-full bg-white border border-purple-100 rounded-xl py-2.5 px-3 text-xs font-bold focus:ring-2 focus:ring-purple-500 outline-none shadow-sm text-black"
+                                                            placeholder="1"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <p className="text-[8px] font-medium text-gray-400 uppercase italic px-1">
+                                                    * Foizlar sotuv narxidan kelib chiqib avtomatik taqsimlanadi.
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Описание (RU)</label>
-                                            <textarea
-                                                rows={4}
-                                                value={newProduct.description_ru}
-                                                onChange={(e) => setNewProduct({ ...newProduct, description_ru: e.target.value })}
-                                                className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all shadow-sm resize-none"
-                                                placeholder="Описание товара (RU)..."
-                                            ></textarea>
-                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                            <div className="mt-10 flex justify-end gap-4 sticky bottom-0 bg-white/95 backdrop-blur-md py-4 border-t border-gray-100 -mx-8 -mb-8 px-8 z-30 shadow-lg shadow-black/5">
-                                <button
-                                    type="button"
-                                    onClick={() => { setIsModalOpen(false); setProductSelectionPath([]); }}
-                                    className="px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] text-gray-400 hover:text-black hover:bg-gray-50 transition-all"
+
+                                    {/* Modal Sticky Footer */}
+                                    <div className="mt-8 flex justify-end gap-4 sticky bottom-0 bg-white/95 backdrop-blur-md py-4 border-t border-gray-100 -mx-6 -mb-6 md:-mx-8 md:-mb-8 px-6 md:px-8 z-30 shadow-lg shadow-black/5">
+                                        <button
+                                            type="button"
+                                            onClick={() => { setIsModalOpen(false); setProductSelectionPath([]); }}
+                                            className="px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] text-gray-400 hover:text-black hover:bg-gray-50 transition-all"
+                                        >
+                                            Bekor qilish
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={isSaving}
+                                            className="bg-black text-white px-12 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-gray-900 transition-all shadow-2xl disabled:opacity-50 flex items-center gap-3 active:scale-95"
+                                        >
+                                            {isSaving ? <Loader2 className="animate-spin text-white" size={18} /> : (newProduct.id ? "Yangilash" : "Saqlash")}
+                                        </button>
+                                    </div>
+                                </form>
+                            );
+                        })()}
+                    </div>
+                </div>
+            )}
+
+            {/* High-Resolution Image Zoom Modal (Popup) */}
+            {previewImage && (
+                <div 
+                    className="fixed inset-0 bg-black/85 backdrop-blur-md z-[60] flex items-center justify-center p-4 animate-in fade-in duration-200" 
+                    onClick={() => setPreviewImage(null)}
+                >
+                    <div 
+                        className="relative max-w-4xl w-full bg-white rounded-3xl overflow-hidden shadow-2xl p-3 border border-gray-100" 
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="relative w-full h-[65vh] md:h-[75vh] flex items-center justify-center bg-gray-950 rounded-2xl overflow-hidden">
+                            <img 
+                                src={previewImage} 
+                                alt="Katta rasm" 
+                                className="max-w-full max-h-full object-contain" 
+                                referrerPolicy="no-referrer"
+                            />
+                        </div>
+                        <div className="flex items-center justify-between p-4 bg-white">
+                            <div className="flex items-center gap-3 flex-wrap">
+                                <span className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 border border-emerald-200">
+                                    <CheckCircle2 size={14} /> WebP S3 Faol
+                                </span>
+                                <a 
+                                    href={previewImage} 
+                                    target="_blank" 
+                                    rel="noreferrer" 
+                                    className="text-xs font-bold text-gray-500 hover:text-black flex items-center gap-1.5 underline"
                                 >
-                                    Bekor qilish
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={isSaving}
-                                    className="bg-black text-white px-12 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-gray-900 transition-all shadow-2xl disabled:opacity-50 flex items-center gap-3 active:scale-95"
-                                >
-                                    {isSaving ? <Loader2 className="animate-spin text-white" size={18} /> : (newProduct.id ? "Yangilash" : "Saqlash")}
-                                </button>
+                                    <ExternalLink size={13} /> Asl havolani yangi tabda ochish
+                                </a>
                             </div>
-                        </form>
+                            <button
+                                type="button"
+                                onClick={() => setPreviewImage(null)}
+                                className="px-6 py-2.5 bg-black text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-gray-800 transition-all shadow-md active:scale-95"
+                            >
+                                Yopish
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

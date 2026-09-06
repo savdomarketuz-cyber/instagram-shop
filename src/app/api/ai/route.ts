@@ -121,6 +121,33 @@ Quyidagi JSON strukturada qaytar:
             }
         }
 
+        // Copywriting / Text Refinement AI Logic
+        if (action === 'refine_text') {
+            const text = context?.text || '';
+            const mode = context?.mode || 'enhance';
+            const lang = context?.lang || 'uz';
+            const productName = context?.productName || '';
+
+            let instruction = "Ushbu mahsulot tavsifini yanada jozibali, xaridorni qiziqtiradigan professional marketing matniga aylantiring.";
+            if (mode === 'bullets') {
+                instruction = "Ushbu tavsifni xaridor o'qishiga juda qulay qilib asosiy afzalliklar va xususiyatlar punktlariga (bullet-points) ajratib bering.";
+            } else if (mode === 'fix_grammar') {
+                instruction = "Ushbu matnning barcha grammatik, imlo va tinish belgilaridagi xatolarini to'g'rilang.";
+            }
+
+            finalModel = "openai/gpt-oss-120b";
+            finalMessages = [
+                {
+                    role: 'system',
+                    content: `Siz professional elektron tijorat (Velari) kopirayterisiz. Til: ${lang === 'ru' ? 'Rus tili' : 'O\'zbek tili'}. FAQAT tayyor natija matnini qaytaring. Ortiqcha kirish yoki tushuntirish yozmang.`
+                },
+                {
+                    role: 'user',
+                    content: `Mahsulot: ${productName}\nVazifa: ${instruction}\nAsl matn:\n${text}`
+                }
+            ];
+        }
+
         const maxRetries = GROQ_API_KEYS.length;
         let attempts = 0;
 
