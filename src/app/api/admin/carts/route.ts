@@ -27,8 +27,8 @@ async function sendInAppMessage(phone: string, text: string) {
 
 // Foydalanuvchining qurilmasiga web-push (PWA) yuborish
 async function sendWebPushToPhone(phone: string, title: string, body: string, url: string) {
-    const pubKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-    const privKey = process.env.VAPID_PRIVATE_KEY;
+    const pubKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "BDjNKYY_cp8NDYQsowXfhIlfikWZmhCDTvFJOWubcNwvOW-LPnBH70sITFARnWBxHOOF-xuT3d3kuy9lkwzQKs8";
+    const privKey = process.env.VAPID_PRIVATE_KEY || "VFjEhX16DW3x3g8NyNIdbg9M_WJQgMPopMjTP9vKdew";
     if (!pubKey || !privKey || !phone) return;
     try {
         webpush.setVapidDetails("mailto:admin@velari.uz", pubKey, privKey);

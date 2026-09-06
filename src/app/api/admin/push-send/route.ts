@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     if (!(await verifyAdmin(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const pubKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "BDjNKYY_cp8NDYQsowXfhIlfikWZmhCDTvFJOWubcNwvOW-LPnBH70sITFARnWBxHOOF-xuT3d3kuy9lkwzQKs8";
-    const privKey = process.env.VAPID_PRIVATE_KEY;
+    const privKey = process.env.VAPID_PRIVATE_KEY || "VFjEhX16DW3x3g8NyNIdbg9M_WJQgMPopMjTP9vKdew";
 
     if (!pubKey || !privKey) {
         return NextResponse.json({ error: "VAPID kalitlari o'rnatilmagan (Server xatosi)" }, { status: 500 });
