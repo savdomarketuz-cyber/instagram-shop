@@ -4,7 +4,8 @@ import {
     RotateCcw, ShieldCheck, Banknote, Phone, MapPin, Send,
     AlertTriangle, CheckCircle2, Truck, ChevronLeft, FileText, Clock,
 } from "lucide-react";
-import { getShopSettingsServer, formatTelegramLink, formatPhoneLink } from "@/lib/shop-settings";
+import { getShopSettingsServer } from "@/lib/shop-settings.server";
+import { formatTelegramLink, formatPhoneLink } from "@/lib/shop-settings";
 
 type Lang = "uz" | "ru";
 

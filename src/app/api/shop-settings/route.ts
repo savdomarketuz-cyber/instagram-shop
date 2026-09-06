@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getShopSettingsServer } from "@/lib/shop-settings";
+import { getShopSettingsServer } from "@/lib/shop-settings.server";
 
 export const revalidate = 300; // 5 daqiqalik edge kesh
 

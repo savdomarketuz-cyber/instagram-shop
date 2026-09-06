@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { translations } from "@/lib/translations";
-import { getShopSettingsServer } from "@/lib/shop-settings";
+import { getShopSettingsServer } from "@/lib/shop-settings.server";
 import AboutClient from "./AboutClient";
 
 export async function generateMetadata({ params: { lang } }: { params: { lang: string } }): Promise<Metadata> {

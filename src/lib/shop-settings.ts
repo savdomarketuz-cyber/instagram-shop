@@ -1,4 +1,5 @@
-import { supabaseAdmin } from "@/lib/supabase-admin";
+// ✅ SAFE: Bu fayl client-side da ham import qilish mumkin.
+// supabaseAdmin YO'Q — faqat interface, konstantalar va format funksiyalari.
 
 export interface ShopSettings {
     name: string;
@@ -64,28 +65,4 @@ export function formatYoutubeLink(val?: string): string {
     const clean = val.trim();
     if (clean.startsWith("http://") || clean.startsWith("https://")) return clean;
     return `https://youtube.com/${clean.startsWith("@") ? clean : `@${clean}`}`;
-}
-
-/**
- * Server tomonida do'kon sozlamalarini DB dan xavfsiz o'qish (Next.js SSR / API)
- */
-export async function getShopSettingsServer(): Promise<ShopSettings> {
-    try {
-        const { data, error } = await supabaseAdmin
-            .from("settings")
-            .select("data")
-            .eq("id", "shop")
-            .maybeSingle();
-
-        if (error || !data?.data) {
-            return { ...DEFAULT_SHOP_SETTINGS };
-        }
-
-        return {
-            ...DEFAULT_SHOP_SETTINGS,
-            ...data.data,
-        };
-    } catch {
-        return { ...DEFAULT_SHOP_SETTINGS };
-    }
 }
