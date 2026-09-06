@@ -16,7 +16,7 @@ async function verifyAdmin(req: NextRequest) {
 export async function POST(req: NextRequest) {
     if (!(await verifyAdmin(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const pubKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+    const pubKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "BDjNKYY_cp8NDYQsowXfhIlfikWZmhCDTvFJOWubcNwvOW-LPnBH70sITFARnWBxHOOF-xuT3d3kuy9lkwzQKs8";
     const privKey = process.env.VAPID_PRIVATE_KEY;
 
     if (!pubKey || !privKey) {
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
         // Barcha obunalarni bazadan olamiz
         const { data: subscriptions, error } = await supabaseAdmin
             .from("fcm_tokens")
-            .select("token");
+            .select("token, user_phone");
 
         if (error) throw error;
 
@@ -50,13 +50,13 @@ export async function POST(req: NextRequest) {
         const pushPromises = (subscriptions || []).map(async (subRow) => {
             try {
                 const subscription = JSON.parse(subRow.token);
+                if (!subscription || !subscription.endpoint) return;
                 await webpush.sendNotification(subscription, pushPayload);
                 results.success++;
             } catch (error: any) {
-                console.error("Push yuborishda xato:", error);
+                console.error("Push yuborishda xato (phone: " + subRow.user_phone + "):", error);
                 results.failed++;
-                // Agar obuna muddati o'tgan bo'lsa, bazadan o'chirib yuboramiz
-                if (error.statusCode === 410 || error.statusCode === 404) {
+                if (error?.statusCode === 410 || error?.statusCode === 404) {
                     await supabaseAdmin.from("fcm_tokens").delete().eq("token", subRow.token);
                 }
             }
