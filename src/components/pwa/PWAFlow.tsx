@@ -33,15 +33,15 @@ function SplashScreen({ onDone }: { onDone: () => void }) {
         }}>
             {/* Logo */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-                <div style={{
-                    width: 80, height: 80, borderRadius: 24,
-                    background: "#2D6E3E",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    boxShadow: "0 8px 32px rgba(45,110,62,0.3)",
-                    animation: "velari-pop-in 600ms cubic-bezier(0.34,1.56,0.64,1) 200ms both",
-                }}>
-                    <span style={{ fontSize: 36, fontWeight: 900, color: "#fff", letterSpacing: -2, fontFamily: "-apple-system, sans-serif" }}>V</span>
-                </div>
+                <img 
+                    src="/icons/icon-192x192.png" 
+                    alt="Velari" 
+                    style={{
+                        width: 80, height: 80, borderRadius: "50%",
+                        boxShadow: "0 8px 32px rgba(15,20,16,0.08)",
+                        animation: "velari-pop-in 600ms cubic-bezier(0.34,1.56,0.64,1) 200ms both",
+                    }} 
+                />
                 <div style={{
                     fontSize: 28, fontWeight: 900, letterSpacing: -1.5, color: "#0F1410",
                     animation: "velari-slide-in 400ms cubic-bezier(0.22,1,0.36,1) 400ms both",

@@ -35,8 +35,13 @@ export const metadata = {
         icon: [
             { url: "/favicon.ico" },
             { url: "/favicon-120x120.png", sizes: "120x120", type: "image/png" },
+            { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+            { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
         ],
-        apple: "/apple-touch-icon.png",
+        apple: [
+            { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+        ],
+        shortcut: "/favicon.ico",
     },
     metadataBase: new URL("https://velari.uz"),
     alternates: {
@@ -209,6 +214,12 @@ export default function RootLayout({
                 <meta name="mobile-web-app-capable" content="yes" />
                 <meta name="telegram:header_color" content="#2d6e3e" />
                 <script src="https://telegram.org/js/telegram-web-app.js" async></script>
+
+                <link rel="icon" href="/favicon.ico" sizes="any" />
+                <link rel="icon" type="image/png" sizes="120x120" href="/favicon-120x120.png" />
+                <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
+                <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png" />
+                <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
                 <link rel="preconnect" href="https://storage.yandexcloud.net" crossOrigin="anonymous" />
                 <link rel="dns-prefetch" href="https://storage.yandexcloud.net" />

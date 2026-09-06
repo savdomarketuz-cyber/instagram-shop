@@ -78,14 +78,15 @@ export async function GET(req: NextRequest) {
                             justifyContent: 'center',
                         }}>
                             <div style={{
-                                fontSize: '24px',
-                                color: '#2d6e3e',
-                                fontWeight: 'bold',
-                                textTransform: 'uppercase',
-                                letterSpacing: '2px',
+                                fontSize: '28px',
+                                color: '#0F1410',
+                                fontWeight: '900',
+                                letterSpacing: '-1px',
                                 marginBottom: '20px',
+                                display: 'flex',
+                                alignItems: 'baseline',
                             }}>
-                                Velari | Premium
+                                VELARI<span style={{ color: '#2d6e3e' }}>.</span>
                             </div>
                             <div style={{
                                 fontSize: '48px',

@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/store/store";
 import { AdminNotificationListener } from "@/components/AdminNotificationListener";
+import Logo from "@/components/Logo";
 
 type MenuItem = { name: string; href: string; icon: LucideIcon; hint?: string };
 type MenuGroup = { title: string; items: MenuItem[] };
@@ -341,12 +342,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Sidebar for Desktop */}
             <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-black text-white transform transition-transform duration-500 ease-in-out lg:translate-x-0 flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="p-10 flex-1 overflow-y-auto scrollbar-hide">
-                    <h2 className="text-3xl font-black tracking-tighter mb-12 flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center shadow-lg shadow-white/5">
-                            <div className="w-5 h-5 bg-black rounded-lg"></div>
-                        </div>
-                        <span className="bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent italic">ADMIN</span>
-                    </h2>
+                    <div className="mb-12 flex items-center justify-between">
+                        <Link href="/" className="hover:opacity-90 transition-opacity">
+                            <Logo size="md" dark={true} />
+                        </Link>
+                        <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest bg-[#2D6E3E] text-white rounded-full">
+                            ADMIN
+                        </span>
+                    </div>
 
                     <nav className="space-y-6">
                         {menuGroups.map((group) => (
