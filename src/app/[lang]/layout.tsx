@@ -97,7 +97,10 @@ export const metadata = {
 };
 
 export const viewport = {
-    themeColor: "#2d6e3e",
+    themeColor: [
+        { media: "(prefers-color-scheme: light)", color: "#2d6e3e" },
+        { media: "(prefers-color-scheme: dark)", color: "#1E4E2B" },
+    ],
     width: "device-width",
     initialScale: 1,
     viewportFit: "cover" as const,
@@ -197,6 +200,16 @@ export default function RootLayout({
         <ViewTransitions>
         <html lang={displayLang} className={inter.variable}>
             <head>
+                <meta name="theme-color" content="#2d6e3e" />
+                <meta name="theme-color" media="(prefers-color-scheme: light)" content="#2d6e3e" />
+                <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1E4E2B" />
+                <meta name="msapplication-navbutton-color" content="#2d6e3e" />
+                <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+                <meta name="apple-mobile-web-app-capable" content="yes" />
+                <meta name="mobile-web-app-capable" content="yes" />
+                <meta name="telegram:header_color" content="#2d6e3e" />
+                <script src="https://telegram.org/js/telegram-web-app.js" async></script>
+
                 <link rel="preconnect" href="https://storage.yandexcloud.net" crossOrigin="anonymous" />
                 <link rel="dns-prefetch" href="https://storage.yandexcloud.net" />
                 <link rel="preconnect" href="https://slmbethqqqugnktxwzdz.supabase.co" crossOrigin="anonymous" />

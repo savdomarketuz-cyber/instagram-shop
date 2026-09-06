@@ -36,6 +36,23 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
         }
     }, [lang, setLanguage]);
 
+    // 📱 Telegram WebApp & Mini App Header Color Support
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const tg = (window as any).Telegram?.WebApp;
+            if (tg) {
+                try {
+                    tg.ready?.();
+                    tg.setHeaderColor?.('#2d6e3e');
+                    tg.setBackgroundColor?.('#ffffff');
+                    tg.expand?.();
+                } catch {
+                    // silent fallback
+                }
+            }
+        }
+    }, [pathname]);
+
     // 🛡️ GLOBAL API ERROR HANDLER
     useEffect(() => {
         const handlePromiseError = (event: PromiseRejectionEvent) => {
