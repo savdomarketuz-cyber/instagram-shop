@@ -44,9 +44,9 @@ function performSmartRevalidation(table: string, products: any[] = []) {
                 slugs.add(`/uz/products/${getProductSlug(product, "uz")}`);
                 slugs.add(`/ru/products/${getProductSlug(product, "ru")}`);
             }
-            for (const path of slugs) {
+            slugs.forEach((path) => {
                 revalidatePath(path);
-            }
+            });
             revalidatePath("/uz/catalog");
             revalidatePath("/ru/catalog");
             revalidatePath("/uz");

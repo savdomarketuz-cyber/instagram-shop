@@ -34,7 +34,7 @@ function revalidateProductCache(products: any[]) {
         paths.add(`/uz/products/${getProductSlug(product, "uz")}`);
         paths.add(`/ru/products/${getProductSlug(product, "ru")}`);
     }
-    for (const path of paths) revalidatePath(path);
+    paths.forEach((path) => revalidatePath(path));
 
     revalidatePath("/uz/catalog");
     revalidatePath("/ru/catalog");

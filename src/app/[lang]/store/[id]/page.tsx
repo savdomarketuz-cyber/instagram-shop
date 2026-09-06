@@ -5,6 +5,40 @@ import StoreClient from "./StoreClient";
 
 export const dynamic = "force-dynamic"; // qoldiqlar o'zgaruvchan
 
+export async function generateMetadata({ params }: { params: { lang: string; id: string } }) {
+    const lang = params.lang === "ru" ? "ru" : "uz";
+    const { data: wh } = await supabaseAdmin
+        .from("warehouses")
+        .select("id,name,address,active")
+        .eq("id", params.id)
+        .single();
+
+    if (!wh || wh.active === false) {
+        return {
+            title: "Do'kon topilmadi | Velari",
+            robots: { index: false, follow: false },
+        };
+    }
+
+    const title = `${wh.name} | Velari`;
+    const description = wh.address 
+        ? `${wh.name} do'konidagi barcha tovarlar. Manzil: ${wh.address}` 
+        : `${wh.name} do'konidagi barcha mahsulotlar katalogi.`;
+
+    return {
+        title,
+        description,
+        alternates: {
+            canonical: `https://velari.uz/${lang}/store/${params.id}`,
+            languages: {
+                "uz-UZ": `https://velari.uz/uz/store/${params.id}`,
+                "ru-RU": `https://velari.uz/ru/store/${params.id}`,
+                "x-default": `https://velari.uz/uz/store/${params.id}`,
+            },
+        },
+    };
+}
+
 const PRODUCT_COLS =
     "id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,created_at";
 

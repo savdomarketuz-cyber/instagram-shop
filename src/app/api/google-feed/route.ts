@@ -21,7 +21,7 @@ function gPrice(val: number): string {
 
 export async function GET() {
     try {
-        const [{ data: products }, { data: categories }] = await Promise.all([
+        const [{ data: products }, { data: categories }, { data: brands }] = await Promise.all([
             supabaseAdmin
                 .from("products")
                 .select("id, name, name_uz, name_ru, price, old_price, image, images, description, description_ru, stock, article, model, category_id, brand_id, is_deleted, updated_at")
@@ -30,6 +30,10 @@ export async function GET() {
             supabaseAdmin
                 .from("categories")
                 .select("id, name, name_ru, name_uz, parent_id")
+                .eq("is_deleted", false),
+            supabaseAdmin
+                .from("brands")
+                .select("id, name")
                 .eq("is_deleted", false),
         ]);
 
@@ -41,6 +45,7 @@ export async function GET() {
         const validProducts = products.filter(p => p.price && p.price > 0 && p.image);
 
         const catMap = new Map((categories || []).map((c) => [c.id, c]));
+        const brandMap = new Map((brands || []).map((b) => [b.id, b.name]));
 
         const getCategoryPath = (catId: string): string => {
             const parts: string[] = [];
@@ -60,23 +65,26 @@ export async function GET() {
 
             const title = esc(p.name_ru || p.name_uz || p.name || "");
             const desc = esc((p.description_ru || p.description || title).substring(0, 5000));
-            const brand = esc(p.brand_id || title.split(" ")[0] || "Velari");
+            
+            // Brand: real brand nomidan olamiz, topilmasa "Velari"
+            const brandName = (p.brand_id ? brandMap.get(p.brand_id) : null) || "Velari";
+            const brand = esc(brandName);
+
             const catPath = esc(getCategoryPath(p.category_id));
             const mpn = esc(p.model || p.article || p.id);
             const availability = (p.stock ?? 1) > 0 ? "in stock" : "out of stock";
 
-            // Rasmlar: asosiy + qo'shimcha (max 10)
-            const allImages: string[] = [p.image, ...(p.images || [])]
-                .filter(Boolean)
-                .slice(0, 10);
-            const [mainImage, ...extraImages] = allImages;
+            // Rasmlar: takrorlanmas noyob rasmlar ro'yxati (asosiy + qo'shimcha, max 10)
+            const rawImages = [p.image, ...(p.images || [])].filter(Boolean) as string[];
+            const uniqueImages = Array.from(new Set(rawImages)).slice(0, 10);
+            const [mainImage, ...extraImages] = uniqueImages;
 
             const additionalImages = extraImages
                 .map((img) => `      <g:additional_image_link>${esc(img)}</g:additional_image_link>`)
                 .join("\n");
 
             const salePriceLine = p.old_price && p.old_price > p.price
-                ? `      <g:sale_price>${gPrice(p.price)}</g:sale_price>\n      <g:sale_price_effective_date>2026-01-01T00:00+05:00/2030-12-31T23:59+05:00</g:sale_price_effective_date>`
+                ? `      <g:sale_price>${gPrice(p.price)}</g:sale_price>`
                 : "";
 
             // Chegirma bo'lsa price = eski narx, sale_price = yangi narx
