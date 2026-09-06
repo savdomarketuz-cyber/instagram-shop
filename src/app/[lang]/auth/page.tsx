@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useStore } from "@/store/store";
@@ -8,7 +8,7 @@ import { ymGoal } from "@/lib/metrika";
 
 const GREEN = "#2D6E3E";
 
-export default function TelegramAuthPage() {
+function TelegramAuthContent() {
     const router = useRouter();
     const params = useParams();
     const searchParams = useSearchParams();
@@ -100,3 +100,16 @@ export default function TelegramAuthPage() {
         </div>
     );
 }
+
+export default function TelegramAuthPage() {
+    return (
+        <Suspense fallback={
+            <div style={{ minHeight: "100vh", background: "#FAFAF6", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                <Loader2 size={48} color={GREEN} style={{ animation: "spin 1s linear infinite" }} />
+            </div>
+        }>
+            <TelegramAuthContent />
+        </Suspense>
+    );
+}
+

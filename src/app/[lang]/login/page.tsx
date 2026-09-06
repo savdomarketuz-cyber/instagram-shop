@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Send, Key, Loader2, ChevronLeft, ShieldCheck, User } from "lucide-react";
 import { useStore } from "@/store/store";
@@ -20,7 +20,7 @@ function toB64Url(s: string): string {
         .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-export default function LoginPage() {
+function LoginContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const setUser = useStore((state) => state.setUser);
@@ -350,3 +350,16 @@ export default function LoginPage() {
         </div>
     );
 }
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div style={{ minHeight: "100vh", background: "#FAFAF6", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                <Loader2 size={36} color={GREEN} style={{ animation: "spin 1s linear infinite" }} />
+            </div>
+        }>
+            <LoginContent />
+        </Suspense>
+    );
+}
+
