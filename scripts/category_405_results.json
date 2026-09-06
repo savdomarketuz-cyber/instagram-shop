@@ -1,0 +1,71 @@
+{
+  "cat": {
+    "id": "405",
+    "name": "Soch turmaklash (Styler)"
+  },
+  "results": [
+    {
+      "id": "ce4609f1-2c01-481d-ba50-327e98b12602",
+      "brand": "M.A.C STYLER",
+      "model": "STYLER",
+      "color": "Qizil",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch turmaklash uchun ko'p funksiyali stayler M.A.C STYLER STYLER, Qizil",
+      "name_ru": "Многофункциональный стайлер для волос M.A.C STYLER STYLER, Красный"
+    },
+    {
+      "id": "b520c832-a80f-4571-a4a1-2cbafd04b4e5",
+      "brand": "M.A.C STYLER",
+      "model": "STYLER",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch turmaklash uchun ko'p funksiyali stayler M.A.C STYLER STYLER, Pushti",
+      "name_ru": "Многофункциональный стайлер для волос M.A.C STYLER STYLER, Розовый"
+    },
+    {
+      "id": "5d531111-83c8-4e55-887e-5c4670812277",
+      "brand": "M.A.C STYLER",
+      "model": "STYLER-GOLD",
+      "color": "Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch turmaklash uchun ko'p funksiyali stayler M.A.C STYLER STYLER-GOLD, Oltin",
+      "name_ru": "Многофункциональный стайлер для волос M.A.C STYLER STYLER-GOLD, Золотой"
+    },
+    {
+      "id": "945ce414-1d32-436f-852f-5d251c7ae92f",
+      "brand": "M.A.C STYLER",
+      "model": "STYLER-ORANGE",
+      "color": "To'q sariq",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch turmaklash uchun ko'p funksiyali stayler M.A.C STYLER STYLER-ORANGE, To'q sariq",
+      "name_ru": "Многофункциональный стайлер для волос M.A.C STYLER STYLER-ORANGE, To'q sariq"
+    },
+    {
+      "id": "8eda2c71-220b-4c8e-8a31-13c45cb6b1a1",
+      "brand": "M.A.C STYLER",
+      "model": "STYLER-PURPLE",
+      "color": "Binafsha",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch turmaklash uchun ko'p funksiyali stayler M.A.C STYLER STYLER-PURPLE, Binafsha",
+      "name_ru": "Многофункциональный стайлер для волос M.A.C STYLER STYLER-PURPLE, Фиолетовый"
+    },
+    {
+      "id": "02ec4006-6c1c-440c-992d-faad7f6aeaba",
+      "brand": "VGR",
+      "model": "V-477-TO'Q",
+      "color": "To'q ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch turmaklash uchun ko'p funksiyali stayler VGR V-477-TO'Q, To'q ko'k",
+      "name_ru": "Многофункциональный стайлер для волос VGR V-477-TO'Q, To'q ko'k"
+    },
+    {
+      "id": "ecb56b0e-6829-4b7c-b367-6cbf71abe43c",
+      "brand": "VGR",
+      "model": "V-483",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch turmaklash uchun ko'p funksiyali stayler VGR V-483, Ko'k",
+      "name_ru": "Многофункциональный стайлер для волос VGR V-483, Синий"
+    }
+  ]
+}

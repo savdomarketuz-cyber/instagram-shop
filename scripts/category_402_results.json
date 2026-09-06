@@ -1,0 +1,80 @@
+{
+  "cat": {
+    "id": "402",
+    "name": "Fen-shotkalar"
+  },
+  "results": [
+    {
+      "id": "917c67ac-6645-429d-8a14-94fd657f9848",
+      "brand": "Cronier",
+      "model": "CR-2071",
+      "color": "Qora",
+      "source": "UZUM_EXACT",
+      "name_uz": "Cronier CR-2071 professional elektr brashing tarog‘i, harorat indikatori bilan",
+      "name_ru": "Профессиональная электрическая расческа брашинг Cronier CR-2071, с индикатором температуры"
+    },
+    {
+      "id": "0e158f35-e08c-4a4a-8d53-4c17e00aef9b",
+      "brand": "VGR",
+      "model": "V-488",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch turmaklash uchun fen-cho'tka VGR V-488, Ko'k",
+      "name_ru": "Фен-щетка для укладки волос VGR V-488, Синий"
+    },
+    {
+      "id": "abc17a93-c3c3-4785-a22f-a4c2ea6dff24",
+      "brand": "VGR",
+      "model": "V-488",
+      "color": "Qizil",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch turmaklash uchun fen-cho'tka VGR V-488, Qizil",
+      "name_ru": "Фен-щетка для укладки волос VGR V-488, Красный"
+    },
+    {
+      "id": "28b9e317-0ae0-414a-af29-7fd37f56ad72",
+      "brand": "VGR",
+      "model": "V-491",
+      "color": "Qora / Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch turmaklash uchun fen-cho'tka VGR V-491, Qora / Oltin",
+      "name_ru": "Фен-щетка для укладки волос VGR V-491, Черный / Золотой"
+    },
+    {
+      "id": "7fe41860-119b-4ced-b165-bfd998e1d9c0",
+      "brand": "VGR",
+      "model": "V-492",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch turmaklash uchun fen-cho'tka VGR V-492, Qora",
+      "name_ru": "Фен-щетка для укладки волос VGR V-492, Черный"
+    },
+    {
+      "id": "27873492-cacc-4d88-bcc7-fab8c06feaa1",
+      "brand": "VGR",
+      "model": "V-496",
+      "color": "Pushti / Fuxiya",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch turmaklash uchun fen-cho'tka VGR V-496, Pushti / Fuxiya",
+      "name_ru": "Фен-щетка для укладки волос VGR V-496, Розовый / fuxiya"
+    },
+    {
+      "id": "f56920d9-a7b3-4d6b-8b88-465dbd77c4ae",
+      "brand": "VGR",
+      "model": "V-498",
+      "color": "Qora",
+      "source": "UZUM_EXACT",
+      "name_uz": "Professional fen-taroq, 360 daraja aylanuvchi VGR V-498, keramik qoplamali",
+      "name_ru": "Профессиональная фен-щётка, вращающийся на 360 градусов, VGR V498 с керамическим покрытием"
+    },
+    {
+      "id": "847fd1ea-0757-4fec-a48d-94738004c567",
+      "brand": "Zumba",
+      "model": "ZM-8061",
+      "color": "Qora",
+      "source": "UZUM_EXACT",
+      "name_uz": "Zumba ZM-8061 brashing professional elektr tarog‘i, harorat indikatori bilan",
+      "name_ru": "Профессиональная электрическая расческа брашинг Zumba ZM-8061, с индикатором температуры"
+    }
+  ]
+}

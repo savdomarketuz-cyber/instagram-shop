@@ -66,7 +66,7 @@ const nextConfig = {
         ignoreDuringBuilds: true,
     },
     experimental: {
-        serverComponentsExternalPackages: ['sharp'],
+        serverComponentsExternalPackages: ['sharp', 'web-push'],
     },
     images: {
         unoptimized: true,

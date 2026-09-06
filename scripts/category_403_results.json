@@ -1,0 +1,431 @@
+{
+  "cat": {
+    "id": "403",
+    "name": "Fenlar"
+  },
+  "results": [
+    {
+      "id": "ff1951b4-a5aa-4def-bf37-6501bc8d87fa",
+      "brand": "M.A.C STYLER",
+      "model": "6730",
+      "color": "Qizil-Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER 6730, Qizil-Qora",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER 6730, Красно-черный"
+    },
+    {
+      "id": "b660b060-46a0-4e72-9660-68f71ccdfaac",
+      "brand": "BOSCH",
+      "model": "BC-9900",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen BOSCH BC-9900, Qora",
+      "name_ru": "Профессиональный фен для волос BOSCH BC-9900, Черный"
+    },
+    {
+      "id": "b88df3c8-741a-4100-8a6c-b2e302f18ce1",
+      "brand": "BOSCH",
+      "model": "BC-9901",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen BOSCH BC-9901, Qora",
+      "name_ru": "Профессиональный фен для волос BOSCH BC-9901, Черный"
+    },
+    {
+      "id": "4053fd51-44ac-422a-ad10-1af1041d3bbb",
+      "brand": "BOSCH",
+      "model": "BC-9902",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen BOSCH BC-9902, Qora",
+      "name_ru": "Профессиональный фен для волос BOSCH BC-9902, Черный"
+    },
+    {
+      "id": "48d3e7f5-8c21-4b38-a585-e096c620867d",
+      "brand": "BOSCH",
+      "model": "BS-9090",
+      "color": "Qizil",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen BOSCH BS-9090, Qizil",
+      "name_ru": "Профессиональный фен для волос BOSCH BS-9090, Красный"
+    },
+    {
+      "id": "0d35368b-7f53-4e00-a0b2-b96c2db7d7e9",
+      "brand": "ENZO",
+      "model": "EN-4140",
+      "color": "Qizil",
+      "source": "UZUM_EXACT",
+      "name_uz": "ENZO 6in1 EN-4140 fen",
+      "name_ru": "ENZO 6в1 EN-4140 фен"
+    },
+    {
+      "id": "458deddf-2051-49c5-8826-afdd51404b4a",
+      "brand": "ENZO",
+      "model": "EN-4142",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen ENZO EN-4142, Pushti",
+      "name_ru": "Профессиональный фен для волос ENZO EN-4142, Розовый"
+    },
+    {
+      "id": "498bad6a-8c97-471a-92c6-f9c37d556cc5",
+      "brand": "ENZO",
+      "model": "EN-8862",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen ENZO EN-8862, Pushti",
+      "name_ru": "Профессиональный фен для волос ENZO EN-8862, Розовый"
+    },
+    {
+      "id": "68413fee-2916-4dee-8f65-08adf71380cf",
+      "brand": "ENZO",
+      "model": "ENZO 9IN1",
+      "color": "Pushti / Rose-Gold",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen ENZO ENZO 9IN1, Pushti / Rose-Gold",
+      "name_ru": "Профессиональный фен для волос ENZO ENZO 9IN1, Розовый / rose-gold"
+    },
+    {
+      "id": "09919346-0a51-42a7-b7c2-245d66a91c03",
+      "brand": "M.A.C STYLER",
+      "model": "MC 6605",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER MC 6605, Qora",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER MC 6605, Черный"
+    },
+    {
+      "id": "dfdd1063-0156-4181-b9e6-7d16f99e4220",
+      "brand": "M.A.C STYLER",
+      "model": "MC-2211",
+      "color": "To'q binafsha",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER MC-2211, To'q binafsha",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER MC-2211, To'q binafsha"
+    },
+    {
+      "id": "44b63b07-0385-4fb2-9b25-b37f029ccd73",
+      "brand": "M.A.C STYLER",
+      "model": "MC-6609",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER MC-6609, Qora",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER MC-6609, Черный"
+    },
+    {
+      "id": "64d580d3-79a8-42b9-b621-3d224a7a7311",
+      "brand": "M.A.C STYLER",
+      "model": "MC-6641",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER MC-6641, Qora",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER MC-6641, Черный"
+    },
+    {
+      "id": "c2dada32-b012-44b4-b9fe-56d4e2557a40",
+      "brand": "M.A.C STYLER",
+      "model": "MC-666",
+      "color": "Qizil-Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER MC-666, Qizil-Qora",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER MC-666, Красно-черный"
+    },
+    {
+      "id": "e16ed691-3d59-4fc3-8027-f3da6dabc5a6",
+      "brand": "M.A.C STYLER",
+      "model": "MC-6660",
+      "color": "Pushti-Kulrang",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER MC-6660, Pushti-Kulrang",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER MC-6660, Pushti-Kulrang"
+    },
+    {
+      "id": "7cf5220f-6576-4275-bf61-ab4f1a5319b8",
+      "brand": "M.A.C STYLER",
+      "model": "MC-6678",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER MC-6678, Qora",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER MC-6678, Черный"
+    },
+    {
+      "id": "3b5f13f4-5ab2-49ca-8fca-6528adb02159",
+      "brand": "M.A.C STYLER",
+      "model": "MC-6682",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER MC-6682, Qora",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER MC-6682, Черный"
+    },
+    {
+      "id": "ef3dbfff-9483-42b7-8ba2-7735cd11cc37",
+      "brand": "M.A.C STYLER",
+      "model": "MC-6682A",
+      "color": "Oq / Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER MC-6682A, Oq / Oltin",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER MC-6682A, Белый / Золотой"
+    },
+    {
+      "id": "02276ad4-4d41-48b4-adac-345cb73f5de8",
+      "brand": "M.A.C STYLER",
+      "model": "MC-6685",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER MC-6685, Qora",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER MC-6685, Черный"
+    },
+    {
+      "id": "cab7e541-73e3-4b70-b041-c4fc65457a54",
+      "brand": "M.A.C STYLER",
+      "model": "MC-6699",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER MC-6699, Qora",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER MC-6699, Черный"
+    },
+    {
+      "id": "dc103218-e675-4f7a-82e3-f88d575033ef",
+      "brand": "M.A.C STYLER",
+      "model": "MC-6760",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER MC-6760, Qora",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER MC-6760, Черный"
+    },
+    {
+      "id": "6826b9cb-9543-49bd-a4db-304df247ff5a",
+      "brand": "M.A.C STYLER",
+      "model": "MC-6766",
+      "color": "Pushti / Creamy",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER MC-6766, Pushti / Creamy",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER MC-6766, Розовый / creamy"
+    },
+    {
+      "id": "a0bde846-8901-4eb3-b2c2-c08bb2e4436e",
+      "brand": "M.A.C STYLER",
+      "model": "MC-6766B",
+      "color": "Pushti / Creamy",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER MC-6766B, Pushti / Creamy",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER MC-6766B, Розовый / creamy"
+    },
+    {
+      "id": "77b9d79d-c71e-48fe-936d-e8cc35c67c81",
+      "brand": "M.A.C STYLER",
+      "model": "MC-6766C",
+      "color": "Pushti / Creamy",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER MC-6766C, Pushti / Creamy",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER MC-6766C, Розовый / creamy"
+    },
+    {
+      "id": "71886087-5b32-4be8-bbd2-4db6f314bf02",
+      "brand": "M.A.C STYLER",
+      "model": "MC-6767",
+      "color": "Kulrang / Fuxiya",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER MC-6767, Kulrang / Fuxiya",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER MC-6767, Серый / fuxiya"
+    },
+    {
+      "id": "5d98fd9e-8973-4402-800e-dfd6c68694a6",
+      "brand": "M.A.C STYLER",
+      "model": "MC-6800",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER MC-6800, Qora",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER MC-6800, Черный"
+    },
+    {
+      "id": "0c6169cc-eb83-407a-bdf9-0045b8f6617b",
+      "brand": "M.A.C STYLER",
+      "model": "MC-8866",
+      "color": "Qizil-Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER MC-8866, Qizil-Qora",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER MC-8866, Красно-черный"
+    },
+    {
+      "id": "381e6889-5b60-4c10-be6e-262440186ac5",
+      "brand": "M.A.C STYLER",
+      "model": "MC-9900A",
+      "color": "Qizil / Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER MC-9900A, Qizil / Qora",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER MC-9900A, Красный / Черный"
+    },
+    {
+      "id": "d6d56879-7d35-4455-b245-8429034d16bc",
+      "brand": "M.A.C STYLER",
+      "model": "MC-9901",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER MC-9901, Qora",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER MC-9901, Черный"
+    },
+    {
+      "id": "0a6babe7-7aeb-402b-b487-38a428416b36",
+      "brand": "M.A.C STYLER",
+      "model": "MC-9902",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER MC-9902, Qora",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER MC-9902, Черный"
+    },
+    {
+      "id": "3b5f6dc7-5194-4fae-b23f-bda1ddb939c3",
+      "brand": "Iparah",
+      "model": "P-510",
+      "color": "Bej / Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen Iparah P-510, Bej / Oltin",
+      "name_ru": "Профессиональный фен для волос Iparah P-510, bej / Золотой"
+    },
+    {
+      "id": "15cb6a15-92ba-45df-a6b4-8341caefc511",
+      "brand": "Philips",
+      "model": "PH-5555",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen Philips PH-5555, Qora",
+      "name_ru": "Профессиональный фен для волос Philips PH-5555, Черный"
+    },
+    {
+      "id": "9024996b-4587-4669-a986-4545c9587191",
+      "brand": "Philips",
+      "model": "PH-6958",
+      "color": "Qora",
+      "source": "UZUM_EXACT",
+      "name_uz": "Philips PH-6958 soch quritgich 9000W ionizasiya, qora",
+      "name_ru": "Фен для волос Philips PH-6958 9000Вт ионизация защита от перегрева, чёрный"
+    },
+    {
+      "id": "7b80c883-bce0-46a0-8b3c-b507636a27da",
+      "brand": "Philips",
+      "model": "PH-8080",
+      "color": "Qora-Qizil",
+      "source": "UZUM_EXACT",
+      "name_uz": "Philips PH-8080 professional soch uchun fen, quritish va yotqizish uchun, ionlashtirilgan",
+      "name_ru": "Фен для волос профессиональный Philips PH-8080, для сушки и укладки, с ионизацией"
+    },
+    {
+      "id": "dc755cd5-314d-4f6c-a8e9-277b873fc97b",
+      "brand": "Philips",
+      "model": "PH-8080",
+      "color": "Qora-Ko'k",
+      "source": "UZUM_EXACT",
+      "name_uz": "Philips PH-8080 professional soch uchun fen, quritish va yotqizish uchun, ionlashtirilgan",
+      "name_ru": "Фен для волос профессиональный Philips PH-8080, для сушки и укладки, с ионизацией"
+    },
+    {
+      "id": "377e45c3-17f4-494c-b58d-fa1c1c36f31f",
+      "brand": "M.A.C STYLER",
+      "model": "PINK",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER PINK, Pushti",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER PINK, Розовый"
+    },
+    {
+      "id": "3fceeee2-06e4-4ff3-a293-0eab398a3050",
+      "brand": "M.A.C STYLER",
+      "model": "PINK",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen M.A.C STYLER PINK, Pushti",
+      "name_ru": "Профессиональный фен для волос M.A.C STYLER PINK, Розовый"
+    },
+    {
+      "id": "86973e06-c100-46e4-bf4b-8cee918853ba",
+      "brand": "Remington",
+      "model": "RE-2022",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen Remington RE-2022, Qora",
+      "name_ru": "Профессиональный фен для волос Remington RE-2022, Черный"
+    },
+    {
+      "id": "26da28a2-5a96-4c74-84ec-abdab5348df6",
+      "brand": "Babyverse",
+      "model": "SE-A6",
+      "color": "To'q ko'k / Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen Babyverse SE-A6, To'q ko'k / Oltin",
+      "name_ru": "Профессиональный фен для волос Babyverse SE-A6, to'q ko'k / Золотой"
+    },
+    {
+      "id": "28a93f5c-ccbc-4ff8-ac0b-a3f71c06d8f9",
+      "brand": "VGR",
+      "model": "V-413",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen VGR V-413, Qora",
+      "name_ru": "Профессиональный фен для волос VGR V-413, Черный"
+    },
+    {
+      "id": "ce7836cb-0095-4f55-8fdd-764c26a15834",
+      "brand": "VGR",
+      "model": "V-414",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen VGR V-414, Qora",
+      "name_ru": "Профессиональный фен для волос VGR V-414, Черный"
+    },
+    {
+      "id": "8d2f2653-a34c-4a7a-a21f-3eaae72ecdea",
+      "brand": "VGR",
+      "model": "V-427",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen VGR V-427, Qora",
+      "name_ru": "Профессиональный фен для волос VGR V-427, Черный"
+    },
+    {
+      "id": "9fa7722e-e9fe-4ae4-860e-6c16cb4397d3",
+      "brand": "VGR",
+      "model": "V-487",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen VGR V-487, Ko'k",
+      "name_ru": "Профессиональный фен для волос VGR V-487, Синий"
+    },
+    {
+      "id": "1b330e7d-7fba-4bc9-97c7-ce99eea7b8b4",
+      "brand": "VGR",
+      "model": "V-487",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen VGR V-487, Pushti",
+      "name_ru": "Профессиональный фен для волос VGR V-487, Розовый"
+    },
+    {
+      "id": "4a0f962d-a6a5-4c43-b814-9a414fd6494a",
+      "brand": "VGR",
+      "model": "V-493",
+      "color": "Kumush-Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen VGR V-493, Kumush-Qora",
+      "name_ru": "Профессиональный фен для волос VGR V-493, Kumush-Qora"
+    },
+    {
+      "id": "8b4f3e8a-59af-4bc2-909b-a6497c8379cc",
+      "brand": "VGR",
+      "model": "V401",
+      "color": "Qizil",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen VGR V401, Qizil",
+      "name_ru": "Профессиональный фен для волос VGR V401, Красный"
+    },
+    {
+      "id": "8317b3b7-7429-4323-9a30-a484fbe6d892",
+      "brand": "VGR",
+      "model": "V401",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch quritish uchun professional fen VGR V401, Qora",
+      "name_ru": "Профессиональный фен для волос VGR V401, Черный"
+    }
+  ]
+}

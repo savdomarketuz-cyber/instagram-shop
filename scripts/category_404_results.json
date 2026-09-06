@@ -1,0 +1,341 @@
+{
+  "cat": {
+    "id": "404",
+    "name": "Soch dazmollari"
+  },
+  "results": [
+    {
+      "id": "fd7203b7-167f-4914-b930-d1522dafdd8d",
+      "brand": "M.A.C STYLER",
+      "model": "MC-2012",
+      "color": "Titan",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-2012, Titan",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-2012, Титан"
+    },
+    {
+      "id": "e1448379-dbc2-4ca0-b457-f9c4087f4023",
+      "brand": "M.A.C STYLER",
+      "model": "MC-2018",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-2018, Qora",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-2018, Черный"
+    },
+    {
+      "id": "c5af357b-210b-4177-aa25-43f94b4c52cc",
+      "brand": "M.A.C STYLER",
+      "model": "MC-2018",
+      "color": "Qizil",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-2018, Qizil",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-2018, Красный"
+    },
+    {
+      "id": "bc462e08-b9f5-4e00-9aba-084ff55649e1",
+      "brand": "M.A.C STYLER",
+      "model": "MC-2021",
+      "color": "Qizil",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-2021, Qizil",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-2021, Красный"
+    },
+    {
+      "id": "eaefcd55-ae72-427a-9e2e-8b0337087a71",
+      "brand": "M.A.C STYLER",
+      "model": "MC-2021",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-2021, Pushti",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-2021, Розовый"
+    },
+    {
+      "id": "6486cb52-2197-49db-843c-6ceb219d3a92",
+      "brand": "M.A.C STYLER",
+      "model": "MC-2021",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-2021, Qora",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-2021, Черный"
+    },
+    {
+      "id": "843911be-e8bf-4c4c-b1e2-3a2aaddbb8e1",
+      "brand": "M.A.C STYLER",
+      "model": "MC-2118",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-2118, Qora",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-2118, Черный"
+    },
+    {
+      "id": "6211e510-25b7-4cae-a7b5-428d842fdfc3",
+      "brand": "M.A.C STYLER",
+      "model": "MC-2218",
+      "color": "Qora",
+      "source": "UZUM_EXACT",
+      "name_uz": "M.A.C STYLER MC-2218 soch dazmol jingalak plita gofre qilingich buklash keratin tez",
+      "name_ru": "M.A.C STYLER MC-2218 утюжок для волос плойка щипцы завивки гофре локоны быстрый нагрев"
+    },
+    {
+      "id": "4613c93c-9c76-4909-b2e1-a68931976c43",
+      "brand": "M.A.C STYLER",
+      "model": "MC-2218",
+      "color": "Pushti",
+      "source": "UZUM_EXACT",
+      "name_uz": "M.A.C STYLER MC-2218 soch dazmol jingalak plita gofre qilingich buklash keratin tez",
+      "name_ru": "M.A.C STYLER MC-2218 утюжок для волос плойка щипцы завивки гофре локоны быстрый нагрев"
+    },
+    {
+      "id": "5487a71b-b7ed-4488-8da2-d5cfd203db8d",
+      "brand": "M.A.C STYLER",
+      "model": "MC-3065",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-3065, Qora",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-3065, Черный"
+    },
+    {
+      "id": "885290f2-829e-42d3-b4c2-01f7642b0dc3",
+      "brand": "M.A.C STYLER",
+      "model": "MC-3083",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-3083, Qora",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-3083, Черный"
+    },
+    {
+      "id": "60bc89dd-8335-455b-81fc-2db40aff5503",
+      "brand": "M.A.C STYLER",
+      "model": "MC-3083",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-3083, Qora",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-3083, Черный"
+    },
+    {
+      "id": "8efe072e-596b-4231-a54c-7055e025fc68",
+      "brand": "M.A.C STYLER",
+      "model": "MC-3084",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-3084, Qora",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-3084, Черный"
+    },
+    {
+      "id": "f600ed8c-4244-4ce7-ba38-5ee726fcf520",
+      "brand": "M.A.C STYLER",
+      "model": "MC-3085",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-3085, Qora",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-3085, Черный"
+    },
+    {
+      "id": "9ab5d662-cb8d-4057-bdae-d03bf640916b",
+      "brand": "M.A.C STYLER",
+      "model": "MC-3086C",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-3086C, Qora",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-3086C, Черный"
+    },
+    {
+      "id": "674d1d63-8328-4267-bf11-cfcc571d3369",
+      "brand": "M.A.C STYLER",
+      "model": "MC-5502",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-5502, Qora",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-5502, Черный"
+    },
+    {
+      "id": "618c7e7d-3812-4ebf-8d46-040e75cb70e7",
+      "brand": "M.A.C STYLER",
+      "model": "MC-5502A",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-5502A, Qora",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-5502A, Черный"
+    },
+    {
+      "id": "40f98340-ef00-4b86-9bb1-bb95918463f9",
+      "brand": "M.A.C STYLER",
+      "model": "MC-5509",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-5509, Oq",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-5509, Белый"
+    },
+    {
+      "id": "bc94674d-3d29-4dcf-8412-b42025e70899",
+      "brand": "M.A.C STYLER",
+      "model": "MC-5510",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-5510, Oq",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-5510, Белый"
+    },
+    {
+      "id": "b495a122-641c-4d67-928b-f08b00575394",
+      "brand": "M.A.C STYLER",
+      "model": "MC-5518 TITAN",
+      "color": "Titan",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-5518 TITAN, Titan",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-5518 TITAN, Титан"
+    },
+    {
+      "id": "5215d1e0-d12b-4239-be59-4502f03f7520",
+      "brand": "M.A.C STYLER",
+      "model": "MC-5518A",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-5518A, Qora",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-5518A, Черный"
+    },
+    {
+      "id": "dbce8187-fff6-4381-bf25-1cdc66ee246b",
+      "brand": "M.A.C STYLER",
+      "model": "MC-5519",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-5519, Qora",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-5519, Черный"
+    },
+    {
+      "id": "f2bef0b2-0822-4f47-baa8-beb337d35665",
+      "brand": "M.A.C STYLER",
+      "model": "MC-5519 TITAN",
+      "color": "Titan",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-5519 TITAN, Titan",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-5519 TITAN, Титан"
+    },
+    {
+      "id": "f9e7c764-f56f-442d-a6c3-3ef6d979c876",
+      "brand": "M.A.C STYLER",
+      "model": "MC-5523A",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-5523A, Qora",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-5523A, Черный"
+    },
+    {
+      "id": "3c23b0d2-7523-418e-8cb5-836693a9afbe",
+      "brand": "M.A.C STYLER",
+      "model": "MC-5527",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-5527, Qora",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-5527, Черный"
+    },
+    {
+      "id": "21b93991-3366-43f2-b2ff-16e75c830828",
+      "brand": "M.A.C STYLER",
+      "model": "MC-5529",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-5529, Pushti",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-5529, Розовый"
+    },
+    {
+      "id": "aada3783-3088-48ae-a8a4-b3a8bb465a89",
+      "brand": "M.A.C STYLER",
+      "model": "MC-5532",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-5532, Pushti",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-5532, Розовый"
+    },
+    {
+      "id": "3247b09a-6f57-42c2-8043-2d076f55995b",
+      "brand": "M.A.C STYLER",
+      "model": "MC-5533",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-5533, Pushti",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-5533, Розовый"
+    },
+    {
+      "id": "b9b99e6f-6cb1-4359-91a9-5b9200cc6cc2",
+      "brand": "M.A.C STYLER",
+      "model": "MC-5544",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-5544, Pushti",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-5544, Розовый"
+    },
+    {
+      "id": "91d6c40d-cf9a-4e48-9457-41b1faacf035",
+      "brand": "M.A.C STYLER",
+      "model": "MC-5573",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-5573, Qora",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-5573, Черный"
+    },
+    {
+      "id": "54eeefe9-465d-4d24-8750-2713be23ae09",
+      "brand": "M.A.C STYLER",
+      "model": "MC-5576",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-5576, Qora",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-5576, Черный"
+    },
+    {
+      "id": "1d62d8b2-02aa-4ea1-b2d7-aecbacd8cf56",
+      "brand": "M.A.C STYLER",
+      "model": "MC-5580",
+      "color": "Titan",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-5580, Titan",
+      "name_ru": "Выпрямитель (утюжок) для волос M.A.C STYLER MC-5580, Титан"
+    },
+    {
+      "id": "8806c02f-4bc2-4312-9749-4a6539aceaf5",
+      "brand": "VGR",
+      "model": "V-509",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol VGR V-509, Qora",
+      "name_ru": "Выпрямитель (утюжок) для волос VGR V-509, Черный"
+    },
+    {
+      "id": "15df80bc-e68f-4f85-a6b0-9676e2e9d5e8",
+      "brand": "VGR",
+      "model": "V-528",
+      "color": "Pushti / Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol VGR V-528, Pushti / Oltin",
+      "name_ru": "Выпрямитель (утюжок) для волос VGR V-528, Розовый / Золотой"
+    },
+    {
+      "id": "4300da72-8907-4351-ab21-9d59590f29f5",
+      "brand": "VGR",
+      "model": "V-590",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol VGR V-590, Qora",
+      "name_ru": "Выпрямитель (утюжок) для волос VGR V-590, Черный"
+    },
+    {
+      "id": "2252b6ad-9422-4496-bc91-d39d62feaeef",
+      "brand": "VGR",
+      "model": "V-595",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol VGR V-595, Qora",
+      "name_ru": "Выпрямитель (утюжок) для волос VGR V-595, Черный"
+    },
+    {
+      "id": "41188068-0d33-4ca8-8e9a-bc25922fede3",
+      "brand": "VGR",
+      "model": "V-597",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch to'g'rilash uchun dazmol VGR V-597, Ko'k",
+      "name_ru": "Выпрямитель (утюжок) для волос VGR V-597, Синий"
+    }
+  ]
+}

@@ -51,15 +51,19 @@ export async function subscribeToPushNotifications(userPhone?: string) {
 
         // ⚠️ MUHIM: Obuna mavjud bo'lsa ham, uni doim serverga yuboramiz (telefon raqam bilan bog'lash uchun)
         if (subscription) {
-            await fetch("/api/auth/push-subscription", {
+            const res = await fetch("/api/auth/push-subscription", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     subscription,
-                    userPhone: userPhone || undefined,
+                    userPhone: phone || undefined,
                     platform: "web"
                 })
             });
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                console.error("Push subscription server xatosi:", res.status, errData);
+            }
         }
 
         return subscription;

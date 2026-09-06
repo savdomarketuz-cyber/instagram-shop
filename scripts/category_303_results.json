@@ -1,0 +1,53 @@
+{
+  "cat": {
+    "id": "303",
+    "name": "Наушники"
+  },
+  "results": [
+    {
+      "id": "de2715af-3ca4-4a27-a397-b92b24245277",
+      "brand": "Apple",
+      "model": "PODS-MAX-LUX",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX, Ko'k",
+      "name_ru": "Беспроводные Bluetooth наушники Apple PODS-MAX-LUX, Синий"
+    },
+    {
+      "id": "81d85c4e-dd36-4b70-a937-b657bf4cb9be",
+      "brand": "Apple",
+      "model": "PODS-MAX-LUX-MIDNIGHT",
+      "color": "Midnight",
+      "source": "STANDARDIZED",
+      "name_uz": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-MIDNIGHT, Midnight",
+      "name_ru": "Беспроводные Bluetooth наушники Apple PODS-MAX-LUX-MIDNIGHT, Темная ночь (Midnight)"
+    },
+    {
+      "id": "582d74c8-24ec-44f2-89f7-19ad7dc49666",
+      "brand": "Apple",
+      "model": "PODS-MAX-LUX-ORANGE",
+      "color": "To'q Sariq",
+      "source": "STANDARDIZED",
+      "name_uz": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-ORANGE, To'q Sariq",
+      "name_ru": "Беспроводные Bluetooth наушники Apple PODS-MAX-LUX-ORANGE, Оранжевый"
+    },
+    {
+      "id": "b1da43ec-ce8a-42d3-9502-26389c52c9cd",
+      "brand": "Apple",
+      "model": "PODS-MAX-LUX-PURPLE",
+      "color": "Binafsha",
+      "source": "STANDARDIZED",
+      "name_uz": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-PURPLE, Binafsha",
+      "name_ru": "Беспроводные Bluetooth наушники Apple PODS-MAX-LUX-PURPLE, Фиолетовый"
+    },
+    {
+      "id": "e86d479e-14fb-4a28-9ba7-819b533a7368",
+      "brand": "Apple",
+      "model": "PODS-MAX-LUX-TITAN",
+      "color": "Titan",
+      "source": "STANDARDIZED",
+      "name_uz": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-TITAN, Titan",
+      "name_ru": "Беспроводные Bluetooth наушники Apple PODS-MAX-LUX-TITAN, Титан"
+    }
+  ]
+}

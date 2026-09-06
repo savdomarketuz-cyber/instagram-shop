@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { verifyJwt } from "@/lib/jwt-utils";
-import webpush from "web-push";
 
-// VAPID sozlamalari POST funksiyasi ichiga ko'chirildi
+// Node.js runtime zarur — web-push kutubxonasi native crypto ishlatadi
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 async function verifyAdmin(req: NextRequest) {
     const adminToken = req.cookies.get("admin_token")?.value;
@@ -24,6 +25,8 @@ export async function POST(req: NextRequest) {
     }
 
     try {
+        // web-push ni dynamic import qilamiz — bundling muammolarini oldini olish uchun
+        const webpush = (await import("web-push")).default;
         webpush.setVapidDetails("mailto:admin@velari.uz", pubKey, privKey);
         
         const { title, body, url } = await req.json();
@@ -37,11 +40,14 @@ export async function POST(req: NextRequest) {
             .from("fcm_tokens")
             .select("token, user_phone");
 
-        if (error) throw error;
+        if (error) {
+            return NextResponse.json({ error: "DB xatosi: " + error.message, detail: error }, { status: 500 });
+        }
 
         const results = {
             success: 0,
-            failed: 0
+            failed: 0,
+            errors: [] as string[]
         };
 
         const pushPayload = JSON.stringify({ title, body, url: url || '/' });
@@ -49,13 +55,25 @@ export async function POST(req: NextRequest) {
         // Har bir obunachiga xabar jo'natamiz
         const pushPromises = (subscriptions || []).map(async (subRow) => {
             try {
-                const subscription = JSON.parse(subRow.token);
-                if (!subscription || !subscription.endpoint) return;
+                let subscription;
+                try {
+                    subscription = typeof subRow.token === 'string' ? JSON.parse(subRow.token) : subRow.token;
+                } catch {
+                    results.failed++;
+                    results.errors.push(`Token parse xatosi (${subRow.user_phone})`);
+                    return;
+                }
+                if (!subscription || !subscription.endpoint) {
+                    results.failed++;
+                    results.errors.push(`Endpoint yo'q (${subRow.user_phone})`);
+                    return;
+                }
                 await webpush.sendNotification(subscription, pushPayload);
                 results.success++;
             } catch (error: any) {
-                console.error("Push yuborishda xato (phone: " + subRow.user_phone + "):", error);
+                console.error("Push yuborishda xato (phone: " + subRow.user_phone + "):", error?.message || error);
                 results.failed++;
+                results.errors.push(`${subRow.user_phone}: ${error?.message || 'Noma\'lum xato'}`);
                 if (error?.statusCode === 410 || error?.statusCode === 404) {
                     await supabaseAdmin.from("fcm_tokens").delete().eq("token", subRow.token);
                 }
@@ -67,6 +85,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, results });
     } catch (error: any) {
         console.error("Push send error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ 
+            error: error.message || "Noma'lum xato", 
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+            type: error.constructor?.name 
+        }, { status: 500 });
     }
 }

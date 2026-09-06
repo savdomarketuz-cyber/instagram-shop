@@ -105,7 +105,11 @@ export default function PushNotificationsPage() {
                         onClick={async () => {
                             try {
                                 const { subscribeToPushNotifications } = await import("@/lib/push-notifications");
-                                await subscribeToPushNotifications();
+                                const sub = await subscribeToPushNotifications();
+                                if (!sub) {
+                                    showToast("Push obuna o'rnatilmadi. Brauzer ruxsatini tekshiring.", "error");
+                                    return;
+                                }
                                 const res = await fetch("/api/admin/push-send", {
                                     method: "POST",
                                     headers: { "Content-Type": "application/json" },
@@ -117,12 +121,14 @@ export default function PushNotificationsPage() {
                                 });
                                 const data = await res.json();
                                 if (data.success) {
-                                    showToast(`Test xabari yuborildi! (${data.results?.success || 1} ta qurilmaga)`, "success");
+                                    showToast(`Test xabari yuborildi! (${data.results?.success || 0} muvaffaqiyatli, ${data.results?.failed || 0} xato)`, "success");
                                 } else {
-                                    showToast(data.error || "Xatolik yuz berdi", "error");
+                                    showToast("Xato: " + (data.error || `Server ${res.status}`), "error");
+                                    console.error("Push send xato:", data);
                                 }
                             } catch (e: any) {
                                 showToast("Xatolik: " + e.message, "error");
+                                console.error("Push test exception:", e);
                             }
                         }}
                         className="w-full bg-blue-50 text-blue-700 border border-blue-200 rounded-3xl p-4 font-black uppercase tracking-wider hover:bg-blue-100 transition-all flex items-center justify-center gap-2 text-xs"

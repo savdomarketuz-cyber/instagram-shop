@@ -1,0 +1,28 @@
+{
+  "name": "marketplace-collector",
+  "version": "1.0.0",
+  "description": "Uzum Market va Wildberries marketplace-laridan mahsulotlar ma'lumotlarini qidirish, yig'ish va tahlil qilish uchun professional API va parser to'plami.",
+  "main": "index.js",
+  "bin": {
+    "marketplace-collector": "./cli.js"
+  },
+  "scripts": {
+    "start": "node cli.js",
+    "example:uzum": "node examples/1_uzum_search.js",
+    "example:detail": "node examples/2_uzum_product_detail.js",
+    "example:cats": "node examples/3_uzum_categories.js",
+    "example:bilingual": "node examples/4_bilingual_collector.js"
+  },
+  "keywords": [
+    "uzum",
+    "wildberries",
+    "wb",
+    "scraper",
+    "marketplace",
+    "api",
+    "collector",
+    "ecommerce"
+  ],
+  "author": "",
+  "license": "MIT"
+}

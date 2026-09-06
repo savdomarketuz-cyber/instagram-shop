@@ -1,0 +1,548 @@
+{
+  "cat": {
+    "id": "401",
+    "name": "Epilyatorlar"
+  },
+  "results": [
+    {
+      "id": "25c7c986-fde3-4ca2-8a28-515a44252cb1",
+      "brand": "IBORRA",
+      "model": "BR-2020",
+      "color": "Yashil / Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator IBORRA BR-2020, Yashil / Oq",
+      "name_ru": "Профессиональный эпилятор для женщин IBORRA BR-2020, Зеленый / Белый"
+    },
+    {
+      "id": "ce70924b-62cf-478c-8e2a-8e7a1874ff3e",
+      "brand": "Braun",
+      "model": "BR-2068",
+      "color": "Pushti / Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator Braun BR-2068, Pushti / Oq",
+      "name_ru": "Профессиональный эпилятор для женщин Braun BR-2068, Розовый / Белый"
+    },
+    {
+      "id": "a99d388a-8e78-48fc-b601-b26200af91ce",
+      "brand": "Cronier",
+      "model": "CR-8801",
+      "color": "Oq",
+      "source": "UZUM_EXACT",
+      "name_uz": "Ayollar elektr epilatori \"Cronier CR - 8801\", 5 tasi 1 da, suvga chidamli",
+      "name_ru": "Женский электроэпилятор \"Cronier CR - 8801\", 5 в 1, водонепроницаемый"
+    },
+    {
+      "id": "e29d8b98-c9ff-4192-986b-923a449bc82a",
+      "brand": "Cronier",
+      "model": "CR-8822",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator Cronier CR-8822, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин Cronier CR-8822, Белый"
+    },
+    {
+      "id": "9048df1d-8efa-4ea9-a03d-e763cb59cbb0",
+      "brand": "Cronier",
+      "model": "CR-8823",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator Cronier CR-8823, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин Cronier CR-8823, Белый"
+    },
+    {
+      "id": "ac95dee6-5f54-4145-a509-375090cadea5",
+      "brand": "Philips",
+      "model": "Lumea",
+      "color": "Oq",
+      "source": "UZUM_EXACT",
+      "name_uz": "Philips Lumea 9900 — uy sharoitida professional darajadagi IPL epilyatsiya",
+      "name_ru": "Philips Lumea 9900 — современный IPL эпилятор для домашнего ухода"
+    },
+    {
+      "id": "be848188-d640-4cf5-a78c-a7640d22d56c",
+      "brand": "M.A.C STYLER",
+      "model": "MC-7700",
+      "color": "Qizil / Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator M.A.C STYLER MC-7700, Qizil / Oq",
+      "name_ru": "Профессиональный эпилятор для женщин M.A.C STYLER MC-7700, Красный / Белый"
+    },
+    {
+      "id": "bef4b586-0c1c-44a7-8183-340e69cbe940",
+      "brand": "M.A.C STYLER",
+      "model": "MC-7720",
+      "color": "Qizil / Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator M.A.C STYLER MC-7720, Qizil / Oq",
+      "name_ru": "Профессиональный эпилятор для женщин M.A.C STYLER MC-7720, Красный / Белый"
+    },
+    {
+      "id": "73fb0bd3-652b-43bb-8de7-c4478e1dd2de",
+      "brand": "M.A.C STYLER",
+      "model": "MC-7721",
+      "color": "Qizil / Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator M.A.C STYLER MC-7721, Qizil / Oq",
+      "name_ru": "Профессиональный эпилятор для женщин M.A.C STYLER MC-7721, Красный / Белый"
+    },
+    {
+      "id": "3a326cc3-02bf-4adc-8ba0-145c3c17d0a5",
+      "brand": "M.A.C STYLER",
+      "model": "MC-7722",
+      "color": "Qizil / Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator M.A.C STYLER MC-7722, Qizil / Oq",
+      "name_ru": "Профессиональный эпилятор для женщин M.A.C STYLER MC-7722, Красный / Белый"
+    },
+    {
+      "id": "994c3db3-8c86-4060-8661-b7ebb8d1fb6b",
+      "brand": "M.A.C STYLER",
+      "model": "MC-7723",
+      "color": "Qizil / Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator M.A.C STYLER MC-7723, Qizil / Oq",
+      "name_ru": "Профессиональный эпилятор для женщин M.A.C STYLER MC-7723, Красный / Белый"
+    },
+    {
+      "id": "726800fa-a525-46c6-92c8-77f82560bad2",
+      "brand": "M.A.C STYLER",
+      "model": "MC-7724",
+      "color": "Qizil / Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator M.A.C STYLER MC-7724, Qizil / Oq",
+      "name_ru": "Профессиональный эпилятор для женщин M.A.C STYLER MC-7724, Красный / Белый"
+    },
+    {
+      "id": "3f267607-c601-4608-b757-eca843a366db",
+      "brand": "M.A.C STYLER",
+      "model": "MC-7725",
+      "color": "Qizil / Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator M.A.C STYLER MC-7725, Qizil / Oq",
+      "name_ru": "Профессиональный эпилятор для женщин M.A.C STYLER MC-7725, Красный / Белый"
+    },
+    {
+      "id": "760be0bd-da60-4db2-aa68-e88b87666227",
+      "brand": "M.A.C STYLER",
+      "model": "MC-7727",
+      "color": "Qizil / Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator M.A.C STYLER MC-7727, Qizil / Oq",
+      "name_ru": "Профессиональный эпилятор для женщин M.A.C STYLER MC-7727, Красный / Белый"
+    },
+    {
+      "id": "3c9b65f2-b8be-4fb1-8c75-b9c601508149",
+      "brand": "M.A.C STYLER",
+      "model": "MC-7728",
+      "color": "Qizil / Oq",
+      "source": "UZUM_EXACT",
+      "name_uz": "M.A.C styler epilyatori, MC-7728, 3 ta 1 da professional epilyator",
+      "name_ru": "Эпилятор M.A.C styler, MC-7728, профессиональный эпилятор 3 в 1"
+    },
+    {
+      "id": "5e13f509-2b65-4693-a1c6-aa25fa574919",
+      "brand": "M.A.C STYLER",
+      "model": "MC-7730",
+      "color": "Qizil / Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator M.A.C STYLER MC-7730, Qizil / Oq",
+      "name_ru": "Профессиональный эпилятор для женщин M.A.C STYLER MC-7730, Красный / Белый"
+    },
+    {
+      "id": "27958e97-ed37-47ab-a899-2759e3814751",
+      "brand": "M.A.C STYLER",
+      "model": "MC-7731",
+      "color": "Qizil / Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator M.A.C STYLER MC-7731, Qizil / Oq",
+      "name_ru": "Профессиональный эпилятор для женщин M.A.C STYLER MC-7731, Красный / Белый"
+    },
+    {
+      "id": "1ef41542-dc05-4264-8ede-ff9629898d5f",
+      "brand": "M.A.C STYLER",
+      "model": "MC-7732",
+      "color": "Qizil / Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator M.A.C STYLER MC-7732, Qizil / Oq",
+      "name_ru": "Профессиональный эпилятор для женщин M.A.C STYLER MC-7732, Красный / Белый"
+    },
+    {
+      "id": "e534e17e-6c0f-4588-9340-b6c254906b62",
+      "brand": "M.A.C STYLER",
+      "model": "MC-7734",
+      "color": "Qizil / Oq",
+      "source": "UZUM_EXACT",
+      "name_uz": "M.A.C STYLER MC-7732 MC-7734, sochlarni olib tashlash uchun epilyator, simsiz",
+      "name_ru": "M.A.C STYLER MC-7732 MC-7734, эпилятор для удаления волос, беспроводной"
+    },
+    {
+      "id": "9a394b7c-a7af-40d5-ac82-30f1d7ee091f",
+      "brand": "M.A.C STYLER",
+      "model": "MC-7736",
+      "color": "Qizil / Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator M.A.C STYLER MC-7736, Qizil / Oq",
+      "name_ru": "Профессиональный эпилятор для женщин M.A.C STYLER MC-7736, Красный / Белый"
+    },
+    {
+      "id": "3f3a2cc0-b414-4568-ba89-bc8b2a7dd304",
+      "brand": "M.A.C STYLER",
+      "model": "MC-P33",
+      "color": "Qizil / Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator M.A.C STYLER MC-P33, Qizil / Oq",
+      "name_ru": "Профессиональный эпилятор для женщин M.A.C STYLER MC-P33, Красный / Белый"
+    },
+    {
+      "id": "81c94b64-cfb5-4798-ab03-88bb17d6b8ff",
+      "brand": "Babyverse",
+      "model": "SE10",
+      "color": "Oq",
+      "source": "UZUM_EXACT",
+      "name_uz": "Fotoepilytor Babyverse SE10, tanava yuz uchun sovitish effektli",
+      "name_ru": "Фотоэпилятор IPL лазерный Babyverse SE10, с охлаждением для лица и тела"
+    },
+    {
+      "id": "2c0a864a-7575-4ab4-b2a8-141a96c193e2",
+      "brand": "Babyverse",
+      "model": "SE11",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator Babyverse SE11, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин Babyverse SE11, Белый"
+    },
+    {
+      "id": "c2ea9ab9-b787-4ad8-a1be-30f59fb71167",
+      "brand": "Babyverse",
+      "model": "SE12",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator Babyverse SE12, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин Babyverse SE12, Белый"
+    },
+    {
+      "id": "98cbf0e4-3bd3-4ea7-bb10-fc3346eb6fad",
+      "brand": "Babyverse",
+      "model": "SE13",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator Babyverse SE13, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин Babyverse SE13, Белый"
+    },
+    {
+      "id": "308f42df-b593-478f-a4a2-93389a3cef03",
+      "brand": "Babyverse",
+      "model": "SE15",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator Babyverse SE15, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин Babyverse SE15, Белый"
+    },
+    {
+      "id": "141cc447-c769-478a-8c7b-5dbec539bdf6",
+      "brand": "Babyverse",
+      "model": "SE2",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator Babyverse SE2, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин Babyverse SE2, Белый"
+    },
+    {
+      "id": "653b984d-65ef-4f25-a592-4a65a1a30b36",
+      "brand": "Babyverse",
+      "model": "SE7",
+      "color": "Oq",
+      "source": "UZUM_EXACT",
+      "name_uz": "Babyverse SE7 – Og‘riqsiz, xavfsiz va samarali lazer epilyator",
+      "name_ru": "Babyverse SE7 – Безболезненный, безопасный и эффективный лазерный эпилятор"
+    },
+    {
+      "id": "a39f677d-1003-4291-8cd2-383f3b228dcb",
+      "brand": "Babyverse",
+      "model": "SE8",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator Babyverse SE8, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин Babyverse SE8, Белый"
+    },
+    {
+      "id": "887ebc55-f1e5-47c1-adb2-7904566ad66b",
+      "brand": "Babyverse",
+      "model": "SE9",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator Babyverse SE9, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин Babyverse SE9, Белый"
+    },
+    {
+      "id": "9292466d-1ecd-4ccd-884e-038d85f28ae4",
+      "brand": "VGR",
+      "model": "V-700",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-700, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-700, Белый"
+    },
+    {
+      "id": "190ec103-d618-466d-96ef-25cb2685005f",
+      "brand": "VGR",
+      "model": "V-703",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-703, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-703, Белый"
+    },
+    {
+      "id": "bed1782a-2479-4a30-9157-9ab053d0f4be",
+      "brand": "VGR",
+      "model": "V-705",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-705, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-705, Белый"
+    },
+    {
+      "id": "c7bd8ab5-98d1-4ccf-b60d-f306d16a3552",
+      "brand": "VGR",
+      "model": "V-706",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-706, Pushti",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-706, Розовый"
+    },
+    {
+      "id": "549fbfda-3412-4117-b474-9c35a3ff1606",
+      "brand": "VGR",
+      "model": "V-722",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-722, Pushti",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-722, Розовый"
+    },
+    {
+      "id": "105627ab-8927-4bab-8123-6ddeab79e2d1",
+      "brand": "VGR",
+      "model": "V-722",
+      "color": "Moviy",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-722, Moviy",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-722, Голубой"
+    },
+    {
+      "id": "6f4c563e-c437-454b-b87a-33ec8e30131a",
+      "brand": "VGR",
+      "model": "V-726",
+      "color": "Moviy",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-726, Moviy",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-726, Голубой"
+    },
+    {
+      "id": "7d07c8ba-dece-4c1a-b992-8a8246eda536",
+      "brand": "VGR",
+      "model": "V-727",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-727, Pushti",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-727, Розовый"
+    },
+    {
+      "id": "1f0494ac-6df1-4f3e-99cd-f8720245c4fa",
+      "brand": "VGR",
+      "model": "V-727",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-727, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-727, Белый"
+    },
+    {
+      "id": "c5589f1a-1a6f-4f40-baa4-c1e379cc38a3",
+      "brand": "VGR",
+      "model": "V-728",
+      "color": "Oq",
+      "source": "UZUM_EXACT",
+      "name_uz": "Professional epilyator modeli VGR V-728 simsiz, ayollar tanasi uchun",
+      "name_ru": "Эпилятор профессиональный модель VGR V-728 беспроводной, для тела женщин"
+    },
+    {
+      "id": "e7574a92-d879-442b-ad20-1ecd1267c5e7",
+      "brand": "VGR",
+      "model": "V-732",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-732, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-732, Белый"
+    },
+    {
+      "id": "91f95918-488b-4561-8adb-d8d2995e5455",
+      "brand": "VGR",
+      "model": "V-732",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-732, Pushti",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-732, Розовый"
+    },
+    {
+      "id": "3a7c573b-70b6-49b6-9c8e-b98707cf4382",
+      "brand": "VGR",
+      "model": "V-733",
+      "color": "Pushti",
+      "source": "UZUM_EXACT",
+      "name_uz": "Epilyator ayollar uchun suv otkazmaydigan VGR V-733 6tasi1da portativ depilyator zaradkali",
+      "name_ru": "Эпилятор женский водонепроницаемый VGR V-733, 6 в 1, портативная бритва с USB-зарядкой"
+    },
+    {
+      "id": "c3eb63e0-5242-4489-a031-c7ec2a403763",
+      "brand": "VGR",
+      "model": "V-733",
+      "color": "Pushti",
+      "source": "UZUM_EXACT",
+      "name_uz": "Epilyator ayollar uchun suv otkazmaydigan VGR V-733 6tasi1da portativ depilyator zaradkali",
+      "name_ru": "Эпилятор женский водонепроницаемый VGR V-733, 6 в 1, портативная бритва с USB-зарядкой"
+    },
+    {
+      "id": "58759958-1d1e-4674-b69f-58fde079a1f9",
+      "brand": "VGR",
+      "model": "V-738",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-738, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-738, Белый"
+    },
+    {
+      "id": "94bccbf1-a58b-4191-86b8-20a854647f4b",
+      "brand": "VGR",
+      "model": "V-738",
+      "color": "Sariq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-738, Sariq",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-738, Желтый"
+    },
+    {
+      "id": "f43ab3bd-d192-4a01-9337-7e1eedbd46a9",
+      "brand": "VGR",
+      "model": "V-739",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-739, Pushti",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-739, Розовый"
+    },
+    {
+      "id": "a2caca42-778f-4009-b133-deebb2e2a3f6",
+      "brand": "VGR",
+      "model": "V-739",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-739, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-739, Белый"
+    },
+    {
+      "id": "f69f6634-7314-4f0d-aaa6-7494fc2ac030",
+      "brand": "VGR",
+      "model": "V-750",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-750, Pushti",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-750, Розовый"
+    },
+    {
+      "id": "cc0ee761-e9bf-4157-83f0-f52386539bd6",
+      "brand": "VGR",
+      "model": "V-750",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-750, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-750, Белый"
+    },
+    {
+      "id": "ceee1569-8ecd-4ec1-9ec1-38dbda5bfa75",
+      "brand": "VGR",
+      "model": "V-751",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-751, Pushti",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-751, Розовый"
+    },
+    {
+      "id": "ce63dc7f-ae23-43ad-ae31-fb411dfde89a",
+      "brand": "VGR",
+      "model": "V-751",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-751, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-751, Белый"
+    },
+    {
+      "id": "b6386fdb-c468-4278-a86e-f5240ec57744",
+      "brand": "VGR",
+      "model": "V-753",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-753, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-753, Белый"
+    },
+    {
+      "id": "0a263d35-ab64-4aec-9d7c-dc41b42248e5",
+      "brand": "VGR",
+      "model": "V-756",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-756, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-756, Белый"
+    },
+    {
+      "id": "66327acd-0b77-4594-bd54-700330ce87a7",
+      "brand": "VGR",
+      "model": "V-756",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-756, Pushti",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-756, Розовый"
+    },
+    {
+      "id": "c1e6c515-5996-4292-99a7-37cb9ed5a0fe",
+      "brand": "VGR",
+      "model": "V-758",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-758, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-758, Белый"
+    },
+    {
+      "id": "20d3560d-d1b6-4adc-9173-6a562de5bfc6",
+      "brand": "VGR",
+      "model": "V-759",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-759, Pushti",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-759, Розовый"
+    },
+    {
+      "id": "a166cb99-c011-41ad-b7a9-5b2c4a9bbeef",
+      "brand": "VGR",
+      "model": "V-759",
+      "color": "Oq",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-759, Oq",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-759, Белый"
+    },
+    {
+      "id": "c78d8593-02ff-41e0-96b9-fbc90b12364a",
+      "brand": "VGR",
+      "model": "V-760",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-760, Pushti",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-760, Розовый"
+    },
+    {
+      "id": "85a39ac9-2c04-4157-8b30-1514536ebb2a",
+      "brand": "VGR",
+      "model": "V-760",
+      "color": "Yashil",
+      "source": "STANDARDIZED",
+      "name_uz": "Ayollar uchun professional epilyator VGR V-760, Yashil",
+      "name_ru": "Профессиональный эпилятор для женщин VGR V-760, Зеленый"
+    }
+  ]
+}

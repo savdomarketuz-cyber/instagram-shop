@@ -1,0 +1,80 @@
+{
+  "cat": {
+    "id": "1780990168256771",
+    "name": "Portativ kalonkalar"
+  },
+  "results": [
+    {
+      "id": "0c3c0d1a-0662-4061-8043-67c670a009d0",
+      "brand": "Sing-e",
+      "model": "CHAMADON 2",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Portativ simsiz Bluetooth kalonka Sing-e CHAMADON 2, Qora",
+      "name_ru": "Портативная беспроводная Bluetooth колонка Sing-e CHAMADON 2, Черный"
+    },
+    {
+      "id": "787c861b-9b6d-48fc-a0de-0602ecd91aac",
+      "brand": "Sing-e",
+      "model": "KALONKA",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Portativ simsiz Bluetooth kalonka Sing-e KALONKA, Qora",
+      "name_ru": "Портативная беспроводная Bluetooth колонка Sing-e KALONKA, Черный"
+    },
+    {
+      "id": "0c7a296f-db28-482f-9a7c-36e7d7b8807e",
+      "brand": "Sing-e",
+      "model": "KALONKA 3",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Portativ simsiz Bluetooth kalonka Sing-e KALONKA 3, Qora",
+      "name_ru": "Портативная беспроводная Bluetooth колонка Sing-e KALONKA 3, Черный"
+    },
+    {
+      "id": "b6b23e2d-01fc-4735-9c65-731345c10384",
+      "brand": "Sing-e",
+      "model": "KALONKA 5",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Portativ simsiz Bluetooth kalonka Sing-e KALONKA 5, Qora",
+      "name_ru": "Портативная беспроводная Bluetooth колонка Sing-e KALONKA 5, Черный"
+    },
+    {
+      "id": "6aef91c9-418e-4ce6-920d-fd710355ecb4",
+      "brand": "Sing-e",
+      "model": "SOONBOX",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Portativ simsiz Bluetooth kalonka Sing-e SOONBOX, Qora",
+      "name_ru": "Портативная беспроводная Bluetooth колонка Sing-e SOONBOX, Черный"
+    },
+    {
+      "id": "5ce9427f-3e91-47cc-aeff-b94107900b77",
+      "brand": "Sing-e",
+      "model": "ZQS-4239",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Portativ simsiz Bluetooth kalonka Sing-e ZQS-4239, Qora",
+      "name_ru": "Портативная беспроводная Bluetooth колонка Sing-e ZQS-4239, Черный"
+    },
+    {
+      "id": "b1ad1b5f-2a2a-4b00-ab59-596c650501f7",
+      "brand": "Sing-e",
+      "model": "ZQS-6212",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Portativ simsiz Bluetooth kalonka Sing-e ZQS-6212, Qora",
+      "name_ru": "Портативная беспроводная Bluetooth колонка Sing-e ZQS-6212, Черный"
+    },
+    {
+      "id": "6176e3e4-1352-44c1-a133-70407c0f313f",
+      "brand": "Sing-e",
+      "model": "ZQS-8301",
+      "color": "Qora",
+      "source": "UZUM_EXACT",
+      "name_uz": "Simsiz portativ kolonkasi Sing-e karaoke, RGB, Bluetooth ZQS-8301/8302",
+      "name_ru": "Портативная беспроводная колонка Sing-e караоке, RGB, Bluetooth ZQS-8301/8302"
+    }
+  ]
+}

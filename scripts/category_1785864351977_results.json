@@ -1,0 +1,44 @@
+{
+  "cat": {
+    "id": "1785864351977",
+    "name": "Shtativlar va tripodlar"
+  },
+  "results": [
+    {
+      "id": "833256f4-01b0-4ff3-ac50-e74a33200035",
+      "brand": "Jmary",
+      "model": "KP-2205",
+      "color": "Qora",
+      "source": "UZUM_EXACT",
+      "name_uz": "Shtativ tripod Jmary KP-2205, telefon ushlagichi bilan kamera va telefon uchun",
+      "name_ru": "Штатив Jmary KP-2205 с держателем для фотоаппарата и телефона"
+    },
+    {
+      "id": "2d541418-7c3a-40d1-9e2b-c86e4707f656",
+      "brand": "Jmary",
+      "model": "KP-2207",
+      "color": "Qora",
+      "source": "UZUM_EXACT",
+      "name_uz": "Jmary KP-2207 tripod, telefon va kamera ushlagichi bilan Pol, 1330 mm",
+      "name_ru": "Штатив Jmary KP-2207, напольный с держателем для телефона и фотоаппарата, 1330 мм"
+    },
+    {
+      "id": "a678d9d9-915a-4fbe-bc10-b934378f190e",
+      "brand": "Jmary",
+      "model": "KP-2274",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Telefon va kamera uchun shtativ tripod Jmary KP-2274, Qora",
+      "name_ru": "Штатив-тренога для телефона и камеры Jmary KP-2274, Черный"
+    },
+    {
+      "id": "cb4c503e-ef7f-46b3-9108-200f2462013a",
+      "brand": "Jmary",
+      "model": "KP-2294",
+      "color": "Qora",
+      "source": "UZUM_EXACT",
+      "name_uz": "Tripod shtativ Jmary KP-2209 / 2274 / 2294",
+      "name_ru": "Трипод штатив Jmary KP-2209 / 2274 / 2294"
+    }
+  ]
+}

@@ -1,0 +1,962 @@
+{
+  "cat": {
+    "id": "406",
+    "name": "Trimmerlar"
+  },
+  "results": [
+    {
+      "id": "7125f54a-d27b-4347-9f2b-c355697e0edd",
+      "brand": "Kemei",
+      "model": "KM-2299",
+      "color": "Qora",
+      "source": "UZUM_EXACT",
+      "name_uz": "KEMEI KM-2299 soch va soqol olish trimmer mashinasi",
+      "name_ru": "Триммер машинка для стрижки волос и бороды KEMEI KM-2299"
+    },
+    {
+      "id": "45fd2d4c-3ead-4bc3-a476-50c83c4ccf97",
+      "brand": "VGR",
+      "model": "STEPLESS PRO 3IN1",
+      "color": "Qizil",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR STEPLESS PRO 3IN1, Qizil",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR STEPLESS PRO 3IN1, Красный"
+    },
+    {
+      "id": "0ee8eb82-618b-446a-9aec-a5022227b440",
+      "brand": "VGR",
+      "model": "STEPLESS PRO 3IN1",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR STEPLESS PRO 3IN1, Ko'k",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR STEPLESS PRO 3IN1, Синий"
+    },
+    {
+      "id": "eb710f4c-3287-427e-ac86-d71f46fcf99b",
+      "brand": "VGR",
+      "model": "STEPLESS PRO 4IN1",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR STEPLESS PRO 4IN1, Ko'k",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR STEPLESS PRO 4IN1, Синий"
+    },
+    {
+      "id": "83b00b92-fc04-4587-ad82-ff4bac3abeb6",
+      "brand": "VGR",
+      "model": "STEPLESS PRO 4IN1",
+      "color": "Qizil",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR STEPLESS PRO 4IN1, Qizil",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR STEPLESS PRO 4IN1, Красный"
+    },
+    {
+      "id": "0c6b6b4b-39ad-4489-8b4c-202ed714629b",
+      "brand": "VGR",
+      "model": "V-001-977",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-001-977, Qora",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-001-977, Черный"
+    },
+    {
+      "id": "a0257f51-2859-4223-9156-3512c6176226",
+      "brand": "VGR",
+      "model": "V-001-977",
+      "color": "Qizil",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-001-977, Qizil",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-001-977, Красный"
+    },
+    {
+      "id": "3310ad06-d5e6-4d49-b371-75deb52ec12a",
+      "brand": "VGR",
+      "model": "V-001-977-GOLD",
+      "color": "Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-001-977-GOLD, Oltin",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-001-977-GOLD, Золотой"
+    },
+    {
+      "id": "65c0cbc7-ccf3-4341-b7be-7cc925805496",
+      "brand": "VGR",
+      "model": "V-015",
+      "color": "Oltin / Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-015, Oltin / Qora",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-015, Золотой / Черный"
+    },
+    {
+      "id": "9a3bd1eb-fc77-4a5a-b3a5-a47dd1995f75",
+      "brand": "VGR",
+      "model": "V-016",
+      "color": "Titan",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-016, Titan",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-016, Титан"
+    },
+    {
+      "id": "1af99fb9-515d-4faa-9f52-6ddb524e7448",
+      "brand": "VGR",
+      "model": "V-020",
+      "color": "Qora / Kumush",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-020, Qora / Kumush",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-020, Черный / Серебристый"
+    },
+    {
+      "id": "f3efe099-0248-42dd-bbd5-30698945e879",
+      "brand": "VGR",
+      "model": "V-026",
+      "color": "Qizil",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-026, Qizil",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-026, Красный"
+    },
+    {
+      "id": "3e6e51e6-74f7-474f-9213-a4bb229b1d63",
+      "brand": "VGR",
+      "model": "V-030",
+      "color": "Qora",
+      "source": "UZUM_EXACT",
+      "name_uz": "VGR V-030 simsiz soch olish mashinasi, soqol va mo‘ylovni olish uchun trimmer",
+      "name_ru": "Беспроводная машинка для стрижки VGR V-030, триммер для бритья бороды и усов"
+    },
+    {
+      "id": "300ce283-9928-4eb8-9a6b-8a143cc3b6c4",
+      "brand": "VGR",
+      "model": "V-055",
+      "color": "Qora",
+      "source": "UZUM_EXACT",
+      "name_uz": "Simsiz trimmer soch olish uchun VGR V-055",
+      "name_ru": "Беспроводной триммер для удаления волос VGR V-055"
+    },
+    {
+      "id": "07b1cb74-48cf-4d61-90ea-cb4645763bbf",
+      "brand": "VGR",
+      "model": "V-070",
+      "color": "Qora",
+      "source": "UZUM_EXACT",
+      "name_uz": "Simsiz trimmer VGR V-070, soqol olish va soch kesish uchun mashinka",
+      "name_ru": "Аккумуляторный триммер VGR V-070, станок для бритья и стрижки"
+    },
+    {
+      "id": "1a6df508-1b99-446c-b7a1-5d8b088f6c2c",
+      "brand": "VGR",
+      "model": "V-071",
+      "color": "Kumush",
+      "source": "UZUM_EXACT",
+      "name_uz": "Elektr ustara VGR V-071 modeli, trimmer va moylash mashinasi uchun",
+      "name_ru": "Электрическая бритва модель VGR В-071, для триммера и смазочной машинки"
+    },
+    {
+      "id": "9567d612-7b3c-4a7a-bce2-a8bdbed3996e",
+      "brand": "VGR",
+      "model": "V-073",
+      "color": "Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-073, Oltin",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-073, Золотой"
+    },
+    {
+      "id": "7618239e-b397-4ef9-a7fa-0ddfd10abcca",
+      "brand": "VGR",
+      "model": "V-075",
+      "color": "Kumush / Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-075, Kumush / Qora",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-075, Серебристый / Черный"
+    },
+    {
+      "id": "e00d63bc-89cd-4d28-9b8a-8a5e30c89175",
+      "brand": "VGR",
+      "model": "V-085",
+      "color": "Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-085, Oltin",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-085, Золотой"
+    },
+    {
+      "id": "a856a83e-7b09-450c-bfdd-1a05cc3f2ef7",
+      "brand": "VGR",
+      "model": "V-091",
+      "color": "Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-091, Oltin",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-091, Золотой"
+    },
+    {
+      "id": "99d4ac49-61ed-4f61-809f-156b9d73715b",
+      "brand": "VGR",
+      "model": "V-095",
+      "color": "Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-095, Oltin",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-095, Золотой"
+    },
+    {
+      "id": "6942f47d-c409-4ab9-878b-9fadbbe6a0bc",
+      "brand": "VGR",
+      "model": "V-096",
+      "color": "Titan",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-096, Titan",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-096, Титан"
+    },
+    {
+      "id": "587d1eac-fc2d-40d8-980f-d223c90acb2b",
+      "brand": "VGR",
+      "model": "V-097",
+      "color": "Kumush",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-097, Kumush",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-097, Серебристый"
+    },
+    {
+      "id": "926291cd-a655-4fea-a7c9-afbd54080bcb",
+      "brand": "VGR",
+      "model": "V-099",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-099, Qora",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-099, Черный"
+    },
+    {
+      "id": "e930f3d7-72a9-4028-83bb-96682bf4a46f",
+      "brand": "VGR",
+      "model": "V-102",
+      "color": "Yashil",
+      "source": "UZUM_EXACT",
+      "name_uz": "Trimmer soch, burun, soqol, olish uchun VGR V-102 qoliplari bilan, 6 tasi 1 da",
+      "name_ru": "Триммер для стрижки волос и бороды, носа VGR V-102 с набором насадок, 6 в 1"
+    },
+    {
+      "id": "3776abb5-b579-4999-a8c9-7f7ffa3be420",
+      "brand": "VGR",
+      "model": "V-105",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-105, Qora",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-105, Черный"
+    },
+    {
+      "id": "4e2be683-7c88-4226-8094-0ff010862d5f",
+      "brand": "VGR",
+      "model": "V-106",
+      "color": "Qora",
+      "source": "UZUM_EXACT",
+      "name_uz": "Professional simsiz VGR V-106, 6 tasi 1 da, soqol olish va soch kesish uchun mashinka",
+      "name_ru": "Профессиональный беспроводной станок для бритья и стрижки волос VGR V-106, 6 в 1"
+    },
+    {
+      "id": "f41fb6d6-5e5e-4bfb-8486-7923fdacf979",
+      "brand": "VGR",
+      "model": "V-107",
+      "color": "Kumush / Qora",
+      "source": "UZUM_EXACT",
+      "name_uz": "Professional simsiz trimmer, soqol, mo'ylov va soch kesish uchun VGR 107",
+      "name_ru": "Профессиональный беспроводной триммер, для стрижки бороды, усов и волос VGR 107"
+    },
+    {
+      "id": "7cf90814-d677-48f5-bb39-7d6f6097a558",
+      "brand": "VGR",
+      "model": "V-111",
+      "color": "Kumush / Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-111, Kumush / Qora",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-111, Серебристый / Черный"
+    },
+    {
+      "id": "fdf6e662-c4f0-4d2f-9612-68e29b395eee",
+      "brand": "VGR",
+      "model": "V-117",
+      "color": "Qizil",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-117, Qizil",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-117, Красный"
+    },
+    {
+      "id": "80f0503c-68f1-4cfe-a725-632e69fa880a",
+      "brand": "VGR",
+      "model": "V-117",
+      "color": "Yashil",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-117, Yashil",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-117, Зеленый"
+    },
+    {
+      "id": "7035f17e-c7c9-4687-846f-5e563f0dc487",
+      "brand": "VGR",
+      "model": "V-119",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-119, Ko'k",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-119, Синий"
+    },
+    {
+      "id": "a56cfbde-9287-464b-b50c-c013c77ab98a",
+      "brand": "VGR",
+      "model": "V-119",
+      "color": "Sariq",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-119, Sariq",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-119, Желтый"
+    },
+    {
+      "id": "9856f5e7-3dad-4145-917d-dbf69b72b7b1",
+      "brand": "VGR",
+      "model": "V-123",
+      "color": "Kumush",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-123, Kumush",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-123, Серебристый"
+    },
+    {
+      "id": "d5c22186-3068-4187-b7a0-65cc6f751b78",
+      "brand": "VGR",
+      "model": "V-166",
+      "color": "Yashil",
+      "source": "UZUM_EXACT",
+      "name_uz": "VGR V-166 Professional Hair Clipper - bu professional soch olish mashinasi",
+      "name_ru": "VGR V-166 Professional Hair Clipper — это профессиональная машинка для стрижки волос"
+    },
+    {
+      "id": "351eaae8-17b6-4776-8295-ec3ae6a68cd9",
+      "brand": "VGR",
+      "model": "V-166-GOLD",
+      "color": "Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-166-GOLD, Oltin",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-166-GOLD, Золотой"
+    },
+    {
+      "id": "b862a3a7-ac03-4c67-a2ab-d8824c592257",
+      "brand": "VGR",
+      "model": "V-171",
+      "color": "Xrom",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-171, Xrom",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-171, Xrom"
+    },
+    {
+      "id": "39282bee-9f29-4b56-a53f-8cd41de5caa1",
+      "brand": "VGR",
+      "model": "V-172",
+      "color": "Qora-ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-172, Qora-ko'k",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-172, Qora-ko'k"
+    },
+    {
+      "id": "81f07326-0509-49e1-b748-eaa0a2378882",
+      "brand": "VGR",
+      "model": "V-172",
+      "color": "To'q ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-172, To'q ko'k",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-172, To'q ko'k"
+    },
+    {
+      "id": "44063e45-3333-4fd9-9a7f-1fb82d052666",
+      "brand": "VGR",
+      "model": "V-175",
+      "color": "Sariq",
+      "source": "UZUM_EXACT",
+      "name_uz": "Soqol va mo‘ylovni olish uchun VGR 175 simsiz soch olish mashinasi, trimmer",
+      "name_ru": "Беспроводная машинка для стрижки волос VGR 175, для бритья бороды и усов, триммер"
+    },
+    {
+      "id": "f123e2f4-3d97-4c80-8ea5-0c81502209c8",
+      "brand": "VGR",
+      "model": "V-175",
+      "color": "Yashil",
+      "source": "UZUM_EXACT",
+      "name_uz": "Soqol va mo‘ylovni olish uchun VGR 175 simsiz soch olish mashinasi, trimmer",
+      "name_ru": "Беспроводная машинка для стрижки волос VGR 175, для бритья бороды и усов, триммер"
+    },
+    {
+      "id": "4de6d217-3165-4fa2-80a1-89b68c0200fd",
+      "brand": "VGR",
+      "model": "V-227",
+      "color": "Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-227, Oltin",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-227, Золотой"
+    },
+    {
+      "id": "8d23550b-04ff-4dd2-9ac6-5e2a60cdab91",
+      "brand": "VGR",
+      "model": "V-270",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-270, Ko'k",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-270, Синий"
+    },
+    {
+      "id": "ee2f995d-6953-467c-8b16-4548a9df1195",
+      "brand": "VGR",
+      "model": "V-270",
+      "color": "Sariq",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-270, Sariq",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-270, Желтый"
+    },
+    {
+      "id": "6a831117-34cf-4977-b179-f79938dc1485",
+      "brand": "VGR",
+      "model": "V-273",
+      "color": "Sariq",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-273, Sariq",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-273, Желтый"
+    },
+    {
+      "id": "a7ae5bdd-ed0b-4d49-b8b8-207afc484c63",
+      "brand": "VGR",
+      "model": "V-274",
+      "color": "Titan",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-274, Titan",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-274, Титан"
+    },
+    {
+      "id": "50674e13-1593-4f11-a368-ddaec2871c0d",
+      "brand": "VGR",
+      "model": "V-276",
+      "color": "Kumush",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-276, Kumush",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-276, Серебристый"
+    },
+    {
+      "id": "43ac0a32-e89d-4bca-b204-88a32d351c50",
+      "brand": "VGR",
+      "model": "V-279",
+      "color": "Yashil",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-279, Yashil",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-279, Зеленый"
+    },
+    {
+      "id": "0deb0fc5-f70b-4f9c-bbab-601f7ddac44e",
+      "brand": "VGR",
+      "model": "V-279",
+      "color": "Qizil",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-279, Qizil",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-279, Красный"
+    },
+    {
+      "id": "d53078d7-94b1-4d01-9ebd-4f15f34e1005",
+      "brand": "VGR",
+      "model": "V-285",
+      "color": "Sariq",
+      "source": "UZUM_EXACT",
+      "name_uz": "Professional soch va soqol trimeri VGR, V-285",
+      "name_ru": "Профессиональная машинка для стрижки волос и бороды VGR V-285"
+    },
+    {
+      "id": "5f015072-c7ae-49af-ba09-fc0fa15ca34a",
+      "brand": "VGR",
+      "model": "V-297",
+      "color": "Xrom",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-297, Xrom",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-297, Xrom"
+    },
+    {
+      "id": "74eaf225-2b3c-4512-a08e-76848f4e9718",
+      "brand": "VGR",
+      "model": "V-306",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-306, Qora",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-306, Черный"
+    },
+    {
+      "id": "5d1f3e80-445a-4621-957d-a6d965f470bc",
+      "brand": "VGR",
+      "model": "V-308",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-308, Ko'k",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-308, Синий"
+    },
+    {
+      "id": "0800ca9b-fcb3-45c6-824c-ee6fcb31a272",
+      "brand": "VGR",
+      "model": "V-308-GOLD",
+      "color": "Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-308-GOLD, Oltin",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-308-GOLD, Золотой"
+    },
+    {
+      "id": "730a2baf-c25e-41d2-b500-1d0b96201962",
+      "brand": "VGR",
+      "model": "V-311",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-311, Ko'k",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-311, Синий"
+    },
+    {
+      "id": "fa4da842-d993-472d-85f5-fc370f9775b9",
+      "brand": "VGR",
+      "model": "V-311-GOLD",
+      "color": "Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-311-GOLD, Oltin",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-311-GOLD, Золотой"
+    },
+    {
+      "id": "68ab5980-0125-4b55-b371-b31ed72078ad",
+      "brand": "VGR",
+      "model": "V-313",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-313, Ko'k",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-313, Синий"
+    },
+    {
+      "id": "4374a404-55cf-4f14-9446-e36fa2d99328",
+      "brand": "VGR",
+      "model": "V-318",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-318, Qora",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-318, Черный"
+    },
+    {
+      "id": "baab9b1b-0f93-4793-97fc-ed6a873b70e1",
+      "brand": "VGR",
+      "model": "V-322",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-322, Ko'k",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-322, Синий"
+    },
+    {
+      "id": "e70fcd04-db36-4b5f-8f49-545d7bf438cd",
+      "brand": "VGR",
+      "model": "V-323",
+      "color": "Moviy",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-323, Moviy",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-323, Голубой"
+    },
+    {
+      "id": "7f31dbf5-fe88-4406-af8e-81bfaf39a3c8",
+      "brand": "VGR",
+      "model": "V-325",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-325, Ko'k",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-325, Синий"
+    },
+    {
+      "id": "bf98f145-d4d4-4f33-8211-690daa8313ac",
+      "brand": "VGR",
+      "model": "V-326",
+      "color": "Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-326, Oltin",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-326, Золотой"
+    },
+    {
+      "id": "1c1ebcff-4160-48d7-b3c4-7d02b9285b62",
+      "brand": "VGR",
+      "model": "V-329",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-329, Qora",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-329, Черный"
+    },
+    {
+      "id": "574e2bc6-6ad1-4ac1-b4d3-627d3f0c7074",
+      "brand": "VGR",
+      "model": "V-331",
+      "color": "Qora",
+      "source": "UZUM_EXACT",
+      "name_uz": "Erkaklar uchun VGR V-331 elektr soqol olish mashinkasi USB",
+      "name_ru": "Электробритва VGR V-331 для мужчин, с USB зарядкой"
+    },
+    {
+      "id": "a9f87b68-c44c-46b1-bcaf-f837216ecfe9",
+      "brand": "VGR",
+      "model": "V-332-GOLD",
+      "color": "Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-332-GOLD, Oltin",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-332-GOLD, Золотой"
+    },
+    {
+      "id": "e350c4ed-636e-4876-b6a9-4d7cbd2676ac",
+      "brand": "VGR",
+      "model": "V-332-SILVER",
+      "color": "Kumush",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-332-SILVER, Kumush",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-332-SILVER, Серебристый"
+    },
+    {
+      "id": "e8aee149-cdb7-466b-a55c-39ea4697e4fc",
+      "brand": "VGR",
+      "model": "V-334",
+      "color": "Qora (Carbon)",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-334, Qora (Carbon)",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-334, Qora (Carbon)"
+    },
+    {
+      "id": "de17b0ad-8d78-4cb4-a074-04ea49786e55",
+      "brand": "VGR",
+      "model": "V-336",
+      "color": "Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-336, Oltin",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-336, Золотой"
+    },
+    {
+      "id": "706fe9c5-2f03-477d-89b5-744ea4b9ae64",
+      "brand": "VGR",
+      "model": "V-337",
+      "color": "Titan",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-337, Titan",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-337, Титан"
+    },
+    {
+      "id": "3ed9184e-9493-47b2-9d6c-49f4dc570600",
+      "brand": "VGR",
+      "model": "V-344",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-344, Ko'k",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-344, Синий"
+    },
+    {
+      "id": "fb10eb4a-8ba1-4aab-b528-1b0225956fac",
+      "brand": "VGR",
+      "model": "V-344-PURPLE",
+      "color": "Binafsha",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-344-PURPLE, Binafsha",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-344-PURPLE, Фиолетовый"
+    },
+    {
+      "id": "89c26385-0429-4111-887b-0d304ddd4488",
+      "brand": "VGR",
+      "model": "V-345",
+      "color": "Qizil",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-345, Qizil",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-345, Красный"
+    },
+    {
+      "id": "b048457a-c8c3-4f90-b702-bfb6efc22856",
+      "brand": "VGR",
+      "model": "V-345-SILVER",
+      "color": "Kumush",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-345-SILVER, Kumush",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-345-SILVER, Серебристый"
+    },
+    {
+      "id": "97120f4d-8845-41ef-9e8b-1e9c5260d9d7",
+      "brand": "VGR",
+      "model": "V-350-GOLD",
+      "color": "Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-350-GOLD, Oltin",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-350-GOLD, Золотой"
+    },
+    {
+      "id": "a407dd51-b916-400a-8b2d-5e091748ed3e",
+      "brand": "VGR",
+      "model": "V-350-SILVER",
+      "color": "Kumush",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-350-SILVER, Kumush",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-350-SILVER, Серебристый"
+    },
+    {
+      "id": "b992c19e-899b-4b2b-9f67-7aea6d8c44ea",
+      "brand": "VGR",
+      "model": "V-353",
+      "color": "Yashil",
+      "source": "UZUM_EXACT",
+      "name_uz": "VGR V-353 elektr ustara, o‘rnatilgan trimmer bilan, simsiz portativ sheyver",
+      "name_ru": "Электробритва VGR V-353, со встроенным триммером, беспроводной портативный шейвер"
+    },
+    {
+      "id": "b4b70ae9-3164-40c5-b9ec-6f65d9977ba2",
+      "brand": "VGR",
+      "model": "V-353",
+      "color": "Qora",
+      "source": "UZUM_EXACT",
+      "name_uz": "VGR V-353 elektr ustara, o‘rnatilgan trimmer bilan, simsiz portativ sheyver",
+      "name_ru": "Электробритва VGR V-353, со встроенным триммером, беспроводной портативный шейвер"
+    },
+    {
+      "id": "9ab5adf1-64d0-487f-b343-f93695e96451",
+      "brand": "VGR",
+      "model": "V-357",
+      "color": "Oltin / Yashil",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-357, Oltin / Yashil",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-357, Золотой / Зеленый"
+    },
+    {
+      "id": "53d60b4e-9f6b-40fb-a13e-fc11df795ab8",
+      "brand": "VGR",
+      "model": "V-359-GOLD",
+      "color": "Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-359-GOLD, Oltin",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-359-GOLD, Золотой"
+    },
+    {
+      "id": "359cfa2c-fbc0-4f5b-8cc3-2f4b3f16c87b",
+      "brand": "VGR",
+      "model": "V-359-SILVER",
+      "color": "Kumush",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-359-SILVER, Kumush",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-359-SILVER, Серебристый"
+    },
+    {
+      "id": "950845ef-a3e7-4374-b416-34fccce0a8da",
+      "brand": "VGR",
+      "model": "V-640",
+      "color": "Ko'k",
+      "source": "UZUM_EXACT",
+      "name_uz": "Professional mashina-trimmeri VGR V-640_S3, soch va soqol olish uchun",
+      "name_ru": "Машинка для стрижки VGR V-640_S3, питание от USB, нержавеющая сталь"
+    },
+    {
+      "id": "a98bb60e-7875-4fdf-8fba-a0fd23c2bafe",
+      "brand": "VGR",
+      "model": "V-640",
+      "color": "Qora",
+      "source": "UZUM_EXACT",
+      "name_uz": "Professional mashina-trimmeri VGR V-640_S3, soch va soqol olish uchun",
+      "name_ru": "Машинка для стрижки VGR V-640_S3, питание от USB, нержавеющая сталь"
+    },
+    {
+      "id": "58027f4c-4b72-4c6a-a67d-ffaa712370fc",
+      "brand": "VGR",
+      "model": "V-640",
+      "color": "Qizil",
+      "source": "UZUM_EXACT",
+      "name_uz": "Professional mashina-trimmeri VGR V-640_S3, soch va soqol olish uchun",
+      "name_ru": "Машинка для стрижки VGR V-640_S3, питание от USB, нержавеющая сталь"
+    },
+    {
+      "id": "835d216f-fee6-49ea-a31f-2c8f9e5e4ce7",
+      "brand": "VGR",
+      "model": "V-640 S3",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-640 S3, Qora",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-640 S3, Черный"
+    },
+    {
+      "id": "9d0bdb65-3e60-4595-8eaa-d1c7df2e1484",
+      "brand": "VGR",
+      "model": "V-640 S3",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-640 S3, Ko'k",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-640 S3, Синий"
+    },
+    {
+      "id": "e13bc25b-a215-4e54-b273-c3d135420861",
+      "brand": "VGR",
+      "model": "V-645 S3",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-645 S3, Ko'k",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-645 S3, Синий"
+    },
+    {
+      "id": "d34cf391-19b5-4e68-a3a3-e619fb99f411",
+      "brand": "VGR",
+      "model": "V-668",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-668, Qora",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-668, Черный"
+    },
+    {
+      "id": "2417a400-5a18-45da-9b2c-43bdb5ea1d71",
+      "brand": "VGR",
+      "model": "V-674",
+      "color": "Yashil",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-674, Yashil",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-674, Зеленый"
+    },
+    {
+      "id": "e659539a-0f1c-4377-a99e-cd6ddd9f23e4",
+      "brand": "VGR",
+      "model": "V-675 S2-SERIY",
+      "color": "Kulrang",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-675 S2-SERIY, Kulrang",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-675 S2-SERIY, Серый"
+    },
+    {
+      "id": "232e4687-ccde-4e30-aadb-b93dcaede865",
+      "brand": "VGR",
+      "model": "V-675 S3-SERIY",
+      "color": "Kulrang",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-675 S3-SERIY, Kulrang",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-675 S3-SERIY, Серый"
+    },
+    {
+      "id": "db6a49f7-d01c-488b-ba60-1122f0c69d31",
+      "brand": "VGR",
+      "model": "V-694S3-TILLA",
+      "color": "Tilla",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-694S3-TILLA, Tilla",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-694S3-TILLA, Золотой"
+    },
+    {
+      "id": "e69279ca-fce4-4276-9a89-8506bd44422b",
+      "brand": "VGR",
+      "model": "V-725",
+      "color": "Pushti",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-725, Pushti",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-725, Розовый"
+    },
+    {
+      "id": "4c65523f-7157-43c8-aec4-c98fb4ad35a2",
+      "brand": "VGR",
+      "model": "V-763",
+      "color": "Moviy",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-763, Moviy",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-763, Голубой"
+    },
+    {
+      "id": "c473f3a7-d9c2-4da0-b8ec-ab3c6c261441",
+      "brand": "VGR",
+      "model": "V-886",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-886, Ko'k",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-886, Синий"
+    },
+    {
+      "id": "a9a6cf3a-2570-4bc4-962b-9f51122da059",
+      "brand": "VGR",
+      "model": "V-938",
+      "color": "Qora",
+      "source": "UZUM_EXACT",
+      "name_uz": "VGR V-938 soqol va tana uchun trimmer professional parvarish USB",
+      "name_ru": "VGR V-938 триммер для бороды и тела профессиональный уход USB"
+    },
+    {
+      "id": "fddbfaac-5e67-4bf6-a3b3-c7cee3cd8244",
+      "brand": "VGR",
+      "model": "V-946",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-946, Ko'k",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-946, Синий"
+    },
+    {
+      "id": "7b31f974-d575-4760-a730-5594784396cb",
+      "brand": "VGR",
+      "model": "V-977/377 S2",
+      "color": "Qora",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-977/377 S2, Qora",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-977/377 S2, Черный"
+    },
+    {
+      "id": "08bd7ae7-a453-45b3-bf94-56596704eba4",
+      "brand": "VGR",
+      "model": "V-977/377 S2",
+      "color": "Qizil",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-977/377 S2, Qizil",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-977/377 S2, Красный"
+    },
+    {
+      "id": "bb01309e-3f21-4c8c-9e2b-c38a792a5b27",
+      "brand": "VGR",
+      "model": "V-977/377 S2-OLTIN",
+      "color": "Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-977/377 S2-OLTIN, Oltin",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-977/377 S2-OLTIN, Золотой"
+    },
+    {
+      "id": "424a1ef4-fed9-428f-ad2d-4415ca69a87e",
+      "brand": "VGR",
+      "model": "V-992",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-992, Ko'k",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-992, Синий"
+    },
+    {
+      "id": "5f857204-ad9b-42c5-9eff-cc3fbc5bf95d",
+      "brand": "VGR",
+      "model": "V-992-SARIQ",
+      "color": "Sariq",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V-992-SARIQ, Sariq",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V-992-SARIQ, Желтый"
+    },
+    {
+      "id": "74c52953-9a12-4551-84f1-e35102d2b1a2",
+      "brand": "VGR",
+      "model": "V001",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V001, Ko'k",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V001, Синий"
+    },
+    {
+      "id": "dbaa0ff2-d567-4aaa-9d35-83c55d669331",
+      "brand": "VGR",
+      "model": "V001",
+      "color": "Qizil",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V001, Qizil",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V001, Красный"
+    },
+    {
+      "id": "b331e56f-87d0-4e88-b9ad-3d393c8b5b05",
+      "brand": "VGR",
+      "model": "V001-CARBON",
+      "color": "Ko'k",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V001-CARBON, Ko'k",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V001-CARBON, Синий"
+    },
+    {
+      "id": "b689848b-bf76-4a21-a3b3-8ddf915c6af1",
+      "brand": "VGR",
+      "model": "V001-GOLD",
+      "color": "Oltin",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V001-GOLD, Oltin",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V001-GOLD, Золотой"
+    },
+    {
+      "id": "527f85fd-fde1-45cb-a676-e8780e7f9768",
+      "brand": "VGR",
+      "model": "V001-LIME",
+      "color": "Limon",
+      "source": "STANDARDIZED",
+      "name_uz": "Soch va soqol olish uchun professional trimmer VGR V001-LIME, Limon",
+      "name_ru": "Профессиональный триммер для волос и бороды VGR V001-LIME, Лимонный"
+    }
+  ]
+}
