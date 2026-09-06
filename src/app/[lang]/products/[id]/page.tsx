@@ -98,9 +98,9 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
                 url: canonicalUrl,
                 siteName: 'Velari',
                 images: [
+                    { url: ogUrl.toString(), width: 1200, height: 630, alt: productName },
                     { url: rawProductImage, width: 800, height: 800, alt: productName },
-                    ...productImages.slice(1, 4).map(img => ({ url: img, width: 800, height: 800, alt: productName })),
-                    { url: ogUrl.toString(), width: 1200, height: 630, alt: productName }
+                    ...productImages.slice(1, 4).map(img => ({ url: img, width: 800, height: 800, alt: productName }))
                 ],
                 locale: isRu ? 'ru_RU' : 'uz_UZ',
                 type: 'website',
@@ -109,7 +109,7 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
                 card: 'summary_large_image',
                 title: title,
                 description: description,
-                images: [rawProductImage, ogUrl.toString()],
+                images: [ogUrl.toString(), rawProductImage],
             },
             alternates: {
                 canonical: canonicalUrl,

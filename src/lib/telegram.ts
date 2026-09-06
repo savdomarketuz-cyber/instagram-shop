@@ -140,25 +140,74 @@ export async function sendCartReminder(phone: string, items: any[], customNote?:
 
         if (!user || !user.telegram_id || !CUSTOMER_BOT_TOKEN) return { success: false, error: "Foydalanuvchi botga ulanmagan" };
 
-        const itemsText = items.map((i: any) => `- ${i.name} (x${i.quantity || 1} ta) — ${(Number(i.price) * (i.quantity || 1)).toLocaleString()} so'm`).join('\n');
+        const itemsText = items.map((i: any) => `• <b>${i.name}</b> (x${i.quantity || 1} ta) — ${(Number(i.price) * (i.quantity || 1)).toLocaleString()} so'm`).join('\n');
         const total = items.reduce((sum, i) => sum + (Number(i.price) * (i.quantity || 1)), 0);
 
         let text = `🛒 <b>Savatda mahsulotlar qolib ketdi!</b>\n\n`;
-        text += `Assalomu alaykum, <b>${user.name || 'Mijoz'}</b>!\n`;
+        text += `Assalomu alaykum, <b>${user.name || 'Hurmatli mijoz'}</b>!\n`;
         text += `Sizning savatingizda quyidagi mahsulotlar o'z xaridini kutmoqda:\n\n`;
-        text += `📦 <b>Siz tanlagan mahsulotlar:</b>\n${itemsText}\n\n`;
-        text += `💰 <b>Jami summa:</b> ${total.toLocaleString()} so'm\n\n`;
+        text += `📦 <b>Tanlangan mahsulotlar:</b>\n${itemsText}\n\n`;
+        text += `💰 <b>Jami summa:</b> <b>${total.toLocaleString()} so'm</b>\n\n`;
         
         if (customNote && customNote.trim()) {
             text += `🎁 <b>Admin eslatmasi:</b>\n<i>${customNote.trim()}</i>\n\n`;
         }
 
-        text += `🏃‍♂️ <i>Mahsulotlar soni cheklangan, ularni hoziroq xarid qiling! Saytimizga kirib buyurtmani yakunlashingiz mumkin:</i>\n👉 https://velari.uz/uz/cart`;
+        text += `🏃‍♂️ <i>Mahsulotlar soni cheklangan, ularni hoziroq rasmiylashtirib oling!</i>`;
 
+        // Inline keyboard button leading directly to cart
+        const reply_markup = {
+            inline_keyboard: [
+                [
+                    {
+                        text: "🛒 Savatni ochish va xarid qilish",
+                        url: `https://velari.uz/uz/cart?ref=tg_reminder&phone=${encodeURIComponent(phone)}`
+                    }
+                ]
+            ]
+        };
+
+        // Find primary product image
+        const firstValidImage = items.find((i: any) => i.image && i.image.startsWith("http"))?.image 
+            || (items[0]?.image ? `https://velari.uz${items[0].image}` : null);
+
+        // 1. Try sending with photo first
+        if (firstValidImage && text.length <= 1000) {
+            try {
+                const photoRes = await fetch(`https://api.telegram.org/bot${CUSTOMER_BOT_TOKEN}/sendPhoto`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: user.telegram_id,
+                        photo: firstValidImage,
+                        caption: text,
+                        parse_mode: 'HTML',
+                        reply_markup
+                    })
+                });
+                const photoData = await photoRes.json();
+                if (photoData.ok) {
+                    return { success: true };
+                }
+            } catch (err) {
+                console.warn("sendPhoto failed, falling back to sendMessage:", err);
+            }
+        }
+
+        // 2. Fallback: sendMessage with rich preview and button
         const res = await fetch(`https://api.telegram.org/bot${CUSTOMER_BOT_TOKEN}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: user.telegram_id, text, parse_mode: 'HTML' })
+            body: JSON.stringify({ 
+                chat_id: user.telegram_id, 
+                text, 
+                parse_mode: 'HTML',
+                reply_markup,
+                link_preview_options: {
+                    is_disabled: false,
+                    prefer_large_media: true
+                }
+            })
         });
         
         const data = await res.json();
