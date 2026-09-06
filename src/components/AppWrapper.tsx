@@ -19,6 +19,7 @@ import ConnectivityListener from "@/components/common/ConnectivityListener";
 import { subscribeToPushNotifications } from "@/lib/push-notifications";
 import { Language } from "@/types";
 import DynamicFavicon from "@/components/common/DynamicFavicon";
+import SmartTabTitle from "@/components/common/SmartTabTitle";
 
 export default function AppWrapper({ children, lang }: { children: React.ReactNode, lang?: string }) {
     const cart = useStore(state => state.cart);
@@ -332,6 +333,7 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
         `}>
             <ConnectivityListener />
             <DynamicFavicon />
+            <SmartTabTitle />
             {showNav && (
                 <Suspense fallback={<div className="h-16 md:h-28 bg-white" />}>
                     <Navigation />
