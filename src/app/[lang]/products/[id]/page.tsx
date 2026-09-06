@@ -143,17 +143,7 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
     }
 }
 
-async function ProductDataWrapper({ params }: { params: { lang: string, id: string } }) {
-    const productIdOrArticle = getProductIdFromSlug(params.id);
-    const product: any = await getProductData(productIdOrArticle);
-    
-    if (!product) notFound();
-
-    const canonicalSlug = getProductSlug(product, params.lang);
-    if (params.id !== canonicalSlug) {
-        permanentRedirect(`/${params.lang}/products/${canonicalSlug}`);
-    }
-
+function ProductDataWrapper({ params, product, canonicalSlug }: { params: { lang: string, id: string }, product: any, canonicalSlug: string }) {
     // Canonical slug (JSON-LD offers.url uchun) — tilga mos, normallashtirilgan
     const canonicalProductUrl = `https://velari.uz/${params.lang}/products/${canonicalSlug}`;
 
@@ -318,10 +308,20 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
     );
 }
 
-export default function Page({ params }: { params: { lang: string, id: string } }) {
+export default async function Page({ params }: { params: { lang: string, id: string } }) {
+    const productIdOrArticle = getProductIdFromSlug(params.id);
+    const product: any = await getProductData(productIdOrArticle);
+    
+    if (!product) notFound();
+
+    const canonicalSlug = getProductSlug(product, params.lang);
+    if (params.id !== canonicalSlug) {
+        permanentRedirect(`/${params.lang}/products/${canonicalSlug}`);
+    }
+
     return (
         <Suspense fallback={<ProductSkeleton />}>
-            <ProductDataWrapper params={params} />
+            <ProductDataWrapper params={params} product={product} canonicalSlug={canonicalSlug} />
         </Suspense>
     );
 }
