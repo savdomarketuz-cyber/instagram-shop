@@ -97,7 +97,38 @@ export default function PushNotificationsPage() {
                         className="w-full bg-black text-white rounded-3xl p-5 font-black uppercase tracking-widest hover:bg-gray-900 transition-all flex items-center justify-center gap-3 shadow-xl shadow-black/10 disabled:opacity-50"
                     >
                         {loading ? <Loader2 className="animate-spin" /> : <Send size={20} />}
-                        Xabarni yuborish
+                        Barchaga yuborish
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={async () => {
+                            try {
+                                const { subscribeToPushNotifications } = await import("@/lib/push-notifications");
+                                await subscribeToPushNotifications();
+                                const res = await fetch("/api/admin/push-send", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ 
+                                        title: title || "Velari — Test Bildirishnoma 🔔", 
+                                        body: body || "Ushbu test xabari brauzeringizga muvaffaqiyatli yetib keldi! 🚀", 
+                                        url: url || "/" 
+                                    }),
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                    showToast(`Test xabari yuborildi! (${data.results?.success || 1} ta qurilmaga)`, "success");
+                                } else {
+                                    showToast(data.error || "Xatolik yuz berdi", "error");
+                                }
+                            } catch (e: any) {
+                                showToast("Xatolik: " + e.message, "error");
+                            }
+                        }}
+                        className="w-full bg-blue-50 text-blue-700 border border-blue-200 rounded-3xl p-4 font-black uppercase tracking-wider hover:bg-blue-100 transition-all flex items-center justify-center gap-2 text-xs"
+                    >
+                        <Bell size={16} />
+                        Mening brauzerimga test xabar yuborish
                     </button>
                 </form>
 

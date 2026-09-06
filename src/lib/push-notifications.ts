@@ -1,4 +1,4 @@
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "BDjNKYY_cp8NDYQsowXfhIlfikWZmhCDTvFJOWubcNwvOW-LPnBH70sITFARnWBxHOOF-xuT3d3kuy9lkwzQKs8";
 
 function urlBase64ToUint8Array(base64String: string) {
     const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -16,8 +16,17 @@ export async function subscribeToPushNotifications(userPhone?: string) {
     if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
         return;
     }
-    if (!VAPID_PUBLIC_KEY) {
-        return;
+
+    // Telefon raqam berilmagan bo'lsa, localStorage/state dan qidiramiz
+    let phone = userPhone;
+    if (!phone) {
+        try {
+            const rawStore = localStorage.getItem("velari-store");
+            if (rawStore) {
+                const parsed = JSON.parse(rawStore);
+                phone = parsed?.state?.user?.phone || undefined;
+            }
+        } catch {}
     }
 
     try {
