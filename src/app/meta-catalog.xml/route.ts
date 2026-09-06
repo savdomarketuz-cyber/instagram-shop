@@ -21,7 +21,7 @@ function stripHtml(html: string = ''): string {
     .replace(/&gt;/gi, '>')               // &gt; -> >
     .replace(/&quot;/gi, '"')             // &quot; -> "
     .replace(/&#039;/gi, "'")             // &#039; -> '
-    .replace(/[✅✔️☑️🔥⭐💥🎁🎉🚀💡⚡🔹🔸▪️●•]/gu, '')  // emojilarni o'chirish
+    .replace(/[✅✔️☑️🔥⭐💥🎁🎉🚀💡⚡🔹🔸▪️●•]/g, '')  // emojilarni o'chirish
     .replace(/\n{3,}/g, '\n\n')           // 3+ yangi qatorni 2 taga kamaytirish
     .replace(/[ \t]+/g, ' ')              // ortiqcha bo'sh joylarni tozalash
     .trim();

@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "./supabase-admin";
+import crypto from "crypto";
 
 const ADMIN_BOT_TOKEN = process.env.TELEGRAM_ADMIN_BOT_TOKEN;
 const CUSTOMER_BOT_TOKEN = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN;
@@ -155,13 +156,34 @@ export async function sendCartReminder(phone: string, items: any[], customNote?:
 
         text += `🏃‍♂️ <i>Mahsulotlar soni cheklangan, ularni hoziroq rasmiylashtirib oling!</i>`;
 
-        // Inline keyboard button leading directly to cart
+        // Create one-time secure magic login token (cross-device auto-login)
+        let cartUrl = `https://velari.uz/uz/cart?ref=tg_reminder`;
+        try {
+            const loginToken = crypto.randomBytes(24).toString('hex');
+            const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 kun
+
+            const { error: ltErr } = await supabaseAdmin.from('login_tokens').insert([{
+                token: loginToken,
+                phone: phone,
+                next_path: '/uz/cart',
+                expires_at: expiresAt,
+                used: false
+            }]);
+
+            if (!ltErr) {
+                cartUrl = `https://velari.uz/uz/auth?lt=${loginToken}`;
+            }
+        } catch (ltErr) {
+            console.warn("Magic login token generation error:", ltErr);
+        }
+
+        // Inline keyboard button leading directly to cart with auto-login
         const reply_markup = {
             inline_keyboard: [
                 [
                     {
                         text: "🛒 Savatni ochish va xarid qilish",
-                        url: `https://velari.uz/uz/cart?ref=tg_reminder&phone=${encodeURIComponent(phone)}`
+                        url: cartUrl
                     }
                 ]
             ]

@@ -54,9 +54,43 @@ export async function POST(req: NextRequest) {
             exp: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60 // 30 kun
         }, JWT_SECRET);
 
+        // 5. Foydalanuvchining savatini tiklash (agar active_carts da bo'lsa)
+        let cartItems: any[] = [];
+        try {
+            const { data: cartRow } = await supabaseAdmin
+                .from("active_carts")
+                .select("items")
+                .eq("user_phone", user.phone)
+                .single();
+
+            if (cartRow?.items && Array.isArray(cartRow.items) && cartRow.items.length > 0) {
+                const productIds = cartRow.items.map((i: any) => i.id).filter(Boolean);
+                if (productIds.length > 0) {
+                    const { data: products } = await supabaseAdmin
+                        .from("products")
+                        .select("*")
+                        .in("id", productIds)
+                        .eq("is_deleted", false);
+
+                    if (products) {
+                        const prodMap = new Map(products.map(p => [p.id, p]));
+                        cartItems = cartRow.items.map((it: any) => {
+                            const p = prodMap.get(it.id);
+                            if (!p) return null;
+                            return {
+                                ...p,
+                                quantity: it.quantity || 1,
+                            };
+                        }).filter(Boolean);
+                    }
+                }
+            }
+        } catch { /* savat tiklash xatosi tizimni to'xtatmaydi */ }
+
         const response = NextResponse.json({
             success: true,
             next: row.next_path || null,
+            cart: cartItems,
             user: {
                 id: user.id,
                 phone: user.phone,

@@ -17,6 +17,7 @@ interface StoreState {
     removeFromCart: (productId: string) => void;
     updateQuantity: (productId: string, quantity: number) => void;
     toggleWishlist: (product: Product) => void;
+    setCart: (cart: CartItem[]) => void;
     clearCart: () => void;
     setUser: (user: User | null) => void;
     logout: () => void;
@@ -105,6 +106,7 @@ export const useStore = create<StoreState>()(
                 }
                 return { wishlist: [...state.wishlist, product] };
             }),
+            setCart: (cart) => set({ cart }),
             clearCart: () => set({ cart: [] }),
             setUser: (user) => set({ user }),
             logout: () => set({ user: null, cart: [], wishlist: [], personalOffers: {} }),

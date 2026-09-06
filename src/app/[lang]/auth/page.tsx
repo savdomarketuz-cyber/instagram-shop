@@ -13,6 +13,8 @@ export default function TelegramAuthPage() {
     const params = useParams();
     const searchParams = useSearchParams();
     const setUser = useStore((s) => s.setUser);
+    const setCart = useStore((s) => s.setCart);
+    const currentCart = useStore((s) => s.cart);
 
     const lang = (params?.lang as string) === "ru" ? "ru" : "uz";
     const [status, setStatus] = useState<"loading" | "ok" | "error">("loading");
@@ -41,6 +43,9 @@ export default function TelegramAuthPage() {
 
                 if (res.ok && data.success) {
                     setUser(data.user);
+                    if (data.cart && data.cart.length > 0 && (!currentCart || currentCart.length === 0)) {
+                        setCart(data.cart);
+                    }
                     ymGoal('login', { method: 'telegram' }); // Analytics: Telegram orqali kirish
                     setStatus("ok");
                     const next = data.next && data.next.startsWith("/") ? data.next : `/${lang}`;
