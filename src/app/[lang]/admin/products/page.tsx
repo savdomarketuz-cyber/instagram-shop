@@ -1687,9 +1687,9 @@ function AdminProducts() {
                 </div>
             )}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white w-full max-w-6xl max-h-[90vh] overflow-hidden rounded-[40px] shadow-2xl animate-in zoom-in duration-300">
-                        <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 text-black">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-3">
+                    <div className="bg-white w-full h-full md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
+                        <div className="px-8 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/70 text-black shrink-0">
                             <div className="flex items-center gap-4">
                                 <div>
                                     <h2 className="text-2xl font-black italic tracking-tighter uppercase">{newProduct.id ? "Tahrirlash" : "Yangi mahsulot"}</h2>
@@ -1707,8 +1707,8 @@ function AdminProducts() {
                             <button onClick={() => { setIsModalOpen(false); setProductSelectionPath([]); }} className="p-4 hover:bg-white rounded-full transition-all shadow-sm"><X size={20} /></button>
                         </div>
 
-                        <form onSubmit={handleSave} className="p-8 overflow-y-auto max-h-[calc(90vh-180px)] text-black">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-8 text-black flex flex-col justify-between">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                 <div className="space-y-6">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2 relative">
@@ -2209,7 +2209,7 @@ function AdminProducts() {
                                     </div>
                                 </div>
                             </div>
-                            <div className="mt-12 flex justify-end gap-4">
+                            <div className="mt-10 flex justify-end gap-4 sticky bottom-0 bg-white/95 backdrop-blur-md py-4 border-t border-gray-100 -mx-8 -mb-8 px-8 z-30 shadow-lg shadow-black/5">
                                 <button
                                     type="button"
                                     onClick={() => { setIsModalOpen(false); setProductSelectionPath([]); }}
@@ -2220,7 +2220,7 @@ function AdminProducts() {
                                 <button
                                     type="submit"
                                     disabled={isSaving}
-                                    className="bg-black text-white px-12 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-gray-900 transition-all shadow-2xl disabled:opacity-50 flex items-center gap-3"
+                                    className="bg-black text-white px-12 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-gray-900 transition-all shadow-2xl disabled:opacity-50 flex items-center gap-3 active:scale-95"
                                 >
                                     {isSaving ? <Loader2 className="animate-spin text-white" size={18} /> : (newProduct.id ? "Yangilash" : "Saqlash")}
                                 </button>
