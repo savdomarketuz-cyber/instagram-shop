@@ -118,18 +118,58 @@ import MetaPixel from "@/components/MetaPixel";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ViewTransitions } from "next-view-transitions";
+import {
+    getShopSettingsServer,
+    formatTelegramLink,
+    formatInstagramLink,
+    formatFacebookLink,
+    formatYoutubeLink,
+} from "@/lib/shop-settings";
 
-export default function RootLayout({
+export default async function RootLayout({
     children,
     params,
 }: {
     children: React.ReactNode;
     params: { lang: string };
 }) {
+    const settings = await getShopSettingsServer();
+    const shopName = settings.name || "Velari";
+
+    const cleanPrimaryPhone = (settings.phone || "+998950821188").replace(/[^\d+]/g, "");
+    const cleanSecondaryPhone = settings.secondary_phone ? settings.secondary_phone.replace(/[^\d+]/g, "") : null;
+
+    const contactPoints = [
+        {
+            "@type": "ContactPoint",
+            "telephone": cleanPrimaryPhone,
+            "contactType": "customer service",
+            "areaServed": "UZ",
+            "availableLanguage": ["Uzbek", "Russian"]
+        }
+    ];
+
+    if (cleanSecondaryPhone) {
+        contactPoints.push({
+            "@type": "ContactPoint",
+            "telephone": cleanSecondaryPhone,
+            "contactType": "sales",
+            "areaServed": "UZ",
+            "availableLanguage": ["Uzbek", "Russian"]
+        });
+    }
+
+    const sameAs: string[] = [];
+    if (settings.instagram) sameAs.push(formatInstagramLink(settings.instagram));
+    if (settings.telegram_channel) sameAs.push(formatTelegramLink(settings.telegram_channel));
+    if (settings.telegram_admin) sameAs.push(formatTelegramLink(settings.telegram_admin));
+    if (settings.facebook) sameAs.push(formatFacebookLink(settings.facebook));
+    if (settings.youtube) sameAs.push(formatYoutubeLink(settings.youtube));
+
     const jsonLd = {
         "@context": "https://schema.org",
         "@type": "WebSite",
-        "name": "Velari",
+        "name": shopName,
         "url": "https://velari.uz",
         "potentialAction": {
             "@type": "SearchAction",
@@ -141,41 +181,28 @@ export default function RootLayout({
     const orgJsonLd = {
         "@context": "https://schema.org",
         "@type": "Organization",
-        "name": "Velari",
+        "name": shopName,
         "url": "https://velari.uz",
         "logo": "https://velari.uz/logo.png",
-        "contactPoint": [
-            {
-                "@type": "ContactPoint",
-                "telephone": "+998950821188",
-                "contactType": "customer service",
-                "areaServed": "UZ",
-                "availableLanguage": ["Uzbek", "Russian"]
-            },
-            {
-                "@type": "ContactPoint",
-                "telephone": "+998200144989",
-                "contactType": "sales",
-                "areaServed": "UZ",
-                "availableLanguage": ["Uzbek", "Russian"]
-            }
-        ],
-        "sameAs": [
+        "contactPoint": contactPoints,
+        "sameAs": sameAs.length > 0 ? sameAs : [
             "https://instagram.com/velari_uz_",
             "https://t.me/VELARI_UZ_ADMIN"
         ]
     };
 
+    const phonesList = cleanSecondaryPhone ? [cleanPrimaryPhone, cleanSecondaryPhone] : [cleanPrimaryPhone];
+
     const storeJsonLd = {
         "@context": "https://schema.org",
         "@type": "Store",
-        "name": "Velari",
+        "name": shopName,
         "url": "https://velari.uz",
         "image": "https://velari.uz/logo.png",
-        "telephone": ["+998950821188", "+998200144989"],
+        "telephone": phonesList,
         "address": {
             "@type": "PostalAddress",
-            "streetAddress": "Tashkent",
+            "streetAddress": settings.address_uz || "Tashkent",
             "addressLocality": "Tashkent",
             "addressRegion": "Tashkent",
             "postalCode": "100000",

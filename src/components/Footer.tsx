@@ -1,13 +1,37 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useStore } from "@/store/store";
 import { translations } from "@/lib/translations";
-import { Instagram, Send, Facebook, Youtube } from "lucide-react";
+import { Instagram, Send, Facebook, Youtube, Phone } from "lucide-react";
+import { 
+    DEFAULT_SHOP_SETTINGS, 
+    ShopSettings, 
+    formatTelegramLink, 
+    formatInstagramLink, 
+    formatFacebookLink, 
+    formatYoutubeLink, 
+    formatPhoneLink 
+} from "@/lib/shop-settings";
 
 export default function Footer() {
     const { language } = useStore();
     const t = translations[language];
+    const [settings, setSettings] = useState<ShopSettings>(DEFAULT_SHOP_SETTINGS);
+
+    useEffect(() => {
+        let mounted = true;
+        fetch("/api/shop-settings")
+            .then(res => res.json())
+            .then(data => {
+                if (mounted && data?.settings) {
+                    setSettings(data.settings);
+                }
+            })
+            .catch(() => {});
+        return () => { mounted = false; };
+    }, []);
 
     return (
         <footer className="bg-white border-t border-gray-100 pt-16 pb-32 md:pb-12 px-4 md:px-10 mt-20">
@@ -40,9 +64,24 @@ export default function Footer() {
                         <h4 className="font-bold text-gray-900 text-sm md:text-base">{t.footer.forUsers}</h4>
                         <ul className="space-y-3">
                             <li>
-                                <span className="text-gray-400 text-xs cursor-default">
+                                <a 
+                                    href={formatPhoneLink(settings.phone)} 
+                                    className="text-gray-700 hover:text-black text-xs transition-colors flex items-center gap-1.5 font-bold"
+                                    title="Call-center bilan bog'lanish"
+                                >
+                                    <Phone size={13} className="text-green-600 shrink-0" />
+                                    <span>{settings.phone}</span>
+                                </a>
+                            </li>
+                            <li>
+                                <Link href="/about" className="text-gray-500 hover:text-black text-xs transition-colors">
                                     {t.footer.contactUs}
-                                </span>
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/return-policy" className="text-gray-500 hover:text-black text-xs transition-colors">
+                                    {language === "uz" ? "Qaytarish va almashtirish" : "Возврат и обмен"}
+                                </Link>
                             </li>
                             <li>
                                 <span className="text-gray-400 text-xs cursor-default">
@@ -91,19 +130,51 @@ export default function Footer() {
 
                         <div className="space-y-3">
                             <h4 className="font-bold text-gray-900 text-xs">{t.footer.socials}</h4>
-                            <div className="flex gap-4">
-                                <a href="https://instagram.com/velari_uz_" target="_blank" rel="noopener noreferrer" className="p-2.5 bg-gray-50 rounded-xl text-gray-600 hover:bg-black hover:text-white transition-all scale-95 hover:scale-105">
-                                    <Instagram size={20} />
-                                </a>
-                                <a href="https://t.me/velariuz" target="_blank" rel="noopener noreferrer" className="p-2.5 bg-gray-50 rounded-xl text-gray-600 hover:bg-black hover:text-white transition-all scale-95 hover:scale-105">
-                                    <Send size={20} />
-                                </a>
-                                <a href="https://facebook.com/velari.uz" target="_blank" rel="noopener noreferrer" className="p-2.5 bg-gray-50 rounded-xl text-gray-600 hover:bg-black hover:text-white transition-all scale-95 hover:scale-105">
-                                    <Facebook size={20} />
-                                </a>
-                                <a href="https://youtube.com/@velariuz" target="_blank" rel="noopener noreferrer" className="p-2.5 bg-gray-50 rounded-xl text-gray-600 hover:bg-black hover:text-white transition-all scale-95 hover:scale-105">
-                                    <Youtube size={20} />
-                                </a>
+                            <div className="flex flex-wrap gap-3">
+                                {settings.instagram && (
+                                    <a 
+                                        href={formatInstagramLink(settings.instagram)} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        aria-label="Instagram"
+                                        className="p-2.5 bg-gray-50 rounded-xl text-gray-600 hover:bg-black hover:text-white transition-all scale-95 hover:scale-105"
+                                    >
+                                        <Instagram size={20} />
+                                    </a>
+                                )}
+                                {settings.telegram_channel && (
+                                    <a 
+                                        href={formatTelegramLink(settings.telegram_channel)} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        aria-label="Telegram"
+                                        className="p-2.5 bg-gray-50 rounded-xl text-gray-600 hover:bg-black hover:text-white transition-all scale-95 hover:scale-105"
+                                    >
+                                        <Send size={20} />
+                                    </a>
+                                )}
+                                {settings.facebook && (
+                                    <a 
+                                        href={formatFacebookLink(settings.facebook)} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        aria-label="Facebook"
+                                        className="p-2.5 bg-gray-50 rounded-xl text-gray-600 hover:bg-black hover:text-white transition-all scale-95 hover:scale-105"
+                                    >
+                                        <Facebook size={20} />
+                                    </a>
+                                )}
+                                {settings.youtube && (
+                                    <a 
+                                        href={formatYoutubeLink(settings.youtube)} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        aria-label="YouTube"
+                                        className="p-2.5 bg-gray-50 rounded-xl text-gray-600 hover:bg-black hover:text-white transition-all scale-95 hover:scale-105"
+                                    >
+                                        <Youtube size={20} />
+                                    </a>
+                                )}
                             </div>
                         </div>
                     </div>

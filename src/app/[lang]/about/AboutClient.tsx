@@ -1,13 +1,37 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useStore } from "@/store/store";
 import { translations } from "@/lib/translations";
-import { ChevronLeft, Rocket, ShieldCheck, Banknote, PackageCheck, RotateCcw, MessageCircle, Send, Instagram, Phone } from "lucide-react";
+import { ChevronLeft, Rocket, ShieldCheck, Banknote, PackageCheck, RotateCcw, MessageCircle, Send, Instagram, Phone, Clock } from "lucide-react";
 import Link from "next/link";
+import {
+    ShopSettings,
+    DEFAULT_SHOP_SETTINGS,
+    formatTelegramLink,
+    formatInstagramLink,
+    formatPhoneLink
+} from "@/lib/shop-settings";
 
-export default function AboutClient() {
+interface AboutClientProps {
+    initialSettings?: ShopSettings;
+}
+
+export default function AboutClient({ initialSettings }: AboutClientProps) {
     const { language } = useStore();
     const t = translations[language];
+    const [settings, setSettings] = useState<ShopSettings>(initialSettings || DEFAULT_SHOP_SETTINGS);
+
+    useEffect(() => {
+        if (!initialSettings) {
+            fetch("/api/shop-settings")
+                .then(res => res.json())
+                .then(d => {
+                    if (d?.settings) setSettings(d.settings);
+                })
+                .catch(() => {});
+        }
+    }, [initialSettings]);
 
     const icons = [
         <Rocket key="rocket" className="text-blue-500" size={24} />,
@@ -20,9 +44,54 @@ export default function AboutClient() {
 
     const contactIcons: any = {
         "Telegram": <Send size={20} />,
+        "Telegram kanal": <Send size={20} />,
+        "Telegram канал": <Send size={20} />,
         "Instagram": <Instagram size={20} />,
         "Call center": <Phone size={20} />
     };
+
+    const tgAdminDisplay = settings.telegram_admin?.startsWith("@")
+        ? settings.telegram_admin
+        : (settings.telegram_admin?.includes("t.me/")
+            ? `@${settings.telegram_admin.split("t.me/")[1].replace(/\//g, "")}`
+            : `@${settings.telegram_admin || "VELARI_UZ_ADMIN"}`);
+
+    const instaDisplay = settings.instagram
+        ? settings.instagram.replace(/^@/, '').replace(/https?:\/\/(www\.)?instagram\.com\//, '').replace(/\/$/, '')
+        : "velari_uz_";
+
+    const contacts: any[] = [
+        {
+            label: "Telegram",
+            value: tgAdminDisplay,
+            link: formatTelegramLink(settings.telegram_admin)
+        },
+        {
+            label: "Instagram",
+            value: `@${instaDisplay}`,
+            link: formatInstagramLink(settings.instagram)
+        },
+        {
+            label: "Call center",
+            value: settings.phone || "+998 95 082 11 88",
+            link: formatPhoneLink(settings.phone)
+        }
+    ];
+
+    if (settings.telegram_channel && settings.telegram_channel !== settings.telegram_admin) {
+        const tgChanDisplay = settings.telegram_channel.includes("t.me/")
+            ? `@${settings.telegram_channel.split("t.me/")[1].replace(/\//g, "")}`
+            : settings.telegram_channel;
+        contacts.splice(1, 0, {
+            label: language === 'ru' ? "Telegram канал" : "Telegram kanal",
+            value: tgChanDisplay.startsWith("@") ? tgChanDisplay : `@${tgChanDisplay}`,
+            link: formatTelegramLink(settings.telegram_channel)
+        });
+    }
+
+    const workingHours = language === 'ru'
+        ? (settings.working_hours_ru || settings.working_hours_uz)
+        : (settings.working_hours_uz || settings.working_hours_ru);
 
     return (
         <div className="min-h-screen text-black w-full overflow-x-hidden" style={{ background: "#FAFAF6" }}>
@@ -133,9 +202,15 @@ export default function AboutClient() {
                         <div className="text-center md:text-left space-y-4">
                             <h3 className="text-3xl font-black italic tracking-tighter uppercase">{t.aboutUs.contactTitle}</h3>
                             <p className="text-gray-500 font-medium text-lg">{t.aboutUs.contactSubtitle}</p>
+                            {workingHours && (
+                                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
+                                    <Clock size={14} className="text-emerald-600" />
+                                    <span>{language === 'ru' ? "Режим работы:" : "Ish vaqti:"} {workingHours}</span>
+                                </div>
+                            )}
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {t.aboutUs.contacts.map((contact: any, i: number) => (
+                        <div className={`grid grid-cols-1 md:grid-cols-2 ${contacts.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"} gap-6`}>
+                            {contacts.map((contact: any, i: number) => (
                                 <a 
                                     key={i} 
                                     href={contact.link}
@@ -148,7 +223,7 @@ export default function AboutClient() {
                                     </div>
                                     <div>
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">{contact.label}</p>
-                                        <p className="text-base font-black italic group-hover:text-black transition-colors">{contact.value}</p>
+                                        <p className="text-base font-black italic group-hover:text-black transition-colors break-all">{contact.value}</p>
                                     </div>
                                 </a>
                             ))}

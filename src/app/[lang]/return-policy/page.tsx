@@ -4,14 +4,7 @@ import {
     RotateCcw, ShieldCheck, Banknote, Phone, MapPin, Send,
     AlertTriangle, CheckCircle2, Truck, ChevronLeft, FileText, Clock,
 } from "lucide-react";
-
-const SUPPORT = {
-    // Qaytarish so'rovi uchun ADMIN bilan bog'lanadi (xabarnoma boti avtomatik, suhbat uchun emas)
-    telegram: "@VELARI_UZ_ADMIN",
-    telegramUrl: "https://t.me/VELARI_UZ_ADMIN",
-    phone: "+998 95 082 11 88",
-    phoneLink: "tel:+998950821188",
-};
+import { getShopSettingsServer, formatTelegramLink, formatPhoneLink } from "@/lib/shop-settings";
 
 type Lang = "uz" | "ru";
 
@@ -152,9 +145,21 @@ export async function generateMetadata({ params }: { params: { lang: string } })
     };
 }
 
-export default function ReturnPolicyPage({ params }: { params: { lang: string } }) {
+export default async function ReturnPolicyPage({ params }: { params: { lang: string } }) {
     const lang = (params.lang === "ru" ? "ru" : "uz") as Lang;
     const c = CONTENT[lang];
+    const settings = await getShopSettingsServer();
+
+    const supportTelegram = settings.telegram_admin || "@VELARI_UZ_ADMIN";
+    const supportTelegramUrl = formatTelegramLink(settings.telegram_admin);
+    const supportPhone = settings.phone || "+998 95 082 11 88";
+    const supportPhoneLink = formatPhoneLink(settings.phone);
+    const returnAddress = (lang === "ru"
+        ? (settings.address_ru || settings.address_uz)
+        : (settings.address_uz || settings.address_ru)) || c.address;
+    const workingHours = lang === "ru"
+        ? (settings.working_hours_ru || settings.working_hours_uz)
+        : (settings.working_hours_uz || settings.working_hours_ru);
 
     return (
         <div className="bg-[#FAFAF6] min-h-screen pb-24 px-4 md:px-6">
@@ -239,23 +244,23 @@ export default function ReturnPolicyPage({ params }: { params: { lang: string } 
                     <p className="text-xs text-gray-400 font-medium mb-7 max-w-lg">{c.contactSubtitle}</p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <a href={SUPPORT.telegramUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 bg-white/5 hover:bg-white/10 rounded-2xl p-5 transition-colors group">
+                        <a href={supportTelegramUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 bg-white/5 hover:bg-white/10 rounded-2xl p-5 transition-colors group">
                             <div className="w-11 h-11 bg-[#229ED9] rounded-2xl flex items-center justify-center shrink-0">
                                 <Send size={20} className="text-white" />
                             </div>
                             <div className="min-w-0">
                                 <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">{c.telegramLabel}</p>
-                                <p className="text-sm font-black truncate group-hover:text-[#4CAF71] transition-colors">{SUPPORT.telegram}</p>
+                                <p className="text-sm font-black truncate group-hover:text-[#4CAF71] transition-colors">{supportTelegram}</p>
                             </div>
                         </a>
 
-                        <a href={SUPPORT.phoneLink} className="flex items-center gap-4 bg-white/5 hover:bg-white/10 rounded-2xl p-5 transition-colors group">
+                        <a href={supportPhoneLink} className="flex items-center gap-4 bg-white/5 hover:bg-white/10 rounded-2xl p-5 transition-colors group">
                             <div className="w-11 h-11 bg-[#2D6E3E] rounded-2xl flex items-center justify-center shrink-0">
                                 <Phone size={20} className="text-white" />
                             </div>
                             <div className="min-w-0">
                                 <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">{c.phoneLabel}</p>
-                                <p className="text-sm font-black truncate group-hover:text-[#4CAF71] transition-colors">{SUPPORT.phone}</p>
+                                <p className="text-sm font-black truncate group-hover:text-[#4CAF71] transition-colors">{supportPhone}</p>
                             </div>
                         </a>
                     </div>
@@ -266,9 +271,18 @@ export default function ReturnPolicyPage({ params }: { params: { lang: string } 
                         </div>
                         <div className="min-w-0">
                             <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">{c.addressLabel}</p>
-                            <p className="text-sm font-bold leading-snug">{c.address}</p>
+                            <p className="text-sm font-bold leading-snug">{returnAddress}</p>
                         </div>
                     </div>
+
+                    {workingHours && (
+                        <div className="flex items-center gap-3 bg-white/5 rounded-2xl p-4 mt-3">
+                            <Clock size={18} className="text-[#4CAF71] shrink-0" />
+                            <p className="text-xs text-gray-300 font-medium leading-relaxed">
+                                <span className="font-bold text-white">{lang === "ru" ? "Режим работы:" : "Ish vaqti:"}</span> {workingHours}
+                            </p>
+                        </div>
+                    )}
                 </section>
 
                 {/* Legal footer */}

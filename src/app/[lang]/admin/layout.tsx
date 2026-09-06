@@ -309,7 +309,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             title: "Tizim",
             items: [
                 { name: "Foydalanuvchilar", href: l("/admin/users"), icon: Users, hint: "Adminlar va managerlar" },
-                { name: "Sozlamalar", href: l("/admin/settings"), icon: Settings, hint: "Telegram bot va to'lovlar" },
+                { name: "Sozlamalar", href: l("/admin/settings"), icon: Settings, hint: "Do'kon, kontaktlar va tarmoqlar" },
                 { name: "Qidiruv Lug'ati", href: l("/admin/synonyms"), icon: BookA, hint: "Sinonimlar va kalit so'zlar" },
                 { name: "AI Monitoring", href: l("/admin/ai"), icon: Brain, hint: "Groq AI tahlil va xarajatlar" },
             ],

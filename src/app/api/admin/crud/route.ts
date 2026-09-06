@@ -63,6 +63,11 @@ function performSmartRevalidation(table: string, products: any[] = []) {
         } else if (table === "banners" || table === "site_settings" || table === "settings") {
             revalidatePath("/uz");
             revalidatePath("/ru");
+            revalidatePath("/uz/about");
+            revalidatePath("/ru/about");
+            revalidatePath("/uz/return-policy");
+            revalidatePath("/ru/return-policy");
+            revalidatePath("/api/shop-settings");
         }
     } catch (e) {
         console.error("Smart revalidation error:", e);
