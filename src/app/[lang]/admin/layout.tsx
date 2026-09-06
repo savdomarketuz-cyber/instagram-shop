@@ -8,7 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/store/store";
 import { AdminNotificationListener } from "@/components/AdminNotificationListener";
 
-type MenuItem = { name: string; href: string; icon: LucideIcon };
+type MenuItem = { name: string; href: string; icon: LucideIcon; hint?: string };
 type MenuGroup = { title: string; items: MenuItem[] };
 
 function AdminTopNav({ groups, pathname }: { groups: MenuGroup[]; pathname: string }) {
@@ -55,28 +55,37 @@ function AdminTopNav({ groups, pathname }: { groups: MenuGroup[]; pathname: stri
         closeTimer.current = setTimeout(() => setHoverGroup(null), 160);
     };
     const togglePin = (title: string) => {
-        setPinnedGroup((prev) => (prev === title ? null : title));
+        if (pinnedGroup === title) {
+            setPinnedGroup(null);
+            setHoverGroup(null);
+        } else {
+            setPinnedGroup(title);
+            setHoverGroup(title);
+        }
     };
 
     useEffect(() => {
-        const onDocClick = (e: MouseEvent) => {
+        const handleDocClick = (e: MouseEvent) => {
             if (navRef.current && !navRef.current.contains(e.target as Node)) {
                 setPinnedGroup(null);
                 setHoverGroup(null);
             }
         };
-        document.addEventListener("mousedown", onDocClick);
-        return () => document.removeEventListener("mousedown", onDocClick);
+        document.addEventListener("click", handleDocClick);
+        return () => document.removeEventListener("click", handleDocClick);
     }, []);
 
     return (
         <nav
             ref={navRef}
-            className="hidden lg:flex items-center gap-1 sticky top-0 z-30 bg-white/85 backdrop-blur-md border-b border-gray-100 px-6 py-3"
+            aria-label="Admin bo'limlari"
+            className="hidden lg:flex items-center gap-2 bg-white/95 backdrop-blur-md border-b border-gray-100 px-8 py-3 sticky top-0 z-40 shadow-sm"
         >
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mr-2">Bo'limlar:</span>
             {groups.map((group) => {
                 const isOpen = pinnedGroup === group.title || hoverGroup === group.title;
-                const hasActive = group.items.some((i) => i.href === pathname);
+                const hasActive = group.items.some((it) => pathname === it.href);
+
                 return (
                     <div
                         key={group.title}
@@ -99,7 +108,7 @@ function AdminTopNav({ groups, pathname }: { groups: MenuGroup[]; pathname: stri
                         </button>
 
                         {isOpen && (
-                            <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl shadow-black/10 border border-gray-100 p-2 z-50 animate-in fade-in slide-in-from-top-1 duration-200">
+                            <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl shadow-black/10 border border-gray-100 p-2 z-50 animate-in fade-in slide-in-from-top-1 duration-200">
                                 {group.items.map((item) => {
                                     const Icon = item.icon;
                                     const active = pathname === item.href;
@@ -108,12 +117,19 @@ function AdminTopNav({ groups, pathname }: { groups: MenuGroup[]; pathname: stri
                                             key={item.href}
                                             href={item.href}
                                             onClick={() => { setPinnedGroup(null); setHoverGroup(null); }}
-                                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                                            className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all ${
                                                 active ? "bg-gray-900 text-white font-bold" : "text-gray-600 hover:bg-gray-100"
                                             }`}
                                         >
-                                            <Icon size={18} className={active ? "text-white" : "text-gray-400"} />
-                                            <span className="text-sm tracking-tight">{item.name}</span>
+                                            <Icon size={18} className={active ? "text-white shrink-0" : "text-gray-400 shrink-0"} />
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="text-sm tracking-tight font-bold truncate">{item.name}</span>
+                                                {item.hint && (
+                                                    <span className={`text-[10px] tracking-tight truncate ${active ? "text-gray-300" : "text-gray-400 font-normal"}`}>
+                                                        {item.hint}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </Link>
                                     );
                                 })}
@@ -237,66 +253,66 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {
             title: "Asosiy",
             items: [
-                { name: "Dashboard", href: l("/admin"), icon: LayoutDashboard },
-                { name: "Live", href: l("/admin/live"), icon: Zap },
-                { name: "Jurnal (Logs)", href: l("/admin/logs"), icon: ClipboardList },
+                { name: "Dashboard", href: l("/admin"), icon: LayoutDashboard, hint: "Statistika va umumiy xulosa" },
+                { name: "Live", href: l("/admin/live"), icon: Zap, hint: "Jonli xaridorlar va radar" },
+                { name: "Jurnal (Logs)", href: l("/admin/logs"), icon: ClipboardList, hint: "Audit va xavfsizlik jurnali" },
             ],
         },
         {
             title: "Savdo",
             items: [
-                { name: "Buyurtmalar", href: l("/admin/orders"), icon: ShoppingCart },
-                { name: "Tark etilgan savat", href: l("/admin/carts"), icon: ShoppingCart },
-                { name: "Qaytarishlar", href: l("/admin/returns"), icon: RotateCcw },
-                { name: "Tezkor yetkazish", href: l("/admin/express-delivery"), icon: Truck },
+                { name: "Buyurtmalar", href: l("/admin/orders"), icon: ShoppingCart, hint: "Barcha xaridlar ro'yxati" },
+                { name: "Tark etilgan savat", href: l("/admin/carts"), icon: ShoppingCart, hint: "Sotib olinmagan savatchalar" },
+                { name: "Qaytarishlar", href: l("/admin/returns"), icon: RotateCcw, hint: "Mahsulotni qaytarish arizalari" },
+                { name: "Tezkor yetkazish", href: l("/admin/express-delivery"), icon: Truck, hint: "Yandex Delivery va kuryerlar" },
             ],
         },
         {
             title: "Katalog",
             items: [
-                { name: "Mahsulotlar", href: l("/admin/products"), icon: Package },
-                { name: "Kategoriyalar", href: l("/admin/categories"), icon: Layers },
-                { name: "Brendlar", href: l("/admin/brands"), icon: Activity },
-                { name: "Qoldiqlar", href: l("/admin/inventory"), icon: Database },
-                { name: "Omborlar", href: l("/admin/warehouses"), icon: Warehouse },
+                { name: "Mahsulotlar", href: l("/admin/products"), icon: Package, hint: "Mahsulotlar va ombor" },
+                { name: "Kategoriyalar", href: l("/admin/categories"), icon: Layers, hint: "Toifalar va iyerarxiya" },
+                { name: "Brendlar", href: l("/admin/brands"), icon: Activity, hint: "Ishlab chiqaruvchi brendlar" },
+                { name: "Qoldiqlar", href: l("/admin/inventory"), icon: Database, hint: "Ombordagi tovar soni" },
+                { name: "Omborlar", href: l("/admin/warehouses"), icon: Warehouse, hint: "Filiallar va ombor manzillari" },
             ],
         },
         {
             title: "Marketing",
             items: [
-                { name: "Promo Kodlar", href: l("/admin/promo-codes"), icon: Tag },
-                { name: "Smart Chegirma", href: l("/admin/smart-discount"), icon: Percent },
-                { name: "Cashback", href: l("/admin/cashback"), icon: Banknote },
-                { name: "Hamyon", href: l("/admin/wallets"), icon: Wallet },
-                { name: "Hamkorlik", href: l("/admin/affiliate"), icon: Sparkles },
-                { name: "Promo Countdown", href: l("/admin/promo-countdown"), icon: Timer },
-                { name: "Narxlar", href: l("/admin/pricing"), icon: DollarSign },
+                { name: "Promo Kodlar", href: l("/admin/promo-codes"), icon: Tag, hint: "Chegirma kuponlari" },
+                { name: "Smart Chegirma", href: l("/admin/smart-discount"), icon: Percent, hint: "Shartli avtomatik chegirmalar" },
+                { name: "Cashback", href: l("/admin/cashback"), icon: Banknote, hint: "Keshbek foizlari" },
+                { name: "Hamyon", href: l("/admin/wallets"), icon: Wallet, hint: "Mijozlar virtual balansi" },
+                { name: "Hamkorlik", href: l("/admin/affiliate"), icon: Sparkles, hint: "3 bosqichli MLM referal" },
+                { name: "Promo Countdown", href: l("/admin/promo-countdown"), icon: Timer, hint: "Taymerli aksiya banneri" },
+                { name: "Narxlar", href: l("/admin/pricing"), icon: DollarSign, hint: "Dinamik narx siyosati" },
             ],
         },
         {
             title: "Kontent / Vitrina",
             items: [
-                { name: "Bannerlar", href: l("/admin/banners"), icon: ImageIcon },
-                { name: "Stories", href: l("/admin/stories"), icon: Sparkles },
-                { name: "Kategoriya vitrina", href: l("/admin/featured-categories"), icon: Grid },
-                { name: "Maqolalar", href: l("/admin/blogs"), icon: BookOpen },
+                { name: "Bannerlar", href: l("/admin/banners"), icon: ImageIcon, hint: "Bosh sahifa slayderlari" },
+                { name: "Stories", href: l("/admin/stories"), icon: Sparkles, hint: "Instagram uslubidagi hikoyalar" },
+                { name: "Kategoriya vitrina", href: l("/admin/featured-categories"), icon: Grid, hint: "Tanlangan toifalar bloki" },
+                { name: "Maqolalar", href: l("/admin/blogs"), icon: BookOpen, hint: "Foydali blog maqolalari" },
             ],
         },
         {
             title: "Mijozlar",
             items: [
-                { name: "Mijozlar", href: l("/admin/customers"), icon: Users },
-                { name: "Chat", href: l("/admin/chats"), icon: MessageSquare },
-                { name: "Xabarnomalar", href: l("/admin/notifications"), icon: Bell },
+                { name: "Mijozlar", href: l("/admin/customers"), icon: Users, hint: "Ro'yxatdan o'tgan xaridorlar" },
+                { name: "Chat", href: l("/admin/chats"), icon: MessageSquare, hint: "Mijozlar bilan yozishmalar" },
+                { name: "Xabarnomalar", href: l("/admin/notifications"), icon: Bell, hint: "Push va tizimli bildirishnomalar" },
             ],
         },
         {
             title: "Tizim",
             items: [
-                { name: "Foydalanuvchilar", href: l("/admin/users"), icon: Users },
-                { name: "Sozlamalar", href: l("/admin/settings"), icon: Settings },
-                { name: "Qidiruv Lug'ati", href: l("/admin/synonyms"), icon: BookA },
-                { name: "AI Monitoring", href: l("/admin/ai"), icon: Brain },
+                { name: "Foydalanuvchilar", href: l("/admin/users"), icon: Users, hint: "Adminlar va managerlar" },
+                { name: "Sozlamalar", href: l("/admin/settings"), icon: Settings, hint: "Telegram bot va to'lovlar" },
+                { name: "Qidiruv Lug'ati", href: l("/admin/synonyms"), icon: BookA, hint: "Sinonimlar va kalit so'zlar" },
+                { name: "AI Monitoring", href: l("/admin/ai"), icon: Brain, hint: "Groq AI tahlil va xarajatlar" },
             ],
         },
     ];

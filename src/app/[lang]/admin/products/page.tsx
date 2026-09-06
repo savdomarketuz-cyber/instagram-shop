@@ -40,6 +40,7 @@ import {
     Check
 } from "lucide-react";
 import ProductParamsEditor from "@/components/admin/ProductParamsEditor";
+import AdminTooltip from "@/components/admin/AdminTooltip";
 import { normalizeQuery, transliterateLatin } from "@/lib/query-normalize";
 import { useParams, usePathname, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
@@ -1829,12 +1830,20 @@ function AdminProducts() {
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <div className="space-y-1.5 relative">
                                                         <div className="flex justify-between items-center mr-1">
-                                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Nomi (UZ)*</label>
+                                                            <div className="flex items-center gap-1">
+                                                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Nomi (UZ)*</label>
+                                                                <AdminTooltip
+                                                                    title="Mahsulot Nomi (O'zbekcha)"
+                                                                    description="Mahsulotning o'zbek tilidagi to'liq nomi. Qidiruv va vitrinada birinchi ko'rinadi."
+                                                                    examples={["iPhone 15 Pro Max 256GB Natural Titanium", "VGR V-099 Professional Trimmer"]}
+                                                                />
+                                                            </div>
                                                             <button
                                                                 type="button"
                                                                 onClick={handleAiVision}
                                                                 disabled={isActionLoading || !newProduct.image}
                                                                 className="flex items-center gap-1.5 px-2.5 py-1 bg-black text-white rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-gray-800 transition-all disabled:opacity-30 shadow-sm"
+                                                                title="Rasm orqali AI tahlili"
                                                             >
                                                                 {isActionLoading ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
                                                                 Vision AI
@@ -1849,7 +1858,13 @@ function AdminProducts() {
                                                         />
                                                     </div>
                                                     <div className="space-y-1.5">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1 italic">Mahsulot Brendi</label>
+                                                        <div className="flex items-center gap-1">
+                                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1 italic">Mahsulot Brendi</label>
+                                                            <AdminTooltip
+                                                                title="Mahsulot Brendi"
+                                                                description="Ishlab chiqaruvchi brendini tanlang. Mijozlar brend bo'yicha filter qilishida ishlatiladi."
+                                                            />
+                                                        </div>
                                                         <div className="relative">
                                                             <select
                                                                 value={newProduct.brand || ""}
@@ -1878,7 +1893,14 @@ function AdminProducts() {
                                                         />
                                                     </div>
                                                     <div className="space-y-1.5">
-                                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1 italic">Model</label>
+                                                        <div className="flex items-center gap-1">
+                                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1 italic">Model</label>
+                                                            <AdminTooltip
+                                                                title="Model kodi"
+                                                                description="Zavod modeli yoki seriya kodi. Qidiruvda aniq moslik uchun xizmat qiladi."
+                                                                examples={["A3106", "V-099", "SM-S928B"]}
+                                                            />
+                                                        </div>
                                                         <input
                                                             value={newProduct.model || ""}
                                                             onChange={e => setNewProduct({ ...newProduct, model: e.target.value })}
@@ -1890,9 +1912,15 @@ function AdminProducts() {
 
                                                 {/* Kaskadli Toifa Tanlash */}
                                                 <div className="space-y-3 pt-2">
-                                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest italic">
-                                                        Tovar Toifasi (Uzum Market uslubida kaskadli)
-                                                    </label>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest italic">
+                                                            Tovar Toifasi (Uzum Market uslubida kaskadli)
+                                                        </label>
+                                                        <AdminTooltip
+                                                            title="Kaskadli Toifalar"
+                                                            description="Mahsulot tegishli bo'lgan asosiy toifani tanlang. Keyin avtomatik ravishda ichki toifalar menyusi ochiladi."
+                                                        />
+                                                    </div>
                                                     <div className="space-y-3">
                                                         {/* Level 1 dropdown */}
                                                         <div className="relative">
@@ -1960,7 +1988,13 @@ function AdminProducts() {
                                                             <ImageIcon size={16} />
                                                         </div>
                                                         <div>
-                                                            <h4 className="text-xs font-black uppercase tracking-wider text-black">Mahsulot Rasmlari (Max 30)</h4>
+                                                            <div className="flex items-center gap-1.5">
+                                                                <h4 className="text-xs font-black uppercase tracking-wider text-black">Mahsulot Rasmlari (Max 30)</h4>
+                                                                <AdminTooltip
+                                                                    title="Rasmlar Galereyasi"
+                                                                    description="Rasmlarni surib (drag & drop) o'rnini almashtirishingiz mumkin. 1-o'rindagi rasm vitrinada asosiy bo'ladi."
+                                                                />
+                                                            </div>
                                                             <p className="text-[9px] text-gray-400 font-bold uppercase">{newProduct.images?.length || 0} / 30 ta yuklangan</p>
                                                         </div>
                                                     </div>
@@ -2104,7 +2138,13 @@ function AdminProducts() {
                                                         <Wand2 size={16} />
                                                     </div>
                                                     <div>
-                                                        <h4 className="text-xs font-black uppercase tracking-wider text-black">Mahsulot Tavsiflari</h4>
+                                                        <div className="flex items-center gap-1.5">
+                                                            <h4 className="text-xs font-black uppercase tracking-wider text-black">Mahsulot Tavsiflari</h4>
+                                                            <AdminTooltip
+                                                                title="AI Kopirayter Toolbari"
+                                                                description="Tavsif yozib, yuqoridagi 'Jozibador qilish', 'Punktlar' yoki 'Imlo' tugmalarini bossangiz, sun'iy intellekt matnni darhol qayta ishlab beradi."
+                                                            />
+                                                        </div>
                                                         <p className="text-[9px] text-gray-400 font-bold uppercase">AI Yordamchi Kopirayter bilan</p>
                                                     </div>
                                                 </div>
@@ -2212,6 +2252,10 @@ function AdminProducts() {
                                                             <Globe size={13} className="text-blue-600" />
                                                         </div>
                                                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Google Qidiruv Ko'rinishi (SERP Preview)</span>
+                                                        <AdminTooltip
+                                                            title="Google Qidiruv Snippeti"
+                                                            description="Foydalanuvchilar Google qidiruvida ushbu mahsulotni qanday ko'rishini real vaqtda ko'rsatuvchi jonli namuna."
+                                                        />
                                                     </div>
                                                     <span className="text-[9px] font-bold px-2 py-0.5 bg-blue-100/60 text-blue-700 rounded-full">Jonli Snippet</span>
                                                 </div>
@@ -2264,7 +2308,13 @@ function AdminProducts() {
                                                             <TrendingUp size={16} />
                                                         </div>
                                                         <div>
-                                                            <h4 className="text-xs font-black uppercase tracking-wider text-black">Narx & Marja Kalkulyatori</h4>
+                                                            <div className="flex items-center gap-1.5">
+                                                                <h4 className="text-xs font-black uppercase tracking-wider text-black">Narx & Marja Kalkulyatori</h4>
+                                                                <AdminTooltip
+                                                                    title="Rentabellik Kalkulyatori"
+                                                                    description="Tannarx va qo'shimcha xarajatlarni kiritsangiz, tizim har bir sotilgan donadan qoladigan sof foyda va rentabellik marjasini avtomatik hisoblab beradi."
+                                                                />
+                                                            </div>
                                                             <p className="text-[9px] text-gray-400 font-bold uppercase">Jonli moliyaviy hisob-kitob</p>
                                                         </div>
                                                     </div>
@@ -2298,7 +2348,13 @@ function AdminProducts() {
                                                         />
                                                     </div>
                                                     <div className="space-y-1">
-                                                        <label className="block text-[10px] font-black text-amber-600 uppercase tracking-wider">Tannarx (so'm)</label>
+                                                        <div className="flex items-center gap-1">
+                                                            <label className="block text-[10px] font-black text-amber-600 uppercase tracking-wider">Tannarx (so'm)</label>
+                                                            <AdminTooltip
+                                                                title="Tannarx"
+                                                                description="Tovarning sotib olingan yoki ishlab chiqarilgan narxi. Faqat admin ko'radi."
+                                                            />
+                                                        </div>
                                                         <input
                                                             type="number"
                                                             value={newProduct.cost_price || ""}
@@ -2308,7 +2364,13 @@ function AdminProducts() {
                                                         />
                                                     </div>
                                                     <div className="space-y-1">
-                                                        <label className="block text-[10px] font-black text-amber-600 uppercase tracking-wider">Qo'shimcha Xarajat</label>
+                                                        <div className="flex items-center gap-1">
+                                                            <label className="block text-[10px] font-black text-amber-600 uppercase tracking-wider">Qo'shimcha Xarajat</label>
+                                                            <AdminTooltip
+                                                                title="Qo'shimcha Xarajat"
+                                                                description="Yetkazib berish, qadoqlash, karobka yoki boshqa logistika xarajatlari."
+                                                            />
+                                                        </div>
                                                         <input
                                                             type="number"
                                                             value={newProduct.additional_expenses || ""}
@@ -2350,14 +2412,27 @@ function AdminProducts() {
                                                         <Tag size={16} />
                                                     </div>
                                                     <div>
-                                                        <h4 className="text-xs font-black uppercase tracking-wider text-black">SKU va Identifikatorlar</h4>
+                                                        <div className="flex items-center gap-1.5">
+                                                            <h4 className="text-xs font-black uppercase tracking-wider text-black">SKU va Identifikatorlar</h4>
+                                                            <AdminTooltip
+                                                                title="SKU va Guruhlash"
+                                                                description="Mahsulotlarning ombordagi unikal kodi va turli rang/variantlarni bitta sahifada birlashtirish vositasi."
+                                                            />
+                                                        </div>
                                                         <p className="text-[9px] text-gray-400 font-bold uppercase">Mahsulot kodi va guruhlash</p>
                                                     </div>
                                                 </div>
 
                                                 <div className="space-y-3">
                                                     <div>
-                                                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Mahsulot SKU kod (Unikal)*</label>
+                                                        <div className="flex items-center gap-1 mb-1">
+                                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Mahsulot SKU kod (Unikal)*</label>
+                                                            <AdminTooltip
+                                                                title="Mahsulot SKU Kodi"
+                                                                description="Har bir tovar donasi uchun unikal kod (Stock Keeping Unit)."
+                                                                examples={["VGR-706-BLUE", "IPH-15P-256-BLK"]}
+                                                            />
+                                                        </div>
                                                         <input
                                                             required
                                                             type="text"
@@ -2369,7 +2444,14 @@ function AdminProducts() {
                                                     </div>
                                                     <div className="grid grid-cols-2 gap-3">
                                                         <div>
-                                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Guruh SKU (GroupId)</label>
+                                                            <div className="flex items-center gap-1 mb-1">
+                                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Guruh SKU (GroupId)</label>
+                                                                <AdminTooltip
+                                                                    title="Guruhlash SKU (GroupId)"
+                                                                    description="Bir xil mahsulotning turli ranglari (Qora, Oq, Ko'k) ga bir xil GroupId beriladi. Saytda mijoz bitta sahifada ranglarni almashtirishi mumkin bo'ladi."
+                                                                    examples={["VGR-706-GROUP", "IPHONE-15-PRO-SERIES"]}
+                                                                />
+                                                            </div>
                                                             <input
                                                                 type="text"
                                                                 value={newProduct.groupId || ""}
@@ -2390,7 +2472,13 @@ function AdminProducts() {
                                                         </div>
                                                     </div>
                                                     <div>
-                                                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Bar-kod (EAN)</label>
+                                                        <div className="flex items-center gap-1 mb-1">
+                                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Bar-kod (EAN)</label>
+                                                            <AdminTooltip
+                                                                title="Shtrix-kod (EAN/Barcode)"
+                                                                description="Mahsulot qutisidagi shtrix-kod. Skaner orqali omborda tez topishda ishlatiladi."
+                                                            />
+                                                        </div>
                                                         <input
                                                             value={newProduct.barcode || ""}
                                                             onChange={e => setNewProduct({ ...newProduct, barcode: e.target.value })}
@@ -2403,7 +2491,13 @@ function AdminProducts() {
                                                     <div className="pt-2">
                                                         <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex items-center justify-between shadow-sm">
                                                             <div>
-                                                                <h4 className="text-[10px] font-black uppercase tracking-widest text-black">Original Sifat</h4>
+                                                                <div className="flex items-center gap-1">
+                                                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-black">Original Sifat</h4>
+                                                                    <AdminTooltip
+                                                                        title="Original Sifat Belgisi"
+                                                                        description="Yoqilsa, sayt vitrinasidagi rasm ustida '100% Original' yorlig'i paydo bo'ladi."
+                                                                    />
+                                                                </div>
                                                                 <p className="text-[8px] text-gray-400 font-bold uppercase mt-0.5 italic">"Original" belgisini ko'rsatish</p>
                                                             </div>
                                                             <button
@@ -2425,7 +2519,13 @@ function AdminProducts() {
                                                         <Layers size={16} />
                                                     </div>
                                                     <div>
-                                                        <h4 className="text-xs font-black uppercase tracking-wider text-black">Gabaritlar & Og'irlik</h4>
+                                                        <div className="flex items-center gap-1.5">
+                                                            <h4 className="text-xs font-black uppercase tracking-wider text-black">Gabaritlar & Og'irlik</h4>
+                                                            <AdminTooltip
+                                                                title="Yetkazib berish o'lchamlari"
+                                                                description="Kuryerlik xizmati (Yandex Delivery, BTS) narxini to'g'ri hisoblash uchun kerak bo'ladi."
+                                                            />
+                                                        </div>
                                                         <p className="text-[9px] text-gray-400 font-bold uppercase">Yetkazib berish o'lchamlari</p>
                                                     </div>
                                                 </div>
@@ -2481,7 +2581,14 @@ function AdminProducts() {
                                                     <div className="w-8 h-8 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-md shadow-emerald-500/20">
                                                         <DollarSign size={16} />
                                                     </div>
-                                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Cashback Sozlamalari</h4>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Cashback Sozlamalari</h4>
+                                                        <AdminTooltip
+                                                            title="Cashback (Keshbek)"
+                                                            description="Xaridor bu mahsulotni sotib olganda uning saytdagi virtual hamyoniga qaytariladigan pul."
+                                                            examples={["Global: Umumiy do'kon foizida beriladi", "Maxsus %: Masalan 5% qaytadi", "Maxsus Summa: Masalan 20,000 so'm qaytadi"]}
+                                                        />
+                                                    </div>
                                                 </div>
                                                 
                                                 <div className="grid grid-cols-2 gap-3">
@@ -2525,7 +2632,14 @@ function AdminProducts() {
                                                     <div className="w-8 h-8 bg-purple-500 text-white rounded-xl flex items-center justify-center shadow-md shadow-purple-500/20">
                                                         <Sparkles size={16} />
                                                     </div>
-                                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-purple-700">Hamkorlik Komissiyasi (%)</h4>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-purple-700">Hamkorlik Komissiyasi (%)</h4>
+                                                        <AdminTooltip
+                                                            title="Hamkorlik (Referal) Komissiyasi"
+                                                            description="Agent yoki blogger ushbu mahsulotni sotsa, 3 darajadagi hamkorlarga ajratiladigan rag'batlantirish foizlari."
+                                                            examples={["Sotuvchi: Tovarni sotgan agent oladigan %", "Manager: Agentning boshlig'i oladigan %", "Top Manager: Katta rahbar oladigan %"]}
+                                                        />
+                                                    </div>
                                                 </div>
                                                 
                                                 <div className="grid grid-cols-3 gap-2">
