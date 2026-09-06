@@ -18,6 +18,7 @@ import ConnectivityListener from "@/components/common/ConnectivityListener";
 
 import { subscribeToPushNotifications } from "@/lib/push-notifications";
 import { Language } from "@/types";
+import DynamicFavicon from "@/components/common/DynamicFavicon";
 
 export default function AppWrapper({ children, lang }: { children: React.ReactNode, lang?: string }) {
     const cart = useStore(state => state.cart);
@@ -330,6 +331,7 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
             ${showNav ? ((pathWithoutLocale === '/' || isProductDetail) ? 'md:pt-28' : 'pt-16 md:pt-28') : ''}
         `}>
             <ConnectivityListener />
+            <DynamicFavicon />
             {showNav && (
                 <Suspense fallback={<div className="h-16 md:h-28 bg-white" />}>
                     <Navigation />
