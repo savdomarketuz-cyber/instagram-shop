@@ -82,7 +82,52 @@ export async function GET(req: NextRequest) {
             cart.user_phone !== "anonymous"
         ) || [];
 
-        return NextResponse.json({ success: true, carts: validCarts });
+        // Extract all unique product IDs
+        const allProductIds = Array.from(
+            new Set(
+                validCarts
+                    .flatMap(c => (Array.isArray(c.items) ? c.items : []).map((i: any) => i?.id))
+                    .filter(Boolean)
+            )
+        );
+
+        // Fetch products details from database
+        let productMap = new Map<string, any>();
+        if (allProductIds.length > 0) {
+            const { data: products } = await supabaseAdmin
+                .from("products")
+                .select("id, name, name_uz, name_ru, price, old_price, image, is_deleted")
+                .in("id", allProductIds);
+
+            if (products) {
+                productMap = new Map(products.map(p => [p.id, p]));
+            }
+        }
+
+        // Enrich carts with product data
+        const enrichedCarts = validCarts.map(cart => {
+            const enrichedItems = (cart.items || []).map((item: any) => {
+                const prod = productMap.get(item.id);
+                return {
+                    id: item.id,
+                    quantity: Number(item.quantity) || 1,
+                    name: prod?.name_uz || prod?.name || item.name || "(O'chirilgan mahsulot)",
+                    price: Number(prod?.price ?? item.price ?? 0),
+                    image: prod?.image || item.image || "",
+                    is_deleted: !prod || prod.is_deleted === true,
+                };
+            });
+
+            const total = enrichedItems.reduce((sum: number, it: any) => sum + (it.price * it.quantity), 0);
+
+            return {
+                ...cart,
+                items: enrichedItems,
+                total,
+            };
+        });
+
+        return NextResponse.json({ success: true, carts: enrichedCarts });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

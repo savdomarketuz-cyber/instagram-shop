@@ -225,7 +225,13 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
                     type: "cart",
                     payload: {
                         user_phone: user.phone,
-                        items: cart.length > 0 ? cart.map(item => ({ id: item.id, quantity: item.quantity })) : []
+                        items: cart.length > 0 ? cart.map(item => ({
+                            id: item.id,
+                            quantity: item.quantity,
+                            name: item.name || "",
+                            price: item.price || 0,
+                            image: item.image || ""
+                        })) : []
                     }
                 })
             }).catch(() => {});
