@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getProductSlug } from '@/lib/slugify';
 
+export const dynamic = 'force-dynamic';
 export const revalidate = 86400; // 24 soatda kesh yangilanadi
 
 const BASE_URL = 'https://velari.uz';

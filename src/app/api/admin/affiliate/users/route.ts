@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { verifyJwt } from "@/lib/jwt-utils";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
     try {
         const adminToken = req.headers.get("cookie")?.split("admin_token=")[1]?.split(";")[0];

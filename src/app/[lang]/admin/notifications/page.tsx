@@ -103,13 +103,19 @@ export default function PushNotificationsPage() {
                     <button
                         type="button"
                         onClick={async () => {
+                            alert("Tugma bosildi! Push test boshlanmoqda...");
+                            console.log("=== PUSH TEST BOSHLANDI ===");
                             try {
+                                console.log("1. Push modulni yuklayapman...");
                                 const { subscribeToPushNotifications } = await import("@/lib/push-notifications");
+                                console.log("2. Obuna qilayapman...");
                                 const sub = await subscribeToPushNotifications();
+                                console.log("3. Obuna natijasi:", sub ? "OK" : "NULL");
                                 if (!sub) {
-                                    showToast("Push obuna o'rnatilmadi. Brauzer ruxsatini tekshiring.", "error");
+                                    alert("Push obuna o'rnatilmadi. Brauzer ruxsatini tekshiring.");
                                     return;
                                 }
+                                console.log("4. Push-send API ga yuborayapman...");
                                 const res = await fetch("/api/admin/push-send", {
                                     method: "POST",
                                     headers: { "Content-Type": "application/json" },
@@ -120,14 +126,15 @@ export default function PushNotificationsPage() {
                                     }),
                                 });
                                 const data = await res.json();
+                                console.log("5. Javob:", data);
                                 if (data.success) {
-                                    showToast(`Test xabari yuborildi! (${data.results?.success || 0} muvaffaqiyatli, ${data.results?.failed || 0} xato)`, "success");
+                                    alert(`Muvaffaqiyat! ${data.results?.success || 0} ta qurilmaga yuborildi`);
                                 } else {
-                                    showToast("Xato: " + (data.error || `Server ${res.status}`), "error");
+                                    alert("Xato: " + (data.error || `Server ${res.status}`));
                                     console.error("Push send xato:", data);
                                 }
                             } catch (e: any) {
-                                showToast("Xatolik: " + e.message, "error");
+                                alert("Exception: " + e.message);
                                 console.error("Push test exception:", e);
                             }
                         }}
