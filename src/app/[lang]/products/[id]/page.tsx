@@ -42,105 +42,94 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: { params: { lang: string, id: string } }): Promise<Metadata> {
-    try {
-        const productIdOrArticle = getProductIdFromSlug(params.id);
-        const product = await getProductData(productIdOrArticle);
+    const productIdOrArticle = getProductIdFromSlug(params.id);
+    const product = await getProductData(productIdOrArticle);
+    
+    if (!product) {
+        notFound();
+    }
+    const baseUrl = "https://velari.uz";
+    const isRu = params.lang === 'ru';
+
+    // Tilga mos canonical slug — UUID/artikul/eski-slug bilan kelsa ham
+    // DOIM bitta to'g'ri shaklga normallashtiriladi (dublikat kontentni yo'qotadi).
+    const uzSlug = getProductSlug(product, 'uz');
+    const ruSlug = getProductSlug(product, 'ru');
+    const canonicalSlug = isRu ? ruSlug : uzSlug;
+    const canonicalUrl = `${baseUrl}/${params.lang}/products/${canonicalSlug}`;
+
+    // Til bo'yicha nom (ru sahifa uchun ruscha nom — Yandex/Google ruscha qidiruvi uchun)
+    const productName = isRu
+        ? (product.name_ru || product.name_uz || product.name)
+        : (product.name_uz || product.name);
+
+    // Ensure raw direct product image URL is absolute for Google Search Thumbnail Indexing
+    const rawProductImage = product.image?.startsWith('http') 
+        ? product.image 
+        : `${baseUrl}${product.image || ''}`;
         
-        if (!product) {
-            return {
-                title: 'Mahsulot topilmadi | Velari',
-                description: 'Kechirasiz, siz qidirayotgan mahsulot topilmadi.',
-                robots: {
-                    index: false,
-                    follow: false,
-                },
-            };
-        }
-        const baseUrl = "https://velari.uz";
-        const isRu = params.lang === 'ru';
+    const productImages = (product.images && product.images.length > 0) 
+        ? product.images.map((img: string) => img.startsWith('http') ? img : `${baseUrl}${img}`)
+        : [rawProductImage];
 
-        // Tilga mos canonical slug — UUID/artikul/eski-slug bilan kelsa ham
-        // DOIM bitta to'g'ri shaklga normallashtiriladi (dublikat kontentni yo'qotadi).
-        const uzSlug = getProductSlug(product, 'uz');
-        const ruSlug = getProductSlug(product, 'ru');
-        const canonicalSlug = isRu ? ruSlug : uzSlug;
-        const canonicalUrl = `${baseUrl}/${params.lang}/products/${canonicalSlug}`;
+    const ogUrl = new URL(`${baseUrl}/api/og`);
+    ogUrl.searchParams.set('name', productName);
+    ogUrl.searchParams.set('price', product.price.toString());
+    ogUrl.searchParams.set('image', rawProductImage);
 
-        // Til bo'yicha nom (ru sahifa uchun ruscha nom — Yandex/Google ruscha qidiruvi uchun)
-        const productName = isRu
-            ? (product.name_ru || product.name_uz || product.name)
-            : (product.name_uz || product.name);
+    // Title template in layout.tsx already adds "| Velari", so don't add it here
+    const title = isRu
+        ? `${productName} - Цена, Рассрочка и Гарантия`
+        : `${productName} - Narxi, Muddatli to'lov va Kafolat`;
+    const description = isRu
+        ? `${productName} по самым выгодным ценам в Узбекистане. Рассрочка, официальная гарантия и бесплатная доставка. ${product.description_ru || product.description || ""}`.substring(0, 160)
+        : `${productName} O'zbekistonda eng hamyonbop narxlarda. Muddatli to'lov, rasmiy kafolat va tekin yetkazib berish. ${product.description_uz || product.description || ""}`.substring(0, 160);
 
-        // Ensure raw direct product image URL is absolute for Google Search Thumbnail Indexing
-        const rawProductImage = product.image?.startsWith('http') 
-            ? product.image 
-            : `${baseUrl}${product.image || ''}`;
-            
-        const productImages = (product.images && product.images.length > 0) 
-            ? product.images.map((img: string) => img.startsWith('http') ? img : `${baseUrl}${img}`)
-            : [rawProductImage];
-
-        const ogUrl = new URL(`${baseUrl}/api/og`);
-        ogUrl.searchParams.set('name', productName);
-        ogUrl.searchParams.set('price', product.price.toString());
-        ogUrl.searchParams.set('image', rawProductImage);
-
-        // Title template in layout.tsx already adds "| Velari", so don't add it here
-        const title = isRu
-            ? `${productName} - Цена, Рассрочка и Гарантия`
-            : `${productName} - Narxi, Muddatli to'lov va Kafolat`;
-        const description = isRu
-            ? `${productName} по самым выгодным ценам в Узбекистане. Рассрочка, официальная гарантия и бесплатная доставка. ${product.description_ru || product.description || ""}`.substring(0, 160)
-            : `${productName} O'zbekistonda eng hamyonbop narxlarda. Muddatli to'lov, rasmiy kafolat va tekin yetkazib berish. ${product.description_uz || product.description || ""}`.substring(0, 160);
-
-        return {
+    return {
+        title: title,
+        description: description,
+        openGraph: {
             title: title,
             description: description,
-            openGraph: {
-                title: title,
-                description: description,
-                url: canonicalUrl,
-                siteName: 'Velari',
-                images: [
-                    { url: ogUrl.toString(), width: 1200, height: 630, alt: productName },
-                    { url: rawProductImage, width: 800, height: 800, alt: productName },
-                    ...productImages.slice(1, 4).map(img => ({ url: img, width: 800, height: 800, alt: productName }))
-                ],
-                locale: isRu ? 'ru_RU' : 'uz_UZ',
-                type: 'website',
+            url: canonicalUrl,
+            siteName: 'Velari',
+            images: [
+                { url: ogUrl.toString(), width: 1200, height: 630, alt: productName },
+                { url: rawProductImage, width: 800, height: 800, alt: productName },
+                ...productImages.slice(1, 4).map(img => ({ url: img, width: 800, height: 800, alt: productName }))
+            ],
+            locale: isRu ? 'ru_RU' : 'uz_UZ',
+            type: 'website',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: title,
+            description: description,
+            images: [ogUrl.toString(), rawProductImage],
+        },
+        alternates: {
+            canonical: canonicalUrl,
+            languages: {
+                'uz-UZ': `${baseUrl}/uz/products/${uzSlug}`,
+                'ru-RU': `${baseUrl}/ru/products/${ruSlug}`,
+                'x-default': `${baseUrl}/uz/products/${uzSlug}`,
             },
-            twitter: {
-                card: 'summary_large_image',
-                title: title,
-                description: description,
-                images: [ogUrl.toString(), rawProductImage],
-            },
-            alternates: {
-                canonical: canonicalUrl,
-                languages: {
-                    'uz-UZ': `${baseUrl}/uz/products/${uzSlug}`,
-                    'ru-RU': `${baseUrl}/ru/products/${ruSlug}`,
-                    'x-default': `${baseUrl}/uz/products/${uzSlug}`,
-                },
-            },
-            keywords: [
-                product.name, 
-                product.name_uz || "", 
-                "Velari", 
-                "muddatli to'lov", 
-                "bo'lib to'lash",
-                "muddatli tolov",
-                "narxi",
-                "sotib olish",
-                "Toshkent",
-                "Uzbekistan",
-                product.category as string
-            ].filter(Boolean) as string[],
-            robots: { index: true, follow: true },
-        };
-    } catch (error) {
-        return { title: 'Velari | Global Electronics' };
-    }
+        },
+        keywords: [
+            product.name, 
+            product.name_uz || "", 
+            "Velari", 
+            "muddatli to'lov", 
+            "bo'lib to'lash",
+            "muddatli tolov",
+            "narxi",
+            "sotib olish",
+            "Toshkent",
+            "Uzbekistan",
+            product.category as string
+        ].filter(Boolean) as string[],
+        robots: { index: true, follow: true },
+    };
 }
 
 function ProductDataWrapper({ params, product, canonicalSlug }: { params: { lang: string, id: string }, product: any, canonicalSlug: string }) {

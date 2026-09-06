@@ -14,10 +14,7 @@ export async function generateMetadata({ params }: { params: { lang: string; id:
         .single();
 
     if (!wh || wh.active === false) {
-        return {
-            title: "Do'kon topilmadi | Velari",
-            robots: { index: false, follow: false },
-        };
+        notFound();
     }
 
     const title = `${wh.name} | Velari`;

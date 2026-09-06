@@ -21,7 +21,7 @@ const getBlogData = cache(async (slug: string) => {
 
 export async function generateMetadata({ params: { lang, slug } }: { params: { lang: string, slug: string } }): Promise<Metadata> {
     const blog = await getBlogData(slug);
-    if (!blog) return { title: 'Maqola topilmadi | Velari' };
+    if (!blog) notFound();
 
     const title = lang === 'uz' ? blog.title_uz : blog.title_ru;
     const description = (lang === 'uz' ? blog.excerpt_uz || blog.content_uz : blog.excerpt_ru || blog.content_ru).substring(0, 160);
