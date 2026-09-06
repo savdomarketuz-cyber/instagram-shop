@@ -29,15 +29,19 @@ async function sendInAppMessage(phone: string, text: string) {
 async function sendWebPushToPhone(phone: string, title: string, body: string, url: string) {
     const pubKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     const privKey = process.env.VAPID_PRIVATE_KEY;
-    if (!pubKey || !privKey) return;
+    if (!pubKey || !privKey || !phone) return;
     try {
         webpush.setVapidDetails("mailto:admin@velari.uz", pubKey, privKey);
+        const cleanPhone = phone.replace(/\D/g, "");
         const { data: tokens } = await supabaseAdmin
             .from("fcm_tokens")
             .select("token")
-            .eq("user_phone", phone);
+            .or(`user_phone.eq.${phone},user_phone.eq.+${cleanPhone},user_phone.eq.${cleanPhone}`);
+
+        if (!tokens || tokens.length === 0) return;
+
         const payload = JSON.stringify({ title, body, url });
-        await Promise.all((tokens || []).map(async (row: any) => {
+        await Promise.all(tokens.map(async (row: any) => {
             try {
                 await webpush.sendNotification(JSON.parse(row.token), payload);
             } catch (err: any) {
@@ -46,7 +50,9 @@ async function sendWebPushToPhone(phone: string, title: string, body: string, ur
                 }
             }
         }));
-    } catch { /* push xatosi jim qoladi */ }
+    } catch (err) {
+        console.error("sendWebPushToPhone error:", err);
+    }
 }
 
 async function verifyAdmin(req: NextRequest) {

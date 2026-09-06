@@ -9,11 +9,14 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Obuna ma'lumotlari yo'q" }, { status: 400 });
         }
 
+        const tokenStr = JSON.stringify(subscription);
+        const targetPhone = userPhone?.trim() || 'anonymous';
+
         const { error } = await supabaseAdmin
             .from("fcm_tokens")
             .upsert({
-                user_phone: userPhone || 'anonymous',
-                token: JSON.stringify(subscription),
+                user_phone: targetPhone,
+                token: tokenStr,
                 platform: platform || 'web',
                 last_updated: new Date().toISOString()
             }, { onConflict: 'user_phone' });

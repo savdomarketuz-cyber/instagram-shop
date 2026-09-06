@@ -12,7 +12,8 @@ function urlBase64ToUint8Array(base64String: string) {
 }
 
 export async function subscribeToPushNotifications(userPhone?: string) {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    if (typeof window === "undefined") return;
+    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
         return;
     }
     if (!VAPID_PUBLIC_KEY) {
@@ -20,30 +21,37 @@ export async function subscribeToPushNotifications(userPhone?: string) {
     }
 
     try {
-        const registration = await navigator.serviceWorker.ready;
-
-        const existingSubscription = await registration.pushManager.getSubscription();
-        if (existingSubscription) {
-            return existingSubscription;
+        // Agar ruxsat berilmagan bo'lsa, so'raymiz
+        if (Notification.permission === "default") {
+            const permission = await Notification.requestPermission();
+            if (permission !== "granted") return;
+        } else if (Notification.permission !== "granted") {
+            return;
         }
 
-        const subscribeOptions = {
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-        };
+        const registration = await navigator.serviceWorker.ready;
+        let subscription = await registration.pushManager.getSubscription();
 
-        const subscription = await registration.pushManager.subscribe(subscribeOptions);
+        if (!subscription) {
+            const subscribeOptions = {
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+            };
+            subscription = await registration.pushManager.subscribe(subscribeOptions);
+        }
 
-        // Serverga yuborish
-        await fetch("/api/auth/push-subscription", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                subscription,
-                userPhone,
-                platform: "web"
-            })
-        });
+        // ⚠️ MUHIM: Obuna mavjud bo'lsa ham, uni doim serverga yuboramiz (telefon raqam bilan bog'lash uchun)
+        if (subscription) {
+            await fetch("/api/auth/push-subscription", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    subscription,
+                    userPhone: userPhone || undefined,
+                    platform: "web"
+                })
+            });
+        }
 
         return subscription;
     } catch (error) {
