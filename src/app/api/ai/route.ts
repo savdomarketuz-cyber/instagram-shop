@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyJwt } from "@/lib/jwt-utils";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const GROQ_API_KEYS = [
     process.env.GROQ_API_KEY_1 || "",
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { messages: rawMessages, model = "llama-3.3-70b-versatile", action, context } = body;
+        const { messages: rawMessages, model = "openai/gpt-oss-120b", action, context } = body;
 
         let finalModel = model;
         let finalMessages = rawMessages;
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+                        model: 'qwen/qwen3.6-27b',
                         messages: [
                             {
                                 role: 'user',
@@ -156,6 +157,21 @@ Quyidagi JSON strukturada qaytar:
                 const parsed = responseFormat?.type === 'json_object'
                     ? JSON.parse(content.replace(/```json|```/g, '').trim())
                     : content;
+
+                // Log to ai_logs table in Supabase
+                try {
+                    await supabaseAdmin.from("ai_logs").insert([{
+                        id: crypto.randomUUID(),
+                        user_phone: "ADMIN",
+                        input: { action: action || "general_completion", context: context || null },
+                        output: [typeof parsed === "object" ? JSON.stringify(parsed) : String(parsed)],
+                        model: finalModel,
+                        action: action === "generate_from_image" ? "admin_product_seo_generation" : (action || "admin_ai_completion"),
+                        status: "completed"
+                    }]);
+                } catch (logErr) {
+                    console.error("Failed to insert ai_log:", logErr);
+                }
 
                 // `content` (eski mijozlar) va `result` (admin) — ikkalasini qaytaramiz
                 return NextResponse.json({

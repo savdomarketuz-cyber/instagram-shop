@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const GROQ_API_KEYS = [
     process.env.GROQ_API_KEY_1 || "",
@@ -20,7 +20,7 @@ async function analyzeVisionImg(imageUrl: string, productName: string) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+                model: 'qwen/qwen3.6-27b',
                 messages: [
                     {
                         role: 'user',
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
         if (!productId) return NextResponse.json({ error: "Product ID required" }, { status: 400 });
 
         // 1. Fetch Product
-        const { data: product, error } = await supabase
+        const { data: product, error } = await supabaseAdmin
             .from("products")
             .select("*")
             .eq("id", productId)
@@ -95,16 +95,16 @@ export async function POST(req: NextRequest) {
             };
 
             // 4. Update Product Metadata (alt-text SEO)
-            await supabase
+            await supabaseAdmin
                 .from("products")
                 .update({ image_metadata: updatedMeta })
                 .eq("id", productId);
 
             // 5. Log Success
-            await supabase.from("ai_logs").insert([{
+            await supabaseAdmin.from("ai_logs").insert([{
                 id: crypto.randomUUID(),
                 action: "vision_auto_analyze",
-                model: "meta-llama/llama-4-scout-17b-16e-instruct",
+                model: "qwen/qwen3.6-27b",
                 product_id: productId,
                 image_url: nextUrl,
                 status: "completed",
@@ -121,10 +121,11 @@ export async function POST(req: NextRequest) {
             });
         } else {
             // Log Failure
-            await supabase.from("ai_logs").insert([{
+            await supabaseAdmin.from("ai_logs").insert([{
                 id: crypto.randomUUID(),
                 action: "vision_auto_analyze_failed",
                 product_id: productId,
+                model: "qwen/qwen3.6-27b",
                 image_url: nextUrl,
                 status: "failed",
                 error_message: "AI analysis returned no valid JSON"

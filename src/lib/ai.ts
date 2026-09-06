@@ -158,7 +158,7 @@ export async function logAiActivity(data: {
             input: data.input,
             output: data.output,
             action: data.action,
-            model: data.model || "llama-3.3-70b-versatile"
+            model: data.model || "openai/gpt-oss-120b"
         }]);
     } catch (e) {
         console.error("AI Logging error:", e);

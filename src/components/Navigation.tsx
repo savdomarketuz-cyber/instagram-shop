@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Heart, ShoppingBag, MessageSquare, Clapperboard, LayoutGrid, User, ShoppingCart, BookOpen, Camera, Loader2, Sparkles, X } from "lucide-react";
+import { Search, Heart, ShoppingBag, MessageSquare, Clapperboard, LayoutGrid, User, ShoppingCart, BookOpen, Loader2, Sparkles, X } from "lucide-react";
 import Image from "next/image";
 import Logo from "./Logo";
 import { getProductSlug } from "@/lib/slugify";
@@ -12,28 +12,6 @@ import { translations } from "@/lib/translations";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { SearchResult } from "@/types";
-
-// Rasmni canvas orqali kichraytirib base64 JPEG qaytaradi (tez upload)
-async function resizeImageToBase64(file: File, maxSize = 1024, quality = 0.8): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const img = new window.Image();
-        const url = URL.createObjectURL(file);
-        img.onload = () => {
-            URL.revokeObjectURL(url);
-            let { width, height } = img;
-            if (width > height && width > maxSize) { height = Math.round(height * maxSize / width); width = maxSize; }
-            else if (height > maxSize) { width = Math.round(width * maxSize / height); height = maxSize; }
-            const canvas = document.createElement("canvas");
-            canvas.width = width; canvas.height = height;
-            const ctx = canvas.getContext("2d");
-            if (!ctx) return reject(new Error("Canvas yo'q"));
-            ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL("image/jpeg", quality));
-        };
-        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Rasm yuklanmadi")); };
-        img.src = url;
-    });
-}
 
 export default function Navigation() {
     const user = useStore(state => state.user);
@@ -161,31 +139,6 @@ export default function Navigation() {
                 }
             }
         }, 300);
-    };
-
-    const handleVisualSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        useStore.setState({ isSearchLoading: true });
-        if (!isHomePage) router.push(`/${language}`);
-
-        try {
-            // Rasmni 1024px ga kichraytirib base64 (3-5MB → ~200KB, tez upload + vision uchun yetarli)
-            const base64 = await resizeImageToBase64(file, 1024, 0.8);
-            const res = await fetch('/api/search', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: base64 })
-            });
-            const data = await res.json();
-            setSearchResults(data.results || [], data.facets || null, data.didYouMean || null, !!data.isFallback);
-            setSearch("");
-            useStore.setState({ isSearchLoading: false });
-        } catch (err) {
-            console.error("Visual search failed", err);
-            useStore.setState({ isSearchLoading: false });
-        }
     };
 
     const l = (path: string) => `/${language}${path === '/' ? '' : path}`;
