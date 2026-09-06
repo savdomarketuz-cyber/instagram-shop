@@ -24,21 +24,29 @@ export default function AdminDashboard() {
 
     const fetchDashboardData = async () => {
         try {
-            // Fetch all orders for stats (can be optimized with RPC later)
-            const allOrders = await adminSelect<any[]>("orders", { columns: "total, status, created_at" });
+            // Parallel so'rovlar: barcha kerakli ma'lumotlar bir vaqtda (0-waterfall) olinadi
+            const [recentOrdersData, allUsersData, statsOrdersData] = await Promise.all([
+                adminSelect<any[]>("orders", {
+                    orderBy: { column: "created_at", ascending: false },
+                    limit: 5,
+                }),
+                adminSelect<any[]>("users", { columns: "id" }),
+                adminSelect<any[]>("orders", {
+                    columns: "total, status, created_at",
+                    orderBy: { column: "created_at", ascending: false },
+                    limit: 1000,
+                }),
+            ]);
 
-            const revenue = allOrders?.reduce((sum, order) => sum + (Number(order.total) || 0), 0) || 0;
-            const pending = allOrders?.filter(order =>
+            const revenue = statsOrdersData?.reduce((sum, order) => sum + (Number(order.total) || 0), 0) || 0;
+            const pending = statsOrdersData?.filter(order =>
                 ["Kutilmoqda", "To'lov kutilmoqda", "Ожидание", "Ожидание оплаты"].some(s => order.status?.includes(s))
             ).length || 0;
 
-            // Fetch user count
-            const allUsers = await adminSelect<any[]>("users", { columns: "id" });
-
             setStats({
-                totalOrders: allOrders?.length || 0,
+                totalOrders: statsOrdersData?.length || 0,
                 totalRevenue: revenue,
-                totalUsers: allUsers?.length || 0,
+                totalUsers: allUsersData?.length || 0,
                 pendingOrders: pending
             });
 
@@ -53,7 +61,7 @@ export default function AdminDashboard() {
                 };
             });
 
-            allOrders?.forEach(o => {
+            statsOrdersData?.forEach(o => {
                 if (!o.created_at) return;
                 const dateOnly = o.created_at.split('T')[0];
                 const dayMatch = last7Days.find(d => d.dateStr === dateOnly);
@@ -63,13 +71,7 @@ export default function AdminDashboard() {
             });
             setChartData(last7Days);
 
-            // Get 5 most recent orders
-            const recent = await adminSelect<any[]>("orders", {
-                orderBy: { column: "created_at", ascending: false },
-                limit: 5,
-            });
-
-            if (recent) setRecentOrders(recent.map(mapOrder));
+            if (recentOrdersData) setRecentOrders(recentOrdersData.map(mapOrder));
 
         } catch (error) {
             console.error("Dashboard error:", error);

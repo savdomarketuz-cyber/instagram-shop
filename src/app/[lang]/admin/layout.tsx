@@ -206,25 +206,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const pathname = usePathname();
     const router = useRouter();
     const { user } = useStore();
-    const [isAuthorized, setIsAuthorized] = useState(false);
+    const isAdmin = Boolean(user?.isAdmin || user?.phone === "ADMIN" || user?.id === "ADMIN");
+    const [isAuthorized, setIsAuthorized] = useState(isAdmin);
     const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
         setIsMounted(true);
-    }, []);
+        if (isAdmin) {
+            setIsAuthorized(true);
+        }
+    }, [isAdmin]);
 
-    // Admin autentifikatsiya tekshiruvi.
-    // MUHIM: zustand `user` localStorage'da abadiy turadi, lekin `admin_token`
-    // cookie 7 kunda tugaydi. Faqat zustandga ishonsak, cookie tugagach panel
-    // ochiq ko'rinadi-yu, har bir /api/admin/* chaqiruvi jimgina 401 qaytaradi.
-    // Shuning uchun haqiqiy cookie'ni serverda tekshiramiz va tugagan bo'lsa
-    // qayta kirishga yo'naltiramiz (yangi cookie olinadi).
+    // Admin autentifikatsiya tekshiruvi:
+    // UI darhol ochiladi (0ms), server tekshiruvi esa orqa fonda amalga oshadi.
     useEffect(() => {
         if (!isMounted) return;
         let cancelled = false;
 
         const verify = async () => {
-            const isAdmin = user?.isAdmin || user?.phone === "ADMIN" || user?.id === "ADMIN";
             if (!user || !isAdmin) {
                 router.replace("/login");
                 return;
@@ -235,7 +234,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 if (res.ok) {
                     setIsAuthorized(true);
                 } else {
-                    // Cookie tugagan/yaroqsiz — qayta kirish kerak
                     router.replace("/login");
                 }
             } catch {
@@ -245,7 +243,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         verify();
         return () => { cancelled = true; };
-    }, [user, router, isMounted]);
+    }, [user, router, isMounted, isAdmin]);
 
     const language = pathname.split('/')[1] || 'uz';
     const l = (path: string) => `/${language}${path}`;

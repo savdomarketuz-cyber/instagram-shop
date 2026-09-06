@@ -46,7 +46,7 @@ export default function AdminWalletsPage() {
         setLoading(true);
         try {
             const [wData, tData] = await Promise.all([
-                adminSelect<any[]>("user_wallets", { orderBy: { column: "balance", ascending: false } }),
+                adminSelect<any[]>("user_wallets", { orderBy: { column: "balance", ascending: false }, limit: 500 }),
                 adminSelect<any[]>("cashback_transactions", { orderBy: { column: "created_at", ascending: false }, limit: 50 }),
             ]);
 

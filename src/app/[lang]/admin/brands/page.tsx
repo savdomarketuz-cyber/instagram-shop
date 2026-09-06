@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { adminSelect } from "@/lib/admin-api";
 import { Plus, Trash2, Tag, Loader2, Hash, Edit2, X, Save, Image as ImageIcon } from "lucide-react";
 import { uploadToYandexS3 } from "@/lib/yandex-s3";
 
@@ -26,8 +27,7 @@ export default function AdminBrands() {
     const fetchBrands = async (isInitial = false) => {
         if (isInitial) setLoading(true);
         try {
-            const { data, error } = await supabase.from("brands").select("*");
-            if (error) throw error;
+            const data = await adminSelect<any[]>("brands", { columns: "id, name, image, is_deleted" });
 
             const fetched = data.map(b => ({
                 id: b.id,

@@ -118,18 +118,19 @@ export default function AffiliateAdminPage() {
 
     const fetchData = async () => {
         try {
-            setLoading(true);
-            const res = await fetch("/api/admin/affiliate");
-            const data = await res.json();
+            const [res, tariffRes] = await Promise.all([
+                fetch("/api/admin/affiliate"),
+                fetch("/api/admin/affiliate/tariffs")
+            ]);
+            const [data, tariffData] = await Promise.all([
+                res.json(),
+                tariffRes.json()
+            ]);
             if (data.success) {
                 setWithdrawals(data.withdrawals || []);
                 if (data.settings) setSettings(data.settings);
                 if (data.stats) setStats(data.stats);
             }
-
-            // Fetch Tariffs if needed
-            const tariffRes = await fetch("/api/admin/affiliate/tariffs");
-            const tariffData = await tariffRes.json();
             if (tariffData.success) setTariffs(tariffData.data);
 
         } catch (error) {

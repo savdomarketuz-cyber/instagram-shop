@@ -35,20 +35,33 @@ export default function AdminCustomers() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [usersData, ordersData, statusRows, productsData] = await Promise.all([
-                    adminSelect<any[]>("users"),
-                    adminSelect<any[]>("orders", { columns: "user_phone, total, id, created_at, items, status" }),
-                    adminSelect<any[]>("user_status"),
-                    adminSelect<any[]>("products", { columns: "id, name" })
+                // Faqat kerakli ustunlar: items (katta JSON) va ortiqcha maydonlar olib tashlandi
+                const [usersData, ordersData, statusRows] = await Promise.all([
+                    adminSelect<any[]>("users", {
+                        columns: "id, phone, name, created_at, ip_address, username, banned_until",
+                        limit: 1000,
+                    }),
+                    adminSelect<any[]>("orders", { columns: "user_phone, total", limit: 5000 }),
+                    adminSelect<any[]>("user_status", { limit: 1000 }),
                 ]);
 
-                const statusData = statusRows.reduce((acc: any, s) => {
-                    acc[s.id] = s;
-                    return acc;
-                }, {});
+                // Hash Map: O(U * O) sekin filtr o'rniga O(1) chaqmoqdek tez hisoblash
+                const orderStatsMap = new Map<string, { count: number; spent: number }>();
+                (ordersData || []).forEach((order) => {
+                    if (!order.user_phone) return;
+                    const prev = orderStatsMap.get(order.user_phone) || { count: 0, spent: 0 };
+                    prev.count += 1;
+                    prev.spent += Number(order.total) || 0;
+                    orderStatsMap.set(order.user_phone, prev);
+                });
 
-                const merged = usersData.map((user: any) => {
-                    const userOrders = ordersData.filter(order => order.user_phone === user.phone);
+                const statusData: Record<string, any> = {};
+                (statusRows || []).forEach((s) => {
+                    if (s?.id) statusData[s.id] = s;
+                });
+
+                const merged = (usersData || []).map((user: any) => {
+                    const stats = orderStatsMap.get(user.phone) || { count: 0, spent: 0 };
                     const activity = statusData[user.phone] || {};
 
                     return {
@@ -62,8 +75,8 @@ export default function AdminCustomers() {
                         isOnline: activity.is_online || false,
                         lastSeen: activity.last_seen || null,
                         currentPath: activity.current_path || "/",
-                        totalOrders: userOrders.length,
-                        totalSpent: userOrders.reduce((sum, order) => sum + (order.total || 0), 0),
+                        totalOrders: stats.count,
+                        totalSpent: stats.spent,
                         username: user.username || null,
                         bannedUntil: user.banned_until || null
                     };
@@ -71,7 +84,6 @@ export default function AdminCustomers() {
 
                 merged.sort((a, b) => b.totalSpent - a.totalSpent);
                 setCustomers(merged as Customer[]);
-                setAllProducts(productsData);
             } catch (error) {
                 console.error("Error fetching customers data:", error);
             } finally {

@@ -33,11 +33,15 @@ export default function AdminInventory() {
     const fetchData = async () => {
         try {
             const [productsData, warehousesData] = await Promise.all([
-                adminSelect<any[]>("products"),
-                adminSelect<any[]>("warehouses", { columns: "id, name" })
+                adminSelect<any[]>("products", {
+                    columns: "id, name, image, price, sku, stock_details",
+                    match: { column: "is_deleted", value: false },
+                    limit: 1000,
+                }),
+                adminSelect<any[]>("warehouses", { columns: "id, name", match: { column: "active", value: true } })
             ]);
 
-            setProducts(productsData.map(p => ({
+            setProducts((productsData || []).map(p => ({
                 id: p.id,
                 name: p.name,
                 image: p.image,

@@ -50,7 +50,11 @@ export default function AdminCashbackPage() {
             if (settJson?.data?.value) setGlobalSettings(settJson.data.value);
 
             // Maxsus cashback belgilangan mahsulotlar (global emas) — RLS chetlab admin API orqali
-            const prodData = await adminSelect<any[]>("products", { match: { column: "is_deleted", value: false } });
+            const prodData = await adminSelect<any[]>("products", {
+                columns: "id, name, price, image, cashback_type, cashback_value",
+                match: { column: "is_deleted", value: false },
+                limit: 1000,
+            });
             if (prodData) {
                 setAllProducts(prodData);
                 setExceptions(prodData.filter(p => p.cashback_type && p.cashback_type !== "global"));

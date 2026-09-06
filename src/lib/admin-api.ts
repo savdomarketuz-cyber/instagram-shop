@@ -20,6 +20,24 @@ async function call(body: Record<string, unknown>) {
     return json;
 }
 
+const cacheStore = new Map<string, { data: any; expiresAt: number }>();
+const CACHEABLE_TABLES = new Set(["categories", "brands", "warehouses", "featured_categories"]);
+const CACHE_TTL_MS = 60 * 1000; // 60 soniya
+
+export function clearAdminCache(table?: string) {
+    if (table) {
+        const toDelete: string[] = [];
+        cacheStore.forEach((_, key) => {
+            if (key.startsWith(`${table}:`)) {
+                toDelete.push(key);
+            }
+        });
+        toDelete.forEach(k => cacheStore.delete(k));
+    } else {
+        cacheStore.clear();
+    }
+}
+
 export async function adminSelect<T = any>(
     table: string,
     opts: {
@@ -29,8 +47,20 @@ export async function adminSelect<T = any>(
         orderBy?: OrderBy;
         limit?: number;
         single?: boolean;
+        skipCache?: boolean;
     } = {}
 ): Promise<T> {
+    const isCacheable = CACHEABLE_TABLES.has(table) && !opts.skipCache && !opts.single;
+    const cacheKey = isCacheable ? `${table}:${JSON.stringify(opts)}` : null;
+
+    if (cacheKey && cacheStore.has(cacheKey)) {
+        const cached = cacheStore.get(cacheKey)!;
+        if (Date.now() < cached.expiresAt) {
+            return cached.data as T;
+        }
+        cacheStore.delete(cacheKey);
+    }
+
     const json = await call({
         table,
         action: "select",
@@ -40,10 +70,18 @@ export async function adminSelect<T = any>(
         orderBy: opts.orderBy,
         limit: opts.limit,
     });
-    return json.data as T;
+
+    const result = json.data as T;
+
+    if (cacheKey && result) {
+        cacheStore.set(cacheKey, { data: result, expiresAt: Date.now() + CACHE_TTL_MS });
+    }
+
+    return result;
 }
 
 export async function adminInsert<T = any>(table: string, payload: any): Promise<T> {
+    clearAdminCache(table);
     const json = await call({ table, action: "insert", payload });
     return json.data as T;
 }
@@ -53,16 +91,19 @@ export async function adminUpdate<T = any>(
     payload: any,
     match: { column: string; value: any }
 ): Promise<T> {
+    clearAdminCache(table);
     const json = await call({ table, action: "update", payload, matchConfig: match });
     return json.data as T;
 }
 
 export async function adminUpsert<T = any>(table: string, payload: any, onConflict?: string): Promise<T> {
+    clearAdminCache(table);
     const json = await call({ table, action: "upsert", payload, onConflict });
     return json.data as T;
 }
 
 export async function adminDelete(table: string, match: { column: string; value: any }): Promise<void> {
+    clearAdminCache(table);
     await call({ table, action: "delete", matchConfig: match });
 }
 

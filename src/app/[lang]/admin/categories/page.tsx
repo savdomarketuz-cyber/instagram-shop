@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { adminSelect } from "@/lib/admin-api";
 import { Plus, Trash2, Folder, Subtitles, Loader2, ChevronRight, Hash, Edit2, X, Save } from "lucide-react";
 
 interface Category {
@@ -79,8 +80,9 @@ export default function AdminCategories() {
     const fetchCategories = async (isInitial = false) => {
         if (isInitial) setLoading(true);
         try {
-            const { data, error } = await supabase.from("categories").select("*");
-            if (error) throw error;
+            const data = await adminSelect<any[]>("categories", {
+                columns: "id, name, name_uz, name_ru, parent_id, image, is_deleted"
+            });
 
             const fetched = data.map(c => ({
                 id: c.id,

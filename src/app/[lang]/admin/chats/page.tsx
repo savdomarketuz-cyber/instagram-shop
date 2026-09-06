@@ -28,8 +28,8 @@ export default function AdminChatPage() {
     const fetchData = async () => {
         try {
             const [chatsData, commentsData] = await Promise.all([
-                adminSelect<any[]>("support_chats", { orderBy: { column: "last_timestamp", ascending: false } }),
-                adminSelect<any[]>("comments", { orderBy: { column: "created_at", ascending: false } })
+                adminSelect<any[]>("support_chats", { orderBy: { column: "last_timestamp", ascending: false }, limit: 100 }),
+                adminSelect<any[]>("comments", { orderBy: { column: "created_at", ascending: false }, limit: 100 })
             ]);
 
             setSupportChats((chatsData || []).map(c => ({

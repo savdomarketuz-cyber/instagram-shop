@@ -37,10 +37,15 @@ export default function AdminBlogs() {
     async function fetchData() {
         setLoading(true);
         try {
-            const bData = await adminSelect<any[]>("blogs", { orderBy: { column: "created_at", ascending: false } });
+            const [bData, pData] = await Promise.all([
+                adminSelect<any[]>("blogs", { orderBy: { column: "created_at", ascending: false } }),
+                adminSelect<any[]>("products", {
+                    columns: "id, name, image, price",
+                    match: { column: "is_deleted", value: false },
+                    limit: 1000,
+                }),
+            ]);
             if (bData) setBlogs(bData.map(mapBlog));
-
-            const pData = await adminSelect<any[]>("products", { match: { column: "is_deleted", value: false } });
             if (pData) setProducts(pData.map(mapProduct));
         } catch (e) {
             console.error(e);

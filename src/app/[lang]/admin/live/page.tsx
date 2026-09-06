@@ -25,6 +25,7 @@ export default function AdminLiveMonitoring() {
         try {
             const data = await adminSelect<any[]>("user_status", {
                 match: { column: "is_online", value: true },
+                limit: 100,
             });
 
             const now = Date.now();

@@ -514,69 +514,54 @@ function AdminProducts() {
                 if (count !== null) setTotalCount(count);
             }
 
-            // Categories usually aren't as many, but if you have > 1000, we'll need to paginate them too later
-            const { data: allCats, error: cError } = await supabase.from("categories").select("*");
-            if (cError) throw cError;
-            if (!allCats) return;
-            setRawCategories(allCats);
+            // Categories & Brands — faqat birinchi marta (initial) yoki bo'sh bo'lganda yuklanadi.
+            // Paginatsiya yoki qidiruv o'zgarganda qayta-qayta butun bazani tortish butunlay olib tashlandi.
+            if (rawCategories.length === 0 || isInitial) {
+                const [{ data: allCats }, { data: bList }] = await Promise.all([
+                    supabase.from("categories").select("id, name, name_uz, name_ru, parent_id, is_deleted"),
+                    supabase.from("brands").select("id, name").eq("is_deleted", false).order("name"),
+                ]);
 
-            const activeCats = allCats.filter((cat: any) => {
-                if (cat.is_deleted) return false;
-                const pId = cat.parent_id;
-                if (pId && pId !== "none") {
-                    const parent = allCats.find((p: any) => p.id === pId);
-                    if (!parent || parent.is_deleted) return false;
+                if (allCats) {
+                    setRawCategories(allCats);
+                    const activeCats = allCats.filter((cat: any) => {
+                        if (cat.is_deleted) return false;
+                        const pId = cat.parent_id;
+                        if (pId && pId !== "none") {
+                            const parent = allCats.find((p: any) => p.id === pId);
+                            if (!parent || parent.is_deleted) return false;
+                        }
+                        return true;
+                    });
+
+                    const getRecursiveLabel = (cat: DBCategory): string => {
+                        const pId = cat.parent_id;
+                        if (pId && pId !== "none") {
+                            const parent = allCats.find((p: any) => p.id === pId);
+                            if (parent) {
+                                return `${getRecursiveLabel(parent)} > ${cat.name}`;
+                            }
+                        }
+                        return cat.name;
+                    };
+
+                    const cData = activeCats.map((cat: any) => ({
+                        id: cat.id,
+                        label: getRecursiveLabel(cat)
+                    }));
+
+                    const labelsMap: { [key: string]: string } = {};
+                    cData.forEach(c => { labelsMap[c.id] = c.label; });
+                    setCategoryLabels(labelsMap);
+                    setCategories(cData);
                 }
-                return true;
-            });
 
-            const getRecursiveLabel = (cat: DBCategory): string => {
-                const pId = cat.parent_id;
-                if (pId && pId !== "none") {
-                    const parent = allCats.find((p: any) => p.id === pId);
-                    if (parent) {
-                        return `${getRecursiveLabel(parent)} > ${cat.name}`;
-                    }
+                if (bList) {
+                    setBrands(bList);
+                    const bLabels: { [key: string]: string } = {};
+                    bList.forEach(b => { bLabels[b.id] = b.name; });
+                    setBrandLabels(bLabels);
                 }
-                return cat.name;
-            };
-
-            const cData = activeCats.map((cat: any) => ({
-                id: cat.id,
-                label: getRecursiveLabel(cat)
-            }));
-
-            const labelsMap: { [key: string]: string } = {};
-            cData.forEach(c => { labelsMap[c.id] = c.label; });
-            setCategoryLabels(labelsMap);
-
-            setCategories(cData);
-
-            // Fetch Brands + product counts per brand
-            const { data: bList } = await supabase
-                .from("brands")
-                .select("*")
-                .eq("is_deleted", false)
-                .order("name");
-            
-            // Count products per brand_id
-            const { data: allProds } = await supabase
-                .from("products")
-                .select("brand_id")
-                .eq("is_deleted", false);
-            
-            const brandCountMap: { [key: string]: number } = {};
-            (allProds || []).forEach((p: any) => {
-                if (p.brand_id) brandCountMap[p.brand_id] = (brandCountMap[p.brand_id] || 0) + 1;
-            });
-
-            if (bList) {
-                // Faqat mahsulotlari bor brendlarni ko'rsatish
-                const brandsWithProducts = bList.filter(b => (brandCountMap[b.id] || 0) > 0);
-                setBrands(brandsWithProducts.map(b => ({ ...b, productCount: brandCountMap[b.id] || 0 })));
-                const bLabels: { [key: string]: string } = {};
-                brandsWithProducts.forEach(b => { bLabels[b.id] = b.name; });
-                setBrandLabels(bLabels);
             }
         } catch (error) {
             console.error("Error fetching data:", error);

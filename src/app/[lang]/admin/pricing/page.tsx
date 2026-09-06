@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { adminSelect } from "@/lib/admin-api";
 import { 
     Search, 
     Save, 
@@ -64,7 +65,7 @@ export default function PricingAdminPage() {
 
     const fetchBrands = async () => {
         try {
-            const { data } = await supabase.from("brands").select("id, name").eq("is_deleted", false);
+            const data = await adminSelect<any[]>("brands", { columns: "id, name", match: { column: "is_deleted", value: false } });
             if (data) {
                 const map: Record<string, string> = {};
                 data.forEach((b: any) => { map[String(b.id)] = b.name; });

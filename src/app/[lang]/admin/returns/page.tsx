@@ -26,6 +26,7 @@ export default function AdminReturns() {
                     table: "order_returns",
                     action: "select",
                     orderBy: { column: "created_at", ascending: false },
+                    limit: 200,
                 }),
             });
             const json = await res.json();

@@ -60,6 +60,7 @@ export default function AdminUsersPage() {
             const data = await adminSelect<AppUser[]>("users", {
                 columns: "id, phone, name, username, password, is_admin, created_at, banned_until",
                 orderBy: { column: "created_at", ascending: false },
+                limit: 500,
             });
             setUsers(data || []);
         } catch {
