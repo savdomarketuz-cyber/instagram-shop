@@ -34,8 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
         routes.push({
             url: `${baseUrl}/uz${path === '/' ? '' : path}`,
-            lastModified: new Date(),
-            changeFrequency: 'daily' as const,
+            changeFrequency: path === '/blog' || path === '' ? 'daily' as const : 'weekly' as const,
             priority: (path === '' || path === '/blog') ? 1 : 0.8,
             alternates: {
                 languages,
@@ -47,7 +46,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         // 1. Dynamic product routes — THE MOST IMPORTANT PART
         const { data: products, error: productsError } = await supabaseAdmin
             .from('products')
-            .select('id, name, name_uz, name_ru, article, updated_at')
+            .select('id, name, name_uz, name_ru, article, updated_at, price, image')
             .eq('is_deleted', false);
 
         if (productsError) {
@@ -55,9 +54,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         }
 
         if (products && products.length > 0) {
-            console.log(`Sitemap: Adding ${products.length} products`);
+            // Faqat real mavjud, narxi va rasmi bor haqiqiy tovarlar
+            const validProducts = products.filter(p => (p.name || p.name_uz || p.name_ru) && (p.article || p.id) && p.image && (p.price > 0));
+            console.log(`Sitemap: Adding ${validProducts.length} valid products`);
+            
             // Har mahsulot bir marta, har til O'Z slug'i bilan (uz=name_uz, ru=name_ru-translit)
-            products.forEach((product) => {
+            validProducts.forEach((product) => {
                 const slugByLocale: Record<string, string> = {
                     uz: getProductSlug(product, 'uz'),
                     ru: getProductSlug(product, 'ru'),
@@ -70,7 +72,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
                 // Canonical (uz) versiya + hreflang alternates
                 routes.push({
                     url: `${baseUrl}/uz/products/${slugByLocale.uz}`,
-                    lastModified: product.updated_at ? new Date(product.updated_at) : new Date(),
+                    lastModified: product.updated_at ? new Date(product.updated_at) : undefined,
                     changeFrequency: 'weekly' as const,
                     priority: 0.9,
                     alternates: {

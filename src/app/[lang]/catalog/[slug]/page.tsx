@@ -13,7 +13,13 @@ export async function generateMetadata({ params }: { params: { lang: string; slu
     const cat = resolveCategoryBySlug(categories, params.slug, lang);
 
     if (!cat) {
-        return { title: lang === 'ru' ? 'Каталог | Velari' : 'Katalog | Velari' };
+        return {
+            title: lang === 'ru' ? 'Каталог | Velari' : 'Katalog | Velari',
+            robots: {
+                index: false,
+                follow: false,
+            },
+        };
     }
 
     const name = lang === 'ru' ? (cat.name_ru || cat.name_uz || cat.name) : (cat.name_uz || cat.name);

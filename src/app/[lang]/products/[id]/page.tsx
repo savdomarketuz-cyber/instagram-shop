@@ -14,12 +14,12 @@ export const revalidate = 86400; // 24 soat cache (Admin panelda mahsulot ozgars
 const getProductData = cache(async (identifier: string) => {
     const { data } = await supabaseAdmin
         .from("products")
-        .select("*")
+        .select("*, brands(id, name)")
         .eq("is_deleted", false)
         .or(`id.eq.${identifier},article.eq.${identifier}`)
         .single();
     
-    return data ? mapProduct(data) : null;
+    return data ? { ...mapProduct(data), brand_name: (data as any)?.brands?.name } : null;
 });
 
 // ⚡ Eng mashhur 200 mahsulotni SEO slug shaklida pre-render (CDN'dan 0ms).
@@ -49,7 +49,11 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
         if (!product) {
             return {
                 title: 'Mahsulot topilmadi | Velari',
-                description: 'Kechirasiz, siz qidirayotgan mahsulot topilmadi.'
+                description: 'Kechirasiz, siz qidirayotgan mahsulot topilmadi.',
+                robots: {
+                    index: false,
+                    follow: false,
+                },
             };
         }
         const baseUrl = "https://velari.uz";
@@ -208,6 +212,15 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
         "offers": offerBase
     };
 
+    // Real DB'dagi brand nomi bo'lsa — schema'ga kiritamiz
+    const realBrandName = product.brand_name || product.brand;
+    if (realBrandName) {
+        jsonLd.brand = {
+            "@type": "Brand",
+            "name": realBrandName
+        };
+    }
+
     // AggregateRating — FAQAT haqiqiy review bo'lganda (Google policy)
     if (reviewCount > 0 && ratingValue > 0) {
         jsonLd.aggregateRating = {
@@ -241,7 +254,7 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
                 "@type": "ListItem",
                 "position": 3,
                 "name": productName,
-                "item": `https://velari.uz/${language}/products/${params.id}`
+                "item": `https://velari.uz/${language}/products/${canonicalSlug}`
             }
         ]
     };
