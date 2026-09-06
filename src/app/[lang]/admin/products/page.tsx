@@ -141,6 +141,15 @@ function AdminProducts() {
     const [isBulkActionLoading, setIsBulkActionLoading] = useState(false);
     const [paramValues, setParamValues] = useState<{param_id: string; value: string}[]>([]);
 
+    // Moomkin.uz integratsiya state'lari
+    const [moomkinRegistry, setMoomkinRegistry] = useState<Record<string, { moomkin_id: number; price: number; name_uz: string; name_ru: string }>>({});
+    const [moomkinIntegrating, setMoomkinIntegrating] = useState<string | null>(null);
+    const [moomkinModal, setMoomkinModal] = useState<{ supabase_id: string; moomkin_id: number; product: Product } | null>(null);
+    const [moomkinModalData, setMoomkinModalData] = useState<any>(null);
+    const [moomkinModalLoading, setMoomkinModalLoading] = useState(false);
+    const [moomkinModalSaving, setMoomkinModalSaving] = useState(false);
+    const [moomkinEditFields, setMoomkinEditFields] = useState<{ price?: number; name_uz?: string; name_ru?: string; description_uz?: string; description_ru?: string }>({});
+
     // Filtrlar (admin) — har qanday parametr bo'yicha
     const [filterCategory, setFilterCategory] = useState<string>("");
     const [filterBrand, setFilterBrand] = useState<string>("");
@@ -403,6 +412,14 @@ function AdminProducts() {
         filterPriceMax, filterOriginal, filterDiscount, sortBy, activeTab, currentPage, isStateInitialized
     ]);
 
+    // 4. Moomkin.uz Registry yuklash
+    useEffect(() => {
+        fetch("/api/moomkin?action=registry")
+            .then(r => r.ok ? r.json() : {})
+            .then(data => setMoomkinRegistry(data || {}))
+            .catch(() => {});
+    }, []);
+
     // Kategoriya + barcha ichki (rekursiv) kategoriya ID'lari — filtr uchun
     const getCategoryWithChildren = (catId: string): string[] => {
         const ids = [catId];
@@ -437,6 +454,136 @@ function AdminProducts() {
             curr = pId && pId !== "none" ? rawCategories.find((p: DBCategory) => p.id === pId) : undefined;
         }
         return path;
+    };
+
+    // Moomkin.uz: Yangi mahsulotni Moomkinga integratsiya qilish
+    const handleMoomkinIntegrate = async (product: Product) => {
+        setMoomkinIntegrating(product.id);
+        try {
+            const res = await fetch("/api/moomkin", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "integrate",
+                    supabase_id: product.id,
+                    product: {
+                        name_uz: product.name_uz || product.name,
+                        name_ru: product.name_ru || product.name,
+                        description_uz: product.description_uz || product.description || "",
+                        description_ru: product.description_ru || "",
+                        price: product.price,
+                        category: product.category,
+                        category_id: product.category,
+                        images: product.images || (product.image ? [product.image] : []),
+                        image: product.image,
+                    },
+                }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                setMoomkinRegistry(prev => ({
+                    ...prev,
+                    [product.id]: {
+                        moomkin_id: data.moomkin_id,
+                        price: Math.round(product.price * 1.1),
+                        name_uz: product.name_uz || product.name || "",
+                        name_ru: product.name_ru || "",
+                    },
+                }));
+                alert(`✅ Moomkinga muvaffaqiyatli yuklandi! ID: ${data.moomkin_id}${data.already_exists ? " (oldin yuklangan)" : ""}`);
+            } else {
+                alert("❌ Xatolik: " + (data.error || "Noma'lum xato"));
+            }
+        } catch (err: any) {
+            alert("❌ Xatolik: " + err.message);
+        } finally {
+            setMoomkinIntegrating(null);
+        }
+    };
+
+    // Moomkin.uz: Tahrirlash modalini ochish
+    const openMoomkinModal = async (product: Product) => {
+        const reg = moomkinRegistry[product.id];
+        if (!reg) return;
+        setMoomkinModal({ supabase_id: product.id, moomkin_id: reg.moomkin_id, product });
+        setMoomkinEditFields({
+            price: reg.price,
+            name_uz: product.name_uz || product.name || "",
+            name_ru: product.name_ru || "",
+            description_uz: product.description_uz || product.description || "",
+            description_ru: product.description_ru || "",
+        });
+        setMoomkinModalData(null);
+        setMoomkinModalLoading(true);
+        try {
+            const res = await fetch(`/api/moomkin?action=product&id=${reg.moomkin_id}`);
+            if (res.ok) {
+                const data = await res.json();
+                setMoomkinModalData(data);
+                // Sync fields from live Moomkin data
+                setMoomkinEditFields({
+                    price: data.price || reg.price,
+                    name_uz: data.name?.uz || product.name_uz || product.name || "",
+                    name_ru: data.name?.ru || product.name_ru || "",
+                    description_uz: data.description?.uz || product.description_uz || "",
+                    description_ru: data.description?.ru || product.description_ru || "",
+                });
+            }
+        } catch {}
+        finally { setMoomkinModalLoading(false); }
+    };
+
+    // Moomkin.uz: O'zgarishlarni saqlash
+    const handleMoomkinSave = async () => {
+        if (!moomkinModal) return;
+        setMoomkinModalSaving(true);
+        try {
+            const fieldsToUpdate: any = {};
+            if (moomkinEditFields.price) fieldsToUpdate.price = moomkinEditFields.price;
+            if (moomkinEditFields.name_uz || moomkinEditFields.name_ru) {
+                fieldsToUpdate.name = {
+                    uz: moomkinEditFields.name_uz || "",
+                    ru: moomkinEditFields.name_ru || "",
+                };
+            }
+            if (moomkinEditFields.description_uz || moomkinEditFields.description_ru) {
+                fieldsToUpdate.description = {
+                    uz: moomkinEditFields.description_uz || "",
+                    ru: moomkinEditFields.description_ru || "",
+                };
+            }
+
+            const res = await fetch("/api/moomkin", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "update",
+                    moomkin_id: moomkinModal.moomkin_id,
+                    supabase_id: moomkinModal.supabase_id,
+                    fields: fieldsToUpdate,
+                }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                if (moomkinEditFields.price) {
+                    setMoomkinRegistry(prev => ({
+                        ...prev,
+                        [moomkinModal.supabase_id]: {
+                            ...prev[moomkinModal.supabase_id],
+                            price: moomkinEditFields.price!,
+                        },
+                    }));
+                }
+                alert("✅ Moomkin ma'lumotlari yangilandi!");
+                setMoomkinModal(null);
+            } else {
+                alert("❌ Xatolik: " + (data.error || "Noma'lum xato"));
+            }
+        } catch (err: any) {
+            alert("❌ Xatolik: " + err.message);
+        } finally {
+            setMoomkinModalSaving(false);
+        }
     };
 
     const fetchData = async (page = 1, isInitial = false) => {
@@ -1513,6 +1660,12 @@ function AdminProducts() {
                                         <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Mahsulot</th>
                                         <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Kategoriya</th>
                                         <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Narx</th>
+                                        <th className="px-6 py-5 text-[10px] font-black text-red-500 uppercase tracking-widest">
+                                            <span className="flex items-center gap-1.5">
+                                                <span className="w-2 h-2 rounded-full bg-red-500 inline-block animate-pulse" />
+                                                Moomkin.uz
+                                            </span>
+                                        </th>
                                         <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Amallar</th>
                                     </tr>
                                 </thead>
@@ -1563,6 +1716,66 @@ function AdminProducts() {
                                                     {p.oldPrice && p.oldPrice > 0 && <span className="text-[10px] text-gray-400 line-through">{p.oldPrice.toLocaleString()} so'm</span>}
                                                     <span className="font-black text-sm italic">{p.price.toLocaleString()} so'm</span>
                                                 </div>
+                                            </td>
+                                            <td className="px-6 py-5">
+                                                {moomkinRegistry[p.id] ? (
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-12 h-14 rounded-xl overflow-hidden relative flex-shrink-0 ring-2 ring-red-500 shadow-sm shadow-red-500/20 bg-gray-50">
+                                                            <Image
+                                                                src={(p.image && (p.image.startsWith('http') || p.image.startsWith('/'))) ? p.image : "/placeholder.png"}
+                                                                alt="Moomkin"
+                                                                fill
+                                                                sizes="48px"
+                                                                className="object-cover"
+                                                                unoptimized
+                                                            />
+                                                            <div className="absolute top-0.5 right-0.5 px-1 py-0.2 bg-red-500 text-white font-black text-[7px] rounded">
+                                                                MK
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[9px] font-black text-red-500 uppercase tracking-wider">
+                                                                ID: #{moomkinRegistry[p.id].moomkin_id}
+                                                            </span>
+                                                            <span className="font-black text-xs text-gray-900 italic">
+                                                                {moomkinRegistry[p.id].price ? moomkinRegistry[p.id].price.toLocaleString() : Math.round(p.price * 1.1).toLocaleString()} so'm
+                                                            </span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    openMoomkinModal(p);
+                                                                }}
+                                                                className="mt-1 inline-flex items-center gap-1 text-[9px] font-black text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-0.5 rounded-md transition-colors w-fit active:scale-95"
+                                                            >
+                                                                <Edit size={10} />
+                                                                <span>Tahrirlash</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleMoomkinIntegrate(p);
+                                                        }}
+                                                        disabled={moomkinIntegrating === p.id}
+                                                        className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-md shadow-red-500/20 active:scale-95 transition-all disabled:opacity-50"
+                                                    >
+                                                        {moomkinIntegrating === p.id ? (
+                                                            <>
+                                                                <Loader2 size={12} className="animate-spin" />
+                                                                <span>Yuklanmoqda...</span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Globe size={12} />
+                                                                <span>Moomkinga integratsiya</span>
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                )}
                                             </td>
                                             <td className="px-8 py-5">
                                                 <div className="flex justify-end gap-3">
@@ -2729,6 +2942,205 @@ function AdminProducts() {
                             >
                                 Yopish
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Moomkin.uz Tahrirlash Modali */}
+            {moomkinModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 md:p-6 animate-in fade-in duration-200">
+                    <div className="bg-white w-full max-w-3xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[92vh] border border-gray-100">
+                        {/* Header */}
+                        <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-red-50 to-rose-50/50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-red-500 text-white flex items-center justify-center font-black text-sm shadow-lg shadow-red-500/20">
+                                    MK
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-lg font-black uppercase text-gray-900 tracking-tight">
+                                            Moomkin.uz Mahsuloti
+                                        </h3>
+                                        <span className="px-2.5 py-0.5 bg-red-100 text-red-700 rounded-full font-black text-[10px] tracking-wider">
+                                            ID: #{moomkinModal.moomkin_id}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-gray-400 font-bold">
+                                        {moomkinModal.product.name_uz || moomkinModal.product.name}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setMoomkinModal(null)}
+                                className="p-2.5 hover:bg-white rounded-full transition-all text-gray-400 hover:text-gray-700 border border-transparent hover:border-gray-200 shadow-sm"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {/* Body */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                            {moomkinModalLoading ? (
+                                <div className="py-20 flex flex-col items-center justify-center gap-3 text-gray-400">
+                                    <Loader2 className="animate-spin text-red-500" size={32} />
+                                    <p className="text-xs font-black uppercase tracking-widest">Moomkin.uz dan ma'lumotlar olinmoqda...</p>
+                                </div>
+                            ) : (
+                                <>
+                                    {/* Narx Bloki */}
+                                    <div className="bg-gray-50/80 p-5 rounded-2xl border border-gray-100">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                                Moomkin Sotuv Narxi (So'm)
+                                            </label>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] font-bold text-gray-400">
+                                                    Velari narxi: {moomkinModal.product.price.toLocaleString()} so'm
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setMoomkinEditFields(prev => ({
+                                                        ...prev,
+                                                        price: Math.round(moomkinModal.product.price * 1.10)
+                                                    }))}
+                                                    className="px-2 py-0.5 bg-red-100 hover:bg-red-200 text-red-700 text-[9px] font-black rounded uppercase tracking-wider transition-colors"
+                                                >
+                                                    +10% hisoblash
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <input
+                                            type="number"
+                                            value={moomkinEditFields.price || ""}
+                                            onChange={(e) => setMoomkinEditFields(prev => ({ ...prev, price: Number(e.target.value) }))}
+                                            className="w-full bg-white border border-gray-200 rounded-xl py-3 px-4 text-base font-black outline-none focus:ring-2 focus:ring-red-500 text-gray-900 shadow-sm"
+                                            placeholder="Masalan: 250000"
+                                        />
+                                    </div>
+
+                                    {/* Mahsulot Nomi */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                                                Nomi (O'zbekcha)
+                                            </label>
+                                            <input
+                                                value={moomkinEditFields.name_uz || ""}
+                                                onChange={(e) => setMoomkinEditFields(prev => ({ ...prev, name_uz: e.target.value }))}
+                                                className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-xs font-bold outline-none focus:ring-2 focus:ring-red-500 text-gray-900 shadow-sm"
+                                                placeholder="Moomkindagi nomi (UZ)"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                                                Название (Русский)
+                                            </label>
+                                            <input
+                                                value={moomkinEditFields.name_ru || ""}
+                                                onChange={(e) => setMoomkinEditFields(prev => ({ ...prev, name_ru: e.target.value }))}
+                                                className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-xs font-bold outline-none focus:ring-2 focus:ring-red-500 text-gray-900 shadow-sm"
+                                                placeholder="Moomkindagi nomi (RU)"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Tavsiflar */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                                                Tavsif (O'zbekcha)
+                                            </label>
+                                            <textarea
+                                                rows={5}
+                                                value={moomkinEditFields.description_uz || ""}
+                                                onChange={(e) => setMoomkinEditFields(prev => ({ ...prev, description_uz: e.target.value }))}
+                                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-xs font-medium outline-none focus:ring-2 focus:ring-red-500 text-gray-900 shadow-sm resize-none"
+                                                placeholder="Moomkindagi tavsif (UZ)"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                                                Описание (Русский)
+                                            </label>
+                                            <textarea
+                                                rows={5}
+                                                value={moomkinEditFields.description_ru || ""}
+                                                onChange={(e) => setMoomkinEditFields(prev => ({ ...prev, description_ru: e.target.value }))}
+                                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-xs font-medium outline-none focus:ring-2 focus:ring-red-500 text-gray-900 shadow-sm resize-none"
+                                                placeholder="Moomkindagi tavsif (RU)"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Rasmlar Galereyasi */}
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                                            Yuklangan rasmlar ({moomkinModalData?.attachments?.length || moomkinModal.product.images?.length || 1} ta)
+                                        </label>
+                                        <div className="flex gap-3 overflow-x-auto pb-2">
+                                            {(moomkinModalData?.attachments?.length ? moomkinModalData.attachments : (moomkinModal.product.images || [moomkinModal.product.image])).map((img: any, idx: number) => {
+                                                const src = typeof img === 'string' ? img : (img.url || img.path || moomkinModal.product.image);
+                                                const isMain = idx === 0;
+                                                return (
+                                                    <div
+                                                        key={idx}
+                                                        className={`relative w-20 h-24 rounded-2xl overflow-hidden flex-shrink-0 bg-gray-100 ${isMain ? 'ring-2 ring-red-500' : 'border border-gray-200'}`}
+                                                    >
+                                                        <img
+                                                            src={src}
+                                                            alt=""
+                                                            className="w-full h-full object-cover"
+                                                            referrerPolicy="no-referrer"
+                                                        />
+                                                        {isMain && (
+                                                            <div className="absolute top-1 left-1 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow">
+                                                                Asosiy
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-6 py-4 bg-gray-50/80 border-t border-gray-100 flex items-center justify-between">
+                            <div className="text-[11px] font-bold text-gray-400 flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                                Moomkin API ulanishi faol
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setMoomkinModal(null)}
+                                    className="px-5 py-2.5 text-xs font-black uppercase tracking-wider text-gray-500 hover:text-gray-900 transition-colors"
+                                >
+                                    Bekor qilish
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleMoomkinSave}
+                                    disabled={moomkinModalSaving || moomkinModalLoading}
+                                    className="flex items-center gap-2 px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-lg shadow-red-500/20 active:scale-95 transition-all disabled:opacity-50"
+                                >
+                                    {moomkinModalSaving ? (
+                                        <>
+                                            <Loader2 size={14} className="animate-spin" />
+                                            <span>Saqlanmoqda...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Check size={14} />
+                                            <span>Moomkinda Saqlash</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
