@@ -49,14 +49,43 @@ const EMPTY: Omit<Story, "id" | "sort_order"> = {
 // Guruh + CTA tahrirlagich (alohida komponent — qidiruv holati saqlanishi uchun)
 function StoryExtras({
     groupKey, groupTitleUz, groupTitleRu, ctaType, ctaIds, ctaLabelUz, ctaLabelRu,
-    set, products, categories, brands,
+    set, products, categories, brands, setProducts,
 }: {
     groupKey: string; groupTitleUz: string; groupTitleRu: string;
     ctaType: CtaType; ctaIds: string[]; ctaLabelUz: string; ctaLabelRu: string;
     set: (key: keyof Story, value: any) => void;
     products: PickTarget[]; categories: PickTarget[]; brands: PickTarget[];
+    setProducts?: React.Dispatch<React.SetStateAction<PickTarget[]>>;
 }) {
     const [q, setQ] = useState("");
+
+    useEffect(() => {
+        if (ctaType !== "product" || !setProducts) return;
+        const term = q.trim();
+        const timer = setTimeout(async () => {
+            try {
+                let query = supabase.from("products").select("id, name").eq("is_deleted", false);
+                if (term) {
+                    query = query.ilike("name", `%${term}%`).limit(30);
+                } else {
+                    query = query.order("created_at", { ascending: false }).limit(30);
+                }
+                const { data } = await query;
+                if (data) {
+                    setProducts(prev => {
+                        const map = new Map(prev.map(p => [p.id, p]));
+                        data.forEach(p => map.set(p.id, p as PickTarget));
+                        return Array.from(map.values());
+                    });
+                }
+            } catch (err) {
+                console.error("Story product search error:", err);
+            }
+        }, term ? 250 : 0);
+
+        return () => clearTimeout(timer);
+    }, [ctaType, q, setProducts]);
+
     const targets = ctaType === "product" ? products : ctaType === "category" ? categories : ctaType === "brand" ? brands : [];
     const filtered = (q.trim() ? targets.filter(t => (t.name || "").toLowerCase().includes(q.toLowerCase())) : targets).slice(0, 40);
     const toggle = (id: string) => {
@@ -140,17 +169,35 @@ export default function AdminStoriesPage() {
     const fetchStories = async () => {
         setLoading(true);
         const { data } = await supabase.from("stories").select("*").order("sort_order", { ascending: true });
-        if (data) setStories(data);
+        if (data) {
+            setStories(data);
+            const targetIds = Array.from(new Set(
+                data
+                    .filter(s => s.cta_type === "product" && Array.isArray(s.cta_ids))
+                    .flatMap(s => s.cta_ids || [])
+            ));
+            if (targetIds.length > 0) {
+                const { data: pData } = await supabase
+                    .from("products")
+                    .select("id, name")
+                    .in("id", targetIds);
+                if (pData) {
+                    setProducts(prev => {
+                        const map = new Map(prev.map(p => [p.id, p]));
+                        pData.forEach(p => map.set(p.id, p as PickTarget));
+                        return Array.from(map.values());
+                    });
+                }
+            }
+        }
         setLoading(false);
     };
 
     const fetchTargets = async () => {
-        const [p, c, b] = await Promise.all([
-            supabase.from("products").select("id, name").eq("is_deleted", false).limit(300),
+        const [c, b] = await Promise.all([
             adminApi.categories.getAll(),
             adminApi.brands.getAll(),
         ]);
-        if (p.data) setProducts(p.data as PickTarget[]);
         if (c) setCategories((c as any[]).map(x => ({ id: String(x.id), name: x.name })));
         if (b) setBrands((b as any[]).map(x => ({ id: String(x.id), name: x.name })));
     };
@@ -398,6 +445,7 @@ export default function AdminStoriesPage() {
                                     ctaLabelRu={s.cta_label_ru || ""}
                                     set={(key, value) => handleField(s.id, key, value)}
                                     products={products} categories={categories} brands={brands}
+                                    setProducts={setProducts}
                                 />
                             </div>
 
@@ -490,6 +538,7 @@ export default function AdminStoriesPage() {
                             ctaLabelRu={newStory.cta_label_ru || ""}
                             set={(key, value) => setNewStory(p => ({ ...p, [key]: value }))}
                             products={products} categories={categories} brands={brands}
+                            setProducts={setProducts}
                         />
                     </div>
                     <button onClick={handleAdd} disabled={adding}

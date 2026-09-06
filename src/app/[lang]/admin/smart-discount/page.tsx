@@ -69,6 +69,34 @@ export default function AdminSmartDiscountPage() {
 
     useEffect(() => { fetchAll(); }, []);
 
+    // Mahsulot qidirilganda bazadan tezkor qidirish (initial blocking yuklash o'rniga)
+    useEffect(() => {
+        const term = (prodSearch || mProdSearch).trim();
+        if (!term) return;
+
+        const timer = setTimeout(async () => {
+            try {
+                const { data } = await supabase
+                    .from("products")
+                    .select("id, name")
+                    .eq("is_deleted", false)
+                    .ilike("name", `%${term}%`)
+                    .limit(20);
+                if (data) {
+                    setProducts(prev => {
+                        const map = new Map(prev.map(p => [p.id, p]));
+                        data.forEach(p => map.set(p.id, p));
+                        return Array.from(map.values());
+                    });
+                }
+            } catch (err) {
+                console.error("Smart discount search error:", err);
+            }
+        }, 250);
+
+        return () => clearTimeout(timer);
+    }, [prodSearch, mProdSearch]);
+
     const fetchAll = async () => {
         setLoading(true);
         try {
@@ -91,12 +119,20 @@ export default function AdminSmartDiscountPage() {
                 setStats(json.stats || {});
                 setUsers(json.users || []);
             }
-            const [{ data: prods }, cats] = await Promise.all([
-                supabase.from("products").select("id, name").eq("is_deleted", false).order("name").limit(300),
-                adminApi.categories.getAll(),
-            ]);
-            setProducts(prods || []);
-            setCategories((cats || []).map((c: any) => ({ id: String(c.id), name: c.name })));
+            const cats = await adminApi.categories.getAll();
+            if (cats) {
+                setCategories(cats.map((c: any) => ({ id: String(c.id), name: c.name })));
+            }
+
+            // Faqat allaqachon istisno qilingan mahsulotlarning nomlarini olib kelamiz
+            const excluded = json?.config?.excluded_product_ids || [];
+            if (Array.isArray(excluded) && excluded.length > 0) {
+                const { data: prods } = await supabase
+                    .from("products")
+                    .select("id, name")
+                    .in("id", excluded);
+                if (prods) setProducts(prods);
+            }
         } catch (e) { console.error(e); } finally { setLoading(false); }
     };
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Globe, Instagram, Send, Phone, Save, Loader2, CheckCircle2 } from "lucide-react";
+import { adminApi } from "@/lib/admin-api";
 
 export default function AdminSettings() {
     const [loading, setLoading] = useState(true);
@@ -18,19 +19,7 @@ export default function AdminSettings() {
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                // settings jadvali anon o'qishdan RLS bilan yopiq — server (service role) orqali o'qiymiz.
-                const res = await fetch("/api/admin/crud", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        table: "settings",
-                        action: "select",
-                        matchConfig: { column: "id", value: "shop" },
-                        payload: { columns: "data", single: true },
-                    }),
-                }).then(r => r.json()).catch(() => null);
-
-                const val = res?.data?.data;
+                const val = await adminApi.settings.get("shop");
                 if (val) {
                     setShopData(val as any);
                 }
@@ -47,18 +36,7 @@ export default function AdminSettings() {
     const handleSaveShop = async () => {
         setIsSaving(true);
         try {
-            // RLS chetlab o'tib server (service role) orqali saqlaymiz; ustun nomi `data`.
-            const res = await fetch("/api/admin/crud", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    table: "settings",
-                    action: "upsert",
-                    payload: { id: "shop", data: shopData },
-                }),
-            });
-
-            if (!res.ok) throw new Error("Saqlashda xatolik");
+            await adminApi.settings.save("shop", shopData);
             setShowSuccess(true);
             setTimeout(() => setShowSuccess(false), 3000);
         } catch (e) {
