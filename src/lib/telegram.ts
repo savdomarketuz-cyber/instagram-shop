@@ -130,7 +130,7 @@ export async function sendTransferOTP(phone: string, amount: number, receiverPho
     }
 }
 
-export async function sendCartReminder(phone: string, items: any[]) {
+export async function sendCartReminder(phone: string, items: any[], customNote?: string) {
     try {
         const { data: user } = await supabaseAdmin
             .from('users')
@@ -140,7 +140,7 @@ export async function sendCartReminder(phone: string, items: any[]) {
 
         if (!user || !user.telegram_id || !CUSTOMER_BOT_TOKEN) return { success: false, error: "Foydalanuvchi botga ulanmagan" };
 
-        const itemsText = items.map((i: any) => `- ${i.name} (x${i.quantity} ta)`).join('\n');
+        const itemsText = items.map((i: any) => `- ${i.name} (x${i.quantity || 1} ta) — ${(Number(i.price) * (i.quantity || 1)).toLocaleString()} so'm`).join('\n');
         const total = items.reduce((sum, i) => sum + (Number(i.price) * (i.quantity || 1)), 0);
 
         let text = `🛒 <b>Savatda mahsulotlar qolib ketdi!</b>\n\n`;
@@ -148,7 +148,12 @@ export async function sendCartReminder(phone: string, items: any[]) {
         text += `Sizning savatingizda quyidagi mahsulotlar o'z xaridini kutmoqda:\n\n`;
         text += `📦 <b>Siz tanlagan mahsulotlar:</b>\n${itemsText}\n\n`;
         text += `💰 <b>Jami summa:</b> ${total.toLocaleString()} so'm\n\n`;
-        text += `🏃‍♂️ <i>Mahsulotlar soni cheklangan, ularni hoziroq xarid qiling! Saytimizga kirib buyurtmani yakunlashingiz mumkin.</i>`;
+        
+        if (customNote && customNote.trim()) {
+            text += `🎁 <b>Admin eslatmasi:</b>\n<i>${customNote.trim()}</i>\n\n`;
+        }
+
+        text += `🏃‍♂️ <i>Mahsulotlar soni cheklangan, ularni hoziroq xarid qiling! Saytimizga kirib buyurtmani yakunlashingiz mumkin:</i>\n👉 https://velari.uz/uz/cart`;
 
         const res = await fetch(`https://api.telegram.org/bot${CUSTOMER_BOT_TOKEN}/sendMessage`, {
             method: 'POST',

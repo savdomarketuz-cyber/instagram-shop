@@ -104,7 +104,21 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        // Enrich carts with product data
+        // Fetch support chats for reminder timestamps and messages
+        const allPhones = validCarts.map(c => c.user_phone).filter(Boolean);
+        let chatMap = new Map<string, any>();
+        if (allPhones.length > 0) {
+            const { data: chats } = await supabaseAdmin
+                .from("support_chats")
+                .select("id, last_message, last_timestamp")
+                .in("id", allPhones);
+
+            if (chats) {
+                chatMap = new Map(chats.map(c => [c.id, c]));
+            }
+        }
+
+        // Enrich carts with product data and reminder history
         const enrichedCarts = validCarts.map(cart => {
             const enrichedItems = (cart.items || []).map((item: any) => {
                 const prod = productMap.get(item.id);
@@ -119,11 +133,14 @@ export async function GET(req: NextRequest) {
             });
 
             const total = enrichedItems.reduce((sum: number, it: any) => sum + (it.price * it.quantity), 0);
+            const chatInfo = chatMap.get(cart.user_phone);
 
             return {
                 ...cart,
                 items: enrichedItems,
                 total,
+                last_reminded_at: chatInfo?.last_timestamp || null,
+                last_reminder_message: chatInfo?.last_message || null,
             };
         });
 
@@ -137,28 +154,35 @@ export async function POST(req: NextRequest) {
     if (!(await verifyAdmin(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
-        const { phone, items } = await req.json();
+        const { phone, items, customMessage } = await req.json();
 
         if (!phone || !items || items.length === 0) {
             return NextResponse.json({ error: "Noto'g'ri ma'lumot" }, { status: 400 });
         }
 
         const count = Array.isArray(items) ? items.length : 0;
-        const reminderText = `🛒 Savatingizda ${count} ta mahsulot kutib turibdi! Ularni unutmang — hoziroq xarid qiling. 💚`;
+        const defaultText = `🛒 Savatingizda ${count} ta mahsulot kutib turibdi! Ularni unutmang — hoziroq xarid qiling. 💚`;
+        const reminderText = customMessage && customMessage.trim() 
+            ? `🛒 Savatingizda ${count} ta mahsulot kutib turibdi!\n${customMessage.trim()}`
+            : defaultText;
+
+        const timestamp = new Date().toISOString();
 
         // Barcha kanallarga parallel yuboramiz (biror kanal ishlamasa ham, qolganlari ishlaydi)
         const [tgResult] = await Promise.allSettled([
-            sendCartReminder(phone, items),                 // Telegram
+            sendCartReminder(phone, items, customMessage), // Telegram
             sendInAppMessage(phone, reminderText),          // Sayt/PWA ichidagi chat
             sendWebPushToPhone(phone, "Velari — Savatingiz", reminderText, "/uz/cart"), // Web push
         ]);
 
         const tgOk = tgResult.status === "fulfilled" && (tgResult.value as any)?.success;
 
-        // Sayt ichidagi xabar har doim yoziladi — shuning uchun muvaffaqiyat deb hisoblaymiz
         return NextResponse.json({
             success: true,
-            message: tgOk ? "Eslatma yuborildi (Telegram + sayt)" : "Eslatma sayt/PWA orqali yuborildi",
+            message: tgOk ? "Eslatma yuborildi (Telegram + Sayt + Push)" : "Eslatma sayt/PWA orqali yuborildi",
+            last_reminded_at: timestamp,
+            last_reminder_message: reminderText,
+            telegram_sent: !!tgOk,
         });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
