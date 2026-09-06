@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { submitToIndexNow } from "@/lib/index-now";
-import { pingSitemapToGoogle } from "@/lib/google-indexing";
 import { getProductSlug } from "@/lib/slugify";
 
 /**
@@ -10,7 +9,6 @@ import { getProductSlug } from "@/lib/slugify";
  * Har kuni avtomatik ishga tushadi (Vercel Cron):
  * 1. Oxirgi 24 soatda yangilangan mahsulotlarni topadi
  * 2. IndexNow orqali Bing/Yandex ga xabar beradi
- * 3. Google Sitemap Ping orqali Google ga xabar beradi
  * 
  * Bu cron har kuni 06:00 UTC da ishlaydi (vercel.json da sozlangan)
  */
@@ -72,11 +70,7 @@ export async function GET(req: Request) {
             results.indexNowUrls = allUrls.length;
         }
 
-        // 5. Google Sitemap Ping
-        const googlePingResult = await pingSitemapToGoogle();
-        results.googlePing = googlePingResult ? "success" : "failed";
-
-        // 6. Oxirgi yangilangan mahsulotlarni topish — yangi qo'shilganlar
+        // 5. Oxirgi yangilangan mahsulotlarni topish — yangi qo'shilganlar
         const { data: newProducts, error: newError } = await supabaseAdmin
             .from("products")
             .select("id, name, name_uz, name_ru, article")

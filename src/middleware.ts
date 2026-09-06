@@ -56,6 +56,31 @@ export async function middleware(request: NextRequest) {
     }
 
     const pathWithoutLocale = pathname.replace(`/${localePart}`, '');
+    const privateRoutes = [
+        '/login',
+        '/account',
+        '/cart',
+        '/wishlist',
+        '/messages',
+        '/checkout',
+        '/orders',
+        '/wallet',
+        '/payment',
+        '/order-success',
+        '/auth',
+        '/ref',
+        '/admin',
+    ];
+    const isPrivateRoute = privateRoutes.some(
+        (route) => pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`)
+    );
+
+    const applyRobotsPolicy = (response: NextResponse) => {
+        if (isPrivateRoute) {
+            response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+        }
+        return response;
+    };
 
     // 3. Admin Protection (Pages & API)
     if (pathWithoutLocale.startsWith('/admin') || pathname.startsWith('/api/admin')) {
@@ -74,13 +99,13 @@ export async function middleware(request: NextRequest) {
             // If it's a page request, redirect to login
             const loginUrl = new URL(`/${localePart}/login`, request.url);
             loginUrl.searchParams.set('redirect', pathname);
-            return NextResponse.redirect(loginUrl);
+            return applyRobotsPolicy(NextResponse.redirect(loginUrl));
         }
 
-        return NextResponse.next();
+        return applyRobotsPolicy(NextResponse.next());
     }
 
-    return NextResponse.next();
+    return applyRobotsPolicy(NextResponse.next());
 }
 
 export const config = {

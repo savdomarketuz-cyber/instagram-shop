@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { submitToIndexNow } from "@/lib/index-now";
-import { submitToGoogleIndexing } from "@/lib/google-indexing";
 import { getProductSlug, getCategorySlug } from "@/lib/slugify";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -50,17 +49,10 @@ export async function POST(req: NextRequest) {
         }
 
         const indexNowSuccess = await submitToIndexNow(urls);
-        const googleSuccess = await submitToGoogleIndexing(urls);
-        
-        // Har safar mahsulot yangilanganda Google sitemap ni ham ping qilish
-        const { pingSitemapToGoogle } = await import("@/lib/google-indexing");
-        const sitemapPing = await pingSitemapToGoogle();
 
         return NextResponse.json({ 
-            success: indexNowSuccess || googleSuccess || sitemapPing, 
+            success: indexNowSuccess,
             indexNow: indexNowSuccess,
-            google: googleSuccess,
-            sitemapPing,
             urlsCount: urls.length
         });
     } catch (error: any) {

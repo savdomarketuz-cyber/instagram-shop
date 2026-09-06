@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import CatalogClient from '../CatalogClient';
 import { getCatalogCategories, resolveCategoryBySlug } from '@/lib/categories';
 import { getCategorySlug } from '@/lib/slugify';
@@ -55,10 +55,7 @@ export default async function CategoryCatalogPage({ params }: { params: { lang: 
     const categories = await getCatalogCategories();
     const cat = resolveCategoryBySlug(categories, params.slug, lang);
 
-    // Topilmasa — umumiy katalogga (yaroqsiz slug 404 emas, balki katalog)
-    if (!cat) {
-        redirect(`/${lang}/catalog`);
-    }
+    if (!cat) notFound();
 
     return <CatalogClient initialCategories={categories} initialCategory={cat!.id} />;
 }

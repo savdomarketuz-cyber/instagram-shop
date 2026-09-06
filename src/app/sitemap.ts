@@ -1,13 +1,16 @@
 import { MetadataRoute } from 'next';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getProductSlug, getCategorySlug } from '@/lib/slugify';
-import { i18n } from '@/lib/i18n-config';
 
 export const revalidate = 86400; // Regenerate sitemap every 24 hours
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const baseUrl = 'https://velari.uz';
-    const locales = i18n.locales;
+    const alternateLanguages = (uzUrl: string, ruUrl: string) => ({
+        'uz-UZ': uzUrl,
+        'ru-RU': ruUrl,
+        'x-default': uzUrl,
+    });
 
     // Static routes — ONLY pages that should be indexed
     // Removed: /cart, /wishlist, /login (these are blocked in robots.txt)
@@ -24,10 +27,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     // Generate static routes — each path once with hreflang alternates
     for (const path of staticPaths) {
-        const languages = locales.reduce((acc, loc) => ({
-            ...acc,
-            [loc]: `${baseUrl}/${loc}${path === '/' ? '' : path}`
-        }), {} as Record<string, string>);
+        const languages = alternateLanguages(
+            `${baseUrl}/uz${path === '/' ? '' : path}`,
+            `${baseUrl}/ru${path === '/' ? '' : path}`
+        );
 
         routes.push({
             url: `${baseUrl}/uz${path === '/' ? '' : path}`,
@@ -59,10 +62,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
                     uz: getProductSlug(product, 'uz'),
                     ru: getProductSlug(product, 'ru'),
                 };
-                const languages = locales.reduce((acc, loc) => ({
-                    ...acc,
-                    [loc]: `${baseUrl}/${loc}/products/${slugByLocale[loc] || slugByLocale.uz}`
-                }), {} as Record<string, string>);
+                const languages = alternateLanguages(
+                    `${baseUrl}/uz/products/${slugByLocale.uz}`,
+                    `${baseUrl}/ru/products/${slugByLocale.ru}`
+                );
 
                 // Canonical (uz) versiya + hreflang alternates
                 routes.push({
@@ -95,10 +98,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
                     uz: getCategorySlug(cat, 'uz'),
                     ru: getCategorySlug(cat, 'ru'),
                 };
-                const languages = locales.reduce((acc, loc) => ({
-                    ...acc,
-                    [loc]: `${baseUrl}/${loc}/catalog/${slugByLocale[loc] || slugByLocale.uz}`
-                }), {} as Record<string, string>);
+                const languages = alternateLanguages(
+                    `${baseUrl}/uz/catalog/${slugByLocale.uz}`,
+                    `${baseUrl}/ru/catalog/${slugByLocale.ru}`
+                );
 
                 routes.push({
                     url: `${baseUrl}/uz/catalog/${slugByLocale.uz}`,
@@ -116,7 +119,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         try {
             const { data: blogs, error: blogsError } = await supabaseAdmin
                 .from('blogs')
-                .select('slug, created_at')
+                .select('slug, created_at, updated_at')
                 .eq('is_deleted', false);
 
             if (blogsError) {
@@ -125,14 +128,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
             if (blogs && blogs.length > 0) {
                 blogs.forEach((blog) => {
-                    const languages = locales.reduce((acc, loc) => ({
-                        ...acc,
-                        [loc]: `${baseUrl}/${loc}/blog/${blog.slug}`
-                    }), {} as Record<string, string>);
+                    const languages = alternateLanguages(
+                        `${baseUrl}/uz/blog/${blog.slug}`,
+                        `${baseUrl}/ru/blog/${blog.slug}`
+                    );
 
                     routes.push({
                         url: `${baseUrl}/uz/blog/${blog.slug}`,
-                        lastModified: blog.created_at ? new Date(blog.created_at) : new Date(),
+                        lastModified: blog.updated_at ? new Date(blog.updated_at) : new Date(blog.created_at),
                         changeFrequency: 'weekly' as const,
                         priority: 0.7,
                         alternates: {

@@ -61,6 +61,25 @@ export default async function BlogPostPage({ params: { lang, slug } }: { params:
 
     if (!blogData) notFound();
     const blog = mapBlog(blogData);
+    const baseUrl = "https://velari.uz";
+    const title = lang === 'uz' ? blog.title_uz : blog.title_ru;
+    const description = lang === 'uz'
+        ? (blog.excerpt_uz || blog.content_uz)
+        : (blog.excerpt_ru || blog.content_ru);
+    const image = blog.image?.startsWith('http') ? blog.image : `${baseUrl}${blog.image || '/og-image.png'}`;
+    const articleUrl = `${baseUrl}/${lang}/blog/${slug}`;
+    const blogJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "mainEntityOfPage": { "@type": "WebPage", "@id": articleUrl },
+        "headline": title,
+        "description": description.substring(0, 160),
+        "image": [image],
+        "datePublished": blog.created_at,
+        "dateModified": blog.updated_at || blog.created_at,
+        "author": { "@type": "Organization", "name": "Velari Insights" },
+        "publisher": { "@type": "Organization", "name": "Velari" },
+    };
 
     // 2. Fetch Linked Products
     let linkedProducts: any[] = [];
@@ -79,6 +98,10 @@ export default async function BlogPostPage({ params: { lang, slug } }: { params:
 
     return (
         <main className="min-h-screen pb-32" style={{ background: "#FAFAF6" }}>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(blogJsonLd) }}
+            />
 
             {/* 1. Header Navigation */}
             <div className="fixed top-24 left-0 right-0 z-50 pointer-events-none">

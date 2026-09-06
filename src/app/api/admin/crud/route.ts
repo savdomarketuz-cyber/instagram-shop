@@ -3,20 +3,57 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { verifyJwt } from "@/lib/jwt-utils";
 import { revalidatePath } from "next/cache";
 import { sendOrderStatusNotification } from "@/lib/telegram";
+import { getProductSlug } from "@/lib/slugify";
 
-function performSmartRevalidation(table: string, payload: any, matchConfig: any) {
+function toArray(value: any): any[] {
+    if (!value) return [];
+    return Array.isArray(value) ? value : [value];
+}
+
+async function getProductSnapshot(matchConfig: any, inConfig: any, payload: any) {
+    try {
+        let query: any = supabaseAdmin
+            .from("products")
+            .select("id, article, name, name_uz, name_ru");
+
+        if (matchConfig) {
+            query = query.eq(matchConfig.column, matchConfig.value);
+        } else if (inConfig) {
+            query = query.in(inConfig.column, inConfig.values);
+        } else {
+            const ids = toArray(payload).map((item) => item?.id).filter(Boolean);
+            if (!ids.length) return [];
+            query = query.in("id", ids);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return data || [];
+    } catch (error) {
+        console.error("Product cache snapshot error:", error);
+        return [];
+    }
+}
+
+function performSmartRevalidation(table: string, products: any[] = []) {
     try {
         if (table === "products") {
-            const id = payload?.id || (matchConfig?.column === "id" ? matchConfig.value : null);
-            if (id) {
-                revalidatePath(`/uz/products/${id}`);
-                revalidatePath(`/ru/products/${id}`);
+            const slugs = new Set<string>();
+            for (const product of products) {
+                if (!product?.id && !product?.article) continue;
+                slugs.add(`/uz/products/${getProductSlug(product, "uz")}`);
+                slugs.add(`/ru/products/${getProductSlug(product, "ru")}`);
+            }
+            for (const path of slugs) {
+                revalidatePath(path);
             }
             revalidatePath("/uz/catalog");
             revalidatePath("/ru/catalog");
             revalidatePath("/uz");
             revalidatePath("/ru");
             revalidatePath("/sitemap.xml");
+            revalidatePath("/image-sitemap.xml");
+            revalidatePath("/api/google-feed");
         } else if (table === "categories") {
             revalidatePath("/uz/catalog");
             revalidatePath("/ru/catalog");
@@ -63,6 +100,9 @@ export async function POST(req: NextRequest) {
         if (!table) return NextResponse.json({ error: "Table is required" }, { status: 400 });
 
         let query = supabaseAdmin.from(table);
+        const productSnapshot = table === "products" && ["update", "upsert", "delete"].includes(action)
+            ? await getProductSnapshot(matchConfig, inConfig, payload)
+            : [];
 
         if (action === "select") {
             // RLS chetlab o'tib o'qish (admin sahifalarda sozlamalarni yuklash uchun)
@@ -81,7 +121,7 @@ export async function POST(req: NextRequest) {
             const { data, error } = await query.insert(payload).select();
             if (error) throw error;
             
-            performSmartRevalidation(table, payload, matchConfig);
+            performSmartRevalidation(table, toArray(data));
             
             return NextResponse.json({ success: true, data });
         } 
@@ -102,7 +142,7 @@ export async function POST(req: NextRequest) {
             const { data, error } = await updateQuery.select();
             if (error) throw error;
             
-            performSmartRevalidation(table, payload, matchConfig);
+            performSmartRevalidation(table, [...productSnapshot, ...toArray(data)]);
 
             // Mijozga Telegram orqali xabar yuborish (Buyurtma holati o'zgarganda)
             if (table === "orders" && payload.status) {
@@ -125,7 +165,7 @@ export async function POST(req: NextRequest) {
             const { data, error } = await upsertQuery.select();
             if (error) throw error;
             
-            performSmartRevalidation(table, payload, matchConfig);
+            performSmartRevalidation(table, [...productSnapshot, ...toArray(data)]);
             
             return NextResponse.json({ success: true, data });
         }
@@ -143,7 +183,7 @@ export async function POST(req: NextRequest) {
             const { data, error } = await deleteQuery;
             if (error) throw error;
             
-            performSmartRevalidation(table, payload, matchConfig);
+            performSmartRevalidation(table, productSnapshot);
             
             return NextResponse.json({ success: true });
         }

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { pingSitemapToGoogle } from "@/lib/google-indexing";
 
 export async function GET(req: Request) {
     const authHeader = req.headers.get('authorization');
@@ -13,13 +12,9 @@ export async function GET(req: Request) {
         const { error } = await supabaseAdmin.rpc('restore_expired_orders');
         if (error) throw error;
         
-        // 2. Google sitemap ping — har kuni xabar berish
-        const sitemapPinged = await pingSitemapToGoogle();
-        
         return NextResponse.json({ 
             success: true, 
-            message: "Expired orders cleaned up",
-            sitemapPinged
+            message: "Expired orders cleaned up"
         });
     } catch(e: any) {
         console.error("Cron Error: ", e);

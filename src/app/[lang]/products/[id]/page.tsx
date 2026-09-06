@@ -4,7 +4,7 @@ import ProductClient from './ProductClient';
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { mapProduct } from "@/lib/mappers";
 import { getProductIdFromSlug, getProductSlug } from "@/lib/slugify";
-import BrandedEmptyState from "@/components/common/BrandedEmptyState";
+import { notFound, permanentRedirect } from 'next/navigation';
 
 import { cache } from 'react';
 
@@ -143,27 +143,25 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
     const productIdOrArticle = getProductIdFromSlug(params.id);
     const product: any = await getProductData(productIdOrArticle);
     
-    if (!product) return <BrandedEmptyState type="not-found" showPopular={true} />;
+    if (!product) notFound();
+
+    const canonicalSlug = getProductSlug(product, params.lang);
+    if (params.id !== canonicalSlug) {
+        permanentRedirect(`/${params.lang}/products/${canonicalSlug}`);
+    }
 
     // Canonical slug (JSON-LD offers.url uchun) — tilga mos, normallashtirilgan
-    const canonicalProductUrl = `https://velari.uz/${params.lang}/products/${getProductSlug(product, params.lang)}`;
+    const canonicalProductUrl = `https://velari.uz/${params.lang}/products/${canonicalSlug}`;
 
     // Structured Data (Schema.org) for Google to understand this is a PRODUCT
     const productName = (params.lang === 'ru')
         ? (product.name_ru || product.name_uz || product.name)
         : (product.name_uz || product.name);
     
-    // Extract brand name from product name (first word is usually the brand)
-    const brandName = product.brand || (productName.split(' ')[0]) || "Velari";
-    
     // Ensure images are absolute URLs
     const productImages = (product.images && product.images.length > 0) 
         ? product.images.map((img: string) => img.startsWith('http') ? img : `https://velari.uz${img}`)
         : [product.image?.startsWith('http') ? product.image : `https://velari.uz${product.image}`];
-
-    // Price valid until (30 days from now for freshness)
-    const priceValidDate = new Date();
-    priceValidDate.setDate(priceValidDate.getDate() + 30);
 
     const ratingValue = Number(product.rating || product.avg_rating || 0);
     const reviewCount = Number(product.reviewCount || product.review_count || 0);
@@ -176,28 +174,9 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
         "url": canonicalProductUrl,
         "priceCurrency": "UZS",
         "price": product.price,
-        "priceValidUntil": priceValidDate.toISOString().split('T')[0],
         "itemCondition": "https://schema.org/NewCondition",
         "availability": inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
         "seller": { "@type": "Organization", "name": "Velari" },
-        "shippingDetails": {
-            "@type": "OfferShippingDetails",
-            "shippingRate": { "@type": "MonetaryAmount", "value": 0, "currency": "UZS" },
-            "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "UZ" },
-            "deliveryTime": {
-                "@type": "ShippingDeliveryTime",
-                "handlingTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 1, "unitCode": "DAY" },
-                "transitTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 1, "unitCode": "DAY" }
-            }
-        },
-        "hasMerchantReturnPolicy": {
-            "@type": "MerchantReturnPolicy",
-            "applicableCountry": "UZ",
-            "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
-            "merchantReturnDays": 14,
-            "returnMethod": "https://schema.org/ReturnByMail",
-            "returnFees": "https://schema.org/FreeReturn"
-        }
     };
 
     // Chegirma bo'lsa — Google eski narxni ham ko'rsatadi (crossed-out price)
@@ -226,7 +205,6 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
         "description": (product.description_uz || product.description || '').substring(0, 500),
         "sku": product.sku || product.article || product.id,
         "mpn": product.model || product.article || product.id,
-        "brand": { "@type": "Brand", "name": brandName },
         "offers": offerBase
     };
 
@@ -268,29 +246,6 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
         ]
     };
 
-    const faqJsonLd = {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-            {
-                "@type": "Question",
-                "name": language === 'uz' ? `Bu ${product.name_uz || product.name} originalmi?` : `Это оригинал ${product.name_ru || product.name}?`,
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": language === 'uz' ? "Ha, Velari do'konida barcha mahsulotlar 100% original va rasmiy kafolatga ega." : "Да, в магазине Velari все товары на 100% оригинальные и имеют официальную гарантию."
-                }
-            },
-            {
-                "@type": "Question",
-                "name": language === 'uz' ? "Yetkazib berish qancha vaqt oladi?" : "Сколько времени занимает доставка?",
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": language === 'uz' ? "Toshkent bo'ylab yetkazib berish 24 soat ichida mutlaqo tekin amalga oshiriladi." : "Доставка по Ташкенту осуществляется бесплатно в течение 24 часов."
-                }
-            }
-        ]
-    };
-
     // Get description for server-side rendering (critical for SEO)
     const description = product[language === 'uz' ? 'description_uz' : 'description_ru'] || product.description || '';
     const descriptionText = typeof description === 'string' ? description : '';
@@ -307,10 +262,6 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
             />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-            />
             {/* SEO: Server-side rendered content for search engine crawlers */}
             {/* This hidden article ensures Googlebot can read the full product description */}
             <article
@@ -326,7 +277,6 @@ async function ProductDataWrapper({ params }: { params: { lang: string, id: stri
                         <li>{productName}</li>
                     </ol>
                 </nav>
-                <span itemProp="brand">{brandName}</span>
                 {/* Barcha xom rasm URL'lari SSR HTML'da — image-sitemap bilan mos, Yandex/Google
                     JS render qilmasa ham real rasm manzillarini va alt matnini ko'radi. */}
                 {productImages.map((img: string, i: number) => (
