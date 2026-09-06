@@ -12,14 +12,37 @@ export const revalidate = 86400; // 24 soat cache (Admin panelda mahsulot ozgars
 
 // 🚀 Memoize the database call to prevent double-fetching in Metadata & Page
 const getProductData = cache(async (identifier: string) => {
-    const { data } = await supabaseAdmin
+    if (!identifier) return null;
+
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+
+    let query = supabaseAdmin
         .from("products")
-        .select("*, brands(id, name)")
-        .eq("is_deleted", false)
-        .or(`id.eq.${identifier},article.eq.${identifier}`)
-        .single();
-    
-    return data ? { ...mapProduct(data), brand_name: (data as any)?.brands?.name } : null;
+        .select("*")
+        .eq("is_deleted", false);
+
+    if (isUUID) {
+        query = query.or(`id.eq.${identifier},article.eq.${identifier}`);
+    } else {
+        query = query.eq("article", identifier);
+    }
+
+    const { data } = await query.single();
+    if (!data) return null;
+
+    let brandName: string | undefined = undefined;
+    if (data.brand_id) {
+        const { data: brand } = await supabaseAdmin
+            .from("brands")
+            .select("name")
+            .eq("id", data.brand_id)
+            .single();
+        if (brand?.name) {
+            brandName = brand.name;
+        }
+    }
+
+    return { ...mapProduct(data), brand_name: brandName };
 });
 
 // ⚡ Eng mashhur 200 mahsulotni SEO slug shaklida pre-render (CDN'dan 0ms).
