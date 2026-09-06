@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutDashboard, ShoppingCart, Package, Layers, LogOut, Menu, X, Users, Image as ImageIcon, Database, Settings, Sparkles, Activity, Zap, MessageSquare, ShieldAlert, Truck, Warehouse, RotateCcw, Tag, Banknote, Wallet, BookOpen, ClipboardList, BookA, Bell, Timer, Percent, Grid, ChevronDown, DollarSign, Brain } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Package, Layers, LogOut, Menu, X, Users, Image as ImageIcon, Database, Settings, Sparkles, Activity, Zap, MessageSquare, ShieldAlert, Truck, Warehouse, RotateCcw, Tag, Banknote, Wallet, BookOpen, ClipboardList, BookA, Bell, Timer, Percent, Grid, ChevronDown, DollarSign, Brain, HelpCircle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -15,8 +15,20 @@ function AdminTopNav({ groups, pathname }: { groups: MenuGroup[]; pathname: stri
     const [hoverGroup, setHoverGroup] = useState<string | null>(null);
     const [pinnedGroup, setPinnedGroup] = useState<string | null>(null);
     const [isRevalidating, setIsRevalidating] = useState(false);
+    const [showHelp, setShowHelp] = useState(false);
     const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const navRef = useRef<HTMLElement | null>(null);
+    const helpRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (helpRef.current && !helpRef.current.contains(e.target as Node)) {
+                setShowHelp(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     const handleRevalidateAll = async () => {
         setIsRevalidating(true);
@@ -111,15 +123,62 @@ function AdminTopNav({ groups, pathname }: { groups: MenuGroup[]; pathname: stri
                 );
             })}
 
-            <button
-                onClick={handleRevalidateAll}
-                disabled={isRevalidating}
-                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200 transition-all disabled:opacity-50"
-                title="Butun sayt keshini majburiy yangilash"
-            >
-                <RotateCcw size={14} className={isRevalidating ? "animate-spin" : ""} />
-                {isRevalidating ? "Yangilanmoqda..." : "🔄 Keshni Yangilash"}
-            </button>
+            <div className="ml-auto relative flex items-center gap-1.5" ref={helpRef}>
+                <button
+                    onClick={handleRevalidateAll}
+                    disabled={isRevalidating}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200 transition-all disabled:opacity-50 active:scale-95 shadow-sm"
+                    title="Sayt keshini majburiy yangilash"
+                >
+                    <RotateCcw size={14} className={isRevalidating ? "animate-spin" : ""} />
+                    <span>{isRevalidating ? "Yangilanmoqda..." : "🔄 Keshni Yangilash"}</span>
+                </button>
+
+                {/* Help Info Icon & Tooltip */}
+                <div className="relative group">
+                    <button
+                        type="button"
+                        onClick={() => setShowHelp(!showHelp)}
+                        className={`p-1.5 rounded-xl transition-all flex items-center justify-center border ${
+                            showHelp 
+                                ? "bg-blue-600 text-white border-blue-600 shadow-sm" 
+                                : "bg-gray-100 hover:bg-blue-50 text-gray-400 hover:text-blue-600 border-gray-200 hover:border-blue-200"
+                        }`}
+                        title="Keshni yangilash nima ekanligini bilish"
+                    >
+                        <HelpCircle size={15} />
+                    </button>
+
+                    {/* Popover / Tooltip */}
+                    <div
+                        className={`absolute right-0 top-full mt-2.5 w-72 md:w-80 bg-white rounded-2xl p-4 shadow-2xl border border-gray-100 text-left transition-all duration-200 z-50 ${
+                            showHelp 
+                                ? "opacity-100 visible translate-y-0" 
+                                : "opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 translate-y-1"
+                        }`}
+                    >
+                        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
+                            <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                                <RotateCcw size={12} />
+                            </div>
+                            <h5 className="text-xs font-black text-gray-900 uppercase tracking-tight">Keshni Yangilash nima?</h5>
+                        </div>
+                        <p className="text-[11px] text-gray-600 leading-relaxed mb-2.5">
+                            Saytingiz tez ishlashi uchun sahifalar va mahsulotlar serverda keshlangan bo'ladi. Ushbu tugma keshni majburiy tozalab, mijozlarga eng yangi ma'lumotlarni ko'rsatadi.
+                        </p>
+                        <div className="bg-gray-50 rounded-xl p-2.5 space-y-1 text-[10px]">
+                            <div className="font-bold text-gray-800 flex items-center gap-1">
+                                <span>💡 Qachon bosish kerak?</span>
+                            </div>
+                            <ul className="text-gray-500 space-y-1 list-disc list-inside">
+                                <li>Yangi mahsulot yoki toifa qo'shilganda</li>
+                                <li>Narxlar yoki aksiyalar o'zgartirilganda</li>
+                                <li>Mijozda o'zgarishlar darhol ko'rinmasa</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </nav>
     );
 }
