@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { adminSelect, adminCount } from "@/lib/admin-api";
 import {
     Sparkles,
     Monitor,
@@ -16,7 +17,8 @@ import {
     Package,
     ArrowRight,
     TrendingUp,
-    Loader2
+    Loader2,
+    RefreshCw
 } from "lucide-react";
 
 interface AiLog {
@@ -38,31 +40,42 @@ export default function AiMonitoring() {
     });
 
     const fetchData = async () => {
+        setLoading(true);
         try {
-            const { data, error } = await supabase
-                .from("ai_logs")
-                .select("*")
-                .order("created_at", { ascending: false })
-                .limit(20);
-            
-            if (error) throw error;
-            
-            const fetched = data.map(l => ({
-                id: l.id,
-                timestamp: l.created_at,
-                userPhone: l.user_phone,
-                input: l.input,
-                output: l.output || [],
-                model: l.model,
-                action: l.action
-            })) as AiLog[];
+            const [data, totalCount] = await Promise.all([
+                adminSelect<any[]>("ai_logs", {
+                    orderBy: { column: "created_at", ascending: false },
+                    limit: 50,
+                }),
+                adminCount("ai_logs").catch(() => 0),
+            ]);
+
+            const fetched = (data || []).map(l => {
+                let parsedInput = l.input;
+                if (typeof parsedInput === 'string') {
+                    try { parsedInput = JSON.parse(parsedInput); } catch { parsedInput = {}; }
+                }
+                let parsedOutput = l.output;
+                if (typeof parsedOutput === 'string') {
+                    try { parsedOutput = JSON.parse(parsedOutput); } catch { parsedOutput = []; }
+                }
+                return {
+                    id: l.id,
+                    timestamp: l.created_at,
+                    userPhone: l.user_phone || "Anonim",
+                    input: parsedInput || {},
+                    output: Array.isArray(parsedOutput) ? parsedOutput : [],
+                    model: l.model || "llama-3.1-70b",
+                    action: l.action || "Tavsiya Berildi",
+                };
+            }) as AiLog[];
 
             setLogs(fetched);
 
-            const uniquePhones = new Set(fetched.map(l => l.userPhone));
+            const uniquePhones = new Set(fetched.map(l => l.userPhone).filter(p => p !== "Anonim"));
             setStats({
-                requests: fetched.length,
-                uniqueUsers: uniquePhones.size
+                requests: totalCount || fetched.length,
+                uniqueUsers: uniquePhones.size || (fetched.length > 0 ? 1 : 0)
             });
         } catch (error) {
             console.error("Fetch ai logs error:", error);
@@ -105,7 +118,15 @@ export default function AiMonitoring() {
                     <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px]">Neural Interface • Real-time AI logs</p>
                 </div>
 
-                <div className="flex gap-4">
+                <div className="flex flex-wrap items-center gap-4">
+                    <button
+                        onClick={fetchData}
+                        disabled={loading}
+                        className="bg-white border border-gray-100 px-5 py-4 rounded-[24px] shadow-sm flex items-center gap-2 text-xs font-black uppercase hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    >
+                        <RefreshCw size={16} className={loading ? "animate-spin text-[#7000FF]" : "text-gray-600"} />
+                        <span className="text-gray-700">Yangilash</span>
+                    </button>
                     <div className="bg-white border border-gray-100 p-6 rounded-[32px] shadow-sm flex items-center gap-4">
                         <div className="w-10 h-10 bg-green-50 text-green-500 rounded-xl flex items-center justify-center">
                             <Zap size={20} />

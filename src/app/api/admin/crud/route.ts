@@ -106,16 +106,17 @@ export async function POST(req: NextRequest) {
 
         if (action === "select") {
             // RLS chetlab o'tib o'qish (admin sahifalarda sozlamalarni yuklash uchun)
-            let selectQuery: any = query.select(payload?.columns || "*");
+            const selectOpts = payload?.count ? { count: payload.count } : undefined;
+            let selectQuery: any = query.select(payload?.columns || "*", selectOpts);
             if (matchConfig) selectQuery = selectQuery.eq(matchConfig.column, matchConfig.value);
             if (inConfig) selectQuery = selectQuery.in(inConfig.column, inConfig.values);
             if (orderBy) selectQuery = selectQuery.order(orderBy.column, { ascending: orderBy.ascending ?? true });
             if (limit) selectQuery = selectQuery.limit(limit);
-            const { data, error } = payload?.single
+            const { data, count, error } = payload?.single
                 ? await selectQuery.maybeSingle()
                 : await selectQuery;
             if (error) throw error;
-            return NextResponse.json({ success: true, data });
+            return NextResponse.json({ success: true, data, count });
         }
         else if (action === "insert") {
             const { data, error } = await query.insert(payload).select();

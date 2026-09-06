@@ -49,24 +49,13 @@ export default function AdminFeaturedCategoriesPage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            // settings jadvali anon o'qishdan RLS bilan yopiq — server (service role) orqali o'qiymiz.
-            const [catRows, settingsJson] = await Promise.all([
+            const [catRows, val] = await Promise.all([
                 adminApi.categories.getAll(),
-                fetch("/api/admin/crud", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        table: "settings",
-                        action: "select",
-                        matchConfig: { column: "id", value: "featured_categories" },
-                        payload: { columns: "data", single: true },
-                    }),
-                }).then(r => r.json()).catch(() => null),
+                adminApi.settings.get("featured_categories"),
             ]);
 
             if (catRows) setAllCategories(catRows);
 
-            const val = settingsJson?.data?.data;
             if (val) {
                 setSelectedIds(val.category_ids || []);
                 setShowOnHome(val.show_on_home !== false);
@@ -89,12 +78,9 @@ export default function AdminFeaturedCategoriesPage() {
         setSaving(true);
         try {
             // 1) Settings saqlash
-            await adminCrud("settings", "upsert", {
-                id: "featured_categories",
-                data: {
-                    category_ids: selectedIds,
-                    show_on_home: showOnHome,
-                },
+            await adminApi.settings.save("featured_categories", {
+                category_ids: selectedIds,
+                show_on_home: showOnHome,
             });
 
             // 2) Har bir kategoriya uchun icon/color yangilash

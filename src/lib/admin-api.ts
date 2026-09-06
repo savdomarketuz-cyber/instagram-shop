@@ -21,7 +21,7 @@ async function call(body: Record<string, unknown>) {
 }
 
 const cacheStore = new Map<string, { data: any; expiresAt: number }>();
-const CACHEABLE_TABLES = new Set(["categories", "brands", "warehouses", "featured_categories"]);
+const CACHEABLE_TABLES = new Set(["categories", "brands", "warehouses", "featured_categories", "settings", "site_settings"]);
 const CACHE_TTL_MS = 60 * 1000; // 60 soniya
 
 export function clearAdminCache(table?: string) {
@@ -48,9 +48,10 @@ export async function adminSelect<T = any>(
         limit?: number;
         single?: boolean;
         skipCache?: boolean;
+        count?: "exact" | "planned" | "estimated";
     } = {}
 ): Promise<T> {
-    const isCacheable = CACHEABLE_TABLES.has(table) && !opts.skipCache && !opts.single;
+    const isCacheable = CACHEABLE_TABLES.has(table) && !opts.skipCache;
     const cacheKey = isCacheable ? `${table}:${JSON.stringify(opts)}` : null;
 
     if (cacheKey && cacheStore.has(cacheKey)) {
@@ -64,7 +65,7 @@ export async function adminSelect<T = any>(
     const json = await call({
         table,
         action: "select",
-        payload: { columns: opts.columns, single: opts.single },
+        payload: { columns: opts.columns, single: opts.single, count: opts.count },
         matchConfig: opts.match,
         inConfig: opts.in,
         orderBy: opts.orderBy,
@@ -78,6 +79,20 @@ export async function adminSelect<T = any>(
     }
 
     return result;
+}
+
+export async function adminCount(
+    table: string,
+    match?: { column: string; value: any }
+): Promise<number> {
+    const json = await call({
+        table,
+        action: "select",
+        payload: { columns: "id", count: "exact" },
+        matchConfig: match,
+        limit: 1,
+    });
+    return json.count ?? (Array.isArray(json.data) ? json.data.length : 0);
 }
 
 export async function adminInsert<T = any>(table: string, payload: any): Promise<T> {
@@ -137,6 +152,36 @@ export const adminApi = {
                 orderBy: { column: "name", ascending: true },
                 skipCache: opts?.skipCache,
             }),
+    },
+    settings: {
+        get: async (id: string, opts?: { skipCache?: boolean }) => {
+            const row = await adminSelect<any>("settings", {
+                columns: "data",
+                match: { column: "id", value: id },
+                single: true,
+                skipCache: opts?.skipCache,
+            });
+            return row?.data ?? null;
+        },
+        save: async (id: string, data: any) => {
+            clearAdminCache("settings");
+            return adminUpsert("settings", { id, data });
+        },
+    },
+    siteSettings: {
+        get: async (key: string, opts?: { skipCache?: boolean }) => {
+            const row = await adminSelect<any>("site_settings", {
+                columns: "value",
+                match: { column: "key", value: key },
+                single: true,
+                skipCache: opts?.skipCache,
+            });
+            return row?.value ?? null;
+        },
+        save: async (key: string, value: any) => {
+            clearAdminCache("site_settings");
+            return adminUpsert("site_settings", { key, value }, "key");
+        },
     },
 };
 

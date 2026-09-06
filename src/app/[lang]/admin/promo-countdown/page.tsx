@@ -144,46 +144,86 @@ export default function PromoCountdownAdmin() {
     const [searchQuery, setSearchQuery] = useState("");
 
     useEffect(() => {
+        let isMounted = true;
         const fetchAll = async () => {
-            // site_settings RLS bilan himoyalangan — server (service role) orqali o'qiymiz
-            const settPromise = fetch("/api/admin/crud", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    table: "site_settings",
-                    action: "select",
-                    matchConfig: { column: "key", value: "promo_countdown" },
-                    payload: { columns: "value", single: true },
-                }),
-            }).then(r => r.json()).catch(() => null);
+            try {
+                const [settVal, catRows, brRows] = await Promise.all([
+                    adminApi.siteSettings.get("promo_countdown"),
+                    adminApi.categories.getAll(),
+                    adminApi.brands.getAll(),
+                ]);
 
-            const [settJson, catRows, brRows, prodRes] = await Promise.all([
-                settPromise,
-                adminApi.categories.getAll(),
-                adminApi.brands.getAll(),
-                supabase.from("products").select("id, name").eq("is_deleted", false).limit(300),
-            ]);
+                if (!isMounted) return;
 
-            if (catRows) setCategories((catRows as any[]).map(x => ({ id: String(x.id), name: x.name })));
-            if (brRows) setBrands((brRows as any[]).map(x => ({ id: String(x.id), name: x.name })));
-            if (prodRes.data) setProducts(prodRes.data);
+                if (catRows) setCategories((catRows as any[]).map(x => ({ id: String(x.id), name: x.name })));
+                if (brRows) setBrands((brRows as any[]).map(x => ({ id: String(x.id), name: x.name })));
 
-            if (settJson?.data?.value) {
-                const v = settJson.data.value as any;
-                setSettings({
-                    ...DEFAULT,
-                    ...v,
-                    start_time: v.start_time ? new Date(v.start_time).toISOString().slice(0, 16) : DEFAULT.start_time,
-                    end_time: v.end_time ? new Date(v.end_time).toISOString().slice(0, 16) : DEFAULT.end_time,
-                    target_type: v.target_type || "all",
-                    target_ids: v.target_ids || [],
-                    discount_percent: v.discount_percent || 0
-                });
+                if (settVal) {
+                    const v = settVal as any;
+                    setSettings({
+                        ...DEFAULT,
+                        ...v,
+                        start_time: v.start_time ? new Date(v.start_time).toISOString().slice(0, 16) : DEFAULT.start_time,
+                        end_time: v.end_time ? new Date(v.end_time).toISOString().slice(0, 16) : DEFAULT.end_time,
+                        target_type: v.target_type || "all",
+                        target_ids: v.target_ids || [],
+                        discount_percent: v.discount_percent || 0
+                    });
+
+                    // Agar target_type manual va tanlangan mahsulotlar bo'lsa, faqat ularning nomlarini olib kelamiz
+                    if (v.target_type === "manual" && Array.isArray(v.target_ids) && v.target_ids.length > 0) {
+                        const { data } = await supabase
+                            .from("products")
+                            .select("id, name")
+                            .in("id", v.target_ids);
+                        if (isMounted && data) {
+                            setProducts(data);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Promo countdown fetch error:", err);
+            } finally {
+                if (isMounted) setLoading(false);
             }
-            setLoading(false);
         };
         fetchAll();
+        return () => { isMounted = false; };
     }, []);
+
+    // Manual rejimda qidiruv yoki birinchi marta ochilganda mahsulotlarni tezkor qidirish
+    useEffect(() => {
+        if (settings.target_type !== "manual") return;
+
+        let active = true;
+        const search = searchQuery.trim();
+
+        const timer = setTimeout(async () => {
+            try {
+                let query = supabase.from("products").select("id, name").eq("is_deleted", false);
+                if (search) {
+                    query = query.ilike("name", `%${search}%`).limit(20);
+                } else {
+                    query = query.order("created_at", { ascending: false }).limit(20);
+                }
+                const { data } = await query;
+                if (!active || !data) return;
+
+                setProducts(prev => {
+                    const map = new Map(prev.map(p => [p.id, p]));
+                    data.forEach(p => map.set(p.id, p));
+                    return Array.from(map.values());
+                });
+            } catch (err) {
+                console.error("Product search error:", err);
+            }
+        }, search ? 250 : 0);
+
+        return () => {
+            active = false;
+            clearTimeout(timer);
+        };
+    }, [settings.target_type, searchQuery]);
 
     const handleSave = async () => {
         setSaving(true);
@@ -193,18 +233,7 @@ export default function PromoCountdownAdmin() {
                 start_time: new Date(settings.start_time).toISOString(),
                 end_time: new Date(settings.end_time).toISOString(),
             };
-            const res = await fetch("/api/admin/crud", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    table: "site_settings",
-                    action: "upsert",
-                    onConflict: "key",
-                    payload: { key: "promo_countdown", value: payload },
-                }),
-            });
-            const json = await res.json();
-            if (!res.ok) throw new Error(json.error || "Xatolik");
+            await adminApi.siteSettings.save("promo_countdown", payload);
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);
         } catch (e: any) {
@@ -232,11 +261,13 @@ export default function PromoCountdownAdmin() {
         let list: { id: string; name: string }[] = [];
         if (settings.target_type === "category") list = categories;
         if (settings.target_type === "brand") list = brands;
-        if (settings.target_type === "manual") list = products;
+        if (settings.target_type === "manual") {
+            return products.filter(x => !settings.target_ids.includes(x.id)).slice(0, 10);
+        }
 
         if (!searchQuery.trim()) return list.slice(0, 10);
         return list.filter(x => x.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 10);
-    }, [settings.target_type, searchQuery, categories, brands, products]);
+    }, [settings.target_type, searchQuery, categories, brands, products, settings.target_ids]);
 
     const getName = (id: string) => {
         if (settings.target_type === "category") return categories.find(c => c.id === id)?.name;
