@@ -1,5 +1,13 @@
 import Link from 'next/link';
 
+export const metadata = {
+    title: "404 - Sahifa topilmadi | Velari",
+    robots: {
+        index: false,
+        follow: false,
+    },
+};
+
 export default function NotFound() {
     return (
         <div className="min-h-[70vh] flex flex-col items-center justify-center text-center px-4 py-16 bg-white">

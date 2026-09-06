@@ -111,3 +111,32 @@ export async function adminRpc<T = any>(fn: string, args: Record<string, unknown
     const json = await call({ action: "rpc", fn, args });
     return json.data as T;
 }
+
+export const adminApi = {
+    categories: {
+        getAll: (opts?: { skipCache?: boolean }) =>
+            adminSelect<any[]>("categories", {
+                columns: "id, name, name_uz, name_ru, parent_id, image, icon, color, is_deleted",
+                match: { column: "is_deleted", value: false },
+                orderBy: { column: "name", ascending: true },
+                skipCache: opts?.skipCache,
+            }),
+    },
+    brands: {
+        getAll: (opts?: { skipCache?: boolean }) =>
+            adminSelect<any[]>("brands", {
+                columns: "id, name, logo, is_deleted",
+                match: { column: "is_deleted", value: false },
+                orderBy: { column: "name", ascending: true },
+                skipCache: opts?.skipCache,
+            }),
+    },
+    warehouses: {
+        getAll: (opts?: { skipCache?: boolean }) =>
+            adminSelect<any[]>("warehouses", {
+                orderBy: { column: "name", ascending: true },
+                skipCache: opts?.skipCache,
+            }),
+    },
+};
+

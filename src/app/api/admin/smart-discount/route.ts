@@ -22,14 +22,22 @@ async function verifyAdmin(req: NextRequest) {
 export async function GET(req: NextRequest) {
     if (!(await verifyAdmin(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     try {
-        const { data: config } = await supabaseAdmin
-            .from("smart_discount_config").select("*").eq("id", "global").single();
-
-        const { data: offers } = await supabaseAdmin
-            .from("smart_discount_offers")
-            .select("id, user_identifier, product_id, percent, intent_score, signals, reason_uz, status, source, created_at, expires_at, redeemed_at, revoked_by")
-            .order("created_at", { ascending: false })
-            .limit(200);
+        const [
+            { data: config },
+            { data: offers },
+            { data: users }
+        ] = await Promise.all([
+            supabaseAdmin.from("smart_discount_config").select("*").eq("id", "global").single(),
+            supabaseAdmin.from("smart_discount_offers")
+                .select("id, user_identifier, product_id, percent, intent_score, signals, reason_uz, status, source, created_at, expires_at, redeemed_at, revoked_by")
+                .order("created_at", { ascending: false })
+                .limit(200),
+            supabaseAdmin.from("users")
+                .select("phone, name")
+                .is("deleted_at", null)
+                .order("name", { nullsFirst: false })
+                .limit(500)
+        ]);
 
         // Auditga mahsulot nomlarini qo'shamiz
         const productIds = Array.from(new Set((offers || []).map(o => o.product_id).filter(Boolean)));
@@ -39,13 +47,6 @@ export async function GET(req: NextRequest) {
             nameMap = Object.fromEntries((prods || []).map(p => [p.id, p.name]));
         }
         const offersWithNames = (offers || []).map(o => ({ ...o, product_name: nameMap[o.product_id] || o.product_id }));
-
-        // Mijozlar — RLS tufayli client (anon) o'qiy olmaydi, shuning uchun bu yerda service-role bilan
-        const { data: users } = await supabaseAdmin
-            .from("users")
-            .select("phone, name")
-            .is("deleted_at", null)
-            .order("name", { nullsFirst: false });
 
         const stats = {
             total: offers?.length || 0,

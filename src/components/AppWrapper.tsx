@@ -10,7 +10,7 @@ const PWAFlow = dynamic(() => import("@/components/pwa/PWAFlow"), { ssr: false }
 import Link from "next/link";
 import { MessageSquare, CheckCircle, AlertCircle, Info } from "lucide-react";
 import { useStore } from "@/store/store";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ConnectivityListener from "@/components/common/ConnectivityListener";
@@ -351,11 +351,7 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
             <ConnectivityListener />
             <DynamicFavicon />
             <SmartTabTitle />
-            {showNav && (
-                <Suspense fallback={<div className="h-16 md:h-28 bg-white" />}>
-                    <Navigation />
-                </Suspense>
-            )}
+            {showNav && <Navigation />}
 
             <PWAFlow />
             <ErrorBoundary>

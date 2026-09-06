@@ -83,7 +83,8 @@ export async function GET(req: NextRequest) {
                 updated_at,
                 users ( name, telegram_id )
             `)
-            .order("updated_at", { ascending: false });
+            .order("updated_at", { ascending: false })
+            .limit(200);
 
         if (error) throw error;
 

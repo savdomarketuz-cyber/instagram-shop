@@ -10,7 +10,6 @@ import { useShallow } from "zustand/react/shallow";
 import { usePathname, useRouter } from "next/navigation";
 import { translations } from "@/lib/translations";
 import { useState, useMemo, useRef, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
 import { SearchResult } from "@/types";
 
 export default function Navigation() {
@@ -23,7 +22,6 @@ export default function Navigation() {
     const router = useRouter();
     const t = translations[language];
     
-    const searchParams = useSearchParams();
     const inputRef = useRef<HTMLInputElement>(null);
     const [search, setSearch] = useState("");
     const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
@@ -39,11 +37,14 @@ export default function Navigation() {
 
     // Handle Search Focus from other pages
     useEffect(() => {
-        if (isHomePage && searchParams?.get('focus') === 'true' && inputRef.current) {
-            inputRef.current.focus();
-            router.replace(`/${language}`, { scroll: false });
+        if (isHomePage && typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('focus') === 'true' && inputRef.current) {
+                inputRef.current.focus();
+                router.replace(`/${language}`, { scroll: false });
+            }
         }
-    }, [isHomePage, searchParams, router, language]);
+    }, [isHomePage, router, language]);
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {

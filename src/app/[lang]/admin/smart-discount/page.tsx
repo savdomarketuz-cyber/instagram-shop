@@ -6,6 +6,7 @@ import {
     Search, X, Ban, Settings2, UserPlus, Trash2, Infinity as InfinityIcon, Bot, Hand
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { adminApi } from "@/lib/admin-api";
 
 type Config = {
     enabled: boolean;
@@ -90,12 +91,12 @@ export default function AdminSmartDiscountPage() {
                 setStats(json.stats || {});
                 setUsers(json.users || []);
             }
-            const [{ data: prods }, { data: cats }] = await Promise.all([
-                supabase.from("products").select("id, name").eq("is_deleted", false).order("name"),
-                supabase.from("categories").select("id, name").order("name"),
+            const [{ data: prods }, cats] = await Promise.all([
+                supabase.from("products").select("id, name").eq("is_deleted", false).order("name").limit(300),
+                adminApi.categories.getAll(),
             ]);
             setProducts(prods || []);
-            setCategories(cats || []);
+            setCategories((cats || []).map((c: any) => ({ id: String(c.id), name: c.name })));
         } catch (e) { console.error(e); } finally { setLoading(false); }
     };
 

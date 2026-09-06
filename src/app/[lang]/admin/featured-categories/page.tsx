@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { adminApi } from "@/lib/admin-api";
 import { Loader2, CheckCircle2, Save, Eye, EyeOff, GripVertical } from "lucide-react";
 
 interface Category {
@@ -49,8 +50,8 @@ export default function AdminFeaturedCategoriesPage() {
         setLoading(true);
         try {
             // settings jadvali anon o'qishdan RLS bilan yopiq — server (service role) orqali o'qiymiz.
-            const [catRes, settingsJson] = await Promise.all([
-                supabase.from("categories").select("id, name, name_uz, name_ru, parent_id, image, icon, color").eq("is_deleted", false),
+            const [catRows, settingsJson] = await Promise.all([
+                adminApi.categories.getAll(),
                 fetch("/api/admin/crud", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -63,7 +64,7 @@ export default function AdminFeaturedCategoriesPage() {
                 }).then(r => r.json()).catch(() => null),
             ]);
 
-            if (catRes.data) setAllCategories(catRes.data);
+            if (catRows) setAllCategories(catRows);
 
             const val = settingsJson?.data?.data;
             if (val) {

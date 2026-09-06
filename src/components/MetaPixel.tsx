@@ -1,14 +1,13 @@
 'use client';
 
 import Script from 'next/script';
-import { Suspense, useEffect, useRef } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 
 export const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || '1593828215426388';
 
 function MetaPixelTracker({ pixelId }: { pixelId: string }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const firstRender = useRef(true);
 
   useEffect(() => {
@@ -24,7 +23,7 @@ function MetaPixelTracker({ pixelId }: { pixelId: string }) {
         /* ignore */
       }
     }
-  }, [pathname, searchParams, pixelId]);
+  }, [pathname, pixelId]);
 
   return null;
 }
@@ -61,9 +60,7 @@ export default function MetaPixel({ pixelId }: { pixelId?: string }) {
           alt=""
         />
       </noscript>
-      <Suspense fallback={null}>
-        <MetaPixelTracker pixelId={id} />
-      </Suspense>
+      <MetaPixelTracker pixelId={id} />
     </>
   );
 }

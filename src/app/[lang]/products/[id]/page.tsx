@@ -69,7 +69,10 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
     const product = await getProductData(productIdOrArticle);
     
     if (!product) {
-        notFound();
+        return {
+            title: "404 - Sahifa topilmadi | Velari",
+            robots: { index: false, follow: false },
+        };
     }
     const baseUrl = "https://velari.uz";
     const isRu = params.lang === 'ru';

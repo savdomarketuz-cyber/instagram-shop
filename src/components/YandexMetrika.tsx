@@ -1,22 +1,20 @@
 'use client';
 
 import Script from 'next/script';
-import { Suspense, useEffect, useRef } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import { ymHit } from '@/lib/metrika';
 
-// SPA pageview: route o'zgarganda 'hit'. useSearchParams Suspense talab qilgani uchun alohida.
+// SPA pageview: route o'zgarganda 'hit'.
 function MetrikaPageTracker() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const firstRender = useRef(true);
 
   useEffect(() => {
     // Birinchi yuklanishni init o'zi sanaydi — ikki marta sanamaslik uchun o'tkazamiz.
     if (firstRender.current) { firstRender.current = false; return; }
     ymHit();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, searchParams]);
+  }, [pathname]);
 
   return null;
 }
@@ -44,9 +42,7 @@ export default function YandexMetrika({ ymid }: { ymid?: string }) {
           });
         `}
       </Script>
-      <Suspense fallback={null}>
-        <MetrikaPageTracker />
-      </Suspense>
+      <MetrikaPageTracker />
       <noscript>
         <div>
           <img src={`https://mc.yandex.ru/watch/${id}`} style={{ position: 'absolute', left: '-9999px' }} alt="" />

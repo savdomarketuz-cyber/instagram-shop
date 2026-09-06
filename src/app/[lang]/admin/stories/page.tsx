@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { adminApi } from "@/lib/admin-api";
 import { Plus, Trash2, Save, Loader2, CheckCircle2, Eye, EyeOff, Image as ImageIcon, Music, Video } from "lucide-react";
 import Image from "next/image";
 
@@ -145,13 +146,13 @@ export default function AdminStoriesPage() {
 
     const fetchTargets = async () => {
         const [p, c, b] = await Promise.all([
-            supabase.from("products").select("id, name").eq("is_deleted", false),
-            supabase.from("categories").select("id, name").eq("is_deleted", false),
-            supabase.from("brands").select("id, name").eq("is_deleted", false),
+            supabase.from("products").select("id, name").eq("is_deleted", false).limit(300),
+            adminApi.categories.getAll(),
+            adminApi.brands.getAll(),
         ]);
         if (p.data) setProducts(p.data as PickTarget[]);
-        if (c.data) setCategories(c.data as PickTarget[]);
-        if (b.data) setBrands(b.data as PickTarget[]);
+        if (c) setCategories((c as any[]).map(x => ({ id: String(x.id), name: x.name })));
+        if (b) setBrands((b as any[]).map(x => ({ id: String(x.id), name: x.name })));
     };
 
     // supabaseAdmin (RLS bypass) uchun /api/admin/crud orqali

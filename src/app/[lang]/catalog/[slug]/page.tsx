@@ -13,7 +13,10 @@ export async function generateMetadata({ params }: { params: { lang: string; slu
     const cat = resolveCategoryBySlug(categories, params.slug, lang);
 
     if (!cat) {
-        notFound();
+        return {
+            title: "404 - Sahifa topilmadi | Velari",
+            robots: { index: false, follow: false },
+        };
     }
 
     const name = lang === 'ru' ? (cat.name_ru || cat.name_uz || cat.name) : (cat.name_uz || cat.name);

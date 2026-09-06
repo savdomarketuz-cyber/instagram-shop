@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
+import { adminApi } from "@/lib/admin-api";
 import { Timer, ToggleLeft, ToggleRight, Save, CheckCircle2, Loader2, Search, X } from "lucide-react";
 
 interface PromoSettings {
@@ -156,15 +157,15 @@ export default function PromoCountdownAdmin() {
                 }),
             }).then(r => r.json()).catch(() => null);
 
-            const [settJson, catRes, brRes, prodRes] = await Promise.all([
+            const [settJson, catRows, brRows, prodRes] = await Promise.all([
                 settPromise,
-                supabase.from("categories").select("id, name").eq("is_deleted", false),
-                supabase.from("brands").select("id, name").eq("is_deleted", false),
-                supabase.from("products").select("id, name").eq("is_deleted", false),
+                adminApi.categories.getAll(),
+                adminApi.brands.getAll(),
+                supabase.from("products").select("id, name").eq("is_deleted", false).limit(300),
             ]);
 
-            if (catRes.data) setCategories(catRes.data);
-            if (brRes.data) setBrands(brRes.data);
+            if (catRows) setCategories((catRows as any[]).map(x => ({ id: String(x.id), name: x.name })));
+            if (brRows) setBrands((brRows as any[]).map(x => ({ id: String(x.id), name: x.name })));
             if (prodRes.data) setProducts(prodRes.data);
 
             if (settJson?.data?.value) {

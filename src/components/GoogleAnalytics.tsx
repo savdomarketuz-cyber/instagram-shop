@@ -1,12 +1,11 @@
 'use client';
 
 import Script from 'next/script';
-import { Suspense, useEffect, useRef } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 
 function GAPageTracker({ gaId }: { gaId: string }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const firstRender = useRef(true);
 
   useEffect(() => {
@@ -17,13 +16,14 @@ function GAPageTracker({ gaId }: { gaId: string }) {
       return;
     }
 
-    const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '');
+    const search = typeof window !== 'undefined' ? window.location.search : '';
+    const url = pathname + search;
     if (typeof window !== 'undefined' && (window as any).gtag) {
       (window as any).gtag('config', gaId, {
         page_path: url,
       });
     }
-  }, [pathname, searchParams, gaId]);
+  }, [pathname, gaId]);
 
   return null;
 }
@@ -48,9 +48,7 @@ export default function GoogleAnalytics({ gaId }: { gaId?: string }) {
           });
         `}
       </Script>
-      <Suspense fallback={null}>
-        <GAPageTracker gaId={id} />
-      </Suspense>
+      <GAPageTracker gaId={id} />
     </>
   );
 }
