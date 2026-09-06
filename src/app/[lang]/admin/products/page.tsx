@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { mapProduct } from "@/lib/mappers";
+import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
 import {
     LayoutGrid,
     List,
@@ -1359,8 +1360,11 @@ function AdminProducts() {
                                             src={(p.image && (p.image.startsWith('http') || p.image.startsWith('/'))) ? p.image : "/placeholder.png"}
                                             alt={p.name}
                                             fill
+                                            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
                                             className="object-cover transition-transform duration-700 group-hover:scale-110"
-                                            unoptimized
+                                            loader={hasVariants(p.image_metadata, p.image) ? makeVariantLoader(p.image_metadata) : undefined}
+                                            placeholder={p.image_metadata?.[p.image]?.blurDataURL ? "blur" : "empty"}
+                                            blurDataURL={p.image_metadata?.[p.image]?.blurDataURL}
                                             referrerPolicy="no-referrer"
                                         />
                                         <div className="absolute top-4 right-4 flex flex-col gap-3 z-30 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300">
@@ -1479,8 +1483,11 @@ function AdminProducts() {
                                                             src={(p.image && (p.image.startsWith('http') || p.image.startsWith('/'))) ? p.image : "/placeholder.png"}
                                                             alt={p.name}
                                                             fill
+                                                            sizes="48px"
                                                             className="object-cover"
-                                                            unoptimized
+                                                            loader={hasVariants(p.image_metadata, p.image) ? makeVariantLoader(p.image_metadata) : undefined}
+                                                            placeholder={p.image_metadata?.[p.image]?.blurDataURL ? "blur" : "empty"}
+                                                            blurDataURL={p.image_metadata?.[p.image]?.blurDataURL}
                                                             referrerPolicy="no-referrer"
                                                         />
                                                     </div>
