@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { verifyJwt } from "@/lib/jwt-utils";
 import { sendCartReminder } from "@/lib/telegram";
-import crypto from "crypto";
-import webpush from "web-push";
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 // Foydalanuvchining sayt ichidagi (support) chatiga admin xabarini yozish
 async function sendInAppMessage(phone: string, text: string) {
+    const msgId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
     await supabaseAdmin.from("support_messages").insert([{
-        id: crypto.randomUUID(),
+        id: msgId,
         chat_id: phone,
         text,
         sender_id: "admin",
@@ -30,8 +32,11 @@ async function sendWebPushToPhone(phone: string, title: string, body: string, ur
     const pubKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "BDjNKYY_cp8NDYQsowXfhIlfikWZmhCDTvFJOWubcNwvOW-LPnBH70sITFARnWBxHOOF-xuT3d3kuy9lkwzQKs8";
     const privKey = process.env.VAPID_PRIVATE_KEY || "VFjEhX16DW3x3g8NyNIdbg9M_WJQgMPopMjTP9vKdew";
     if (!pubKey || !privKey || !phone) return;
+
     try {
+        const webpush = (await import("web-push")).default;
         webpush.setVapidDetails("mailto:admin@velari.uz", pubKey, privKey);
+        
         const cleanPhone = phone.replace(/\D/g, "");
         const { data: tokens } = await supabaseAdmin
             .from("fcm_tokens")
@@ -43,7 +48,9 @@ async function sendWebPushToPhone(phone: string, title: string, body: string, ur
         const payload = JSON.stringify({ title, body, url });
         await Promise.all(tokens.map(async (row: any) => {
             try {
-                await webpush.sendNotification(JSON.parse(row.token), payload);
+                const sub = typeof row.token === 'string' ? JSON.parse(row.token) : row.token;
+                if (!sub || !sub.endpoint) return;
+                await webpush.sendNotification(sub, payload);
             } catch (err: any) {
                 if (err?.statusCode === 410 || err?.statusCode === 404) {
                     await supabaseAdmin.from("fcm_tokens").delete().eq("token", row.token);
@@ -191,6 +198,7 @@ export async function POST(req: NextRequest) {
             telegram_sent: !!tgOk,
         });
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error("Cart reminder error:", error);
+        return NextResponse.json({ error: error.message || "Xatolik yuz berdi" }, { status: 500 });
     }
 }

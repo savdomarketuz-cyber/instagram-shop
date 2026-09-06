@@ -159,7 +159,9 @@ export async function sendCartReminder(phone: string, items: any[], customNote?:
         // Create one-time secure magic login token (cross-device auto-login)
         let cartUrl = `https://velari.uz/uz/cart?ref=tg_reminder`;
         try {
-            const loginToken = crypto.randomBytes(24).toString('hex');
+            const loginToken = typeof crypto !== 'undefined' && crypto.randomBytes 
+                ? crypto.randomBytes(24).toString('hex') 
+                : ('lt_' + Date.now() + '_' + Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2));
             const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 kun
 
             const { error: ltErr } = await supabaseAdmin.from('login_tokens').insert([{
