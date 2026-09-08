@@ -93,11 +93,9 @@ export const SingleReel = ({
     }, [isActive]);
 
     // ─────────────────────────────────────────────────────────────
-    // 1. Single-Active Hardware Video Engine (Zero Decoder Exhaustion)
-    //    Brauzer video manbani parse qilguncha kutib, keyin play() chaqiradi.
-    //    Eski muammo: React <video src=...> ni DOM'ga qo'shgan zahoti v.play()
-    //    chaqirilardi — brauzer hali faylni yuklay boshlamagan, shuning uchun
-    //    "NotSupportedError: no supported source" xatosi berardi.
+    // 1. Video Initialization Effect (faqat isActive/cleanVideoUrl o'zgarganda)
+    //    Video manbani yuklab, metadata tayyor bo'lgach play() chaqiradi.
+    //    QuickBuySheet yoki Hold — bu effectga ta'sir QILMAYDI.
     // ─────────────────────────────────────────────────────────────
     useEffect(() => {
         const v = videoRef.current;
@@ -105,7 +103,6 @@ export const SingleReel = ({
 
         let isCancelled = false;
 
-        // Video manba sifatida mos yoki yo'qligini aniqlash uchun kutish
         const attemptPlay = () => {
             if (isCancelled || !v) return;
 
@@ -146,85 +143,82 @@ export const SingleReel = ({
             }
         };
 
-        if (!isQuickBuyOpen && !isHolding) {
-            // readyState tekshiramiz:
-            // 0 = HAVE_NOTHING — brauzer hali hech narsa yuklamagan
-            // 1 = HAVE_METADATA — metadata tayyor, play() chaqirish mumkin
-            // 2+ = HAVE_CURRENT_DATA — data tayyor
-            if (v.readyState >= 1) {
-                // Brauzer allaqachon metadata'ni parse qilgan — darhol play
-                attemptPlay();
-            } else {
-                // Brauzer hali yuklamagan — loadedmetadata event'ini kutamiz
-                const onReady = () => {
-                    v.removeEventListener("loadedmetadata", onReady);
-                    v.removeEventListener("canplay", onReady);
-                    v.removeEventListener("error", onFail);
-                    attemptPlay();
-                };
-
-                const onFail = () => {
-                    v.removeEventListener("loadedmetadata", onReady);
-                    v.removeEventListener("canplay", onReady);
-                    v.removeEventListener("error", onFail);
-                    // Bu yerda xatolikni onError handler o'zi boshqaradi
-                };
-
-                v.addEventListener("loadedmetadata", onReady);
-                v.addEventListener("canplay", onReady);
-                v.addEventListener("error", onFail);
-
-                // Agar 8 soniyada hech narsa bo'lmasa — failsafe sifatida play() sinab ko'ramiz
-                const failsafeTimer = setTimeout(() => {
-                    v.removeEventListener("loadedmetadata", onReady);
-                    v.removeEventListener("canplay", onReady);
-                    v.removeEventListener("error", onFail);
-                    if (!isCancelled && v.readyState === 0) {
-                        // Src qaytadan o'rnatamiz — ba'zi brauzerlarda element DOM'ga
-                        // qo'shilganda src to'g'ri o'qilmay qoladi
-                        v.src = cleanVideoUrl;
-                    }
-                    attemptPlay();
-                }, 8000);
-
-                // Cleanup'da failsafe timer'ni ham tozalash
-                const originalCleanup = () => {
-                    clearTimeout(failsafeTimer);
-                    v.removeEventListener("loadedmetadata", onReady);
-                    v.removeEventListener("canplay", onReady);
-                    v.removeEventListener("error", onFail);
-                };
-
-                // Cleanup funksiyasini return'da ishlatamiz
-                return () => {
-                    isCancelled = true;
-                    originalCleanup();
-                    if (v) {
-                        try {
-                            v.pause();
-                            v.removeAttribute("src");
-                            v.load();
-                        } catch {}
-                    }
-                };
-            }
+        if (v.readyState >= 1) {
+            attemptPlay();
         } else {
-            v.pause();
-            setIsPlaying(false);
+            const onReady = () => {
+                v.removeEventListener("loadedmetadata", onReady);
+                v.removeEventListener("canplay", onReady);
+                v.removeEventListener("error", onFail);
+                attemptPlay();
+            };
+
+            const onFail = () => {
+                v.removeEventListener("loadedmetadata", onReady);
+                v.removeEventListener("canplay", onReady);
+                v.removeEventListener("error", onFail);
+            };
+
+            v.addEventListener("loadedmetadata", onReady);
+            v.addEventListener("canplay", onReady);
+            v.addEventListener("error", onFail);
+
+            const failsafeTimer = setTimeout(() => {
+                v.removeEventListener("loadedmetadata", onReady);
+                v.removeEventListener("canplay", onReady);
+                v.removeEventListener("error", onFail);
+                if (!isCancelled && v.readyState === 0) {
+                    v.src = cleanVideoUrl;
+                }
+                attemptPlay();
+            }, 8000);
+
+            return () => {
+                isCancelled = true;
+                clearTimeout(failsafeTimer);
+                v.removeEventListener("loadedmetadata", onReady);
+                v.removeEventListener("canplay", onReady);
+                v.removeEventListener("error", onFail);
+                // isActive false bo'lganda React <video> ni DOM'dan olib tashlaydi,
+                // shuning uchun bu yerda faqat pause qilsak kifoya
+                if (v) {
+                    try { v.pause(); } catch {}
+                }
+            };
         }
 
-        // Faol bo'lmay qolganda resursni to'liq bo'shatish (OS decoder exhaustion'ni oldini oladi)
         return () => {
             isCancelled = true;
             if (v) {
-                try {
-                    v.pause();
-                    v.removeAttribute("src");
-                    v.load();
-                } catch {}
+                try { v.pause(); } catch {}
             }
         };
-    }, [isActive, isQuickBuyOpen, isHolding, cleanVideoUrl]);
+    }, [isActive, cleanVideoUrl]);
+
+    // ─────────────────────────────────────────────────────────────
+    // 2. Pause/Resume Effect (QuickBuySheet yoki Long Press Hold uchun)
+    //    Video src'ni BUZMAYDI — faqat pause/play qiladi.
+    // ─────────────────────────────────────────────────────────────
+    useEffect(() => {
+        const v = videoRef.current;
+        if (!v || !isActive) return;
+
+        if (isQuickBuyOpen || isHolding) {
+            v.pause();
+            setIsPlaying(false);
+        } else {
+            // Sheet yopildi yoki hold tugadi — videoni davom ettirish
+            if (v.readyState >= 1 && v.paused) {
+                v.muted = isMuted;
+                v.play()
+                    .then(() => {
+                        setIsPlaying(true);
+                        setIsBuffering(false);
+                    })
+                    .catch(() => {});
+            }
+        }
+    }, [isQuickBuyOpen, isHolding, isActive]);
 
     // Ovoz o'zgarganda faol videoga to'g'ridan-to'g'ri berish
     useEffect(() => {
