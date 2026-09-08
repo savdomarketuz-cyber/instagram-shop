@@ -4,9 +4,9 @@ import { useRef, useState, useEffect } from "react";
 import { ChevronLeft, Heart, X, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { MediaItem } from "./MediaItem";
-
 import { Product, MediaItemType } from "@/types";
 import { useStore } from "@/store/store";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 interface ProductMediaProps {
     allMedia: MediaItemType[];
@@ -34,6 +34,13 @@ export const ProductMedia = ({
     const [startX, setStartX] = useState(0);
     const [scrollLeft, setScrollLeft] = useState(0);
 
+    // Instagram Pinch-to-Zoom & Double-Tap state
+    const [pinchScale, setPinchScale] = useState(1);
+    const [pinchOrigin, setPinchOrigin] = useState({ x: 50, y: 50 });
+    const initialPinchDist = useRef<number>(0);
+    const [showHeart, setShowHeart] = useState(false);
+    const lastTapTime = useRef<number>(0);
+
     const onMouseDown = (e: React.MouseEvent, ref: React.RefObject<HTMLDivElement>) => {
         if (!ref.current) return;
         setIsDragging(true);
@@ -55,7 +62,6 @@ export const ProductMedia = ({
         setIsDragging(false);
         if (ref.current) {
             ref.current.style.scrollBehavior = 'smooth';
-            // Custom snap logic for carousel with next items preview
             const width = ref.current.offsetWidth * 0.85; 
             const index = Math.round(ref.current.scrollLeft / width);
             handleMediaSelect(Math.min(index, allMedia.length - 1));
@@ -65,7 +71,7 @@ export const ProductMedia = ({
     const handleMediaSelect = (index: number) => {
         setActiveImage(index);
         if (carouselRef.current) {
-            const width = carouselRef.current.offsetWidth * 0.85; // match item width + gap
+            const width = carouselRef.current.offsetWidth * 0.85;
             carouselRef.current.scrollTo({
                 left: index * width,
                 behavior: 'smooth'
@@ -83,6 +89,59 @@ export const ProductMedia = ({
         }
     };
 
+    // Touch Pinch-to-Zoom Gesture (Instagram Style)
+    const handleTouchStart = (e: React.TouchEvent) => {
+        if (e.touches.length === 2) {
+            const dist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            initialPinchDist.current = dist;
+            const rect = e.currentTarget.getBoundingClientRect();
+            const midX = ((e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left) / rect.width * 100;
+            const midY = ((e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top) / rect.height * 100;
+            setPinchOrigin({ x: midX, y: midY });
+        }
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (e.touches.length === 2 && initialPinchDist.current > 0) {
+            const dist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            const scale = Math.min(3.5, Math.max(1, dist / initialPinchDist.current));
+            setPinchScale(scale);
+        }
+    };
+
+    const handleTouchEnd = () => {
+        setPinchScale(1);
+        initialPinchDist.current = 0;
+    };
+
+    // Double-Tap to Like
+    const handleDoubleTap = (e: React.MouseEvent) => {
+        const now = Date.now();
+        if (now - lastTapTime.current < 280) {
+            e.stopPropagation();
+            videoPreWarmer.triggerHaptic("double");
+            toggleWishlist(product);
+            setShowHeart(true);
+            setTimeout(() => setShowHeart(false), 800);
+        } else {
+            if (!isDragging) {
+                // Single click to open lightbox
+                setTimeout(() => {
+                    if (Date.now() - lastTapTime.current >= 280 && pinchScale === 1) {
+                        setIsLightboxOpen(true);
+                    }
+                }, 280);
+            }
+        }
+        lastTapTime.current = now;
+    };
+
     useEffect(() => {
         if (isLightboxOpen && lightboxCarouselRef.current) {
             lightboxCarouselRef.current.scrollTo({
@@ -94,7 +153,7 @@ export const ProductMedia = ({
 
     return (
         <>
-            <div className="relative w-full bg-white pt-2 pb-6 overflow-hidden group/media-section">
+            <div className="relative w-full bg-white pt-2 pb-6 overflow-hidden group/media-section select-none">
                 {/* Horizontal Carousel with Next Preview (Social Style) */}
                 <div
                     ref={carouselRef}
@@ -104,15 +163,30 @@ export const ProductMedia = ({
                     onMouseUp={() => stopDragging(carouselRef)}
                     onMouseLeave={() => stopDragging(carouselRef)}
                     className={`flex w-full h-full overflow-x-auto no-scrollbar px-5 gap-3 ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
-                    style={{ scrollSnapType: 'x mandatory' }}
+                    style={{ scrollSnapType: pinchScale > 1 ? 'none' : 'x mandatory' }}
                 >
                     {allMedia.map((media, i) => (
                         <div
                             key={i}
-                            style={{ scrollSnapAlign: 'start', ...(i === activeImage ? { viewTransitionName: `product-img-${product.id}` } : {}) } as React.CSSProperties}
+                            onTouchStart={i === activeImage ? handleTouchStart : undefined}
+                            onTouchMove={i === activeImage ? handleTouchMove : undefined}
+                            onTouchEnd={i === activeImage ? handleTouchEnd : undefined}
+                            onClick={i === activeImage ? handleDoubleTap : undefined}
+                            style={{
+                                scrollSnapAlign: 'start',
+                                ...(i === activeImage ? { viewTransitionName: `product-img-${product.id}` } : {})
+                            } as React.CSSProperties}
                             className="min-w-[85vw] aspect-[3/4] rounded-[28px] overflow-hidden bg-gray-50 flex items-center justify-center relative shadow-sm border border-gray-100"
                         >
-                            <div className="w-full h-full pointer-events-auto">
+                            {/* Scalable Container for Pinch-to-Zoom */}
+                            <div
+                                className="w-full h-full pointer-events-auto transition-transform duration-150 ease-out"
+                                style={{
+                                    transform: i === activeImage && pinchScale > 1 ? `scale(${pinchScale})` : 'scale(1)',
+                                    transformOrigin: `${pinchOrigin.x}% ${pinchOrigin.y}%`,
+                                    zIndex: pinchScale > 1 ? 50 : 1,
+                                }}
+                            >
                                 <MediaItem
                                     media={{
                                         ...media,
@@ -124,23 +198,49 @@ export const ProductMedia = ({
                                     }}
                                     isActive={activeImage === i}
                                     isLightbox={false}
-                                    onClick={() => !isDragging && setIsLightboxOpen(true)}
+                                    onClick={() => {}}
                                     alt={product.name}
                                     priority={i === 0}
                                 />
                             </div>
+
+                            {/* Flying Heart on Double Tap */}
+                            {showHeart && i === activeImage && (
+                                <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none">
+                                    <Heart size={90} className="text-red-500 fill-red-500 animate-in zoom-in-50 fade-out duration-700 drop-shadow-2xl" />
+                                </div>
+                            )}
                         </div>
                     ))}
                     {/* Extra space at the end */}
                     <div className="min-w-[10vw]" />
                 </div>
                 
-                {/* Dots / Pagination */}
-                <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-1.5 z-20 pointer-events-none">
-                    {allMedia.map((_, i) => (
-                        <div key={i} className={`h-1 rounded-full transition-all duration-500 ${activeImage === i ? "w-6 bg-black/40" : "w-1 bg-black/10"}`} />
-                    ))}
-                </div>
+                {/* Instagram Style Dynamic Dots Pagination */}
+                {allMedia.length > 1 && (
+                    <div className="absolute bottom-10 left-0 right-0 flex items-center justify-center gap-1.5 z-20 pointer-events-none">
+                        {allMedia.map((_, i) => {
+                            const diff = Math.abs(i - activeImage);
+                            let sizeClass = "w-1.5 h-1.5 bg-black/20 rounded-full";
+                            if (diff === 0) {
+                                sizeClass = "w-5 h-1.5 bg-black rounded-full shadow-sm";
+                            } else if (diff === 1) {
+                                sizeClass = "w-2 h-2 bg-black/40 rounded-full";
+                            } else if (diff === 2) {
+                                sizeClass = "w-1.5 h-1.5 bg-black/25 rounded-full";
+                            } else {
+                                sizeClass = "w-1 h-1 bg-black/15 rounded-full";
+                            }
+
+                            return (
+                                <div
+                                    key={i}
+                                    className={`transition-all duration-300 ${sizeClass}`}
+                                />
+                            );
+                        })}
+                    </div>
+                )}
 
                 {/* Floating Top Controls */}
                 <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-30 pointer-events-none">
@@ -173,7 +273,10 @@ export const ProductMedia = ({
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
                         </button>
                         <button 
-                            onClick={() => toggleWishlist(product)} 
+                            onClick={() => {
+                                videoPreWarmer.triggerHaptic("light");
+                                toggleWishlist(product);
+                            }} 
                             className="p-3 bg-white/40 backdrop-blur-xl text-black rounded-full shadow-lg active:scale-90 transition-all border border-white/50 pointer-events-auto"
                         >
                             <Heart size={20} fill={isWishlisted ? "#ef4444" : "none"} className={isWishlisted ? "text-red-500" : "text-gray-400"} />
@@ -182,7 +285,7 @@ export const ProductMedia = ({
                 </div>
             </div>
 
-            {/* Lightbox remains standard full screen */}
+            {/* Lightbox */}
             {isLightboxOpen && (
                 <div className="fixed inset-0 bg-black z-[100] flex flex-col items-center justify-center animate-in fade-in duration-300">
                     <button onClick={() => setIsLightboxOpen(false)} className="absolute top-10 right-10 p-4 bg-white/10 text-white rounded-full backdrop-blur-xl transition-all z-[110] border border-white/10">

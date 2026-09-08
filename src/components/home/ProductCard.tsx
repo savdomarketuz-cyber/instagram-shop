@@ -73,11 +73,11 @@ function WishBtn({ isWished, onClick }: { isWished: boolean; onClick: (e: React.
       onClick={onClick}
       style={{
         position: "absolute",
-        top: 8,
-        right: 8,
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+        top: 10,
+        right: 10,
+        width: 34,
+        height: 34,
+        borderRadius: 17,
         background: "rgba(255,255,255,0.92)",
         backdropFilter: "blur(8px)",
         display: "flex",
@@ -159,7 +159,7 @@ export const ProductCard = memo(({
       {/* Image area */}
       <Link
         href={`/${language}/products/${getProductSlug(item, language)}`}
-        style={{ display: "block", textDecoration: "none", color: "inherit" }}
+        style={{ display: "flex", flexDirection: "column", flex: 1, textDecoration: "none", color: "inherit" }}
         prefetch={true}
         onPointerEnter={() => prefetchFirstImage(item)}
         onPointerDown={() => prefetchFirstImage(item)}
@@ -177,11 +177,11 @@ export const ProductCard = memo(({
           }
         }}
       >
-        <div style={{ position: "relative", padding: 12, paddingBottom: 6 }}>
+        <div style={{ position: "relative", width: "100%" }}>
           <div ref={imgWrapRef} style={{
             position: "relative",
             aspectRatio: "3 / 4",
-            borderRadius: 16,
+            width: "100%",
             overflow: "hidden",
             background: "#F5F5F0",
           } as React.CSSProperties}>
@@ -209,8 +209,8 @@ export const ProductCard = memo(({
             {badge && (
               <div style={{
                 position: "absolute",
-                top: 8,
-                left: 8,
+                top: 10,
+                left: 10,
                 padding: "4px 9px",
                 borderRadius: 10,
                 background: badgeBg,
@@ -232,7 +232,7 @@ export const ProductCard = memo(({
         </div>
 
         {/* Info */}
-        <div style={{ padding: "2px 14px 12px" }}>
+        <div style={{ padding: "10px 14px 14px", display: "flex", flexDirection: "column", flex: 1 }}>
           {/* Do'kon (ombor) nomi — mahsulot nomidan tepada */}
           {warehouse?.name && (
             <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3 }}>
@@ -310,7 +310,7 @@ export const ProductCard = memo(({
               : (item.oldPrice && item.oldPrice > item.price ? item.oldPrice : null);
             return (
               <>
-                <div style={{ marginTop: 8, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+                <div style={{ marginTop: "auto", paddingTop: 8, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
                   <span style={{ fontSize: 15, fontWeight: 700, color: hasPersonal ? "#4F46E5" : "#0F1410", letterSpacing: -0.3 }}>
                     {fmtPrice(displayPrice)}
                   </span>
@@ -331,19 +331,18 @@ export const ProductCard = memo(({
         </div>
       </Link>
 
-      {/* Cart controls */}
-      <div style={{ padding: "0 12px 12px" }}>
-
+      {/* Cart controls — full-bleed 0px padding */}
+      <div style={{ marginTop: "auto", width: "100%" }}>
         {isInCart ? (
           <div style={{
             width: "100%",
-            height: 42,
+            height: 44,
             background: "#F5F9F6",
-            borderRadius: 14,
+            borderTop: "1px solid #E6EFE9",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "0 4px",
+            padding: "0 14px",
           }}>
             <button
               onClick={(e) => {
@@ -352,15 +351,16 @@ export const ProductCard = memo(({
                 else removeFromCart(item.id);
               }}
               style={{
-                width: 34, height: 34, borderRadius: 10,
-                background: "transparent", border: "none",
+                width: 32, height: 32, borderRadius: 9,
+                background: "#E8EFEA", border: "none",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", color: "#5A625C",
+                cursor: "pointer", color: "#2D6E3E",
+                WebkitTapHighlightColor: "transparent",
               }}
             >
               <Minus size={14} strokeWidth={2.5} />
             </button>
-            <span style={{ fontSize: 15, fontWeight: 700, color: "#0F1410" }}>{isInCart.quantity}</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: "#0F1410" }}>{isInCart.quantity}</span>
             <button
               onClick={(e) => {
                 e.preventDefault();
@@ -368,10 +368,11 @@ export const ProductCard = memo(({
                   updateQuantity(item.id, isInCart.quantity + 1);
               }}
               style={{
-                width: 34, height: 34, borderRadius: 10,
+                width: 32, height: 32, borderRadius: 9,
                 background: GREEN, border: "none",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 cursor: "pointer", color: "#fff",
+                WebkitTapHighlightColor: "transparent",
               }}
             >
               <Plus size={14} strokeWidth={2.5} />
@@ -382,8 +383,8 @@ export const ProductCard = memo(({
             onClick={(e) => { e.preventDefault(); addToCart(item); }}
             style={{
               width: "100%",
-              height: 42,
-              borderRadius: 14,
+              height: 44,
+              borderRadius: 0,
               background: GREEN,
               color: "#fff",
               border: "none",
@@ -391,17 +392,19 @@ export const ProductCard = memo(({
               fontWeight: 600,
               letterSpacing: -0.1,
               cursor: "pointer",
-              boxShadow: "0 4px 12px rgba(45,110,62,0.25)",
-              transition: `transform 150ms ${EASE}`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
               WebkitTapHighlightColor: "transparent",
+              transition: `opacity 150ms ${EASE}`,
             }}
-            onPointerDown={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(0.96)"; }}
-            onPointerUp={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
-            onPointerLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
+            onPointerDown={(e) => { (e.currentTarget as HTMLElement).style.opacity = "0.88"; }}
+            onPointerUp={(e) => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
+            onPointerLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
           >
             {item.express_delivery ? (
-              <span style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", lineHeight: "1.2" }}>
-                <span style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4, fontWeight: 700 }}>
+              <span style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", lineHeight: "1.15" }}>
+                <span style={{ fontSize: 12.5, display: "flex", alignItems: "center", gap: 5, fontWeight: 700 }}>
                   <Truck size={14} strokeWidth={2.5} /> {language === "uz" ? "Tezkor yetkazish" : "Экспресс доставка"}
                 </span>
                 <span style={{ fontSize: 9.5, opacity: 0.9, marginTop: 1, fontWeight: 600 }}>
@@ -409,8 +412,8 @@ export const ProductCard = memo(({
                 </span>
               </span>
             ) : deliveryText ? (
-              <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                <Truck size={15} strokeWidth={2.2} /> {deliveryText}
+              <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 12.5, fontWeight: 600 }}>
+                <Truck size={14} strokeWidth={2.2} /> {deliveryText}
               </span>
             ) : (
               language === "uz" ? "Savatga" : "В корзину"

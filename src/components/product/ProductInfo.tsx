@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { getProductSlug } from "@/lib/slugify";
-import { Star, Check, Truck, Clock, RefreshCw, FileText } from "lucide-react";
+import { Star, Check, Truck, Clock, RefreshCw, FileText, MessageCircle } from "lucide-react";
+import { ProductDirectChatSheet } from "./ProductDirectChatSheet";
 
 const GREEN = "#2D6E3E";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
@@ -21,6 +23,7 @@ interface ProductInfoProps {
 export const ProductInfo = ({
     product, language, t, groupProducts, totalStock, getDeliveryDateText, onDescriptionOpen, personalOffer
 }: ProductInfoProps) => {
+    const [isChatOpen, setIsChatOpen] = useState(false);
     const name = (language === "uz" ? product.name_uz : product.name_ru) || product.name;
     const fmtPrice = (n: number) => n.toLocaleString("ru-RU") + (language === "ru" ? " сум" : " so'm");
     // Shaxsiy smart-chegirma (desktop bilan bir xil ko'rinish): yakuniy narx + chizilgan asl narx
@@ -173,6 +176,45 @@ export const ProductInfo = ({
                 <FileText size={16} color={GREEN} />
                 {language === "uz" ? "To'liq tavsifni ko'rish" : "Полное описание"}
             </button>
+
+            {/* Instagram Direct style "Sotuvchiga savol berish" button */}
+            <button
+                type="button"
+                onClick={() => setIsChatOpen(true)}
+                style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    padding: "14px",
+                    background: "#fff",
+                    border: "1.5px solid rgba(99, 53, 237, 0.2)",
+                    borderRadius: 18,
+                    fontSize: 13,
+                    fontWeight: 800,
+                    color: "#6335ED",
+                    cursor: "pointer",
+                    boxShadow: "0 2px 8px rgba(99, 53, 237, 0.06)",
+                    marginTop: 10,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.2,
+                    WebkitTapHighlightColor: "transparent"
+                }}
+            >
+                <MessageCircle size={17} color="#6335ED" strokeWidth={2.4} />
+                <span>{language === "uz" ? "Sotuvchidan so'rash (Direct)" : "Спросить у продавца (Direct)"}</span>
+            </button>
+
+            {/* Direct Chat Sheet */}
+            {isChatOpen && (
+                <ProductDirectChatSheet
+                    product={product}
+                    onClose={() => setIsChatOpen(false)}
+                    language={language}
+                    t={t}
+                />
+            )}
         </div>
     );
 };

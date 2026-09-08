@@ -2,8 +2,10 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
-import { ShoppingBag, Send, X } from "lucide-react";
+import { ShoppingBag, Send, X, Zap } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { QuickBuySheet } from "@/components/reels/QuickBuySheet";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 interface Story {
     id: string;
@@ -74,6 +76,34 @@ export default function StoriesRow({ language, device = "both" }: { language: "u
     const [slideIdx, setSlideIdx] = useState(0);
     const [progress, setProgress] = useState(0);
     const [paused, setPaused] = useState(false);
+    const [quickBuyProduct, setQuickBuyProduct] = useState<any | null>(null);
+
+    const handleOpenQuickBuy = async (e: React.MouseEvent, s: Story) => {
+        e.preventDefault();
+        e.stopPropagation();
+        videoPreWarmer.triggerHaptic("medium");
+        setPaused(true);
+        pausedRef.current = true;
+
+        const productId = s.cta_ids?.[0];
+        if (productId) {
+            try {
+                const { data } = await supabase.from("products").select("*").eq("id", productId).single();
+                if (data) {
+                    setQuickBuyProduct(data);
+                    return;
+                }
+            } catch {}
+        }
+        // Fallback: s dan product shakllantirish
+        setQuickBuyProduct({
+            id: s.id,
+            name: s[`title_${language}`] || s.title_uz || s.title_ru,
+            price: 180000,
+            image: s.image,
+            category: "Velari"
+        });
+    };
 
     // Kub o'tish holati
     const [rot, setRot] = useState(0);
@@ -559,26 +589,78 @@ export default function StoriesRow({ language, device = "both" }: { language: "u
                         }}><X size={18} /></button>
                     </div>
 
+                    {/* Instagram Shoppable Product Sticker */}
+                    {!busyRef.current && curSlide && (curSlide.cta_type === "product" || curSlide.cta_ids?.[0]) && (
+                        <div
+                            onClick={(e) => handleOpenQuickBuy(e, curSlide)}
+                            style={{
+                                position: "absolute",
+                                bottom: 94,
+                                left: "50%",
+                                transform: "translateX(-50%)",
+                                zIndex: 10,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                padding: "9px 18px",
+                                background: "rgba(255, 255, 255, 0.95)",
+                                backdropFilter: "blur(16px)",
+                                borderRadius: 30,
+                                boxShadow: "0 12px 35px rgba(0,0,0,0.4)",
+                                cursor: "pointer",
+                                border: "1px solid rgba(255,255,255,0.8)",
+                                WebkitTapHighlightColor: "transparent",
+                            }}
+                            className="active:scale-95 transition-transform"
+                        >
+                            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#2D6E3E", boxShadow: "0 0 0 3px rgba(45, 110, 62, 0.25)" }} />
+                            <ShoppingBag size={15} color="#2D6E3E" strokeWidth={2.5} />
+                            <span style={{ fontSize: 11, fontWeight: 800, color: "#0F1410", letterSpacing: 0.2, textTransform: "uppercase" }}>
+                                {curSlide.cta_label_uz || curSlide.cta_label_ru || (language === "uz" ? "Mahsulotni Xarid Qilish" : "Купить товар")}
+                            </span>
+                            <Zap size={13} color="#6335ED" fill="#6335ED" />
+                        </div>
+                    )}
+
                     {/* CTA — "Xarid qilish" tugmasi */}
                     {!busyRef.current && curSlide && ctaHref(language, curSlide) && (
                         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 5, padding: "16px 20px 36px", display: "flex", justifyContent: "center", gap: 10 }}>
-                            <a
-                                href={ctaHref(language, curSlide) || "#"}
-                                onClick={handleClose}
-                                style={{
-                                    flex: 1, maxWidth: 360, display: "flex", alignItems: "center", justifyContent: "center",
-                                    gap: 8, padding: "15px 18px", background: "#fff", borderRadius: 30,
-                                    color: "#0F1410", fontWeight: 800, fontSize: 14, textDecoration: "none",
-                                    letterSpacing: -0.2, boxShadow: "0 6px 24px rgba(0,0,0,0.25)",
-                                }}
-                            >
-                                <ShoppingBag size={17} color={GREEN} strokeWidth={2.4} />
-                                {curSlide.cta_label_uz || curSlide.cta_label_ru
-                                    ? (language === "uz" ? (curSlide.cta_label_uz || curSlide.cta_label_ru) : (curSlide.cta_label_ru || curSlide.cta_label_uz))
-                                    : (curSlide.cta_type && curSlide.cta_type !== "none"
-                                        ? (language === "uz" ? "Xarid qilish" : "Купить")
-                                        : (language === "uz" ? "Ko'rish" : "Смотреть"))}
-                            </a>
+                            {curSlide.cta_type === "product" || curSlide.cta_ids?.[0] ? (
+                                <button
+                                    type="button"
+                                    onClick={(e) => handleOpenQuickBuy(e, curSlide)}
+                                    style={{
+                                        flex: 1, maxWidth: 360, display: "flex", alignItems: "center", justifyContent: "center",
+                                        gap: 8, padding: "15px 18px", background: "#fff", borderRadius: 30, border: "none",
+                                        color: "#0F1410", fontWeight: 800, fontSize: 14, cursor: "pointer",
+                                        letterSpacing: -0.2, boxShadow: "0 6px 24px rgba(0,0,0,0.25)",
+                                    }}
+                                    className="active:scale-95 transition-transform"
+                                >
+                                    <ShoppingBag size={17} color={GREEN} strokeWidth={2.4} />
+                                    <span>
+                                        {curSlide.cta_label_uz || curSlide.cta_label_ru || (language === "uz" ? "Tezkor Xarid" : "Быстрая покупка")}
+                                    </span>
+                                </button>
+                            ) : (
+                                <a
+                                    href={ctaHref(language, curSlide) || "#"}
+                                    onClick={handleClose}
+                                    style={{
+                                        flex: 1, maxWidth: 360, display: "flex", alignItems: "center", justifyContent: "center",
+                                        gap: 8, padding: "15px 18px", background: "#fff", borderRadius: 30,
+                                        color: "#0F1410", fontWeight: 800, fontSize: 14, textDecoration: "none",
+                                        letterSpacing: -0.2, boxShadow: "0 6px 24px rgba(0,0,0,0.25)",
+                                    }}
+                                >
+                                    <ShoppingBag size={17} color={GREEN} strokeWidth={2.4} />
+                                    {curSlide.cta_label_uz || curSlide.cta_label_ru
+                                        ? (language === "uz" ? (curSlide.cta_label_uz || curSlide.cta_label_ru) : (curSlide.cta_label_ru || curSlide.cta_label_uz))
+                                        : (curSlide.cta_type && curSlide.cta_type !== "none"
+                                            ? (language === "uz" ? "Xarid qilish" : "Купить")
+                                            : (language === "uz" ? "Ko'rish" : "Смотреть"))}
+                                </a>
+                            )}
                             <button
                                 type="button"
                                 aria-label={language === "uz" ? "Ulashish" : "Поделиться"}
@@ -607,6 +689,20 @@ export default function StoriesRow({ language, device = "both" }: { language: "u
                                 <Send size={20} color="#fff" />
                             </button>
                         </div>
+                    )}
+
+                    {/* Quick Buy Sheet for Stories */}
+                    {quickBuyProduct && (
+                        <QuickBuySheet
+                            product={quickBuyProduct}
+                            onClose={() => {
+                                setQuickBuyProduct(null);
+                                setPaused(false);
+                                pausedRef.current = false;
+                            }}
+                            language={language}
+                            t={{}}
+                        />
                     )}
                 </div>
             )}
