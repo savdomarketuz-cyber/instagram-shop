@@ -10,6 +10,7 @@ import { TranslationKeys } from "@/lib/translations";
 import { getProductSlug } from "@/lib/slugify";
 import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
 import { getDeliveryCardText } from "@/lib/date-utils";
+import { sanitizeVideoUrl } from "@/lib/video-url";
 
 const GREEN = "#2D6E3E";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
@@ -187,7 +188,7 @@ export const ProductCard = memo(({
           } as React.CSSProperties}>
             {isVideo ? (
               <video
-                src={mainMedia}
+                src={sanitizeVideoUrl(mainMedia)}
                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
                 autoPlay muted loop playsInline
               />

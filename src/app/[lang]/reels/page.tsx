@@ -10,6 +10,7 @@ import { Reel } from "@/types";
 import { SingleReel } from "@/components/reels/SingleReel";
 import { CommentsSheet } from "@/components/reels/CommentsSheet";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
+import { sanitizeVideoUrl } from "@/lib/video-url";
 
 // Active reel atrofida 2 ta oldingi va 2 ta keyingi reel render qilinadi
 const WINDOW = 2;
@@ -22,7 +23,6 @@ export default function ReelsPage() {
     const [reels, setReels] = useState<Reel[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeIndex, setActiveIndex] = useState(0);
-    // Standart qoida: Mobil brauzerlar 100% to'xtovsiz autoplay qilishi uchun boshida ovozsiz (muted) ochiladi
     const [isMuted, setIsMuted] = useState(true);
     const [commentProductId, setCommentProductId] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -31,36 +31,58 @@ export default function ReelsPage() {
     useEffect(() => {
         const fetchReelsData = async () => {
             try {
+                // Ham reels, ham video_url bor mahsulotlarni olamiz (xuddi Flutter ilovadagidek)
                 const [reelsRes, productsRes] = await Promise.all([
-                    supabase.from("reels").select("*").limit(20),
-                    supabase.from("products").select("*").not("video_url", "is", null).neq("video_url", "").limit(20),
+                    supabase.from("reels").select("*").limit(30),
+                    supabase
+                        .from("products")
+                        .select("id,name,name_uz,name_ru,price,images,image,video_url,stock_details,category_id")
+                        .not("video_url", "is", null)
+                        .neq("video_url", "")
+                        .limit(30),
                 ]);
 
-                const reelItems = (reelsRes.data || []).map(r => ({
-                    id: r.id,
-                    videoUrl: r.video_url,
-                    likesCount: r.likes_count,
-                    commentCount: r.comment_count,
-                    productId: r.product_id,
-                    name: r.name,
-                    price: r.price,
-                    image: r.image,
-                })) as Reel[];
+                const reelItems: Reel[] = (reelsRes.data || [])
+                    .filter((r: any) => Boolean(r.video_url))
+                    .map((r: any) => ({
+                        id: String(r.id),
+                        videoUrl: sanitizeVideoUrl(r.video_url),
+                        likesCount: Number(r.likes_count) || 0,
+                        commentCount: Number(r.comment_count) || 0,
+                        productId: r.product_id ? String(r.product_id) : undefined,
+                        name: r.name || "",
+                        price: Number(r.price) || 0,
+                        image: r.image || r.thumbnail_url || "/placeholder.png",
+                    }));
 
-                const productItems = (productsRes.data || []).map(p => ({
-                    id: p.id,
-                    videoUrl: p.video_url,
-                    productId: p.id,
-                    name: p.name,
-                    name_uz: p.name_uz,
-                    name_ru: p.name_ru,
-                    price: p.price,
-                    image: p.image || p.imageUrl,
-                    stockDetails: p.stockDetails || null,
-                })) as Reel[];
+                const productItems: Reel[] = (productsRes.data || [])
+                    .filter((p: any) => Boolean(p.video_url))
+                    .map((p: any) => {
+                        const img = p.image || (Array.isArray(p.images) ? p.images[0] : null) || "/placeholder.png";
+                        return {
+                            id: String(p.id),
+                            videoUrl: sanitizeVideoUrl(p.video_url),
+                            productId: String(p.id),
+                            name: p.name || "",
+                            name_uz: p.name_uz || p.name || "",
+                            name_ru: p.name_ru || p.name || "",
+                            price: Number(p.price) || 0,
+                            image: img,
+                            stockDetails: p.stock_details || null,
+                        };
+                    });
 
-                const seen = new Set(reelItems.map(r => r.id));
-                const merged = [...reelItems, ...productItems.filter(p => !seen.has(p.id))];
+                // Takrorlanuvchi video havolalarini filtrlaymiz
+                const seenUrls = new Set<string>();
+                const merged: Reel[] = [];
+                for (const item of [...reelItems, ...productItems]) {
+                    if (item.videoUrl && !seenUrls.has(item.videoUrl)) {
+                        seenUrls.add(item.videoUrl);
+                        merged.push(item);
+                    }
+                }
+
+                // Tasodifiy tartibda aralashtiramiz
                 const sorted = merged.sort(() => Math.random() - 0.5);
                 setReels(sorted);
 
@@ -98,13 +120,25 @@ export default function ReelsPage() {
             if (newIndex !== activeIndex && newIndex >= 0 && newIndex < reels.length) {
                 setActiveIndex(newIndex);
             }
-        }, 50);
+        }, 60);
     }, [activeIndex, reels.length]);
 
     if (loading) return (
         <div className="h-[100dvh] w-full flex flex-col items-center justify-center bg-black">
             <Loader2 size={44} className="text-white animate-spin mb-3 opacity-80" />
             <p className="text-[11px] font-black uppercase tracking-widest text-white/50">Loading Reels</p>
+        </div>
+    );
+
+    if (reels.length === 0) return (
+        <div className="h-[100dvh] w-full flex flex-col items-center justify-center bg-black text-white gap-3 p-4">
+            <p className="text-sm font-semibold opacity-70">Hech qanday video topilmadi</p>
+            <button
+                onClick={() => router.back()}
+                className="px-4 py-2 bg-white/20 rounded-xl text-xs font-bold active:scale-95 transition-transform"
+            >
+                Orqaga qaytish
+            </button>
         </div>
     );
 

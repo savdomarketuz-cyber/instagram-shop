@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { Play } from "lucide-react";
 import Image from "next/image";
 import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
+import { sanitizeVideoUrl } from "@/lib/video-url";
 
 interface MediaItemProps {
     media: {
@@ -46,7 +47,7 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority 
                 {/* Blurred Background for Lightbox */}
                 {isLightbox && (
                     <video
-                        src={media.url}
+                        src={sanitizeVideoUrl(media.url)}
                         className="absolute inset-0 w-full h-full object-cover scale-150 blur-3xl opacity-40"
                         muted
                         loop
@@ -56,7 +57,7 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority 
                 
                 <video
                     ref={videoRef}
-                    src={media.url}
+                    src={sanitizeVideoUrl(media.url)}
                     className="w-full h-full object-cover"
                     muted={!isLightbox}
                     loop

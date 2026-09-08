@@ -7,6 +7,7 @@ import { Product, CartItem } from "@/types";
 import { TranslationKeys } from "@/lib/translations";
 import { getProductSlug } from "@/lib/slugify";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
+import { sanitizeVideoUrl } from "@/lib/video-url";
 import { QuickBuySheet } from "@/components/reels/QuickBuySheet";
 
 interface BentoVideoCardProps {
@@ -33,9 +34,10 @@ export const BentoVideoCard = memo(({
 
     const isWished = wishlist.some(w => w.id === item.id);
     const isInCart = cart.some(c => c.id === item.id);
-    const videoUrl = item.videoUrl || (item as any).video_url;
+    const rawVideoUrl = item.videoUrl || (item as any).video_url;
+    const videoUrl = sanitizeVideoUrl(rawVideoUrl);
     const productName = item[`name_${language}`] || item.name;
-    const productImage = item.imageUrl || item.image;
+    const productImage = item.imageUrl || item.image || (Array.isArray(item.images) ? item.images[0] : undefined);
 
     // IntersectionObserver: Faqat ekranda ko'ringandagina o'ynatish (akkumulyator va trafikni asrash)
     useEffect(() => {
