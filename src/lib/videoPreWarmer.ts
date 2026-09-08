@@ -21,7 +21,7 @@ class VideoPreWarmerService {
     }
 
     /**
-     * Prewarm video by requesting metadata in background
+     * Prewarm video HTTP connection without allocating OS hardware decoders
      */
     public prewarmVideo(url: string): void {
         if (!url || typeof window === "undefined" || this.prewarmedSet.has(url)) {
@@ -32,9 +32,13 @@ class VideoPreWarmerService {
         this.prewarmedSet.add(url);
 
         try {
-            const v = document.createElement("video");
-            v.preload = "metadata";
-            v.src = url;
+            // Warm up connection & TCP/TLS handshake with a tiny 1KB Range request
+            // ZERO hardware decoders consumed!
+            fetch(url, {
+                method: "GET",
+                headers: { Range: "bytes=0-1024" },
+                mode: "cors",
+            }).catch(() => {});
         } catch {}
     }
 

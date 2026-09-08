@@ -7,6 +7,14 @@ export function sanitizeVideoUrl(url?: string | null): string {
     if (!url) return "";
     let trimmed = url.trim();
     if (!trimmed) return "";
+
+    // If multiple URLs are separated by semicolon or comma, take the first valid one
+    if (trimmed.includes(";") || trimmed.includes(",")) {
+        const parts = trimmed.split(/[;,]/).map((s) => s.trim()).filter(Boolean);
+        trimmed = parts[0] || "";
+    }
+    if (!trimmed) return "";
+
     if (trimmed.startsWith("//")) trimmed = "https:" + trimmed;
 
     try {

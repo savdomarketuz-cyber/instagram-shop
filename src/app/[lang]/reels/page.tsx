@@ -54,13 +54,15 @@ export default function ReelsPage() {
                         image: r.image || r.thumbnail_url || "/placeholder.png",
                     }));
 
-                const productItems: Reel[] = (productsRes.data || [])
-                    .filter((p: any) => Boolean(p.video_url))
-                    .map((p: any) => {
-                        const img = p.image || (Array.isArray(p.images) ? p.images[0] : null) || "/placeholder.png";
-                        return {
-                            id: String(p.id),
-                            videoUrl: sanitizeVideoUrl(p.video_url),
+                const productItems: Reel[] = [];
+                for (const p of productsRes.data || []) {
+                    if (!p.video_url) continue;
+                    const img = p.image || (Array.isArray(p.images) ? p.images[0] : null) || "/placeholder.png";
+                    const rawUrls = String(p.video_url).split(/[;,]/).map((u) => sanitizeVideoUrl(u)).filter(Boolean);
+                    rawUrls.forEach((vUrl, uIdx) => {
+                        productItems.push({
+                            id: `${p.id}-${uIdx}`,
+                            videoUrl: vUrl,
                             productId: String(p.id),
                             name: p.name || "",
                             name_uz: p.name_uz || p.name || "",
@@ -68,8 +70,9 @@ export default function ReelsPage() {
                             price: Number(p.price) || 0,
                             image: img,
                             stockDetails: p.stock_details || null,
-                        };
+                        });
                     });
+                }
 
                 // Takrorlanuvchi video havolalarini filtrlaymiz
                 const seenUrls = new Set<string>();

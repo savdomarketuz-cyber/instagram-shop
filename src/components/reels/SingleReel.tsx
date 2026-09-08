@@ -81,21 +81,30 @@ export const SingleReel = ({
 
     const cleanVideoUrl = sanitizeVideoUrl(reel.videoUrl);
 
+    // Faol bo'lganda avvalgi xatolik holatini tozalash
+    useEffect(() => {
+        if (isActive) {
+            setHasError(false);
+            setIsBuffering(true);
+        } else {
+            setIsPlaying(false);
+            setIsBuffering(false);
+        }
+    }, [isActive]);
+
     // ─────────────────────────────────────────────────────────────
-    // 1. High-Performance Instant Video Playback Engine
+    // 1. Single-Active Hardware Video Engine (Zero Decoder Exhaustion)
     // ─────────────────────────────────────────────────────────────
     useEffect(() => {
         const v = videoRef.current;
-        if (!v || !cleanVideoUrl) return;
+        if (!v || !cleanVideoUrl || !isActive) return;
 
         let isCancelled = false;
 
-        if (isActive && !isQuickBuyOpen && !isHolding) {
-            setHasError(false);
+        if (!isQuickBuyOpen && !isHolding) {
             v.defaultMuted = isMuted;
             v.muted = isMuted;
 
-            // Direct play invocation — NEVER call v.load() which freezes on mobile Safari!
             const playPromise = v.play();
             if (playPromise !== undefined) {
                 playPromise
@@ -103,48 +112,54 @@ export const SingleReel = ({
                         if (!isCancelled) {
                             setIsPlaying(true);
                             setIsBuffering(false);
+                            setHasError(false);
                         }
                     })
                     .catch((err) => {
                         console.warn("[SingleReel] Autoplay unmuted rejected, retrying muted:", err);
-                        // Fallback to muted autoplay (browser policy compliance)
-                        v.muted = true;
-                        v.play()
-                            .then(() => {
-                                if (!isCancelled) {
-                                    setIsPlaying(true);
-                                    setIsBuffering(false);
-                                }
-                            })
-                            .catch(() => {
-                                if (!isCancelled) {
-                                    setIsPlaying(false);
-                                    setIsBuffering(false);
-                                }
-                            });
+                        if (!isCancelled && v) {
+                            v.muted = true;
+                            v.play()
+                                .then(() => {
+                                    if (!isCancelled) {
+                                        setIsPlaying(true);
+                                        setIsBuffering(false);
+                                        setHasError(false);
+                                    }
+                                })
+                                .catch(() => {
+                                    if (!isCancelled) {
+                                        setIsPlaying(false);
+                                        setIsBuffering(false);
+                                    }
+                                });
+                        }
                     });
             }
         } else {
             v.pause();
-            if (!isActive) {
-                try {
-                    v.currentTime = 0;
-                } catch {}
-            }
             setIsPlaying(false);
         }
 
+        // Faol bo'lmay qolganda resursni to'liq bo'shatish (OS decoder exhaustion'ni oldini oladi)
         return () => {
             isCancelled = true;
+            if (v) {
+                try {
+                    v.pause();
+                    v.removeAttribute("src");
+                    v.load();
+                } catch {}
+            }
         };
     }, [isActive, isQuickBuyOpen, isHolding, cleanVideoUrl]);
 
-    // Ovoz o'zgarganda videoga to'g'ridan-to'g'ri tatbiq etish
+    // Ovoz o'zgarganda faol videoga to'g'ridan-to'g'ri berish
     useEffect(() => {
         const v = videoRef.current;
-        if (v) {
+        if (v && isActive) {
             v.muted = isMuted;
-            if (isActive && v.paused && !isHolding && !isQuickBuyOpen) {
+            if (v.paused && !isHolding && !isQuickBuyOpen) {
                 v.play().then(() => setIsPlaying(true)).catch(() => {});
             }
         }
@@ -178,7 +193,6 @@ export const SingleReel = ({
 
         touchStartPos.current = { x: e.clientX, y: e.clientY };
 
-        // 240ms dan ko'p ushlab tursa — video pauza bo'ladi va barcha UI yashiriladi
         holdTimerRef.current = setTimeout(() => {
             setIsHolding(true);
             videoPreWarmer.triggerHaptic("light");
@@ -192,7 +206,6 @@ export const SingleReel = ({
         if (!holdTimerRef.current) return;
         const dx = Math.abs(e.clientX - touchStartPos.current.x);
         const dy = Math.abs(e.clientY - touchStartPos.current.y);
-        // Agar barmoq siljisa (skroll qilinayotgan bo'lsa), hold'ni bekor qilamiz
         if (dx > 8 || dy > 8) {
             clearTimeout(holdTimerRef.current);
             holdTimerRef.current = null;
@@ -211,7 +224,6 @@ export const SingleReel = ({
             holdTimerRef.current = null;
         }
 
-        // Agar hold holatida bo'lgan bo'lsa — barmoq olinganda o'ynashda davom etadi
         if (isHolding) {
             setIsHolding(false);
             if (videoRef.current && isActive && !isQuickBuyOpen) {
@@ -220,7 +232,6 @@ export const SingleReel = ({
             return;
         }
 
-        // Aks holda bu oddiy chertish (Tap)
         const now = Date.now();
         const diff = now - lastTapRef.current;
 
@@ -243,7 +254,7 @@ export const SingleReel = ({
                 setFlyingHearts((prev) => prev.filter((h) => h.id !== heartId));
             }, 850);
         } else {
-            // Single Tap: Instagram Reels kabi ovozni yoqish/o'chirish
+            // Single Tap: Instagram Reels ovozini yoqish/o'chirish
             tapTimerRef.current = setTimeout(() => {
                 videoPreWarmer.triggerHaptic("light");
                 const nextMuted = !isMuted;
@@ -303,6 +314,17 @@ export const SingleReel = ({
         }
     };
 
+    const handleRetry = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setHasError(false);
+        setIsBuffering(true);
+        const v = videoRef.current;
+        if (v) {
+            v.src = cleanVideoUrl;
+            v.play().catch(() => {});
+        }
+    };
+
     const fmtPrice = (n?: number) => {
         if (!n) return "0 so'm";
         return n.toLocaleString("ru-RU") + (language === "ru" ? " сум" : " so'm");
@@ -338,67 +360,56 @@ export const SingleReel = ({
                 onPointerUp={handlePointerUp}
                 className="relative w-full h-full bg-black flex items-center justify-center cursor-pointer overflow-hidden"
             >
-                {/* Poster Background (instant visual response, placed behind video) */}
+                {/* Poster Background: ALWAYS visible so there's never a black frame */}
                 {reel.image && (
                     <img
                         src={reel.image}
                         alt=""
-                        className="absolute inset-0 w-full h-full object-cover -z-10 select-none pointer-events-none"
+                        className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none"
                     />
                 )}
 
-                {/* Hardware Accelerated Native Video Element */}
-                {cleanVideoUrl ? (
+                {/* Hardware Accelerated Native Video Element (ONLY rendered when isActive) */}
+                {isActive && cleanVideoUrl ? (
                     <video
                         ref={videoRef}
                         src={cleanVideoUrl}
-                        className={`w-full h-full object-cover transition-opacity duration-300 ${
-                            isBuffering && !isPlaying ? "opacity-70" : "opacity-100"
+                        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-200 ${
+                            isPlaying ? "opacity-100" : "opacity-0"
                         }`}
                         loop
                         playsInline
                         webkit-playsinline="true"
                         muted={isMuted}
-                        preload={isActive ? "auto" : isNearby ? "auto" : "metadata"}
-                        poster={reel.image || undefined}
+                        preload="auto"
                         onWaiting={() => setIsBuffering(true)}
                         onPlaying={() => {
                             setIsBuffering(false);
                             setIsPlaying(true);
+                            setHasError(false);
                         }}
                         onCanPlay={() => setIsBuffering(false)}
                         onPause={() => setIsPlaying(false)}
                         onError={(e) => {
+                            // Faqat faol vaqtda xatolik bo'lsa ko'rsatiladi (unmount abort'larni hisobga olmaydi)
+                            if (!isActive) return;
                             console.error("[SingleReel] Video playback error:", cleanVideoUrl, e);
                             setIsBuffering(false);
                             setHasError(true);
                         }}
                     />
-                ) : (
-                    <div className="text-white/60 text-xs font-semibold flex flex-col items-center gap-2">
-                        <AlertCircle size={32} />
-                        <span>Video manzili mavjud emas</span>
-                    </div>
-                )}
+                ) : null}
 
                 {/* Video Error Recovery Screen */}
-                {hasError && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/75 text-white gap-3 p-6 text-center z-30">
+                {hasError && isActive && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 text-white gap-3 p-6 text-center z-30">
                         <AlertCircle size={36} className="text-red-400" />
                         <p className="text-xs font-medium text-white/90">
                             {language === "uz" ? "Videoni yuklab bo'lmadi" : "Не удалось загрузить видео"}
                         </p>
                         <button
                             data-interactive="true"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setHasError(false);
-                                setIsBuffering(true);
-                                if (videoRef.current) {
-                                    videoRef.current.src = cleanVideoUrl;
-                                    videoRef.current.play().catch(() => {});
-                                }
-                            }}
+                            onClick={handleRetry}
                             className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-xs font-bold active:scale-95 transition-all"
                         >
                             {language === "uz" ? "Qayta urinish" : "Повторить"}
@@ -407,7 +418,7 @@ export const SingleReel = ({
                 )}
 
                 {/* Subtle Buffering Spinner */}
-                {isBuffering && !hasError && isActive && (
+                {isBuffering && !hasError && isActive && !isPlaying && (
                     <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
                         <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10">
                             <Loader2 size={24} className="text-white animate-spin opacity-90" />
@@ -446,9 +457,7 @@ export const SingleReel = ({
                 ))}
             </div>
 
-            {/* ─────────────────────────────────────────────────────────────
-                Instagram Reels Top Gradient & Progress Bar
-                ───────────────────────────────────────────────────────────── */}
+            {/* Top Gradient & Progress Bar */}
             <div
                 className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/75 via-black/25 to-transparent pointer-events-none z-30 transition-opacity duration-200 ${
                     isHolding ? "opacity-0" : "opacity-100"
