@@ -147,7 +147,7 @@ export default function Navigation() {
     return (
         <>
             {/* Main Header - Top Fixed */}
-            <header className={`fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-2xl z-[100] border-b border-gray-100 h-16 md:h-24 ${pathname?.includes('/admin') ? 'hidden' : (isHomePage || isProductPage) ? 'hidden md:block' : 'block'}`}>
+            <header className={`fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-2xl z-[100] border-b border-gray-100 h-16 md:h-24 ${pathname?.includes('/admin') || pathname?.includes('/reels') ? 'hidden' : (isHomePage || isProductPage) ? 'hidden md:block' : 'block'}`}>
                 <div className="max-w-[1600px] mx-auto h-full px-4 md:px-10 flex items-center gap-3 md:gap-12">
                     
                     <div className="shrink-0 group">
@@ -315,81 +315,90 @@ export default function Navigation() {
                 </div>
             </header>
 
-            {/* Velari — iOS-style Glass Bottom Tab Bar.
+            {/* Velari — iOS-style Glass Bottom Tab Bar (Instagram Dark style on /reels).
                 Savat (cart) sahifasida ham ko'rinadi: u yerdagi "Buyurtma berish"
                 tugmasi tab bar ustida turadi (ustma-ust tushmaydi). */}
-            {!pathname?.includes('/admin') && <nav
-                className="flex md:hidden fixed bottom-0 left-0 right-0 w-screen max-w-full z-[110]"
-                style={{
-                    background: "rgba(255,255,255,0.82)",
-                    backdropFilter: "blur(24px) saturate(180%)",
-                    WebkitBackdropFilter: "blur(24px) saturate(180%)",
-                    borderTop: "0.5px solid rgba(15,20,16,0.08)",
-                    paddingBottom: "max(env(safe-area-inset-bottom, 8px), 8px)",
-                    paddingTop: 6,
-                    justifyContent: "space-around",
-                }}
-            >
-                {[
-                    { href: l("/"), label: t.nav.home, active: isHomePage, icon: (on: boolean) => <LayoutGrid size={26} strokeWidth={on ? 2.5 : 1.8} /> },
-                    { href: l("/cart"), label: t.nav.cart, active: pathname === l("/cart"), badge: cartCount, icon: (on: boolean) => <ShoppingCart size={26} strokeWidth={on ? 2.5 : 1.8} /> },
-                    { href: l("/reels"), label: t.nav.reels, active: pathname === l("/reels"), icon: (on: boolean) => <Clapperboard size={26} strokeWidth={on ? 2.5 : 1.8} /> },
-                    { href: l("/wishlist"), label: t.nav.wishlist, active: pathname === l("/wishlist"), icon: (on: boolean) => <Heart size={26} strokeWidth={on ? 2.5 : 1.8} fill={on ? "currentColor" : "none"} /> },
-                    { href: user ? l("/account") : l("/login"), label: t.nav.profile, active: !!pathname?.includes("/account"), icon: (on: boolean) => <User size={26} strokeWidth={on ? 2.5 : 1.8} /> },
-                ].map((tab) => (
-                    <Link
-                        key={tab.href}
-                        href={tab.href}
+            {!pathname?.includes('/admin') && (() => {
+                const isReels = !!pathname?.includes('/reels');
+                return (
+                    <nav
+                        className="flex md:hidden fixed bottom-0 left-0 right-0 w-screen max-w-full z-[110]"
                         style={{
-                            flex: 1,
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            gap: 3,
-                            padding: "6px 0",
-                            position: "relative",
-                            color: tab.active ? "#2D6E3E" : "#9AA29C",
-                            textDecoration: "none",
-                            WebkitTapHighlightColor: "transparent",
-                            transition: "color 150ms ease",
+                            background: isReels ? "rgba(10, 10, 10, 0.88)" : "rgba(255,255,255,0.82)",
+                            backdropFilter: "blur(24px) saturate(180%)",
+                            WebkitBackdropFilter: "blur(24px) saturate(180%)",
+                            borderTop: isReels ? "0.5px solid rgba(255,255,255,0.12)" : "0.5px solid rgba(15,20,16,0.08)",
+                            paddingBottom: "max(env(safe-area-inset-bottom, 8px), 8px)",
+                            paddingTop: 6,
+                            justifyContent: "space-around",
                         }}
                     >
-                        <div style={{ position: "relative" }}>
-                            {tab.icon(tab.active)}
-                            {(tab.badge ?? 0) > 0 && (
-                                <div style={{
-                                    position: "absolute",
-                                    top: -4,
-                                    right: -10,
-                                    minWidth: 18,
-                                    height: 18,
-                                    borderRadius: 9,
-                                    padding: "0 5px",
-                                    background: "#FF3B30",
-                                    color: "#fff",
-                                    fontSize: 11,
-                                    fontWeight: 700,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    boxShadow: "0 0 0 2px rgba(255,255,255,0.9)",
-                                    animation: "velari-badge-pop 360ms cubic-bezier(0.34,1.56,0.64,1)",
-                                }}>
-                                    {tab.badge}
-                                </div>
-                            )}
-                        </div>
-                        <span style={{
-                            fontSize: 10.5,
-                            fontWeight: 600,
-                            letterSpacing: 0.1,
-                            color: tab.active ? "#2D6E3E" : "#9AA29C",
-                        }}>
-                            {tab.label}
-                        </span>
-                    </Link>
-                ))}
-            </nav>}
+                        {[
+                            { href: l("/"), label: t.nav.home, active: isHomePage, icon: (on: boolean) => <LayoutGrid size={26} strokeWidth={on ? 2.5 : 1.8} /> },
+                            { href: l("/cart"), label: t.nav.cart, active: pathname === l("/cart"), badge: cartCount, icon: (on: boolean) => <ShoppingCart size={26} strokeWidth={on ? 2.5 : 1.8} /> },
+                            { href: l("/reels"), label: t.nav.reels, active: pathname === l("/reels"), icon: (on: boolean) => <Clapperboard size={26} strokeWidth={on ? 2.5 : 1.8} /> },
+                            { href: l("/wishlist"), label: t.nav.wishlist, active: pathname === l("/wishlist"), icon: (on: boolean) => <Heart size={26} strokeWidth={on ? 2.5 : 1.8} fill={on ? "currentColor" : "none"} /> },
+                            { href: user ? l("/account") : l("/login"), label: t.nav.profile, active: !!pathname?.includes("/account"), icon: (on: boolean) => <User size={26} strokeWidth={on ? 2.5 : 1.8} /> },
+                        ].map((tab) => {
+                            const activeColor = isReels ? "#ffffff" : "#2D6E3E";
+                            const inactiveColor = isReels ? "#8e8e8e" : "#9AA29C";
+                            return (
+                                <Link
+                                    key={tab.href}
+                                    href={tab.href}
+                                    style={{
+                                        flex: 1,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        gap: 3,
+                                        padding: "6px 0",
+                                        position: "relative",
+                                        color: tab.active ? activeColor : inactiveColor,
+                                        textDecoration: "none",
+                                        WebkitTapHighlightColor: "transparent",
+                                        transition: "color 150ms ease",
+                                    }}
+                                >
+                                    <div style={{ position: "relative" }}>
+                                        {tab.icon(tab.active)}
+                                        {(tab.badge ?? 0) > 0 && (
+                                            <div style={{
+                                                position: "absolute",
+                                                top: -4,
+                                                right: -10,
+                                                minWidth: 18,
+                                                height: 18,
+                                                borderRadius: 9,
+                                                padding: "0 5px",
+                                                background: "#FF3B30",
+                                                color: "#fff",
+                                                fontSize: 11,
+                                                fontWeight: 700,
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                boxShadow: isReels ? "0 0 0 2px rgba(0,0,0,0.8)" : "0 0 0 2px rgba(255,255,255,0.9)",
+                                                animation: "velari-badge-pop 360ms cubic-bezier(0.34,1.56,0.64,1)",
+                                            }}>
+                                                {tab.badge}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <span style={{
+                                        fontSize: 10.5,
+                                        fontWeight: 600,
+                                        letterSpacing: 0.1,
+                                        color: tab.active ? activeColor : inactiveColor,
+                                    }}>
+                                        {tab.label}
+                                    </span>
+                                </Link>
+                            );
+                        })}
+                    </nav>
+                );
+            })()}
         </>
     );
 }

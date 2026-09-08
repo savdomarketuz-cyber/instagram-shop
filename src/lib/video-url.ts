@@ -5,8 +5,9 @@
  */
 export function sanitizeVideoUrl(url?: string | null): string {
     if (!url) return "";
-    const trimmed = url.trim();
+    let trimmed = url.trim();
     if (!trimmed) return "";
+    if (trimmed.startsWith("//")) trimmed = "https:" + trimmed;
 
     try {
         const parsed = new URL(trimmed);

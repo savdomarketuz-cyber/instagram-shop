@@ -341,12 +341,13 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
         );
     }
 
+    const isReels = pathWithoutLocale === "/reels";
     const showNav = !isCheckout && !isPayment && !isChat;
 
     return (
         <div className={`
-            mx-auto bg-white min-h-screen relative w-full max-w-full lg:max-w-[1600px] overflow-x-clip
-            ${showNav ? ((pathWithoutLocale === '/' || isProductDetail) ? 'md:pt-28' : 'pt-16 md:pt-28') : ''}
+            mx-auto ${isReels ? 'bg-black' : 'bg-white'} min-h-screen relative w-full max-w-full lg:max-w-[1600px] overflow-x-clip
+            ${showNav ? (isReels ? '' : (pathWithoutLocale === '/' || isProductDetail) ? 'md:pt-28' : 'pt-16 md:pt-28') : ''}
         `}>
             <ConnectivityListener />
             <DynamicFavicon />

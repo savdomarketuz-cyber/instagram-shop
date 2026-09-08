@@ -1,7 +1,22 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Heart, MessageSquare, Share2, Volume2, VolumeX, Play, Loader2, AlertCircle, ChevronRight } from "lucide-react";
+import {
+    Heart,
+    MessageCircle,
+    Send,
+    Bookmark,
+    MoreHorizontal,
+    ShoppingBag,
+    Volume2,
+    VolumeX,
+    Loader2,
+    AlertCircle,
+    ChevronRight,
+    CheckCircle2,
+    Music,
+    Copy,
+} from "lucide-react";
 import { useStore } from "@/store/store";
 import { supabase } from "@/lib/supabase";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
@@ -19,89 +34,123 @@ interface SingleReelProps {
     t: any;
 }
 
+interface FlyingHeart {
+    id: number;
+    x: number;
+    y: number;
+}
+
 export const SingleReel = ({
-    reel, isActive, isNearby, isMuted, toggleMute, onCommentOpen, language, t
+    reel,
+    isActive,
+    isNearby,
+    isMuted,
+    toggleMute,
+    onCommentOpen,
+    language,
+    t,
 }: SingleReelProps) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const progressRef = useRef<HTMLDivElement>(null);
     const rafRef = useRef<number | null>(null);
+
     const { user, showToast } = useStore();
+
+    // Interaction states
     const [liked, setLiked] = useState(false);
-    const [likesCount, setLikesCount] = useState(reel.likesCount || 0);
+    const [likesCount, setLikesCount] = useState(Number(reel.likesCount) || 0);
+    const [saved, setSaved] = useState(false);
+    const [isFollowing, setIsFollowing] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [isBuffering, setIsBuffering] = useState(true);
+    const [isBuffering, setIsBuffering] = useState(false);
     const [hasError, setHasError] = useState(false);
 
-    // Instagram In-Reel Shopping & Gesture states
+    // Instagram UI states
     const [isQuickBuyOpen, setIsQuickBuyOpen] = useState(false);
-    const [flyingHeart, setFlyingHeart] = useState<{ x: number; y: number } | null>(null);
-    const [soundPill, setSoundPill] = useState<boolean | null>(null);
+    const [isOptionsOpen, setIsOptionsOpen] = useState(false);
+    const [isCaptionExpanded, setIsCaptionExpanded] = useState(false);
+    const [flyingHearts, setFlyingHearts] = useState<FlyingHeart[]>([]);
+    const [soundBadge, setSoundBadge] = useState<{ visible: boolean; isMuted: boolean } | null>(null);
+    const [isHolding, setIsHolding] = useState(false);
 
+    // Touch & tap tracking
     const lastTapRef = useRef<number>(0);
     const tapTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const touchStartPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
     const cleanVideoUrl = sanitizeVideoUrl(reel.videoUrl);
 
-    // Play / Pause boshqaruvi
+    // ─────────────────────────────────────────────────────────────
+    // 1. High-Performance Instant Video Playback Engine
+    // ─────────────────────────────────────────────────────────────
     useEffect(() => {
         const v = videoRef.current;
         if (!v || !cleanVideoUrl) return;
 
-        if (isActive && !isQuickBuyOpen) {
+        let isCancelled = false;
+
+        if (isActive && !isQuickBuyOpen && !isHolding) {
             setHasError(false);
+            v.defaultMuted = isMuted;
             v.muted = isMuted;
 
-            const startPlay = () => {
-                const playPromise = v.play();
-                if (playPromise !== undefined) {
-                    playPromise
-                        .then(() => {
+            // Direct play invocation — NEVER call v.load() which freezes on mobile Safari!
+            const playPromise = v.play();
+            if (playPromise !== undefined) {
+                playPromise
+                    .then(() => {
+                        if (!isCancelled) {
                             setIsPlaying(true);
                             setIsBuffering(false);
-                        })
-                        .catch((err) => {
-                            console.warn("Autoplay blocked, trying muted:", err);
-                            // Agar audio tufayli bloklansa, darhol muted qilib qayta o'ynatamiz
-                            v.muted = true;
-                            v.play()
-                                .then(() => {
+                        }
+                    })
+                    .catch((err) => {
+                        console.warn("[SingleReel] Autoplay unmuted rejected, retrying muted:", err);
+                        // Fallback to muted autoplay (browser policy compliance)
+                        v.muted = true;
+                        v.play()
+                            .then(() => {
+                                if (!isCancelled) {
                                     setIsPlaying(true);
                                     setIsBuffering(false);
-                                })
-                                .catch(() => {
+                                }
+                            })
+                            .catch(() => {
+                                if (!isCancelled) {
                                     setIsPlaying(false);
                                     setIsBuffering(false);
-                                });
-                        });
-                }
-            };
-
-            // Agar video allaqachon tayyor bo'lsa darhol boshlaymiz
-            if (v.readyState >= 2) {
-                startPlay();
-            } else {
-                v.load();
-                const onCanPlay = () => {
-                    startPlay();
-                    v.removeEventListener("canplay", onCanPlay);
-                };
-                v.addEventListener("canplay", onCanPlay);
+                                }
+                            });
+                    });
             }
         } else {
             v.pause();
-            v.currentTime = 0;
+            if (!isActive) {
+                try {
+                    v.currentTime = 0;
+                } catch {}
+            }
             setIsPlaying(false);
         }
-    }, [isActive, isQuickBuyOpen, cleanVideoUrl]);
 
-    // Ovoz o'zgarganda videoga berish
+        return () => {
+            isCancelled = true;
+        };
+    }, [isActive, isQuickBuyOpen, isHolding, cleanVideoUrl]);
+
+    // Ovoz o'zgarganda videoga to'g'ridan-to'g'ri tatbiq etish
     useEffect(() => {
-        if (videoRef.current) {
-            videoRef.current.muted = isMuted;
+        const v = videoRef.current;
+        if (v) {
+            v.muted = isMuted;
+            if (isActive && v.paused && !isHolding && !isQuickBuyOpen) {
+                v.play().then(() => setIsPlaying(true)).catch(() => {});
+            }
         }
-    }, [isMuted]);
+    }, [isMuted, isActive, isHolding, isQuickBuyOpen]);
 
-    // Progress bar (requestAnimationFrame)
+    // Progress Bar (requestAnimationFrame)
     useEffect(() => {
         const v = videoRef.current;
         if (!v || !isActive) return;
@@ -120,81 +169,136 @@ export const SingleReel = ({
         };
     }, [isActive]);
 
-    // Like bosish
-    const handleLike = useCallback(async (forcedLike?: boolean) => {
-        if (!user) {
-            showToast(language === 'uz' ? "Yoqtirish uchun tizimga kiring" : "Войдите, чтобы поставить лайк", 'info');
+    // ─────────────────────────────────────────────────────────────
+    // 2. Instagram Gestures (Single Tap Sound, Double Tap Like, Long Press Hold)
+    // ─────────────────────────────────────────────────────────────
+    const handlePointerDown = (e: React.PointerEvent) => {
+        const target = e.target as HTMLElement;
+        if (target.closest("button") || target.closest("[data-interactive='true']")) return;
+
+        touchStartPos.current = { x: e.clientX, y: e.clientY };
+
+        // 240ms dan ko'p ushlab tursa — video pauza bo'ladi va barcha UI yashiriladi
+        holdTimerRef.current = setTimeout(() => {
+            setIsHolding(true);
+            videoPreWarmer.triggerHaptic("light");
+            if (videoRef.current && !videoRef.current.paused) {
+                videoRef.current.pause();
+            }
+        }, 240);
+    };
+
+    const handlePointerMove = (e: React.PointerEvent) => {
+        if (!holdTimerRef.current) return;
+        const dx = Math.abs(e.clientX - touchStartPos.current.x);
+        const dy = Math.abs(e.clientY - touchStartPos.current.y);
+        // Agar barmoq siljisa (skroll qilinayotgan bo'lsa), hold'ni bekor qilamiz
+        if (dx > 8 || dy > 8) {
+            clearTimeout(holdTimerRef.current);
+            holdTimerRef.current = null;
+        }
+    };
+
+    const handlePointerUp = (e: React.PointerEvent) => {
+        const target = e.target as HTMLElement;
+        if (target.closest("button") || target.closest("[data-interactive='true']")) {
+            if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
             return;
         }
-        const newLiked = forcedLike !== undefined ? forcedLike : !liked;
-        if (newLiked === liked && forcedLike !== undefined) return;
 
-        const diff = newLiked ? 1 : -1;
-        setLiked(newLiked);
-        setLikesCount((prev: number) => Math.max(0, prev + diff));
-        videoPreWarmer.triggerHaptic(newLiked ? "double" : "light");
-
-        try {
-            await supabase.rpc('increment_reel_likes', { reel_id: reel.id, diff: diff });
-        } catch (error) {
-            console.error(error);
+        if (holdTimerRef.current) {
+            clearTimeout(holdTimerRef.current);
+            holdTimerRef.current = null;
         }
-    }, [user, liked, language, reel.id, showToast]);
 
-    // Ekran bosilganda (Click / Tap)
-    const handleScreenClick = (e: React.MouseEvent) => {
-        // Agar tugmalar yoki mahsulot kartochkasi bosilgan bo'lsa, bu yer ishlamaydi
-        const target = e.target as HTMLElement;
-        if (target.closest("button") || target.closest("[data-clickable]")) return;
+        // Agar hold holatida bo'lgan bo'lsa — barmoq olinganda o'ynashda davom etadi
+        if (isHolding) {
+            setIsHolding(false);
+            if (videoRef.current && isActive && !isQuickBuyOpen) {
+                videoRef.current.play().catch(() => {});
+            }
+            return;
+        }
 
+        // Aks holda bu oddiy chertish (Tap)
         const now = Date.now();
         const diff = now - lastTapRef.current;
 
         if (diff < 280) {
             // Double Tap: Like + Flying Heart
-            if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+            if (tapTimerRef.current) {
+                clearTimeout(tapTimerRef.current);
+                tapTimerRef.current = null;
+            }
+
             const rect = e.currentTarget.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
+            const heartId = Date.now();
 
-            setFlyingHeart({ x, y });
+            setFlyingHearts((prev) => [...prev, { id: heartId, x, y }]);
             handleLike(true);
-            setTimeout(() => setFlyingHeart(null), 850);
+
+            setTimeout(() => {
+                setFlyingHearts((prev) => prev.filter((h) => h.id !== heartId));
+            }, 850);
         } else {
-            // Single Tap: Play / Pause yoki Ovozni yoqish/o'chirish
+            // Single Tap: Instagram Reels kabi ovozni yoqish/o'chirish
             tapTimerRef.current = setTimeout(() => {
                 videoPreWarmer.triggerHaptic("light");
-                const v = videoRef.current;
-                if (!v) return;
-
-                if (isMuted) {
-                    // Agar ovozsiz bo'lsa, birinchi chertishda ovozni yoqamiz
-                    toggleMute();
-                    setSoundPill(false);
-                    setTimeout(() => setSoundPill(null), 800);
-                } else {
-                    // Agar ovozli bo'lsa, play/pause
-                    if (v.paused) {
-                        v.play().then(() => setIsPlaying(true)).catch(() => {});
-                    } else {
-                        v.pause();
-                        setIsPlaying(false);
-                    }
-                }
-            }, 280);
+                const nextMuted = !isMuted;
+                toggleMute();
+                setSoundBadge({ visible: true, isMuted: nextMuted });
+                setTimeout(() => setSoundBadge(null), 750);
+            }, 260);
         }
+
         lastTapRef.current = now;
+    };
+
+    // ─────────────────────────────────────────────────────────────
+    // 3. User Actions (Like, Save, Share, Comments)
+    // ─────────────────────────────────────────────────────────────
+    const handleLike = useCallback(
+        async (forcedLike?: boolean) => {
+            const nextLiked = forcedLike !== undefined ? forcedLike : !liked;
+            if (nextLiked === liked && forcedLike !== undefined) return;
+
+            const diff = nextLiked ? 1 : -1;
+            setLiked(nextLiked);
+            setLikesCount((prev) => Math.max(0, prev + diff));
+            videoPreWarmer.triggerHaptic(nextLiked ? "double" : "light");
+
+            try {
+                await supabase.rpc("increment_reel_likes", { reel_id: reel.id, diff });
+            } catch (error) {
+                console.error("[SingleReel] Like sync error:", error);
+            }
+        },
+        [liked, reel.id]
+    );
+
+    const handleSave = () => {
+        videoPreWarmer.triggerHaptic("light");
+        const next = !saved;
+        setSaved(next);
+        showToast(
+            next
+                ? (language === "uz" ? "Saqlanganlarga qo'shildi" : "Сохранено в закладки")
+                : (language === "uz" ? "Saqlanganlardan olib tashlandi" : "Удалено из закладок"),
+            "info"
+        );
     };
 
     const handleShare = () => {
         videoPreWarmer.triggerHaptic("light");
+        const url = typeof window !== "undefined" ? window.location.href : "";
+        const title = reel[`name_${language}`] || reel.name || "Velari Reels";
+
         if (navigator.share) {
-            navigator.share({
-                title: reel[`name_${language}`] || reel.name,
-                url: window.location.href
-            }).catch(() => {});
+            navigator.share({ title, url }).catch(() => {});
         } else {
-            navigator.clipboard.writeText(window.location.href);
+            navigator.clipboard.writeText(url);
             showToast(language === "uz" ? "Havola nusxalandi!" : "Ссылка скопирована!", "info");
         }
     };
@@ -202,6 +306,13 @@ export const SingleReel = ({
     const fmtPrice = (n?: number) => {
         if (!n) return "0 so'm";
         return n.toLocaleString("ru-RU") + (language === "ru" ? " сум" : " so'm");
+    };
+
+    const formatCount = (n: number) => {
+        if (!n || n <= 0) return "0";
+        if (n >= 1000000) return (n / 1000000).toFixed(1) + "M";
+        if (n >= 1000) return (n / 1000).toFixed(1) + "K";
+        return String(n);
     };
 
     const reelProduct = {
@@ -216,35 +327,40 @@ export const SingleReel = ({
         stockDetails: reel.stockDetails || null,
     };
 
+    const reelTitle = reel[`name_${language}`] || reel.name || "";
+
     return (
         <div className="relative w-full h-full bg-black overflow-hidden flex flex-col items-center justify-center select-none">
-            {/* Main Video Viewport */}
+            {/* Main Interactive Screen */}
             <div
-                onClick={handleScreenClick}
-                className={`relative w-full h-full bg-black flex items-center justify-center transition-all duration-300 cursor-pointer ${
-                    isQuickBuyOpen ? "scale-[0.94] brightness-50 blur-[2px] rounded-3xl" : "scale-100"
-                }`}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                className="relative w-full h-full bg-black flex items-center justify-center cursor-pointer overflow-hidden"
             >
-                {/* Poster orqada doim turadi — video yuklanguncha qora ekran bo'lmaydi */}
-                {reel.image && !isPlaying && (
+                {/* Poster Background (instant visual response, placed behind video) */}
+                {reel.image && (
                     <img
                         src={reel.image}
                         alt=""
-                        className="absolute inset-0 w-full h-full object-cover"
+                        className="absolute inset-0 w-full h-full object-cover -z-10 select-none pointer-events-none"
                     />
                 )}
 
-                {/* HTML5 Hardware Accelerated Video */}
+                {/* Hardware Accelerated Native Video Element */}
                 {cleanVideoUrl ? (
                     <video
                         ref={videoRef}
                         src={cleanVideoUrl}
-                        className="w-full h-full object-cover"
+                        className={`w-full h-full object-cover transition-opacity duration-300 ${
+                            isBuffering && !isPlaying ? "opacity-70" : "opacity-100"
+                        }`}
                         loop
                         playsInline
                         webkit-playsinline="true"
                         muted={isMuted}
-                        preload={isActive ? "auto" : (isNearby ? "metadata" : "none")}
+                        preload={isActive ? "auto" : isNearby ? "auto" : "metadata"}
+                        poster={reel.image || undefined}
                         onWaiting={() => setIsBuffering(true)}
                         onPlaying={() => {
                             setIsBuffering(false);
@@ -253,192 +369,360 @@ export const SingleReel = ({
                         onCanPlay={() => setIsBuffering(false)}
                         onPause={() => setIsPlaying(false)}
                         onError={(e) => {
-                            console.error("Video error on reel:", cleanVideoUrl, e);
-                            setHasError(true);
+                            console.error("[SingleReel] Video playback error:", cleanVideoUrl, e);
                             setIsBuffering(false);
+                            setHasError(true);
                         }}
                     />
                 ) : (
-                    <div className="text-white/50 text-sm font-semibold flex flex-col items-center gap-2">
+                    <div className="text-white/60 text-xs font-semibold flex flex-col items-center gap-2">
                         <AlertCircle size={32} />
                         <span>Video manzili mavjud emas</span>
                     </div>
                 )}
 
-                {/* Video xatolik bersa */}
+                {/* Video Error Recovery Screen */}
                 {hasError && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white gap-3 p-4 text-center z-30">
-                        <AlertCircle size={40} className="text-red-400" />
-                        <p className="text-xs text-white/80">Videoni yuklab bo'lmadi</p>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/75 text-white gap-3 p-6 text-center z-30">
+                        <AlertCircle size={36} className="text-red-400" />
+                        <p className="text-xs font-medium text-white/90">
+                            {language === "uz" ? "Videoni yuklab bo'lmadi" : "Не удалось загрузить видео"}
+                        </p>
                         <button
-                            data-clickable="true"
+                            data-interactive="true"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setHasError(false);
                                 setIsBuffering(true);
                                 if (videoRef.current) {
-                                    videoRef.current.load();
+                                    videoRef.current.src = cleanVideoUrl;
                                     videoRef.current.play().catch(() => {});
                                 }
                             }}
-                            className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-xs font-bold active:scale-95 transition-transform"
+                            className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-xs font-bold active:scale-95 transition-all"
                         >
-                            Qayta urinish
+                            {language === "uz" ? "Qayta urinish" : "Повторить"}
                         </button>
                     </div>
                 )}
 
-                {/* Buffering indikatori */}
+                {/* Subtle Buffering Spinner */}
                 {isBuffering && !hasError && isActive && (
-                    <div className="absolute inset-0 flex items-center justify-center z-30 bg-black/20 pointer-events-none">
-                        <Loader2 size={44} className="text-white animate-spin opacity-80" />
-                    </div>
-                )}
-
-                {/* Play / Pause belgisi (faqat foydalanuvchi o'zi pauza qilganda) */}
-                {!isPlaying && !isBuffering && !hasError && !isQuickBuyOpen && (
                     <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-                        <div className="w-18 h-18 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 animate-in zoom-in-75 duration-200">
-                            <Play size={34} className="text-white fill-white ml-1" />
+                        <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10">
+                            <Loader2 size={24} className="text-white animate-spin opacity-90" />
                         </div>
                     </div>
                 )}
 
-                {/* Double-tap uchuvchi yurakcha */}
-                {flyingHeart && (
+                {/* Instagram Center Speaker Badge (Pops in on Tap) */}
+                {soundBadge && (
+                    <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none">
+                        <div className="w-18 h-18 bg-black/60 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/20 shadow-2xl animate-ig-speaker-badge">
+                            {soundBadge.isMuted ? (
+                                <VolumeX size={34} className="text-white" />
+                            ) : (
+                                <Volume2 size={34} className="text-white" />
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Instagram Flying Red Hearts on Double Tap */}
+                {flyingHearts.map((heart) => (
                     <div
-                        className="absolute pointer-events-none z-50 flex items-center justify-center"
+                        key={heart.id}
+                        className="absolute pointer-events-none z-50 flex items-center justify-center animate-ig-flying-heart"
                         style={{
-                            left: `${flyingHeart.x}px`,
-                            top: `${flyingHeart.y}px`,
-                            transform: "translate(-50%, -50%)",
+                            left: `${heart.x}px`,
+                            top: `${heart.y}px`,
                         }}
                     >
                         <Heart
-                            size={95}
-                            className="text-red-500 fill-red-500 drop-shadow-[0_10px_25px_rgba(255,0,0,0.7)] animate-in zoom-in-50 fade-out-0 duration-700"
+                            size={92}
+                            className="fill-[#FF3040] text-[#FF3040] drop-shadow-[0_12px_28px_rgba(255,48,64,0.65)]"
                         />
                     </div>
-                )}
-
-                {/* Ovoz holati (Markazda animatsiya) */}
-                {soundPill !== null && (
-                    <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none">
-                        <div className="w-16 h-16 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 animate-in zoom-in-75 fade-out-0 duration-500 shadow-2xl">
-                            {soundPill ? <VolumeX size={30} className="text-white" /> : <Volume2 size={30} className="text-white" />}
-                        </div>
-                    </div>
-                )}
+                ))}
             </div>
 
-            {/* Content Top Overlay */}
-            <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/70 to-transparent pointer-events-none" />
+            {/* ─────────────────────────────────────────────────────────────
+                Instagram Reels Top Gradient & Progress Bar
+                ───────────────────────────────────────────────────────────── */}
+            <div
+                className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/75 via-black/25 to-transparent pointer-events-none z-30 transition-opacity duration-200 ${
+                    isHolding ? "opacity-0" : "opacity-100"
+                }`}
+            />
 
-            {/* Progress Bar (rAF) */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-white/20 z-50">
-                <div ref={progressRef} className="h-full bg-white transition-none" style={{ width: '0%' }} />
+            {/* Ultra-thin Instagram Progress Bar */}
+            <div
+                className={`absolute top-0 left-0 right-0 h-[2px] bg-white/20 z-40 transition-opacity duration-200 ${
+                    isHolding ? "opacity-0" : "opacity-100"
+                }`}
+            >
+                <div ref={progressRef} className="h-full bg-white transition-none" style={{ width: "0%" }} />
             </div>
 
-            {/* Right Side Action Bar (Mobile App uslubida) */}
-            <div className="absolute bottom-24 right-3.5 flex flex-col items-center gap-5 z-40">
-                {/* Ovoz tugmasi */}
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        videoPreWarmer.triggerHaptic("light");
-                        toggleMute();
-                    }}
-                    className="w-11 h-11 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/15 active:scale-90 transition-transform text-white shadow-lg"
-                >
-                    {isMuted ? <VolumeX size={19} /> : <Volume2 size={19} />}
-                </button>
-
-                {/* Like tugmasi */}
+            {/* ─────────────────────────────────────────────────────────────
+                Instagram Right Action Rail (Vertical Icons)
+                ───────────────────────────────────────────────────────────── */}
+            <div
+                className={`absolute bottom-6 right-3 flex flex-col items-center gap-4.5 z-40 transition-opacity duration-200 ${
+                    isHolding ? "opacity-0 pointer-events-none" : "opacity-100"
+                }`}
+            >
+                {/* Like Button */}
                 <div className="flex flex-col items-center gap-1">
                     <button
+                        data-interactive="true"
                         onClick={(e) => {
                             e.stopPropagation();
                             handleLike();
                         }}
-                        className={`w-11 h-11 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/15 active:scale-90 transition-transform shadow-lg ${
-                            liked ? 'text-red-500 bg-red-500/20 border-red-500/30' : 'text-white'
-                        }`}
+                        className="p-1 active:scale-75 transition-transform"
+                        aria-label="Like"
                     >
-                        <Heart size={23} fill={liked ? 'currentColor' : 'none'} strokeWidth={liked ? 0 : 2.2} />
+                        <Heart
+                            size={29}
+                            className={
+                                liked
+                                    ? "fill-[#FF3040] text-[#FF3040] drop-shadow-[0_2px_8px_rgba(255,48,64,0.5)] scale-105 transition-transform"
+                                    : "text-white stroke-[2.2] drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
+                            }
+                        />
                     </button>
-                    <span className="text-[10px] font-black text-white drop-shadow-md">{likesCount}</span>
+                    <span className="text-[12px] font-semibold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                        {formatCount(likesCount)}
+                    </span>
                 </div>
 
-                {/* Izoh tugmasi */}
+                {/* Comment Button */}
                 <div className="flex flex-col items-center gap-1">
                     <button
+                        data-interactive="true"
                         onClick={(e) => {
                             e.stopPropagation();
                             videoPreWarmer.triggerHaptic("light");
-                            onCommentOpen(reel.productId || reel.id);
+                            onCommentOpen(reelProduct.id);
                         }}
-                        className="w-11 h-11 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/15 active:scale-90 transition-transform text-white shadow-lg"
+                        className="p-1 active:scale-75 transition-transform"
+                        aria-label="Comments"
                     >
-                        <MessageSquare size={21} strokeWidth={2.2} />
+                        <MessageCircle
+                            size={28}
+                            strokeWidth={2.2}
+                            className="text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
+                        />
                     </button>
-                    <span className="text-[10px] font-black text-white drop-shadow-md">{reel.commentCount || 0}</span>
+                    <span className="text-[12px] font-semibold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                        {formatCount(reel.commentCount || 0)}
+                    </span>
                 </div>
 
-                {/* Ulashish (Share) */}
+                {/* Share (Paper Airplane) */}
                 <div className="flex flex-col items-center gap-1">
                     <button
+                        data-interactive="true"
                         onClick={(e) => {
                             e.stopPropagation();
                             handleShare();
                         }}
-                        className="w-11 h-11 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/15 active:scale-90 transition-transform text-white shadow-lg"
+                        className="p-1 active:scale-75 transition-transform"
+                        aria-label="Share"
                     >
-                        <Share2 size={21} strokeWidth={2.2} />
+                        <Send
+                            size={26}
+                            strokeWidth={2.2}
+                            className="text-white -rotate-12 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
+                        />
                     </button>
-                    <span className="text-[9px] font-black uppercase text-white/90 drop-shadow-md">{t.reels?.share || "SHARE"}</span>
+                    <span className="text-[11px] font-medium text-white/95 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                        {language === "uz" ? "Ulashish" : "Поделиться"}
+                    </span>
+                </div>
+
+                {/* Bookmark / Save */}
+                <div className="flex flex-col items-center gap-1">
+                    <button
+                        data-interactive="true"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleSave();
+                        }}
+                        className="p-1 active:scale-75 transition-transform"
+                        aria-label="Save"
+                    >
+                        <Bookmark
+                            size={27}
+                            strokeWidth={2.2}
+                            className={
+                                saved
+                                    ? "fill-white text-white drop-shadow-[0_2px_8px_rgba(255,255,255,0.4)]"
+                                    : "text-white stroke-[2.2] drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
+                            }
+                        />
+                    </button>
+                    <span className="text-[11px] font-medium text-white/95 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                        {language === "uz" ? "Saqlash" : "Сохранить"}
+                    </span>
+                </div>
+
+                {/* Three Dots More Options */}
+                <button
+                    data-interactive="true"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        videoPreWarmer.triggerHaptic("light");
+                        setIsOptionsOpen(true);
+                    }}
+                    className="p-1 text-white active:scale-75 transition-transform drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
+                    aria-label="More options"
+                >
+                    <MoreHorizontal size={24} strokeWidth={2.4} />
+                </button>
+
+                {/* Spinning Vinyl Music Disc with rising notes */}
+                <div className="relative mt-1 flex items-center justify-center">
+                    <span className="absolute -top-3 left-0 text-white text-[11px] animate-ig-note-1 select-none pointer-events-none">
+                        ♪
+                    </span>
+                    <span className="absolute -top-4 right-0 text-white text-[9px] animate-ig-note-2 select-none pointer-events-none">
+                        ♫
+                    </span>
+                    <div className="w-8 h-8 rounded-full border-[1.5px] border-white/80 overflow-hidden bg-zinc-900 animate-ig-disc shadow-xl flex items-center justify-center ring-2 ring-black/40">
+                        {reel.image ? (
+                            <img src={reel.image} alt="" className="w-full h-full object-cover rounded-full" />
+                        ) : (
+                            <div className="w-2.5 h-2.5 rounded-full bg-white/80" />
+                        )}
+                    </div>
                 </div>
             </div>
 
-            {/* Bottom Product Info & Quick Buy Card (Mobile App uslubida) */}
-            <div className="absolute bottom-5 left-3.5 right-18 z-40 space-y-2.5">
-                {/* Tovar nomi */}
-                <h3 className="text-sm font-bold text-white line-clamp-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] pr-2">
-                    {reel[`name_${language}`] || reel.name}
-                </h3>
-
-                {/* Mobil ilovadagi kabi tovar kartochkasi */}
-                <div
-                    data-clickable="true"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        videoPreWarmer.triggerHaptic("medium");
-                        setIsQuickBuyOpen(true);
-                    }}
-                    className="inline-flex items-center gap-3 bg-white/20 backdrop-blur-xl p-2 pr-3.5 rounded-2xl border border-white/25 active:scale-95 transition-all cursor-pointer shadow-lg"
-                >
-                    {reel.image && (
-                        <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-black/30 shrink-0 border border-white/20">
-                            <img src={reel.image} className="w-full h-full object-cover" alt="" />
+            {/* ─────────────────────────────────────────────────────────────
+                Instagram Bottom-Left Area (Shoppable Pill, Author, Caption, Music)
+                ───────────────────────────────────────────────────────────── */}
+            <div
+                className={`absolute bottom-4 left-3.5 right-18 z-40 space-y-2.5 transition-opacity duration-200 ${
+                    isHolding ? "opacity-0 pointer-events-none" : "opacity-100"
+                }`}
+            >
+                {/* 1. Shoppable Product Tag (Instagram Product Pill) */}
+                {reelProduct.price > 0 && (
+                    <div>
+                        <div
+                            data-interactive="true"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                videoPreWarmer.triggerHaptic("medium");
+                                setIsQuickBuyOpen(true);
+                            }}
+                            className="inline-flex items-center gap-2 bg-black/65 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/20 text-white shadow-xl active:scale-95 transition-all cursor-pointer group"
+                        >
+                            <ShoppingBag size={14} className="text-emerald-400 shrink-0 group-hover:scale-110 transition-transform" />
+                            <span className="text-[11.5px] font-bold tracking-tight">
+                                {language === "uz" ? "Mahsulotni ko'rish" : "Смотреть товар"}
+                            </span>
+                            <span className="text-white/40 text-[10px]">•</span>
+                            <span className="text-[11.5px] font-extrabold text-emerald-300">
+                                {fmtPrice(reelProduct.price)}
+                            </span>
+                            <ChevronRight size={13} className="text-white/70 shrink-0 ml-0.5" />
                         </div>
-                    )}
+                    </div>
+                )}
 
-                    <div className="flex flex-col min-w-0 pr-1">
-                        <span className="text-[10px] font-bold text-white/90 uppercase tracking-wider">
-                            {language === "uz" ? "Xarid qilish" : "Купить"}
-                        </span>
-                        <span className="text-xs font-black text-white">
-                            {fmtPrice(reel.price)}
-                        </span>
+                {/* 2. Channel / Author Row */}
+                <div className="flex items-center gap-2.5">
+                    <div className="relative w-9 h-9 rounded-full ring-1.5 ring-white/60 overflow-hidden bg-black/50 shrink-0 shadow-md">
+                        <img
+                            src={reel.image || "/favicon-120x120.png"}
+                            alt="Velari"
+                            className="w-full h-full object-cover"
+                        />
                     </div>
 
-                    <ChevronRight size={16} className="text-white/80 shrink-0 ml-1" />
+                    <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-[13.5px] font-bold text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)] truncate">
+                            velari.uz
+                        </span>
+                        <CheckCircle2 size={13} className="text-[#0095F6] fill-[#0095F6] shrink-0" />
+                    </div>
+
+                    {/* Follow / Obuna bo'lish Button */}
+                    <button
+                        data-interactive="true"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            videoPreWarmer.triggerHaptic("light");
+                            const next = !isFollowing;
+                            setIsFollowing(next);
+                            showToast(
+                                next
+                                    ? (language === "uz" ? "Obuna bo'ldingiz!" : "Вы подписались!")
+                                    : (language === "uz" ? "Obuna bekor qilindi" : "Подписка отменена"),
+                                "info"
+                            );
+                        }}
+                        className={`ml-1 text-[11px] font-bold px-3 py-1 rounded-lg border transition-all active:scale-90 ${
+                            isFollowing
+                                ? "bg-white/20 border-white/30 text-white/90"
+                                : "bg-transparent border-white/80 text-white hover:bg-white/10"
+                        }`}
+                    >
+                        {isFollowing
+                            ? (language === "uz" ? "Obunadasiz" : "Подписки")
+                            : (language === "uz" ? "Obuna bo'lish" : "Подписаться")}
+                    </button>
+                </div>
+
+                {/* 3. Caption Text with Expandable "...ko'proq / more" */}
+                {reelTitle && (
+                    <div className="text-[13px] text-white/95 leading-relaxed drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] font-normal pr-2">
+                        <p className={isCaptionExpanded ? "" : "line-clamp-2"}>
+                            {reelTitle}
+                            <span className="text-white/60 text-xs ml-1 font-medium">#velari #tashkent #gadgets</span>
+                        </p>
+                        {reelTitle.length > 60 && (
+                            <button
+                                data-interactive="true"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsCaptionExpanded(!isCaptionExpanded);
+                                }}
+                                className="text-[12px] font-semibold text-white/70 hover:text-white mt-0.5"
+                            >
+                                {isCaptionExpanded
+                                    ? (language === "uz" ? "Yopish" : "Скрыть")
+                                    : (language === "uz" ? "...ko'proq" : "...ещё")}
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {/* 4. Audio Marquee Ticker */}
+                <div className="flex items-center gap-2 overflow-hidden max-w-[240px]">
+                    <Music size={12} className="text-white/90 shrink-0 animate-pulse" />
+                    <div className="overflow-hidden whitespace-nowrap text-[11px] text-white/90 font-medium">
+                        <div className="animate-ig-marquee flex gap-6">
+                            <span>Velari • Original audio • velari.uz • Asl audio</span>
+                            <span>Velari • Original audio • velari.uz • Asl audio</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             {/* Bottom Gradient overlay */}
-            <div className="absolute bottom-0 left-0 right-0 h-44 bg-gradient-to-t from-black/85 via-black/40 to-transparent pointer-events-none" />
+            <div
+                className={`absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black/90 via-black/45 to-transparent pointer-events-none z-20 transition-opacity duration-200 ${
+                    isHolding ? "opacity-0" : "opacity-100"
+                }`}
+            />
 
-            {/* Quick Buy Bottom Sheet Modal */}
+            {/* ─────────────────────────────────────────────────────────────
+                Quick Buy Sheet Modal
+                ───────────────────────────────────────────────────────────── */}
             {isQuickBuyOpen && (
                 <QuickBuySheet
                     product={reelProduct}
@@ -446,6 +730,77 @@ export const SingleReel = ({
                     language={language}
                     t={t}
                 />
+            )}
+
+            {/* ─────────────────────────────────────────────────────────────
+                Instagram Options Action Sheet (Three dots menu)
+                ───────────────────────────────────────────────────────────── */}
+            {isOptionsOpen && (
+                <div
+                    className="fixed inset-0 z-[120] flex flex-col justify-end bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+                    onClick={() => setIsOptionsOpen(false)}
+                >
+                    <div
+                        className="bg-[#262626] text-white rounded-t-3xl overflow-hidden p-3 pb-8 space-y-1 animate-in slide-in-from-bottom duration-300 shadow-2xl max-w-md mx-auto w-full"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="w-10 h-1 bg-white/20 rounded-full mx-auto my-2" />
+
+                        {/* Mahsulotga o'tish */}
+                        <button
+                            onClick={() => {
+                                setIsOptionsOpen(false);
+                                setIsQuickBuyOpen(true);
+                            }}
+                            className="w-full flex items-center justify-between p-3.5 hover:bg-white/10 rounded-2xl active:scale-98 transition-all"
+                        >
+                            <span className="text-sm font-semibold">
+                                {language === "uz" ? "Mahsulotni ko'rish" : "Посмотреть товар"}
+                            </span>
+                            <ShoppingBag size={19} className="text-white/80" />
+                        </button>
+
+                        {/* Havolani nusxalash */}
+                        <button
+                            onClick={() => {
+                                setIsOptionsOpen(false);
+                                handleShare();
+                            }}
+                            className="w-full flex items-center justify-between p-3.5 hover:bg-white/10 rounded-2xl active:scale-98 transition-all"
+                        >
+                            <span className="text-sm font-semibold">
+                                {language === "uz" ? "Havolani nusxalash" : "Копировать ссылку"}
+                            </span>
+                            <Copy size={19} className="text-white/80" />
+                        </button>
+
+                        {/* Saqlash */}
+                        <button
+                            onClick={() => {
+                                setIsOptionsOpen(false);
+                                handleSave();
+                            }}
+                            className="w-full flex items-center justify-between p-3.5 hover:bg-white/10 rounded-2xl active:scale-98 transition-all"
+                        >
+                            <span className="text-sm font-semibold">
+                                {saved
+                                    ? (language === "uz" ? "Saqlanganlardan o'chirish" : "Удалить из сохраненных")
+                                    : (language === "uz" ? "Saqlash" : "Сохранить")}
+                            </span>
+                            <Bookmark size={19} className="text-white/80" />
+                        </button>
+
+                        {/* Bekor qilish */}
+                        <div className="pt-2">
+                            <button
+                                onClick={() => setIsOptionsOpen(false)}
+                                className="w-full p-3.5 bg-white/10 hover:bg-white/15 rounded-2xl text-center text-sm font-bold text-red-400 active:scale-98 transition-all"
+                            >
+                                {language === "uz" ? "Yopish" : "Отмена"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
