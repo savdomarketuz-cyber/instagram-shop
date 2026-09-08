@@ -32,14 +32,12 @@ const withPWA = withPWAInit({
                 },
             },
             {
+                // Video fayllar HECH QACHON Service Worker cache'dan o'tmasligi kerak!
+                // Sabab: Brauzer video uchun Range request (206 Partial Content) yuboradi,
+                // lekin Cache API 206 javobni qo'llab-quvvatlamaydi va xatolik beradi:
+                // "Failed to execute 'put' on 'Cache': Partial response (status code 206) is unsupported"
                 urlPattern: /^https:\/\/storage\.yandexcloud\.net\/.*\.mp4$/i,
-                handler: 'CacheFirst',
-                options: {
-                    cacheName: 'yandex-videos',
-                    rangeRequests: true,
-                    expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 * 14 },
-                    cacheableResponse: { statuses: [0, 200, 206] },
-                },
+                handler: 'NetworkOnly',
             },
             {
                 urlPattern: /^\/_next\/image\?.*/i,
