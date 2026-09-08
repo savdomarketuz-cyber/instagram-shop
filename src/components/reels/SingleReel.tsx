@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Heart, MessageSquare, Share2, ShoppingBag, Plus, Sparkles, Volume2, VolumeX, Play, Loader2, Download, Zap } from "lucide-react";
-import Link from "next/link";
+import { Heart, MessageSquare, Share2, Sparkles, Volume2, VolumeX, Play, Loader2, Download, Zap } from "lucide-react";
 import { useStore } from "@/store/store";
 import { supabase } from "@/lib/supabase";
-import { getProductSlug } from "@/lib/slugify";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
 import { QuickBuySheet } from "@/components/reels/QuickBuySheet";
 
@@ -26,31 +24,52 @@ export const SingleReel = ({
     const videoRef = useRef<HTMLVideoElement>(null);
     const progressRef = useRef<HTMLDivElement>(null);
     const rafRef = useRef<number | null>(null);
-    const { user, showToast, addToCart, cart } = useStore();
+    const { user, showToast, cart } = useStore();
     const [liked, setLiked] = useState(false);
     const [likesCount, setLikesCount] = useState(reel.likesCount || 0);
-    const [isPlaying, setIsPlaying] = useState(true);
+    const [isPlaying, setIsPlaying] = useState(false);
     const [isBuffering, setIsBuffering] = useState(false);
 
     // Instagram In-Reel Shopping & Gesture states
     const [isQuickBuyOpen, setIsQuickBuyOpen] = useState(false);
     const [flyingHeart, setFlyingHeart] = useState<{ x: number; y: number } | null>(null);
+    const [soundPill, setSoundPill] = useState<boolean | null>(null);
+
+    const touchStartPos = useRef<{ x: number; y: number; time: number }>({ x: 0, y: 0, time: 0 });
     const lastTapTime = useRef<number>(0);
     const tapTimeout = useRef<NodeJS.Timeout | null>(null);
 
-    // Active bo'lganda o'ynaydi
+    // Active bo'lganda to'xtovsiz, silliq o'ynash
     useEffect(() => {
         const v = videoRef.current;
         if (!v) return;
+
         if (isActive && !isQuickBuyOpen) {
-            v.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+            v.muted = isMuted;
+            const playPromise = v.play();
+            if (playPromise !== undefined) {
+                playPromise
+                    .then(() => setIsPlaying(true))
+                    .catch(() => {
+                        // Agar brauzer ovoz tufayli bloklasa, darhol ovozsiz rejimda o'ynaymiz (hech qachon qotib qolmaydi)
+                        v.muted = true;
+                        v.play()
+                            .then(() => setIsPlaying(true))
+                            .catch(() => setIsPlaying(false));
+                    });
+            }
         } else {
             v.pause();
+            v.currentTime = 0;
+            setIsPlaying(false);
         }
     }, [isActive, isQuickBuyOpen]);
 
+    // Ovoz o'zgarganda videoga qo'llash
     useEffect(() => {
-        if (videoRef.current) videoRef.current.muted = isMuted;
+        if (videoRef.current) {
+            videoRef.current.muted = isMuted;
+        }
     }, [isMuted]);
 
     // Progress bar: requestAnimationFrame bilan silliq yuradi
@@ -92,31 +111,55 @@ export const SingleReel = ({
         }
     }, [user, liked, language, reel.id, showToast]);
 
-    // Instagram Double-Tap Gesture
-    const handleVideoClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        const currentTime = Date.now();
-        const tapInterval = currentTime - lastTapTime.current;
+    // Touch boshlanishi
+    const handleTouchStart = (e: React.TouchEvent) => {
+        const touch = e.touches[0];
+        touchStartPos.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+    };
 
-        if (tapInterval < 300) {
-            // Double Tap aniqlandi
+    // Touch tugashi: Skroll (swipe) bilan chertish (tap)ni aniq ajratamiz
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        const touch = e.changedTouches[0];
+        const dx = Math.abs(touch.clientX - touchStartPos.current.x);
+        const dy = Math.abs(touch.clientY - touchStartPos.current.y);
+        const dt = Date.now() - touchStartPos.current.time;
+
+        // Agar barmoq 15px dan ko'p siljigan bo'lsa yoki ushlab turilgan bo'lsa, bu skroll!
+        if (dx > 15 || dy > 15 || dt > 500) return;
+
+        processTap(touch.clientX, touch.clientY);
+    };
+
+    // Sichqoncha bilan bosish (Desktop uchun)
+    const handleClick = (e: React.MouseEvent) => {
+        processTap(e.clientX, e.clientY);
+    };
+
+    const processTap = (clientX: number, clientY: number) => {
+        const now = Date.now();
+        const tapInterval = now - lastTapTime.current;
+
+        if (tapInterval < 280) {
+            // Double Tap: Like + Flying Heart
             if (tapTimeout.current) clearTimeout(tapTimeout.current);
-            const rect = e.currentTarget.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            const rect = videoRef.current?.getBoundingClientRect();
+            const x = rect ? clientX - rect.left : clientX;
+            const y = rect ? clientY - rect.top : clientY;
 
             setFlyingHeart({ x, y });
             handleLike(true);
-
-            setTimeout(() => {
-                setFlyingHeart(null);
-            }, 900);
+            setTimeout(() => setFlyingHeart(null), 850);
         } else {
-            // Single tap: Play / Pause
+            // Single Tap: Instagram kabi ovozni yoqish/o'chirish
             tapTimeout.current = setTimeout(() => {
-                togglePlay();
-            }, 300);
+                videoPreWarmer.triggerHaptic("light");
+                const nextMuted = !isMuted;
+                toggleMute();
+                setSoundPill(nextMuted);
+                setTimeout(() => setSoundPill(null), 800);
+            }, 280);
         }
-        lastTapTime.current = currentTime;
+        lastTapTime.current = now;
     };
 
     const handleShare = () => {
@@ -148,29 +191,9 @@ export const SingleReel = ({
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
         } catch (error) {
-            console.error("Video download failed:", error);
             window.open(reel.videoUrl, '_blank');
         }
     };
-
-    const togglePlay = () => {
-        const v = videoRef.current;
-        if (!v) return;
-        videoPreWarmer.triggerHaptic("light");
-        if (isPlaying) {
-            v.pause();
-            setIsPlaying(false);
-        } else {
-            v.play();
-            setIsPlaying(true);
-        }
-    };
-
-    const inCart = cart.find(item => item.id === (reel.productId || reel.id));
-
-    // Video manbasini PreWarmer keshidan olamiz (Instant 0s playback)
-    const rawVideoUrl = reel.videoUrl || "";
-    const videoSrc = (isActive || isNearby) ? videoPreWarmer.getVideoSrc(rawVideoUrl) : "";
 
     // Mahsulot obyekti (Quick-Buy sheet uchun)
     const reelProduct = {
@@ -187,36 +210,33 @@ export const SingleReel = ({
 
     return (
         <div className="relative w-full h-full bg-black overflow-hidden flex flex-col items-center justify-center select-none">
-            {/* Main Video Viewport with Blur on Quick Buy */}
+            {/* Main Video Viewport */}
             <div
-                onClick={handleVideoClick}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+                onClick={handleClick}
                 className={`relative w-full h-full bg-black flex items-center justify-center transition-all duration-300 ${
                     isQuickBuyOpen ? "scale-[0.94] brightness-50 blur-[2px] rounded-3xl" : "scale-100"
                 }`}
             >
-                {/* 1. Static Poster Background */}
-                <img
-                    src={reel.image}
-                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
-                        isBuffering || !isPlaying ? 'opacity-40 blur-md' : 'opacity-0'
-                    }`}
-                    alt=""
-                    loading="lazy"
-                />
-
-                {/* 2. Optimized Video Layer with Pre-Warm Buffer */}
+                {/* Direct Hardware Video Element */}
                 <video
                     ref={videoRef}
-                    src={videoSrc}
-                    className="relative max-w-full max-h-full object-contain pointer-events-auto cursor-pointer"
-                    style={{ transform: 'translateZ(0)' }}
+                    src={reel.videoUrl || ""}
+                    className="w-full h-full object-cover pointer-events-none cursor-pointer"
                     loop
                     playsInline
+                    webkit-playsinline="true"
+                    muted={isMuted}
                     poster={reel.image}
-                    preload={isActive ? "auto" : (isNearby ? "auto" : "none")}
+                    preload={isActive ? "auto" : (isNearby ? "metadata" : "none")}
                     onWaiting={() => setIsBuffering(true)}
-                    onPlaying={() => setIsBuffering(false)}
+                    onPlaying={() => {
+                        setIsBuffering(false);
+                        setIsPlaying(true);
+                    }}
                     onCanPlay={() => setIsBuffering(false)}
+                    onPause={() => setIsPlaying(false)}
                 />
 
                 {/* Instagram Double-Tap Flying Heart */}
@@ -230,15 +250,24 @@ export const SingleReel = ({
                         }}
                     >
                         <Heart
-                            size={100}
-                            className="text-red-500 fill-red-500 drop-shadow-[0_10px_25px_rgba(255,0,0,0.6)] animate-in zoom-in-50 fade-out-0 duration-700"
+                            size={95}
+                            className="text-red-500 fill-red-500 drop-shadow-[0_10px_25px_rgba(255,0,0,0.7)] animate-in zoom-in-50 fade-out-0 duration-700"
                         />
+                    </div>
+                )}
+
+                {/* Instagram Center Sound Indicator (tap toggled) */}
+                {soundPill !== null && (
+                    <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none">
+                        <div className="w-16 h-16 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 animate-in zoom-in-75 fade-out-0 duration-500 shadow-2xl">
+                            {soundPill ? <VolumeX size={30} className="text-white" /> : <Volume2 size={30} className="text-white" />}
+                        </div>
                     </div>
                 )}
             </div>
 
             {/* Content Top Overlay */}
-            <div className="absolute top-0 left-0 right-0 h-36 bg-gradient-to-b from-black/70 to-transparent pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/70 to-transparent pointer-events-none" />
 
             {/* Progress Bar (rAF) */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-white/20 z-50">
@@ -247,17 +276,8 @@ export const SingleReel = ({
 
             {/* Buffering Indicator */}
             {isBuffering && (
-                <div className="absolute inset-0 flex items-center justify-center z-40 bg-black/10 pointer-events-none">
-                    <Loader2 size={44} className="text-white animate-spin opacity-70" />
-                </div>
-            )}
-
-            {/* Play/Pause Indicator */}
-            {!isPlaying && !isBuffering && !isQuickBuyOpen && (
-                <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
-                    <div className="w-20 h-20 bg-black/30 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 animate-in zoom-in-75 duration-200">
-                        <Play size={38} className="text-white fill-white ml-1.5" />
-                    </div>
+                <div className="absolute inset-0 flex items-center justify-center z-40 bg-black/20 pointer-events-none">
+                    <Loader2 size={44} className="text-white animate-spin opacity-80" />
                 </div>
             )}
 
@@ -391,7 +411,7 @@ export const SingleReel = ({
             </div>
 
             {/* Bottom Gradient overlay */}
-            <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black/85 via-black/40 to-transparent pointer-events-none" />
+            <div className="absolute bottom-0 left-0 right-0 h-44 bg-gradient-to-t from-black/85 via-black/40 to-transparent pointer-events-none" />
 
             {/* Quick Buy Bottom Sheet Modal */}
             {isQuickBuyOpen && (
