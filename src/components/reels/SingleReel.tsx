@@ -94,6 +94,10 @@ export const SingleReel = ({
 
     // ─────────────────────────────────────────────────────────────
     // 1. Single-Active Hardware Video Engine (Zero Decoder Exhaustion)
+    //    Brauzer video manbani parse qilguncha kutib, keyin play() chaqiradi.
+    //    Eski muammo: React <video src=...> ni DOM'ga qo'shgan zahoti v.play()
+    //    chaqirilardi — brauzer hali faylni yuklay boshlamagan, shuning uchun
+    //    "NotSupportedError: no supported source" xatosi berardi.
     // ─────────────────────────────────────────────────────────────
     useEffect(() => {
         const v = videoRef.current;
@@ -101,7 +105,10 @@ export const SingleReel = ({
 
         let isCancelled = false;
 
-        if (!isQuickBuyOpen && !isHolding) {
+        // Video manba sifatida mos yoki yo'qligini aniqlash uchun kutish
+        const attemptPlay = () => {
+            if (isCancelled || !v) return;
+
             v.defaultMuted = isMuted;
             v.muted = isMuted;
 
@@ -116,8 +123,9 @@ export const SingleReel = ({
                         }
                     })
                     .catch((err) => {
-                        console.warn("[SingleReel] Autoplay unmuted rejected, retrying muted:", err);
-                        if (!isCancelled && v) {
+                        if (isCancelled) return;
+                        console.warn("[SingleReel] Autoplay rejected, retrying muted:", err.message);
+                        if (v) {
                             v.muted = true;
                             v.play()
                                 .then(() => {
@@ -135,6 +143,70 @@ export const SingleReel = ({
                                 });
                         }
                     });
+            }
+        };
+
+        if (!isQuickBuyOpen && !isHolding) {
+            // readyState tekshiramiz:
+            // 0 = HAVE_NOTHING — brauzer hali hech narsa yuklamagan
+            // 1 = HAVE_METADATA — metadata tayyor, play() chaqirish mumkin
+            // 2+ = HAVE_CURRENT_DATA — data tayyor
+            if (v.readyState >= 1) {
+                // Brauzer allaqachon metadata'ni parse qilgan — darhol play
+                attemptPlay();
+            } else {
+                // Brauzer hali yuklamagan — loadedmetadata event'ini kutamiz
+                const onReady = () => {
+                    v.removeEventListener("loadedmetadata", onReady);
+                    v.removeEventListener("canplay", onReady);
+                    v.removeEventListener("error", onFail);
+                    attemptPlay();
+                };
+
+                const onFail = () => {
+                    v.removeEventListener("loadedmetadata", onReady);
+                    v.removeEventListener("canplay", onReady);
+                    v.removeEventListener("error", onFail);
+                    // Bu yerda xatolikni onError handler o'zi boshqaradi
+                };
+
+                v.addEventListener("loadedmetadata", onReady);
+                v.addEventListener("canplay", onReady);
+                v.addEventListener("error", onFail);
+
+                // Agar 8 soniyada hech narsa bo'lmasa — failsafe sifatida play() sinab ko'ramiz
+                const failsafeTimer = setTimeout(() => {
+                    v.removeEventListener("loadedmetadata", onReady);
+                    v.removeEventListener("canplay", onReady);
+                    v.removeEventListener("error", onFail);
+                    if (!isCancelled && v.readyState === 0) {
+                        // Src qaytadan o'rnatamiz — ba'zi brauzerlarda element DOM'ga
+                        // qo'shilganda src to'g'ri o'qilmay qoladi
+                        v.src = cleanVideoUrl;
+                    }
+                    attemptPlay();
+                }, 8000);
+
+                // Cleanup'da failsafe timer'ni ham tozalash
+                const originalCleanup = () => {
+                    clearTimeout(failsafeTimer);
+                    v.removeEventListener("loadedmetadata", onReady);
+                    v.removeEventListener("canplay", onReady);
+                    v.removeEventListener("error", onFail);
+                };
+
+                // Cleanup funksiyasini return'da ishlatamiz
+                return () => {
+                    isCancelled = true;
+                    originalCleanup();
+                    if (v) {
+                        try {
+                            v.pause();
+                            v.removeAttribute("src");
+                            v.load();
+                        } catch {}
+                    }
+                };
             }
         } else {
             v.pause();
@@ -321,7 +393,12 @@ export const SingleReel = ({
         const v = videoRef.current;
         if (v) {
             v.src = cleanVideoUrl;
-            v.play().catch(() => {});
+            // Brauzer manbani parse qilguncha kutamiz
+            const onCanPlay = () => {
+                v.removeEventListener("canplay", onCanPlay);
+                v.play().catch(() => {});
+            };
+            v.addEventListener("canplay", onCanPlay);
         }
     };
 
