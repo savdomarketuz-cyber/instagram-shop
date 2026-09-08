@@ -410,14 +410,22 @@ export const SingleReel = ({
 
     const reelProduct = {
         id: reel.productId || reel.id,
+        productId: reel.productId || reel.id,
         name: reel.name,
         name_uz: reel.name_uz || reel.name,
         name_ru: reel.name_ru || reel.name,
         price: reel.price,
+        oldPrice: reel.oldPrice || 0,
         image: reel.image,
         imageUrl: reel.image,
+        images: reel.images || (reel.image ? [reel.image] : []),
         category: reel.category || "Velari",
         stockDetails: reel.stockDetails || null,
+        stock: reel.stock || 0,
+        colorName: reel.colorName || "",
+        model: reel.model || "",
+        groupId: reel.groupId || "",
+        article: reel.article || "",
     };
 
     const reelTitle = reel[`name_${language}`] || reel.name || "";

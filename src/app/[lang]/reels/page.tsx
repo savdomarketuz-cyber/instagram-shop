@@ -35,7 +35,7 @@ export default function ReelsPage() {
                     supabase.from("reels").select("*").limit(40),
                     supabase
                         .from("products")
-                        .select("id,name,name_uz,name_ru,price,images,image,video_url,stock_details,category_id")
+                        .select("id,name,name_uz,name_ru,price,old_price,images,image,video_url,stock_details,category_id,color_name,model,group_id,article,stock")
                         .not("video_url", "is", null)
                         .neq("video_url", "")
                         .limit(40),
@@ -68,8 +68,15 @@ export default function ReelsPage() {
                             name_uz: p.name_uz || p.name || "",
                             name_ru: p.name_ru || p.name || "",
                             price: Number(p.price) || 0,
+                            oldPrice: Number(p.old_price) || 0,
                             image: img,
+                            images: Array.isArray(p.images) ? p.images : (img ? [img] : []),
                             stockDetails: p.stock_details || null,
+                            stock: Number(p.stock) || 0,
+                            colorName: p.color_name || "",
+                            model: p.model || "",
+                            groupId: p.group_id || "",
+                            article: p.article || "",
                         });
                     });
                 }

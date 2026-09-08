@@ -128,6 +128,22 @@ export interface Reel {
     description?: string;
     likes?: number;
     views?: number;
+    likesCount?: number;
+    commentCount?: number;
+    name?: string;
+    name_uz?: string;
+    name_ru?: string;
+    price?: number;
+    oldPrice?: number;
+    image?: string;
+    images?: string[];
+    stockDetails?: any;
+    stock?: number;
+    colorName?: string;
+    model?: string;
+    groupId?: string;
+    article?: string;
+    category?: string;
 }
 
 export type Language = "uz" | "ru";

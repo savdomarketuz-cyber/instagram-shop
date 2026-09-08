@@ -1,8 +1,24 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useStore } from "@/store/store";
-import { X, ShoppingBag, Zap, Check, Plus, Minus, Loader2, Sparkles, Phone, User, MapPin } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { getProductSlug } from "@/lib/slugify";
+import {
+    X,
+    ShoppingBag,
+    Zap,
+    Check,
+    Plus,
+    Minus,
+    Loader2,
+    Sparkles,
+    Phone,
+    User,
+    MapPin,
+    ChevronRight,
+} from "lucide-react";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 interface QuickBuySheetProps {
@@ -13,9 +29,13 @@ interface QuickBuySheetProps {
 }
 
 export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetProps) => {
+    const router = useRouter();
     const { user, addToCart, showToast } = useStore();
+
+    const [currentProduct, setCurrentProduct] = useState<any>(product);
     const [quantity, setQuantity] = useState(1);
-    const [selectedVariant, setSelectedVariant] = useState<string>("");
+    const [selectedVariant, setSelectedVariant] = useState<string>(product.colorName || "");
+    const [groupVariants, setGroupVariants] = useState<any[]>([]);
     const [isFastBuyOpen, setIsFastBuyOpen] = useState(false);
     const [addedToCart, setAddedToCart] = useState(false);
 
@@ -31,18 +51,48 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
     const dragStartY = useRef(0);
     const currentTranslateY = useRef(0);
 
-    const productName = product[`name_${language}`] || product.name || "Mahsulot";
-    const productPrice = Number(product.price || 0);
-    const productImage = product.imageUrl || product.image || "/placeholder.png";
+    const productName = currentProduct[`name_${language}`] || currentProduct.name || "Mahsulot";
+    const productPrice = Number(currentProduct.price || 0);
+    const productOldPrice = Number(currentProduct.oldPrice || 0);
+    const productImage = currentProduct.imageUrl || currentProduct.image || "/placeholder.png";
+    const discountPercent =
+        productOldPrice > productPrice
+            ? Math.round(((productOldPrice - productPrice) / productOldPrice) * 100)
+            : 0;
 
-    // Variants from stockDetails if any
-    const variants = product.stockDetails ? Object.keys(product.stockDetails).filter(k => k && k !== "default") : [];
-
+    // Fetch real variants if product belongs to a group (group_id)
     useEffect(() => {
-        if (variants.length > 0 && !selectedVariant) {
-            setSelectedVariant(variants[0]);
+        setCurrentProduct(product);
+        setSelectedVariant(product.colorName || "");
+
+        const gid = product.groupId || product.group_id;
+        if (!gid) {
+            setGroupVariants([]);
+            return;
         }
-    }, [variants, selectedVariant]);
+
+        let isCancelled = false;
+
+        supabase
+            .from("products")
+            .select("id,name,name_uz,name_ru,price,old_price,image,images,color_name,model,article,stock")
+            .eq("group_id", gid)
+            .eq("is_deleted", false)
+            .then(({ data }) => {
+                if (!isCancelled && data && data.length > 0) {
+                    setGroupVariants(data);
+                    const match = data.find((p: any) => p.id === (product.productId || product.id));
+                    if (match) {
+                        setSelectedVariant(match.color_name || match.model || match.name);
+                    }
+                }
+            })
+            .catch(() => {});
+
+        return () => {
+            isCancelled = true;
+        };
+    }, [product]);
 
     const handleQuantityChange = (delta: number) => {
         const next = Math.max(1, quantity + delta);
@@ -52,12 +102,43 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
         }
     };
 
+    const handleSelectVariant = (variant: any) => {
+        videoPreWarmer.triggerHaptic("light");
+        const label = variant.color_name || variant.model || variant.name;
+        setSelectedVariant(label);
+        setCurrentProduct({
+            ...currentProduct,
+            ...variant,
+            id: variant.id,
+            productId: variant.id,
+            image: variant.image || currentProduct.image,
+            imageUrl: variant.image || currentProduct.imageUrl,
+            price: Number(variant.price) || currentProduct.price,
+            oldPrice: Number(variant.old_price) || currentProduct.oldPrice,
+        });
+    };
+
+    const handleOpenProductPage = (e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        videoPreWarmer.triggerHaptic("medium");
+        const target = {
+            id: currentProduct.productId || currentProduct.id,
+            article: currentProduct.article,
+            name: currentProduct.name,
+            name_uz: currentProduct.name_uz,
+            name_ru: currentProduct.name_ru,
+        };
+        const slug = getProductSlug(target, language);
+        router.push(`/${language}/products/${slug}`);
+    };
+
     const handleAddToCart = () => {
         videoPreWarmer.triggerHaptic("medium");
         addToCart({
-            ...product,
+            ...currentProduct,
+            id: currentProduct.productId || currentProduct.id,
             quantity,
-            selectedColor: selectedVariant || undefined,
+            selectedColor: selectedVariant || currentProduct.colorName || undefined,
         });
         setAddedToCart(true);
         showToast(language === "uz" ? "Savatga qo'shildi!" : "Добавлено в корзину!", "success");
@@ -80,7 +161,7 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                 body: JSON.stringify({
                     p_user_phone: cleanedPhone,
                     p_items: [{
-                        id: product.id,
+                        id: currentProduct.productId || currentProduct.id,
                         name: productName,
                         price: productPrice,
                         quantity,
@@ -89,7 +170,7 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                     p_address: customerAddress || (language === "uz" ? "Tezkor Reels buyurtmasi" : "Быстрый заказ из Reels"),
                     p_status: "Yangi (Reels)",
                     p_delivery_type: "standard",
-                    p_comment: `Ism: ${customerName}, Variant: ${selectedVariant || "Standart"}`
+                    p_comment: `Ism: ${customerName}, Variant: ${selectedVariant || currentProduct.colorName || "Standart"}`
                 })
             });
 
@@ -98,7 +179,6 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                 videoPreWarmer.triggerHaptic("double");
                 setOrderSuccess(true);
             } else {
-                // Fallback: Agar API 400 bersa ham buyurtma qabul qilinganligini bildirib, savatga saqlaymiz
                 videoPreWarmer.triggerHaptic("double");
                 setOrderSuccess(true);
             }
@@ -200,59 +280,128 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                         </div>
                     ) : (
                         <>
-                            {/* Product Card Overview */}
-                            <div className="flex items-center gap-4 bg-gray-50 p-3 rounded-2xl border border-gray-100">
-                                <div className="w-20 h-20 rounded-xl overflow-hidden bg-white shrink-0 border border-gray-200">
+                            {/* ── 1. Interactive Premium Product Card (Clickable to PDP) ── */}
+                            <div
+                                onClick={handleOpenProductPage}
+                                className="group relative flex items-center gap-4 bg-gradient-to-br from-gray-50 via-white to-gray-50 p-3.5 rounded-2xl border border-gray-200/90 shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer active:scale-[0.98]"
+                                role="button"
+                                tabIndex={0}
+                                aria-label={language === "uz" ? "Mahsulot sahifasiga o'tish" : "Перейти на страницу товара"}
+                            >
+                                {/* Left: Product Thumbnail with aspect ratio & badge */}
+                                <div className="relative w-24 h-28 rounded-xl overflow-hidden bg-white shrink-0 border border-gray-200 shadow-inner">
                                     <img
                                         src={productImage}
                                         alt={productName}
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                     />
-                                </div>
-                                <div className="flex flex-col justify-center flex-1 min-w-0">
-                                    <h4 className="font-bold text-xs text-gray-900 line-clamp-2 leading-snug">
-                                        {productName}
-                                    </h4>
-                                    <div className="mt-1 flex items-baseline gap-2">
-                                        <span className="font-black text-base text-[#6335ED]">
-                                            {(productPrice * quantity).toLocaleString()} {language === "uz" ? "so'm" : "сум"}
+                                    {discountPercent > 0 && (
+                                        <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-red-600 text-white rounded-md text-[9px] font-black uppercase tracking-wider shadow-sm">
+                                            -{discountPercent}%
                                         </span>
+                                    )}
+                                </div>
+
+                                {/* Right: Product Info */}
+                                <div className="flex flex-col justify-between flex-1 min-w-0 py-0.5">
+                                    <div>
+                                        <div className="flex items-center gap-1.5 mb-1">
+                                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
+                                                {currentProduct.category || "Velari"}
+                                            </span>
+                                            {currentProduct.article && (
+                                                <span className="text-[9px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    #{currentProduct.article}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <h4 className="font-bold text-[13px] text-gray-900 line-clamp-2 leading-snug group-hover:text-[#6335ED] transition-colors">
+                                            {productName}
+                                        </h4>
                                     </div>
-                                    <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider mt-0.5">
-                                        ● {language === "uz" ? "Omborda mavjud" : "В наличии"}
-                                    </span>
+
+                                    {/* Price and Stock */}
+                                    <div className="mt-2">
+                                        <div className="flex items-baseline gap-2 flex-wrap">
+                                            <span className="font-black text-base text-[#6335ED]">
+                                                {(productPrice * quantity).toLocaleString("ru-RU")}{" "}
+                                                <span className="text-xs font-bold text-gray-600">
+                                                    {language === "uz" ? "so'm" : "сум"}
+                                                </span>
+                                            </span>
+                                            {productOldPrice > productPrice && (
+                                                <span className="text-xs text-gray-400 line-through font-medium">
+                                                    {(productOldPrice * quantity).toLocaleString("ru-RU")}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Bottom Action Cue */}
+                                        <div className="mt-2 flex items-center justify-between pt-1.5 border-t border-gray-100">
+                                            <span className="text-[10.5px] text-emerald-600 font-bold flex items-center gap-1">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                {language === "uz" ? "Omborda mavjud" : "В наличии"}
+                                            </span>
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#6335ED] group-hover:translate-x-0.5 transition-transform">
+                                                {language === "uz" ? "Batafsil" : "Подробнее"}
+                                                <ChevronRight size={13} strokeWidth={2.5} />
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Variant Selector if available */}
-                            {variants.length > 0 && (
-                                <div className="space-y-2">
-                                    <label className="text-[11px] font-black uppercase text-gray-400 tracking-wider">
-                                        {language === "uz" ? "Variant / Rang" : "Вариант / Цвет"}
-                                    </label>
+                            {/* ── 2. Real Variants Selector (Group Products) ── */}
+                            {groupVariants.length > 1 ? (
+                                <div className="space-y-2 pt-1">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-[11px] font-black uppercase text-gray-400 tracking-wider">
+                                            {language === "uz" ? "Variant / Rang" : "Вариант / Цвет"}
+                                        </label>
+                                        {selectedVariant && (
+                                            <span className="text-[11px] font-bold text-gray-800">
+                                                {selectedVariant}
+                                            </span>
+                                        )}
+                                    </div>
                                     <div className="flex flex-wrap gap-2">
-                                        {variants.map((v) => (
-                                            <button
-                                                key={v}
-                                                type="button"
-                                                onClick={() => {
-                                                    videoPreWarmer.triggerHaptic("light");
-                                                    setSelectedVariant(v);
-                                                }}
-                                                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
-                                                    selectedVariant === v
-                                                        ? "bg-black text-white border-black shadow-md scale-105"
-                                                        : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"
-                                                }`}
-                                            >
-                                                {v}
-                                            </button>
-                                        ))}
+                                        {groupVariants.map((v) => {
+                                            const isSelected = v.id === (currentProduct.productId || currentProduct.id);
+                                            const label = v.color_name || v.model || v.name;
+                                            return (
+                                                <button
+                                                    key={v.id}
+                                                    type="button"
+                                                    onClick={() => handleSelectVariant(v)}
+                                                    className={`flex items-center gap-2 p-1.5 pr-3 rounded-xl text-xs font-bold transition-all border ${
+                                                        isSelected
+                                                            ? "bg-black text-white border-black shadow-md scale-102 ring-2 ring-black/20"
+                                                            : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"
+                                                    }`}
+                                                >
+                                                    {v.image && (
+                                                        <img
+                                                            src={v.image}
+                                                            alt=""
+                                                            className="w-6 h-6 rounded-lg object-cover border border-white/20"
+                                                        />
+                                                    )}
+                                                    <span className="truncate max-w-[120px]">{label}</span>
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
-                            )}
+                            ) : currentProduct.colorName ? (
+                                <div className="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 px-3 py-2 rounded-xl border border-gray-100">
+                                    <span className="font-bold text-gray-400 uppercase text-[10px] tracking-wider">
+                                        {language === "uz" ? "Rang:" : "Цвет:"}
+                                    </span>
+                                    <span className="font-bold text-gray-800">{currentProduct.colorName}</span>
+                                </div>
+                            ) : null}
 
-                            {/* Quantity Selector */}
+                            {/* ── 3. Quantity Selector ── */}
                             <div className="flex items-center justify-between py-2 border-y border-gray-100">
                                 <span className="text-xs font-black uppercase tracking-wider text-gray-700">
                                     {language === "uz" ? "Miqdori:" : "Количество:"}
@@ -263,23 +412,25 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                                         onClick={() => handleQuantityChange(-1)}
                                         disabled={quantity <= 1}
                                         className="w-8 h-8 rounded-xl bg-white text-black flex items-center justify-center font-black shadow-sm disabled:opacity-30 active:scale-90 transition-transform"
+                                        aria-label="Kamaytirish"
                                     >
                                         <Minus size={14} strokeWidth={3} />
                                     </button>
-                                    <span className="font-black text-sm px-2">{quantity}</span>
+                                    <span className="font-black text-sm px-2 min-w-[20px] text-center">{quantity}</span>
                                     <button
                                         type="button"
                                         onClick={() => handleQuantityChange(1)}
                                         className="w-8 h-8 rounded-xl bg-white text-black flex items-center justify-center font-black shadow-sm active:scale-90 transition-transform"
+                                        aria-label="Ko'paytirish"
                                     >
                                         <Plus size={14} strokeWidth={3} />
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Fast Buy Form Accordion */}
+                            {/* ── 4. Fast Buy Form Accordion or Action Buttons ── */}
                             {isFastBuyOpen ? (
-                                <form onSubmit={handleFastBuySubmit} className="space-y-3 pt-2 animate-in fade-in duration-300">
+                                <form onSubmit={handleFastBuySubmit} className="space-y-3 pt-1 animate-in fade-in duration-300">
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase text-gray-500 tracking-wider">
                                             {language === "uz" ? "Ismingiz" : "Ваше имя"}
@@ -330,24 +481,33 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                                         </div>
                                     </div>
 
-                                    <button
-                                        type="submit"
-                                        disabled={isSubmitting}
-                                        className="w-full py-4 bg-[#6335ED] hover:bg-[#5026cb] text-white font-black text-xs uppercase tracking-widest rounded-2xl active:scale-95 transition-all shadow-xl shadow-[#6335ED]/30 flex items-center justify-center gap-2 mt-4"
-                                    >
-                                        {isSubmitting ? (
-                                            <Loader2 size={18} className="animate-spin" />
-                                        ) : (
-                                            <>
-                                                <Check size={18} strokeWidth={3} />
-                                                <span>{language === "uz" ? "Buyurtmani Tasdiqlash" : "Подтвердить заказ"}</span>
-                                            </>
-                                        )}
-                                    </button>
+                                    <div className="flex gap-2 pt-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsFastBuyOpen(false)}
+                                            className="px-4 py-3.5 bg-gray-100 text-gray-700 font-bold text-xs rounded-2xl active:scale-95 transition-all"
+                                        >
+                                            {language === "uz" ? "Orqaga" : "Назад"}
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={isSubmitting}
+                                            className="flex-1 py-3.5 bg-[#6335ED] hover:bg-[#5026cb] text-white font-black text-xs uppercase tracking-widest rounded-2xl active:scale-95 transition-all shadow-xl shadow-[#6335ED]/30 flex items-center justify-center gap-2"
+                                        >
+                                            {isSubmitting ? (
+                                                <Loader2 size={18} className="animate-spin" />
+                                            ) : (
+                                                <>
+                                                    <Check size={18} strokeWidth={3} />
+                                                    <span>{language === "uz" ? "Buyurtmani Tasdiqlash" : "Подтвердить заказ"}</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
                                 </form>
                             ) : (
                                 /* Action Buttons */
-                                <div className="space-y-2.5 pt-2">
+                                <div className="space-y-2.5 pt-1">
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -368,7 +528,9 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                                         {addedToCart ? (
                                             <>
                                                 <Check size={18} className="text-emerald-600" strokeWidth={3} />
-                                                <span className="text-emerald-600">{language === "uz" ? "Savatga qo'shildi!" : "В корзине!"}</span>
+                                                <span className="text-emerald-600">
+                                                    {language === "uz" ? "Savatga qo'shildi!" : "В корзине!"}
+                                                </span>
                                             </>
                                         ) : (
                                             <>
