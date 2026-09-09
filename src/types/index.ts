@@ -144,6 +144,8 @@ export interface Reel {
     groupId?: string;
     article?: string;
     category?: string;
+    image_metadata?: any;
+    rawImage?: string;
 }
 
 export type Language = "uz" | "ru";

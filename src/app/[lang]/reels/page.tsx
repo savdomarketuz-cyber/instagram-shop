@@ -11,6 +11,7 @@ import { SingleReel } from "@/components/reels/SingleReel";
 import { CommentsSheet } from "@/components/reels/CommentsSheet";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
 import { sanitizeVideoUrl } from "@/lib/video-url";
+import { getOptimizedImageUrl } from "@/lib/imageVariants";
 
 // Active reel atrofida 2 ta oldingi va 2 ta keyingi reel DOMda saqlanadi
 const WINDOW = 2;
@@ -35,7 +36,7 @@ export default function ReelsPage() {
                     supabase.from("reels").select("*").limit(40),
                     supabase
                         .from("products")
-                        .select("id,name,name_uz,name_ru,price,old_price,images,image,video_url,stock_details,category_id,color_name,model,group_id,article,stock")
+                        .select("id,name,name_uz,name_ru,price,old_price,images,image,image_metadata,video_url,stock_details,category_id,color_name,model,group_id,article,stock")
                         .not("video_url", "is", null)
                         .neq("video_url", "")
                         .limit(40),
@@ -43,21 +44,27 @@ export default function ReelsPage() {
 
                 const reelItems: Reel[] = (reelsRes.data || [])
                     .filter((r: any) => Boolean(r.video_url))
-                    .map((r: any) => ({
-                        id: String(r.id),
-                        videoUrl: sanitizeVideoUrl(r.video_url),
-                        likesCount: Number(r.likes_count) || 0,
-                        commentCount: Number(r.comment_count) || 0,
-                        productId: r.product_id ? String(r.product_id) : undefined,
-                        name: r.name || "",
-                        price: Number(r.price) || 0,
-                        image: r.image || r.thumbnail_url || "/placeholder.png",
-                    }));
+                    .map((r: any) => {
+                        const rawImg = r.image || r.thumbnail_url || "/placeholder.png";
+                        return {
+                            id: String(r.id),
+                            videoUrl: sanitizeVideoUrl(r.video_url),
+                            likesCount: Number(r.likes_count) || 0,
+                            commentCount: Number(r.comment_count) || 0,
+                            productId: r.product_id ? String(r.product_id) : undefined,
+                            name: r.name || "",
+                            price: Number(r.price) || 0,
+                            image: getOptimizedImageUrl(r.image_metadata, rawImg, 'md'),
+                            rawImage: rawImg,
+                            image_metadata: r.image_metadata,
+                        };
+                    });
 
                 const productItems: Reel[] = [];
                 for (const p of productsRes.data || []) {
                     if (!p.video_url) continue;
-                    const img = p.image || (Array.isArray(p.images) ? p.images[0] : null) || "/placeholder.png";
+                    const rawImg = p.image || (Array.isArray(p.images) ? p.images[0] : null) || "/placeholder.png";
+                    const poster = getOptimizedImageUrl(p.image_metadata, rawImg, 'md');
                     const rawUrls = String(p.video_url).split(/[;,]/).map((u) => sanitizeVideoUrl(u)).filter(Boolean);
                     rawUrls.forEach((vUrl, uIdx) => {
                         productItems.push({
@@ -69,8 +76,10 @@ export default function ReelsPage() {
                             name_ru: p.name_ru || p.name || "",
                             price: Number(p.price) || 0,
                             oldPrice: Number(p.old_price) || 0,
-                            image: img,
-                            images: Array.isArray(p.images) ? p.images : (img ? [img] : []),
+                            image: poster,
+                            rawImage: rawImg,
+                            image_metadata: p.image_metadata,
+                            images: Array.isArray(p.images) ? p.images : (rawImg ? [rawImg] : []),
                             stockDetails: p.stock_details || null,
                             stock: Number(p.stock) || 0,
                             colorName: p.color_name || "",

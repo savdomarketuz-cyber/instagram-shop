@@ -183,12 +183,11 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                 videoPreWarmer.triggerHaptic("double");
                 setOrderSuccess(true);
             } else {
-                videoPreWarmer.triggerHaptic("double");
-                setOrderSuccess(true);
+                showToast(data?.error || (language === "uz" ? "Buyurtma yuborilmadi. Qayta urinib ko'ring." : "Не удалось оформить заказ. Попробуйте снова."), "error");
             }
-        } catch {
-            videoPreWarmer.triggerHaptic("double");
-            setOrderSuccess(true);
+        } catch (err: any) {
+            console.error("Quick buy error:", err);
+            showToast(language === "uz" ? "Tarmoq xatosi. Internet aloqasini tekshiring." : "Ошибка сети. Проверьте подключение к интернету.", "error");
         } finally {
             setIsSubmitting(false);
         }

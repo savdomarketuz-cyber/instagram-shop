@@ -104,7 +104,7 @@ interface Product {
     additional_expenses?: number;
 }
 
-import { uploadToYandexS3, uploadFromUrlToYandexS3 } from "@/lib/yandex-s3";
+import { uploadToYandexS3, uploadAdminToYandexS3, uploadFromUrlToYandexS3 } from "@/lib/yandex-s3";
 
 function AdminProducts() {
     const params = useParams();
@@ -214,9 +214,23 @@ function AdminProducts() {
         const file = e.target.files?.[0];
         if (!file) return;
 
+        // Video format tekshiruvi (faqat video fayllar)
+        const validExts = ["mp4", "webm", "mov", "m4v"];
+        const ext = file.name.split(".").pop()?.toLowerCase() || "";
+        if (!file.type.startsWith("video/") && !validExts.includes(ext)) {
+            alert("Iltimos, faqat video fayl yuklang (MP4, WebM, MOV)");
+            return;
+        }
+
+        // 300MB limit tekshiruvi
+        if (file.size > 300 * 1024 * 1024) {
+            alert("Video hajmi juda katta! Maksimal hajm: 300 MB.");
+            return;
+        }
+
         setIsUploading(true);
         try {
-            const { url } = await uploadToYandexS3(file);
+            const { url } = await uploadAdminToYandexS3(file);
             setNewProduct(prev => ({
                 ...prev,
                 videoUrl: url

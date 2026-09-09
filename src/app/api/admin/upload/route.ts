@@ -108,6 +108,19 @@ export async function POST(req: NextRequest) {
         const safeName = rawName.replace(/[^a-zA-Z0-9._-]/g, "_");
         const ts = Date.now();
 
+        const extFromName = safeName.split(".").pop()?.toLowerCase() || "";
+        // MIME aniqlash yoki to'g'irlash (ayniqsa mobil brauzerlar va iOS Safari uchun video/mp4 talab qilinadi)
+        if (!mime || mime === "application/octet-stream") {
+            if (extFromName === "mp4" || extFromName === "m4v") mime = "video/mp4";
+            else if (extFromName === "webm") mime = "video/webm";
+            else if (extFromName === "mov") mime = "video/quicktime";
+            else if (extFromName === "jpg" || extFromName === "jpeg") mime = "image/jpeg";
+            else if (extFromName === "png") mime = "image/png";
+            else if (extFromName === "webp") mime = "image/webp";
+            else if (extFromName === "avif") mime = "image/avif";
+            else if (extFromName === "mp3") mime = "audio/mpeg";
+        }
+
         let blurDataURL = "";
         let lowResBuf: Buffer | null = null;
         let xsBuf: Buffer | null = null;
@@ -149,7 +162,9 @@ export async function POST(req: NextRequest) {
         if (mime.startsWith("audio/"))  folder = "admin/audio";
         if (mime.startsWith("video/"))  folder = "admin/video";
 
-        const ext = mime.startsWith("image/") ? "avif" : safeName.split(".").pop() || "bin";
+        const ext = (mime.startsWith("image/") && !mime.includes("gif") && !mime.includes("svg"))
+            ? "avif"
+            : (extFromName || (mime.startsWith("video/") ? "mp4" : "bin"));
         const baseNoExt = safeName.split(".")[0];
         const key = `${folder}/${ts}_${baseNoExt}.${ext}`;
 

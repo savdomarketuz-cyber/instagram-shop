@@ -419,6 +419,8 @@ export const SingleReel = ({
         image: reel.image,
         imageUrl: reel.image,
         images: reel.images || (reel.image ? [reel.image] : []),
+        image_metadata: reel.image_metadata,
+        rawImage: reel.rawImage,
         category: reel.category || "Velari",
         stockDetails: reel.stockDetails || null,
         stock: reel.stock || 0,
