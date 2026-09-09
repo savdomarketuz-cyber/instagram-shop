@@ -163,8 +163,8 @@ export const ProductMedia = ({
                     onMouseMove={(e) => onMouseMove(e, carouselRef)}
                     onMouseUp={() => stopDragging(carouselRef)}
                     onMouseLeave={() => stopDragging(carouselRef)}
-                    className={`flex w-full h-full overflow-x-auto no-scrollbar px-5 gap-3 ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
-                    style={{ scrollSnapType: pinchScale > 1 ? 'none' : 'x mandatory' }}
+                    className={`flex w-full h-full overflow-x-auto no-scrollbar px-5 gap-3 overscroll-x-contain touch-pan-x ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+                    style={{ scrollSnapType: pinchScale > 1 ? 'none' : 'x mandatory', WebkitOverflowScrolling: "touch" }}
                 >
                     {allMedia.map((media, i) => {
                         const meta = getMetaForUrl(product.image_metadata, media.url);
@@ -238,7 +238,7 @@ export const ProductMedia = ({
                             return (
                                 <div
                                     key={i}
-                                    className={`transition-all duration-300 ${sizeClass}`}
+                                    className={`transition-transform duration-200 transition-colors duration-200 ${sizeClass}`}
                                 />
                             );
                         })}
@@ -249,10 +249,22 @@ export const ProductMedia = ({
                 <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-30 pointer-events-none">
                     {/* Left Group */}
                     <div className="flex flex-col gap-2">
-                        <button onClick={() => router.back()} className="p-3 bg-white/40 backdrop-blur-xl text-black rounded-full shadow-lg active:scale-90 transition-all border border-white/50 pointer-events-auto">
+                        <button
+                            onClick={() => {
+                                videoPreWarmer.triggerHaptic("light");
+                                router.back();
+                            }}
+                            className="p-3 bg-white/60 backdrop-blur-xl text-black rounded-full shadow-lg ios-icon-tap active:scale-90 transition-transform duration-150 ease-out will-change-transform border border-white/60 pointer-events-auto"
+                        >
                             <ChevronLeft size={20} strokeWidth={3} />
                         </button>
-                        <button onClick={() => router.push(`/${language}/?focus=true`)} className="p-3 bg-white/40 backdrop-blur-xl text-black rounded-full shadow-lg active:scale-90 transition-all border border-white/50 pointer-events-auto">
+                        <button
+                            onClick={() => {
+                                videoPreWarmer.triggerHaptic("light");
+                                router.push(`/${language}/?focus=true`);
+                            }}
+                            className="p-3 bg-white/60 backdrop-blur-xl text-black rounded-full shadow-lg ios-icon-tap active:scale-90 transition-transform duration-150 ease-out will-change-transform border border-white/60 pointer-events-auto"
+                        >
                             <Search size={20} strokeWidth={3} />
                         </button>
                     </div>
@@ -261,6 +273,7 @@ export const ProductMedia = ({
                     <div className="flex flex-col gap-2">
                         <button 
                             onClick={async () => {
+                                videoPreWarmer.triggerHaptic("light");
                                 try {
                                     await navigator.share({
                                         title: product.name,
@@ -271,7 +284,7 @@ export const ProductMedia = ({
                                     console.warn("Sharing failed", err);
                                 }
                             }} 
-                            className="p-3 bg-white/40 backdrop-blur-xl text-black rounded-full shadow-lg active:scale-90 transition-all border border-white/50 pointer-events-auto"
+                            className="p-3 bg-white/60 backdrop-blur-xl text-black rounded-full shadow-lg ios-icon-tap active:scale-90 transition-transform duration-150 ease-out will-change-transform border border-white/60 pointer-events-auto"
                         >
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
                         </button>
@@ -280,7 +293,7 @@ export const ProductMedia = ({
                                 videoPreWarmer.triggerHaptic("light");
                                 toggleWishlist(product);
                             }} 
-                            className="p-3 bg-white/40 backdrop-blur-xl text-black rounded-full shadow-lg active:scale-90 transition-all border border-white/50 pointer-events-auto"
+                            className="p-3 bg-white/60 backdrop-blur-xl text-black rounded-full shadow-lg ios-icon-tap active:scale-90 transition-transform duration-150 ease-out will-change-transform border border-white/60 pointer-events-auto"
                         >
                             <Heart size={20} fill={isWishlisted ? "#ef4444" : "none"} className={isWishlisted ? "text-red-500" : "text-gray-400"} />
                         </button>
@@ -291,7 +304,13 @@ export const ProductMedia = ({
             {/* Lightbox */}
             {isLightboxOpen && (
                 <div className="fixed inset-0 bg-black z-[100] flex flex-col items-center justify-center animate-in fade-in duration-300">
-                    <button onClick={() => setIsLightboxOpen(false)} className="absolute top-10 right-10 p-4 bg-white/10 text-white rounded-full backdrop-blur-xl transition-all z-[110] border border-white/10">
+                    <button
+                        onClick={() => {
+                            videoPreWarmer.triggerHaptic("light");
+                            setIsLightboxOpen(false);
+                        }}
+                        className="absolute top-10 right-10 p-4 bg-white/10 text-white rounded-full backdrop-blur-xl ios-icon-tap active:scale-90 transition-transform duration-150 ease-out will-change-transform z-[110] border border-white/10"
+                    >
                         <X size={24} strokeWidth={3} />
                     </button>
                     <div className="w-full h-full flex items-center justify-center relative">

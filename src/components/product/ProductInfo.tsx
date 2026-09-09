@@ -6,6 +6,7 @@ import { getProductSlug } from "@/lib/slugify";
 import { getOptimizedImageUrl } from "@/lib/imageVariants";
 import { Star, Check, Truck, Clock, RefreshCw, FileText, MessageCircle } from "lucide-react";
 import { ProductDirectChatSheet } from "./ProductDirectChatSheet";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 const GREEN = "#2D6E3E";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
@@ -116,9 +117,11 @@ export const ProductInfo = ({
                     <p style={{ fontSize: 11, fontWeight: 700, color: "#9AA29C", letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 10 }}>
                         {language === "uz" ? "Rang" : "Цвет"}: <span style={{ color: "#0F1410", fontWeight: 800 }}>{product.colorName || "—"}</span>
                     </p>
-                    <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }} className="no-scrollbar">
+                    <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4, WebkitOverflowScrolling: "touch" }} className="no-scrollbar overscroll-x-contain touch-pan-x">
                         {groupProducts.map(v => (
                             <Link replace key={v.id} href={`/${language}/products/${getProductSlug(v, language)}`}
+                                onClick={() => videoPreWarmer.triggerHaptic("light")}
+                                className="ios-tap-feedback active:scale-95 transition-transform duration-150 ease-out will-change-transform"
                                 style={{ flexShrink: 0, width: 56, height: 72, borderRadius: 16, overflow: "hidden", border: v.id === product.id ? `2.5px solid ${GREEN}` : "2px solid rgba(15,20,16,0.08)", textDecoration: "none", display: "block", transform: v.id === product.id ? "scale(1.06)" : undefined, boxShadow: v.id === product.id ? "0 4px 12px rgba(45,110,62,0.18)" : "none" }}
                             >
                                 <img src={getOptimizedImageUrl(v.image_metadata, v.image, 'xs')} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={v.colorName} />
@@ -171,7 +174,11 @@ export const ProductInfo = ({
 
             {/* Description button */}
             <button
-                onClick={onDescriptionOpen}
+                onClick={() => {
+                    videoPreWarmer.triggerHaptic("light");
+                    onDescriptionOpen();
+                }}
+                className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 ease-out will-change-transform"
                 style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: "#fff", border: `1.5px solid rgba(45,110,62,0.15)`, borderRadius: 18, fontSize: 14, fontWeight: 700, color: GREEN, cursor: "pointer", boxShadow: "0 2px 8px rgba(15,20,16,0.04)", WebkitTapHighlightColor: "transparent" }}
             >
                 <FileText size={16} color={GREEN} />
@@ -181,7 +188,11 @@ export const ProductInfo = ({
             {/* Instagram Direct style "Sotuvchiga savol berish" button */}
             <button
                 type="button"
-                onClick={() => setIsChatOpen(true)}
+                onClick={() => {
+                    videoPreWarmer.triggerHaptic("light");
+                    setIsChatOpen(true);
+                }}
+                className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 ease-out will-change-transform"
                 style={{
                     width: "100%",
                     display: "flex",

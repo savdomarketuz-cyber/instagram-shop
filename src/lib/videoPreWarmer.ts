@@ -59,10 +59,12 @@ class VideoPreWarmerService {
     /**
      * Taktil haptic feedback
      */
-    public triggerHaptic(type: "light" | "medium" | "double" = "light") {
+    public triggerHaptic(type: "light" | "medium" | "double" | "selection" = "light") {
         if (typeof window === "undefined" || !("vibrate" in navigator)) return;
         try {
-            if (type === "light") {
+            if (type === "selection") {
+                navigator.vibrate(5);
+            } else if (type === "light") {
                 navigator.vibrate(8);
             } else if (type === "medium") {
                 navigator.vibrate(15);

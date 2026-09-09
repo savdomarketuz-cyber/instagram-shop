@@ -14,6 +14,7 @@ import { getProductIdFromSlug, getProductSlug } from "@/lib/slugify";
 import { useTelemetry } from "@/hooks/useTelemetry";
 import { makeVariantLoader, hasVariants, getOptimizedImageUrl, getOptimizedSrcSet, getMetaForUrl } from "@/lib/imageVariants";
 import { ymViewProduct } from "@/lib/metrika";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 // Components
 import { ProductMedia } from "@/components/product/ProductMedia";
@@ -423,6 +424,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
     , [product]);
 
     const handleFastBuy = () => {
+        videoPreWarmer.triggerHaptic("medium");
         if (!product) return;
         const item = {
             id: product.id,
@@ -549,7 +551,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
         <div className="bg-white min-h-screen text-black font-sans selection:bg-black selection:text-white animate-in fade-in duration-500">
             
             {/* Sticky Quick-Buy Bar (Desktop) */}
-            <div className={`hidden md:flex fixed top-20 md:top-24 left-0 right-0 bg-white/95 backdrop-blur-2xl z-[90] border-b border-gray-100 py-4 shadow-2xl transition-all duration-500 transform ${isScrolledPast ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
+            <div className={`hidden md:flex fixed top-20 md:top-24 left-0 right-0 bg-white/95 backdrop-blur-2xl z-[90] border-b border-gray-100 py-4 shadow-2xl transition-transform duration-300 transition-opacity duration-300 ease-out will-change-transform transform ${isScrolledPast ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}`}>
                 <div className="max-w-[1600px] mx-auto px-10 flex items-center justify-between w-full h-16">
                     <div className="flex items-center gap-6 flex-1 min-w-0">
                         <div className="relative w-14 h-14 rounded-2xl overflow-hidden shrink-0 border border-gray-100 shadow-sm">
@@ -579,15 +581,18 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                     
                     <div className="flex items-center gap-4">
                         <button 
-                            onClick={() => toggleWishlist({ ...product, imageUrl: product.image } as any)}
-                            className="p-4 bg-gray-50 rounded-2xl hover:bg-black hover:text-white transition-all shadow-sm border border-transparent hover:border-black"
+                            onClick={() => {
+                                videoPreWarmer.triggerHaptic("light");
+                                toggleWishlist({ ...product, imageUrl: product.image } as any);
+                            }}
+                            className="ios-icon-tap active:scale-90 p-4 bg-gray-50 rounded-2xl hover:bg-black hover:text-white transition-colors duration-200 shadow-sm border border-transparent hover:border-black"
                         >
                             <Heart size={20} fill={isWishlisted ? "currentColor" : "none"} />
                         </button>
 
                         <button 
                             onClick={handleFastBuy}
-                            className="px-10 py-4 bg-[#F2F3F5] hover:bg-black hover:text-white text-black rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] transition-all"
+                            className="ios-tap-feedback active:scale-95 px-10 py-4 bg-[#F2F3F5] hover:bg-black hover:text-white text-black rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-200"
                         >
                             {language === 'uz' ? "Tezkor xarid" : "Купить сейчас"}
                         </button>
@@ -595,23 +600,32 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                         {cartItem ? (
                            <div className="flex items-center rounded-[24px] overflow-hidden h-[56px]" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", boxShadow: "0 8px 24px rgba(45,110,62,0.28)" }}>
                                <button
-                                   onClick={() => updateQuantity(product.id, cartItem.quantity - 1)}
-                                   className="px-6 py-4 hover:bg-white/10 transition-colors"
+                                   onClick={() => {
+                                       videoPreWarmer.triggerHaptic("light");
+                                       updateQuantity(product.id, cartItem.quantity - 1);
+                                   }}
+                                   className="px-6 py-4 hover:bg-white/10 ios-icon-tap active:scale-85 transition-transform duration-150 ease-out will-change-transform"
                                >
                                    <Minus size={18} strokeWidth={3} />
                                </button>
                                <span className="px-2 font-black italic text-lg">{cartItem.quantity}</span>
                                <button
-                                   onClick={() => updateQuantity(product.id, cartItem.quantity + 1)}
-                                   className="px-6 py-4 hover:bg-white/10 transition-colors"
+                                   onClick={() => {
+                                       videoPreWarmer.triggerHaptic("light");
+                                       updateQuantity(product.id, cartItem.quantity + 1);
+                                   }}
+                                   className="px-6 py-4 hover:bg-white/10 ios-icon-tap active:scale-85 transition-transform duration-150 ease-out will-change-transform"
                                >
                                    <Plus size={18} strokeWidth={3} />
                                </button>
                            </div>
                         ) : (
                             <button
-                                onClick={() => addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any)}
-                                className="px-10 py-4 rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all flex items-center gap-3 velari-green-btn"
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("medium");
+                                    addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any);
+                                }}
+                                className="px-10 py-4 rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] ios-tap-feedback active:scale-95 transition-transform duration-150 ease-out will-change-transform flex items-center gap-3 velari-green-btn"
                             >
                                 <Plus size={18} strokeWidth={3} /> {language === 'uz' ? "SAVATGA" : "В КОРЗИНУ"}
                             </button>
@@ -622,7 +636,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
 
             {/* Sticky Quick-Buy Bar (Mobile) — pastga skrol qilinganda tepada paydo bo'ladi */}
             <div
-                className="md:hidden fixed top-0 left-0 right-0 z-[95] transition-all duration-400"
+                className="md:hidden fixed top-0 left-0 right-0 z-[95] transition-transform duration-300 transition-opacity duration-300 ease-out will-change-transform"
                 style={{
                     background: "rgba(250,250,246,0.94)",
                     backdropFilter: "blur(20px) saturate(180%)",
@@ -663,13 +677,35 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                     {/* Cart CTA */}
                     {cartItem ? (
                         <div style={{ display: "flex", alignItems: "center", gap: 4, background: "#EAF3EC", borderRadius: 14, padding: "0 4px", height: 44, flexShrink: 0 }}>
-                            <button onClick={() => updateQuantity(product.id, cartItem.quantity - 1)} style={{ padding: 8, background: "none", border: "none", cursor: "pointer", color: "#2D6E3E" }}><Minus size={15} /></button>
+                            <button
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("light");
+                                    updateQuantity(product.id, cartItem.quantity - 1);
+                                }}
+                                className="ios-icon-tap active:scale-85 transition-transform duration-150"
+                                style={{ padding: 8, background: "none", border: "none", cursor: "pointer", color: "#2D6E3E" }}
+                            >
+                                <Minus size={15} />
+                            </button>
                             <span style={{ fontSize: 14, fontWeight: 700, color: "#0F1410", minWidth: 16, textAlign: "center" }}>{cartItem.quantity}</span>
-                            <button onClick={() => updateQuantity(product.id, cartItem.quantity + 1)} style={{ padding: 8, background: "none", border: "none", cursor: "pointer", color: "#2D6E3E" }}><Plus size={15} /></button>
+                            <button
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("light");
+                                    updateQuantity(product.id, cartItem.quantity + 1);
+                                }}
+                                className="ios-icon-tap active:scale-85 transition-transform duration-150"
+                                style={{ padding: 8, background: "none", border: "none", cursor: "pointer", color: "#2D6E3E" }}
+                            >
+                                <Plus size={15} />
+                            </button>
                         </div>
                     ) : (
                         <button
-                            onClick={() => addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any)}
+                            onClick={() => {
+                                videoPreWarmer.triggerHaptic("medium");
+                                addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any);
+                            }}
+                            className="ios-tap-feedback active:scale-[0.96] transition-transform duration-150 ease-out will-change-transform"
                             style={{
                                 flexShrink: 0, height: 44, borderRadius: 14, border: "none", cursor: "pointer",
                                 padding: "0 18px", background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)",
@@ -736,8 +772,11 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                             {allMedia.map((media, i) => (
                                 <button 
                                     key={i}
-                                    onClick={() => setActiveImage(i)}
-                                    className={`aspect-[3/4] rounded-3xl overflow-hidden border-2 transition-all group ${activeImage === i ? "border-black scale-95 shadow-xl" : "border-gray-50 opacity-60 hover:opacity-100"}`}
+                                    onClick={() => {
+                                        videoPreWarmer.triggerHaptic("selection");
+                                        setActiveImage(i);
+                                    }}
+                                    className={`ios-tap-feedback active:scale-95 aspect-[3/4] rounded-3xl overflow-hidden border-2 transition-transform duration-150 group ${activeImage === i ? "border-black scale-95 shadow-xl" : "border-gray-50 opacity-60 hover:opacity-100"}`}
                                 >
                                     {media.type === 'image' ? (
                                         <div className="relative w-full h-full bg-gray-50">
@@ -813,8 +852,12 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                             </div>
 
                             <button 
-                                onClick={(e) => { e.stopPropagation(); toggleWishlist({ ...product, imageUrl: product.image } as any); }}
-                                className="absolute top-8 right-8 p-5 bg-white/80 backdrop-blur-xl rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all text-black border border-white z-10"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    videoPreWarmer.triggerHaptic("light");
+                                    toggleWishlist({ ...product, imageUrl: product.image } as any);
+                                }}
+                                className="ios-icon-tap active:scale-90 absolute top-8 right-8 p-5 bg-white/80 backdrop-blur-xl rounded-full shadow-2xl transition-transform duration-150 text-black border border-white z-10"
                             >
                                 <Heart size={24} fill={isWishlisted ? "black" : "none"} />
                             </button>
@@ -909,7 +952,8 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                                 replace 
                                                 key={v.id} 
                                                 href={`/products/${getProductSlug(v, language)}`}
-                                                className={`aspect-[3/4] rounded-3xl overflow-hidden border-2 transition-all flex-shrink-0 shadow-sm relative group/v ${v.id === product.id ? "border-black scale-105 shadow-xl z-10" : "border-white opacity-60 hover:opacity-100 hover:border-gray-200"}`}
+                                                onClick={() => videoPreWarmer.triggerHaptic("selection")}
+                                                className={`ios-tap-feedback aspect-[3/4] rounded-3xl overflow-hidden border-2 transition-transform duration-150 flex-shrink-0 shadow-sm relative group/v active:scale-95 ${v.id === product.id ? "border-black scale-105 shadow-xl z-10" : "border-white opacity-60 hover:opacity-100 hover:border-gray-200"}`}
                                             >
                                                 <Image
                                                     src={getOptimizedImageUrl(v.image_metadata, v.image, 'xs')}
@@ -937,7 +981,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                 <div className="flex gap-4 items-stretch">
                                     <button 
                                         onClick={handleFastBuy}
-                                        className="flex-1 bg-white border-2 border-black text-black py-5 rounded-[28px] font-black text-sm uppercase tracking-widest hover:bg-gray-50 active:scale-95 transition-all shadow-xl shadow-black/5"
+                                        className="ios-tap-feedback flex-1 bg-white border-2 border-black text-black py-5 rounded-[28px] font-black text-sm uppercase tracking-widest hover:bg-gray-50 active:scale-[0.98] transition-transform duration-150 shadow-xl shadow-black/5 will-change-transform"
                                     >
                                         {language === 'uz' ? "TEZKOR XARID" : "КУПИТЬ СЕЙЧАС"}
                                     </button>
@@ -946,27 +990,40 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                         <div className="flex-1 flex items-center gap-2 animate-in fade-in zoom-in duration-300">
                                             <div className="flex-1 bg-[#F2F3F5] h-[60px] rounded-[28px] flex items-center justify-around">
                                                 <button 
-                                                    onClick={() => updateQuantity(product.id, cartItem.quantity - 1)} 
-                                                    className="p-3 text-gray-400 hover:text-black"
+                                                    onClick={() => {
+                                                        videoPreWarmer.triggerHaptic("light");
+                                                        updateQuantity(product.id, cartItem.quantity - 1);
+                                                    }} 
+                                                    className="ios-icon-tap active:scale-85 p-3 text-gray-400 hover:text-black transition-transform duration-150"
                                                 >
                                                     <Minus size={20} strokeWidth={3} />
                                                 </button>
                                                 <span className="text-xl font-black italic">{cartItem.quantity}</span>
                                                 <button 
-                                                    onClick={() => updateQuantity(product.id, cartItem.quantity + 1)} 
-                                                    className="p-3 text-gray-400 hover:text-black"
+                                                    onClick={() => {
+                                                        videoPreWarmer.triggerHaptic("light");
+                                                        updateQuantity(product.id, cartItem.quantity + 1);
+                                                    }} 
+                                                    className="ios-icon-tap active:scale-85 p-3 text-gray-400 hover:text-black transition-transform duration-150"
                                                 >
                                                     <Plus size={20} strokeWidth={3} />
                                                 </button>
                                             </div>
-                                            <Link href="/cart" className="p-5 rounded-[28px] hover:scale-110 active:scale-90 transition-all velari-green-btn">
+                                            <Link
+                                                href="/cart"
+                                                onClick={() => videoPreWarmer.triggerHaptic("light")}
+                                                className="ios-icon-tap p-5 rounded-[28px] active:scale-90 transition-transform duration-150 velari-green-btn"
+                                            >
                                                 <ShoppingBag size={20} strokeWidth={3} />
                                             </Link>
                                         </div>
                                     ) : (
                                         <button
-                                            onClick={() => addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any)}
-                                            className="flex-1 py-5 rounded-[28px] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all velari-green-btn"
+                                            onClick={() => {
+                                                videoPreWarmer.triggerHaptic("medium");
+                                                addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any);
+                                            }}
+                                            className="ios-tap-feedback flex-1 py-5 rounded-[28px] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 active:scale-[0.98] transition-transform duration-150 velari-green-btn will-change-transform"
                                         >
                                             <Plus size={20} strokeWidth={3} /> {language === 'uz' ? "SAVATGA" : "В КОРЗИНУ"}
                                         </button>
@@ -1031,8 +1088,11 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                 </div>
                             </div>
                             <button
-                                onClick={() => setIsDescriptionModalOpen(true)}
-                                className="mt-6 w-full py-4 bg-white hover:bg-black hover:text-white text-black font-black text-xs uppercase tracking-widest rounded-2xl transition-all shadow-sm border border-gray-200/60 flex items-center justify-center gap-2 group active:scale-95"
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("light");
+                                    setIsDescriptionModalOpen(true);
+                                }}
+                                className="ios-tap-feedback mt-6 w-full py-4 bg-white hover:bg-black hover:text-white text-black font-black text-xs uppercase tracking-widest rounded-2xl transition-transform duration-150 shadow-sm border border-gray-200/60 flex items-center justify-center gap-2 group active:scale-[0.98]"
                             >
                                 <span>{language === 'uz' ? "Batafsil ko'rish" : "Подробнее"}</span>
                                 <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
@@ -1107,12 +1167,13 @@ export default function ProductClient({ params, initialProduct }: { params: { id
             />
 
             {/* Mobile Sticky CTA — Velari style */}
-            <div className={`md:hidden fixed bottom-[66px] left-0 right-0 z-[60] transition-all duration-500 transform ${isScrolledPast ? 'translate-y-40 opacity-0' : 'translate-y-0 opacity-100'}`}
+            <div className={`md:hidden fixed bottom-[66px] left-0 right-0 z-[60] transition-transform duration-300 transition-opacity duration-300 ease-out will-change-transform transform ${isScrolledPast ? 'translate-y-40 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}
                 style={{ padding: "14px 20px 20px", background: "rgba(250,250,246,0.92)", backdropFilter: "blur(20px) saturate(180%)", borderTop: "0.5px solid rgba(15,20,16,0.06)" }}>
                 <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
                     {/* Tezkor xarid (like o'rniga) */}
                     <button
                         onClick={handleFastBuy}
+                        className="ios-tap-feedback active:scale-[0.96] transition-transform duration-150 will-change-transform"
                         style={{
                             flexShrink: 0, height: 54, borderRadius: 18, padding: "0 18px",
                             background: "#fff", border: "1.5px solid rgba(45,110,62,0.25)",
@@ -1128,17 +1189,44 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                     {cartItem ? (
                         <div style={{ flex: 1, display: "flex", gap: 8, alignItems: "stretch" }}>
                             <div style={{ flex: 1, background: "#EAF3EC", borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "space-around" }}>
-                                <button onClick={() => updateQuantity(product.id, cartItem.quantity - 1)} style={{ padding: 10, background: "none", border: "none", cursor: "pointer", color: "#2D6E3E" }}><Minus size={16} /></button>
+                                <button
+                                    onClick={() => {
+                                        videoPreWarmer.triggerHaptic("light");
+                                        updateQuantity(product.id, cartItem.quantity - 1);
+                                    }}
+                                    className="ios-icon-tap active:scale-85 transition-transform duration-150"
+                                    style={{ padding: 10, background: "none", border: "none", cursor: "pointer", color: "#2D6E3E" }}
+                                >
+                                    <Minus size={16} />
+                                </button>
                                 <span style={{ fontSize: 16, fontWeight: 700, color: "#0F1410" }}>{cartItem.quantity}</span>
-                                <button onClick={() => updateQuantity(product.id, cartItem.quantity + 1)} style={{ padding: 10, background: "none", border: "none", cursor: "pointer", color: "#2D6E3E" }}><Plus size={16} /></button>
+                                <button
+                                    onClick={() => {
+                                        videoPreWarmer.triggerHaptic("light");
+                                        updateQuantity(product.id, cartItem.quantity + 1);
+                                    }}
+                                    className="ios-icon-tap active:scale-85 transition-transform duration-150"
+                                    style={{ padding: 10, background: "none", border: "none", cursor: "pointer", color: "#2D6E3E" }}
+                                >
+                                    <Plus size={16} />
+                                </button>
                             </div>
-                            <Link href={`/${language}/cart`} style={{ width: 54, height: 54, borderRadius: 27, background: "#2D6E3E", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", flexShrink: 0 }}>
+                            <Link
+                                href={`/${language}/cart`}
+                                onClick={() => videoPreWarmer.triggerHaptic("light")}
+                                className="ios-icon-tap active:scale-90 transition-transform duration-150"
+                                style={{ width: 54, height: 54, borderRadius: 27, background: "#2D6E3E", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", flexShrink: 0 }}
+                            >
                                 <ShoppingBag size={20} color="#fff" />
                             </Link>
                         </div>
                     ) : (
                         <button
-                            onClick={() => addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any)}
+                            onClick={() => {
+                                videoPreWarmer.triggerHaptic("medium");
+                                addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any);
+                            }}
+                            className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
                             style={{
                                 flex: 1, height: 54, borderRadius: 18, border: "none", cursor: "pointer",
                                 background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)",
@@ -1167,8 +1255,11 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                             {product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name}
                         </p>
                         <button
-                            onClick={() => setLightboxIndex(null)}
-                            className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all backdrop-blur-md"
+                            onClick={() => {
+                                videoPreWarmer.triggerHaptic("light");
+                                setLightboxIndex(null);
+                            }}
+                            className="ios-icon-tap active:scale-90 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-transform duration-150 backdrop-blur-md"
                         >
                             <X size={24} />
                         </button>
@@ -1178,8 +1269,11 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                     <div className="relative flex-1 flex items-center justify-center my-4 overflow-hidden">
                         {allMedia.length > 1 && (
                             <button
-                                onClick={() => setLightboxIndex(prev => (prev === null || prev === 0 ? allMedia.length - 1 : prev - 1))}
-                                className="absolute left-2 md:left-6 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all backdrop-blur-md z-20 hover:scale-110 active:scale-95"
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("light");
+                                    setLightboxIndex(prev => (prev === null || prev === 0 ? allMedia.length - 1 : prev - 1));
+                                }}
+                                className="ios-icon-tap active:scale-90 absolute left-2 md:left-6 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full transition-transform duration-150 backdrop-blur-md z-20"
                             >
                                 <ChevronLeft size={32} />
                             </button>
@@ -1195,8 +1289,11 @@ export default function ProductClient({ params, initialProduct }: { params: { id
 
                         {allMedia.length > 1 && (
                             <button
-                                onClick={() => setLightboxIndex(prev => (prev === null || prev === allMedia.length - 1 ? 0 : prev + 1))}
-                                className="absolute right-2 md:right-6 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all backdrop-blur-md z-20 hover:scale-110 active:scale-95"
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("light");
+                                    setLightboxIndex(prev => (prev === null || prev === allMedia.length - 1 ? 0 : prev + 1));
+                                }}
+                                className="ios-icon-tap active:scale-90 absolute right-2 md:right-6 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full transition-transform duration-150 backdrop-blur-md z-20"
                             >
                                 <ChevronRight size={32} />
                             </button>
@@ -1205,12 +1302,15 @@ export default function ProductClient({ params, initialProduct }: { params: { id
 
                     {/* Bottom Thumbnails */}
                     {allMedia.length > 1 && (
-                        <div className="flex justify-center gap-3 overflow-x-auto no-scrollbar py-2 z-10">
+                        <div className="flex justify-center gap-3 overflow-x-auto no-scrollbar py-2 z-10 overscroll-x-contain touch-pan-x">
                             {allMedia.map((m, idx) => (
                                 <button
                                     key={idx}
-                                    onClick={() => setLightboxIndex(idx)}
-                                    className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all shrink-0 ${
+                                    onClick={() => {
+                                        videoPreWarmer.triggerHaptic("selection");
+                                        setLightboxIndex(idx);
+                                    }}
+                                    className={`ios-tap-feedback active:scale-95 w-16 h-16 rounded-xl overflow-hidden border-2 transition-transform duration-150 shrink-0 ${
                                         lightboxIndex === idx ? "border-white scale-110" : "border-transparent opacity-50 hover:opacity-100"
                                     }`}
                                 >

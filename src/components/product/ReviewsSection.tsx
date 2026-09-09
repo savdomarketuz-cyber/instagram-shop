@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { Product, User, Language, Comment } from "@/types";
 import { TranslationType } from "@/lib/translations";
 import { useRouter } from "next/navigation";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 interface ReviewsSectionProps {
     productId: string;
@@ -197,11 +198,25 @@ export const ReviewsSection = ({
     return (
         <div className="mt-8 px-4 mb-20 text-black" style={{ background: "#FAFAF6" }}>
             <div className="flex border-b border-gray-100 mb-6">
-                <button onClick={() => setActiveCommentTab('review')} className={`flex-1 py-4 text-xs font-black uppercase tracking-widest relative ${activeCommentTab === 'review' ? '' : 'text-gray-400'}`} style={activeCommentTab === 'review' ? { color: GREEN } : {}}>
+                <button
+                    onClick={() => {
+                        videoPreWarmer.triggerHaptic("selection");
+                        setActiveCommentTab('review');
+                    }}
+                    className={`ios-tap-feedback flex-1 py-4 text-xs font-black uppercase tracking-widest relative ${activeCommentTab === 'review' ? '' : 'text-gray-400'}`}
+                    style={activeCommentTab === 'review' ? { color: GREEN } : {}}
+                >
                     {language === 'uz' ? "Sharhlar" : "Отзывы"}
                     {activeCommentTab === 'review' && <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: GREEN }} />}
                 </button>
-                <button onClick={() => setActiveCommentTab('question')} className={`flex-1 py-4 text-xs font-black uppercase tracking-widest relative ${activeCommentTab === 'question' ? '' : 'text-gray-400'}`} style={activeCommentTab === 'question' ? { color: GREEN } : {}}>
+                <button
+                    onClick={() => {
+                        videoPreWarmer.triggerHaptic("selection");
+                        setActiveCommentTab('question');
+                    }}
+                    className={`ios-tap-feedback flex-1 py-4 text-xs font-black uppercase tracking-widest relative ${activeCommentTab === 'question' ? '' : 'text-gray-400'}`}
+                    style={activeCommentTab === 'question' ? { color: GREEN } : {}}
+                >
                     {language === 'uz' ? "Savollar" : "Вопросы"}
                     {activeCommentTab === 'question' && <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: GREEN }} />}
                 </button>
@@ -220,7 +235,14 @@ export const ReviewsSection = ({
                             <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{language === 'uz' ? 'Baholang:' : 'Оцените:'}</span>
                             <div className="flex gap-1">
                                 {[1, 2, 3, 4, 5].map(star => (
-                                    <button key={star} onClick={() => setCommentRating(star)}>
+                                    <button
+                                        key={star}
+                                        onClick={() => {
+                                            videoPreWarmer.triggerHaptic("light");
+                                            setCommentRating(star);
+                                        }}
+                                        className="ios-icon-tap active:scale-90 transition-transform duration-150"
+                                    >
                                         <Star size={24} fill={commentRating >= star ? "#FBBF24" : "none"} className={commentRating >= star ? "text-yellow-400" : "text-gray-200"} />
                                     </button>
                                 ))}
@@ -233,11 +255,18 @@ export const ReviewsSection = ({
                             value={commentText}
                             onChange={(e) => setCommentText(e.target.value)}
                             placeholder={activeCommentTab === 'review' ? (language === 'uz' ? "Sharh qoldiring..." : "Оставить отзыв...") : (language === 'uz' ? "Savolingizni bering..." : "Задать вопрос...")}
-                            className="w-full rounded-2xl p-4 pr-16 text-sm font-medium outline-none transition-all min-h-[100px] resize-none"
+                            className="w-full rounded-2xl p-4 pr-16 text-sm font-medium outline-none transition-colors duration-200 min-h-[100px] resize-none focus:bg-white focus:ring-2 focus:ring-[#2D6E3E]/20"
                             style={{ background: "#F5F5F0", border: "none" }}
                         />
                         <div className="absolute bottom-3 right-3 flex gap-2">
-                            <button onClick={submitComment} className="text-white p-3 rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-50" style={{ background: GREEN }}>
+                            <button
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("medium");
+                                    submitComment();
+                                }}
+                                className="ios-icon-tap active:scale-90 text-white p-3 rounded-xl shadow-lg transition-transform duration-150 disabled:opacity-50"
+                                style={{ background: GREEN }}
+                            >
                                 {isPosting ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                             </button>
                         </div>
@@ -285,16 +314,29 @@ export const ReviewsSection = ({
                                                 <button onClick={() => setCommentToDelete(comment.id)} className="text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 flex items-center gap-1"><Trash2 size={12} /> O'chirish</button>
                                             </div>
                                         )}
-                                        <button onClick={() => setActiveReactionPicker(activeReactionPicker === comment.id ? null : comment.id)} className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-black flex items-center gap-1 ml-auto">
+                                        <button
+                                            onClick={() => {
+                                                videoPreWarmer.triggerHaptic("light");
+                                                setActiveReactionPicker(activeReactionPicker === comment.id ? null : comment.id);
+                                            }}
+                                            className="ios-icon-tap active:scale-90 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-black flex items-center gap-1 ml-auto transition-transform duration-150"
+                                        >
                                             <Smile size={12} />
                                         </button>
                                     </div>
 
                                     {activeReactionPicker === comment.id && (
                                         <div className="mt-4 bg-white shadow-[0_20px_60px_rgba(0,0,0,0.18)] rounded-[24px] p-2 border border-gray-100 animate-in fade-in zoom-in-90 slide-in-from-top-4 duration-300 z-50 w-full max-w-[320px]">
-                                            <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-1 px-1">
+                                            <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-1 px-1 overscroll-x-contain touch-pan-x">
                                                 {EMOJIS.map(emoji => (
-                                                    <button key={emoji} onClick={() => handleReaction(comment.id, emoji)} className="hover:scale-125 transition-all active:scale-90 flex items-center justify-center shrink-0">
+                                                    <button
+                                                        key={emoji}
+                                                        onClick={() => {
+                                                            videoPreWarmer.triggerHaptic("light");
+                                                            handleReaction(comment.id, emoji);
+                                                        }}
+                                                        className="ios-icon-tap hover:scale-110 active:scale-90 transition-transform duration-150 flex items-center justify-center shrink-0"
+                                                    >
                                                         <AppleEmoji emoji={emoji} size={30} />
                                                     </button>
                                                 ))}
@@ -305,7 +347,14 @@ export const ReviewsSection = ({
                                     {comment.reactions && Object.keys(comment.reactions).length > 0 && (
                                         <div className="flex flex-wrap gap-3 mt-4">
                                             {Object.entries(comment.reactions).map(([emoji, users]: [string, any]) => (
-                                                <button key={emoji} onClick={() => handleReaction(comment.id, emoji)} className={`flex items-center gap-1.5 transition-all active:scale-90 ${users.includes(user?.id || user?.phone || "") ? "opacity-100 scale-110" : "opacity-50"}`}>
+                                                <button
+                                                    key={emoji}
+                                                    onClick={() => {
+                                                        videoPreWarmer.triggerHaptic("light");
+                                                        handleReaction(comment.id, emoji);
+                                                    }}
+                                                    className={`ios-tap-feedback flex items-center gap-1.5 transition-transform duration-150 active:scale-90 ${users.includes(user?.id || user?.phone || "") ? "opacity-100 scale-105" : "opacity-60"}`}
+                                                >
                                                     <AppleEmoji emoji={emoji} size={22} />
                                                     <span className="text-xs font-black text-gray-500">{users.length}</span>
                                                 </button>
@@ -318,7 +367,16 @@ export const ReviewsSection = ({
                                             <textarea value={editingText} onChange={(e) => setEditingText(e.target.value)} className="w-full text-sm font-medium outline-none resize-none min-h-[80px]" autoFocus />
                                             <div className="flex justify-end gap-2 mt-2">
                                                 <button onClick={() => setEditingCommentId(null)} className="px-4 py-2 text-[10px] font-black uppercase text-gray-400">Bekor qilish</button>
-                                                <button onClick={() => handleUpdateComment(comment.id)} className="px-6 py-2 text-white rounded-xl text-[10px] font-black uppercase shadow-lg transition-all" style={{ background: GREEN }}>Saqlash</button>
+                                                <button
+                                                    onClick={() => {
+                                                        videoPreWarmer.triggerHaptic("medium");
+                                                        handleUpdateComment(comment.id);
+                                                    }}
+                                                    className="ios-tap-feedback active:scale-95 px-6 py-2 text-white rounded-xl text-[10px] font-black uppercase shadow-lg transition-transform duration-150"
+                                                    style={{ background: GREEN }}
+                                                >
+                                                    Saqlash
+                                                </button>
                                             </div>
                                         </div>
                                     )}
@@ -344,7 +402,14 @@ export const ReviewsSection = ({
                     ))}
 
                 {comments.filter(c => c.type === activeCommentTab && !c.parentId).length > visibleCommentsCount && (
-                    <button onClick={() => setVisibleCommentsCount(prev => prev + 5)} className="w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2" style={{ background: "#EAF3EC", color: GREEN }}>
+                    <button
+                        onClick={() => {
+                            videoPreWarmer.triggerHaptic("light");
+                            setVisibleCommentsCount(prev => prev + 5);
+                        }}
+                        className="ios-tap-feedback active:scale-[0.98] w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-transform duration-150 flex items-center justify-center gap-2"
+                        style={{ background: "#EAF3EC", color: GREEN }}
+                    >
                         <ChevronDown size={14} strokeWidth={3} /> {language === 'uz' ? "Ko'proq ko'rish" : "Показать ещё"}
                     </button>
                 )}
@@ -358,8 +423,24 @@ export const ReviewsSection = ({
                         <Trash2 size={32} className="text-red-500 mx-auto mb-4" />
                         <h3 className="text-xl font-bold text-center mb-8">{language === 'uz' ? "Sharhni o'chirish" : "Удалить комментарий"}</h3>
                         <div className="flex flex-col gap-3">
-                            <button onClick={confirmDelete} className="w-full py-4 bg-red-500 text-white rounded-2xl font-black uppercase">O'chirish</button>
-                            <button onClick={() => setCommentToDelete(null)} className="w-full py-4 bg-gray-50 text-gray-400 rounded-2xl font-black uppercase">Bekor qilish</button>
+                            <button
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("medium");
+                                    confirmDelete();
+                                }}
+                                className="ios-tap-feedback active:scale-[0.98] w-full py-4 bg-red-500 text-white rounded-2xl font-black uppercase transition-transform duration-150"
+                            >
+                                O'chirish
+                            </button>
+                            <button
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("light");
+                                    setCommentToDelete(null);
+                                }}
+                                className="ios-tap-feedback active:scale-[0.98] w-full py-4 bg-gray-50 text-gray-400 rounded-2xl font-black uppercase transition-transform duration-150"
+                            >
+                                Bekor qilish
+                            </button>
                         </div>
                     </div>
                 </div>

@@ -3,6 +3,7 @@
 import { X, Image as ImageIcon } from "lucide-react";
 import { useEffect } from "react";
 import { getOptimizedImageUrl } from "@/lib/imageVariants";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 interface ProductDescriptionModalProps {
     isOpen: boolean;
@@ -50,15 +51,18 @@ export const ProductDescriptionModal = ({
                         </h2>
                     </div>
                     <button
-                        onClick={onClose}
-                        className="p-3 bg-gray-100 hover:bg-black hover:text-white rounded-full text-gray-600 transition-all active:scale-95"
+                        onClick={() => {
+                            videoPreWarmer.triggerHaptic("light");
+                            onClose();
+                        }}
+                        className="ios-icon-tap active:scale-90 p-3 bg-gray-100 hover:bg-black hover:text-white rounded-full text-gray-600 transition-transform duration-150 ease-out will-change-transform"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Body Content */}
-                <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-12 no-scrollbar">
+                <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-12 no-scrollbar overscroll-contain touch-pan-y [WebkitOverflowScrolling:touch]">
                     {/* Description Text */}
                     <div className="space-y-6">
                         <h3 className="text-xl md:text-2xl font-black text-gray-900 italic uppercase tracking-tight">
