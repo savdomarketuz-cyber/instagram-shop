@@ -10,6 +10,7 @@ import { getProductSlug } from "@/lib/slugify";
 import Image from "next/image";
 import { makeVariantLoader, hasVariants, getOptimizedImageUrl } from "@/lib/imageVariants";
 import { useStore as useStoreCart } from "@/store/store";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 const GREEN = "#2D6E3E";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
@@ -47,7 +48,12 @@ export default function WishlistPage() {
             <div className="md:hidden" style={{ background: "#FAFAF6", minHeight: "100vh", paddingBottom: 100 }}>
                 {/* Header */}
                 <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "20px 20px 16px" }}>
-                    <Link href={`/${language}/catalog`} style={{ width: 40, height: 40, borderRadius: 20, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", textDecoration: "none", color: "#0F1410", flexShrink: 0 }}>
+                    <Link
+                        href={`/${language}/catalog`}
+                        onClick={() => videoPreWarmer.triggerHaptic("light")}
+                        className="ios-icon-tap active:scale-90 transition-transform duration-150 will-change-transform"
+                        style={{ width: 40, height: 40, borderRadius: 20, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", textDecoration: "none", color: "#0F1410", flexShrink: 0 }}
+                    >
                         <ChevronLeft size={20} />
                     </Link>
                     <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.6, color: "#0F1410", margin: 0 }}>
@@ -101,7 +107,11 @@ export default function WishlistPage() {
 
                                     {/* Remove */}
                                     <button
-                                        onClick={() => toggleWishlist(item)}
+                                        onClick={() => {
+                                            videoPreWarmer.triggerHaptic("light");
+                                            toggleWishlist(item);
+                                        }}
+                                        className="ios-icon-tap active:scale-90 transition-transform duration-150 will-change-transform"
                                         style={{ position: "absolute", top: 8, right: 8, width: 30, height: 30, borderRadius: 10, background: "rgba(255,255,255,0.9)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}
                                     >
                                         <Heart size={14} color="#FF3B30" fill="#FF3B30" />
@@ -111,15 +121,31 @@ export default function WishlistPage() {
                                     <div style={{ padding: "0 12px 12px" }}>
                                         {cartItem ? (
                                             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0, background: "#F5F5F0", borderRadius: 12, overflow: "hidden", height: 36 }}>
-                                                <button onClick={() => cartItem.quantity > 1 ? updateQuantity(item.id, cartItem.quantity - 1) : removeFromCart(item.id)}
-                                                    style={{ flex: 1, height: "100%", border: "none", background: "none", cursor: "pointer", color: "#5A625C", fontSize: 16 }}>−</button>
+                                                <button
+                                                    onClick={() => {
+                                                        videoPreWarmer.triggerHaptic("light");
+                                                        cartItem.quantity > 1 ? updateQuantity(item.id, cartItem.quantity - 1) : removeFromCart(item.id);
+                                                    }}
+                                                    className="ios-tap-feedback active:scale-90 transition-transform duration-150 will-change-transform"
+                                                    style={{ flex: 1, height: "100%", border: "none", background: "none", cursor: "pointer", color: "#5A625C", fontSize: 16 }}
+                                                >−</button>
                                                 <span style={{ fontSize: 14, fontWeight: 800, color: "#0F1410", minWidth: 24, textAlign: "center" }}>{cartItem.quantity}</span>
-                                                <button onClick={() => updateQuantity(item.id, cartItem.quantity + 1)}
-                                                    style={{ flex: 1, height: "100%", border: "none", background: "none", cursor: "pointer", color: GREEN, fontSize: 16 }}>+</button>
+                                                <button
+                                                    onClick={() => {
+                                                        videoPreWarmer.triggerHaptic("light");
+                                                        updateQuantity(item.id, cartItem.quantity + 1);
+                                                    }}
+                                                    className="ios-tap-feedback active:scale-90 transition-transform duration-150 will-change-transform"
+                                                    style={{ flex: 1, height: "100%", border: "none", background: "none", cursor: "pointer", color: GREEN, fontSize: 16 }}
+                                                >+</button>
                                             </div>
                                         ) : (
                                             <button
-                                                onClick={() => addToCart({ ...item, imageUrl: item.imageUrl || item.image } as any)}
+                                                onClick={() => {
+                                                    videoPreWarmer.triggerHaptic("medium");
+                                                    addToCart({ ...item, imageUrl: item.imageUrl || item.image } as any);
+                                                }}
+                                                className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
                                                 style={{ width: "100%", height: 36, borderRadius: 12, border: "none", background: GREEN, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                                             >
                                                 <ShoppingBag size={14} /> {language === "uz" ? "Savatga" : "В корзину"}
@@ -161,7 +187,13 @@ export default function WishlistPage() {
                                         <h3 className="text-[13px] font-bold text-gray-900 leading-tight line-clamp-2 min-h-[2.5em]">{name}</h3>
                                         <p className="text-sm font-black text-black mt-1">{fmtPrice(item.price)}</p>
                                     </Link>
-                                    <button onClick={() => toggleWishlist(item)} className="absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur rounded-2xl text-red-500 shadow-xl active:scale-90 transition-all">
+                                    <button
+                                        onClick={() => {
+                                            videoPreWarmer.triggerHaptic("light");
+                                            toggleWishlist(item);
+                                        }}
+                                        className="ios-icon-tap active:scale-90 absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur rounded-2xl text-red-500 shadow-xl transition-transform duration-150 will-change-transform"
+                                    >
                                         <Trash2 size={16} />
                                     </button>
                                 </div>

@@ -54,6 +54,7 @@ import Image from "next/image";
 import { uploadToYandexS3 } from "@/lib/yandex-s3";
 import { useShallow } from "zustand/react/shallow";
 import { PinKeypad } from "@/components/PinKeypad";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 const ACCOUNT_VIEWS = ["edit-profile", "language", "returns", "promo-codes", "reviews", "affiliate"] as const;
 type AccountView = "menu" | typeof ACCOUNT_VIEWS[number];
@@ -242,7 +243,13 @@ function AccountContent() {
         return (
             <div className="bg-[#FAFAF6] min-h-screen pb-24 px-4 md:px-10">
                 <div className="max-w-xl mx-auto pt-10">
-                    <button onClick={() => setView("menu")} className="flex items-center gap-2 text-gray-400 font-bold mb-8 hover:text-black transition-colors">
+                    <button
+                        onClick={() => {
+                            videoPreWarmer.triggerHaptic("light");
+                            setView("menu");
+                        }}
+                        className="ios-icon-tap active:scale-90 flex items-center gap-2 text-gray-400 font-bold mb-8 hover:text-black transition-colors duration-150 will-change-transform"
+                    >
                         <ChevronLeft size={20} />
                         {language === 'uz' ? 'Orqaga' : 'Назад'}
                     </button>
@@ -256,7 +263,7 @@ function AccountContent() {
                                 type="text"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-2xl px-6 py-4 font-bold outline-none transition-all"
+                                className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-2xl px-6 py-4 font-bold outline-none transition-colors duration-150"
                             />
                         </div>
                         <div>
@@ -265,7 +272,7 @@ function AccountContent() {
                                 type="text"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                className={`w-full bg-gray-50 border-2 ${usernameError ? 'border-red-500' : 'border-transparent focus:border-black'} rounded-2xl px-6 py-4 font-bold outline-none transition-all`}
+                                className={`w-full bg-gray-50 border-2 ${usernameError ? 'border-red-500' : 'border-transparent focus:border-black'} rounded-2xl px-6 py-4 font-bold outline-none transition-colors duration-150`}
                             />
                             {usernameError && <p className="text-red-500 text-[10px] font-bold mt-2 ml-4">{usernameError}</p>}
                         </div>
@@ -277,14 +284,17 @@ function AccountContent() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="******"
-                                className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-2xl px-6 py-4 font-bold outline-none transition-all"
+                                className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-2xl px-6 py-4 font-bold outline-none transition-colors duration-150"
                             />
                         </div>
 
                         <button
-                            onClick={handleSave}
+                            onClick={() => {
+                                videoPreWarmer.triggerHaptic("medium");
+                                handleSave();
+                            }}
                             disabled={isSaving}
-                            className="w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50"
+                            className="ios-tap-feedback active:scale-[0.98] w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-transform duration-150 will-change-transform disabled:opacity-50"
                             style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff" }}
                         >
                             {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
@@ -305,7 +315,13 @@ function AccountContent() {
         return (
             <div className="bg-[#FAFAF6] min-h-screen px-4 md:px-10">
                 <div className="max-w-xl mx-auto pt-10">
-                    <button onClick={() => setView("menu")} className="flex items-center gap-2 text-gray-400 font-bold mb-8 transition-colors">
+                    <button
+                        onClick={() => {
+                            videoPreWarmer.triggerHaptic("light");
+                            setView("menu");
+                        }}
+                        className="ios-icon-tap active:scale-90 flex items-center gap-2 text-gray-400 font-bold mb-8 transition-colors duration-150 will-change-transform"
+                    >
                         <ChevronLeft size={20} />
                         {language === 'uz' ? 'Orqaga' : 'Назад'}
                     </button>
@@ -313,22 +329,24 @@ function AccountContent() {
                     
                     <div className="space-y-4">
                         <button 
-                            onClick={() => { 
+                            onClick={() => {
+                                videoPreWarmer.triggerHaptic("selection");
                                 setLanguage("uz"); 
                                 router.push("/uz/account");
                                 setView("menu"); 
                             }}
-                            className={`w-full p-6 bg-white rounded-3xl flex items-center justify-between font-black italic tracking-tighter text-xl ${language === 'uz' ? 'ring-2 ring-black' : ''}`}
+                            className={`ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform w-full p-6 bg-white rounded-3xl flex items-center justify-between font-black italic tracking-tighter text-xl ${language === 'uz' ? 'ring-2 ring-black' : ''}`}
                         >
                             O'zbekcha {language === 'uz' && <CheckCircle2 size={24} />}
                         </button>
                         <button 
-                            onClick={() => { 
+                            onClick={() => {
+                                videoPreWarmer.triggerHaptic("selection");
                                 setLanguage("ru"); 
                                 router.push("/ru/account");
                                 setView("menu"); 
                             }}
-                            className={`w-full p-6 bg-white rounded-3xl flex items-center justify-between font-black italic tracking-tighter text-xl ${language === 'ru' ? 'ring-2 ring-black' : ''}`}
+                            className={`ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform w-full p-6 bg-white rounded-3xl flex items-center justify-between font-black italic tracking-tighter text-xl ${language === 'ru' ? 'ring-2 ring-black' : ''}`}
                         >
                             Русский {language === 'ru' && <CheckCircle2 size={24} />}
                         </button>
@@ -404,15 +422,30 @@ function AccountContent() {
 
                     {/* Stats row */}
                     <div style={{ marginTop: 18, display: "flex", gap: 8, position: "relative" }}>
-                        <Link href={`/${language}/orders`} style={{ flex: 1, padding: 10, borderRadius: 14, background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)", textDecoration: "none", color: "#fff", display: "block" }}>
+                        <Link
+                            href={`/${language}/orders`}
+                            onClick={() => videoPreWarmer.triggerHaptic("light")}
+                            className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
+                            style={{ flex: 1, padding: 10, borderRadius: 14, background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)", textDecoration: "none", color: "#fff", display: "block" }}
+                        >
                             <div style={{ fontSize: 18, fontWeight: 700 }}>{orderCount}</div>
                             <div style={{ fontSize: 11, opacity: 0.8 }}>{t.account.orders}</div>
                         </Link>
-                        <Link href={`/${language}/wishlist`} style={{ flex: 1, padding: 10, borderRadius: 14, background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)", textDecoration: "none", color: "#fff", display: "block" }}>
+                        <Link
+                            href={`/${language}/wishlist`}
+                            onClick={() => videoPreWarmer.triggerHaptic("light")}
+                            className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
+                            style={{ flex: 1, padding: 10, borderRadius: 14, background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)", textDecoration: "none", color: "#fff", display: "block" }}
+                        >
                             <div style={{ fontSize: 18, fontWeight: 700 }}>{wishlist.length}</div>
                             <div style={{ fontSize: 11, opacity: 0.8 }}>{t.nav.wishlist}</div>
                         </Link>
-                        <Link href={`/${language}/wallet`} style={{ flex: 1, padding: 10, borderRadius: 14, background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)", textDecoration: "none", color: "#fff", display: "block" }}>
+                        <Link
+                            href={`/${language}/wallet`}
+                            onClick={() => videoPreWarmer.triggerHaptic("light")}
+                            className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
+                            style={{ flex: 1, padding: 10, borderRadius: 14, background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)", textDecoration: "none", color: "#fff", display: "block" }}
+                        >
                             <div style={{ fontSize: 18, fontWeight: 700 }}>{(balance || 0).toLocaleString()}</div>
                             <div style={{ fontSize: 11, opacity: 0.8 }}>{language === 'uz' ? 'Cashback' : 'Кэшбэк'}</div>
                         </Link>
@@ -457,7 +490,11 @@ function AccountContent() {
                 {/* Logout */}
                 <div style={{ padding: "16px 16px 0" }}>
                     <button
-                        onClick={logout}
+                        onClick={() => {
+                            videoPreWarmer.triggerHaptic("medium");
+                            logout();
+                        }}
+                        className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
                         style={{
                             width: "100%", padding: "14px 16px", borderRadius: 18,
                             background: "#fff", border: "none", cursor: "pointer",
@@ -596,7 +633,13 @@ function ReviewsView({ user, language, showToast, onBack }: any) {
     return (
         <div className="bg-[#FAFAF6] min-h-screen pb-24 px-4 md:px-10">
             <div className="max-w-xl mx-auto pt-10">
-                <button onClick={onBack} className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8 hover:text-black transition-all">
+                <button
+                    onClick={() => {
+                        videoPreWarmer.triggerHaptic("light");
+                        onBack();
+                    }}
+                    className="ios-icon-tap active:scale-90 flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8 hover:text-black transition-colors duration-150 will-change-transform"
+                >
                     <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
                 </button>
 
@@ -617,15 +660,18 @@ function ReviewsView({ user, language, showToast, onBack }: any) {
                                 {pendingProducts.map(p => (
                                     <div 
                                         key={p.id} 
-                                        onClick={() => setReviewProduct(p)}
-                                        className="bg-white p-4 rounded-3xl flex items-center gap-4 border border-emerald-100 shadow-xl shadow-emerald-500/5 group hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+                                        onClick={() => {
+                                            videoPreWarmer.triggerHaptic("light");
+                                            setReviewProduct(p);
+                                        }}
+                                        className="ios-tap-feedback active:scale-[0.98] bg-white p-4 rounded-3xl flex items-center gap-4 border border-emerald-100 shadow-xl shadow-emerald-500/5 group cursor-pointer transition-transform duration-150 will-change-transform"
                                     >
                                         <div className="w-16 h-16 rounded-2xl bg-gray-100 overflow-hidden shrink-0"><img src={getOptimizedImageUrl(p.image_metadata, p.image, 'xs')} className="w-full h-full object-cover" alt={p.name} /></div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-xs font-black italic uppercase truncate">{p.name}</p>
                                             <p className="text-[10px] font-bold text-[#2D6E3E] uppercase tracking-widest mt-1">{language === 'uz' ? 'Mahsulotni baholang' : 'Оцените товар'}</p>
                                         </div>
-                                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-[#2D6E3E] group-hover:bg-[#EAF3EC]0 group-hover:text-white transition-all">
+                                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-[#2D6E3E] group-hover:bg-[#EAF3EC]0 group-hover:text-white transition-colors duration-150">
                                             <Star size={18} fill="currentColor" />
                                         </div>
                                     </div>
@@ -690,11 +736,19 @@ function ReviewsView({ user, language, showToast, onBack }: any) {
 
             {/* Review Modal */}
             {reviewProduct && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
-                    <div className="bg-white w-full max-w-sm rounded-[48px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in duration-500">
+                <div onClick={() => setReviewProduct(null)} className="fixed inset-0 bg-black/70 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+                    <div onClick={e => e.stopPropagation()} className="bg-white w-full max-w-sm rounded-[48px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in duration-300">
                         <div className="p-8 pb-4 flex justify-between items-center">
                             <h3 className="text-xl font-black italic tracking-tighter uppercase">{language === 'uz' ? 'Baholash' : 'Оценка'}</h3>
-                            <button onClick={() => setReviewProduct(null)} className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center"><X size={20} /></button>
+                            <button
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("light");
+                                    setReviewProduct(null);
+                                }}
+                                className="ios-icon-tap active:scale-90 w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center transition-transform duration-150 will-change-transform"
+                            >
+                                <X size={20} />
+                            </button>
                         </div>
                         <div className="px-8 pb-10 space-y-6 overflow-y-auto no-scrollbar">
                            <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-3xl">
@@ -704,7 +758,14 @@ function ReviewsView({ user, language, showToast, onBack }: any) {
 
                            <div className="flex justify-center gap-2">
                                {[1,2,3,4,5].map(star => (
-                                   <button key={star} onClick={() => setReviewRating(star)} className="p-1 transition-transform active:scale-90">
+                                   <button
+                                       key={star}
+                                       onClick={() => {
+                                           videoPreWarmer.triggerHaptic("selection");
+                                           setReviewRating(star);
+                                       }}
+                                       className="ios-icon-tap p-1 transition-transform duration-150 will-change-transform active:scale-90"
+                                   >
                                        <Star size={36} fill={reviewRating >= star ? "#EAB308" : "none"} className={reviewRating >= star ? "text-yellow-500" : "text-gray-200"} />
                                    </button>
                                ))}
@@ -714,7 +775,7 @@ function ReviewsView({ user, language, showToast, onBack }: any) {
                                 value={reviewText}
                                 onChange={e => setReviewText(e.target.value)}
                                 placeholder={language === 'uz' ? "Fikringiz..." : "Ваш отзыв..."}
-                                className="w-full bg-gray-50 border-none rounded-3xl p-6 text-sm font-bold h-32 resize-none outline-none focus:ring-2 focus:ring-black transition-all"
+                                className="w-full bg-gray-50 border-none rounded-3xl p-6 text-sm font-bold h-32 resize-none outline-none focus:ring-2 focus:ring-black transition-shadow"
                            />
 
                            {/* Media Upload */}
@@ -724,63 +785,73 @@ function ReviewsView({ user, language, showToast, onBack }: any) {
                                         type="file" accept="image/*" className="hidden" 
                                         onChange={async (e) => {
                                             const file = e.target.files?.[0];
-                                            if (file) {
-                                                setIsUploading(true);
-                                                try {
-                                                    const { url } = await uploadToYandexS3(file);
-                                                    setReviewImages([...reviewImages, url]);
-                                                } finally { setIsUploading(false); }
-                                            }
-                                        }} 
-                                   />
-                                   <Camera size={20} className="text-gray-400" />
-                               </label>
-                               <label className="flex-1 h-14 bg-gray-50 rounded-2xl flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-gray-100 hover:border-gray-300">
-                                   <input 
-                                        type="file" accept="video/*" className="hidden"
-                                        onChange={async (e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) {
-                                                setIsUploading(true);
-                                                try {
-                                                    const { url } = await uploadToYandexS3(file);
-                                                    setReviewVideo(url);
-                                                } finally { setIsUploading(false); }
+                                            if (!file) return;
+                                            setIsUploading(true);
+                                            try {
+                                                const { url } = await uploadToYandexS3(file);
+                                                setReviewImages([...reviewImages, url]);
+                                            } catch (err) {
+                                                showToast(language === 'uz' ? "Yuklashda xatolik" : "Ошибка загрузки", "error");
+                                            } finally {
+                                                setIsUploading(false);
                                             }
                                         }}
                                    />
-                                   <Video size={20} className="text-gray-400" />
+                                   <Camera size={16} className="text-gray-400" />
+                                   <span className="text-[8px] font-black uppercase tracking-widest text-gray-400 mt-1">{language === 'uz' ? 'Rasm' : 'Фото'}</span>
+                               </label>
+                               <label className="flex-1 h-14 bg-gray-50 rounded-2xl flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-gray-100 hover:border-gray-300">
+                                   <input 
+                                        type="file" accept="video/*" className="hidden" 
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+                                            setIsUploading(true);
+                                            try {
+                                                const { url } = await uploadToYandexS3(file);
+                                                setReviewVideo(url);
+                                            } catch (err) {
+                                                showToast(language === 'uz' ? "Yuklashda xatolik" : "Ошибка загрузки", "error");
+                                            } finally {
+                                                setIsUploading(false);
+                                            }
+                                        }}
+                                   />
+                                   <Video size={16} className="text-gray-400" />
+                                   <span className="text-[8px] font-black uppercase tracking-widest text-gray-400 mt-1">{language === 'uz' ? 'Video' : 'Видео'}</span>
                                </label>
                             </div>
 
-
-                           {/* Media Preview */}
+                           {/* Uploaded Media Previews */}
                            {(reviewImages.length > 0 || reviewVideo) && (
-                               <div className="flex gap-2 overflow-x-auto no-scrollbar">
-                                   {reviewImages.map((img, i) => (
-                                       <div key={i} className="w-14 h-14 rounded-xl overflow-hidden relative group">
-                                           <img src={img} className="w-full h-full object-cover" />
-                                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer" onClick={() => setReviewImages(reviewImages.filter((_, idx) => idx !== i))}>
-                                               <X size={12} className="text-white" />
-                                           </div>
-                                       </div>
-                                   ))}
-                                   {reviewVideo && (
-                                       <div className="w-14 h-14 rounded-xl overflow-hidden relative group" style={{ background: "#0F1410" }}>
-                                           <video src={reviewVideo} className="w-full h-full object-cover opacity-60" />
-                                           <div className="absolute inset-0 flex items-center justify-center"><Play size={14} className="text-white" /></div>
-                                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer" onClick={() => setReviewVideo("")}>
-                                               <X size={12} className="text-white" />
-                                           </div>
-                                       </div>
-                                   )}
-                               </div>
+                                <div className="flex gap-2 overflow-x-auto pb-2">
+                                    {reviewImages.map((img, i) => (
+                                        <div key={i} className="w-14 h-14 rounded-xl overflow-hidden relative group shrink-0">
+                                            <img src={img} className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer" onClick={() => setReviewImages(reviewImages.filter((_, idx) => idx !== i))}>
+                                                <X size={12} className="text-white" />
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {reviewVideo && (
+                                        <div className="w-14 h-14 rounded-xl overflow-hidden relative group" style={{ background: "#0F1410" }}>
+                                            <video src={reviewVideo} className="w-full h-full object-cover opacity-60" />
+                                            <div className="absolute inset-0 flex items-center justify-center"><Play size={14} className="text-white" /></div>
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer" onClick={() => setReviewVideo("")}>
+                                                <X size={12} className="text-white" />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                            )}
 
                            <button 
-                                onClick={handleSubmitReview}
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("medium");
+                                    handleSubmitReview();
+                                }}
                                 disabled={isSubmitting || isUploading || !reviewText.trim()}
-                                className="w-full py-5 rounded-[28px] font-black text-xs uppercase tracking-widest active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-3 velari-green-btn"
+                                className="ios-tap-feedback active:scale-[0.98] w-full py-5 rounded-[28px] font-black text-xs uppercase tracking-widest transition-transform duration-150 will-change-transform disabled:opacity-50 flex items-center justify-center gap-3 velari-green-btn"
                            >
                                {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <><Check size={18} /> {language === 'uz' ? 'Tasdiqlash' : 'Подтвердить'}</>}
                            </button>
@@ -866,7 +937,14 @@ function ReturnsView({ user, t, language, onBack }: any) {
     return (
         <div className="bg-[#FAFAF6] min-h-screen pb-24 px-4 md:px-10">
             <div className="max-w-xl mx-auto pt-10">
-                <button onClick={selectedOrder ? () => setSelectedOrder(null) : onBack} className="flex items-center gap-2 mb-8 bg-white border border-gray-100 shadow-sm rounded-2xl pl-3 pr-5 py-3 text-gray-700 font-black uppercase tracking-widest text-[11px] hover:bg-black hover:text-white transition-all active:scale-95">
+                <button
+                    onClick={() => {
+                        videoPreWarmer.triggerHaptic("light");
+                        if (selectedOrder) setSelectedOrder(null);
+                        else onBack();
+                    }}
+                    className="ios-icon-tap active:scale-90 flex items-center gap-2 mb-8 bg-white border border-gray-100 shadow-sm rounded-2xl pl-3 pr-5 py-3 text-gray-700 font-black uppercase tracking-widest text-[11px] hover:bg-black hover:text-white transition-colors duration-150 will-change-transform"
+                >
                     <ChevronLeft size={18} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
                 </button>
 
@@ -880,7 +958,8 @@ function ReturnsView({ user, t, language, onBack }: any) {
                         {/* Qaytarish shartlari (return-policy) — chiroyli havola tugma */}
                         <Link
                             href={`/${language}/return-policy`}
-                            className="group flex items-center gap-4 rounded-[28px] p-5 text-white overflow-hidden relative active:scale-[0.98] transition-all"
+                            onClick={() => videoPreWarmer.triggerHaptic("light")}
+                            className="group flex items-center gap-4 rounded-[28px] p-5 text-white overflow-hidden relative ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
                             style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", boxShadow: "0 8px 24px rgba(45,110,62,0.25)" }}
                         >
                             <div className="absolute -bottom-6 -right-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
@@ -907,15 +986,18 @@ function ReturnsView({ user, t, language, onBack }: any) {
                                 {orders.map(order => (
                                     <div 
                                         key={order.id} 
-                                        onClick={() => setSelectedOrder(order)}
-                                        className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer group"
+                                        onClick={() => {
+                                            videoPreWarmer.triggerHaptic("light");
+                                            setSelectedOrder(order);
+                                        }}
+                                        className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100 ios-tap-feedback active:scale-[0.99] transition-transform duration-150 will-change-transform cursor-pointer group"
                                     >
                                         <div className="flex justify-between items-start mb-4">
                                             <div>
                                                 <p className="text-[10px] font-black text-gray-400 uppercase">#{order.id.slice(0,8)}</p>
                                                 <p className="font-black text-lg italic tracking-tighter">{order.total.toLocaleString()} {language === 'uz' ? "so'm" : "сум"}</p>
                                             </div>
-                                            <ChevronRight className="text-gray-300 group-hover:text-black transition-all" />
+                                            <ChevronRight className="text-gray-300 group-hover:text-black transition-colors" />
                                         </div>
                                     </div>
                                 ))}
@@ -935,10 +1017,11 @@ function ReturnsView({ user, t, language, onBack }: any) {
                                             <div 
                                                 key={i} 
                                                 onClick={() => {
+                                                    videoPreWarmer.triggerHaptic("selection");
                                                     if (isSelected) setSelectedItems(selectedItems.filter(si => si.id !== item.id));
                                                     else setSelectedItems([...selectedItems, item]);
                                                 }}
-                                                className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between ${isSelected ? 'border-black bg-gray-50' : 'border-gray-50 hover:border-gray-200'}`}
+                                                className={`p-4 rounded-2xl border-2 transition-colors duration-150 cursor-pointer flex items-center justify-between ios-tap-feedback active:scale-[0.98] will-change-transform ${isSelected ? 'border-black bg-gray-50' : 'border-gray-50 hover:border-gray-200'}`}
                                             >
                                                 <div className="font-bold text-sm tracking-tighter italic uppercase">{item.name}</div>
                                                 <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 ${isSelected ? 'border-transparent text-white' : 'border-gray-100'}" style={isSelected ? { background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" } : {}}`}>
@@ -953,7 +1036,17 @@ function ReturnsView({ user, t, language, onBack }: any) {
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">{language === 'uz' ? 'Qaytarish sababi' : 'Причина возврата'}</label>
                                 <textarea value={reason} onChange={e => setReason(e.target.value)} className="w-full bg-gray-50 border-none rounded-3xl p-6 text-sm font-medium h-32 resize-none" />
                             </div>
-                            <button onClick={handleSubmit} disabled={submitting || selectedItems.length === 0 || !reason.trim()} className="w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 disabled:opacity-20 transition-all" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff" }}>TASDIQLASH</button>
+                            <button
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("medium");
+                                    handleSubmit();
+                                }}
+                                disabled={submitting || selectedItems.length === 0 || !reason.trim()}
+                                className="ios-tap-feedback active:scale-[0.98] w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest disabled:opacity-20 transition-transform duration-150 will-change-transform"
+                                style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff" }}
+                            >
+                                TASDIQLASH
+                            </button>
                         </div>
                     </div>
                 )}
@@ -978,7 +1071,13 @@ function PromoCodesView({ t, language, onBack }: any) {
     return (
         <div className="bg-[#FAFAF6] min-h-screen pb-24 px-4 md:px-10">
             <div className="max-w-xl mx-auto pt-10">
-                <button onClick={onBack} className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8 hover:text-black transition-all">
+                <button
+                    onClick={() => {
+                        videoPreWarmer.triggerHaptic("light");
+                        onBack();
+                    }}
+                    className="ios-icon-tap active:scale-90 flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8 hover:text-black transition-colors duration-150 will-change-transform"
+                >
                     <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
                 </button>
                 <div className="space-y-6">
@@ -1473,7 +1572,13 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
         <div className="bg-[#FAFAF6] min-h-screen pb-24 px-4 md:px-10 overflow-x-hidden">
             <div className="max-w-4xl mx-auto pt-10">
                 <div className="flex justify-between items-center mb-8">
-                    <button onClick={onBack} className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] hover:text-black transition-all">
+                    <button
+                        onClick={() => {
+                            videoPreWarmer.triggerHaptic("light");
+                            onBack();
+                        }}
+                        className="ios-icon-tap active:scale-90 flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] hover:text-black transition-colors duration-150 will-change-transform"
+                    >
                         <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
                     </button>
                     <div className="flex items-center gap-2 px-4 py-1.5 rounded-full scale-90" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff" }}>
@@ -1491,8 +1596,11 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                     ].map(tab => (
                         <button
                             key={tab.id}
-                            onClick={() => setActiveTab(tab.id as any)}
-                            className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab.id ? 'velari-green-btn' : 'text-gray-400 hover:text-black hover:bg-white'}`}
+                            onClick={() => {
+                                videoPreWarmer.triggerHaptic("selection");
+                                setActiveTab(tab.id as any);
+                            }}
+                            className={`ios-tap-feedback active:scale-95 flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-transform duration-150 will-change-transform whitespace-nowrap ${activeTab === tab.id ? 'velari-green-btn' : 'text-gray-400 hover:text-black hover:bg-white'}`}
                         >
                             <tab.icon size={14} />
                             {tab.label}
@@ -2201,11 +2309,19 @@ function VDivider() {
 function MenuItem({ href, icon, label, language, onClick, badge }: any) {
     const GREEN_TINT = "#EAF3EC";
 
+    const handleClick = (e: React.MouseEvent) => {
+        videoPreWarmer.triggerHaptic("light");
+        if (onClick) onClick(e);
+    };
+
     const Content = (
-        <div style={{
-            width: "100%", display: "flex", alignItems: "center", gap: 14,
-            padding: "14px 16px", cursor: "pointer",
-        }}>
+        <div
+            className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
+            style={{
+                width: "100%", display: "flex", alignItems: "center", gap: 14,
+                padding: "14px 16px", cursor: "pointer",
+            }}
+        >
             <div style={{
                 width: 36, height: 36, borderRadius: 10, background: GREEN_TINT,
                 display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
@@ -2230,7 +2346,7 @@ function MenuItem({ href, icon, label, language, onClick, badge }: any) {
     );
 
     if (href && href !== "#") {
-        return <Link href={`/${language}${href}`} style={{ display: "block", textDecoration: "none" }}>{Content}</Link>;
+        return <Link href={`/${language}${href}`} onClick={handleClick} style={{ display: "block", textDecoration: "none" }}>{Content}</Link>;
     }
-    return <div onClick={onClick}>{Content}</div>;
+    return <div onClick={handleClick}>{Content}</div>;
 }

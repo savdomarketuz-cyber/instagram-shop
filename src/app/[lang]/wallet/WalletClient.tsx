@@ -16,6 +16,7 @@ import { supabase } from "@/lib/supabase";
 import { useStore } from "@/store/store";
 import { translations } from "@/lib/translations";
 import { useRouter } from "next/navigation";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 export default function WalletClient() {
     const router = useRouter();
@@ -128,7 +129,14 @@ export default function WalletClient() {
             <div className="max-w-xl mx-auto" style={{ padding: "0 16px" }}>
                 {/* Back button */}
                 <div style={{ paddingTop: 20, marginBottom: 16 }}>
-                    <button onClick={() => router.back()} style={{ width: 40, height: 40, borderRadius: 20, background: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", cursor: "pointer" }}>
+                    <button
+                        onClick={() => {
+                            videoPreWarmer.triggerHaptic("light");
+                            router.back();
+                        }}
+                        className="ios-icon-tap active:scale-90 transition-transform duration-150 will-change-transform"
+                        style={{ width: 40, height: 40, borderRadius: 20, background: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", cursor: "pointer" }}
+                    >
                         <ChevronLeft size={20} color="#0F1410" />
                     </button>
                 </div>
@@ -171,7 +179,11 @@ export default function WalletClient() {
                 {/* Transfer button */}
                 <div style={{ background: "#fff", borderRadius: 20, overflow: "hidden", marginBottom: 14 }}>
                     <button
-                        onClick={() => setShowTransfer(true)}
+                        onClick={() => {
+                            videoPreWarmer.triggerHaptic("light");
+                            setShowTransfer(true);
+                        }}
+                        className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
                         style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
                     >
                         <div style={{ width: 36, height: 36, borderRadius: 10, background: "#EAF3EC", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -226,9 +238,28 @@ export default function WalletClient() {
 
             {/* Transfer Modal */}
             {showTransfer && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(15,20,16,0.6)", backdropFilter: "blur(20px)", zIndex: 50, display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 0 20px" }}>
-                    <div style={{ background: "#fff", width: "100%", maxWidth: 480, borderRadius: "32px 32px 28px 28px", padding: "24px 24px 32px", boxShadow: "0 -8px 40px rgba(15,20,16,0.12)", position: "relative" }}>
-                        <button onClick={() => { setShowTransfer(false); setTransferStep(1); }} style={{ position: "absolute", top: 20, right: 20, width: 36, height: 36, borderRadius: 18, background: "#F5F5F0", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div
+                    onClick={() => {
+                        setShowTransfer(false);
+                        setTransferStep(1);
+                    }}
+                    className="animate-in fade-in duration-300"
+                    style={{ position: "fixed", inset: 0, background: "rgba(15,20,16,0.6)", backdropFilter: "blur(20px)", zIndex: 50, display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 0 20px" }}
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        className="animate-in slide-in-from-bottom duration-300"
+                        style={{ background: "#fff", width: "100%", maxWidth: 480, borderRadius: "32px 32px 28px 28px", padding: "24px 24px 32px", boxShadow: "0 -8px 40px rgba(15,20,16,0.12)", position: "relative" }}
+                    >
+                        <button
+                            onClick={() => {
+                                videoPreWarmer.triggerHaptic("light");
+                                setShowTransfer(false);
+                                setTransferStep(1);
+                            }}
+                            className="ios-icon-tap active:scale-90 transition-transform duration-150 will-change-transform"
+                            style={{ position: "absolute", top: 20, right: 20, width: 36, height: 36, borderRadius: 18, background: "#F5F5F0", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        >
                             ✕
                         </button>
                         <div style={{ textAlign: "center", marginBottom: 24 }}>
@@ -246,20 +277,43 @@ export default function WalletClient() {
                             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                                 <input type="tel" placeholder={language === 'uz' ? "Qabul qiluvchi tel..." : "Телефон получателя..."} value={receiverPhone} onChange={e => setReceiverPhone(e.target.value)} style={{ width: "100%", background: "#F5F5F0", border: "none", borderRadius: 16, padding: "14px 18px", fontSize: 15, fontWeight: 600, color: "#0F1410", outline: "none", boxSizing: "border-box" }} />
                                 <input type="number" placeholder={language === 'uz' ? "Summa (so'm)..." : "Сумма (сум)..."} value={amount} onChange={e => setAmount(e.target.value)} style={{ width: "100%", background: "#F5F5F0", border: "none", borderRadius: 16, padding: "14px 18px", fontSize: 15, fontWeight: 600, color: "#0F1410", outline: "none", boxSizing: "border-box" }} />
-                                <button onClick={() => setIsGift(!isGift)} style={{ width: "100%", padding: "14px 16px", borderRadius: 16, border: isGift ? "1.5px solid #F59E0B" : "1.5px solid rgba(15,20,16,0.06)", background: isGift ? "#FFFBEB" : "#fff", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
+                                <button
+                                    onClick={() => {
+                                        videoPreWarmer.triggerHaptic("selection");
+                                        setIsGift(!isGift);
+                                    }}
+                                    className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
+                                    style={{ width: "100%", padding: "14px 16px", borderRadius: 16, border: isGift ? "1.5px solid #F59E0B" : "1.5px solid rgba(15,20,16,0.06)", background: isGift ? "#FFFBEB" : "#fff", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}
+                                >
                                     <div style={{ width: 32, height: 32, borderRadius: 10, background: isGift ? "#F59E0B" : "#F5F5F0", display: "flex", alignItems: "center", justifyContent: "center" }}>
                                         <Star size={16} fill={isGift ? "#fff" : "none"} color={isGift ? "#fff" : "#9AA29C"} />
                                     </div>
                                     <span style={{ fontSize: 13, fontWeight: 600, color: isGift ? "#B45309" : "#9AA29C" }}>🎁 {language === 'uz' ? "Sovg'a sifatida yuborish" : "Отправить как подарок"}</span>
                                 </button>
-                                <button onClick={handleTransferRequest} disabled={isProcessing} style={{ width: "100%", padding: "16px", borderRadius: 18, border: "none", background: `linear-gradient(135deg, ${GREEN} 0%, #1F5A30 100%)`, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 8px 20px rgba(45,110,62,0.28)", opacity: isProcessing ? 0.5 : 1 }}>
+                                <button
+                                    onClick={() => {
+                                        videoPreWarmer.triggerHaptic("medium");
+                                        handleTransferRequest();
+                                    }}
+                                    disabled={isProcessing}
+                                    className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
+                                    style={{ width: "100%", padding: "16px", borderRadius: 18, border: "none", background: `linear-gradient(135deg, ${GREEN} 0%, #1F5A30 100%)`, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 8px 20px rgba(45,110,62,0.28)", opacity: isProcessing ? 0.5 : 1 }}
+                                >
                                     {isProcessing ? <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} /> : (language === 'uz' ? "Davom etish" : "Продолжить")}
                                 </button>
                             </div>
                         ) : (
                             <div style={{ display: "flex", flexDirection: "column", gap: 12, textAlign: "center" }}>
                                 <input type="text" maxLength={6} placeholder="000000" value={otpCode} onChange={e => setOtpCode(e.target.value)} style={{ background: "#F5F5F0", border: "none", borderRadius: 16, padding: "20px 16px", fontSize: 32, fontWeight: 700, textAlign: "center", letterSpacing: "0.5em", outline: "none", width: "100%", boxSizing: "border-box", color: "#0F1410" }} />
-                                <button onClick={handleTransferConfirm} disabled={isProcessing || otpCode.length < 6} style={{ width: "100%", padding: "16px", borderRadius: 18, border: "none", background: `linear-gradient(135deg, ${GREEN} 0%, #1F5A30 100%)`, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: (isProcessing || otpCode.length < 6) ? 0.5 : 1 }}>
+                                <button
+                                    onClick={() => {
+                                        videoPreWarmer.triggerHaptic("medium");
+                                        handleTransferConfirm();
+                                    }}
+                                    disabled={isProcessing || otpCode.length < 6}
+                                    className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
+                                    style={{ width: "100%", padding: "16px", borderRadius: 18, border: "none", background: `linear-gradient(135deg, ${GREEN} 0%, #1F5A30 100%)`, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: (isProcessing || otpCode.length < 6) ? 0.5 : 1 }}
+                                >
                                     {isProcessing ? <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} /> : <CheckCircle2 size={18} />}
                                     {language === 'uz' ? "Tasdiqlash" : "Подтвердить"}
                                 </button>

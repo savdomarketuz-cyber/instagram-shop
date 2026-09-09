@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useStore } from "@/store/store";
 import { supabase } from "@/lib/supabase";
 import { getProductSlug } from "@/lib/slugify";
-import { Package, ChevronRight, Clock, CheckCircle, Truck, XCircle, Loader2, Star, Camera, Video, MessageCircle, Play, RefreshCw } from "lucide-react";
+import { Package, ChevronRight, ChevronLeft, Clock, CheckCircle, Truck, XCircle, Loader2, Star, Camera, Video, MessageCircle, Play, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { getOptimizedImageUrl } from "@/lib/imageVariants";
@@ -12,6 +12,7 @@ import { translations } from "@/lib/translations";
 import { uploadToYandexS3 } from "@/lib/yandex-s3";
 import { mapOrder, mapProduct } from "@/lib/mappers";
 import { normalizeOrderStatus, getStatusLabel } from "@/lib/order-status";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 interface Order {
     id: string;
@@ -330,7 +331,16 @@ export default function OrdersPage() {
 
     return (
         <div className="p-6 min-h-screen pt-12 pb-24" style={{ background: "#FAFAF6" }}>
-            <h1 className="text-3xl font-black mb-10 tracking-tighter italic uppercase">{t.account.orders}</h1>
+            <div className="flex items-center gap-4 mb-8">
+                <Link
+                    href={`/${language}/account`}
+                    onClick={() => videoPreWarmer.triggerHaptic("light")}
+                    className="ios-icon-tap active:scale-90 w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm border border-gray-100 text-black transition-transform duration-150 will-change-transform"
+                >
+                    <ChevronLeft size={20} />
+                </Link>
+                <h1 className="text-3xl font-black tracking-tighter italic uppercase">{t.account.orders}</h1>
+            </div>
 
             {loading ? (
                 <div className="space-y-6">
@@ -361,8 +371,11 @@ export default function OrdersPage() {
                     {orders.map((order) => (
                         <div
                             key={order.id}
-                            onClick={() => setSelectedOrder(order)}
-                            className="rounded-[22px] p-5 active:scale-[0.98] transition-all cursor-pointer"
+                            onClick={() => {
+                                videoPreWarmer.triggerHaptic("light");
+                                setSelectedOrder(order);
+                            }}
+                            className="rounded-[22px] p-5 ios-tap-feedback active:scale-[0.99] transition-transform duration-150 will-change-transform cursor-pointer"
                             style={{ background: "#fff", boxShadow: "0 2px 12px rgba(15,20,16,0.06)", border: "1px solid rgba(15,20,16,0.05)" }}
                         >
                             <div className="mb-6">
@@ -406,8 +419,8 @@ export default function OrdersPage() {
 
             {/* Order Details Modal */}
             {selectedOrder && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-end justify-center animate-in fade-in duration-300 p-4">
-                    <div className="bg-white w-full max-w-md rounded-[40px] shadow-2xl animate-in slide-in-from-bottom duration-500 overflow-hidden pb-10">
+                <div onClick={() => setSelectedOrder(null)} className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-end justify-center animate-in fade-in duration-300 p-4">
+                    <div onClick={e => e.stopPropagation()} className="bg-white w-full max-w-md rounded-[40px] shadow-2xl animate-in slide-in-from-bottom duration-300 overflow-hidden pb-10">
                         <div className="p-8 border-b border-gray-100 flex justify-between items-center">
                             <div>
                                 <h2 className="text-2xl font-black italic tracking-tighter uppercase">
@@ -416,8 +429,11 @@ export default function OrdersPage() {
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ID: #{selectedOrder.id}</p>
                             </div>
                             <button
-                                onClick={() => setSelectedOrder(null)}
-                                className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 active:scale-90 transition-all"
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("light");
+                                    setSelectedOrder(null);
+                                }}
+                                className="ios-icon-tap active:scale-90 w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 transition-transform duration-150 will-change-transform"
                             >
                                 <ChevronRight size={24} className="rotate-90" />
                             </button>
@@ -461,14 +477,18 @@ export default function OrdersPage() {
                                         <div className="flex gap-2 w-full">
                                             <Link
                                                 href={`/products/${getProductSlug(item, language)}`}
-                                                className="flex-1 py-3 bg-white border border-gray-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-2 hover:bg-gray-50 transition-all active:scale-95"
+                                                onClick={() => videoPreWarmer.triggerHaptic("light")}
+                                                className="ios-tap-feedback active:scale-[0.98] flex-1 py-3 bg-white border border-gray-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-2 hover:bg-gray-50 transition-transform duration-150 will-change-transform"
                                             >
                                                 {t.common.inMarket}
                                             </Link>
                                             {(normalizeOrderStatus(selectedOrder.status) === 'delivered') && (
                                                 <button
-                                                    onClick={() => setReviewProduct(item)}
-                                                    className="flex-1 py-3 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-2 active:scale-95 shadow-lg"
+                                                    onClick={() => {
+                                                        videoPreWarmer.triggerHaptic("light");
+                                                        setReviewProduct(item);
+                                                    }}
+                                                    className="ios-tap-feedback active:scale-[0.98] flex-1 py-3 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-2 shadow-lg transition-transform duration-150 will-change-transform"
                                                     style={{ background: "#2D6E3E" }}
                                                 >
                                                     <Star size={12} fill="currentColor" />
@@ -505,9 +525,12 @@ export default function OrdersPage() {
                             {/* Cancel Order Button — faqat jo'natilmagan/yetkazilmagan buyurtmalar */}
                             {['awaiting_payment', 'accepted', 'pending'].includes(normalizeOrderStatus(selectedOrder.status)) && (
                                 <button
-                                    onClick={() => handleCancelOrder(selectedOrder.id)}
+                                    onClick={() => {
+                                        videoPreWarmer.triggerHaptic("medium");
+                                        handleCancelOrder(selectedOrder.id);
+                                    }}
                                     disabled={isCancelling}
-                                    className="w-full mt-10 py-4 bg-red-50 text-red-500 rounded-3xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-red-500 hover:text-white transition-all active:scale-95 disabled:opacity-50 border border-red-100"
+                                    className="ios-tap-feedback active:scale-[0.98] w-full mt-10 py-4 bg-red-50 text-red-500 rounded-3xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-transform duration-150 will-change-transform disabled:opacity-50 border border-red-100"
                                 >
                                     {isCancelling ? (
                                         <Loader2 className="animate-spin" size={16} />
@@ -535,8 +558,12 @@ export default function OrdersPage() {
                                 // So'rov yo'q yoki rad etilgan -> qaytarishni so'rash mumkin
                                 return (
                                     <button
-                                        onClick={() => { setReturnOrder(selectedOrder); setReturnReason(""); }}
-                                        className="w-full mt-10 py-4 bg-orange-50 text-orange-600 rounded-3xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-orange-500 hover:text-white transition-all active:scale-95 border border-orange-100"
+                                        onClick={() => {
+                                            videoPreWarmer.triggerHaptic("medium");
+                                            setReturnOrder(selectedOrder);
+                                            setReturnReason("");
+                                        }}
+                                        className="ios-tap-feedback active:scale-[0.98] w-full mt-10 py-4 bg-orange-50 text-orange-600 rounded-3xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-transform duration-150 will-change-transform border border-orange-100"
                                     >
                                         <RefreshCw size={16} />
                                         {rStatus === 'rejected'
@@ -557,13 +584,19 @@ export default function OrdersPage() {
             )}
             {/* Review Modal */}
             {reviewProduct && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
-                    <div className="bg-white w-full max-w-sm rounded-[48px] overflow-hidden shadow-2xl animate-in zoom-in duration-500 flex flex-col max-h-[90vh]">
+                <div onClick={() => setReviewProduct(null)} className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+                    <div onClick={e => e.stopPropagation()} className="bg-white w-full max-w-sm rounded-[48px] overflow-hidden shadow-2xl animate-in zoom-in duration-300 flex flex-col max-h-[90vh]">
                         <div className="p-10 pb-6 flex justify-between items-center">
                             <h3 className="text-2xl font-black italic tracking-tighter uppercase">
                                 {t.common.leaveReviewTitle}
                             </h3>
-                            <button onClick={() => setReviewProduct(null)} className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400">
+                            <button
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("light");
+                                    setReviewProduct(null);
+                                }}
+                                className="ios-icon-tap active:scale-90 w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 transition-transform duration-150 will-change-transform"
+                            >
                                 <XCircle size={20} />
                             </button>
                         </div>
@@ -586,8 +619,11 @@ export default function OrdersPage() {
                                     {[1, 2, 3, 4, 5].map((star) => (
                                         <button
                                             key={star}
-                                            onClick={() => setReviewRating(star)}
-                                            className={`p-2 transition-all duration-300 ${reviewRating >= star ? 'scale-125' : 'opacity-30 grayscale'}`}
+                                            onClick={() => {
+                                                videoPreWarmer.triggerHaptic("selection");
+                                                setReviewRating(star);
+                                            }}
+                                            className={`ios-icon-tap p-2 transition-transform duration-150 will-change-transform ${reviewRating >= star ? 'scale-125' : 'opacity-30 grayscale'}`}
                                         >
                                             <Star size={32} fill={reviewRating >= star ? "#fbbf24" : "none"} className={reviewRating >= star ? "text-yellow-400" : "text-gray-300"} />
                                         </button>
@@ -602,14 +638,14 @@ export default function OrdersPage() {
                                     value={reviewText}
                                     onChange={(e) => setReviewText(e.target.value)}
                                     placeholder={t.common.productOpinionPlaceholder}
-                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-[32px] p-6 text-sm font-bold h-32 outline-none transition-all resize-none shadow-inner"
+                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-[32px] p-6 text-sm font-bold h-32 outline-none transition-shadow resize-none shadow-inner"
                                 />
                             </div>
 
                             {/* Media Upload Simulation */}
                             <div className="space-y-4">
                                 <div className="flex gap-3">
-                                    <label className={`flex-1 bg-gray-50 border border-gray-100 py-4 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all border-dashed hover:bg-gray-100 ${isUploadingMedia ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <label className={`flex-1 bg-gray-50 border border-gray-100 py-4 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors border-dashed hover:bg-gray-100 ${isUploadingMedia ? 'opacity-50 pointer-events-none' : ''}`}>
                                         <input
                                             type="file"
                                             accept="image/*"
@@ -635,7 +671,7 @@ export default function OrdersPage() {
                                         </span>
                                     </label>
 
-                                    <label className={`flex-1 bg-gray-50 border border-gray-100 py-4 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all border-dashed hover:bg-gray-100 ${isUploadingMedia || reviewVideo ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <label className={`flex-1 bg-gray-50 border border-gray-100 py-4 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors border-dashed hover:bg-gray-100 ${isUploadingMedia || reviewVideo ? 'opacity-50 pointer-events-none' : ''}`}>
                                         <input
                                             type="file"
                                             accept="video/*"
@@ -648,7 +684,7 @@ export default function OrdersPage() {
                                                         const { url } = await uploadToYandexS3(file);
                                                         setReviewVideo(url);
                                                     } catch (err) {
-                                                        showToast(language === 'uz' ? "Video yuklashda xatolik" : "Ошибка при загрузке video", 'error');
+                                                        showToast(language === 'uz' ? "Video yuklashda xatolik" : "Ошибка при загрузке видео", 'error');
                                                     } finally {
                                                         setIsUploadingMedia(false);
                                                     }
@@ -660,10 +696,9 @@ export default function OrdersPage() {
                                             {isUploadingMedia ? "..." : t.common.video}
                                         </span>
                                     </label>
-
                                 </div>
 
-                                {/* Media Preview */}
+                                {/* Media Previews */}
                                 {(reviewImages.length > 0 || reviewVideo) && (
                                     <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
                                         {reviewImages.map((img, i) => (
@@ -688,9 +723,12 @@ export default function OrdersPage() {
                             </div>
 
                             <button
-                                onClick={handleSubmitReview}
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("medium");
+                                    handleSubmitReview();
+                                }}
                                 disabled={isSubmittingReview || !reviewText.trim()}
-                                className="w-full py-5 rounded-[32px] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+                                className="ios-tap-feedback active:scale-[0.98] w-full py-5 rounded-[32px] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-transform duration-150 will-change-transform disabled:opacity-50"
                                 style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", boxShadow: "0 8px 20px rgba(45,110,62,0.28)" }}
                             >
                                 {isSubmittingReview ? <Loader2 className="animate-spin" size={18} /> : (
@@ -707,8 +745,8 @@ export default function OrdersPage() {
 
             {/* Cancellation Confirmation Modal */}
             {orderToCancel && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
-                    <div className="bg-white w-full max-w-sm rounded-[48px] p-10 text-center space-y-8 animate-in zoom-in duration-500 shadow-2xl">
+                <div onClick={() => setOrderToCancel(null)} className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
+                    <div onClick={e => e.stopPropagation()} className="bg-white w-full max-w-sm rounded-[48px] p-10 text-center space-y-8 animate-in zoom-in duration-300 shadow-2xl">
                         <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto shadow-xl shadow-red-500/10">
                             <XCircle size={40} />
                         </div>
@@ -722,14 +760,20 @@ export default function OrdersPage() {
                         </div>
                         <div className="flex flex-col gap-3">
                             <button
-                                onClick={confirmCancelOrder}
-                                className="w-full py-5 bg-red-500 text-white rounded-[28px] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-red-500/20 active:scale-95 transition-all"
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("medium");
+                                    confirmCancelOrder();
+                                }}
+                                className="ios-tap-feedback active:scale-[0.98] w-full py-5 bg-red-500 text-white rounded-[28px] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-red-500/20 transition-transform duration-150 will-change-transform"
                             >
                                 {t.common.confirm}
                             </button>
                             <button
-                                onClick={() => setOrderToCancel(null)}
-                                className="w-full py-5 bg-gray-50 text-gray-400 rounded-[28px] font-black text-xs uppercase tracking-[0.2em] active:scale-95 transition-all"
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("light");
+                                    setOrderToCancel(null);
+                                }}
+                                className="ios-tap-feedback active:scale-[0.98] w-full py-5 bg-gray-50 text-gray-400 rounded-[28px] font-black text-xs uppercase tracking-[0.2em] transition-transform duration-150 will-change-transform"
                             >
                                 {t.common.back}
                             </button>
@@ -740,8 +784,8 @@ export default function OrdersPage() {
 
             {/* Qaytarish (Return) Modal */}
             {returnOrder && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
-                    <div className="bg-white w-full max-w-sm rounded-[48px] p-10 space-y-8 animate-in zoom-in duration-500 shadow-2xl">
+                <div onClick={() => { setReturnOrder(null); setReturnReason(""); }} className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
+                    <div onClick={e => e.stopPropagation()} className="bg-white w-full max-w-sm rounded-[48px] p-10 space-y-8 animate-in zoom-in duration-300 shadow-2xl">
                         <div className="flex flex-col items-center text-center space-y-4">
                             <div className="w-20 h-20 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center shadow-xl shadow-orange-500/10">
                                 <RefreshCw size={36} />
@@ -760,20 +804,27 @@ export default function OrdersPage() {
                             value={returnReason}
                             onChange={(e) => setReturnReason(e.target.value)}
                             placeholder={language === 'uz' ? "Qaytarish sababi..." : "Причина возврата..."}
-                            className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-[28px] p-6 text-sm font-bold h-28 outline-none transition-all resize-none shadow-inner"
+                            className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-[28px] p-6 text-sm font-bold h-28 outline-none transition-shadow resize-none shadow-inner"
                         />
 
                         <div className="flex flex-col gap-3">
                             <button
-                                onClick={handleSubmitReturn}
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("medium");
+                                    handleSubmitReturn();
+                                }}
                                 disabled={isReturning || !returnReason.trim()}
-                                className="w-full py-5 bg-orange-500 text-white rounded-[28px] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-orange-500/20 active:scale-95 transition-all disabled:opacity-40 flex items-center justify-center gap-3"
+                                className="ios-tap-feedback active:scale-[0.98] w-full py-5 bg-orange-500 text-white rounded-[28px] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-orange-500/20 transition-transform duration-150 will-change-transform disabled:opacity-40 flex items-center justify-center gap-3"
                             >
                                 {isReturning ? <Loader2 className="animate-spin" size={16} /> : (language === 'uz' ? "So'rov yuborish" : "Отправить запрос")}
                             </button>
                             <button
-                                onClick={() => { setReturnOrder(null); setReturnReason(""); }}
-                                className="w-full py-5 bg-gray-50 text-gray-400 rounded-[28px] font-black text-xs uppercase tracking-[0.2em] active:scale-95 transition-all"
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("light");
+                                    setReturnOrder(null);
+                                    setReturnReason("");
+                                }}
+                                className="ios-tap-feedback active:scale-[0.98] w-full py-5 bg-gray-50 text-gray-400 rounded-[28px] font-black text-xs uppercase tracking-[0.2em] transition-transform duration-150 will-change-transform"
                             >
                                 {t.common.back}
                             </button>
