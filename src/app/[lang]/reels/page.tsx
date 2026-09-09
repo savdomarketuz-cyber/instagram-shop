@@ -21,100 +21,163 @@ export default function ReelsPage() {
     const { language, showToast } = useStore();
     const t = translations[language];
 
+    const PAGE_SIZE = 15;
     const [reels, setReels] = useState<Reel[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeIndex, setActiveIndex] = useState(0);
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [isMuted, setIsMuted] = useState(true);
     const [commentProductId, setCommentProductId] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
+    const fetchBatch = useCallback(async (pageIndex: number) => {
+        const from = pageIndex * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+
+        const [reelsRes, productsRes] = await Promise.all([
+            supabase
+                .from("reels")
+                .select("*")
+                .order("created_at", { ascending: false })
+                .range(from, to),
+            supabase
+                .from("products")
+                .select("id,name,name_uz,name_ru,price,old_price,images,image,image_metadata,video_url,stock_details,category_id,color_name,model,group_id,article,stock,created_at")
+                .not("video_url", "is", null)
+                .neq("video_url", "")
+                .order("created_at", { ascending: false })
+                .range(from, to),
+        ]);
+
+        const reelItems: Reel[] = [];
+        for (const r of reelsRes.data || []) {
+            if (!r.video_url) continue;
+            const rawImg = r.image || r.thumbnail_url || "/placeholder.png";
+            const poster = getOptimizedImageUrl(r.image_metadata, rawImg, 'md');
+            const rawUrls = String(r.video_url).split(/[;,]/).map((u) => sanitizeVideoUrl(u)).filter(Boolean);
+            rawUrls.forEach((vUrl, uIdx) => {
+                reelItems.push({
+                    id: `reel-${r.id}-${uIdx}`,
+                    videoUrl: vUrl,
+                    likesCount: Number(r.likes_count) || 0,
+                    commentCount: Number(r.comment_count) || 0,
+                    productId: r.product_id ? String(r.product_id) : undefined,
+                    name: r.name || "",
+                    price: Number(r.price) || 0,
+                    image: poster,
+                    rawImage: rawImg,
+                    image_metadata: r.image_metadata,
+                });
+            });
+        }
+
+        const productItems: Reel[] = [];
+        for (const p of productsRes.data || []) {
+            if (!p.video_url) continue;
+            const rawImg = p.image || (Array.isArray(p.images) ? p.images[0] : null) || "/placeholder.png";
+            const poster = getOptimizedImageUrl(p.image_metadata, rawImg, 'md');
+            const rawUrls = String(p.video_url).split(/[;,]/).map((u) => sanitizeVideoUrl(u)).filter(Boolean);
+            rawUrls.forEach((vUrl, uIdx) => {
+                productItems.push({
+                    id: `${p.id}-${uIdx}`,
+                    videoUrl: vUrl,
+                    productId: String(p.id),
+                    name: p.name || "",
+                    name_uz: p.name_uz || p.name || "",
+                    name_ru: p.name_ru || p.name || "",
+                    price: Number(p.price) || 0,
+                    oldPrice: Number(p.old_price) || 0,
+                    image: poster,
+                    rawImage: rawImg,
+                    image_metadata: p.image_metadata,
+                    images: Array.isArray(p.images) ? p.images : (rawImg ? [rawImg] : []),
+                    stockDetails: p.stock_details || null,
+                    stock: Number(p.stock) || 0,
+                    colorName: p.color_name || "",
+                    model: p.model || "",
+                    groupId: p.group_id || "",
+                    article: p.article || "",
+                });
+            });
+        }
+
+        // Interleave (1 ta reel, 1 ta mahsulot videosi)
+        const maxLen = Math.max(reelItems.length, productItems.length);
+        const combined: Reel[] = [];
+        for (let i = 0; i < maxLen; i++) {
+            if (i < reelItems.length) combined.push(reelItems[i]);
+            if (i < productItems.length) combined.push(productItems[i]);
+        }
+
+        const moreAvailable =
+            (reelsRes.data?.length === PAGE_SIZE) ||
+            (productsRes.data?.length === PAGE_SIZE);
+
+        return { items: combined, hasMore: moreAvailable };
+    }, []);
+
     useEffect(() => {
-        const fetchReelsData = async () => {
+        let isMounted = true;
+        const loadInitial = async () => {
             try {
-                // Ham reels, ham video_url bor mahsulotlarni olamiz
-                const [reelsRes, productsRes] = await Promise.all([
-                    supabase.from("reels").select("*").limit(40),
-                    supabase
-                        .from("products")
-                        .select("id,name,name_uz,name_ru,price,old_price,images,image,image_metadata,video_url,stock_details,category_id,color_name,model,group_id,article,stock")
-                        .not("video_url", "is", null)
-                        .neq("video_url", "")
-                        .limit(40),
-                ]);
+                const { items, hasMore: more } = await fetchBatch(0);
+                if (!isMounted) return;
 
-                const reelItems: Reel[] = (reelsRes.data || [])
-                    .filter((r: any) => Boolean(r.video_url))
-                    .map((r: any) => {
-                        const rawImg = r.image || r.thumbnail_url || "/placeholder.png";
-                        return {
-                            id: String(r.id),
-                            videoUrl: sanitizeVideoUrl(r.video_url),
-                            likesCount: Number(r.likes_count) || 0,
-                            commentCount: Number(r.comment_count) || 0,
-                            productId: r.product_id ? String(r.product_id) : undefined,
-                            name: r.name || "",
-                            price: Number(r.price) || 0,
-                            image: getOptimizedImageUrl(r.image_metadata, rawImg, 'md'),
-                            rawImage: rawImg,
-                            image_metadata: r.image_metadata,
-                        };
-                    });
-
-                const productItems: Reel[] = [];
-                for (const p of productsRes.data || []) {
-                    if (!p.video_url) continue;
-                    const rawImg = p.image || (Array.isArray(p.images) ? p.images[0] : null) || "/placeholder.png";
-                    const poster = getOptimizedImageUrl(p.image_metadata, rawImg, 'md');
-                    const rawUrls = String(p.video_url).split(/[;,]/).map((u) => sanitizeVideoUrl(u)).filter(Boolean);
-                    rawUrls.forEach((vUrl, uIdx) => {
-                        productItems.push({
-                            id: `${p.id}-${uIdx}`,
-                            videoUrl: vUrl,
-                            productId: String(p.id),
-                            name: p.name || "",
-                            name_uz: p.name_uz || p.name || "",
-                            name_ru: p.name_ru || p.name || "",
-                            price: Number(p.price) || 0,
-                            oldPrice: Number(p.old_price) || 0,
-                            image: poster,
-                            rawImage: rawImg,
-                            image_metadata: p.image_metadata,
-                            images: Array.isArray(p.images) ? p.images : (rawImg ? [rawImg] : []),
-                            stockDetails: p.stock_details || null,
-                            stock: Number(p.stock) || 0,
-                            colorName: p.color_name || "",
-                            model: p.model || "",
-                            groupId: p.group_id || "",
-                            article: p.article || "",
-                        });
-                    });
-                }
-
-                // Takrorlanuvchi video havolalarini filtrlaymiz
                 const seenUrls = new Set<string>();
-                const merged: Reel[] = [];
-                for (const item of [...reelItems, ...productItems]) {
+                const unique: Reel[] = [];
+                for (const item of items) {
                     if (item.videoUrl && !seenUrls.has(item.videoUrl)) {
                         seenUrls.add(item.videoUrl);
-                        merged.push(item);
+                        unique.push(item);
                     }
                 }
 
-                // Tasodifiy tartibda aralashtiramiz
-                const sorted = merged.sort(() => Math.random() - 0.5);
-                setReels(sorted);
+                setReels(unique);
+                setHasMore(more);
+                setPage(0);
 
-                // Dastlabki videolarni orqa fonda isitish
-                const urls = sorted.map((s) => s.videoUrl).filter(Boolean);
+                const urls = unique.map((s) => s.videoUrl).filter(Boolean);
                 videoPreWarmer.prewarmUpcoming(urls, 0);
             } catch (error) {
                 console.error("[ReelsPage] Error fetching reels:", error);
             } finally {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }
         };
-        fetchReelsData();
-    }, []);
+        loadInitial();
+        return () => {
+            isMounted = false;
+        };
+    }, [fetchBatch]);
+
+    // Skroll oxiriga yetganda keyingi sahifani yuklash (Infinite Scroll)
+    useEffect(() => {
+        if (activeIndex >= reels.length - 3 && hasMore && !isLoadingMore && !loading && reels.length > 0) {
+            const loadMore = async () => {
+                setIsLoadingMore(true);
+                try {
+                    const nextPage = page + 1;
+                    const { items: newItems, hasMore: more } = await fetchBatch(nextPage);
+                    if (newItems.length > 0) {
+                        setReels((prev) => {
+                            const seen = new Set(prev.map((r) => r.videoUrl));
+                            const uniqueNew = newItems.filter((r) => !seen.has(r.videoUrl));
+                            return [...prev, ...uniqueNew];
+                        });
+                        setPage(nextPage);
+                    }
+                    setHasMore(more);
+                } catch (err) {
+                    console.error("[ReelsPage] Failed to load more reels:", err);
+                } finally {
+                    setIsLoadingMore(false);
+                }
+            };
+            loadMore();
+        }
+    }, [activeIndex, reels.length, hasMore, isLoadingMore, loading, page, fetchBatch]);
 
     // ActiveIndex o'zgarganda navbatdagi videolarni orqa fonda isitish
     useEffect(() => {

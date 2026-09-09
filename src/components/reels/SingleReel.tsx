@@ -99,7 +99,16 @@ export const SingleReel = ({
     // ─────────────────────────────────────────────────────────────
     useEffect(() => {
         const v = videoRef.current;
-        if (!v || !cleanVideoUrl || !isActive) return;
+        if (!v || !cleanVideoUrl) return;
+
+        if (!isActive) {
+            try {
+                v.pause();
+            } catch {}
+            setIsPlaying(false);
+            setIsBuffering(false);
+            return;
+        }
 
         let isCancelled = false;
 
@@ -450,27 +459,29 @@ export const SingleReel = ({
                     />
                 )}
 
-                {/* Hardware Accelerated Native Video Element (ONLY rendered when isActive) */}
-                {isActive && cleanVideoUrl ? (
+                {/* Hardware Accelerated Native Video Element (rendered when isActive or isNearby for zero-lag preloading) */}
+                {(isActive || isNearby) && cleanVideoUrl ? (
                     <video
                         ref={videoRef}
                         src={cleanVideoUrl}
                         className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-200 ${
-                            isPlaying ? "opacity-100" : "opacity-0"
+                            isActive && isPlaying ? "opacity-100" : "opacity-0"
                         }`}
                         loop
                         playsInline
                         webkit-playsinline="true"
-                        muted={isMuted}
-                        preload="auto"
-                        onWaiting={() => setIsBuffering(true)}
+                        muted={!isActive || isMuted}
+                        preload={isActive ? "auto" : "metadata"}
+                        onWaiting={() => { if (isActive) setIsBuffering(true); }}
                         onPlaying={() => {
-                            setIsBuffering(false);
-                            setIsPlaying(true);
-                            setHasError(false);
+                            if (isActive) {
+                                setIsBuffering(false);
+                                setIsPlaying(true);
+                                setHasError(false);
+                            }
                         }}
-                        onCanPlay={() => setIsBuffering(false)}
-                        onPause={() => setIsPlaying(false)}
+                        onCanPlay={() => { if (isActive) setIsBuffering(false); }}
+                        onPause={() => { if (isActive) setIsPlaying(false); }}
                         onError={(e) => {
                             // Faqat faol vaqtda xatolik bo'lsa ko'rsatiladi (unmount abort'larni hisobga olmaydi)
                             if (!isActive) return;

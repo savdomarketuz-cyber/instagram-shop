@@ -33,12 +33,12 @@ class VideoPreWarmerService {
 
         try {
             // Warm up connection & TCP/TLS handshake with a tiny 1KB Range request
-            // ZERO hardware decoders consumed! cache: 'no-store' prevents SW from caching 206
+            // ZERO hardware decoders consumed!
             fetch(url, {
                 method: "GET",
                 headers: { Range: "bytes=0-1024" },
                 mode: "cors",
-                cache: "no-store",
+                cache: "default",
             }).catch(() => {});
         } catch {}
     }
