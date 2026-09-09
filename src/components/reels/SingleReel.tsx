@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import {
     Heart,
     MessageCircle,
@@ -899,83 +900,290 @@ export const SingleReel = ({
             {/* ─────────────────────────────────────────────────────────────
                 Instagram Options Action Sheet (Three dots menu)
                 ───────────────────────────────────────────────────────────── */}
-            {isOptionsOpen && (
-                <div
-                    className="fixed inset-0 z-[120] flex flex-col justify-end bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
-                    onClick={() => setIsOptionsOpen(false)}
-                    onTouchStart={(e) => e.stopPropagation()}
-                    onTouchMove={(e) => e.stopPropagation()}
-                    style={{ overscrollBehavior: "none" }}
-                >
-                    <div
-                        className="bg-[#262626] text-white rounded-t-3xl overflow-hidden p-3 pb-[max(24px,env(safe-area-inset-bottom))] space-y-1 animate-ios-sheet shadow-2xl max-w-md mx-auto w-full will-change-transform"
-                        onClick={(e) => e.stopPropagation()}
-                        style={{ overscrollBehavior: "contain" }}
-                    >
-                        <div
-                            className="w-full flex items-center justify-center pt-1 pb-3 cursor-grab select-none"
-                            style={{ touchAction: "none" }}
-                            onClick={() => setIsOptionsOpen(false)}
-                        >
-                            <div className="w-10 h-1 bg-white/20 rounded-full" />
-                        </div>
-
-                        {/* Mahsulotga o'tish */}
-                        <button
-                            onClick={() => {
-                                setIsOptionsOpen(false);
-                                setIsQuickBuyOpen(true);
-                            }}
-                            className="w-full flex items-center justify-between p-3.5 hover:bg-white/10 rounded-2xl active:scale-98 transition-colors duration-150"
-                        >
-                            <span className="text-sm font-semibold">
-                                {language === "uz" ? "Mahsulotni ko'rish" : "Посмотреть товар"}
-                            </span>
-                            <ShoppingBag size={19} className="text-white/80" />
-                        </button>
-
-                        {/* Havolani nusxalash */}
-                        <button
-                            onClick={() => {
-                                setIsOptionsOpen(false);
-                                handleShare();
-                            }}
-                            className="w-full flex items-center justify-between p-3.5 hover:bg-white/10 rounded-2xl active:scale-98 transition-colors duration-150"
-                        >
-                            <span className="text-sm font-semibold">
-                                {language === "uz" ? "Havolani nusxalash" : "Копировать ссылку"}
-                            </span>
-                            <Copy size={19} className="text-white/80" />
-                        </button>
-
-                        {/* Saqlash */}
-                        <button
-                            onClick={() => {
-                                setIsOptionsOpen(false);
-                                handleSave();
-                            }}
-                            className="w-full flex items-center justify-between p-3.5 hover:bg-white/10 rounded-2xl active:scale-98 transition-colors duration-150"
-                        >
-                            <span className="text-sm font-semibold">
-                                {saved
-                                    ? (language === "uz" ? "Saqlanganlardan o'chirish" : "Удалить из сохраненных")
-                                    : (language === "uz" ? "Saqlash" : "Сохранить")}
-                            </span>
-                            <Bookmark size={19} className="text-white/80" />
-                        </button>
-
-                        {/* Bekor qilish */}
-                        <div className="pt-2">
-                            <button
-                                onClick={() => setIsOptionsOpen(false)}
-                                className="w-full p-3.5 bg-white/10 hover:bg-white/15 rounded-2xl text-center text-sm font-bold text-red-400 active:scale-98 transition-colors duration-150"
-                            >
-                                {language === "uz" ? "Yopish" : "Отмена"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ReelOptionsSheet
+                open={isOptionsOpen}
+                onClose={() => setIsOptionsOpen(false)}
+                language={language}
+                saved={saved}
+                onOpenProduct={() => setIsQuickBuyOpen(true)}
+                onShare={handleShare}
+                onSave={handleSave}
+            />
         </div>
     );
 };
+
+function ReelOptionsSheet({
+    open,
+    onClose,
+    language,
+    saved,
+    onOpenProduct,
+    onShare,
+    onSave,
+}: {
+    open: boolean;
+    onClose: () => void;
+    language: "uz" | "ru";
+    saved: boolean;
+    onOpenProduct: () => void;
+    onShare: () => void;
+    onSave: () => void;
+}) {
+    const [mounted, setMounted] = useState(false);
+    const [isClosing, setIsClosing] = useState(false);
+    const sheetRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const dragStartY = useRef(0);
+    const lastTouchY = useRef(0);
+    const dragStartTime = useRef(0);
+    const velocity = useRef(0);
+    const currentTranslateY = useRef(0);
+    const isDragging = useRef(false);
+
+    useEffect(() => {
+        const el = sheetRef.current;
+        if (!el) return;
+        const onNativeTouchMove = (e: TouchEvent) => {
+            if (isDragging.current && e.cancelable) {
+                e.preventDefault();
+            }
+        };
+        el.addEventListener("touchmove", onNativeTouchMove, { passive: false });
+        return () => el.removeEventListener("touchmove", onNativeTouchMove);
+    }, []);
+
+    const handleCloseWithAnimation = useCallback(() => {
+        if (isClosing) return;
+        setIsClosing(true);
+        if (sheetRef.current) {
+            sheetRef.current.style.transition = "transform 250ms cubic-bezier(0.32, 0.72, 0, 1), opacity 220ms ease-out";
+            sheetRef.current.style.transform = "translate3d(0, 100%, 0)";
+            sheetRef.current.style.opacity = "0";
+        }
+        setTimeout(() => {
+            setIsClosing(false);
+            onClose();
+        }, 250);
+    }, [isClosing, onClose]);
+
+    const handlePointerDown = (e: React.PointerEvent) => {
+        e.stopPropagation();
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        const y = e.clientY;
+        dragStartY.current = y;
+        lastTouchY.current = y;
+        dragStartTime.current = performance.now();
+        velocity.current = 0;
+        isDragging.current = true;
+        if (sheetRef.current) {
+            sheetRef.current.style.animation = "none";
+            sheetRef.current.style.transition = "none";
+        }
+    };
+
+    const handlePointerMove = (e: React.PointerEvent) => {
+        if (!isDragging.current) return;
+        e.stopPropagation();
+        const y = e.clientY;
+        const delta = y - dragStartY.current;
+
+        if (delta < 0) {
+            if (sheetRef.current) sheetRef.current.style.transform = "translate3d(0, 0, 0)";
+            currentTranslateY.current = 0;
+            return;
+        }
+
+        const now = performance.now();
+        const dt = Math.max(1, now - dragStartTime.current);
+        const dy = y - lastTouchY.current;
+        velocity.current = dy / dt;
+        lastTouchY.current = y;
+        dragStartTime.current = now;
+
+        if (sheetRef.current) {
+            currentTranslateY.current = delta;
+            sheetRef.current.style.transform = `translate3d(0, ${delta}px, 0)`;
+        }
+    };
+
+    const handlePointerUp = (e: React.PointerEvent) => {
+        if (!isDragging.current) return;
+        e.stopPropagation();
+        try {
+            (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+        } catch {}
+        isDragging.current = false;
+
+        if (currentTranslateY.current > 80 || velocity.current > 0.45) {
+            videoPreWarmer.triggerHaptic("light");
+            handleCloseWithAnimation();
+        } else if (sheetRef.current) {
+            sheetRef.current.style.transition = "transform 320ms cubic-bezier(0.32, 0.72, 0, 1)";
+            sheetRef.current.style.transform = "translate3d(0, 0, 0)";
+        }
+        currentTranslateY.current = 0;
+        velocity.current = 0;
+    };
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        e.stopPropagation();
+        const y = e.touches[0].clientY;
+        dragStartY.current = y;
+        lastTouchY.current = y;
+        dragStartTime.current = performance.now();
+        velocity.current = 0;
+        isDragging.current = true;
+        if (sheetRef.current) {
+            sheetRef.current.style.animation = "none";
+            sheetRef.current.style.transition = "none";
+        }
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (!isDragging.current) return;
+        e.stopPropagation();
+        const y = e.touches[0].clientY;
+        const delta = y - dragStartY.current;
+
+        if (delta < 0) return;
+
+        const now = performance.now();
+        const dt = Math.max(1, now - dragStartTime.current);
+        const dy = y - lastTouchY.current;
+        velocity.current = dy / dt;
+        lastTouchY.current = y;
+        dragStartTime.current = now;
+
+        if (sheetRef.current) {
+            currentTranslateY.current = delta;
+            sheetRef.current.style.transform = `translate3d(0, ${delta}px, 0)`;
+        }
+    };
+
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        e.stopPropagation();
+        if (!isDragging.current || !sheetRef.current) {
+            isDragging.current = false;
+            return;
+        }
+        isDragging.current = false;
+
+        if (currentTranslateY.current > 80 || velocity.current > 0.45) {
+            videoPreWarmer.triggerHaptic("light");
+            handleCloseWithAnimation();
+        } else {
+            sheetRef.current.style.transition = "transform 320ms cubic-bezier(0.32, 0.72, 0, 1)";
+            sheetRef.current.style.transform = "translate3d(0, 0, 0)";
+        }
+        currentTranslateY.current = 0;
+        velocity.current = 0;
+    };
+
+    if (!open || !mounted) return null;
+
+    return createPortal(
+        <div
+            className="fixed inset-0 z-[120] flex flex-col justify-end pointer-events-auto"
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            style={{ overscrollBehavior: "none" }}
+        >
+            <div
+                className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-250 ease-out ${
+                    isClosing ? "opacity-0" : "opacity-100 animate-in fade-in"
+                }`}
+                style={{ touchAction: "none" }}
+                onClick={handleCloseWithAnimation}
+            />
+            <div
+                ref={sheetRef}
+                onClick={(e) => e.stopPropagation()}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                onTouchCancel={handleTouchEnd}
+                style={{
+                    willChange: "transform",
+                    WebkitOverflowScrolling: "touch",
+                    overscrollBehavior: "contain",
+                    transition: isClosing ? "transform 250ms cubic-bezier(0.32, 0.72, 0, 1), opacity 220ms ease-out" : undefined,
+                    transform: isClosing ? "translate3d(0, 100%, 0)" : undefined,
+                }}
+                className={`relative bg-[#262626] text-white rounded-t-3xl overflow-hidden p-3 pb-[max(24px,env(safe-area-inset-bottom))] space-y-1 shadow-2xl max-w-md mx-auto w-full will-change-transform overscroll-contain ${
+                    !isClosing ? "animate-in slide-in-from-bottom duration-300" : ""
+                }`}
+            >
+                <div
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerUp}
+                    className="w-full flex items-center justify-center pt-1 pb-3 cursor-grab select-none"
+                    style={{ touchAction: "none" }}
+                >
+                    <div className="w-10 h-1 bg-white/20 rounded-full" />
+                </div>
+
+                {/* Mahsulotga o'tish */}
+                <button
+                    onClick={() => {
+                        handleCloseWithAnimation();
+                        onOpenProduct();
+                    }}
+                    className="w-full flex items-center justify-between p-3.5 hover:bg-white/10 rounded-2xl active:scale-98 transition-colors duration-150"
+                >
+                    <span className="text-sm font-semibold">
+                        {language === "uz" ? "Mahsulotni ko'rish" : "Посмотреть товар"}
+                    </span>
+                    <ShoppingBag size={19} className="text-white/80" />
+                </button>
+
+                {/* Havolani nusxalash */}
+                <button
+                    onClick={() => {
+                        handleCloseWithAnimation();
+                        onShare();
+                    }}
+                    className="w-full flex items-center justify-between p-3.5 hover:bg-white/10 rounded-2xl active:scale-98 transition-colors duration-150"
+                >
+                    <span className="text-sm font-semibold">
+                        {language === "uz" ? "Havolani nusxalash" : "Копировать ссылку"}
+                    </span>
+                    <Copy size={19} className="text-white/80" />
+                </button>
+
+                {/* Saqlash */}
+                <button
+                    onClick={() => {
+                        handleCloseWithAnimation();
+                        onSave();
+                    }}
+                    className="w-full flex items-center justify-between p-3.5 hover:bg-white/10 rounded-2xl active:scale-98 transition-colors duration-150"
+                >
+                    <span className="text-sm font-semibold">
+                        {saved
+                            ? (language === "uz" ? "Saqlanganlardan o'chirish" : "Удалить из сохраненных")
+                            : (language === "uz" ? "Saqlash" : "Сохранить")}
+                    </span>
+                    <Bookmark size={19} className="text-white/80" />
+                </button>
+
+                {/* Bekor qilish */}
+                <div className="pt-2">
+                    <button
+                        onClick={handleCloseWithAnimation}
+                        className="w-full p-3.5 bg-white/10 hover:bg-white/15 rounded-2xl text-center text-sm font-bold text-red-400 active:scale-98 transition-colors duration-150"
+                    >
+                        {language === "uz" ? "Yopish" : "Отмена"}
+                    </button>
+                </div>
+            </div>
+        </div>,
+        document.body
+    );
+}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useStore } from "@/store/store";
 import { X, MessageCircle, Loader2, Heart, Send } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -20,8 +21,13 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
     const [newComment, setNewComment] = useState("");
     const [isPosting, setIsPosting] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
+    const [mounted, setMounted] = useState(false);
     const sheetRef = useRef<HTMLDivElement>(null);
     const commentsListRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     // Drag to dismiss gesture with velocity tracking & Pointer Capture
     const dragStartY = useRef(0);
@@ -44,6 +50,21 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
         return () => el.removeEventListener("touchmove", onNativeTouchMove);
     }, []);
 
+    // Handle animated close
+    const handleCloseWithAnimation = useCallback(() => {
+        if (isClosing) return;
+        setIsClosing(true);
+        if (sheetRef.current) {
+            sheetRef.current.style.transition = "transform 250ms cubic-bezier(0.32, 0.72, 0, 1), opacity 220ms ease-out";
+            sheetRef.current.style.transform = "translate3d(0, 100%, 0)";
+            sheetRef.current.style.opacity = "0";
+        }
+        setTimeout(() => {
+            setIsClosing(false);
+            onClose();
+        }, 250);
+    }, [isClosing, onClose]);
+
     // Pointer Events on Header / Drag Pill with Pointer Capture
     const handlePointerDown = (e: React.PointerEvent) => {
         e.stopPropagation();
@@ -55,6 +76,7 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
         velocity.current = 0;
         isDragging.current = true;
         if (sheetRef.current) {
+            sheetRef.current.style.animation = "none";
             sheetRef.current.style.transition = "none";
         }
     };
@@ -117,6 +139,7 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
         velocity.current = 0;
         isDragging.current = true;
         if (sheetRef.current) {
+            sheetRef.current.style.animation = "none";
             sheetRef.current.style.transition = "none";
         }
     };
@@ -162,19 +185,6 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
         }
         currentTranslateY.current = 0;
         velocity.current = 0;
-    };
-
-    const handleCloseWithAnimation = () => {
-        if (isClosing) return;
-        setIsClosing(true);
-        if (sheetRef.current) {
-            sheetRef.current.style.transition = "transform 280ms cubic-bezier(0.32, 0.72, 0, 1), opacity 280ms ease-out";
-            sheetRef.current.style.transform = "translate3d(0, 100%, 0)";
-            sheetRef.current.style.opacity = "0";
-        }
-        setTimeout(() => {
-            onClose();
-        }, 260);
     };
 
     useEffect(() => {
@@ -244,7 +254,9 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
         }
     };
 
-    return (
+    if (!mounted) return null;
+
+    return createPortal(
         <div
             className="fixed inset-0 z-[9999] flex flex-col justify-end pointer-events-auto"
             onTouchStart={(e) => e.stopPropagation()}
@@ -252,19 +264,29 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
             style={{ overscrollBehavior: "none" }}
         >
             <div
-                className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
-                    isClosing ? "opacity-0" : "opacity-100"
+                className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-250 ease-out ${
+                    isClosing ? "opacity-0" : "opacity-100 animate-in fade-in"
                 }`}
                 style={{ touchAction: "none" }}
                 onClick={handleCloseWithAnimation}
             />
             <div
                 ref={sheetRef}
+                onClick={(e) => e.stopPropagation()}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
-                className="relative bg-white text-black h-[70dvh] max-w-[500px] mx-auto w-full rounded-t-[36px] flex flex-col shadow-2xl animate-ios-sheet overflow-hidden will-change-transform"
-                style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}
+                onTouchCancel={handleTouchEnd}
+                style={{
+                    willChange: "transform",
+                    WebkitOverflowScrolling: "touch",
+                    overscrollBehavior: "contain",
+                    transition: isClosing ? "transform 250ms cubic-bezier(0.32, 0.72, 0, 1), opacity 220ms ease-out" : undefined,
+                    transform: isClosing ? "translate3d(0, 100%, 0)" : undefined,
+                }}
+                className={`relative bg-white text-black h-[70dvh] max-w-[500px] mx-auto w-full rounded-t-[36px] flex flex-col shadow-2xl overflow-hidden will-change-transform overscroll-contain ${
+                    !isClosing ? "animate-in slide-in-from-bottom duration-300" : ""
+                }`}
             >
                 {/* Drag pill handle & header (Dedicated Touch-Action None Drag Zone) */}
                 <div
@@ -318,17 +340,14 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
                                     </div>
                                 </div>
                                 <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-xs font-black uppercase italic tracking-tighter">{comment.username}</span>
-                                        <span className="text-[10px] text-gray-300 font-bold">
+                                    <div className="flex items-baseline justify-between mb-1">
+                                        <span className="font-bold text-xs text-gray-900">{comment.username}</span>
+                                        <span className="text-[10px] text-gray-400">
                                             {new Date(comment.timestamp).toLocaleDateString()}
                                         </span>
                                     </div>
-                                    <p className="text-[13px] text-gray-700 leading-relaxed font-medium">{comment.text}</p>
+                                    <p className="text-xs text-gray-600 leading-relaxed font-medium">{comment.text}</p>
                                 </div>
-                                <button className="self-start mt-1 p-1 text-gray-300 hover:text-red-500 transition-colors">
-                                    <Heart size={14} />
-                                </button>
                             </div>
                         ))
                     )}
@@ -353,6 +372,7 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };

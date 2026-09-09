@@ -308,7 +308,7 @@ body.affiliate-active footer {
 }
 
 .animate-ios-sheet {
-  animation: ios-sheet-enter 380ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  animation: ios-sheet-enter 320ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* iOS System Utilities */

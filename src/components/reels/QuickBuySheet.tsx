@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/store/store";
 import { supabase } from "@/lib/supabase";
@@ -46,15 +47,21 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
     const [customerAddress, setCustomerAddress] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [orderSuccess, setOrderSuccess] = useState(false);
+    const [mounted, setMounted] = useState(false);
 
     // Drag to dismiss gesture with velocity tracking
     const sheetRef = useRef<HTMLDivElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
     const dragStartY = useRef(0);
     const lastTouchY = useRef(0);
     const dragStartTime = useRef(0);
     const velocity = useRef(0);
     const currentTranslateY = useRef(0);
     const [isClosing, setIsClosing] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const productName = currentProduct[`name_${language}`] || currentProduct.name || "Mahsulot";
     const productPrice = Number(currentProduct.price || 0);
@@ -224,6 +231,7 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
         velocity.current = 0;
         isDragging.current = true;
         if (sheetRef.current) {
+            sheetRef.current.style.animation = "none";
             sheetRef.current.style.transition = "none";
         }
     };
@@ -275,6 +283,10 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
 
     const handleTouchStart = (e: React.TouchEvent) => {
         e.stopPropagation();
+        if (contentRef.current && contentRef.current.scrollTop > 0) {
+            isDragging.current = false;
+            return;
+        }
         const y = e.touches[0].clientY;
         dragStartY.current = y;
         lastTouchY.current = y;
@@ -282,6 +294,7 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
         velocity.current = 0;
         isDragging.current = true;
         if (sheetRef.current) {
+            sheetRef.current.style.animation = "none";
             sheetRef.current.style.transition = "none";
         }
     };
@@ -290,6 +303,12 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
         if (!isDragging.current) return;
         e.stopPropagation();
         const y = e.touches[0].clientY;
+        const delta = y - dragStartY.current;
+
+        if (delta < 0 || (contentRef.current && contentRef.current.scrollTop > 0)) {
+            return;
+        }
+
         const now = performance.now();
         const dt = Math.max(1, now - dragStartTime.current);
         const dy = y - lastTouchY.current;
@@ -297,8 +316,7 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
         lastTouchY.current = y;
         dragStartTime.current = now;
 
-        const delta = y - dragStartY.current;
-        if (delta > 0 && sheetRef.current) {
+        if (sheetRef.current) {
             currentTranslateY.current = delta;
             sheetRef.current.style.transform = `translate3d(0, ${delta}px, 0)`;
         }
@@ -321,20 +339,23 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
         velocity.current = 0;
     };
 
-    const handleCloseWithAnimation = () => {
+    const handleCloseWithAnimation = useCallback(() => {
         if (isClosing) return;
         setIsClosing(true);
         if (sheetRef.current) {
-            sheetRef.current.style.transition = "transform 280ms cubic-bezier(0.32, 0.72, 0, 1), opacity 280ms ease-out";
+            sheetRef.current.style.transition = "transform 250ms cubic-bezier(0.32, 0.72, 0, 1), opacity 220ms ease-out";
             sheetRef.current.style.transform = "translate3d(0, 100%, 0)";
             sheetRef.current.style.opacity = "0";
         }
         setTimeout(() => {
+            setIsClosing(false);
             onClose();
-        }, 260);
-    };
+        }, 250);
+    }, [isClosing, onClose]);
 
-    return (
+    if (!mounted) return null;
+
+    return createPortal(
         <div
             className="fixed inset-0 z-[99999] flex flex-col justify-end pointer-events-auto"
             onTouchStart={(e) => e.stopPropagation()}
@@ -343,8 +364,8 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
         >
             {/* Backdrop with native blur */}
             <div
-                className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
-                    isClosing ? "opacity-0" : "opacity-100"
+                className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-250 ease-out ${
+                    isClosing ? "opacity-0" : "opacity-100 animate-in fade-in"
                 }`}
                 style={{ touchAction: "none" }}
                 onClick={handleCloseWithAnimation}
@@ -353,11 +374,21 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
             {/* Bottom Sheet Container */}
             <div
                 ref={sheetRef}
+                onClick={(e) => e.stopPropagation()}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
-                className="relative w-full max-w-[500px] mx-auto bg-white text-black rounded-t-[36px] shadow-[0_-15px_40px_rgba(0,0,0,0.4)] flex flex-col max-h-[85dvh] overflow-hidden will-change-transform animate-ios-sheet"
-                style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}
+                onTouchCancel={handleTouchEnd}
+                style={{
+                    willChange: "transform",
+                    WebkitOverflowScrolling: "touch",
+                    overscrollBehavior: "contain",
+                    transition: isClosing ? "transform 250ms cubic-bezier(0.32, 0.72, 0, 1), opacity 220ms ease-out" : undefined,
+                    transform: isClosing ? "translate3d(0, 100%, 0)" : undefined,
+                }}
+                className={`relative w-full max-w-[500px] mx-auto bg-white text-black rounded-t-[36px] shadow-[0_-15px_40px_rgba(0,0,0,0.4)] flex flex-col max-h-[85dvh] overflow-hidden will-change-transform overscroll-contain ${
+                    !isClosing ? "animate-in slide-in-from-bottom duration-300" : ""
+                }`}
             >
                 {/* Drag pill handle & Header (Dedicated Touch-Action None Drag Zone) */}
                 <div
@@ -394,7 +425,7 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                 </div>
 
                 {/* Content */}
-                <div className="p-5 pb-[max(20px,env(safe-area-inset-bottom))] overflow-y-auto space-y-5 no-scrollbar">
+                <div ref={contentRef} className="p-5 pb-[max(20px,env(safe-area-inset-bottom))] overflow-y-auto space-y-5 no-scrollbar">
                     {orderSuccess ? (
                         /* Success View */
                         <div className="py-8 flex flex-col items-center text-center space-y-4 animate-in zoom-in-95 duration-300">
@@ -685,6 +716,7 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
