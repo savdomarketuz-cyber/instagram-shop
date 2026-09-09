@@ -125,41 +125,51 @@ export default function Home() {
 
 function HomeSkeleton() {
     return (
-        <div className="min-h-screen bg-white animate-pulse">
+        <div className="min-h-screen bg-[#FAFAF6] animate-pulse">
             {/* 1. Header Navigation Skeleton (matches height of real site) */}
-            <div className="h-16 border-b border-gray-50 flex items-center px-4 md:px-10 gap-8">
+            <div className="h-16 border-b border-black/[0.04] flex items-center px-4 md:px-10 gap-8 bg-white">
                 <div className="w-24 h-6 bg-gray-100 rounded-full" />
                 <div className="hidden md:block flex-1 max-w-xl h-10 bg-gray-100 rounded-2xl mx-auto" />
                 <div className="w-10 h-10 bg-gray-100 rounded-xl" />
             </div>
 
-            {/* 2. Banner Section Skeleton (matches logic of real banner) */}
-            <div className="mt-8 px-4 md:px-10">
-                <div className="w-full h-[210px] md:h-[420px] bg-gray-50 rounded-[32px] md:rounded-[48px]" />
+            {/* 2. Banner Section Skeleton (matches mobile aspect-16/10 and desktop hero) */}
+            <div className="mt-3 md:mt-8 px-4 md:px-10">
+                <div className="w-full aspect-[16/10] md:aspect-auto md:h-[210px] bg-gray-100 rounded-3xl md:rounded-[32px]" />
             </div>
 
             {/* 3. Category Filter Skeleton */}
-            <div className="mt-12 px-4 md:px-10 space-y-4">
-                <div className="flex gap-4 overflow-hidden">
+            <div className="mt-6 md:mt-10 px-4 md:px-10 space-y-4">
+                <div className="flex gap-3 overflow-hidden">
                     {[...Array(8)].map((_, i) => (
-                        <div key={i} className="w-20 md:w-28 h-8 md:h-12 bg-gray-50 rounded-2xl shrink-0" />
+                        <div key={i} className="w-16 md:w-24 h-16 md:h-20 bg-gray-100 rounded-2xl shrink-0" />
                     ))}
                 </div>
             </div>
 
             {/* 4. Product Tab Skeleton */}
-            <div className="mt-10 px-4 md:px-10 border-b border-gray-50 flex gap-12">
-                <div className="w-24 h-8 bg-gray-50 rounded-t-lg" />
-                <div className="w-24 h-8 bg-gray-50 rounded-t-lg" />
+            <div className="mt-8 px-4 md:px-10 border-b border-black/[0.04] flex gap-8">
+                <div className="w-20 h-7 bg-gray-100 rounded-t-lg" />
+                <div className="w-20 h-7 bg-gray-100 rounded-t-lg" />
             </div>
 
-            {/* 5. Product Grid Skeleton */}
-            <div className="mt-8 px-4 md:px-10 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-8">
-                {[...Array(10)].map((_, i) => (
-                    <div key={i} className="flex flex-col gap-4">
-                        <div className="aspect-[1080/1440] bg-gray-50 rounded-3xl" />
-                        <div className="h-4 w-3/4 bg-gray-50 rounded-lg" />
-                        <div className="h-6 w-1/4 bg-gray-50 rounded-lg" />
+            {/* 5. Product Grid Skeleton (1:1 layout match with ProductCard) */}
+            <div className="mt-6 px-2 md:px-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-2.5 md:gap-x-6 gap-y-5 md:gap-y-10">
+                {[...Array(12)].map((_, i) => (
+                    <div
+                        key={i}
+                        className="flex flex-col h-full bg-white overflow-hidden rounded-[22px] border border-black/[0.04]"
+                        style={{ boxShadow: "0 4px 16px rgba(15,20,16,0.05)" }}
+                    >
+                        <div className="relative bg-gray-100 w-full aspect-[3/4]" />
+                        <div className="flex flex-col flex-1 p-[10px_14px_12px]">
+                            <div className="h-3 bg-gray-100 rounded-full w-3/4 mb-2" />
+                            <div className="h-3 bg-gray-100 rounded-full w-1/2 mb-3" />
+                            <div className="mt-auto flex flex-col gap-2">
+                                <div className="h-4 bg-gray-100 rounded-full w-24" />
+                            </div>
+                        </div>
+                        <div className="w-full bg-gray-100 mt-auto h-[44px]" />
                     </div>
                 ))}
             </div>

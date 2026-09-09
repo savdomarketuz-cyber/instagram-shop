@@ -11,6 +11,7 @@ import { getProductSlug } from "@/lib/slugify";
 import { makeVariantLoader, hasVariants, getOptimizedImageUrl, getMetaForUrl } from "@/lib/imageVariants";
 import { getDeliveryCardText } from "@/lib/date-utils";
 import { sanitizeVideoUrl } from "@/lib/video-url";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 const GREEN = "#2D6E3E";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
@@ -68,7 +69,10 @@ function WishBtn({ isWished, onClick }: { isWished: boolean; onClick: (e: React.
   const [pressed, setPressed] = useState(false);
   return (
     <button
-      onPointerDown={() => setPressed(true)}
+      onPointerDown={() => {
+        setPressed(true);
+        videoPreWarmer.triggerHaptic(isWished ? "light" : "double");
+      }}
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
       onClick={onClick}
@@ -112,6 +116,7 @@ export const ProductCard = memo(({
   const globalPromo = useStore(s => s.globalPromo);
   const item = applyGlobalPromo(rawItem, globalPromo);
   const imgWrapRef = useRef<HTMLDivElement>(null);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   const isInCart = cart.find(ci => ci.id === item.id);
   const isWished = wishlist.some(w => w.id === item.id);
@@ -148,7 +153,7 @@ export const ProductCard = memo(({
 
   return (
     <div 
-      className="transition-transform duration-150 active:scale-[0.97] select-none"
+      className="ios-tap-feedback active:scale-[0.96] transition-transform duration-150 ease-out select-none will-change-transform"
       style={{
         background: "#fff",
         borderRadius: 22,
@@ -195,6 +200,8 @@ export const ProductCard = memo(({
                 alt={name}
                 fill
                 sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 25vw"
+                className={`transition-opacity duration-300 ease-out ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+                onLoad={() => setImgLoaded(true)}
                 style={{ objectFit: "cover" }}
                 priority={priority}
                 loader={hasVariants(item.image_metadata, mainMedia) ? makeVariantLoader(item.image_metadata) : undefined}
@@ -345,9 +352,11 @@ export const ProductCard = memo(({
             <button
               onClick={(e) => {
                 e.preventDefault();
+                videoPreWarmer.triggerHaptic("light");
                 if (isInCart.quantity > 1) updateQuantity(item.id, isInCart.quantity - 1);
                 else removeFromCart(item.id);
               }}
+              className="active:scale-85 transition-transform duration-120 select-none"
               style={{
                 width: 32, height: 32, borderRadius: 9,
                 background: "#E8EFEA", border: "none",
@@ -362,9 +371,11 @@ export const ProductCard = memo(({
             <button
               onClick={(e) => {
                 e.preventDefault();
+                videoPreWarmer.triggerHaptic("light");
                 if (isInCart.quantity < ((totalStock as number) || 999))
                   updateQuantity(item.id, isInCart.quantity + 1);
               }}
+              className="active:scale-85 transition-transform duration-120 select-none"
               style={{
                 width: 32, height: 32, borderRadius: 9,
                 background: GREEN, border: "none",
@@ -378,7 +389,12 @@ export const ProductCard = memo(({
           </div>
         ) : (
           <button
-            onClick={(e) => { e.preventDefault(); addToCart(item); }}
+            onClick={(e) => {
+              e.preventDefault();
+              videoPreWarmer.triggerHaptic("medium");
+              addToCart(item);
+            }}
+            className="active:scale-[0.98] transition-transform duration-120 select-none"
             style={{
               width: "100%",
               height: 44,
@@ -394,11 +410,7 @@ export const ProductCard = memo(({
               alignItems: "center",
               justifyContent: "center",
               WebkitTapHighlightColor: "transparent",
-              transition: `opacity 150ms ${EASE}`,
             }}
-            onPointerDown={(e) => { (e.currentTarget as HTMLElement).style.opacity = "0.88"; }}
-            onPointerUp={(e) => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
-            onPointerLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
           >
             {item.express_delivery ? (
               <span style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", lineHeight: "1.15" }}>

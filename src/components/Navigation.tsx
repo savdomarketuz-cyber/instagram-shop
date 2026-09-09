@@ -12,6 +12,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { translations } from "@/lib/translations";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { SearchResult } from "@/types";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 export default function Navigation() {
     const user = useStore(state => state.user);
@@ -264,35 +265,35 @@ export default function Navigation() {
                     </form>
 
                     <div className="hidden md:flex items-center gap-2 md:gap-6 shrink-0 h-full">
-                        <Link href={l("/reels")} className={`flex flex-col items-center gap-1 group transition-all ${pathname === l('/reels') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
+                        <Link href={l("/reels")} className={`flex flex-col items-center gap-1 group transition-colors duration-150 ${pathname === l('/reels') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
                             <div className="relative p-2 rounded-xl group-hover:bg-gray-50 transition-colors">
-                                <Clapperboard size={22} strokeWidth={pathname === l('/reels') ? 3 : 2} className="group-hover:scale-110 group-hover:-rotate-12 group-hover:text-black transition-all duration-300" />
+                                <Clapperboard size={22} strokeWidth={pathname === l('/reels') ? 3 : 2} className="group-hover:scale-110 group-hover:-rotate-12 group-hover:text-black transition-transform duration-200" />
                             </div>
                             <span className="text-[9px] font-black uppercase tracking-tighter hidden xl:block">{t.nav.reels}</span>
                         </Link>
 
-                        <Link href={l("/blog")} className={`flex flex-col items-center gap-1 group transition-all ${pathname === l('/blog') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
+                        <Link href={l("/blog")} className={`flex flex-col items-center gap-1 group transition-colors duration-150 ${pathname === l('/blog') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
                             <div className="relative p-2 rounded-xl group-hover:bg-gray-50 transition-colors">
-                                <BookOpen size={22} strokeWidth={pathname === l('/blog') ? 3 : 2} className="group-hover:scale-110 group-hover:text-black transition-all duration-300" />
+                                <BookOpen size={22} strokeWidth={pathname === l('/blog') ? 3 : 2} className="group-hover:scale-110 group-hover:text-black transition-transform duration-200" />
                             </div>
                             <span className="text-[9px] font-black uppercase tracking-tighter hidden xl:block">{t.nav.blog}</span>
                         </Link>
 
-                        <Link href={l("/orders")} className={`flex flex-col items-center gap-1 group transition-all ${pathname === l('/orders') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
+                        <Link href={l("/orders")} className={`flex flex-col items-center gap-1 group transition-colors duration-150 ${pathname === l('/orders') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
                             <div className="p-2 rounded-xl group-hover:bg-gray-50 transition-colors">
-                                <ShoppingBag size={22} strokeWidth={pathname === l('/orders') ? 3 : 2} className="group-hover:-translate-y-1.5 group-hover:scale-110 group-hover:text-black transition-all duration-300" />
+                                <ShoppingBag size={22} strokeWidth={pathname === l('/orders') ? 3 : 2} className="group-hover:-translate-y-1.5 group-hover:scale-110 group-hover:text-black transition-transform duration-200" />
                             </div>
                             <span className="text-[9px] font-black uppercase tracking-tighter hidden xl:block">{language === 'uz' ? 'Buyurtmalar' : 'Заказы'}</span>
                         </Link>
 
-                        <Link href={l("/wishlist")} className={`flex flex-col items-center gap-1 group transition-all ${pathname === l('/wishlist') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
+                        <Link href={l("/wishlist")} className={`flex flex-col items-center gap-1 group transition-colors duration-150 ${pathname === l('/wishlist') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
                             <div className="p-2 rounded-xl group-hover:bg-gray-50 relative transition-colors">
-                                <Heart size={22} fill={wishlist.length > 0 ? "black" : "none"} strokeWidth={pathname === l('/wishlist') ? 3 : 2} className="transition-all duration-500 group-hover:scale-125" />
+                                <Heart size={22} fill={wishlist.length > 0 ? "black" : "none"} strokeWidth={pathname === l('/wishlist') ? 3 : 2} className="transition-transform duration-200 group-hover:scale-125" />
                             </div>
                             <span className="text-[9px] font-black uppercase tracking-tighter hidden xl:block">{language === 'uz' ? 'Saralangan' : 'Избранное'}</span>
                         </Link>
 
-                        <Link href={l("/cart")} className={`flex flex-col items-center gap-1 group transition-all ${pathname === l('/cart') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
+                        <Link href={l("/cart")} className={`flex flex-col items-center gap-1 group transition-colors duration-150 ${pathname === l('/cart') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
                             <div className="p-2 rounded-xl group-hover:bg-gray-50 relative transition-colors">
                                 <ShoppingCart size={22} strokeWidth={pathname === l('/cart') ? 3 : 2} />
                                 {cartCount > 0 && <span className="absolute top-1 right-1 bg-red-600 text-white text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full border border-white">{cartCount}</span>}
@@ -302,12 +303,12 @@ export default function Navigation() {
 
                         <div className="pl-4 md:pl-6 border-l border-gray-100 items-center gap-4 hidden lg:flex">
                             {user ? (
-                                <Link href={l("/account")} className={`flex items-center gap-3 bg-[#F2F3F5] hover:bg-black hover:text-white px-6 py-3.5 rounded-2xl transition-all group shadow-sm hover:shadow-xl ${pathname?.includes('/account') ? 'bg-black text-white' : ''}`}>
-                                    <User size={18} className="group-hover:scale-110 transition-transform duration-300" />
+                                <Link href={l("/account")} className={`flex items-center gap-3 bg-[#F2F3F5] hover:bg-black hover:text-white px-6 py-3.5 rounded-2xl transition-colors duration-150 group shadow-sm hover:shadow-xl ${pathname?.includes('/account') ? 'bg-black text-white' : ''}`}>
+                                    <User size={18} className="group-hover:scale-110 transition-transform duration-200" />
                                     <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">{t.nav.profile}</span>
                                 </Link>
                             ) : (
-                                <Link href={l("/login")} className="bg-[#F2F3F5] hover:bg-black hover:text-white px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-xl">
+                                <Link href={l("/login")} className="bg-[#F2F3F5] hover:bg-black hover:text-white px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-transform duration-150 hover:scale-105 active:scale-95 shadow-sm hover:shadow-xl">
                                     {language === 'uz' ? 'Kirish' : 'Войти'}
                                 </Link>
                             )}
@@ -347,6 +348,8 @@ export default function Navigation() {
                                 <Link
                                     key={tab.href}
                                     href={tab.href}
+                                    onClick={() => videoPreWarmer.triggerHaptic("light")}
+                                    className="ios-icon-tap active:scale-90 transition-transform duration-150 ease-out will-change-transform select-none"
                                     style={{
                                         flex: 1,
                                         display: "flex",

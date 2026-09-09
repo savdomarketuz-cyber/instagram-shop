@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { Banner } from "@/types";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 interface BannerSectionProps {
     banners: Banner[];
@@ -19,7 +20,7 @@ interface BannerSectionProps {
     outerPadding?: string;
 }
 
-const TRANSITION = "transform 650ms cubic-bezier(0.22,1,0.36,1)";
+const TRANSITION = "transform 460ms cubic-bezier(0.32, 0.72, 0, 1)";
 
 export const BannerSection = ({
     banners,
@@ -98,7 +99,10 @@ export const BannerSection = ({
     const onTouchEnd = (e: React.TouchEvent) => {
         if (touchX.current === null) return;
         const dx = e.changedTouches[0].clientX - touchX.current;
-        if (Math.abs(dx) > 40) { dx < 0 ? next() : prev(); }
+        if (Math.abs(dx) > 40) {
+            videoPreWarmer.triggerHaptic("light");
+            dx < 0 ? next() : prev();
+        }
         touchX.current = null;
     };
 
@@ -123,8 +127,10 @@ export const BannerSection = ({
                     className="flex h-full"
                     style={{
                         width: `${slides.length * 100}%`,
-                        transform: `translateX(-${(idx * 100) / slides.length}%)`,
+                        transform: `translate3d(-${(idx * 100) / slides.length}%, 0, 0)`,
                         transition: anim ? TRANSITION : "none",
+                        willChange: "transform",
+                        backfaceVisibility: "hidden",
                     }}
                     onTransitionEnd={handleTransitionEnd}
                 >
@@ -170,14 +176,17 @@ export const BannerSection = ({
                         {visible.map((_, i) => (
                             <button
                                 key={i}
-                                onClick={() => goTo(i)}
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("light");
+                                    goTo(i);
+                                }}
                                 aria-label={`Banner ${i + 1}`}
                                 style={{
                                     height: 6, borderRadius: 3, border: "none", cursor: "pointer", padding: 0,
                                     width: realIdx === i ? 22 : 6,
                                     background: realIdx === i ? "#fff" : "rgba(255,255,255,0.5)",
                                     boxShadow: realIdx === i ? "0 1px 4px rgba(0,0,0,0.2)" : "none",
-                                    transition: "all 300ms cubic-bezier(0.22,1,0.36,1)",
+                                    transition: "width 240ms cubic-bezier(0.32,0.72,0,1), background-color 240ms ease, box-shadow 240ms ease",
                                 }}
                             />
                         ))}

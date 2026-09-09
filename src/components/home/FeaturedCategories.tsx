@@ -6,6 +6,7 @@ import { ChevronRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getCategorySlug } from "@/lib/slugify";
 import { getOptimizedImageUrl } from "@/lib/imageVariants";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 interface FeaturedCat {
     id: string;
@@ -122,8 +123,11 @@ export default function FeaturedCategories({ language, initial }: { language: "u
             <div className="md:hidden" style={{ padding: "16px 20px 0" }}>
                 <HeaderRow fontSize={18} mb={14} />
                 <div
-                    style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none" }}
-                    className="no-scrollbar"
+                    style={{
+                        display: "flex", gap: 14, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none",
+                        WebkitOverflowScrolling: "touch",
+                    }}
+                    className="no-scrollbar overscroll-x-contain touch-pan-x"
                 >
                     {categories.map((cat, idx) => {
                         const bg = cat.color || PALETTE[idx % PALETTE.length];
@@ -132,6 +136,8 @@ export default function FeaturedCategories({ language, initial }: { language: "u
                             <Link
                                 key={cat.id}
                                 href={`/${language}/catalog/${getCategorySlug(cat, language)}`}
+                                onClick={() => videoPreWarmer.triggerHaptic("light")}
+                                className="ios-tap-feedback active:scale-90 transition-transform duration-150 ease-out select-none will-change-transform"
                                 style={{
                                     flexShrink: 0, display: "flex", flexDirection: "column",
                                     alignItems: "center", gap: 8, textDecoration: "none",
@@ -139,13 +145,17 @@ export default function FeaturedCategories({ language, initial }: { language: "u
                                     animation: `velari-cart-in ${200 + idx * 60}ms ${EASE} both`,
                                 }}
                             >
-                                <div style={{
-                                    width: 64, height: 64, borderRadius: 20,
-                                    background: cat.image ? "#fff" : bg,
-                                    display: "flex", alignItems: "center", justifyContent: "center",
-                                    fontSize: 28, lineHeight: 1, overflow: "hidden",
-                                    boxShadow: "0 4px 12px rgba(15,20,16,0.08)",
-                                }}>
+                                <div
+                                    className="[contain:layout_paint]"
+                                    style={{
+                                        width: 64, height: 64, borderRadius: 20,
+                                        background: cat.image ? "#fff" : bg,
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                        fontSize: 28, lineHeight: 1, overflow: "hidden",
+                                        boxShadow: "0 4px 12px rgba(15,20,16,0.08)",
+                                        transform: "translate3d(0, 0, 0)",
+                                    }}
+                                >
                                     {cat.image ? (
                                         <img src={getOptimizedImageUrl(cat.image_meta, cat.image, 'xs')} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                                     ) : (cat.icon || "📦")}
@@ -163,7 +173,13 @@ export default function FeaturedCategories({ language, initial }: { language: "u
             {/* ── DESKTOP (kattaroq) ── */}
             <div className="hidden md:block px-10 mt-10">
                 <HeaderRow fontSize={26} mb={20} />
-                <div style={{ display: "flex", gap: 22, overflowX: "auto", paddingBottom: 6 }} className="no-scrollbar">
+                <div
+                    style={{
+                        display: "flex", gap: 22, overflowX: "auto", paddingBottom: 6,
+                        WebkitOverflowScrolling: "touch",
+                    }}
+                    className="no-scrollbar overscroll-x-contain touch-pan-x"
+                >
                     {categories.map((cat, idx) => {
                         const bg = cat.color || PALETTE[idx % PALETTE.length];
                         const name = language === "uz" ? (cat.name_uz || cat.name) : (cat.name_ru || cat.name);
@@ -171,7 +187,7 @@ export default function FeaturedCategories({ language, initial }: { language: "u
                             <Link
                                 key={cat.id}
                                 href={`/${language}/catalog/${getCategorySlug(cat, language)}`}
-                                className="group"
+                                className="group ios-tap-feedback active:scale-95 transition-transform duration-150 ease-out will-change-transform"
                                 style={{
                                     flexShrink: 0, display: "flex", flexDirection: "column",
                                     alignItems: "center", gap: 12, textDecoration: "none",
@@ -179,13 +195,14 @@ export default function FeaturedCategories({ language, initial }: { language: "u
                                 }}
                             >
                                 <div
-                                    className="group-hover:-translate-y-1 group-hover:shadow-xl transition-all duration-300"
+                                    className="group-hover:-translate-y-1 group-hover:shadow-xl transition-transform duration-200 transition-shadow duration-200 [contain:layout_paint]"
                                     style={{
                                         width: 104, height: 104, borderRadius: 32,
                                         background: cat.image ? "#fff" : bg,
                                         display: "flex", alignItems: "center", justifyContent: "center",
                                         fontSize: 46, lineHeight: 1, overflow: "hidden",
                                         boxShadow: "0 6px 18px rgba(15,20,16,0.08)",
+                                        transform: "translate3d(0, 0, 0)",
                                     }}
                                 >
                                     {cat.image ? (

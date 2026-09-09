@@ -512,22 +512,28 @@ export default function HomeClient({
                             <ChevronRight size={13} color="#9AA29C" />
                         </div>
                     </div>
-                    <Link href={`/${language}/account`} style={{
-                        width: 40, height: 40, borderRadius: 20, background: "#fff",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        boxShadow: "0 2px 8px rgba(15,20,16,0.05)", position: "relative", flexShrink: 0,
-                        textDecoration: "none",
-                    }}>
+                    <Link href={`/${language}/account`}
+                        className="ios-icon-tap active:scale-90 transition-transform duration-150 ease-out will-change-transform"
+                        style={{
+                            width: 40, height: 40, borderRadius: 20, background: "#fff",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            boxShadow: "0 2px 8px rgba(15,20,16,0.05)", position: "relative", flexShrink: 0,
+                            textDecoration: "none",
+                        }}
+                    >
                         <User size={18} color="#0F1410" />
                         {user && <div style={{ position: "absolute", top: 8, right: 9, width: 8, height: 8, borderRadius: 4, background: "#2D6E3E", border: "2px solid #FAFAF6" }} />}
                     </Link>
                 </div>
                 <form onSubmit={handleMobileSearch}>
-                    <div style={{
-                        width: "100%", height: 46, borderRadius: 23,
-                        background: "#fff", display: "flex", alignItems: "center", gap: 10, padding: "0 16px",
-                        boxShadow: "0 2px 10px rgba(15,20,16,0.04)", border: "1px solid rgba(15,20,16,0.05)",
-                    }}>
+                    <div
+                        className="active:scale-[0.99] transition-transform duration-150 will-change-transform"
+                        style={{
+                            width: "100%", height: 46, borderRadius: 23,
+                            background: "#fff", display: "flex", alignItems: "center", gap: 10, padding: "0 16px",
+                            boxShadow: "0 2px 10px rgba(15,20,16,0.04)", border: "1px solid rgba(15,20,16,0.05)",
+                        }}
+                    >
                         {isSearchLoading ? <Loader2 size={18} color="#9AA29C" className="animate-spin" /> : <Search size={18} color="#9AA29C" />}
                         <input
                             type="text"
@@ -538,6 +544,7 @@ export default function HomeClient({
                         />
                         {search && (
                             <button type="button" onClick={clearMobileSearch}
+                                className="ios-icon-tap active:scale-85 transition-transform duration-150 will-change-transform"
                                 style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
                                 <X size={16} color="#9AA29C" />
                             </button>
@@ -549,12 +556,15 @@ export default function HomeClient({
             {/* ── MOBILE: Gradient Catalog CTA ── */}
             {!searchResults && !urlCategory && (
                 <div className="md:hidden" style={{ padding: "10px 20px 0" }}>
-                    <Link href={`/${language}/catalog`} style={{
-                        height: 52, borderRadius: 18, display: "flex", alignItems: "center",
-                        justifyContent: "space-between", padding: "0 18px",
-                        background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)",
-                        boxShadow: "0 8px 20px rgba(45,110,62,0.28)", color: "#fff", textDecoration: "none",
-                    }}>
+                    <Link href={`/${language}/catalog`}
+                        className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
+                        style={{
+                            height: 52, borderRadius: 18, display: "flex", alignItems: "center",
+                            justifyContent: "space-between", padding: "0 18px",
+                            background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)",
+                            boxShadow: "0 8px 20px rgba(45,110,62,0.28)", color: "#fff", textDecoration: "none",
+                        }}
+                    >
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <div style={{
                                 width: 32, height: 32, borderRadius: 10,
@@ -608,7 +618,7 @@ export default function HomeClient({
                             <PromoCountdown language={language} initialSettings={initialPromo} variant="card" />
                             <Link
                                 href={`/${language}/login`}
-                                className="flex flex-1 min-h-0 flex-col justify-between transition-transform hover:-translate-y-0.5"
+                                className="flex flex-1 min-h-0 flex-col justify-between transition-transform hover:-translate-y-0.5 active:scale-[0.98] duration-150 ease-out will-change-transform"
                                 style={{
                                     background: "linear-gradient(135deg,#FBF4E6 0%,#F7ECD4 100%)",
                                     borderRadius: 24, padding: "20px 22px", textDecoration: "none",
@@ -663,10 +673,13 @@ export default function HomeClient({
                                         {language === "uz" ? "Premium sifat mahsulotlar" : "Премиум товары"}
                                     </h2>
                                 </div>
-                                <Link href={`/${language}/catalog`} style={{
-                                    alignSelf: "flex-start", padding: "10px 18px", borderRadius: 20,
-                                    background: "#fff", fontSize: 13, fontWeight: 600, color: "#0F1410", textDecoration: "none",
-                                }}>
+                                <Link href={`/${language}/catalog`}
+                                    className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
+                                    style={{
+                                        alignSelf: "flex-start", padding: "10px 18px", borderRadius: 20,
+                                        background: "#fff", fontSize: 13, fontWeight: 600, color: "#0F1410", textDecoration: "none",
+                                    }}
+                                >
                                     {language === "uz" ? "Ko'rish →" : "Смотреть →"}
                                 </Link>
                             </div>
@@ -745,13 +758,14 @@ export default function HomeClient({
                             </div>
                             <button
                                 onClick={clearMobileSearch}
+                                className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
                                 style={{ padding: "10px 18px", borderRadius: 20, background: "#fff", border: "1px solid rgba(15,20,16,0.08)", fontSize: 13, fontWeight: 600, color: "#5A625C", cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}
                             >
                                 {language === "uz" ? "Tozalash" : "Очистить"}
                             </button>
                         </div>
                         {searchFacets?.categories && Object.keys(searchFacets.categories).length > 0 && (
-                            <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }} className="scrollbar-hide">
+                            <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, WebkitOverflowScrolling: "touch" }} className="scrollbar-hide overscroll-x-contain touch-pan-x">
                                 {Object.entries(searchFacets.categories).map(([cat, count]) => {
                                     const on = activeFacet === cat;
                                     // ID o'rniga kategoriya NOMI (til bo'yicha); nom topilmasa ID fallback
@@ -760,6 +774,7 @@ export default function HomeClient({
                                         <button
                                             key={cat}
                                             onClick={() => setActiveFacet(prev => prev === cat ? null : cat)}
+                                            className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
                                             style={{ padding: "8px 14px", borderRadius: 18, whiteSpace: "nowrap", background: on ? "#2D6E3E" : "#EAF3EC", border: "none", cursor: "pointer", fontSize: 13, fontWeight: on ? 700 : 500, color: on ? "#fff" : "#2D6E3E", transition: "background 160ms ease, color 160ms ease" }}
                                         >
                                             {label} <span style={{ opacity: 0.6 }}>({count as number})</span>
@@ -777,6 +792,7 @@ export default function HomeClient({
                         <button
                             onClick={() => { setActiveFilter("all"); setHomeActiveFilter("all"); router.push(`/${language}`); }}
                             aria-label={language === "uz" ? "Orqaga" : "Назад"}
+                            className="ios-icon-tap active:scale-90 transition-transform duration-150 will-change-transform"
                             style={{ width: 40, height: 40, borderRadius: 14, background: "#fff", border: "1px solid rgba(15,20,16,0.08)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}
                         >
                             <ChevronLeft size={20} color="#0F1410" />
@@ -798,6 +814,7 @@ export default function HomeClient({
                             <button
                                 key={tab}
                                 onClick={() => { setActiveTab(tab); setHomeActiveTab(tab); }}
+                                className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
                                 style={{
                                     flex: 1, paddingBottom: 12, paddingTop: 4, textAlign: "center",
                                     position: "relative", background: "none", border: "none", cursor: "pointer",
