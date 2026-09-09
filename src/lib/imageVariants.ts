@@ -2,30 +2,40 @@ import type { ImageLoaderProps } from 'next/image';
 
 type Meta = Record<string, { xs?: string; md?: string; lg?: string; lowResUrl?: string; blurDataURL?: string }> | undefined;
 
+function firstDefined(...values: Array<string | undefined>): string | undefined {
+  return values.find(Boolean);
+}
+
 export function getMetaForUrl(metadata: Meta, url: string) {
   if (!metadata || typeof metadata !== 'object') return undefined;
   if (metadata[url]) return metadata[url];
   const urlBase = url.split('/').pop()?.split('?')[0];
   if (urlBase) {
-    const entry = Object.entries(metadata).find(([k]) => {
+    const matches = Object.entries(metadata).filter(([k]) => {
       const kBase = k.split('/').pop()?.split('?')[0];
-      return kBase && kBase === urlBase;
+      return kBase === urlBase;
     });
-    if (entry) return entry[1];
+    if (matches.length === 1) return matches[0][1];
   }
-  const first = Object.values(metadata)[0];
-  return first || undefined;
+  return undefined;
 }
 
 export function makeVariantLoader(metadata: Meta) {
   return ({ src, width }: ImageLoaderProps): string => {
     const m = getMetaForUrl(metadata, src);
     if (!m) return src;
-    if (width <= 420 && m.lowResUrl) return m.lowResUrl;
-    if (width <= 640 && (m.xs || m.lowResUrl)) return m.xs || m.lowResUrl;
-    if (width <= 828 && (m.md || m.xs || m.lowResUrl)) return m.md || m.xs || m.lowResUrl;
-    if (m.lg || m.md || m.xs || m.lowResUrl) return m.lg || m.md || m.xs || m.lowResUrl!;
-    return src;
+
+    const selected = firstDefined(
+      width <= 420 ? m.lowResUrl : undefined,
+      width <= 640 ? m.xs : undefined,
+      width <= 828 ? m.md : undefined,
+      m.lg,
+      m.md,
+      m.xs,
+      m.lowResUrl
+    );
+
+    return selected || src;
   };
 }
 

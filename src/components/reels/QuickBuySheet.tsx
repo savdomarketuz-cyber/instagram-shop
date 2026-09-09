@@ -74,12 +74,14 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
 
         let isCancelled = false;
 
-        supabase
-            .from("products")
-            .select("id,name,name_uz,name_ru,price,old_price,image,images,color_name,model,article,stock")
-            .eq("group_id", gid)
-            .eq("is_deleted", false)
-            .then(({ data }) => {
+        (async () => {
+            try {
+                const { data } = await supabase
+                    .from("products")
+                    .select("id,name,name_uz,name_ru,price,old_price,image,images,color_name,model,article,stock")
+                    .eq("group_id", gid)
+                    .eq("is_deleted", false);
+
                 if (!isCancelled && data && data.length > 0) {
                     setGroupVariants(data);
                     const match = data.find((p: any) => p.id === (product.productId || product.id));
@@ -87,8 +89,8 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                         setSelectedVariant(match.color_name || match.model || match.name);
                     }
                 }
-            })
-            .catch(() => {});
+            } catch {}
+        })();
 
         return () => {
             isCancelled = true;
