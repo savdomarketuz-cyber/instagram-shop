@@ -210,6 +210,91 @@ function AdminProducts() {
         }
     };
 
+    const extractVideoThumbnailAndInfo = (file: File): Promise<{
+        thumbnailBlob: Blob | null;
+        width: number;
+        height: number;
+        duration: number;
+    }> => {
+        return new Promise((resolve) => {
+            const video = document.createElement("video");
+            video.preload = "metadata";
+            video.muted = true;
+            video.playsInline = true;
+
+            const objectUrl = URL.createObjectURL(file);
+            video.src = objectUrl;
+
+            const cleanup = () => {
+                try { URL.revokeObjectURL(objectUrl); } catch {}
+            };
+
+            const timeout = setTimeout(() => {
+                cleanup();
+                resolve({ thumbnailBlob: null, width: 0, height: 0, duration: 0 });
+            }, 8000);
+
+            video.onloadedmetadata = () => {
+                const duration = video.duration || 0;
+                video.currentTime = Math.min(0.5, Math.max(0, duration / 2));
+            };
+
+            video.onseeked = () => {
+                clearTimeout(timeout);
+                try {
+                    const canvas = document.createElement("canvas");
+                    const maxDim = 1080;
+                    let w = video.videoWidth || 720;
+                    let h = video.videoHeight || 1280;
+                    if (w > maxDim || h > maxDim) {
+                        if (w > h) {
+                            h = Math.round((h * maxDim) / w);
+                            w = maxDim;
+                        } else {
+                            w = Math.round((w * maxDim) / h);
+                            h = maxDim;
+                        }
+                    }
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext("2d");
+                    if (ctx) {
+                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        canvas.toBlob(
+                            (blob) => {
+                                cleanup();
+                                resolve({
+                                    thumbnailBlob: blob,
+                                    width: video.videoWidth,
+                                    height: video.videoHeight,
+                                    duration: video.duration,
+                                });
+                            },
+                            "image/webp",
+                            0.82
+                        );
+                        return;
+                    }
+                } catch (err) {
+                    console.warn("Canvas thumbnail extraction error:", err);
+                }
+                cleanup();
+                resolve({
+                    thumbnailBlob: null,
+                    width: video.videoWidth,
+                    height: video.videoHeight,
+                    duration: video.duration,
+                });
+            };
+
+            video.onerror = () => {
+                clearTimeout(timeout);
+                cleanup();
+                resolve({ thumbnailBlob: null, width: 0, height: 0, duration: 0 });
+            };
+        });
+    };
+
     const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -230,10 +315,46 @@ function AdminProducts() {
 
         setIsUploading(true);
         try {
+            // 1. Videodan metadata va avtomatik WebP poster olish
+            const { thumbnailBlob, width, height } = await extractVideoThumbnailAndInfo(file);
+
+            if (width >= 3840 || height >= 3840) {
+                alert("Diqqat: Siz 4K formatdagi og'ir video yuklamoqdasiz. Mobil foydalanuvchilar qotmasligi uchun 1080p yoki 720p tavsiya etiladi.");
+            }
+
+            // 2. Agar mahsulotda asosiy rasm bo'lmasa, videodan olingan posterni avtomatik yuklaymiz
+            let autoPosterUrl = "";
+            let posterMeta: any = undefined;
+            if (thumbnailBlob && (!newProduct.image || newProduct.image.length === 0)) {
+                try {
+                    const posterFile = new File([thumbnailBlob], `poster_${Date.now()}.webp`, { type: "image/webp" });
+                    const posterRes = await uploadAdminToYandexS3(posterFile);
+                    autoPosterUrl = posterRes.url;
+                    posterMeta = {
+                        [posterRes.url]: {
+                            lowResUrl: posterRes.lowResUrl,
+                            xs: posterRes.xs,
+                            md: posterRes.md,
+                            lg: posterRes.lg,
+                            blurDataURL: posterRes.blurDataURL
+                        }
+                    };
+                } catch (pErr) {
+                    console.warn("Auto-poster upload skipped:", pErr);
+                }
+            }
+
+            // 3. Videoning o'zini Yandex S3 ga yuklash (300 MB limit)
             const { url } = await uploadAdminToYandexS3(file);
+
             setNewProduct(prev => ({
                 ...prev,
-                videoUrl: url
+                videoUrl: url,
+                ...(autoPosterUrl ? {
+                    image: autoPosterUrl,
+                    images: prev.images && prev.images.length > 0 ? prev.images : [autoPosterUrl],
+                    image_metadata: { ...(prev.image_metadata || {}), ...posterMeta }
+                } : {})
             }));
         } catch (error: any) {
             console.error("Video upload failed:", error);

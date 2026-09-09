@@ -55,7 +55,7 @@ export default function ReelsPage() {
         for (const r of reelsRes.data || []) {
             if (!r.video_url) continue;
             const rawImg = r.image || r.thumbnail_url || "/placeholder.png";
-            const poster = getOptimizedImageUrl(r.image_metadata, rawImg, 'md');
+            const poster = getOptimizedImageUrl(r.image_metadata, rawImg, 'xs');
             const rawUrls = String(r.video_url).split(/[;,]/).map((u) => sanitizeVideoUrl(u)).filter(Boolean);
             rawUrls.forEach((vUrl, uIdx) => {
                 reelItems.push({
@@ -77,7 +77,7 @@ export default function ReelsPage() {
         for (const p of productsRes.data || []) {
             if (!p.video_url) continue;
             const rawImg = p.image || (Array.isArray(p.images) ? p.images[0] : null) || "/placeholder.png";
-            const poster = getOptimizedImageUrl(p.image_metadata, rawImg, 'md');
+            const poster = getOptimizedImageUrl(p.image_metadata, rawImg, 'xs');
             const rawUrls = String(p.video_url).split(/[;,]/).map((u) => sanitizeVideoUrl(u)).filter(Boolean);
             rawUrls.forEach((vUrl, uIdx) => {
                 productItems.push({
@@ -291,6 +291,7 @@ export default function ReelsPage() {
                     {reels.map((reel, index) => {
                         const inWindow = index >= activeIndex - WINDOW && index <= activeIndex + WINDOW;
                         const isNearby = index >= activeIndex - 1 && index <= activeIndex + 1;
+                        const isImmediateNext = index === activeIndex + 1;
 
                         if (!inWindow) {
                             return (
@@ -310,6 +311,7 @@ export default function ReelsPage() {
                                     reel={reel}
                                     isActive={activeIndex === index && !commentProductId}
                                     isNearby={isNearby}
+                                    isImmediateNext={isImmediateNext}
                                     isMuted={isMuted}
                                     toggleMute={() => setIsMuted(!isMuted)}
                                     onCommentOpen={(pid) => setCommentProductId(pid)}

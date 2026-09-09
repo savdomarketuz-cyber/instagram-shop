@@ -27,6 +27,7 @@ interface SingleReelProps {
     reel: any;
     isActive: boolean;
     isNearby?: boolean;
+    isImmediateNext?: boolean;
     isMuted: boolean;
     toggleMute: () => void;
     onCommentOpen: (productId: string) => void;
@@ -44,6 +45,7 @@ export const SingleReel = ({
     reel,
     isActive,
     isNearby,
+    isImmediateNext,
     isMuted,
     toggleMute,
     onCommentOpen,
@@ -471,7 +473,7 @@ export const SingleReel = ({
                         playsInline
                         webkit-playsinline="true"
                         muted={!isActive || isMuted}
-                        preload={isActive ? "auto" : "metadata"}
+                        preload={isActive || isImmediateNext ? "auto" : "metadata"}
                         onWaiting={() => { if (isActive) setIsBuffering(true); }}
                         onPlaying={() => {
                             if (isActive) {
