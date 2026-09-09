@@ -181,7 +181,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({
             url: originalUrl,
-            lowResUrl: thumbUrl || originalUrl,
+            lowResUrl: thumbUrl || xsUrl || null,
             blurDataURL,
             xs: xsUrl,
             md: mdUrl,
