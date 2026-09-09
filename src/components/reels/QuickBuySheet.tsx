@@ -197,19 +197,98 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
         }
     };
 
-    // Touch drag down to dismiss with iOS velocity & spring physics
+    // Touch drag down to dismiss with iOS velocity & spring physics & Pointer Capture
+    const isDragging = useRef(false);
+
+    // Non-passive touch listener to prevent pull-to-refresh
+    useEffect(() => {
+        const el = sheetRef.current;
+        if (!el) return;
+        const onNativeTouchMove = (e: TouchEvent) => {
+            if (isDragging.current && e.cancelable) {
+                e.preventDefault();
+            }
+        };
+        el.addEventListener("touchmove", onNativeTouchMove, { passive: false });
+        return () => el.removeEventListener("touchmove", onNativeTouchMove);
+    }, []);
+
+    // Pointer Events on Header / Drag Pill with Pointer Capture
+    const handlePointerDown = (e: React.PointerEvent) => {
+        e.stopPropagation();
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        const y = e.clientY;
+        dragStartY.current = y;
+        lastTouchY.current = y;
+        dragStartTime.current = performance.now();
+        velocity.current = 0;
+        isDragging.current = true;
+        if (sheetRef.current) {
+            sheetRef.current.style.transition = "none";
+        }
+    };
+
+    const handlePointerMove = (e: React.PointerEvent) => {
+        if (!isDragging.current) return;
+        e.stopPropagation();
+        const y = e.clientY;
+        const delta = y - dragStartY.current;
+
+        if (delta < 0) {
+            if (sheetRef.current) sheetRef.current.style.transform = "translate3d(0, 0, 0)";
+            currentTranslateY.current = 0;
+            return;
+        }
+
+        const now = performance.now();
+        const dt = Math.max(1, now - dragStartTime.current);
+        const dy = y - lastTouchY.current;
+        velocity.current = dy / dt;
+        lastTouchY.current = y;
+        dragStartTime.current = now;
+
+        if (sheetRef.current) {
+            currentTranslateY.current = delta;
+            sheetRef.current.style.transform = `translate3d(0, ${delta}px, 0)`;
+        }
+    };
+
+    const handlePointerUp = (e: React.PointerEvent) => {
+        if (!isDragging.current) return;
+        e.stopPropagation();
+        try {
+            (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+        } catch {}
+        isDragging.current = false;
+
+        // Dismiss if dragged down > 80px OR flicked down with velocity > 0.45 px/ms
+        if (currentTranslateY.current > 80 || velocity.current > 0.45) {
+            videoPreWarmer.triggerHaptic("light");
+            handleCloseWithAnimation();
+        } else if (sheetRef.current) {
+            sheetRef.current.style.transition = "transform 320ms cubic-bezier(0.32, 0.72, 0, 1)";
+            sheetRef.current.style.transform = "translate3d(0, 0, 0)";
+        }
+        currentTranslateY.current = 0;
+        velocity.current = 0;
+    };
+
     const handleTouchStart = (e: React.TouchEvent) => {
+        e.stopPropagation();
         const y = e.touches[0].clientY;
         dragStartY.current = y;
         lastTouchY.current = y;
         dragStartTime.current = performance.now();
         velocity.current = 0;
+        isDragging.current = true;
         if (sheetRef.current) {
             sheetRef.current.style.transition = "none";
         }
     };
 
     const handleTouchMove = (e: React.TouchEvent) => {
+        if (!isDragging.current) return;
+        e.stopPropagation();
         const y = e.touches[0].clientY;
         const now = performance.now();
         const dt = Math.max(1, now - dragStartTime.current);
@@ -225,10 +304,13 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
         }
     };
 
-    const handleTouchEnd = () => {
-        if (!sheetRef.current) return;
-        // Dismiss if dragged down > 110px OR swiped down with velocity > 0.55 px/ms
-        if (currentTranslateY.current > 110 || velocity.current > 0.55) {
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        e.stopPropagation();
+        if (!sheetRef.current || !isDragging.current) return;
+        isDragging.current = false;
+
+        // Dismiss if dragged down > 80px OR swiped down with velocity > 0.45 px/ms
+        if (currentTranslateY.current > 80 || velocity.current > 0.45) {
             videoPreWarmer.triggerHaptic("light");
             handleCloseWithAnimation();
         } else {
@@ -253,12 +335,18 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
     };
 
     return (
-        <div className="fixed inset-0 z-[99999] flex flex-col justify-end pointer-events-auto">
+        <div
+            className="fixed inset-0 z-[99999] flex flex-col justify-end pointer-events-auto"
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            style={{ overscrollBehavior: "none" }}
+        >
             {/* Backdrop with native blur */}
             <div
                 className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
                     isClosing ? "opacity-0" : "opacity-100"
                 }`}
+                style={{ touchAction: "none" }}
                 onClick={handleCloseWithAnimation}
             />
 
@@ -269,29 +357,40 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
                 className="relative w-full max-w-[500px] mx-auto bg-white text-black rounded-t-[36px] shadow-[0_-15px_40px_rgba(0,0,0,0.4)] flex flex-col max-h-[85dvh] overflow-hidden will-change-transform animate-ios-sheet"
-                style={{ WebkitOverflowScrolling: "touch" }}
+                style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}
             >
-                {/* Drag pill handle */}
-                <div className="w-full flex items-center justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing">
-                    <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
-                </div>
-
-                {/* Header */}
-                <div className="px-5 pb-3 flex items-center justify-between border-b border-gray-100">
-                    <div className="flex items-center gap-2">
-                        <span className="p-1.5 bg-[#6335ED]/10 text-[#6335ED] rounded-xl">
-                            <Sparkles size={16} />
-                        </span>
-                        <h3 className="font-black text-sm tracking-tight uppercase">
-                            {language === "uz" ? "Tezkor Xarid" : "Быстрая покупка"}
-                        </h3>
+                {/* Drag pill handle & Header (Dedicated Touch-Action None Drag Zone) */}
+                <div
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerUp}
+                    className="w-full shrink-0 select-none cursor-grab active:cursor-grabbing"
+                    style={{ touchAction: "none" }}
+                >
+                    <div className="w-full flex items-center justify-center pt-3 pb-2">
+                        <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
                     </div>
-                    <button
-                        onClick={handleCloseWithAnimation}
-                        className="p-2 text-gray-400 hover:text-black rounded-full hover:bg-gray-100 active:scale-95 transition-transform duration-150"
-                    >
-                        <X size={20} />
-                    </button>
+
+                    {/* Header */}
+                    <div className="px-5 pb-3 flex items-center justify-between border-b border-gray-100">
+                        <div className="flex items-center gap-2 pointer-events-none">
+                            <span className="p-1.5 bg-[#6335ED]/10 text-[#6335ED] rounded-xl">
+                                <Sparkles size={16} />
+                            </span>
+                            <h3 className="font-black text-sm tracking-tight uppercase">
+                                {language === "uz" ? "Tezkor Xarid" : "Быстрая покупка"}
+                            </h3>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleCloseWithAnimation}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className="p-1.5 bg-gray-50 rounded-full text-gray-400 hover:text-black transition-colors"
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Content */}

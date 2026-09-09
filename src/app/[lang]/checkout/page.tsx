@@ -14,6 +14,7 @@ const YandexMapPicker = dynamic(() => import("@/components/YandexMapPicker"), {
 });
 import { translations } from "@/lib/translations";
 import { ymGoal, ymPurchase } from "@/lib/metrika";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 export default function CheckoutPage() {
     const router = useRouter();
@@ -334,7 +335,14 @@ export default function CheckoutPage() {
     return (
         <div className="p-4 md:p-6 min-h-screen pt-8 md:pt-12 pb-32" style={{ background: "#FAFAF6" }}>
             <div className="flex items-center gap-4 mb-8 md:mb-10">
-                <button onClick={() => router.back()} style={{ width: 40, height: 40, borderRadius: 20, background: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", cursor: "pointer", flexShrink: 0 }}>
+                <button
+                    onClick={() => {
+                        videoPreWarmer.triggerHaptic("light");
+                        router.back();
+                    }}
+                    className="ios-icon-tap active:scale-90 transition-transform duration-150 will-change-transform"
+                    style={{ width: 40, height: 40, borderRadius: 20, background: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", cursor: "pointer", flexShrink: 0 }}
+                >
                     <ArrowLeft size={20} />
                 </button>
                 <h1 className="text-2xl md:text-3xl font-black tracking-tighter sm:truncate">{t.common.checkout}</h1>
@@ -359,8 +367,11 @@ export default function CheckoutPage() {
                         ))}
                     </div>
                     <button
-                        onClick={() => router.push(`/${language}/cart`)}
-                        className="w-full mt-6 py-4 bg-red-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-red-200"
+                        onClick={() => {
+                            videoPreWarmer.triggerHaptic("light");
+                            router.push(`/${language}/cart`);
+                        }}
+                        className="ios-tap-feedback active:scale-[0.98] w-full mt-6 py-4 bg-red-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-red-200 transition-transform duration-150 will-change-transform"
                     >
                         {t.common.editCart}
                     </button>
@@ -385,7 +396,11 @@ export default function CheckoutPage() {
                         <label style={{ fontSize: 11, fontWeight: 700, color: "#9AA29C", letterSpacing: 0.4, textTransform: "uppercase" }}>{t.common.address}</label>
                         <button
                             type="button"
-                            onClick={() => setIsMapOpen(true)}
+                            onClick={() => {
+                                videoPreWarmer.triggerHaptic("light");
+                                setIsMapOpen(true);
+                            }}
+                            className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
                             style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "#2D6E3E", background: "#EAF3EC", border: "none", borderRadius: 10, padding: "6px 12px", cursor: "pointer" }}
                         >
                             <MapPin size={12} />
@@ -414,8 +429,15 @@ export default function CheckoutPage() {
                     {expressEligible ? (
                         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                             {/* Standart */}
-                            <button type="button" onClick={() => setDeliveryType("standard")}
-                                style={{ display: "flex", alignItems: "center", gap: 12, background: "#fff", border: deliveryType === "standard" ? "1.5px solid #2D6E3E" : "1.5px solid rgba(15,20,16,0.06)", borderRadius: 20, padding: "14px 16px", cursor: "pointer", textAlign: "left", boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("selection");
+                                    setDeliveryType("standard");
+                                }}
+                                className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
+                                style={{ display: "flex", alignItems: "center", gap: 12, background: "#fff", border: deliveryType === "standard" ? "1.5px solid #2D6E3E" : "1.5px solid rgba(15,20,16,0.06)", borderRadius: 20, padding: "14px 16px", cursor: "pointer", textAlign: "left", boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}
+                            >
                                 <div style={{ width: 42, height: 42, borderRadius: 13, background: deliveryType === "standard" ? "#2D6E3E" : "#F0F0EC", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                                     <Truck size={20} color={deliveryType === "standard" ? "#fff" : "#9AA29C"} />
                                 </div>
@@ -429,8 +451,16 @@ export default function CheckoutPage() {
                             </button>
 
                             {/* Tezkor */}
-                            <button type="button" onClick={() => setDeliveryType("express")} disabled={!coords}
-                                style={{ display: "flex", alignItems: "center", gap: 12, background: "#fff", border: deliveryType === "express" ? "1.5px solid #4F46E5" : "1.5px solid rgba(15,20,16,0.06)", borderRadius: 20, padding: "14px 16px", cursor: coords ? "pointer" : "not-allowed", textAlign: "left", boxShadow: "0 2px 8px rgba(15,20,16,0.04)", opacity: coords ? 1 : 0.7 }}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("selection");
+                                    setDeliveryType("express");
+                                }}
+                                disabled={!coords}
+                                className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
+                                style={{ display: "flex", alignItems: "center", gap: 12, background: "#fff", border: deliveryType === "express" ? "1.5px solid #4F46E5" : "1.5px solid rgba(15,20,16,0.06)", borderRadius: 20, padding: "14px 16px", cursor: coords ? "pointer" : "not-allowed", textAlign: "left", boxShadow: "0 2px 8px rgba(15,20,16,0.04)", opacity: coords ? 1 : 0.7 }}
+                            >
                                 <div style={{ width: 42, height: 42, borderRadius: 13, background: deliveryType === "express" ? "#4F46E5" : "#EEF0FF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                                     <Zap size={20} color={deliveryType === "express" ? "#fff" : "#4F46E5"} />
                                 </div>
@@ -481,13 +511,30 @@ export default function CheckoutPage() {
                             style={{ flex: 1, background: "#F5F5F0", border: promoData ? "1.5px solid #2D6E3E" : "1.5px solid transparent", borderRadius: 14, padding: "12px 16px", fontSize: 14, fontWeight: 700, color: "#0F1410", outline: "none", letterSpacing: 0.5, opacity: promoData ? 0.8 : 1 }}
                         />
                         {promoData ? (
-                            <button type="button" onClick={() => { setPromoData(null); setPromoCode(""); setCartPromo(null); }}
-                                style={{ padding: "12px 16px", background: "#FFF0EE", border: "none", borderRadius: 14, cursor: "pointer", display: "flex", alignItems: "center" }}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("light");
+                                    setPromoData(null);
+                                    setPromoCode("");
+                                    setCartPromo(null);
+                                }}
+                                className="ios-icon-tap active:scale-90 transition-transform duration-150 will-change-transform"
+                                style={{ padding: "12px 16px", background: "#FFF0EE", border: "none", borderRadius: 14, cursor: "pointer", display: "flex", alignItems: "center" }}
+                            >
                                 <X size={18} color="#FF3B30" />
                             </button>
                         ) : (
-                            <button type="button" onClick={handleApplyPromo} disabled={isApplyingPromo || !promoCode.trim()}
-                                style={{ padding: "12px 20px", background: "#0F1410", color: "#fff", border: "none", borderRadius: 14, fontSize: 12, fontWeight: 800, cursor: "pointer", opacity: (!promoCode.trim() || isApplyingPromo) ? 0.3 : 1, display: "flex", alignItems: "center", gap: 6 }}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("medium");
+                                    handleApplyPromo();
+                                }}
+                                disabled={isApplyingPromo || !promoCode.trim()}
+                                className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
+                                style={{ padding: "12px 20px", background: "#0F1410", color: "#fff", border: "none", borderRadius: 14, fontSize: 12, fontWeight: 800, cursor: "pointer", opacity: (!promoCode.trim() || isApplyingPromo) ? 0.3 : 1, display: "flex", alignItems: "center", gap: 6 }}
+                            >
                                 {isApplyingPromo ? <Loader2 size={16} className="animate-spin" /> : t.common.apply}
                             </button>
                         )}
@@ -501,8 +548,14 @@ export default function CheckoutPage() {
 
                 {/* Wallet */}
                 {walletBalance > 0 && !promoData && (
-                    <div onClick={() => setUseWallet(!useWallet)}
-                        style={{ background: useWallet ? "#EAF3EC" : "#fff", border: useWallet ? "1.5px solid #2D6E3E" : "1.5px solid rgba(15,20,16,0.06)", borderRadius: 22, padding: "16px 18px", cursor: "pointer", boxShadow: "0 2px 8px rgba(15,20,16,0.04)", transition: "all 200ms ease" }}>
+                    <div
+                        onClick={() => {
+                            videoPreWarmer.triggerHaptic("selection");
+                            setUseWallet(!useWallet);
+                        }}
+                        className="ios-tap-feedback active:scale-[0.98] will-change-transform"
+                        style={{ background: useWallet ? "#EAF3EC" : "#fff", border: useWallet ? "1.5px solid #2D6E3E" : "1.5px solid rgba(15,20,16,0.06)", borderRadius: 22, padding: "16px 18px", cursor: "pointer", boxShadow: "0 2px 8px rgba(15,20,16,0.04)", transition: "background-color 150ms ease, border-color 150ms ease, transform 150ms ease" }}
+                    >
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                                 <div style={{ width: 40, height: 40, borderRadius: 13, background: useWallet ? "#2D6E3E" : "#F0F0EC", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -527,24 +580,24 @@ export default function CheckoutPage() {
                     </div>
                 )}
 
-                {/* Summary card \u2014 Velari green */}
+                {/* Summary card — Velari green */}
                 <div style={{ marginTop: 24, padding: "20px 20px", background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", borderRadius: 24, boxShadow: "0 16px 40px rgba(45,110,62,0.28)", position: "relative", overflow: "hidden" }}>
                     <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: 60, background: "rgba(255,255,255,0.08)", pointerEvents: "none" }} />
                     <div style={{ position: "relative" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: 12, opacity: 0.8 }}>
                             <span>{t.common.products}</span>
-                            <span>{subtotal.toLocaleString()} {language === "ru" ? "\u0441\u0443\u043C" : "so'm"}</span>
+                            <span>{subtotal.toLocaleString()} {language === "ru" ? "сум" : "so'm"}</span>
                         </div>
                         {smartDiscount > 0 && (
                             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: 12, color: "#A3F0B8" }}>
-                                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>\u2726 {language === "ru" ? "\u041F\u0435\u0440\u0441\u043E\u043D\u0430\u043B\u044C\u043D\u0430\u044F \u0441\u043A\u0438\u0434\u043A\u0430" : "Shaxsiy chegirma"}</span>
-                                <span>-{smartDiscount.toLocaleString()} {language === "ru" ? "\u0441\u0443\u043C" : "so'm"}</span>
+                                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>✦ {language === "ru" ? "Персональная скидка" : "Shaxsiy chegirma"}</span>
+                                <span>-{smartDiscount.toLocaleString()} {language === "ru" ? "сум" : "so'm"}</span>
                             </div>
                         )}
                         {promoData && (
                             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: 12, color: "#A3F0B8" }}>
                                 <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Tag size={12} /> {promoData.code}</span>
-                                <span>-{promoData.discount.toLocaleString()} {language === "ru" ? "\u0441\u0443\u043C" : "so'm"}</span>
+                                <span>-{promoData.discount.toLocaleString()} {language === "ru" ? "сум" : "so'm"}</span>
                             </div>
                         )}
                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14, fontSize: 12, opacity: 0.8 }}>
@@ -559,7 +612,7 @@ export default function CheckoutPage() {
                         <div style={{ borderTop: "1px solid rgba(255,255,255,0.15)", paddingTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <span style={{ fontSize: 13, opacity: 0.7, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>{t.common.total}</span>
                             <span style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5 }}>
-                                {total.toLocaleString()} <span style={{ fontSize: 16, opacity: 0.8 }}>{language === "ru" ? "\u0441\u0443\u043C" : "so'm"}</span>
+                                {total.toLocaleString()} <span style={{ fontSize: 16, opacity: 0.8 }}>{language === "ru" ? "сум" : "so'm"}</span>
                             </span>
                         </div>
                     </div>
@@ -567,7 +620,9 @@ export default function CheckoutPage() {
 
                 <button
                     type="submit"
+                    onClick={() => videoPreWarmer.triggerHaptic("medium")}
                     disabled={isSubmitting || displayProducts.length === 0 || stockErrors.length > 0 || isValidating}
+                    className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
                     style={{
                         width: "100%", padding: "17px 0", borderRadius: 18, border: "none", cursor: "pointer",
                         background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)",

@@ -19,6 +19,11 @@
   --foreground: #171717;
 }
 
+html,
+body {
+  overscroll-behavior-y: none;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
@@ -26,7 +31,6 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
-  overscroll-behavior-y: contain;
   scroll-behavior: auto;
 }
 

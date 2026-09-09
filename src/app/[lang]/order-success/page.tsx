@@ -6,6 +6,7 @@ import { useStore } from "@/store/store";
 import { useSearchParams } from "next/navigation";
 import { useState, useEffect, useRef, Suspense } from "react";
 import { ymGoal } from "@/lib/metrika";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 const GREEN = "#2D6E3E";
 const GREEN_DEEP = "#1F5A30";
@@ -20,6 +21,7 @@ function SuccessContent() {
     const trackedRef = useRef<string | null>(null);
 
     useEffect(() => {
+        videoPreWarmer.triggerHaptic("double");
         if (orderId) {
             // Analytics: yakuniy konversiya (har orderId uchun bir marta)
             if (trackedRef.current !== orderId) {
@@ -109,6 +111,8 @@ function SuccessContent() {
             <div style={{ width: "100%", maxWidth: 360, display: "flex", flexDirection: "column", gap: 12 }}>
                 <Link
                     href="/"
+                    onClick={() => videoPreWarmer.triggerHaptic("medium")}
+                    className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
                     style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, padding: "18px 24px", borderRadius: 20, background: `linear-gradient(135deg, ${GREEN} 0%, ${GREEN_DEEP} 100%)`, color: "#fff", fontWeight: 800, fontSize: 13, textDecoration: "none", boxShadow: "0 8px 20px rgba(45,110,62,0.28)", letterSpacing: 0.5 }}
                 >
                     {language === 'uz' ? 'Xaridni davom ettirish' : 'Продолжить покупки'}
@@ -117,6 +121,8 @@ function SuccessContent() {
                 <div style={{ display: "flex", gap: 10 }}>
                     <Link
                         href="/orders"
+                        onClick={() => videoPreWarmer.triggerHaptic("light")}
+                        className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
                         style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "16px 12px", borderRadius: 18, background: "#fff", color: "#5A625C", fontWeight: 700, fontSize: 12, textDecoration: "none", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", border: "1px solid rgba(15,20,16,0.06)" }}
                     >
                         <History size={16} />
@@ -124,6 +130,8 @@ function SuccessContent() {
                     </Link>
                     <Link
                         href="/account"
+                        onClick={() => videoPreWarmer.triggerHaptic("light")}
+                        className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
                         style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "16px 12px", borderRadius: 18, background: GREEN_TINT, color: GREEN, fontWeight: 700, fontSize: 12, textDecoration: "none" }}
                     >
                         <Wallet size={16} />

@@ -31,6 +31,7 @@ interface SingleReelProps {
     isMuted: boolean;
     toggleMute: () => void;
     onCommentOpen: (productId: string) => void;
+    onModalStateChange?: (isOpen: boolean) => void;
     language: "uz" | "ru";
     t: any;
 }
@@ -49,6 +50,7 @@ export const SingleReel = ({
     isMuted,
     toggleMute,
     onCommentOpen,
+    onModalStateChange,
     language,
     t,
 }: SingleReelProps) => {
@@ -74,6 +76,11 @@ export const SingleReel = ({
     const [flyingHearts, setFlyingHearts] = useState<FlyingHeart[]>([]);
     const [soundBadge, setSoundBadge] = useState<{ visible: boolean; isMuted: boolean } | null>(null);
     const [isHolding, setIsHolding] = useState(false);
+
+    // Notify parent container to lock snap scrolling when child modal is open
+    useEffect(() => {
+        onModalStateChange?.(isQuickBuyOpen || isOptionsOpen);
+    }, [isQuickBuyOpen, isOptionsOpen, onModalStateChange]);
 
     // Touch & tap tracking
     const lastTapRef = useRef<number>(0);
@@ -896,12 +903,22 @@ export const SingleReel = ({
                 <div
                     className="fixed inset-0 z-[120] flex flex-col justify-end bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
                     onClick={() => setIsOptionsOpen(false)}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onTouchMove={(e) => e.stopPropagation()}
+                    style={{ overscrollBehavior: "none" }}
                 >
                     <div
                         className="bg-[#262626] text-white rounded-t-3xl overflow-hidden p-3 pb-[max(24px,env(safe-area-inset-bottom))] space-y-1 animate-ios-sheet shadow-2xl max-w-md mx-auto w-full will-change-transform"
                         onClick={(e) => e.stopPropagation()}
+                        style={{ overscrollBehavior: "contain" }}
                     >
-                        <div className="w-10 h-1 bg-white/20 rounded-full mx-auto my-2" />
+                        <div
+                            className="w-full flex items-center justify-center pt-1 pb-3 cursor-grab select-none"
+                            style={{ touchAction: "none" }}
+                            onClick={() => setIsOptionsOpen(false)}
+                        >
+                            <div className="w-10 h-1 bg-white/20 rounded-full" />
+                        </div>
 
                         {/* Mahsulotga o'tish */}
                         <button

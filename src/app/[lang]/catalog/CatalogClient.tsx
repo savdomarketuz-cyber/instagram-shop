@@ -574,9 +574,83 @@ function BottomSheet({ open, onClose, title, leftAction, children }: {
         }, 250);
     }, [onClose]);
 
+    // Non-passive touch listener to prevent pull-to-refresh
+    useEffect(() => {
+        const el = sheetRef.current;
+        if (!el) return;
+        const onNativeTouchMove = (e: TouchEvent) => {
+            if (isDragging.current && e.cancelable) {
+                e.preventDefault();
+            }
+        };
+        el.addEventListener("touchmove", onNativeTouchMove, { passive: false });
+        return () => el.removeEventListener("touchmove", onNativeTouchMove);
+    }, []);
+
     if (!open && !isClosing) return null;
 
+    // Pointer Events on Header / Drag Pill with Pointer Capture
+    const handlePointerDown = (e: React.PointerEvent) => {
+        e.stopPropagation();
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        const y = e.clientY;
+        dragStartY.current = y;
+        lastTouchY.current = y;
+        dragStartTime.current = performance.now();
+        velocity.current = 0;
+        isDragging.current = true;
+        if (sheetRef.current) {
+            sheetRef.current.style.transition = "none";
+        }
+    };
+
+    const handlePointerMove = (e: React.PointerEvent) => {
+        if (!isDragging.current) return;
+        e.stopPropagation();
+        const y = e.clientY;
+        const delta = y - dragStartY.current;
+
+        if (delta < 0) {
+            if (sheetRef.current) sheetRef.current.style.transform = "translate3d(0, 0, 0)";
+            currentTranslateY.current = 0;
+            return;
+        }
+
+        const now = performance.now();
+        const dt = Math.max(1, now - dragStartTime.current);
+        const dy = y - lastTouchY.current;
+        velocity.current = dy / dt;
+        lastTouchY.current = y;
+        dragStartTime.current = now;
+
+        if (sheetRef.current) {
+            currentTranslateY.current = delta;
+            sheetRef.current.style.transform = `translate3d(0, ${delta}px, 0)`;
+        }
+    };
+
+    const handlePointerUp = (e: React.PointerEvent) => {
+        if (!isDragging.current) return;
+        e.stopPropagation();
+        try {
+            (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+        } catch {}
+        isDragging.current = false;
+
+        // Dismiss if dragged down > 80px OR flicked down with velocity > 0.45 px/ms
+        if (currentTranslateY.current > 80 || velocity.current > 0.45) {
+            videoPreWarmer.triggerHaptic("light");
+            handleCloseWithAnimation();
+        } else if (sheetRef.current) {
+            sheetRef.current.style.transition = "transform 320ms cubic-bezier(0.32, 0.72, 0, 1)";
+            sheetRef.current.style.transform = "translate3d(0, 0, 0)";
+        }
+        currentTranslateY.current = 0;
+        velocity.current = 0;
+    };
+
     const handleTouchStart = (e: React.TouchEvent) => {
+        e.stopPropagation();
         if (contentRef.current && contentRef.current.scrollTop > 0) {
             isDragging.current = false;
             return;
@@ -594,10 +668,11 @@ function BottomSheet({ open, onClose, title, leftAction, children }: {
 
     const handleTouchMove = (e: React.TouchEvent) => {
         if (!isDragging.current) return;
+        e.stopPropagation();
         const y = e.touches[0].clientY;
         const delta = y - dragStartY.current;
 
-        if (delta < 0) {
+        if (delta < 0 || (contentRef.current && contentRef.current.scrollTop > 0)) {
             return;
         }
 
@@ -614,15 +689,16 @@ function BottomSheet({ open, onClose, title, leftAction, children }: {
         }
     };
 
-    const handleTouchEnd = () => {
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        e.stopPropagation();
         if (!isDragging.current || !sheetRef.current) {
             isDragging.current = false;
             return;
         }
         isDragging.current = false;
 
-        // Dismiss if dragged down > 110px OR swiped down with velocity > 0.55 px/ms
-        if (currentTranslateY.current > 110 || velocity.current > 0.55) {
+        // Dismiss if dragged down > 80px OR swiped down with velocity > 0.45 px/ms
+        if (currentTranslateY.current > 80 || velocity.current > 0.45) {
             videoPreWarmer.triggerHaptic("light");
             handleCloseWithAnimation();
         } else {
@@ -634,15 +710,22 @@ function BottomSheet({ open, onClose, title, leftAction, children }: {
     };
 
     return (
-        <div className="fixed inset-0 z-[130] flex items-end justify-center" onClick={handleCloseWithAnimation}>
+        <div
+            className="fixed inset-0 z-[130] flex items-end justify-center pointer-events-auto"
+            onClick={handleCloseWithAnimation}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            style={{ overscrollBehavior: "none" }}
+        >
             <div
                 className={`absolute inset-0 bg-black/40 transition-opacity duration-250 ease-out ${
                     isClosing ? "opacity-0" : "opacity-100 animate-in fade-in"
                 }`}
+                style={{ touchAction: "none" }}
             />
             <div
                 ref={sheetRef}
-                onClick={e => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
@@ -656,21 +739,32 @@ function BottomSheet({ open, onClose, title, leftAction, children }: {
                     !isClosing ? "animate-in slide-in-from-bottom duration-300" : ""
                 }`}
             >
-                {/* Drag handle */}
-                <div className="py-2.5 -mt-1 flex justify-center cursor-grab active:cursor-grabbing w-full">
-                    <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
-                </div>
+                {/* Drag handle & Header (Dedicated Touch-Action None Drag Zone) */}
+                <div
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerUp}
+                    className="w-full shrink-0 select-none cursor-grab active:cursor-grabbing"
+                    style={{ touchAction: "none" }}
+                >
+                    <div className="py-2.5 -mt-1 flex justify-center w-full">
+                        <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
+                    </div>
 
-                {/* Header */}
-                <div className="flex items-center justify-between mb-5 select-none">
-                    <div className="w-16">{leftAction}</div>
-                    <h3 className="text-base font-black text-[#0F1410]">{title}</h3>
-                    <button
-                        onClick={handleCloseWithAnimation}
-                        className="w-16 flex justify-end ios-icon-tap active:scale-90 transition-transform duration-150 p-1"
-                    >
-                        <X size={20} className="text-gray-400" />
-                    </button>
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-5 select-none">
+                        <div className="w-16">{leftAction}</div>
+                        <h3 className="text-base font-black text-[#0F1410] pointer-events-none">{title}</h3>
+                        <button
+                            type="button"
+                            onClick={handleCloseWithAnimation}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className="w-16 flex justify-end ios-icon-tap active:scale-90 transition-transform duration-150 p-1"
+                        >
+                            <X size={20} className="text-gray-400" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Content Container */}

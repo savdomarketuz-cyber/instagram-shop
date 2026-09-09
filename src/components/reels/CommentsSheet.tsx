@@ -23,7 +23,7 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
     const sheetRef = useRef<HTMLDivElement>(null);
     const commentsListRef = useRef<HTMLDivElement>(null);
 
-    // Drag to dismiss gesture with velocity tracking
+    // Drag to dismiss gesture with velocity tracking & Pointer Capture
     const dragStartY = useRef(0);
     const lastTouchY = useRef(0);
     const dragStartTime = useRef(0);
@@ -31,7 +31,81 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
     const currentTranslateY = useRef(0);
     const isDragging = useRef(false);
 
+    // Non-passive touch listener to prevent pull-to-refresh
+    useEffect(() => {
+        const el = sheetRef.current;
+        if (!el) return;
+        const onNativeTouchMove = (e: TouchEvent) => {
+            if (isDragging.current && e.cancelable) {
+                e.preventDefault();
+            }
+        };
+        el.addEventListener("touchmove", onNativeTouchMove, { passive: false });
+        return () => el.removeEventListener("touchmove", onNativeTouchMove);
+    }, []);
+
+    // Pointer Events on Header / Drag Pill with Pointer Capture
+    const handlePointerDown = (e: React.PointerEvent) => {
+        e.stopPropagation();
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        const y = e.clientY;
+        dragStartY.current = y;
+        lastTouchY.current = y;
+        dragStartTime.current = performance.now();
+        velocity.current = 0;
+        isDragging.current = true;
+        if (sheetRef.current) {
+            sheetRef.current.style.transition = "none";
+        }
+    };
+
+    const handlePointerMove = (e: React.PointerEvent) => {
+        if (!isDragging.current) return;
+        e.stopPropagation();
+        const y = e.clientY;
+        const delta = y - dragStartY.current;
+
+        if (delta < 0) {
+            if (sheetRef.current) sheetRef.current.style.transform = "translate3d(0, 0, 0)";
+            currentTranslateY.current = 0;
+            return;
+        }
+
+        const now = performance.now();
+        const dt = Math.max(1, now - dragStartTime.current);
+        const dy = y - lastTouchY.current;
+        velocity.current = dy / dt;
+        lastTouchY.current = y;
+        dragStartTime.current = now;
+
+        if (sheetRef.current) {
+            currentTranslateY.current = delta;
+            sheetRef.current.style.transform = `translate3d(0, ${delta}px, 0)`;
+        }
+    };
+
+    const handlePointerUp = (e: React.PointerEvent) => {
+        if (!isDragging.current) return;
+        e.stopPropagation();
+        try {
+            (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+        } catch {}
+        isDragging.current = false;
+
+        // Dismiss if dragged down > 80px OR flicked down with velocity > 0.45 px/ms
+        if (currentTranslateY.current > 80 || velocity.current > 0.45) {
+            videoPreWarmer.triggerHaptic("light");
+            handleCloseWithAnimation();
+        } else if (sheetRef.current) {
+            sheetRef.current.style.transition = "transform 320ms cubic-bezier(0.32, 0.72, 0, 1)";
+            sheetRef.current.style.transform = "translate3d(0, 0, 0)";
+        }
+        currentTranslateY.current = 0;
+        velocity.current = 0;
+    };
+
     const handleTouchStart = (e: React.TouchEvent) => {
+        e.stopPropagation();
         if (commentsListRef.current && commentsListRef.current.scrollTop > 0) {
             isDragging.current = false;
             return;
@@ -49,10 +123,11 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
 
     const handleTouchMove = (e: React.TouchEvent) => {
         if (!isDragging.current) return;
+        e.stopPropagation();
         const y = e.touches[0].clientY;
         const delta = y - dragStartY.current;
 
-        if (delta < 0) {
+        if (delta < 0 || (commentsListRef.current && commentsListRef.current.scrollTop > 0)) {
             return;
         }
 
@@ -69,15 +144,16 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
         }
     };
 
-    const handleTouchEnd = () => {
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        e.stopPropagation();
         if (!isDragging.current || !sheetRef.current) {
             isDragging.current = false;
             return;
         }
         isDragging.current = false;
 
-        // Dismiss if dragged down > 110px OR swiped down with velocity > 0.55 px/ms
-        if (currentTranslateY.current > 110 || velocity.current > 0.55) {
+        // Dismiss if dragged down > 80px OR swiped down with velocity > 0.45 px/ms
+        if (currentTranslateY.current > 80 || velocity.current > 0.45) {
             videoPreWarmer.triggerHaptic("light");
             handleCloseWithAnimation();
         } else {
@@ -169,11 +245,17 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
     };
 
     return (
-        <div className="fixed inset-0 z-[9999] flex flex-col justify-end pointer-events-auto">
+        <div
+            className="fixed inset-0 z-[9999] flex flex-col justify-end pointer-events-auto"
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            style={{ overscrollBehavior: "none" }}
+        >
             <div
                 className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
                     isClosing ? "opacity-0" : "opacity-100"
                 }`}
+                style={{ touchAction: "none" }}
                 onClick={handleCloseWithAnimation}
             />
             <div
@@ -182,24 +264,35 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
                 className="relative bg-white text-black h-[70dvh] max-w-[500px] mx-auto w-full rounded-t-[36px] flex flex-col shadow-2xl animate-ios-sheet overflow-hidden will-change-transform"
-                style={{ WebkitOverflowScrolling: "touch" }}
+                style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}
             >
-                {/* Drag pill handle */}
+                {/* Drag pill handle & header (Dedicated Touch-Action None Drag Zone) */}
                 <div
-                    className="w-full flex items-center justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing shrink-0"
-                    onClick={handleCloseWithAnimation}
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerUp}
+                    className="w-full shrink-0 select-none cursor-grab active:cursor-grabbing"
+                    style={{ touchAction: "none" }}
                 >
-                    <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
-                </div>
+                    <div className="w-full flex items-center justify-center pt-3 pb-2">
+                        <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+                    </div>
 
-                <div className="px-6 py-2 border-b border-gray-100 flex items-center justify-between shrink-0">
-                    <h3 className="font-black italic uppercase tracking-tighter text-lg">
-                        {t.reels?.comments || "Comments"}
-                        <span className="ml-2 text-gray-300">({comments.length})</span>
-                    </h3>
-                    <button onClick={handleCloseWithAnimation} className="p-2 bg-gray-50 rounded-full text-gray-400 hover:text-black transition-colors">
-                        <X size={20} />
-                    </button>
+                    <div className="px-6 py-2 border-b border-gray-100 flex items-center justify-between">
+                        <h3 className="font-black italic uppercase tracking-tighter text-lg pointer-events-none">
+                            {t.reels?.comments || "Comments"}
+                            <span className="ml-2 text-gray-300">({comments.length})</span>
+                        </h3>
+                        <button
+                            type="button"
+                            onClick={handleCloseWithAnimation}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className="p-2 bg-gray-50 rounded-full text-gray-400 hover:text-black transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
                 </div>
 
                 <div

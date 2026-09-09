@@ -30,6 +30,8 @@ export default function ReelsPage() {
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [isMuted, setIsMuted] = useState(true);
     const [commentProductId, setCommentProductId] = useState<string | null>(null);
+    const [isChildModalOpen, setIsChildModalOpen] = useState(false);
+    const isModalActive = Boolean(commentProductId || isChildModalOpen);
     const containerRef = useRef<HTMLDivElement>(null);
 
     const fetchBatch = useCallback(async (pageIndex: number) => {
@@ -281,12 +283,16 @@ export default function ReelsPage() {
                 <div
                     ref={containerRef}
                     onScroll={handleScroll}
-                    className="w-full h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar bg-black relative flex flex-col overscroll-contain touch-pan-y"
+                    className={`w-full h-full no-scrollbar bg-black relative flex flex-col ${
+                        isModalActive
+                            ? "overflow-hidden"
+                            : "overflow-y-scroll snap-y snap-mandatory overscroll-contain touch-pan-y"
+                    }`}
                     style={{
                         scrollbarWidth: "none",
                         msOverflowStyle: "none",
-                        WebkitOverflowScrolling: "touch",
-                        overscrollBehaviorY: "contain",
+                        WebkitOverflowScrolling: isModalActive ? "auto" : "touch",
+                        overscrollBehaviorY: "none",
                     }}
                 >
                     {reels.map((reel, index) => {
@@ -310,12 +316,13 @@ export default function ReelsPage() {
                             >
                                 <SingleReel
                                     reel={reel}
-                                    isActive={activeIndex === index && !commentProductId}
+                                    isActive={activeIndex === index && !isModalActive}
                                     isNearby={isNearby}
                                     isImmediateNext={isImmediateNext}
                                     isMuted={isMuted}
                                     toggleMute={() => setIsMuted(!isMuted)}
                                     onCommentOpen={(pid) => setCommentProductId(pid)}
+                                    onModalStateChange={setIsChildModalOpen}
                                     language={language}
                                     t={t}
                                 />

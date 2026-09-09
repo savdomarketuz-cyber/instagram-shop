@@ -11,6 +11,7 @@ import { makeVariantLoader, hasVariants, getOptimizedImageUrl } from "@/lib/imag
 import { computeStandardDelivery } from "@/lib/delivery";
 import Sheet from "@/components/velari/Sheet";
 import { Gift } from "lucide-react";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 const GREEN = "#2D6E3E";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
@@ -82,7 +83,12 @@ export default function CartPage() {
             <div className="md:hidden pb-48">
                 {/* Header */}
                 <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "20px 20px 12px" }}>
-                    <Link href={`/${language}/catalog`} style={{ width: 40, height: 40, borderRadius: 20, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", textDecoration: "none", color: "#0F1410", flexShrink: 0 }}>
+                    <Link
+                        href={`/${language}/catalog`}
+                        onClick={() => videoPreWarmer.triggerHaptic("light")}
+                        className="ios-icon-tap active:scale-90 transition-transform duration-150"
+                        style={{ width: 40, height: 40, borderRadius: 20, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", textDecoration: "none", color: "#0F1410", flexShrink: 0 }}
+                    >
                         <ChevronLeft size={20} />
                     </Link>
                     <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.6, color: "#0F1410", margin: 0 }}>
@@ -101,17 +107,22 @@ export default function CartPage() {
                         <p style={{ fontSize: 15, fontWeight: 700, color: "#9AA29C", marginBottom: 24 }}>
                             {t.cart.empty}
                         </p>
-                        <Link href="/" style={{
-                            display: "inline-block", padding: "14px 32px",
-                            background: GREEN, color: "#fff", borderRadius: 27,
-                            fontWeight: 700, fontSize: 15, textDecoration: "none",
-                            boxShadow: "0 8px 24px rgba(45,110,62,0.28)",
-                        }}>
+                        <Link
+                            href="/"
+                            onClick={() => videoPreWarmer.triggerHaptic("light")}
+                            className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150"
+                            style={{
+                                display: "inline-block", padding: "14px 32px",
+                                background: GREEN, color: "#fff", borderRadius: 27,
+                                fontWeight: 700, fontSize: 15, textDecoration: "none",
+                                boxShadow: "0 8px 24px rgba(45,110,62,0.28)",
+                            }}
+                        >
                             {language === "uz" ? "Xaridni boshlash" : "Начать покупки"}
                         </Link>
                     </div>
                 ) : (
-                    <div style={{ padding: "0 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div className="overscroll-contain touch-pan-y [WebkitOverflowScrolling:touch]" style={{ padding: "0 16px", display: "flex", flexDirection: "column", gap: 10 }}>
                         {cart.map((item, idx) => {
                             const name = (language === "uz" ? item.name_uz : item.name_ru) || item.name;
                             return (
@@ -140,14 +151,22 @@ export default function CartPage() {
                                             {/* Qty */}
                                             <div style={{ display: "flex", alignItems: "center", gap: 0, background: "#F5F5F0", borderRadius: 12, overflow: "hidden" }}>
                                                 <button
-                                                    onClick={() => item.quantity > 1 ? updateQuantity(item.id, item.quantity - 1) : removeFromCart(item.id)}
+                                                    onClick={() => {
+                                                        videoPreWarmer.triggerHaptic("light");
+                                                        item.quantity > 1 ? updateQuantity(item.id, item.quantity - 1) : removeFromCart(item.id);
+                                                    }}
+                                                    className="ios-icon-tap active:scale-85 transition-transform duration-150"
                                                     style={{ width: 34, height: 34, border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#5A625C" }}
                                                 >
                                                     <Minus size={14} strokeWidth={2.5} />
                                                 </button>
                                                 <span style={{ fontSize: 14, fontWeight: 800, color: "#0F1410", minWidth: 20, textAlign: "center" }}>{item.quantity}</span>
                                                 <button
-                                                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                    onClick={() => {
+                                                        videoPreWarmer.triggerHaptic("light");
+                                                        updateQuantity(item.id, item.quantity + 1);
+                                                    }}
+                                                    className="ios-icon-tap active:scale-85 transition-transform duration-150"
                                                     style={{ width: 34, height: 34, border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: GREEN }}
                                                 >
                                                     <Plus size={14} strokeWidth={2.5} />
@@ -180,7 +199,11 @@ export default function CartPage() {
 
                                     {/* Delete */}
                                     <button
-                                        onClick={() => removeFromCart(item.id)}
+                                        onClick={() => {
+                                            videoPreWarmer.triggerHaptic("medium");
+                                            removeFromCart(item.id);
+                                        }}
+                                        className="ios-icon-tap active:scale-85 transition-transform duration-150"
                                         style={{ width: 32, height: 32, borderRadius: 10, background: "#FFF0EE", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, alignSelf: "flex-start" }}
                                     >
                                         <Trash2 size={14} color="#FF3B30" />
@@ -202,13 +225,26 @@ export default function CartPage() {
                                             −{fmtPrice(cartPromo.discount)} {language === "uz" ? "chegirma" : "скидка"}
                                         </p>
                                     </div>
-                                    <button onClick={handleRemovePromo} style={{ width: 32, height: 32, borderRadius: 10, background: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                    <button
+                                        onClick={() => {
+                                            videoPreWarmer.triggerHaptic("light");
+                                            handleRemovePromo();
+                                        }}
+                                        className="ios-icon-tap active:scale-85 transition-transform duration-150"
+                                        style={{ width: 32, height: 32, borderRadius: 10, background: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                                    >
                                         <X size={16} color="#FF3B30" />
                                     </button>
                                 </div>
                             ) : (
-                                <button onClick={() => setPromoOpen(true)}
-                                    style={{ width: "100%", background: "#fff", borderRadius: 18, padding: "14px 16px", boxShadow: "0 2px 8px rgba(15,20,16,0.04)", border: "1px dashed rgba(15,20,16,0.12)", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", textAlign: "left" }}>
+                                <button
+                                    onClick={() => {
+                                        videoPreWarmer.triggerHaptic("light");
+                                        setPromoOpen(true);
+                                    }}
+                                    className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150"
+                                    style={{ width: "100%", background: "#fff", borderRadius: 18, padding: "14px 16px", boxShadow: "0 2px 8px rgba(15,20,16,0.04)", border: "1px dashed rgba(15,20,16,0.12)", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", textAlign: "left" }}
+                                >
                                     <div style={{ width: 38, height: 38, borderRadius: 12, background: "#F5F5F0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                                         <Ticket size={18} color="#5A625C" />
                                     </div>
@@ -272,14 +308,19 @@ export default function CartPage() {
                         padding: "14px 20px",
                         zIndex: 50,
                     }}>
-                        <Link href="/checkout" style={{
-                            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                            width: "100%", height: 54,
-                            background: GREEN, color: "#fff",
-                            borderRadius: 27, fontWeight: 700, fontSize: 16,
-                            textDecoration: "none", letterSpacing: -0.2,
-                            boxShadow: "0 8px 24px rgba(45,110,62,0.28)",
-                        }}>
+                        <Link
+                            href="/checkout"
+                            onClick={() => videoPreWarmer.triggerHaptic("medium")}
+                            className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
+                            style={{
+                                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                                width: "100%", height: 54,
+                                background: GREEN, color: "#fff",
+                                borderRadius: 27, fontWeight: 700, fontSize: 16,
+                                textDecoration: "none", letterSpacing: -0.2,
+                                boxShadow: "0 8px 24px rgba(45,110,62,0.28)",
+                            }}
+                        >
                             {t.common.checkout} · {fmtPrice(total)} <ArrowRight size={18} />
                         </Link>
                     </div>
@@ -296,7 +337,11 @@ export default function CartPage() {
                             </h1>
                         </div>
                         <div className="flex items-center gap-2 shrink-0 ml-2">
-                            <Link href="/orders" className="p-3 bg-gray-50 rounded-2xl text-gray-400 hover:text-black hover:bg-gray-100 transition-all flex items-center gap-2">
+                            <Link
+                                href="/orders"
+                                onClick={() => videoPreWarmer.triggerHaptic("light")}
+                                className="ios-tap-feedback active:scale-95 p-3 bg-gray-50 rounded-2xl text-gray-400 hover:text-black hover:bg-gray-100 transition-colors duration-200 flex items-center gap-2"
+                            >
                                 <Package size={20} strokeWidth={2.5} />
                                 <span className="text-[10px] font-black uppercase tracking-widest">Buyurtmalar</span>
                             </Link>
@@ -312,7 +357,12 @@ export default function CartPage() {
                                 <ShoppingBag size={48} />
                             </div>
                             <p className="text-gray-400 font-black uppercase tracking-widest text-xs mb-8">{t.cart.empty}</p>
-                            <Link href="/" className="px-10 py-5 rounded-full font-black uppercase tracking-widest text-xs active:scale-95 transition-all" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", boxShadow: "0 8px 20px rgba(45,110,62,0.28)" }}>
+                            <Link
+                                href="/"
+                                onClick={() => videoPreWarmer.triggerHaptic("light")}
+                                className="ios-tap-feedback active:scale-[0.98] px-10 py-5 rounded-full font-black uppercase tracking-widest text-xs transition-transform duration-150"
+                                style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", boxShadow: "0 8px 20px rgba(45,110,62,0.28)" }}
+                            >
                                 {language === "uz" ? "Xaridni boshlash" : "Начать покупки"}
                             </Link>
                         </div>
@@ -332,18 +382,36 @@ export default function CartPage() {
                                                 </div>
                                                 <div className="flex-1 min-w-0 overflow-hidden">
                                                     <h3 className="font-black text-xs text-gray-900 leading-tight uppercase tracking-tight mb-2 line-clamp-2">{name}</h3>
-                                                    <button onClick={() => removeFromCart(item.id)} className="inline-flex items-center gap-1.5 text-red-500 font-black text-[10px] uppercase tracking-widest hover:bg-red-50 px-2 py-1 rounded-lg transition-all">
+                                                    <button
+                                                        onClick={() => {
+                                                            videoPreWarmer.triggerHaptic("medium");
+                                                            removeFromCart(item.id);
+                                                        }}
+                                                        className="ios-tap-feedback active:scale-90 inline-flex items-center gap-1.5 text-red-500 font-black text-[10px] uppercase tracking-widest hover:bg-red-50 px-2 py-1 rounded-lg transition-colors duration-150"
+                                                    >
                                                         <Trash2 size={12} /> {language === "uz" ? "O'chirish" : "Удалить"}
                                                     </button>
                                                 </div>
                                             </div>
                                             <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-50 w-full">
                                                 <div className="flex items-center gap-3 bg-gray-50 border border-gray-100 px-4 py-2 rounded-2xl">
-                                                    <button onClick={() => item.quantity > 1 ? updateQuantity(item.id, item.quantity - 1) : removeFromCart(item.id)} className="text-gray-400 hover:text-black transition-colors">
+                                                    <button
+                                                        onClick={() => {
+                                                            videoPreWarmer.triggerHaptic("light");
+                                                            item.quantity > 1 ? updateQuantity(item.id, item.quantity - 1) : removeFromCart(item.id);
+                                                        }}
+                                                        className="ios-icon-tap active:scale-85 text-gray-400 hover:text-black transition-transform duration-150"
+                                                    >
                                                         <Minus size={15} strokeWidth={3} />
                                                     </button>
                                                     <span className="text-sm font-black w-4 text-center">{item.quantity}</span>
-                                                    <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="text-gray-400 hover:text-black transition-colors">
+                                                    <button
+                                                        onClick={() => {
+                                                            videoPreWarmer.triggerHaptic("light");
+                                                            updateQuantity(item.id, item.quantity + 1);
+                                                        }}
+                                                        className="ios-icon-tap active:scale-85 text-gray-400 hover:text-black transition-transform duration-150"
+                                                    >
                                                         <Plus size={15} strokeWidth={3} />
                                                     </button>
                                                 </div>
@@ -396,7 +464,12 @@ export default function CartPage() {
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-1">{t.common.total}</p>
                                         <p className="text-3xl font-black italic tracking-tighter text-black break-words">{total.toLocaleString("uz-UZ")}<span className="text-xl not-italic opacity-80"> so'm</span></p>
                                     </div>
-                                    <Link href="/checkout" className="flex w-full py-5 rounded-[18px] font-black text-sm transition-all justify-center items-center gap-3 active:scale-95 uppercase tracking-widest" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", boxShadow: "0 8px 20px rgba(45,110,62,0.28)" }}>
+                                    <Link
+                                        href="/checkout"
+                                        onClick={() => videoPreWarmer.triggerHaptic("medium")}
+                                        className="ios-tap-feedback active:scale-[0.98] flex w-full py-5 rounded-[18px] font-black text-sm transition-transform duration-150 justify-center items-center gap-3 uppercase tracking-widest will-change-transform"
+                                        style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", boxShadow: "0 8px 20px rgba(45,110,62,0.28)" }}
+                                    >
                                         <span>{t.common.checkout}</span>
                                         <ArrowRight size={20} strokeWidth={3} />
                                     </Link>
@@ -435,8 +508,15 @@ export default function CartPage() {
                         style={{ width: "100%", boxSizing: "border-box", background: "#F5F5F0", border: "1.5px solid transparent", borderRadius: 16, padding: "16px 18px", fontSize: 17, fontWeight: 800, color: "#0F1410", outline: "none", letterSpacing: 1.5, textAlign: "center" }}
                     />
 
-                    <button onClick={handleApplyPromo} disabled={isApplyingPromo || !promoCode.trim()}
-                        style={{ width: "100%", marginTop: 14, height: 54, background: GREEN, color: "#fff", border: "none", borderRadius: 18, fontSize: 16, fontWeight: 700, cursor: "pointer", opacity: (!promoCode.trim() || isApplyingPromo) ? 0.4 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 8px 24px rgba(45,110,62,0.28)" }}>
+                    <button
+                        onClick={() => {
+                            videoPreWarmer.triggerHaptic("medium");
+                            handleApplyPromo();
+                        }}
+                        disabled={isApplyingPromo || !promoCode.trim()}
+                        className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150"
+                        style={{ width: "100%", marginTop: 14, height: 54, background: GREEN, color: "#fff", border: "none", borderRadius: 18, fontSize: 16, fontWeight: 700, cursor: "pointer", opacity: (!promoCode.trim() || isApplyingPromo) ? 0.4 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 8px 24px rgba(45,110,62,0.28)" }}
+                    >
                         {isApplyingPromo ? <Loader2 size={18} className="animate-spin" /> : (language === "uz" ? "Qo'llash" : "Применить")}
                     </button>
 
