@@ -281,11 +281,12 @@ export default function ReelsPage() {
                 <div
                     ref={containerRef}
                     onScroll={handleScroll}
-                    className="w-full h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar bg-black relative flex flex-col"
+                    className="w-full h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar bg-black relative flex flex-col overscroll-contain touch-pan-y"
                     style={{
                         scrollbarWidth: "none",
                         msOverflowStyle: "none",
                         WebkitOverflowScrolling: "touch",
+                        overscrollBehaviorY: "contain",
                     }}
                 >
                     {reels.map((reel, index) => {
@@ -305,7 +306,7 @@ export default function ReelsPage() {
                         return (
                             <div
                                 key={reel.id}
-                                className="w-full h-full snap-start shrink-0 relative"
+                                className="w-full h-full snap-start shrink-0 relative [contain:layout_paint]"
                             >
                                 <SingleReel
                                     reel={reel}

@@ -242,28 +242,59 @@ export const SingleReel = ({
         }
     }, [isMuted, isActive, isHolding, isQuickBuyOpen]);
 
-    // Progress Bar (requestAnimationFrame)
+    // Progress Bar (requestAnimationFrame with GPU transform)
     useEffect(() => {
         const v = videoRef.current;
-        if (!v || !isActive) return;
+        if (!v || !isActive) {
+            if (rafRef.current) {
+                cancelAnimationFrame(rafRef.current);
+                rafRef.current = null;
+            }
+            return;
+        }
 
         const tick = () => {
+            if (v.paused || v.ended || document.hidden) {
+                rafRef.current = requestAnimationFrame(tick);
+                return;
+            }
             if (v.duration > 0 && progressRef.current) {
-                const p = (v.currentTime / v.duration) * 100;
-                progressRef.current.style.width = `${p}%`;
+                const ratio = Math.min(1, Math.max(0, v.currentTime / v.duration));
+                progressRef.current.style.transform = `scaleX(${ratio})`;
             }
             rafRef.current = requestAnimationFrame(tick);
         };
         rafRef.current = requestAnimationFrame(tick);
 
         return () => {
-            if (rafRef.current) cancelAnimationFrame(rafRef.current);
+            if (rafRef.current) {
+                cancelAnimationFrame(rafRef.current);
+                rafRef.current = null;
+            }
         };
     }, [isActive]);
 
     // ─────────────────────────────────────────────────────────────
     // 2. Instagram Gestures (Single Tap Sound, Double Tap Like, Long Press Hold)
     // ─────────────────────────────────────────────────────────────
+    const SINGLE_TAP_DELAY = 160;
+    const HOLD_DELAY = 320;
+
+    const clearGestureTimers = () => {
+        if (holdTimerRef.current) {
+            clearTimeout(holdTimerRef.current);
+            holdTimerRef.current = null;
+        }
+        if (tapTimerRef.current) {
+            clearTimeout(tapTimerRef.current);
+            tapTimerRef.current = null;
+        }
+    };
+
+    useEffect(() => {
+        return () => clearGestureTimers();
+    }, []);
+
     const handlePointerDown = (e: React.PointerEvent) => {
         const target = e.target as HTMLElement;
         if (target.closest("button") || target.closest("[data-interactive='true']")) return;
@@ -276,7 +307,7 @@ export const SingleReel = ({
             if (videoRef.current && !videoRef.current.paused) {
                 videoRef.current.pause();
             }
-        }, 240);
+        }, HOLD_DELAY);
     };
 
     const handlePointerMove = (e: React.PointerEvent) => {
@@ -286,6 +317,19 @@ export const SingleReel = ({
         if (dx > 8 || dy > 8) {
             clearTimeout(holdTimerRef.current);
             holdTimerRef.current = null;
+        }
+    };
+
+    const handlePointerCancel = () => {
+        if (holdTimerRef.current) {
+            clearTimeout(holdTimerRef.current);
+            holdTimerRef.current = null;
+        }
+        if (isHolding) {
+            setIsHolding(false);
+            if (videoRef.current && isActive && !isQuickBuyOpen) {
+                videoRef.current.play().catch(() => {});
+            }
         }
     };
 
@@ -331,14 +375,14 @@ export const SingleReel = ({
                 setFlyingHearts((prev) => prev.filter((h) => h.id !== heartId));
             }, 850);
         } else {
-            // Single Tap: Instagram Reels ovozini yoqish/o'chirish
+            // Single Tap: Snappy sound toggle (160ms)
             tapTimerRef.current = setTimeout(() => {
                 videoPreWarmer.triggerHaptic("light");
                 const nextMuted = !isMuted;
                 toggleMute();
                 setSoundBadge({ visible: true, isMuted: nextMuted });
                 setTimeout(() => setSoundBadge(null), 750);
-            }, 260);
+            }, SINGLE_TAP_DELAY);
         }
 
         lastTapRef.current = now;
@@ -450,14 +494,19 @@ export const SingleReel = ({
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerCancel}
+                onPointerLeave={handlePointerCancel}
                 className="relative w-full h-full bg-black flex items-center justify-center cursor-pointer overflow-hidden"
             >
-                {/* Poster Background: ALWAYS visible so there's never a black frame */}
+                {/* Poster Background: smooth GPU crossfade */}
                 {reel.image && (
                     <img
                         src={reel.image}
                         alt=""
-                        className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none"
+                        className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-opacity duration-200 ease-out ${
+                            isActive && isPlaying ? "opacity-0" : "opacity-100"
+                        }`}
+                        style={{ transform: "translate3d(0, 0, 0)", backfaceVisibility: "hidden" }}
                     />
                 )}
 
@@ -466,9 +515,14 @@ export const SingleReel = ({
                     <video
                         ref={videoRef}
                         src={cleanVideoUrl}
-                        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-200 ${
+                        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-200 ease-out ${
                             isActive && isPlaying ? "opacity-100" : "opacity-0"
                         }`}
+                        style={{
+                            transform: "translate3d(0, 0, 0)",
+                            backfaceVisibility: "hidden",
+                            willChange: isActive || isImmediateNext ? "opacity" : "auto",
+                        }}
                         loop
                         playsInline
                         webkit-playsinline="true"
@@ -564,7 +618,7 @@ export const SingleReel = ({
                     isHolding ? "opacity-0" : "opacity-100"
                 }`}
             >
-                <div ref={progressRef} className="h-full bg-white transition-none" style={{ width: "0%" }} />
+                <div ref={progressRef} className="h-full w-full bg-white transition-none origin-left will-change-transform" style={{ transform: "scaleX(0)" }} />
             </div>
 
             {/* ─────────────────────────────────────────────────────────────
@@ -721,7 +775,7 @@ export const SingleReel = ({
                                 videoPreWarmer.triggerHaptic("medium");
                                 setIsQuickBuyOpen(true);
                             }}
-                            className="inline-flex items-center gap-2 bg-black/65 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/20 text-white shadow-xl active:scale-95 transition-all cursor-pointer group"
+                            className="inline-flex items-center gap-2 bg-black/65 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/20 text-white shadow-xl active:scale-95 transition-transform duration-150 cursor-pointer group"
                         >
                             <ShoppingBag size={14} className="text-emerald-400 shrink-0 group-hover:scale-110 transition-transform" />
                             <span className="text-[11.5px] font-bold tracking-tight">
@@ -768,7 +822,7 @@ export const SingleReel = ({
                                 "info"
                             );
                         }}
-                        className={`ml-1 text-[11px] font-bold px-3 py-1 rounded-lg border transition-all active:scale-90 ${
+                        className={`ml-1 text-[11px] font-bold px-3 py-1 rounded-lg border transition-transform duration-150 active:scale-90 ${
                             isFollowing
                                 ? "bg-white/20 border-white/30 text-white/90"
                                 : "bg-transparent border-white/80 text-white hover:bg-white/10"
@@ -844,7 +898,7 @@ export const SingleReel = ({
                     onClick={() => setIsOptionsOpen(false)}
                 >
                     <div
-                        className="bg-[#262626] text-white rounded-t-3xl overflow-hidden p-3 pb-8 space-y-1 animate-in slide-in-from-bottom duration-300 shadow-2xl max-w-md mx-auto w-full"
+                        className="bg-[#262626] text-white rounded-t-3xl overflow-hidden p-3 pb-[max(24px,env(safe-area-inset-bottom))] space-y-1 animate-ios-sheet shadow-2xl max-w-md mx-auto w-full will-change-transform"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="w-10 h-1 bg-white/20 rounded-full mx-auto my-2" />
@@ -855,7 +909,7 @@ export const SingleReel = ({
                                 setIsOptionsOpen(false);
                                 setIsQuickBuyOpen(true);
                             }}
-                            className="w-full flex items-center justify-between p-3.5 hover:bg-white/10 rounded-2xl active:scale-98 transition-all"
+                            className="w-full flex items-center justify-between p-3.5 hover:bg-white/10 rounded-2xl active:scale-98 transition-colors duration-150"
                         >
                             <span className="text-sm font-semibold">
                                 {language === "uz" ? "Mahsulotni ko'rish" : "Посмотреть товар"}
@@ -869,7 +923,7 @@ export const SingleReel = ({
                                 setIsOptionsOpen(false);
                                 handleShare();
                             }}
-                            className="w-full flex items-center justify-between p-3.5 hover:bg-white/10 rounded-2xl active:scale-98 transition-all"
+                            className="w-full flex items-center justify-between p-3.5 hover:bg-white/10 rounded-2xl active:scale-98 transition-colors duration-150"
                         >
                             <span className="text-sm font-semibold">
                                 {language === "uz" ? "Havolani nusxalash" : "Копировать ссылку"}
@@ -883,7 +937,7 @@ export const SingleReel = ({
                                 setIsOptionsOpen(false);
                                 handleSave();
                             }}
-                            className="w-full flex items-center justify-between p-3.5 hover:bg-white/10 rounded-2xl active:scale-98 transition-all"
+                            className="w-full flex items-center justify-between p-3.5 hover:bg-white/10 rounded-2xl active:scale-98 transition-colors duration-150"
                         >
                             <span className="text-sm font-semibold">
                                 {saved
@@ -897,7 +951,7 @@ export const SingleReel = ({
                         <div className="pt-2">
                             <button
                                 onClick={() => setIsOptionsOpen(false)}
-                                className="w-full p-3.5 bg-white/10 hover:bg-white/15 rounded-2xl text-center text-sm font-bold text-red-400 active:scale-98 transition-all"
+                                className="w-full p-3.5 bg-white/10 hover:bg-white/15 rounded-2xl text-center text-sm font-bold text-red-400 active:scale-98 transition-colors duration-150"
                             >
                                 {language === "uz" ? "Yopish" : "Отмена"}
                             </button>

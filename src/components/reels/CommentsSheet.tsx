@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useStore } from "@/store/store";
 import { X, MessageCircle, Loader2, Heart, Send } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -18,6 +18,21 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
     const [loading, setLoading] = useState(true);
     const [newComment, setNewComment] = useState("");
     const [isPosting, setIsPosting] = useState(false);
+    const [isClosing, setIsClosing] = useState(false);
+    const sheetRef = useRef<HTMLDivElement>(null);
+
+    const handleCloseWithAnimation = () => {
+        if (isClosing) return;
+        setIsClosing(true);
+        if (sheetRef.current) {
+            sheetRef.current.style.transition = "transform 280ms cubic-bezier(0.32, 0.72, 0, 1), opacity 280ms ease-out";
+            sheetRef.current.style.transform = "translate3d(0, 100%, 0)";
+            sheetRef.current.style.opacity = "0";
+        }
+        setTimeout(() => {
+            onClose();
+        }, 260);
+    };
 
     useEffect(() => {
         const fetchComments = async () => {
@@ -87,10 +102,18 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
     };
 
     return (
-        <div className="fixed inset-0 z-[9999] flex flex-col justify-end animate-in fade-in duration-300">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative bg-white text-black h-[70dvh] rounded-t-[32px] flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-500 overflow-hidden">
-                <div className="w-full h-1 flex justify-center py-3 cursor-pointer shrink-0" onClick={onClose}>
+        <div className="fixed inset-0 z-[9999] flex flex-col justify-end pointer-events-auto">
+            <div
+                className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
+                    isClosing ? "opacity-0" : "opacity-100"
+                }`}
+                onClick={handleCloseWithAnimation}
+            />
+            <div
+                ref={sheetRef}
+                className="relative bg-white text-black h-[70dvh] rounded-t-[32px] flex flex-col shadow-2xl animate-ios-sheet overflow-hidden will-change-transform"
+            >
+                <div className="w-full h-1 flex justify-center py-3 cursor-pointer shrink-0" onClick={handleCloseWithAnimation}>
                     <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
                 </div>
 
@@ -99,7 +122,7 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
                         {t.reels?.comments || "Comments"}
                         <span className="ml-2 text-gray-300">({comments.length})</span>
                     </h3>
-                    <button onClick={onClose} className="p-2 bg-gray-50 rounded-full text-gray-400">
+                    <button onClick={handleCloseWithAnimation} className="p-2 bg-gray-50 rounded-full text-gray-400 hover:text-black transition-colors">
                         <X size={20} />
                     </button>
                 </div>
@@ -140,8 +163,8 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
                     )}
                 </div>
 
-                <div className="p-4 bg-white border-t border-gray-100 pb-10 shrink-0">
-                    <div className="flex items-center gap-3 bg-gray-50 rounded-2xl p-2 px-4 group focus-within:ring-2 focus-within:ring-black/5 transition-all">
+                <div className="p-4 bg-white border-t border-gray-100 pb-[max(20px,env(safe-area-inset-bottom))] shrink-0">
+                    <div className="flex items-center gap-3 bg-gray-50 rounded-2xl p-2 px-4 group focus-within:ring-2 focus-within:ring-black/5 transition-colors">
                         <input
                             type="text"
                             value={newComment}
@@ -152,7 +175,7 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
                         <button
                             onClick={handleSubmit}
                             disabled={isPosting || !newComment.trim()}
-                            className="p-2 rounded-xl disabled:opacity-20 transition-all active:scale-90 velari-green-btn"
+                            className="p-2 rounded-xl disabled:opacity-20 transition-transform duration-150 active:scale-90 velari-green-btn"
                         >
                             {isPosting ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                         </button>

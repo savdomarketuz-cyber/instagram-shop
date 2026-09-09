@@ -47,10 +47,14 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [orderSuccess, setOrderSuccess] = useState(false);
 
-    // Drag to dismiss gesture
+    // Drag to dismiss gesture with velocity tracking
     const sheetRef = useRef<HTMLDivElement>(null);
     const dragStartY = useRef(0);
+    const lastTouchY = useRef(0);
+    const dragStartTime = useRef(0);
+    const velocity = useRef(0);
     const currentTranslateY = useRef(0);
+    const [isClosing, setIsClosing] = useState(false);
 
     const productName = currentProduct[`name_${language}`] || currentProduct.name || "Mahsulot";
     const productPrice = Number(currentProduct.price || 0);
@@ -193,35 +197,69 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
         }
     };
 
-    // Touch drag down to dismiss
+    // Touch drag down to dismiss with iOS velocity & spring physics
     const handleTouchStart = (e: React.TouchEvent) => {
-        dragStartY.current = e.touches[0].clientY;
+        const y = e.touches[0].clientY;
+        dragStartY.current = y;
+        lastTouchY.current = y;
+        dragStartTime.current = performance.now();
+        velocity.current = 0;
+        if (sheetRef.current) {
+            sheetRef.current.style.transition = "none";
+        }
     };
 
     const handleTouchMove = (e: React.TouchEvent) => {
-        const delta = e.touches[0].clientY - dragStartY.current;
+        const y = e.touches[0].clientY;
+        const now = performance.now();
+        const dt = Math.max(1, now - dragStartTime.current);
+        const dy = y - lastTouchY.current;
+        velocity.current = dy / dt;
+        lastTouchY.current = y;
+        dragStartTime.current = now;
+
+        const delta = y - dragStartY.current;
         if (delta > 0 && sheetRef.current) {
             currentTranslateY.current = delta;
-            sheetRef.current.style.transform = `translateY(${delta}px)`;
+            sheetRef.current.style.transform = `translate3d(0, ${delta}px, 0)`;
         }
     };
 
     const handleTouchEnd = () => {
-        if (currentTranslateY.current > 120) {
+        if (!sheetRef.current) return;
+        // Dismiss if dragged down > 110px OR swiped down with velocity > 0.55 px/ms
+        if (currentTranslateY.current > 110 || velocity.current > 0.55) {
             videoPreWarmer.triggerHaptic("light");
-            onClose();
-        } else if (sheetRef.current) {
-            sheetRef.current.style.transform = "translateY(0px)";
+            handleCloseWithAnimation();
+        } else {
+            sheetRef.current.style.transition = "transform 320ms cubic-bezier(0.32, 0.72, 0, 1)";
+            sheetRef.current.style.transform = "translate3d(0, 0, 0)";
         }
         currentTranslateY.current = 0;
+        velocity.current = 0;
+    };
+
+    const handleCloseWithAnimation = () => {
+        if (isClosing) return;
+        setIsClosing(true);
+        if (sheetRef.current) {
+            sheetRef.current.style.transition = "transform 280ms cubic-bezier(0.32, 0.72, 0, 1), opacity 280ms ease-out";
+            sheetRef.current.style.transform = "translate3d(0, 100%, 0)";
+            sheetRef.current.style.opacity = "0";
+        }
+        setTimeout(() => {
+            onClose();
+        }, 260);
     };
 
     return (
         <div className="fixed inset-0 z-[99999] flex flex-col justify-end pointer-events-auto">
             {/* Backdrop with native blur */}
             <div
-                className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity duration-300 animate-in fade-in"
-                onClick={onClose}
+                className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
+                    isClosing ? "opacity-0" : "opacity-100"
+                }`}
+                onClick={handleCloseWithAnimation}
             />
 
             {/* Bottom Sheet Container */}
@@ -230,7 +268,7 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
-                className="relative w-full max-w-[500px] mx-auto bg-white text-black rounded-t-[36px] shadow-[0_-15px_40px_rgba(0,0,0,0.4)] flex flex-col max-h-[85dvh] overflow-hidden transition-transform duration-200 ease-out animate-in slide-in-from-bottom duration-400"
+                className="relative w-full max-w-[500px] mx-auto bg-white text-black rounded-t-[36px] shadow-[0_-15px_40px_rgba(0,0,0,0.4)] flex flex-col max-h-[85dvh] overflow-hidden will-change-transform animate-ios-sheet"
                 style={{ WebkitOverflowScrolling: "touch" }}
             >
                 {/* Drag pill handle */}
@@ -249,15 +287,15 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                         </h3>
                     </div>
                     <button
-                        onClick={onClose}
-                        className="p-2 text-gray-400 hover:text-black rounded-full hover:bg-gray-100 active:scale-95 transition-all"
+                        onClick={handleCloseWithAnimation}
+                        className="p-2 text-gray-400 hover:text-black rounded-full hover:bg-gray-100 active:scale-95 transition-transform duration-150"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className="p-5 overflow-y-auto space-y-5 no-scrollbar">
+                <div className="p-5 pb-[max(20px,env(safe-area-inset-bottom))] overflow-y-auto space-y-5 no-scrollbar">
                     {orderSuccess ? (
                         /* Success View */
                         <div className="py-8 flex flex-col items-center text-center space-y-4 animate-in zoom-in-95 duration-300">
@@ -275,8 +313,8 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                                 </p>
                             </div>
                             <button
-                                onClick={onClose}
-                                className="w-full py-4 bg-black text-white font-black text-xs uppercase tracking-widest rounded-2xl active:scale-95 transition-all shadow-lg"
+                                onClick={handleCloseWithAnimation}
+                                className="w-full py-4 bg-black text-white font-black text-xs uppercase tracking-widest rounded-2xl active:scale-95 transition-transform duration-150 shadow-lg"
                             >
                                 {language === "uz" ? "Reels tomosha qilishda davom etish" : "Продолжить просмотр"}
                             </button>
@@ -286,7 +324,7 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                             {/* ── 1. Interactive Premium Product Card (Clickable to PDP) ── */}
                             <div
                                 onClick={handleOpenProductPage}
-                                className="group relative flex items-center gap-4 bg-gradient-to-br from-gray-50 via-white to-gray-50 p-3.5 rounded-2xl border border-gray-200/90 shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer active:scale-[0.98]"
+                                className="group relative flex items-center gap-4 bg-gradient-to-br from-gray-50 via-white to-gray-50 p-3.5 rounded-2xl border border-gray-200/90 shadow-sm hover:shadow-md hover:border-gray-300 transition-colors duration-150 cursor-pointer active:scale-[0.98]"
                                 role="button"
                                 tabIndex={0}
                                 aria-label={language === "uz" ? "Mahsulot sahifasiga o'tish" : "Перейти на страницу товара"}
@@ -376,7 +414,7 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                                                     key={v.id}
                                                     type="button"
                                                     onClick={() => handleSelectVariant(v)}
-                                                    className={`flex items-center gap-2 p-1.5 pr-3 rounded-xl text-xs font-bold transition-all border ${
+                                                    className={`flex items-center gap-2 p-1.5 pr-3 rounded-xl text-xs font-bold transition-colors duration-150 border ${
                                                         isSelected
                                                             ? "bg-black text-white border-black shadow-md scale-102 ring-2 ring-black/20"
                                                             : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"
@@ -488,14 +526,14 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                                         <button
                                             type="button"
                                             onClick={() => setIsFastBuyOpen(false)}
-                                            className="px-4 py-3.5 bg-gray-100 text-gray-700 font-bold text-xs rounded-2xl active:scale-95 transition-all"
+                                            className="px-4 py-3.5 bg-gray-100 text-gray-700 font-bold text-xs rounded-2xl active:scale-95 transition-transform duration-150"
                                         >
                                             {language === "uz" ? "Orqaga" : "Назад"}
                                         </button>
                                         <button
                                             type="submit"
                                             disabled={isSubmitting}
-                                            className="flex-1 py-3.5 bg-[#6335ED] hover:bg-[#5026cb] text-white font-black text-xs uppercase tracking-widest rounded-2xl active:scale-95 transition-all shadow-xl shadow-[#6335ED]/30 flex items-center justify-center gap-2"
+                                            className="flex-1 py-3.5 bg-[#6335ED] hover:bg-[#5026cb] text-white font-black text-xs uppercase tracking-widest rounded-2xl active:scale-95 transition-transform duration-150 shadow-xl shadow-[#6335ED]/30 flex items-center justify-center gap-2"
                                         >
                                             {isSubmitting ? (
                                                 <Loader2 size={18} className="animate-spin" />
@@ -517,7 +555,7 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                                             videoPreWarmer.triggerHaptic("medium");
                                             setIsFastBuyOpen(true);
                                         }}
-                                        className="w-full py-4 bg-[#6335ED] hover:bg-[#5329cf] text-white font-black text-xs uppercase tracking-widest rounded-2xl active:scale-95 transition-all shadow-xl shadow-[#6335ED]/25 flex items-center justify-center gap-2"
+                                        className="w-full py-4 bg-[#6335ED] hover:bg-[#5329cf] text-white font-black text-xs uppercase tracking-widest rounded-2xl active:scale-95 transition-transform duration-150 shadow-xl shadow-[#6335ED]/25 flex items-center justify-center gap-2"
                                     >
                                         <Zap size={18} fill="currentColor" />
                                         <span>{language === "uz" ? "1-Bosqichda Tezkor Xarid" : "Купить в 1 клик"}</span>
@@ -526,7 +564,7 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                                     <button
                                         type="button"
                                         onClick={handleAddToCart}
-                                        className="w-full py-4 bg-gray-100 hover:bg-gray-200 text-black font-black text-xs uppercase tracking-widest rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-2"
+                                        className="w-full py-4 bg-gray-100 hover:bg-gray-200 text-black font-black text-xs uppercase tracking-widest rounded-2xl active:scale-95 transition-transform duration-150 flex items-center justify-center gap-2"
                                     >
                                         {addedToCart ? (
                                             <>
