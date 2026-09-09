@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getCategorySlug } from "@/lib/slugify";
+import { getOptimizedImageUrl } from "@/lib/imageVariants";
 
 interface FeaturedCat {
     id: string;
@@ -14,6 +15,7 @@ interface FeaturedCat {
     image?: string;
     icon?: string;
     color?: string;
+    image_meta?: any;
 }
 
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
@@ -76,7 +78,7 @@ export default function FeaturedCategories({ language, initial }: { language: "u
 
                 const { data: cats } = await supabase
                     .from("categories")
-                    .select("id, name, name_uz, name_ru, image, icon, color")
+                    .select("id, name, name_uz, name_ru, image, icon, color, image_meta")
                     .in("id", visibleIds);
 
                 if (cats) {
@@ -145,7 +147,7 @@ export default function FeaturedCategories({ language, initial }: { language: "u
                                     boxShadow: "0 4px 12px rgba(15,20,16,0.08)",
                                 }}>
                                     {cat.image ? (
-                                        <img src={cat.image} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                                        <img src={getOptimizedImageUrl(cat.image_meta, cat.image, 'xs')} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                                     ) : (cat.icon || "📦")}
                                 </div>
                                 <span style={{
@@ -187,7 +189,7 @@ export default function FeaturedCategories({ language, initial }: { language: "u
                                     }}
                                 >
                                     {cat.image ? (
-                                        <img src={cat.image} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                                        <img src={getOptimizedImageUrl(cat.image_meta, cat.image, 'xs')} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                                     ) : (cat.icon || "📦")}
                                 </div>
                                 <span style={{

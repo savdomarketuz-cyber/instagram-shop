@@ -8,6 +8,7 @@ import { TranslationKeys } from "@/lib/translations";
 import { getProductSlug } from "@/lib/slugify";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
 import { sanitizeVideoUrl } from "@/lib/video-url";
+import { getOptimizedImageUrl } from "@/lib/imageVariants";
 import { QuickBuySheet } from "@/components/reels/QuickBuySheet";
 
 interface BentoVideoCardProps {
@@ -36,8 +37,9 @@ export const BentoVideoCard = memo(({
     const isInCart = cart.some(c => c.id === item.id);
     const rawVideoUrl = item.videoUrl || (item as any).video_url;
     const videoUrl = sanitizeVideoUrl(rawVideoUrl);
-    const productName = item[`name_${language}`] || item.name;
-    const productImage = item.imageUrl || item.image || (Array.isArray(item.images) ? item.images[0] : undefined);
+    const rawImg = item.imageUrl || item.image || (Array.isArray(item.images) ? item.images[0] : undefined);
+    const productImage = getOptimizedImageUrl(item.image_metadata, rawImg, 'xs');
+    const productName = (item as any)[`name_${language}`] || item.name;
 
     // IntersectionObserver: Faqat ekranda ko'ringandagina o'ynatish (akkumulyator va trafikni asrash)
     useEffect(() => {

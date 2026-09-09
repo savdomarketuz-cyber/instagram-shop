@@ -76,19 +76,21 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority 
 
     // Lightbox uses native img for pinch-zoom and full resolution
     if (isLightbox) {
+        const fullResUrl = media.lg || media.md || media.lowResUrl || media.url;
+        const blurUrl = media.lowResUrl || media.xs || fullResUrl;
         return (
             <div
                 className="w-full h-full flex items-center justify-center cursor-pointer relative overflow-hidden bg-black"
                 onClick={onClick}
             >
                 <img
-                    src={media.url}
+                    src={blurUrl}
                     alt=""
                     className="absolute inset-0 w-full h-full object-cover scale-150 blur-3xl opacity-50"
                     draggable={false}
                 />
                 <img
-                    src={media.url}
+                    src={fullResUrl}
                     alt={alt || "Velari product image"}
                     className="relative max-w-[95%] max-h-[90%] object-contain animate-in zoom-in-95 duration-500 shadow-2xl rounded-lg"
                     draggable={false}
@@ -99,6 +101,12 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority 
 
     const metaForUrl = { [media.url]: { xs: media.xs, md: media.md, lg: media.lg, lowResUrl: media.lowResUrl, blurDataURL: media.blurDataURL } };
     const hasV = hasVariants(metaForUrl, media.url);
+    const optimizedSrc = media.md || media.lg || media.xs || media.lowResUrl || media.url;
+    const srcSetParts = [
+        media.xs ? `${media.xs} 640w` : null,
+        media.md ? `${media.md} 828w` : null,
+        media.lg ? `${media.lg} 1080w` : null,
+    ].filter(Boolean).join(", ");
 
     return (
         <div
@@ -106,7 +114,7 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority 
             onClick={onClick}
         >
             <Image
-                src={media.url}
+                src={optimizedSrc}
                 alt={alt || "Velari mahsulotlari - Sifatli elektronika va maishiy texnika"}
                 fill
                 className="object-cover"

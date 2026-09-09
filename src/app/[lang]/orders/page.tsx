@@ -7,6 +7,7 @@ import { getProductSlug } from "@/lib/slugify";
 import { Package, ChevronRight, Clock, CheckCircle, Truck, XCircle, Loader2, Star, Camera, Video, MessageCircle, Play, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { getOptimizedImageUrl } from "@/lib/imageVariants";
 import { translations } from "@/lib/translations";
 import { uploadToYandexS3 } from "@/lib/yandex-s3";
 import { mapOrder, mapProduct } from "@/lib/mappers";
@@ -431,7 +432,7 @@ export default function OrdersPage() {
                                             <div className="w-16 h-20 bg-white rounded-2xl overflow-hidden shrink-0 shadow-sm border border-gray-200 relative">
                                                 {(item.image || item.imageUrl || item.image_url) && (String(item.image || item.imageUrl || item.image_url).startsWith('http') || String(item.image || item.imageUrl || item.image_url).startsWith('/')) ? (
                                                     <Image
-                                                        src={item.image || item.imageUrl || item.image_url}
+                                                        src={getOptimizedImageUrl(item.image_metadata, item.image || item.imageUrl || item.image_url, 'xs')}
                                                         alt={item[`name_${language}`] || item.name}
                                                         width={160}
                                                         height={214}

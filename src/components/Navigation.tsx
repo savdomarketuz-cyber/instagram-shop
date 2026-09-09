@@ -5,6 +5,7 @@ import { Search, Heart, ShoppingBag, MessageSquare, Clapperboard, LayoutGrid, Us
 import Image from "next/image";
 import Logo from "./Logo";
 import { getProductSlug } from "@/lib/slugify";
+import { getOptimizedImageUrl } from "@/lib/imageVariants";
 import { useStore } from "@/store/store";
 import { useShallow } from "zustand/react/shallow";
 import { usePathname, useRouter } from "next/navigation";
@@ -230,7 +231,7 @@ export default function Navigation() {
                                             >
                                                 <div className="w-12 h-12 bg-gray-100 rounded-xl overflow-hidden shrink-0 relative">
                                                     <Image 
-                                                        src={item.image || item.images?.[0] || '/placeholder.png'} 
+                                                        src={getOptimizedImageUrl(item.image_metadata, item.image || item.images?.[0], 'xs')} 
                                                         alt={item[`name_${language}`] || item.name} 
                                                         fill 
                                                         className="object-cover"

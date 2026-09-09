@@ -8,7 +8,7 @@ import { useStore } from "@/store/store";
 import { Product, CartItem } from "@/types";
 import { TranslationKeys } from "@/lib/translations";
 import { getProductSlug } from "@/lib/slugify";
-import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
+import { makeVariantLoader, hasVariants, getOptimizedImageUrl, getMetaForUrl } from "@/lib/imageVariants";
 import { getDeliveryCardText } from "@/lib/date-utils";
 import { sanitizeVideoUrl } from "@/lib/video-url";
 
@@ -191,15 +191,15 @@ export const ProductCard = memo(({
               />
             ) : (
               <Image
-                src={mainMedia}
+                src={getOptimizedImageUrl(item.image_metadata, mainMedia, 'xs')}
                 alt={name}
                 fill
                 sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 25vw"
                 style={{ objectFit: "cover" }}
                 priority={priority}
                 loader={hasVariants(item.image_metadata, mainMedia) ? makeVariantLoader(item.image_metadata) : undefined}
-                placeholder={item.image_metadata?.[mainMedia]?.blurDataURL ? "blur" : "empty"}
-                blurDataURL={item.image_metadata?.[mainMedia]?.blurDataURL}
+                placeholder={getMetaForUrl(item.image_metadata, mainMedia)?.blurDataURL ? "blur" : "empty"}
+                blurDataURL={getMetaForUrl(item.image_metadata, mainMedia)?.blurDataURL}
               />
             )}
 

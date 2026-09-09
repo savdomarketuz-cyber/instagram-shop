@@ -12,7 +12,7 @@ import { getDeliveryDateText } from "@/lib/date-utils";
 import Image from "next/image";
 import { getProductIdFromSlug, getProductSlug } from "@/lib/slugify";
 import { useTelemetry } from "@/hooks/useTelemetry";
-import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
+import { makeVariantLoader, hasVariants, getOptimizedImageUrl, getOptimizedSrcSet, getMetaForUrl } from "@/lib/imageVariants";
 import { ymViewProduct } from "@/lib/metrika";
 
 // Components
@@ -554,10 +554,10 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                     <div className="flex items-center gap-6 flex-1 min-w-0">
                         <div className="relative w-14 h-14 rounded-2xl overflow-hidden shrink-0 border border-gray-100 shadow-sm">
                             <Image
-                                src={product.image}
+                                src={getOptimizedImageUrl(product.image_metadata, product.image, 'xs')}
                                 fill
                                 className="object-cover"
-                                alt={(product.image_metadata?.[product.image]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || (product[`name_${language}` as keyof typeof product] as string) || product.name}
+                                alt={(product[`name_${language}` as keyof typeof product] as string) || product.name}
                                 sizes="56px"
                                 loader={hasVariants(product.image_metadata, product.image) ? makeVariantLoader(product.image_metadata) : undefined}
                             />
@@ -744,10 +744,10 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                             {/* Zanjirli yuklanish: Faqat o'z navbati kelgan rasm yuklanadi */}
                                             {i <= maxDesktopLoadIndex ? (
                                                 <Image
-                                                    src={media.url}
+                                                    src={getOptimizedImageUrl(product.image_metadata, media.url, 'xs')}
                                                     fill
                                                     className="object-cover group-hover:scale-110 transition-transform"
-                                                    alt={(product.image_metadata?.[media.url]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || `${(product[`name_${language}` as keyof typeof product] as string) || product.name} - ${i + 1}`}
+                                                    alt={`${(product[`name_${language}` as keyof typeof product] as string) || product.name} - ${i + 1}`}
                                                     sizes="160px"
                                                     loader={hasVariants(product.image_metadata, media.url) ? makeVariantLoader(product.image_metadata) : undefined}
                                                     onLoad={() => setMaxDesktopLoadIndex(prev => Math.max(prev, i + 1))}
@@ -793,10 +793,10 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                 </div>
                             ) : (
                                 <Image
-                                    src={allMedia[activeImage]?.url || ""}
+                                    src={getOptimizedImageUrl(product.image_metadata, allMedia[activeImage]?.url || "", 'lg')}
                                     fill
                                     className="object-contain p-4 md:p-6 group-hover:scale-105 transition-transform duration-500"
-                                    alt={(product.image_metadata?.[allMedia[activeImage]?.url]?.[`alt_${language}` as keyof typeof product.image_metadata[string]] as string) || `${(product[`name_${language}` as keyof typeof product] as string) || product.name} - ${language === 'uz' ? 'Asosiy rasm' : 'Основное изображение'}`}
+                                    alt={`${(product[`name_${language}` as keyof typeof product] as string) || product.name} - ${language === 'uz' ? 'Asosiy rasm' : 'Основное изображение'}`}
                                     priority
                                     sizes="(max-width: 1024px) 100vw, 60vw"
                                     quality={85}
@@ -912,7 +912,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                                 className={`aspect-[3/4] rounded-3xl overflow-hidden border-2 transition-all flex-shrink-0 shadow-sm relative group/v ${v.id === product.id ? "border-black scale-105 shadow-xl z-10" : "border-white opacity-60 hover:opacity-100 hover:border-gray-200"}`}
                                             >
                                                 <Image
-                                                    src={v.image}
+                                                    src={getOptimizedImageUrl(v.image_metadata, v.image, 'xs')}
                                                     fill
                                                     className="object-cover transition-transform duration-500 group-hover/v:scale-110"
                                                     alt={`${(v[`name_${language}` as keyof typeof v] as string) || v.name} - ${v.colorName || "variant"}`}
@@ -1189,7 +1189,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                             {allMedia[lightboxIndex]?.type === 'video' ? (
                                 <video src={allMedia[lightboxIndex].url} controls autoPlay className="max-h-full max-w-full rounded-2xl object-contain shadow-2xl" />
                             ) : (
-                                <img src={allMedia[lightboxIndex]?.url} alt="" className="max-h-full max-w-full object-contain rounded-2xl shadow-2xl animate-in zoom-in-95 duration-300" />
+                                <img src={getOptimizedImageUrl(product.image_metadata, allMedia[lightboxIndex]?.url, 'lg')} alt="" className="max-h-full max-w-full object-contain rounded-2xl shadow-2xl animate-in zoom-in-95 duration-300" />
                             )}
                         </div>
 
@@ -1217,7 +1217,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                     {m.type === 'video' ? (
                                         <div className="w-full h-full bg-gray-900 flex items-center justify-center text-white text-[9px] font-bold">VIDEO</div>
                                     ) : (
-                                        <img src={m.url} alt="" className="w-full h-full object-cover" />
+                                        <img src={getOptimizedImageUrl(product.image_metadata, m.url, 'xs')} alt="" className="w-full h-full object-cover" />
                                     )}
                                 </button>
                             ))}

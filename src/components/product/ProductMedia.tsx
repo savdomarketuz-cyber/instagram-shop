@@ -7,6 +7,7 @@ import { MediaItem } from "./MediaItem";
 import { Product, MediaItemType } from "@/types";
 import { useStore } from "@/store/store";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
+import { getMetaForUrl } from "@/lib/imageVariants";
 
 interface ProductMediaProps {
     allMedia: MediaItemType[];
@@ -165,7 +166,9 @@ export const ProductMedia = ({
                     className={`flex w-full h-full overflow-x-auto no-scrollbar px-5 gap-3 ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
                     style={{ scrollSnapType: pinchScale > 1 ? 'none' : 'x mandatory' }}
                 >
-                    {allMedia.map((media, i) => (
+                    {allMedia.map((media, i) => {
+                        const meta = getMetaForUrl(product.image_metadata, media.url);
+                        return (
                         <div
                             key={i}
                             onTouchStart={i === activeImage ? handleTouchStart : undefined}
@@ -190,11 +193,11 @@ export const ProductMedia = ({
                                 <MediaItem
                                     media={{
                                         ...media,
-                                        lowResUrl:   product.image_metadata?.[media.url]?.lowResUrl,
-                                        blurDataURL: product.image_metadata?.[media.url]?.blurDataURL,
-                                        xs:          product.image_metadata?.[media.url]?.xs,
-                                        md:          product.image_metadata?.[media.url]?.md,
-                                        lg:          product.image_metadata?.[media.url]?.lg,
+                                        lowResUrl:   meta?.lowResUrl,
+                                        blurDataURL: meta?.blurDataURL,
+                                        xs:          meta?.xs,
+                                        md:          meta?.md,
+                                        lg:          meta?.lg,
                                     }}
                                     isActive={activeImage === i}
                                     isLightbox={false}
@@ -211,7 +214,7 @@ export const ProductMedia = ({
                                 </div>
                             )}
                         </div>
-                    ))}
+                    );})}
                     {/* Extra space at the end */}
                     <div className="min-w-[10vw]" />
                 </div>
@@ -293,13 +296,27 @@ export const ProductMedia = ({
                     </button>
                     <div className="w-full h-full flex items-center justify-center relative">
                         <div ref={lightboxCarouselRef} className="flex w-full h-full overflow-x-auto snap-x snap-mandatory no-scrollbar">
-                            {allMedia.map((media, i) => (
+                            {allMedia.map((media, i) => {
+                                const meta = getMetaForUrl(product.image_metadata, media.url);
+                                return (
                                 <div key={i} className="min-w-full h-full flex items-center justify-center snap-center select-none">
                                     <div className="relative w-full h-full">
-                                        <MediaItem media={media} isActive={activeImage === i} isLightbox={true} alt={product.name} />
+                                        <MediaItem
+                                            media={{
+                                                ...media,
+                                                lowResUrl:   meta?.lowResUrl,
+                                                blurDataURL: meta?.blurDataURL,
+                                                xs:          meta?.xs,
+                                                md:          meta?.md,
+                                                lg:          meta?.lg,
+                                            }}
+                                            isActive={activeImage === i}
+                                            isLightbox={true}
+                                            alt={product.name}
+                                        />
                                     </div>
                                 </div>
-                            ))}
+                            );})}
                         </div>
                     </div>
                 </div>

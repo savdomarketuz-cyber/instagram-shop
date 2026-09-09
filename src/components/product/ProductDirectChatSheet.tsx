@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useStore } from "@/store/store";
 import { X, Send, MessageCircle, Check, Loader2, Sparkles, User } from "lucide-react";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
+import { getOptimizedImageUrl } from "@/lib/imageVariants";
 
 interface ProductDirectChatSheetProps {
     product: any;
@@ -23,7 +24,7 @@ export const ProductDirectChatSheet = ({
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const productName = (language === "uz" ? product.name_uz : product.name_ru) || product.name;
-    const productImage = product.imageUrl || product.image;
+    const productImage = getOptimizedImageUrl(product.image_metadata, product.imageUrl || product.image, 'xs');
     const productPrice = Number(product.price || 0).toLocaleString();
 
     // Tezkor savol shablonlari

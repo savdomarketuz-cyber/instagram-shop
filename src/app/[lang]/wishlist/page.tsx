@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { translations } from "@/lib/translations";
 import { getProductSlug } from "@/lib/slugify";
 import Image from "next/image";
-import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
+import { makeVariantLoader, hasVariants, getOptimizedImageUrl } from "@/lib/imageVariants";
 import { useStore as useStoreCart } from "@/store/store";
 
 const GREEN = "#2D6E3E";
@@ -85,7 +85,7 @@ export default function WishlistPage() {
                                     <Link href={`/${language}/products/${slug}`} style={{ textDecoration: "none" }}>
                                         <div style={{ position: "relative", aspectRatio: "3/4", background: "#F5F5F0" }}>
                                             {(() => {
-                                                const u = item.image || item.imageUrl || "/placeholder.png";
+                                                const u = getOptimizedImageUrl(item.image_metadata, item.image || item.imageUrl, 'xs');
                                                 return <Image src={u} alt={name} fill sizes="(max-width: 768px) 50vw, 200px" style={{ objectFit: "cover" }} loader={hasVariants(item.image_metadata, u) ? makeVariantLoader(item.image_metadata) : undefined} />;
                                             })()}
                                         </div>
@@ -154,7 +154,7 @@ export default function WishlistPage() {
                                     <Link href={`/${language}/products/${slug}`} className="block">
                                         <div className="aspect-[3/4] overflow-hidden rounded-[24px] bg-gray-50 mb-3 shadow-sm relative">
                                             {(() => {
-                                                const u = item.image || item.imageUrl || "";
+                                                const u = getOptimizedImageUrl(item.image_metadata, item.image || item.imageUrl, 'xs');
                                                 return <Image src={u} alt={name} fill sizes="300px" className="object-cover group-hover:scale-105 transition-transform duration-500" loader={hasVariants(item.image_metadata, u) ? makeVariantLoader(item.image_metadata) : undefined} />;
                                             })()}
                                         </div>

@@ -2,6 +2,7 @@
 
 import { X, Image as ImageIcon } from "lucide-react";
 import { useEffect } from "react";
+import { getOptimizedImageUrl } from "@/lib/imageVariants";
 
 interface ProductDescriptionModalProps {
     isOpen: boolean;
@@ -98,7 +99,7 @@ export const ProductDescriptionModal = ({
                                         {m.type === 'video' ? (
                                             <video src={m.url} controls className="w-full max-h-[600px] object-contain rounded-2xl" />
                                         ) : (
-                                            <img src={m.url} alt={`Gallery-${i}`} className="w-full max-h-[700px] object-contain rounded-2xl" />
+                                            <img src={getOptimizedImageUrl(product?.image_metadata, m.url, 'md')} alt={`Gallery-${i}`} className="w-full max-h-[700px] object-contain rounded-2xl" />
                                         )}
                                     </div>
                                 ))}

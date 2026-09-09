@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, ShoppingCart, Package, ChevronLeft, ChevronRight, Ticket, Loader2, X } from "lucide-react";
 import { translations } from "@/lib/translations";
 import Image from "next/image";
-import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
+import { makeVariantLoader, hasVariants, getOptimizedImageUrl } from "@/lib/imageVariants";
 import { computeStandardDelivery } from "@/lib/delivery";
 import Sheet from "@/components/velari/Sheet";
 import { Gift } from "lucide-react";
@@ -124,7 +124,7 @@ export default function CartPage() {
                                     {/* Image */}
                                     <div style={{ width: 80, height: 80, borderRadius: 16, overflow: "hidden", background: "#F5F5F0", flexShrink: 0, position: "relative" }}>
                                         {(() => {
-                                            const u = item.image || item.imageUrl || "/placeholder.png";
+                                            const u = getOptimizedImageUrl(item.image_metadata, item.image || item.imageUrl, 'xs');
                                             return <Image src={u} alt={name} fill sizes="80px" style={{ objectFit: "cover" }} loader={hasVariants(item.image_metadata, u) ? makeVariantLoader(item.image_metadata) : undefined} />;
                                         })()}
                                     </div>
@@ -326,7 +326,7 @@ export default function CartPage() {
                                             <div className="flex gap-3 w-full overflow-hidden">
                                                 <div className="w-20 h-20 bg-gray-50 rounded-2xl overflow-hidden shrink-0 relative">
                                                     {(() => {
-                                                        const u = item.image || item.imageUrl || "";
+                                                        const u = getOptimizedImageUrl(item.image_metadata, item.image || item.imageUrl, 'xs');
                                                         return <Image src={u} alt={name} fill className="object-cover" sizes="80px" loader={hasVariants(item.image_metadata, u) ? makeVariantLoader(item.image_metadata) : undefined} />;
                                                     })()}
                                                 </div>

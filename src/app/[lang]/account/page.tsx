@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/store/store";
+import { getOptimizedImageUrl } from "@/lib/imageVariants";
 import { 
     ChevronRight, 
     Package, 
@@ -619,7 +620,7 @@ function ReviewsView({ user, language, showToast, onBack }: any) {
                                         onClick={() => setReviewProduct(p)}
                                         className="bg-white p-4 rounded-3xl flex items-center gap-4 border border-emerald-100 shadow-xl shadow-emerald-500/5 group hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
                                     >
-                                        <div className="w-16 h-16 rounded-2xl bg-gray-100 overflow-hidden shrink-0"><img src={p.image} className="w-full h-full object-cover" alt={p.name} /></div>
+                                        <div className="w-16 h-16 rounded-2xl bg-gray-100 overflow-hidden shrink-0"><img src={getOptimizedImageUrl(p.image_metadata, p.image, 'xs')} className="w-full h-full object-cover" alt={p.name} /></div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-xs font-black italic uppercase truncate">{p.name}</p>
                                             <p className="text-[10px] font-bold text-[#2D6E3E] uppercase tracking-widest mt-1">{language === 'uz' ? 'Mahsulotni baholang' : 'Оцените товар'}</p>

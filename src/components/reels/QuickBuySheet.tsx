@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@/store/store";
 import { supabase } from "@/lib/supabase";
 import { getProductSlug } from "@/lib/slugify";
+import { getOptimizedImageUrl } from "@/lib/imageVariants";
 import {
     X,
     ShoppingBag,
@@ -55,7 +56,7 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
     const productPrice = Number(currentProduct.price || 0);
     const productOldPrice = Number(currentProduct.oldPrice || 0);
     const rawImg = currentProduct.imageUrl || currentProduct.image || "";
-    const productImage = currentProduct.image_metadata?.[rawImg]?.lowResUrl || currentProduct.image_metadata?.[currentProduct.image]?.lowResUrl || rawImg || "/placeholder.png";
+    const productImage = getOptimizedImageUrl(currentProduct.image_metadata, rawImg, 'xs');
     const discountPercent =
         productOldPrice > productPrice
             ? Math.round(((productOldPrice - productPrice) / productOldPrice) * 100)
@@ -78,7 +79,7 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
             try {
                 const { data } = await supabase
                     .from("products")
-                    .select("id,name,name_uz,name_ru,price,old_price,image,images,color_name,model,article,stock")
+                    .select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,color_name,model,article,stock")
                     .eq("group_id", gid)
                     .eq("is_deleted", false);
 
@@ -384,7 +385,7 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                                                 >
                                                     {v.image && (
                                                         <img
-                                                            src={v.image}
+                                                            src={getOptimizedImageUrl(v.image_metadata, v.image, 'xs')}
                                                             alt=""
                                                             className="w-6 h-6 rounded-lg object-cover border border-white/20"
                                                         />
