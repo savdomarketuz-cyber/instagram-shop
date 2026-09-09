@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft } from "lucide-react";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 interface Category {
     id: string;
@@ -39,17 +40,20 @@ export const CategoryFilter = ({
     const hasSubCats = subCategories.length > 0 && activeParent !== "all";
 
     const handleMainClick = (id: string) => {
+        videoPreWarmer.triggerHaptic("light");
         setActiveFilter(id);
         setActiveParent(id);
         setHomeActiveFilter(id);
     };
 
     const handleSubClick = (id: string) => {
+        videoPreWarmer.triggerHaptic("light");
         setActiveFilter(id);
         setHomeActiveFilter(id);
     };
 
     const handleBack = () => {
+        videoPreWarmer.triggerHaptic("light");
         const current = allCategories.find(c => c.id === activeFilter);
         if (current?.parentId) {
             setActiveFilter(current.parentId);
@@ -74,12 +78,13 @@ export const CategoryFilter = ({
         <div className="mt-4 flex flex-col" style={{ gap: 0 }}>
             {/* ── Mobile: Velari chip style ── */}
             <div
-                className="md:hidden flex gap-2 overflow-x-auto no-scrollbar px-4 py-2"
-                style={{ scrollbarWidth: "none" }}
+                className="md:hidden flex gap-2 overflow-x-auto no-scrollbar px-4 py-2 overscroll-x-contain touch-pan-x"
+                style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
             >
                 {/* "Hammasi" chip */}
                 <button
                     onClick={() => handleMainClick("all")}
+                    className="ios-tap-feedback active:scale-95 will-change-transform"
                     style={{
                         flexShrink: 0,
                         height: 36,
@@ -92,7 +97,7 @@ export const CategoryFilter = ({
                         fontWeight: 500,
                         letterSpacing: -0.1,
                         cursor: "pointer",
-                        transition: `all 200ms ${EASE}`,
+                        transition: "background 180ms ease, color 180ms ease, border-color 180ms ease",
                         WebkitTapHighlightColor: "transparent",
                         whiteSpace: "nowrap",
                     }}
@@ -106,6 +111,7 @@ export const CategoryFilter = ({
                         <button
                             key={cat.id}
                             onClick={() => handleMainClick(cat.id)}
+                            className="ios-tap-feedback active:scale-95 will-change-transform"
                             style={{
                                 flexShrink: 0,
                                 height: 36,
@@ -118,7 +124,7 @@ export const CategoryFilter = ({
                                 fontWeight: 500,
                                 letterSpacing: -0.1,
                                 cursor: "pointer",
-                                transition: `all 200ms ${EASE}`,
+                                transition: "background 180ms ease, color 180ms ease, border-color 180ms ease",
                                 WebkitTapHighlightColor: "transparent",
                                 whiteSpace: "nowrap",
                             }}
@@ -132,13 +138,14 @@ export const CategoryFilter = ({
             {/* Mobile subcategories row */}
             {hasSubCats && (
                 <div
-                    className="md:hidden flex gap-2 overflow-x-auto no-scrollbar px-4 pb-2"
-                    style={{ animation: "velari-slide-in 260ms cubic-bezier(0.22,1,0.36,1)" }}
+                    className="md:hidden flex gap-2 overflow-x-auto no-scrollbar px-4 pb-2 overscroll-x-contain touch-pan-x"
+                    style={{ animation: "velari-slide-in 260ms cubic-bezier(0.22,1,0.36,1)", WebkitOverflowScrolling: "touch" }}
                 >
                     {/* Back button */}
                     {allCategories.find(c => c.id === activeFilter)?.parentId && (
                         <button
                             onClick={handleBack}
+                            className="ios-icon-tap active:scale-90 will-change-transform"
                             style={{
                                 flexShrink: 0,
                                 width: 36,
@@ -150,6 +157,7 @@ export const CategoryFilter = ({
                                 alignItems: "center",
                                 justifyContent: "center",
                                 cursor: "pointer",
+                                transition: "transform 150ms ease-out",
                             }}
                         >
                             <ChevronLeft size={16} color="#5A625C" />
@@ -162,6 +170,7 @@ export const CategoryFilter = ({
                             <button
                                 key={sub.id}
                                 onClick={() => handleSubClick(sub.id)}
+                                className="ios-tap-feedback active:scale-95 will-change-transform"
                                 style={{
                                     flexShrink: 0,
                                     height: 32,
@@ -173,7 +182,7 @@ export const CategoryFilter = ({
                                     fontSize: 13,
                                     fontWeight: isActive ? 600 : 500,
                                     cursor: "pointer",
-                                    transition: `all 180ms ${EASE}`,
+                                    transition: "background 180ms ease, color 180ms ease, border-color 180ms ease",
                                     WebkitTapHighlightColor: "transparent",
                                     whiteSpace: "nowrap",
                                 }}
@@ -187,10 +196,10 @@ export const CategoryFilter = ({
 
             {/* ── Desktop: original style (unchanged) ── */}
             <div className="hidden md:flex flex-col gap-4 px-0 mt-8">
-                <div className="flex gap-3 overflow-x-auto no-scrollbar py-2">
+                <div className="flex gap-3 overflow-x-auto no-scrollbar py-2 overscroll-x-contain touch-pan-x" style={{ WebkitOverflowScrolling: "touch" }}>
                     <button
                         onClick={() => handleMainClick("all")}
-                        className={`shrink-0 px-8 py-4 rounded-[24px] text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 border-2 ${activeFilter === "all" ? "velari-green-btn border-transparent" : "bg-[#F2F3F5] text-gray-400 border-transparent hover:bg-[#EBEDF0] hover:text-black"}`}
+                        className={`shrink-0 px-8 py-4 rounded-[24px] text-[11px] font-black uppercase tracking-[0.2em] transition-colors duration-200 ios-tap-feedback active:scale-95 will-change-transform border-2 ${activeFilter === "all" ? "velari-green-btn border-transparent" : "bg-[#F2F3F5] text-gray-400 border-transparent hover:bg-[#EBEDF0] hover:text-black"}`}
                     >
                         {t.common.all}
                     </button>
@@ -198,7 +207,7 @@ export const CategoryFilter = ({
                         <button
                             key={cat.id}
                             onClick={() => handleMainClick(cat.id)}
-                            className={`shrink-0 px-8 py-4 rounded-[24px] text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 border-2 ${activeFilter === cat.id || activeParent === cat.id ? "velari-green-btn border-transparent" : "bg-[#F2F3F5] text-gray-400 border-transparent hover:bg-[#EBEDF0] hover:text-black"}`}
+                            className={`shrink-0 px-8 py-4 rounded-[24px] text-[11px] font-black uppercase tracking-[0.2em] transition-colors duration-200 ios-tap-feedback active:scale-95 will-change-transform border-2 ${activeFilter === cat.id || activeParent === cat.id ? "velari-green-btn border-transparent" : "bg-[#F2F3F5] text-gray-400 border-transparent hover:bg-[#EBEDF0] hover:text-black"}`}
                         >
                             {catName(cat)}
                         </button>
@@ -206,11 +215,11 @@ export const CategoryFilter = ({
                 </div>
 
                 {activeFilter !== "all" && subCategories.length > 0 && (
-                    <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
+                    <div className="flex gap-2 overflow-x-auto no-scrollbar py-1 overscroll-x-contain touch-pan-x" style={{ WebkitOverflowScrolling: "touch" }}>
                         {allCategories.find(c => c.id === activeFilter)?.parentId && (
                             <button
                                 onClick={handleBack}
-                                className="shrink-0 p-3 bg-gray-100 rounded-xl text-gray-500 hover:text-black transition-colors"
+                                className="shrink-0 p-3 bg-gray-100 rounded-xl text-gray-500 hover:text-black transition-colors ios-icon-tap active:scale-90 will-change-transform"
                             >
                                 <ChevronLeft size={16} />
                             </button>
@@ -219,7 +228,7 @@ export const CategoryFilter = ({
                             <button
                                 key={sub.id}
                                 onClick={() => handleSubClick(sub.id)}
-                                className="shrink-0 px-5 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-[11px] font-bold text-gray-600 transition-all border border-gray-100"
+                                className="shrink-0 px-5 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-[11px] font-bold text-gray-600 transition-colors duration-200 ios-tap-feedback active:scale-95 will-change-transform border border-gray-100"
                             >
                                 {catName(sub)}
                             </button>

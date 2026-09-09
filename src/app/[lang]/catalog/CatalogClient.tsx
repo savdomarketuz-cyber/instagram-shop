@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useStore } from "@/store/store";
 import { useShallow } from "zustand/react/shallow";
 import { Search, SlidersHorizontal, ArrowUpDown, X, Check, Loader2, PackageSearch } from "lucide-react";
@@ -9,6 +9,8 @@ import { translations } from "@/lib/translations";
 import { supabase } from "@/lib/supabase";
 import { mapProduct } from "@/lib/mappers";
 import { ProductCard } from "@/components/home/ProductCard";
+import { ProductSkeleton } from "@/components/home/ProductSkeleton";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 import type { Product } from "@/types";
 
 const GREEN = "#2D6E3E";
@@ -278,19 +280,22 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                 </h1>
 
                 {/* Search */}
-                <div className="relative mb-5">
+                <div className="relative mb-5 active:scale-[0.99] transition-transform duration-150 will-change-transform">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
                     <input
                         type="text"
                         placeholder={language === "uz" ? "Mahsulot, brend, kategoriya..." : "Товар, бренд, категория..."}
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
-                        className="w-full bg-white rounded-[20px] py-4 pl-12 pr-4 text-sm font-medium border border-gray-100 shadow-sm outline-none focus:border-gray-200"
+                        className="w-full bg-white rounded-[20px] py-4 pl-12 pr-4 text-sm font-medium border border-gray-100 shadow-sm outline-none focus:border-gray-200 transition-colors"
                     />
                 </div>
 
                 {/* Main category pills */}
-                <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 mb-3 -mx-1 px-1">
+                <div
+                    className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 mb-3 -mx-1 px-1 overscroll-x-contain touch-pan-x"
+                    style={{ WebkitOverflowScrolling: "touch" }}
+                >
                     <Pill active={mainCat === "all"} onClick={() => { setMainCat("all"); setSubCat("all"); }}>
                         {language === "uz" ? "Hammasi" : "Все"}
                     </Pill>
@@ -303,7 +308,10 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
 
                 {/* Sub category pills */}
                 {subCategories.length > 0 && (
-                    <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 mb-3 -mx-1 px-1">
+                    <div
+                        className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 mb-3 -mx-1 px-1 overscroll-x-contain touch-pan-x"
+                        style={{ WebkitOverflowScrolling: "touch" }}
+                    >
                         <Pill small active={subCat === "all"} onClick={() => setSubCat("all")}>
                             {language === "uz" ? "Barchasi" : "Все"}
                         </Pill>
@@ -318,8 +326,11 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                 {/* Filter / Sort buttons */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
                     <button
-                        onClick={openFilters}
-                        className="flex items-center justify-center gap-2 bg-white border border-gray-100 rounded-2xl py-3.5 text-sm font-bold shadow-sm active:scale-[0.98] transition-transform"
+                        onClick={() => {
+                            videoPreWarmer.triggerHaptic("light");
+                            openFilters();
+                        }}
+                        className="flex items-center justify-center gap-2 bg-white border border-gray-100 rounded-2xl py-3.5 text-sm font-bold shadow-sm ios-tap-feedback active:scale-[0.96] transition-transform duration-150 ease-out will-change-transform"
                     >
                         <SlidersHorizontal size={16} />
                         {language === "uz" ? "Filtrlar" : "Фильтры"}
@@ -330,18 +341,23 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                         )}
                     </button>
                     <button
-                        onClick={() => setShowSort(true)}
-                        className="flex items-center justify-center gap-2 bg-white border border-gray-100 rounded-2xl py-3.5 text-sm font-bold shadow-sm active:scale-[0.98] transition-transform"
+                        onClick={() => {
+                            videoPreWarmer.triggerHaptic("light");
+                            setShowSort(true);
+                        }}
+                        className="flex items-center justify-center gap-2 bg-white border border-gray-100 rounded-2xl py-3.5 text-sm font-bold shadow-sm ios-tap-feedback active:scale-[0.96] transition-transform duration-150 ease-out will-change-transform"
                     >
                         <ArrowUpDown size={16} />
                         {language === "uz" ? "Saralash" : "Сортировка"}
                     </button>
                 </div>
 
-                {/* Product grid */}
+                {/* Product grid with 1:1 skeleton layout */}
                 {loadingProducts ? (
-                    <div className="flex justify-center py-24">
-                        <Loader2 className="animate-spin" size={32} color={GREEN} />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-5">
+                        {[...Array(12)].map((_, i) => (
+                            <ProductSkeleton key={i} />
+                        ))}
                     </div>
                 ) : filteredProducts.length === 0 ? (
                     <div className="py-24 text-center">
@@ -424,8 +440,11 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                                 const on = draftBrands.includes(b.id);
                                 return (
                                     <button key={b.id}
-                                        onClick={() => setDraftBrands(on ? draftBrands.filter(x => x !== b.id) : [...draftBrands, b.id])}
-                                        className={`px-4 py-2.5 rounded-full text-xs font-bold border transition-colors ${on ? "text-white border-transparent" : "bg-white text-gray-700 border-gray-200"}`}
+                                        onClick={() => {
+                                            videoPreWarmer.triggerHaptic("light");
+                                            setDraftBrands(on ? draftBrands.filter(x => x !== b.id) : [...draftBrands, b.id]);
+                                        }}
+                                        className={`px-4 py-2.5 rounded-full text-xs font-bold border transition-colors ios-tap-feedback active:scale-95 transition-transform duration-150 ease-out will-change-transform ${on ? "text-white border-transparent" : "bg-white text-gray-700 border-gray-200"}`}
                                         style={on ? { background: GREEN } : undefined}
                                     >
                                         {(language === "uz" ? b.name_uz : b.name_ru) || b.name}
@@ -439,8 +458,12 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                 {/* Rating */}
                 <Section title={language === "uz" ? "Reyting" : "Рейтинг"}>
                     {[4.5, 4, 3.5, 0].map(r => (
-                        <button key={r} onClick={() => setDraftRating(r)}
-                            className="w-full flex items-center gap-3 py-3 border-b border-gray-50 last:border-0">
+                        <button key={r}
+                            onClick={() => {
+                                videoPreWarmer.triggerHaptic("light");
+                                setDraftRating(r);
+                            }}
+                            className="w-full flex items-center gap-3 py-3 border-b border-gray-50 last:border-0 ios-tap-feedback active:scale-[0.98] transition-transform duration-150 ease-out">
                             <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${draftRating === r ? "border-transparent" : "border-gray-200"}`}
                                 style={draftRating === r ? { background: GREEN } : undefined}>
                                 {draftRating === r && <Check size={12} color="#fff" strokeWidth={3} />}
@@ -452,10 +475,18 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                     ))}
                 </Section>
 
-                <div className="sticky bottom-0 -mx-6 px-6 pt-3 pb-2 bg-white border-t border-gray-50">
-                    <button onClick={applyFilters}
-                        className="w-full py-4 rounded-2xl text-white font-bold text-sm"
-                        style={{ background: GREEN, boxShadow: "0 8px 20px rgba(45,110,62,0.28)" }}>
+                <div
+                    className="sticky bottom-0 -mx-6 px-6 pt-3 bg-white border-t border-gray-50"
+                    style={{ paddingBottom: "max(14px, env(safe-area-inset-bottom, 14px))" }}
+                >
+                    <button
+                        onClick={() => {
+                            videoPreWarmer.triggerHaptic("medium");
+                            applyFilters();
+                        }}
+                        className="w-full py-4 rounded-2xl text-white font-bold text-sm ios-tap-feedback active:scale-[0.98] transition-transform duration-150 ease-out will-change-transform"
+                        style={{ background: GREEN, boxShadow: "0 8px 20px rgba(45,110,62,0.28)" }}
+                    >
                         {language === "uz" ? "Natijalarni ko'rsatish" : "Показать результаты"}
                     </button>
                 </div>
@@ -467,8 +498,12 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
             >
                 {sortOptions.map(o => (
                     <button key={o.key}
-                        onClick={() => { setSortBy(o.key); setShowSort(false); }}
-                        className="w-full flex items-center justify-between py-4 border-b border-gray-50 last:border-0">
+                        onClick={() => {
+                            videoPreWarmer.triggerHaptic("light");
+                            setSortBy(o.key);
+                            setShowSort(false);
+                        }}
+                        className="w-full flex items-center justify-between py-4 border-b border-gray-50 last:border-0 ios-tap-feedback active:scale-[0.98] transition-transform duration-150 ease-out">
                         <span className={`text-sm ${sortBy === o.key ? "font-black" : "font-medium text-gray-600"}`}>
                             {language === "uz" ? o.label_uz : o.label_ru}
                         </span>
@@ -482,8 +517,13 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
 
 function Pill({ children, active, onClick, small }: { children: React.ReactNode; active: boolean; onClick: () => void; small?: boolean }) {
     return (
-        <button onClick={onClick}
-            className={`shrink-0 rounded-full font-bold transition-colors whitespace-nowrap ${small ? "px-4 py-2 text-xs" : "px-5 py-2.5 text-sm"} ${active ? "bg-black text-white" : "bg-white text-gray-600 border border-gray-100"}`}>
+        <button
+            onClick={() => {
+                videoPreWarmer.triggerHaptic("light");
+                onClick();
+            }}
+            className={`shrink-0 rounded-full font-bold transition-colors whitespace-nowrap ios-tap-feedback active:scale-95 transition-transform duration-150 ease-out will-change-transform ${small ? "px-4 py-2 text-xs" : "px-5 py-2.5 text-sm"} ${active ? "bg-black text-white" : "bg-white text-gray-600 border border-gray-100"}`}
+        >
             {children}
         </button>
     );
@@ -501,23 +541,146 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function BottomSheet({ open, onClose, title, leftAction, children }: {
     open: boolean; onClose: () => void; title: string; leftAction?: React.ReactNode; children: React.ReactNode;
 }) {
-    if (!open) return null;
+    const [isClosing, setIsClosing] = useState(false);
+    const sheetRef = useRef<HTMLDivElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
+
+    // Gesture tracking refs
+    const dragStartY = useRef(0);
+    const lastTouchY = useRef(0);
+    const dragStartTime = useRef(0);
+    const velocity = useRef(0);
+    const currentTranslateY = useRef(0);
+    const isDragging = useRef(false);
+
+    // Lock body scroll during open
+    useEffect(() => {
+        if (open) {
+            document.body.style.overflow = "hidden";
+        } else {
+            document.body.style.overflow = "";
+        }
+        return () => {
+            document.body.style.overflow = "";
+        };
+    }, [open]);
+
+    // Handle animated close
+    const handleCloseWithAnimation = useCallback(() => {
+        setIsClosing(true);
+        setTimeout(() => {
+            setIsClosing(false);
+            onClose();
+        }, 250);
+    }, [onClose]);
+
+    if (!open && !isClosing) return null;
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        if (contentRef.current && contentRef.current.scrollTop > 0) {
+            isDragging.current = false;
+            return;
+        }
+        const y = e.touches[0].clientY;
+        dragStartY.current = y;
+        lastTouchY.current = y;
+        dragStartTime.current = performance.now();
+        velocity.current = 0;
+        isDragging.current = true;
+        if (sheetRef.current) {
+            sheetRef.current.style.transition = "none";
+        }
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (!isDragging.current) return;
+        const y = e.touches[0].clientY;
+        const delta = y - dragStartY.current;
+
+        if (delta < 0) {
+            return;
+        }
+
+        const now = performance.now();
+        const dt = Math.max(1, now - dragStartTime.current);
+        const dy = y - lastTouchY.current;
+        velocity.current = dy / dt;
+        lastTouchY.current = y;
+        dragStartTime.current = now;
+
+        if (sheetRef.current) {
+            currentTranslateY.current = delta;
+            sheetRef.current.style.transform = `translate3d(0, ${delta}px, 0)`;
+        }
+    };
+
+    const handleTouchEnd = () => {
+        if (!isDragging.current || !sheetRef.current) {
+            isDragging.current = false;
+            return;
+        }
+        isDragging.current = false;
+
+        // Dismiss if dragged down > 110px OR swiped down with velocity > 0.55 px/ms
+        if (currentTranslateY.current > 110 || velocity.current > 0.55) {
+            videoPreWarmer.triggerHaptic("light");
+            handleCloseWithAnimation();
+        } else {
+            sheetRef.current.style.transition = "transform 320ms cubic-bezier(0.32, 0.72, 0, 1)";
+            sheetRef.current.style.transform = "translate3d(0, 0, 0)";
+        }
+        currentTranslateY.current = 0;
+        velocity.current = 0;
+    };
+
     return (
-        <div className="fixed inset-0 z-[130] flex items-end justify-center" onClick={onClose}>
-            <div className="absolute inset-0 bg-black/40 animate-in fade-in duration-200" />
+        <div className="fixed inset-0 z-[130] flex items-end justify-center" onClick={handleCloseWithAnimation}>
             <div
+                className={`absolute inset-0 bg-black/40 transition-opacity duration-250 ease-out ${
+                    isClosing ? "opacity-0" : "opacity-100 animate-in fade-in"
+                }`}
+            />
+            <div
+                ref={sheetRef}
                 onClick={e => e.stopPropagation()}
-                className="relative w-full max-w-[480px] bg-white rounded-t-[32px] px-6 pt-6 pb-4 max-h-[88vh] overflow-y-auto animate-in slide-in-from-bottom duration-300"
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                onTouchCancel={handleTouchEnd}
+                style={{
+                    willChange: "transform",
+                    transition: isClosing ? "transform 250ms cubic-bezier(0.32, 0.72, 0, 1), opacity 220ms ease-out" : undefined,
+                    transform: isClosing ? "translate3d(0, 100%, 0)" : undefined,
+                }}
+                className={`relative w-full max-w-[480px] bg-white rounded-t-[32px] px-6 pt-3 pb-4 max-h-[88vh] flex flex-col overscroll-contain ${
+                    !isClosing ? "animate-in slide-in-from-bottom duration-300" : ""
+                }`}
             >
-                <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
-                <div className="flex items-center justify-between mb-6">
+                {/* Drag handle */}
+                <div className="py-2.5 -mt-1 flex justify-center cursor-grab active:cursor-grabbing w-full">
+                    <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
+                </div>
+
+                {/* Header */}
+                <div className="flex items-center justify-between mb-5 select-none">
                     <div className="w-16">{leftAction}</div>
-                    <h3 className="text-base font-black">{title}</h3>
-                    <button onClick={onClose} className="w-16 flex justify-end">
+                    <h3 className="text-base font-black text-[#0F1410]">{title}</h3>
+                    <button
+                        onClick={handleCloseWithAnimation}
+                        className="w-16 flex justify-end ios-icon-tap active:scale-90 transition-transform duration-150 p-1"
+                    >
                         <X size={20} className="text-gray-400" />
                     </button>
                 </div>
-                {children}
+
+                {/* Content Container */}
+                <div
+                    ref={contentRef}
+                    className="flex-1 overflow-y-auto overscroll-contain pr-1 -mr-1"
+                    style={{ WebkitOverflowScrolling: "touch" }}
+                >
+                    {children}
+                </div>
             </div>
         </div>
     );
