@@ -558,7 +558,7 @@ export const SingleReel = ({
                         <button
                             data-interactive="true"
                             onClick={handleRetry}
-                            className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-xs font-bold active:scale-95 transition-all"
+                            className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-xs font-bold active:scale-95 transition-transform duration-150 transition-colors"
                         >
                             {language === "uz" ? "Qayta urinish" : "Повторить"}
                         </button>

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useStore } from "@/store/store";
 import { X, MessageCircle, Loader2, Heart, Send } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 interface CommentsSheetProps {
     productId: string;
@@ -20,6 +21,72 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
     const [isPosting, setIsPosting] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
     const sheetRef = useRef<HTMLDivElement>(null);
+    const commentsListRef = useRef<HTMLDivElement>(null);
+
+    // Drag to dismiss gesture with velocity tracking
+    const dragStartY = useRef(0);
+    const lastTouchY = useRef(0);
+    const dragStartTime = useRef(0);
+    const velocity = useRef(0);
+    const currentTranslateY = useRef(0);
+    const isDragging = useRef(false);
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        if (commentsListRef.current && commentsListRef.current.scrollTop > 0) {
+            isDragging.current = false;
+            return;
+        }
+        const y = e.touches[0].clientY;
+        dragStartY.current = y;
+        lastTouchY.current = y;
+        dragStartTime.current = performance.now();
+        velocity.current = 0;
+        isDragging.current = true;
+        if (sheetRef.current) {
+            sheetRef.current.style.transition = "none";
+        }
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (!isDragging.current) return;
+        const y = e.touches[0].clientY;
+        const delta = y - dragStartY.current;
+
+        if (delta < 0) {
+            return;
+        }
+
+        const now = performance.now();
+        const dt = Math.max(1, now - dragStartTime.current);
+        const dy = y - lastTouchY.current;
+        velocity.current = dy / dt;
+        lastTouchY.current = y;
+        dragStartTime.current = now;
+
+        if (sheetRef.current) {
+            currentTranslateY.current = delta;
+            sheetRef.current.style.transform = `translate3d(0, ${delta}px, 0)`;
+        }
+    };
+
+    const handleTouchEnd = () => {
+        if (!isDragging.current || !sheetRef.current) {
+            isDragging.current = false;
+            return;
+        }
+        isDragging.current = false;
+
+        // Dismiss if dragged down > 110px OR swiped down with velocity > 0.55 px/ms
+        if (currentTranslateY.current > 110 || velocity.current > 0.55) {
+            videoPreWarmer.triggerHaptic("light");
+            handleCloseWithAnimation();
+        } else {
+            sheetRef.current.style.transition = "transform 320ms cubic-bezier(0.32, 0.72, 0, 1)";
+            sheetRef.current.style.transform = "translate3d(0, 0, 0)";
+        }
+        currentTranslateY.current = 0;
+        velocity.current = 0;
+    };
 
     const handleCloseWithAnimation = () => {
         if (isClosing) return;
@@ -111,10 +178,18 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
             />
             <div
                 ref={sheetRef}
-                className="relative bg-white text-black h-[70dvh] rounded-t-[32px] flex flex-col shadow-2xl animate-ios-sheet overflow-hidden will-change-transform"
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                className="relative bg-white text-black h-[70dvh] max-w-[500px] mx-auto w-full rounded-t-[36px] flex flex-col shadow-2xl animate-ios-sheet overflow-hidden will-change-transform"
+                style={{ WebkitOverflowScrolling: "touch" }}
             >
-                <div className="w-full h-1 flex justify-center py-3 cursor-pointer shrink-0" onClick={handleCloseWithAnimation}>
-                    <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
+                {/* Drag pill handle */}
+                <div
+                    className="w-full flex items-center justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing shrink-0"
+                    onClick={handleCloseWithAnimation}
+                >
+                    <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
                 </div>
 
                 <div className="px-6 py-2 border-b border-gray-100 flex items-center justify-between shrink-0">
@@ -127,7 +202,10 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
+                <div
+                    ref={commentsListRef}
+                    className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar"
+                >
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-20 opacity-20">
                             <Loader2 size={32} className="animate-spin mb-4" />
