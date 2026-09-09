@@ -82,7 +82,7 @@ export const ProductGrid = ({
                             addToCart={addToCart}
                             updateQuantity={updateQuantity}
                             removeFromCart={removeFromCart}
-                            priority={index < 2}
+                            priority={index < 4}
                             reason={showReasons ? reasonMap?.[item.id]?.[language] : undefined}
                         />
                     </WatchedProduct>

@@ -147,15 +147,18 @@ export const ProductCard = memo(({
   };
 
   return (
-    <div style={{
-      background: "#fff",
-      borderRadius: 22,
-      overflow: "hidden",
-      display: "flex",
-      flexDirection: "column",
-      boxShadow: "0 4px 16px rgba(15,20,16,0.05)",
-      WebkitTapHighlightColor: "transparent",
-    }}>
+    <div 
+      className="transition-transform duration-150 active:scale-[0.97] select-none"
+      style={{
+        background: "#fff",
+        borderRadius: 22,
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        boxShadow: "0 4px 16px rgba(15,20,16,0.05)",
+        WebkitTapHighlightColor: "transparent",
+        transform: "translate3d(0,0,0)",
+      }}>
       {/* Image area */}
       <Link
         href={`/${language}/products/${getProductSlug(item, language)}`}

@@ -6,15 +6,15 @@ export function makeVariantLoader(metadata: Meta) {
   return ({ src, width }: ImageLoaderProps): string => {
     const m = metadata?.[src];
     if (!m) return src;
-    if (width <= 360 && m.lowResUrl) return m.lowResUrl;
-    if (width <= 640 && m.xs) return m.xs;
-    if (width <= 828 && m.md) return m.md;
-    if (m.lg) return m.lg;
+    if (width <= 400 && m.lowResUrl) return m.lowResUrl;
+    if (width <= 640 && (m.xs || m.lowResUrl)) return m.xs || m.lowResUrl;
+    if (width <= 828 && (m.md || m.xs || m.lowResUrl)) return m.md || m.xs || m.lowResUrl;
+    if (m.lg || m.md || m.xs || m.lowResUrl) return m.lg || m.md || m.xs || m.lowResUrl!;
     return src;
   };
 }
 
 export function hasVariants(metadata: Meta, url: string): boolean {
   const m = metadata?.[url];
-  return !!(m?.xs && m?.md && m?.lg);
+  return !!(m?.lowResUrl || m?.xs || m?.md || m?.lg);
 }
