@@ -117,7 +117,6 @@ import GoogleAnalytics from "@/components/GoogleAnalytics";
 import MetaPixel from "@/components/MetaPixel";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { ViewTransitions } from "next-view-transitions";
 import { getShopSettingsServer } from "@/lib/shop-settings.server";
 import {
     formatTelegramLink,
@@ -229,7 +228,6 @@ export default async function RootLayout({
     const displayLang = ['uz', 'ru'].includes(params.lang) ? params.lang : 'uz';
 
     return (
-        <ViewTransitions>
         <html lang={displayLang} className={inter.variable}>
             <head>
                 <meta name="theme-color" content="#2d6e3e" />
@@ -266,11 +264,6 @@ export default async function RootLayout({
                     type="application/ld+json"
                     dangerouslySetInnerHTML={{ __html: JSON.stringify(storeJsonLd) }}
                 />
-                <script
-                    dangerouslySetInnerHTML={{
-                        __html: `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','1593828215426388');fbq('track','PageView');`
-                    }}
-                />
             </head>
             <body className="bg-white text-gray-900 antialiased font-sans w-full max-w-full min-h-screen">
                 <a href="#main-content" className="skip-to-main">
@@ -295,7 +288,6 @@ export default async function RootLayout({
                 `}} />
             </body>
         </html>
-        </ViewTransitions>
     );
 }
 

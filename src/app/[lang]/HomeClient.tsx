@@ -158,30 +158,34 @@ export default function HomeClient({
 
         if (typeof navigator === "undefined" || !navigator.geolocation) return;
 
-        navigator.geolocation.getCurrentPosition(
-            async (pos) => {
-                const { latitude, longitude } = pos.coords;
-                try {
-                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=${langCode}&countrycodes=uz`);
-                    const data = await res.json();
-                    const a = data?.address;
-                    if (!a) return;
+        const geoTimer = setTimeout(() => {
+            navigator.geolocation.getCurrentPosition(
+                async (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    try {
+                        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=${langCode}&countrycodes=uz`);
+                        const data = await res.json();
+                        const a = data?.address;
+                        if (!a) return;
 
-                    const city = a.city || a.town || a.county || a.state || "";
-                    const district = a.city_district || a.suburb || a.neighbourhood || a.borough || "";
-                    const label = [city, district].filter(Boolean).join(", ");
+                        const city = a.city || a.town || a.county || a.state || "";
+                        const district = a.city_district || a.suburb || a.neighbourhood || a.borough || "";
+                        const label = [city, district].filter(Boolean).join(", ");
 
-                    if (label) {
-                        setLocationLabel(label);
-                        try { localStorage.setItem(cacheKey, label); } catch {}
+                        if (label) {
+                            setLocationLabel(label);
+                            try { localStorage.setItem(cacheKey, label); } catch {}
+                        }
+                    } catch {
+                        // Tarmoq/geocoder xatosi — default qoladi
                     }
-                } catch {
-                    // Tarmoq/geocoder xatosi — default qoladi
-                }
-            },
-            () => { /* Ruxsat berilmadi — default qoladi */ },
-            { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 }
-        );
+                },
+                () => { /* Ruxsat berilmadi — default qoladi */ },
+                { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 }
+            );
+        }, 3000);
+
+        return () => clearTimeout(geoTimer);
     }, [language]);
 
     // Shaxsiy smart-chegirmalarni yuklash (login mijoz) — kartochkalarda ko'rsatish uchun
@@ -293,7 +297,7 @@ export default function HomeClient({
             }, 300);
         };
 
-        window.addEventListener('scroll', handleScrollEvent);
+        window.addEventListener('scroll', handleScrollEvent, { passive: true });
 
         return () => {
             supabase.removeChannel(bannersChannel);

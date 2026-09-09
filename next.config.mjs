@@ -3,9 +3,9 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 const withPWA = withPWAInit({
     dest: "public",
-    cacheOnFrontEndNav: true,
-    aggressiveFrontEndNavCaching: true,
-    reloadOnOnline: true,
+    cacheOnFrontEndNav: false,
+    aggressiveFrontEndNavCaching: false,
+    reloadOnOnline: false,
     swMinify: true,
     disable: process.env.NODE_ENV === "development",
     workboxOptions: {
@@ -24,10 +24,10 @@ const withPWA = withPWAInit({
             },
             {
                 urlPattern: /^https:\/\/storage\.yandexcloud\.net\/.*\.(?:png|jpg|jpeg|webp|avif|gif|svg)$/i,
-                handler: 'CacheFirst',
+                handler: 'StaleWhileRevalidate',
                 options: {
                     cacheName: 'yandex-images',
-                    expiration: { maxEntries: 600, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                    expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 7 },
                     cacheableResponse: { statuses: [0, 200] },
                 },
             },

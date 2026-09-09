@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useState, useRef } from "react";
-import { Link } from "next-view-transitions";
+import Link from "next/link";
 import Image from "next/image";
 import { Heart, Star, Minus, Plus, Sparkles, Truck, Store } from "lucide-react";
 import { useStore } from "@/store/store";
@@ -155,7 +155,6 @@ export const ProductCard = memo(({
       flexDirection: "column",
       boxShadow: "0 4px 16px rgba(15,20,16,0.05)",
       WebkitTapHighlightColor: "transparent",
-      animation: "velari-cart-in 300ms cubic-bezier(0.22,1,0.36,1) both",
     }}>
       {/* Image area */}
       <Link
@@ -163,12 +162,7 @@ export const ProductCard = memo(({
         style={{ display: "flex", flexDirection: "column", flex: 1, textDecoration: "none", color: "inherit" }}
         prefetch={true}
         onPointerEnter={() => prefetchFirstImage(item)}
-        onPointerDown={() => prefetchFirstImage(item)}
-        onTouchStart={() => prefetchFirstImage(item)}
         onClick={() => {
-          // view-transition-name faqat bosilgan kartochkaga, navigatsiyadan oldin beriladi.
-          // Statik berilsa, bir mahsulot bir nechta ro'yxatda chiqsa "duplicate" xatosi bo'lardi.
-          if (imgWrapRef.current) imgWrapRef.current.style.viewTransitionName = `product-img-${item.id}`;
           const query = useStore.getState().homeSearchQuery;
           if (query && query.trim().length >= 2) {
             fetch("/api/analytics/search-click", {

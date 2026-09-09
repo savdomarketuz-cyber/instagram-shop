@@ -37,7 +37,7 @@ export default function YandexMetrika({ ymid }: { ymid?: string }) {
                clickmap:true,
                trackLinks:true,
                accurateTrackBounce:true,
-               webvisor:true,
+               webvisor:false,
                ecommerce:"dataLayer"
           });
         `}

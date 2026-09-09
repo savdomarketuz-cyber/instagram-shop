@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, memo } from "react";
-import { Link } from "next-view-transitions";
+import Link from "next/link";
 import { Heart, Volume2, VolumeX, Sparkles, Zap, Clapperboard, ShoppingBag, Plus, Check } from "lucide-react";
 import { Product, CartItem } from "@/types";
 import { TranslationKeys } from "@/lib/translations";

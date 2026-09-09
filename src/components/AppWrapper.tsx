@@ -106,27 +106,14 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
                 // Skip tracking for Admin users (prevents 406 Not Acceptable)
                 if (user?.phone === 'ADMIN') return;
 
-                // ── 1. GEO (ipapi.co — shahar, ISP, koordinat hammasi birga) ──
+                // ── 1. GEO (sessionStorage'dan o'qish, tashqi ipapi.co ga so'rov yuborilmaydi) ──
                 let geoData: any = {};
-                const cachedGeo = sessionStorage.getItem("tracked_geo");
-                if (cachedGeo) {
-                    geoData = JSON.parse(cachedGeo);
-                } else {
-                    const geoRes = await fetch("https://ipapi.co/json/").catch(() => null);
-                    if (geoRes && geoRes.ok) {
-                        const raw = await geoRes.json();
-                        geoData = {
-                            ip: raw.ip,
-                            city: raw.city,
-                            region: raw.region,
-                            country: raw.country_name,
-                            isp: raw.org,
-                            latitude: raw.latitude,
-                            longitude: raw.longitude,
-                        };
-                        sessionStorage.setItem("tracked_geo", JSON.stringify(geoData));
+                try {
+                    const cachedGeo = sessionStorage.getItem("tracked_geo");
+                    if (cachedGeo) {
+                        geoData = JSON.parse(cachedGeo);
                     }
-                }
+                } catch {}
 
                 // ── 2. QURILMA (Device info — insta skrab usuli) ──
                 const ua = navigator.userAgent;
@@ -312,10 +299,16 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
     // Footer (Biz haqimizda / Foydalanuvchilarga / Tadbirkorlarga) faqat profil bo'limida
     const isAccount = pathWithoutLocale === "/account" || pathWithoutLocale.startsWith("/account/");
 
-    // Manual Scroll Restoration Logic
+    // Manual Scroll Restoration Logic (debounced + passive listener)
     useEffect(() => {
+        let timer: NodeJS.Timeout;
         const handleScroll = () => {
-            sessionStorage.setItem(`scroll_${pathname}`, window.scrollY.toString());
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                try {
+                    sessionStorage.setItem(`scroll_${pathname}`, window.scrollY.toString());
+                } catch {}
+            }, 300);
         };
 
         const savedScroll = sessionStorage.getItem(`scroll_${pathname}`);
@@ -328,8 +321,11 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
             }, 50);
         }
 
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('scroll', handleScroll);
+        };
     }, [pathname]);
 
     if (isAdmin) {

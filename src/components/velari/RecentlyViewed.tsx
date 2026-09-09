@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Link } from "next-view-transitions";
+import Link from "next/link";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { mapProduct } from "@/lib/mappers";
