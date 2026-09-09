@@ -154,26 +154,38 @@ export default function Navigation() {
                     
                     <div className="shrink-0 group">
                         <div className="md:hidden">
-                            <Link href={l("/catalog")} className="flex items-center gap-2 bg-[#E8F5EC] px-4 py-2.5 rounded-xl active:scale-95 transition-all outline-none">
+                            <Link
+                                href={l("/catalog")}
+                                onClick={() => videoPreWarmer.triggerHaptic("light")}
+                                className="ios-tap-feedback active:scale-95 transition-transform duration-150 flex items-center gap-2 bg-[#E8F5EC] px-4 py-2.5 rounded-xl outline-none will-change-transform"
+                            >
                                 <LayoutGrid size={20} strokeWidth={3} className="text-[#2d6e3e]" />
                                 <span className="text-[11px] font-black uppercase tracking-tighter text-[#2d6e3e]">Katalog</span>
                             </Link>
                         </div>
                         <div className="hidden md:block">
-                            <Link href={l("/")} className="transition-transform active:scale-95 flex">
+                            <Link
+                                href={l("/")}
+                                onClick={() => videoPreWarmer.triggerHaptic("light")}
+                                className="ios-tap-feedback active:scale-95 transition-transform duration-150 flex will-change-transform"
+                            >
                                 <Logo size="md" showSmile={false} className="!items-start" />
                             </Link>
                         </div>
                     </div>
 
-                    <Link href={l("/catalog")} className="hidden lg:flex items-center gap-3 bg-[#2d6e3e] text-white px-6 py-3.5 rounded-2xl hover:scale-105 active:scale-95 transition-all group shadow-xl shadow-emerald-800/20">
+                    <Link
+                        href={l("/catalog")}
+                        onClick={() => videoPreWarmer.triggerHaptic("light")}
+                        className="hidden lg:flex items-center gap-3 bg-[#2d6e3e] text-white px-6 py-3.5 rounded-2xl active:scale-95 transition-transform duration-150 group shadow-xl shadow-emerald-800/20 will-change-transform"
+                    >
                         <LayoutGrid size={20} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-500" />
                         <span className="text-[11px] font-black uppercase tracking-[0.2em]">{language === 'uz' ? 'Katalog' : 'Каталог'}</span>
                     </Link>
 
                     <form onSubmit={handleSearch} className="flex-1 relative group max-w-2xl">
                         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                            <Search className="text-gray-400 group-focus-within:text-black transition-colors" size={16} />
+                            <Search className="text-gray-400 group-focus-within:text-black transition-colors duration-150" size={16} />
                         </div>
                         <input
                             ref={inputRef}
@@ -182,13 +194,14 @@ export default function Navigation() {
                             value={search}
                             onChange={handleSearchChange}
                             onFocus={() => { if (search.trim()) setShowSuggestions(true); }}
-                            className="w-full bg-[#F5F9F6] border-2 border-transparent rounded-xl md:rounded-2xl py-2 md:py-4 pl-10 md:pl-14 pr-12 md:pr-16 text-xs md:text-base font-bold placeholder:text-gray-400 focus:bg-white focus:border-[#2d6e3e]/30 focus:ring-4 focus:ring-[#2d6e3e]/5 outline-none transition-all shadow-sm"
+                            className="w-full bg-[#F5F9F6] border-2 border-transparent rounded-xl md:rounded-2xl py-2 md:py-4 pl-10 md:pl-14 pr-12 md:pr-16 text-xs md:text-base font-bold placeholder:text-gray-400 focus:bg-white focus:border-[#2d6e3e]/30 focus:ring-4 focus:ring-[#2d6e3e]/5 outline-none transition-[background-color,border-color,box-shadow] duration-200 shadow-sm"
                         />
                         <div className="absolute inset-y-0 right-2 flex items-center gap-1 md:gap-2">
                             {search && (
                                 <button
                                     type="button"
                                     onClick={() => { 
+                                        videoPreWarmer.triggerHaptic("light");
                                         setSearch(""); 
                                         setSuggestions([]);
                                         setShowSuggestions(false);
@@ -196,14 +209,15 @@ export default function Navigation() {
                                         setStoreGlobalQuery("");
                                         if (debounceTimer.current) clearTimeout(debounceTimer.current);
                                     }}
-                                    className="p-2 text-gray-400 hover:text-black transition-colors"
+                                    className="ios-icon-tap active:scale-85 transition-transform duration-150 p-2 text-gray-400 hover:text-black will-change-transform"
                                 >
                                     <X size={18} />
                                 </button>
                             )}
                             <button
                                 type="submit"
-                                className={`p-2 md:p-3 rounded-lg md:rounded-xl transition-all ${isSearchLoading ? 'velari-green-btn' : 'text-gray-400 hover:text-[#2d6e3e] hover:bg-white shadow-sm'}`}
+                                onClick={() => videoPreWarmer.triggerHaptic("light")}
+                                className={`ios-icon-tap active:scale-90 p-2 md:p-3 rounded-lg md:rounded-xl transition-transform duration-150 will-change-transform ${isSearchLoading ? 'velari-green-btn' : 'text-gray-400 hover:text-[#2d6e3e] hover:bg-white shadow-sm'}`}
                             >
                                 {isSearchLoading ? <Loader2 size={18} className="animate-spin" /> : <Search size={20} />}
                             </button>
@@ -211,24 +225,25 @@ export default function Navigation() {
 
                         {/* Live Suggestions Dropdown */}
                         {showSuggestions && (search.trim().length > 0) && (
-                            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[120]">
+                            <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[120] animate-in fade-in slide-in-from-top-2 duration-200">
                                 {isSuggesting ? (
                                     <div className="flex items-center justify-center p-6 bg-gray-50/50">
                                         <Loader2 size={24} className="animate-spin text-black/20" />
                                     </div>
                                 ) : suggestions.length > 0 ? (
-                                    <div className="flex flex-col max-h-[60vh] overflow-y-auto">
+                                    <div className="flex flex-col max-h-[60vh] overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch" }}>
                                         {suggestions.map((item, idx) => (
                                             <Link 
                                                 key={item.id} 
                                                 href={`/${language}/products/${getProductSlug(item, language)}`}
                                                 onClick={() => { 
+                                                    videoPreWarmer.triggerHaptic("light");
                                                     setShowSuggestions(false); 
                                                     if (search.trim().length >= 2) {
                                                         fetch('/api/analytics/search-click', { method: 'POST', body: JSON.stringify({ productId: item.id, query: search.trim() }) }).catch(e => console.error("Click track error", e));
                                                     }
                                                 }}
-                                                className={`flex items-center gap-4 p-3 hover:bg-gray-50 transition-colors ${idx !== 0 ? 'border-t border-gray-50' : ''}`}
+                                                className={`ios-tap-feedback active:scale-[0.99] flex items-center gap-4 p-3 hover:bg-gray-50 transition-colors duration-150 will-change-transform ${idx !== 0 ? 'border-t border-gray-50' : ''}`}
                                             >
                                                 <div className="w-12 h-12 bg-gray-100 rounded-xl overflow-hidden shrink-0 relative">
                                                     <Image 
@@ -249,8 +264,11 @@ export default function Navigation() {
                                         ))}
                                         <button 
                                             type="submit" 
-                                            onClick={() => handleSearch()}
-                                            className="w-full p-4 bg-gray-50 hover:bg-gray-100 text-xs font-black text-black uppercase tracking-widest transition-colors"
+                                            onClick={() => {
+                                                videoPreWarmer.triggerHaptic("medium");
+                                                handleSearch();
+                                            }}
+                                            className="ios-tap-feedback active:scale-[0.98] w-full p-4 bg-gray-50 hover:bg-gray-100 text-xs font-black text-black uppercase tracking-widest transition-transform duration-150 will-change-transform"
                                         >
                                             {language === 'uz' ? "Barcha natijalarni ko'rish" : "Посмотреть все результаты"}
                                         </button>
@@ -265,36 +283,56 @@ export default function Navigation() {
                     </form>
 
                     <div className="hidden md:flex items-center gap-2 md:gap-6 shrink-0 h-full">
-                        <Link href={l("/reels")} className={`flex flex-col items-center gap-1 group transition-colors duration-150 ${pathname === l('/reels') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
-                            <div className="relative p-2 rounded-xl group-hover:bg-gray-50 transition-colors">
+                        <Link
+                            href={l("/reels")}
+                            onClick={() => videoPreWarmer.triggerHaptic("light")}
+                            className={`ios-icon-tap active:scale-95 flex flex-col items-center gap-1 group transition-colors duration-150 will-change-transform ${pathname === l('/reels') ? 'text-black' : 'text-gray-400 hover:text-black'}`}
+                        >
+                            <div className="relative p-2 rounded-xl group-hover:bg-gray-50 transition-colors duration-150">
                                 <Clapperboard size={22} strokeWidth={pathname === l('/reels') ? 3 : 2} className="group-hover:scale-110 group-hover:-rotate-12 group-hover:text-black transition-transform duration-200" />
                             </div>
                             <span className="text-[9px] font-black uppercase tracking-tighter hidden xl:block">{t.nav.reels}</span>
                         </Link>
 
-                        <Link href={l("/blog")} className={`flex flex-col items-center gap-1 group transition-colors duration-150 ${pathname === l('/blog') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
-                            <div className="relative p-2 rounded-xl group-hover:bg-gray-50 transition-colors">
+                        <Link
+                            href={l("/blog")}
+                            onClick={() => videoPreWarmer.triggerHaptic("light")}
+                            className={`ios-icon-tap active:scale-95 flex flex-col items-center gap-1 group transition-colors duration-150 will-change-transform ${pathname === l('/blog') ? 'text-black' : 'text-gray-400 hover:text-black'}`}
+                        >
+                            <div className="relative p-2 rounded-xl group-hover:bg-gray-50 transition-colors duration-150">
                                 <BookOpen size={22} strokeWidth={pathname === l('/blog') ? 3 : 2} className="group-hover:scale-110 group-hover:text-black transition-transform duration-200" />
                             </div>
                             <span className="text-[9px] font-black uppercase tracking-tighter hidden xl:block">{t.nav.blog}</span>
                         </Link>
 
-                        <Link href={l("/orders")} className={`flex flex-col items-center gap-1 group transition-colors duration-150 ${pathname === l('/orders') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
-                            <div className="p-2 rounded-xl group-hover:bg-gray-50 transition-colors">
+                        <Link
+                            href={l("/orders")}
+                            onClick={() => videoPreWarmer.triggerHaptic("light")}
+                            className={`ios-icon-tap active:scale-95 flex flex-col items-center gap-1 group transition-colors duration-150 will-change-transform ${pathname === l('/orders') ? 'text-black' : 'text-gray-400 hover:text-black'}`}
+                        >
+                            <div className="p-2 rounded-xl group-hover:bg-gray-50 transition-colors duration-150">
                                 <ShoppingBag size={22} strokeWidth={pathname === l('/orders') ? 3 : 2} className="group-hover:-translate-y-1.5 group-hover:scale-110 group-hover:text-black transition-transform duration-200" />
                             </div>
                             <span className="text-[9px] font-black uppercase tracking-tighter hidden xl:block">{language === 'uz' ? 'Buyurtmalar' : 'Заказы'}</span>
                         </Link>
 
-                        <Link href={l("/wishlist")} className={`flex flex-col items-center gap-1 group transition-colors duration-150 ${pathname === l('/wishlist') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
-                            <div className="p-2 rounded-xl group-hover:bg-gray-50 relative transition-colors">
+                        <Link
+                            href={l("/wishlist")}
+                            onClick={() => videoPreWarmer.triggerHaptic("light")}
+                            className={`ios-icon-tap active:scale-95 flex flex-col items-center gap-1 group transition-colors duration-150 will-change-transform ${pathname === l('/wishlist') ? 'text-black' : 'text-gray-400 hover:text-black'}`}
+                        >
+                            <div className="p-2 rounded-xl group-hover:bg-gray-50 relative transition-colors duration-150">
                                 <Heart size={22} fill={wishlist.length > 0 ? "black" : "none"} strokeWidth={pathname === l('/wishlist') ? 3 : 2} className="transition-transform duration-200 group-hover:scale-125" />
                             </div>
                             <span className="text-[9px] font-black uppercase tracking-tighter hidden xl:block">{language === 'uz' ? 'Saralangan' : 'Избранное'}</span>
                         </Link>
 
-                        <Link href={l("/cart")} className={`flex flex-col items-center gap-1 group transition-colors duration-150 ${pathname === l('/cart') ? 'text-black' : 'text-gray-400 hover:text-black'}`}>
-                            <div className="p-2 rounded-xl group-hover:bg-gray-50 relative transition-colors">
+                        <Link
+                            href={l("/cart")}
+                            onClick={() => videoPreWarmer.triggerHaptic("light")}
+                            className={`ios-icon-tap active:scale-95 flex flex-col items-center gap-1 group transition-colors duration-150 will-change-transform ${pathname === l('/cart') ? 'text-black' : 'text-gray-400 hover:text-black'}`}
+                        >
+                            <div className="p-2 rounded-xl group-hover:bg-gray-50 relative transition-colors duration-150">
                                 <ShoppingCart size={22} strokeWidth={pathname === l('/cart') ? 3 : 2} />
                                 {cartCount > 0 && <span className="absolute top-1 right-1 bg-red-600 text-white text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full border border-white">{cartCount}</span>}
                             </div>
@@ -303,12 +341,20 @@ export default function Navigation() {
 
                         <div className="pl-4 md:pl-6 border-l border-gray-100 items-center gap-4 hidden lg:flex">
                             {user ? (
-                                <Link href={l("/account")} className={`flex items-center gap-3 bg-[#F2F3F5] hover:bg-black hover:text-white px-6 py-3.5 rounded-2xl transition-colors duration-150 group shadow-sm hover:shadow-xl ${pathname?.includes('/account') ? 'bg-black text-white' : ''}`}>
+                                <Link
+                                    href={l("/account")}
+                                    onClick={() => videoPreWarmer.triggerHaptic("light")}
+                                    className={`ios-tap-feedback active:scale-95 flex items-center gap-3 bg-[#F2F3F5] hover:bg-black hover:text-white px-6 py-3.5 rounded-2xl transition-colors duration-150 group shadow-sm hover:shadow-xl will-change-transform ${pathname?.includes('/account') ? 'bg-black text-white' : ''}`}
+                                >
                                     <User size={18} className="group-hover:scale-110 transition-transform duration-200" />
                                     <span className="text-[10px] font-black uppercase tracking-widest hidden xl:block">{t.nav.profile}</span>
                                 </Link>
                             ) : (
-                                <Link href={l("/login")} className="bg-[#F2F3F5] hover:bg-black hover:text-white px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-transform duration-150 hover:scale-105 active:scale-95 shadow-sm hover:shadow-xl">
+                                <Link
+                                    href={l("/login")}
+                                    onClick={() => videoPreWarmer.triggerHaptic("light")}
+                                    className="ios-tap-feedback active:scale-95 bg-[#F2F3F5] hover:bg-black hover:text-white px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-150 shadow-sm hover:shadow-xl will-change-transform"
+                                >
                                     {language === 'uz' ? 'Kirish' : 'Войти'}
                                 </Link>
                             )}

@@ -19,6 +19,7 @@ import RecentlyViewed, { getRecentlyViewedIds } from "@/components/velari/Recent
 import PromoCountdown from "@/components/velari/PromoCountdown";
 import StoriesRow from "@/components/velari/StoriesRow";
 import FeaturedCategories from "@/components/home/FeaturedCategories";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 import type { Product, Category, Banner } from "@/types";
 
@@ -431,6 +432,7 @@ export default function HomeClient({
     // Qidiruvni to'liq tozalash: kutilayotgan debounce + uchayotgan so'rovni bekor qiladi.
     // Aks holda eskirgan javob qaytib, o'chirilgan so'zni qidiruv maydoniga tiklab qo'yardi.
     const clearMobileSearch = () => {
+        videoPreWarmer.triggerHaptic("light");
         if (mobileSearchTimer.current) { clearTimeout(mobileSearchTimer.current); mobileSearchTimer.current = null; }
         if (searchAbortRef.current) { searchAbortRef.current.abort(); searchAbortRef.current = null; }
         setSearch("");
@@ -500,7 +502,12 @@ export default function HomeClient({
                 padding: "12px 20px 12px",
             }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                    <div>
+                    <Link
+                        href={`/${language}/account`}
+                        onClick={() => videoPreWarmer.triggerHaptic("light")}
+                        className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform block"
+                        style={{ textDecoration: "none" }}
+                    >
                         <div style={{ fontSize: 12, color: "#9AA29C", fontWeight: 500 }}>
                             {language === "ru" ? "Доставка в" : "Yetkazib berish"}
                         </div>
@@ -511,8 +518,9 @@ export default function HomeClient({
                             </span>
                             <ChevronRight size={13} color="#9AA29C" />
                         </div>
-                    </div>
+                    </Link>
                     <Link href={`/${language}/account`}
+                        onClick={() => videoPreWarmer.triggerHaptic("light")}
                         className="ios-icon-tap active:scale-90 transition-transform duration-150 ease-out will-change-transform"
                         style={{
                             width: 40, height: 40, borderRadius: 20, background: "#fff",
@@ -732,6 +740,7 @@ export default function HomeClient({
                                         {language === "uz" ? "Balki: " : "Может быть: "}
                                         <button
                                             onClick={async () => {
+                                                videoPreWarmer.triggerHaptic("light");
                                                 useStore.setState({ isSearchLoading: true, homeSearchQuery: didYouMean });
                                                 setSearch(didYouMean);
                                                 try {
@@ -749,6 +758,7 @@ export default function HomeClient({
                                                     useStore.setState({ isSearchLoading: false });
                                                 }
                                             }}
+                                            className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform inline-block"
                                             style={{ color: "#2D6E3E", fontWeight: 600, background: "none", border: "none", cursor: "pointer", fontSize: 13 }}
                                         >
                                             {didYouMean}
@@ -773,7 +783,10 @@ export default function HomeClient({
                                     return (
                                         <button
                                             key={cat}
-                                            onClick={() => setActiveFacet(prev => prev === cat ? null : cat)}
+                                            onClick={() => {
+                                                videoPreWarmer.triggerHaptic("selection");
+                                                setActiveFacet(prev => prev === cat ? null : cat);
+                                            }}
                                             className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
                                             style={{ padding: "8px 14px", borderRadius: 18, whiteSpace: "nowrap", background: on ? "#2D6E3E" : "#EAF3EC", border: "none", cursor: "pointer", fontSize: 13, fontWeight: on ? 700 : 500, color: on ? "#fff" : "#2D6E3E", transition: "background 160ms ease, color 160ms ease" }}
                                         >
