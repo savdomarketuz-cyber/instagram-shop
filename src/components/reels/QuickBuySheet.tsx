@@ -54,7 +54,8 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
     const productName = currentProduct[`name_${language}`] || currentProduct.name || "Mahsulot";
     const productPrice = Number(currentProduct.price || 0);
     const productOldPrice = Number(currentProduct.oldPrice || 0);
-    const productImage = currentProduct.imageUrl || currentProduct.image || "/placeholder.png";
+    const rawImg = currentProduct.imageUrl || currentProduct.image || "";
+    const productImage = currentProduct.image_metadata?.[rawImg]?.lowResUrl || currentProduct.image_metadata?.[currentProduct.image]?.lowResUrl || rawImg || "/placeholder.png";
     const discountPercent =
         productOldPrice > productPrice
             ? Math.round(((productOldPrice - productPrice) / productOldPrice) * 100)

@@ -197,7 +197,7 @@ export const ProductCard = memo(({
                 sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 25vw"
                 style={{ objectFit: "cover" }}
                 priority={priority}
-                loader={hasVariants(item.image_metadata, mainMedia) ? makeVariantLoader(item.image_metadata) : undefined}
+                loader={hasVariants(item.image_metadata, mainMedia) ? makeVariantLoader(item.image_metadata, true) : undefined}
                 placeholder={item.image_metadata?.[mainMedia]?.blurDataURL ? "blur" : "empty"}
                 blurDataURL={item.image_metadata?.[mainMedia]?.blurDataURL}
               />
