@@ -40,7 +40,7 @@ export const ProductGrid = ({
 
     if (products.length === 0) {
         return (
-            <div className="py-20 text-center text-gray-400 font-bold bg-gray-50/50 rounded-[40px] uppercase tracking-widest text-[10px]">
+            <div className="py-16 text-center text-[#737D75] font-medium glass-surface rounded-[28px] text-sm border border-black/5">
                 {t.common.noProducts}
             </div>
         );

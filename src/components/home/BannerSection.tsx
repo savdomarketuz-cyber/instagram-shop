@@ -172,24 +172,26 @@ export const BannerSection = ({
 
                 {/* Dots (qo'lda boshqaruv) */}
                 {loop && (
-                    <div style={{ position: "absolute", bottom: 14, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 6, zIndex: 5 }}>
-                        {visible.map((_, i) => (
-                            <button
-                                key={i}
-                                onClick={() => {
-                                    videoPreWarmer.triggerHaptic("light");
-                                    goTo(i);
-                                }}
-                                aria-label={`Banner ${i + 1}`}
-                                style={{
-                                    height: 6, borderRadius: 3, border: "none", cursor: "pointer", padding: 0,
-                                    width: realIdx === i ? 22 : 6,
-                                    background: realIdx === i ? "#fff" : "rgba(255,255,255,0.5)",
-                                    boxShadow: realIdx === i ? "0 1px 4px rgba(0,0,0,0.2)" : "none",
-                                    transition: "width 240ms cubic-bezier(0.32,0.72,0,1), background-color 240ms ease, box-shadow 240ms ease",
-                                }}
-                            />
-                        ))}
+                    <div style={{ position: "absolute", bottom: 12, left: 0, right: 0, display: "flex", justifyContent: "center", zIndex: 5, pointerEvents: "none" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 8px", borderRadius: 20, background: "rgba(0,0,0,0.28)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", pointerEvents: "auto" }}>
+                            {visible.map((_, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => {
+                                        videoPreWarmer.triggerHaptic("light");
+                                        goTo(i);
+                                    }}
+                                    aria-label={`Banner ${i + 1}`}
+                                    style={{
+                                        height: 5, borderRadius: 3, border: "none", cursor: "pointer", padding: 0,
+                                        width: realIdx === i ? 20 : 5,
+                                        background: realIdx === i ? "#fff" : "rgba(255,255,255,0.45)",
+                                        boxShadow: realIdx === i ? "0 1px 4px rgba(0,0,0,0.25)" : "none",
+                                        transition: "width 240ms cubic-bezier(0.32,0.72,0,1), background-color 240ms ease",
+                                    }}
+                                />
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>

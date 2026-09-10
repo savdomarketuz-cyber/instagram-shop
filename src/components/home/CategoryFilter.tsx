@@ -76,7 +76,7 @@ export const CategoryFilter = ({
 
     return (
         <div className="mt-4 flex flex-col" style={{ gap: 0 }}>
-            {/* ── Mobile: Velari chip style ── */}
+            {/* ── Mobile: Velari Liquid Glass chips ── */}
             <div
                 className="md:hidden flex gap-2 overflow-x-auto no-scrollbar px-4 py-2 overscroll-x-contain touch-pan-x"
                 style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
@@ -84,20 +84,23 @@ export const CategoryFilter = ({
                 {/* "Hammasi" chip */}
                 <button
                     onClick={() => handleMainClick("all")}
-                    className="ios-tap-feedback active:scale-95 will-change-transform"
+                    className="ios-tap-feedback active:scale-95 will-change-transform select-none"
                     style={{
                         flexShrink: 0,
                         height: 36,
                         padding: "0 16px",
                         borderRadius: 18,
                         border: activeFilter === "all" ? "none" : "1px solid rgba(15,20,16,0.08)",
-                        background: activeFilter === "all" ? "#0F1410" : "#fff",
-                        color: activeFilter === "all" ? "#fff" : "#0F1410",
-                        fontSize: 14,
-                        fontWeight: 500,
+                        background: activeFilter === "all" ? "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" : "rgba(255,255,255,0.85)",
+                        backdropFilter: "blur(14px)",
+                        WebkitBackdropFilter: "blur(14px)",
+                        color: activeFilter === "all" ? "#fff" : "#111612",
+                        fontSize: 13.5,
+                        fontWeight: activeFilter === "all" ? 600 : 500,
                         letterSpacing: -0.1,
                         cursor: "pointer",
-                        transition: "background 180ms ease, color 180ms ease, border-color 180ms ease",
+                        boxShadow: activeFilter === "all" ? "0 4px 14px rgba(45,110,62,0.25)" : "0 2px 8px rgba(0,0,0,0.02)",
+                        transition: "all 180ms ease",
                         WebkitTapHighlightColor: "transparent",
                         whiteSpace: "nowrap",
                     }}
@@ -111,20 +114,23 @@ export const CategoryFilter = ({
                         <button
                             key={cat.id}
                             onClick={() => handleMainClick(cat.id)}
-                            className="ios-tap-feedback active:scale-95 will-change-transform"
+                            className="ios-tap-feedback active:scale-95 will-change-transform select-none"
                             style={{
                                 flexShrink: 0,
                                 height: 36,
                                 padding: "0 16px",
                                 borderRadius: 18,
                                 border: isActive ? "none" : "1px solid rgba(15,20,16,0.08)",
-                                background: isActive ? "#0F1410" : "#fff",
-                                color: isActive ? "#fff" : "#0F1410",
-                                fontSize: 14,
-                                fontWeight: 500,
+                                background: isActive ? "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" : "rgba(255,255,255,0.85)",
+                                backdropFilter: "blur(14px)",
+                                WebkitBackdropFilter: "blur(14px)",
+                                color: isActive ? "#fff" : "#111612",
+                                fontSize: 13.5,
+                                fontWeight: isActive ? 600 : 500,
                                 letterSpacing: -0.1,
                                 cursor: "pointer",
-                                transition: "background 180ms ease, color 180ms ease, border-color 180ms ease",
+                                boxShadow: isActive ? "0 4px 14px rgba(45,110,62,0.25)" : "0 2px 8px rgba(0,0,0,0.02)",
+                                transition: "all 180ms ease",
                                 WebkitTapHighlightColor: "transparent",
                                 whiteSpace: "nowrap",
                             }}
@@ -145,13 +151,16 @@ export const CategoryFilter = ({
                     {allCategories.find(c => c.id === activeFilter)?.parentId && (
                         <button
                             onClick={handleBack}
+                            aria-label="Orqaga"
                             className="ios-icon-tap active:scale-90 will-change-transform"
                             style={{
                                 flexShrink: 0,
-                                width: 36,
+                                width: 34,
                                 height: 32,
                                 borderRadius: 16,
-                                background: "#fff",
+                                background: "rgba(255,255,255,0.85)",
+                                backdropFilter: "blur(12px)",
+                                WebkitBackdropFilter: "blur(12px)",
                                 border: "1px solid rgba(15,20,16,0.08)",
                                 display: "flex",
                                 alignItems: "center",
@@ -170,19 +179,21 @@ export const CategoryFilter = ({
                             <button
                                 key={sub.id}
                                 onClick={() => handleSubClick(sub.id)}
-                                className="ios-tap-feedback active:scale-95 will-change-transform"
+                                className="ios-tap-feedback active:scale-95 will-change-transform select-none"
                                 style={{
                                     flexShrink: 0,
                                     height: 32,
                                     padding: "0 14px",
                                     borderRadius: 16,
-                                    background: isActive ? "#EAF3EC" : "#fff",
+                                    background: isActive ? "#EAF3EC" : "rgba(255,255,255,0.85)",
+                                    backdropFilter: "blur(12px)",
+                                    WebkitBackdropFilter: "blur(12px)",
                                     border: isActive ? "1.5px solid #2D6E3E" : "1px solid rgba(15,20,16,0.08)",
                                     color: isActive ? "#2D6E3E" : "#5A625C",
-                                    fontSize: 13,
+                                    fontSize: 12.5,
                                     fontWeight: isActive ? 600 : 500,
                                     cursor: "pointer",
-                                    transition: "background 180ms ease, color 180ms ease, border-color 180ms ease",
+                                    transition: "all 180ms ease",
                                     WebkitTapHighlightColor: "transparent",
                                     whiteSpace: "nowrap",
                                 }}
@@ -194,24 +205,27 @@ export const CategoryFilter = ({
                 </div>
             )}
 
-            {/* ── Desktop: original style (unchanged) ── */}
-            <div className="hidden md:flex flex-col gap-4 px-0 mt-8">
-                <div className="flex gap-3 overflow-x-auto no-scrollbar py-2 overscroll-x-contain touch-pan-x" style={{ WebkitOverflowScrolling: "touch" }}>
+            {/* ── Desktop: Liquid Glass pills ── */}
+            <div className="hidden md:flex flex-col gap-3 px-0 mt-6">
+                <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-2 overscroll-x-contain touch-pan-x" style={{ WebkitOverflowScrolling: "touch" }}>
                     <button
                         onClick={() => handleMainClick("all")}
-                        className={`shrink-0 px-8 py-4 rounded-[24px] text-[11px] font-black uppercase tracking-[0.2em] transition-colors duration-200 ios-tap-feedback active:scale-95 will-change-transform border-2 ${activeFilter === "all" ? "velari-green-btn border-transparent" : "bg-[#F2F3F5] text-gray-400 border-transparent hover:bg-[#EBEDF0] hover:text-black"}`}
+                        className={`shrink-0 px-6 py-2.5 rounded-full text-[13.5px] font-semibold tracking-tight transition-all duration-150 ios-tap-feedback active:scale-95 will-change-transform border ${activeFilter === "all" ? "bg-gradient-to-r from-[#2D6E3E] to-[#1F5A30] text-white border-transparent shadow-md shadow-[#2D6E3E]/20" : "bg-white/80 backdrop-blur-md text-[#2C332E] border-black/5 hover:bg-white hover:text-black hover:shadow-sm"}`}
                     >
                         {t.common.all}
                     </button>
-                    {mainCategories.map(cat => (
-                        <button
-                            key={cat.id}
-                            onClick={() => handleMainClick(cat.id)}
-                            className={`shrink-0 px-8 py-4 rounded-[24px] text-[11px] font-black uppercase tracking-[0.2em] transition-colors duration-200 ios-tap-feedback active:scale-95 will-change-transform border-2 ${activeFilter === cat.id || activeParent === cat.id ? "velari-green-btn border-transparent" : "bg-[#F2F3F5] text-gray-400 border-transparent hover:bg-[#EBEDF0] hover:text-black"}`}
-                        >
-                            {catName(cat)}
-                        </button>
-                    ))}
+                    {mainCategories.map(cat => {
+                        const isActive = activeFilter === cat.id || activeParent === cat.id;
+                        return (
+                            <button
+                                key={cat.id}
+                                onClick={() => handleMainClick(cat.id)}
+                                className={`shrink-0 px-6 py-2.5 rounded-full text-[13.5px] font-semibold tracking-tight transition-all duration-150 ios-tap-feedback active:scale-95 will-change-transform border ${isActive ? "bg-gradient-to-r from-[#2D6E3E] to-[#1F5A30] text-white border-transparent shadow-md shadow-[#2D6E3E]/20" : "bg-white/80 backdrop-blur-md text-[#2C332E] border-black/5 hover:bg-white hover:text-black hover:shadow-sm"}`}
+                            >
+                                {catName(cat)}
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {activeFilter !== "all" && subCategories.length > 0 && (
@@ -219,20 +233,24 @@ export const CategoryFilter = ({
                         {allCategories.find(c => c.id === activeFilter)?.parentId && (
                             <button
                                 onClick={handleBack}
-                                className="shrink-0 p-3 bg-gray-100 rounded-xl text-gray-500 hover:text-black transition-colors ios-icon-tap active:scale-90 will-change-transform"
+                                aria-label="Orqaga"
+                                className="shrink-0 p-2.5 bg-white/80 backdrop-blur-md rounded-xl text-gray-500 hover:text-black transition-colors border border-black/5 ios-icon-tap active:scale-90 will-change-transform"
                             >
                                 <ChevronLeft size={16} />
                             </button>
                         )}
-                        {subCategories.map(sub => (
-                            <button
-                                key={sub.id}
-                                onClick={() => handleSubClick(sub.id)}
-                                className="shrink-0 px-5 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-[11px] font-bold text-gray-600 transition-colors duration-200 ios-tap-feedback active:scale-95 will-change-transform border border-gray-100"
-                            >
-                                {catName(sub)}
-                            </button>
-                        ))}
+                        {subCategories.map(sub => {
+                            const isSubActive = activeFilter === sub.id;
+                            return (
+                                <button
+                                    key={sub.id}
+                                    onClick={() => handleSubClick(sub.id)}
+                                    className={`shrink-0 px-4 py-2 rounded-xl text-[12.5px] font-semibold transition-all duration-150 ios-tap-feedback active:scale-95 will-change-transform border ${isSubActive ? "bg-[#EAF3EC] text-[#2D6E3E] border-[#2D6E3E]/30" : "bg-white/70 backdrop-blur-md text-[#5A625C] border-black/5 hover:bg-white hover:text-black"}`}
+                                >
+                                    {catName(sub)}
+                                </button>
+                            );
+                        })}
                     </div>
                 )}
             </div>

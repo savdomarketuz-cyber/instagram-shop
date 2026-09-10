@@ -65,10 +65,16 @@ interface ProductCardProps {
   brandLabel?: string;
 }
 
-function WishBtn({ isWished, onClick }: { isWished: boolean; onClick: (e: React.MouseEvent) => void }) {
+function WishBtn({ isWished, onClick, language }: { isWished: boolean; onClick: (e: React.MouseEvent) => void; language: "uz" | "ru" }) {
   const [pressed, setPressed] = useState(false);
+  const ariaLabel = isWished
+    ? (language === "uz" ? "Saralanganlardan o'chirish" : "Удалить из избранного")
+    : (language === "uz" ? "Saralanganlarga qo'shish" : "Добавить в избранное");
+
   return (
     <button
+      type="button"
+      aria-label={ariaLabel}
       onPointerDown={() => {
         setPressed(true);
         videoPreWarmer.triggerHaptic(isWished ? "light" : "double");
@@ -78,28 +84,30 @@ function WishBtn({ isWished, onClick }: { isWished: boolean; onClick: (e: React.
       onClick={onClick}
       style={{
         position: "absolute",
-        top: 10,
-        right: 10,
-        width: 34,
-        height: 34,
-        borderRadius: 17,
-        background: "rgba(255,255,255,0.92)",
-        backdropFilter: "blur(8px)",
+        top: 8,
+        right: 8,
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        background: "rgba(255, 255, 255, 0.85)",
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        border: "none",
+        border: "1px solid rgba(255, 255, 255, 0.9)",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
         cursor: "pointer",
-        transform: pressed ? "scale(0.85)" : "scale(1)",
-        transition: `transform 180ms ${EASE}`,
+        transform: pressed ? "scale(0.86)" : "scale(1)",
+        transition: `transform 150ms ${EASE}`,
         WebkitTapHighlightColor: "transparent",
-        zIndex: 2,
+        zIndex: 3,
       }}
     >
       <Heart
-        size={16}
-        color={isWished ? "#FF3B30" : "#0F1410"}
-        fill={isWished ? "#FF3B30" : "none"}
+        size={17}
+        color={isWished ? "#EF4444" : "#111612"}
+        fill={isWished ? "#EF4444" : "none"}
         strokeWidth={2}
       />
     </button>
@@ -153,14 +161,15 @@ export const ProductCard = memo(({
 
   return (
     <div 
-      className="ios-tap-feedback active:scale-[0.96] transition-transform duration-150 ease-out select-none will-change-transform"
+      className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 ease-out select-none will-change-transform"
       style={{
         background: "#fff",
-        borderRadius: 22,
+        borderRadius: 24,
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
-        boxShadow: "0 4px 16px rgba(15,20,16,0.05)",
+        boxShadow: "0 4px 20px rgba(15,20,16,0.06)",
+        border: "1px solid rgba(15,20,16,0.06)",
         WebkitTapHighlightColor: "transparent",
         transform: "translate3d(0,0,0)",
       }}>
@@ -214,15 +223,18 @@ export const ProductCard = memo(({
             {badge && (
               <div style={{
                 position: "absolute",
-                top: 10,
-                left: 10,
-                padding: "4px 9px",
-                borderRadius: 10,
-                background: badgeBg,
+                top: 8,
+                left: 8,
+                padding: "3px 9px",
+                borderRadius: 9999,
+                background: badge === "HIT" ? "rgba(17, 22, 18, 0.85)" : "rgba(239, 68, 68, 0.9)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+                border: "1px solid rgba(255, 255, 255, 0.25)",
                 color: "#fff",
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: 0.4,
+                fontSize: 10.5,
+                fontWeight: 600,
+                letterSpacing: 0.3,
                 zIndex: 2,
               }}>
                 {badge}
@@ -231,19 +243,20 @@ export const ProductCard = memo(({
 
             <WishBtn
               isWished={isWished}
+              language={language}
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(item); }}
             />
           </div>
         </div>
 
         {/* Info */}
-        <div style={{ padding: "10px 14px 14px", display: "flex", flexDirection: "column", flex: 1 }}>
+        <div style={{ padding: "10px 12px 12px", display: "flex", flexDirection: "column", flex: 1 }}>
           {/* Do'kon (ombor) nomi — mahsulot nomidan tepada */}
           {warehouse?.name && (
             <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3 }}>
               <Store size={11} color={GREEN} strokeWidth={2.2} style={{ flexShrink: 0 }} />
               <span style={{
-                fontSize: 10.5, fontWeight: 700, color: GREEN, letterSpacing: -0.1,
+                fontSize: 11, fontWeight: 600, color: GREEN, letterSpacing: -0.1,
                 whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
               }}>
                 {warehouse.name}
@@ -253,9 +266,9 @@ export const ProductCard = memo(({
           {brandName && (
             <div style={{
               fontSize: 10,
-              color: "#9AA29C",
+              color: "#737D75",
               fontWeight: 600,
-              letterSpacing: 0.4,
+              letterSpacing: 0.3,
               textTransform: "uppercase",
               marginBottom: 2,
             }}>
@@ -264,11 +277,11 @@ export const ProductCard = memo(({
           )}
 
           <div style={{
-            fontSize: 14,
+            fontSize: 13.5,
             fontWeight: 600,
-            color: "#0F1410",
-            lineHeight: 1.25,
-            letterSpacing: -0.2,
+            color: "#111612",
+            lineHeight: 1.3,
+            letterSpacing: -0.15,
             display: "-webkit-box",
             WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical" as const,
@@ -279,10 +292,10 @@ export const ProductCard = memo(({
 
           {/* Personal reason — "nega bu senga" (halol, persona'dan) */}
           {reason && (
-            <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
               <Sparkles size={11} color={GREEN} style={{ flexShrink: 0 }} />
               <span style={{
-                fontSize: 11, fontWeight: 600, color: GREEN, letterSpacing: -0.1,
+                fontSize: 10.5, fontWeight: 500, color: GREEN, letterSpacing: -0.1,
                 lineHeight: 1.2, display: "-webkit-box", WebkitLineClamp: 1,
                 WebkitBoxOrient: "vertical" as const, overflow: "hidden",
               }}>
@@ -292,41 +305,39 @@ export const ProductCard = memo(({
           )}
 
           {/* Rating */}
-          <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 3.5, marginTop: 5 }}>
             <Star size={11} fill="#F6B100" color="#F6B100" />
-            <span style={{ fontSize: 11, color: "#5A625C", fontWeight: 600 }}>
+            <span style={{ fontSize: 11, color: "#737D75", fontWeight: 500 }}>
               {(item.reviewCount || 0) > 0 ? (item.rating || 0).toFixed(1) : t.common.new}
             </span>
             {(item.reviewCount || 0) > 0 && (
               <>
                 <span style={{ fontSize: 11, color: "#9AA29C" }}>·</span>
-                <span style={{ fontSize: 11, color: "#9AA29C" }}>{item.reviewCount}</span>
+                <span style={{ fontSize: 11, color: "#737D75" }}>{item.reviewCount}</span>
               </>
             )}
           </div>
 
           {/* Price */}
           {(() => {
-            // Shaxsiy chegirma bo'lsa: faqat 2 narx — eski narx (chizilgan) + shaxsiy narx.
-            // Oraliq (joriy) narx ko'rsatilmaydi, mijozni chalkashtirmaslik uchun.
             const displayPrice = hasPersonal ? Math.round(item.price * (1 - personalPct / 100)) : item.price;
             const struck = hasPersonal
               ? (item.oldPrice && item.oldPrice > item.price ? item.oldPrice : item.price)
               : (item.oldPrice && item.oldPrice > item.price ? item.oldPrice : null);
             return (
               <>
-                <div style={{ marginTop: "auto", paddingTop: 8, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: hasPersonal ? "#4F46E5" : "#0F1410", letterSpacing: -0.3 }}>
+                <div style={{ marginTop: "auto", paddingTop: 8, display: "flex", alignItems: "baseline", gap: 5, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: hasPersonal ? "#4F46E5" : "#111612", letterSpacing: -0.3 }}>
                     {fmtPrice(displayPrice)}
                   </span>
                   {struck && (
-                    <span style={{ fontSize: 12, color: "#9AA29C", textDecoration: "line-through" }}>
+                    <span style={{ fontSize: 11.5, color: "#737D75", textDecoration: "line-through", fontWeight: 400 }}>
                       {fmtPrice(struck)}
                     </span>
                   )}
                 </div>
                 {hasPersonal && (
-                  <div style={{ marginTop: 3, fontSize: 9.5, fontWeight: 800, color: "#4F46E5", letterSpacing: 0.3, textTransform: "uppercase" }}>
+                  <div style={{ marginTop: 2, fontSize: 9.5, fontWeight: 700, color: "#4F46E5", letterSpacing: 0.2, textTransform: "uppercase" }}>
                     {language === "uz" ? `Siz uchun −${personalPct}%` : `Для вас −${personalPct}%`}
                   </div>
                 )}
@@ -341,15 +352,17 @@ export const ProductCard = memo(({
         {isInCart ? (
           <div style={{
             width: "100%",
-            height: 44,
+            height: 42,
             background: "#F5F9F6",
             borderTop: "1px solid #E6EFE9",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "0 14px",
+            padding: "0 12px",
           }}>
             <button
+              type="button"
+              aria-label="Kamaytirish"
               onClick={(e) => {
                 e.preventDefault();
                 videoPreWarmer.triggerHaptic("light");
@@ -358,7 +371,7 @@ export const ProductCard = memo(({
               }}
               className="active:scale-85 transition-transform duration-120 select-none"
               style={{
-                width: 32, height: 32, borderRadius: 9,
+                width: 30, height: 30, borderRadius: 8,
                 background: "#E8EFEA", border: "none",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 cursor: "pointer", color: "#2D6E3E",
@@ -367,8 +380,10 @@ export const ProductCard = memo(({
             >
               <Minus size={14} strokeWidth={2.5} />
             </button>
-            <span style={{ fontSize: 14, fontWeight: 700, color: "#0F1410" }}>{isInCart.quantity}</span>
+            <span style={{ fontSize: 13.5, fontWeight: 600, color: "#111612" }}>{isInCart.quantity}</span>
             <button
+              type="button"
+              aria-label="Ko'paytirish"
               onClick={(e) => {
                 e.preventDefault();
                 videoPreWarmer.triggerHaptic("light");
@@ -377,7 +392,7 @@ export const ProductCard = memo(({
               }}
               className="active:scale-85 transition-transform duration-120 select-none"
               style={{
-                width: 32, height: 32, borderRadius: 9,
+                width: 30, height: 30, borderRadius: 8,
                 background: GREEN, border: "none",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 cursor: "pointer", color: "#fff",
@@ -389,6 +404,7 @@ export const ProductCard = memo(({
           </div>
         ) : (
           <button
+            type="button"
             onClick={(e) => {
               e.preventDefault();
               videoPreWarmer.triggerHaptic("medium");
@@ -397,9 +413,9 @@ export const ProductCard = memo(({
             className="active:scale-[0.98] transition-transform duration-120 select-none"
             style={{
               width: "100%",
-              height: 44,
+              height: 42,
               borderRadius: 0,
-              background: GREEN,
+              background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)",
               color: "#fff",
               border: "none",
               fontSize: 13,
@@ -414,16 +430,16 @@ export const ProductCard = memo(({
           >
             {item.express_delivery ? (
               <span style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", lineHeight: "1.15" }}>
-                <span style={{ fontSize: 12.5, display: "flex", alignItems: "center", gap: 5, fontWeight: 700 }}>
-                  <Truck size={14} strokeWidth={2.5} /> {language === "uz" ? "Tezkor yetkazish" : "Экспресс доставка"}
+                <span style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 4.5, fontWeight: 600 }}>
+                  <Truck size={13} strokeWidth={2.4} /> {language === "uz" ? "Tezkor yetkazish" : "Экспресс доставка"}
                 </span>
-                <span style={{ fontSize: 9.5, opacity: 0.9, marginTop: 1, fontWeight: 600 }}>
+                <span style={{ fontSize: 9.5, opacity: 0.88, marginTop: 1, fontWeight: 500 }}>
                   {language === "uz" ? "2 soatda" : "за 2 часа"}
                 </span>
               </span>
             ) : deliveryText ? (
-              <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 12.5, fontWeight: 600 }}>
-                <Truck size={14} strokeWidth={2.2} /> {deliveryText}
+              <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontSize: 12, fontWeight: 600 }}>
+                <Truck size={13} strokeWidth={2.2} /> {deliveryText}
               </span>
             ) : (
               language === "uz" ? "Savatga" : "В корзину"

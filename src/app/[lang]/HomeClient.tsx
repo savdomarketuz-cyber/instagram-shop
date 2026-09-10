@@ -826,7 +826,11 @@ export default function HomeClient({
                         {["for_you", "popular"].map(tab => (
                             <button
                                 key={tab}
-                                onClick={() => { setActiveTab(tab); setHomeActiveTab(tab); }}
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("selection");
+                                    setActiveTab(tab);
+                                    setHomeActiveTab(tab);
+                                }}
                                 className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
                                 style={{
                                     flex: 1, paddingBottom: 12, paddingTop: 4, textAlign: "center",
