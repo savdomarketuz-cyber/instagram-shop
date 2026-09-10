@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useStore } from "@/store/store";
-import { MessageSquare, User, Search, Loader2, Headset, Settings, LogOut, Package } from "lucide-react";
+import { MessageSquare, User, Search, Loader2, Headset, Settings, LogOut, Package, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 import { translations } from "@/lib/translations";
 
 export default function MessagesPage() {
@@ -126,77 +126,97 @@ export default function MessagesPage() {
 
     if (!mounted || (loading && chats.length === 0)) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-white">
-                <Loader2 className="animate-spin text-black" size={32} />
+            <div className="min-h-screen flex items-center justify-center bg-[#FAFAF6]">
+                <Loader2 className="animate-spin text-[#2D6E3E]" size={32} />
             </div>
         );
     }
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", height: "100svh", background: "#FAFAF6", maxWidth: 480, margin: "0 auto", position: "relative", overflow: "hidden" }}>
+        <div className="flex flex-col h-[100svh] bg-[#FAFAF6] max-w-[480px] mx-auto relative overflow-hidden">
             {/* Header */}
-            <div style={{ background: "rgba(250,250,246,0.92)", backdropFilter: "blur(20px)", padding: "54px 20px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "0.5px solid rgba(15,20,16,0.06)", flexShrink: 0, position: "relative", zIndex: 60 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div className="bg-[#FAFAF6]/85 backdrop-blur-2xl px-5 pt-12 pb-3 flex items-center justify-between border-b border-[rgba(15,20,16,0.06)] shrink-0 sticky top-0 z-40">
+                <div className="flex items-center gap-3">
                     <button
-                        onClick={() => setShowMenu(!showMenu)}
-                        style={{ width: 40, height: 40, borderRadius: 20, background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, cursor: "pointer", boxShadow: "0 4px 12px rgba(45,110,62,0.28)" }}
+                        onClick={() => {
+                            videoPreWarmer.triggerHaptic("light");
+                            setShowMenu(!showMenu);
+                        }}
+                        className="ios-tap-feedback active:scale-95 transition-transform w-10 h-10 rounded-2xl bg-gradient-to-br from-[#2D6E3E] to-[#1F5A30] text-white flex items-center justify-center font-bold text-sm shadow-md shadow-[#2D6E3E]/25"
                     >
                         {user?.username?.charAt(0).toUpperCase() || user?.name?.charAt(0).toUpperCase() || <User size={18} />}
                     </button>
                     <div>
-                        <h1 style={{ fontSize: 18, fontWeight: 700, color: "#0F1410", letterSpacing: -0.3 }}>Inbox</h1>
-                        <p style={{ fontSize: 11, color: "#9AA29C", fontWeight: 500 }}>@{user?.username || 'user'}</p>
+                        <h1 className="text-xl font-bold tracking-tight text-[#111612]">Inbox</h1>
+                        <p className="text-xs font-medium text-[#737D75]">@{user?.username || 'user'}</p>
                     </div>
                 </div>
 
                 <button
-                    onClick={() => setShowMenu(!showMenu)}
-                    style={{ width: 40, height: 40, borderRadius: 14, background: showMenu ? "#2D6E3E" : "#fff", color: showMenu ? "#fff" : "#9AA29C", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 2px 8px rgba(15,20,16,0.06)" }}
+                    onClick={() => {
+                        videoPreWarmer.triggerHaptic("light");
+                        setShowMenu(!showMenu);
+                    }}
+                    className={`ios-icon-tap active:scale-90 transition-transform w-10 h-10 rounded-2xl border flex items-center justify-center shadow-xs ${
+                        showMenu 
+                            ? "bg-[#2D6E3E] text-white border-[#2D6E3E]" 
+                            : "bg-white/80 backdrop-blur-md border-[rgba(15,20,16,0.08)] text-[#737D75] hover:text-[#111612]"
+                    }`}
+                    aria-label="Settings"
                 >
-                    <Settings size={20} />
+                    <Settings size={19} />
                 </button>
 
-                {/* Profile Modal Menu */}
+                {/* Profile Modal Popover */}
                 {showMenu && (
                     <>
-                        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" onClick={() => setShowMenu(false)} />
-                        <div className="absolute top-full right-6 mt-2 w-64 bg-white rounded-[32px] shadow-2xl border border-gray-100 p-2 z-50 animate-in slide-in-from-top-4 duration-300">
-                            <div className="p-4 bg-gray-50 rounded-[24px] mb-2 flex items-center gap-3">
-                                <div style={{ width: 48, height: 48, borderRadius: 16, background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14 }}>
-                                    {user?.username?.charAt(0).toUpperCase()}
+                        <div className="fixed inset-0 bg-black/20 backdrop-blur-xs z-40 animate-in fade-in duration-200" onClick={() => setShowMenu(false)} />
+                        <div className="absolute top-full right-4 mt-2 w-64 bg-white/95 backdrop-blur-2xl rounded-[28px] shadow-2xl border border-[rgba(15,20,16,0.08)] p-2.5 z-50 animate-in slide-in-from-top-3 duration-200">
+                            <div className="p-3.5 bg-[#F5F7F5] rounded-2xl mb-2 flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#2D6E3E] to-[#1F5A30] text-white flex items-center justify-center font-bold text-sm shrink-0">
+                                    {user?.username?.charAt(0).toUpperCase() || user?.name?.charAt(0).toUpperCase() || "U"}
                                 </div>
-                                <div className="min-w-0">
-                                    <h3 className="font-black italic text-xs uppercase truncate leading-none mb-1">{user?.name}</h3>
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter truncate">{user?.phone}</p>
+                                <div className="min-w-0 flex-1">
+                                    <h3 className="font-semibold text-xs text-[#111612] truncate leading-tight mb-0.5">{user?.name}</h3>
+                                    <p className="text-[11px] font-medium text-[#737D75] truncate">{user?.phone}</p>
                                 </div>
                             </div>
 
                             <div className="space-y-1">
-                                <Link href="/account" className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-2xl transition-all group">
-                                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                        <User size={16} />
+                                <Link 
+                                    href="/account" 
+                                    onClick={() => videoPreWarmer.triggerHaptic("light")}
+                                    className="ios-tap-feedback active:scale-[0.98] transition-transform flex items-center gap-3 p-2.5 hover:bg-[#F5F7F5] rounded-xl group"
+                                >
+                                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                                        <User size={15} />
                                     </div>
-                                    <span className="text-[11px] font-black uppercase tracking-tighter">{t.common.profileInfo}</span>
+                                    <span className="text-xs font-semibold text-[#111612]">{t.common.profileInfo}</span>
                                 </Link>
 
-                                <Link href="/orders" className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-2xl transition-all group">
-                                    <div className="w-8 h-8 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                        <Package size={16} />
+                                <Link 
+                                    href="/orders" 
+                                    onClick={() => videoPreWarmer.triggerHaptic("light")}
+                                    className="ios-tap-feedback active:scale-[0.98] transition-transform flex items-center gap-3 p-2.5 hover:bg-[#F5F7F5] rounded-xl group"
+                                >
+                                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-[#2D6E3E] flex items-center justify-center">
+                                        <Package size={15} />
                                     </div>
-                                    <span className="text-[11px] font-black uppercase tracking-tighter">{t.common.myOrders}</span>
+                                    <span className="text-xs font-semibold text-[#111612]">{t.common.myOrders}</span>
                                 </Link>
 
                                 <button
                                     onClick={() => {
+                                        videoPreWarmer.triggerHaptic("light");
                                         useStore.getState().logout();
                                         router.push("/login");
                                     }}
-                                    className="w-full flex items-center gap-3 p-3 hover:bg-red-50 rounded-2xl transition-all group text-red-500 mt-2"
+                                    className="ios-tap-feedback active:scale-[0.98] transition-transform w-full flex items-center gap-3 p-2.5 hover:bg-rose-50 rounded-xl group text-rose-600 mt-1"
                                 >
-                                    <div className="w-8 h-8 rounded-xl bg-red-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                        <LogOut size={16} />
+                                    <div className="w-8 h-8 rounded-lg bg-rose-100/70 flex items-center justify-center">
+                                        <LogOut size={15} />
                                     </div>
-                                    <span className="text-[11px] font-black uppercase tracking-tighter">{t.common.logoutSystem}</span>
+                                    <span className="text-xs font-semibold">{t.common.logoutSystem}</span>
                                 </button>
                             </div>
                         </div>
@@ -205,57 +225,74 @@ export default function MessagesPage() {
             </div>
 
             {/* Search */}
-            <div style={{ padding: "12px 16px", flexShrink: 0 }}>
-                <div style={{ position: "relative" }}>
-                    <Search style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#C7CDC8", pointerEvents: "none" }} size={18} />
+            <div className="px-4 py-2.5 shrink-0">
+                <div className="relative flex items-center">
+                    <Search className="absolute left-3.5 text-[#9AA29C] pointer-events-none" size={17} />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder={t.common.search}
-                        style={{ width: "100%", background: "#fff", border: "1.5px solid rgba(15,20,16,0.06)", borderRadius: 16, padding: "12px 14px 12px 44px", fontSize: 14, fontWeight: 500, color: "#0F1410", outline: "none", boxSizing: "border-box", transition: "border-color 200ms" }}
-                        onFocus={e => (e.target.style.borderColor = "#2D6E3E")}
-                        onBlur={e => (e.target.style.borderColor = "rgba(15,20,16,0.06)")}
+                        className="w-full bg-white/80 backdrop-blur-md border border-[rgba(15,20,16,0.08)] focus:border-[#2D6E3E] rounded-2xl pl-10 pr-9 py-2.5 text-sm font-medium text-[#111612] outline-none transition-all placeholder:text-[#9AA29C] shadow-xs"
                     />
+                    {searchQuery && (
+                        <button
+                            onClick={() => setSearchQuery("")}
+                            className="absolute right-3 w-5 h-5 rounded-full bg-black/5 text-[#737D75] flex items-center justify-center hover:bg-black/10 active:scale-90 transition-all"
+                        >
+                            <X size={12} />
+                        </button>
+                    )}
                 </div>
             </div>
 
             {/* Chat List */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 100px" }} className="no-scrollbar">
+            <div className="flex-1 overflow-y-auto px-4 pb-24 no-scrollbar">
                 {filteredChats.length === 0 && 
                  searchQuery.trim().length === 0 && 
                  (!supportChat || !`admin support qo'llab quvvatlash`.includes(searchQuery.toLowerCase())) ? (
-                    <div className="h-full flex flex-col items-center justify-center text-center opacity-20 py-20">
-                        <MessageSquare size={80} strokeWidth={1} />
-                        <p className="mt-4 font-black uppercase tracking-widest text-xs italic">No messages found</p>
+                    <div className="h-full flex flex-col items-center justify-center text-center py-20">
+                        <div className="w-16 h-16 rounded-3xl bg-[#EAF3EC] text-[#2D6E3E] flex items-center justify-center mb-3 shadow-xs">
+                            <MessageSquare size={28} />
+                        </div>
+                        <h3 className="text-base font-bold tracking-tight text-[#111612]">
+                            {language === 'uz' ? "Xabarlar yo'q" : "Сообщений нет"}
+                        </h3>
+                        <p className="text-xs text-[#737D75] mt-1 max-w-xs">
+                            {language === 'uz' ? "Barcha yangi suhbatlar va bildirishnomalar shu yerda ko'rinadi" : "Все новые чаты и уведомления будут отображаться здесь"}
+                        </p>
                     </div>
                 ) : (
                     <div className="space-y-2">
-                        {/* Admin Support Chat - Fixed at Top */}
+                        {/* Admin Support Chat - Pinned at Top */}
                         {supportChat && `admin support qo'llab quvvatlash`.includes(searchQuery.toLowerCase()) && (
                             <Link
                                 href="/chat"
-                                style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", borderRadius: 20, background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", textDecoration: "none", marginBottom: 8, boxShadow: "0 8px 20px rgba(45,110,62,0.22)" }}
+                                onClick={() => videoPreWarmer.triggerHaptic("light")}
+                                className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform flex items-center gap-3.5 p-3.5 rounded-[24px] text-white relative overflow-hidden shadow-md shadow-[#2D6E3E]/20 mb-2.5 border border-white/20"
+                                style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" }}
                             >
-                                <div style={{ width: 48, height: 48, borderRadius: 16, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                    <Headset size={24} color="#fff" />
+                                <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/20 shadow-xs">
+                                    <Headset size={22} className="text-white" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between mb-1">
+                                    <div className="flex items-center justify-between mb-0.5">
                                         <div className="flex items-center gap-2">
-                                            <h3 className="font-black italic text-sm truncate uppercase tracking-tighter">{t.common.supportService}</h3>
-                                            <span className="bg-white text-black text-[8px] px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">Admin</span>
+                                            <h3 className="font-bold text-sm text-white tracking-tight truncate">{t.common.supportService}</h3>
+                                            <span className="bg-white/20 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                                Admin
+                                            </span>
                                         </div>
-                                        <span className="text-[10px] text-white/40 font-bold uppercase">
+                                        <span className="text-[11px] text-white/70 font-medium">
                                             {supportChat.lastTimestamp?.toDate ? supportChat.lastTimestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}
                                         </span>
                                     </div>
-                                    <div className="flex items-center justify-between gap-4">
-                                        <p className={`text-[11px] font-medium truncate ${supportChat.unreadByUser > 0 ? "text-white font-black" : "text-white/60"}`}>
+                                    <div className="flex items-center justify-between gap-3">
+                                        <p className={`text-xs truncate ${supportChat.unreadByUser > 0 ? "text-white font-semibold" : "text-white/80"}`}>
                                             {supportChat.lastMessage || t.common.clickToContact}
                                         </p>
                                         {supportChat.unreadByUser > 0 && (
-                                            <div className="min-w-[18px] h-[18px] bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] font-black px-1 shadow-lg shadow-red-200">
+                                            <div className="min-w-[20px] h-5 bg-rose-500 text-white rounded-full flex items-center justify-center text-[11px] font-bold px-1.5 shadow-md shadow-rose-900/30">
                                                 {supportChat.unreadByUser}
                                             </div>
                                         )}
@@ -277,20 +314,23 @@ export default function MessagesPage() {
                                 <Link
                                     key={chat.id}
                                     href={`/messages/${otherPhone}`}
-                                    style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", borderRadius: 18, textDecoration: "none", background: "#fff", marginBottom: 6 }}
+                                    onClick={() => videoPreWarmer.triggerHaptic("light")}
+                                    className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform flex items-center gap-3.5 p-3.5 rounded-[22px] bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.06)] shadow-xs hover:border-[#2D6E3E]/30"
                                 >
-                                    <div style={{ width: 46, height: 46, borderRadius: 16, background: "#EAF3EC", color: "#2D6E3E", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 16, flexShrink: 0 }}>
+                                    <div className="w-12 h-12 rounded-2xl bg-[#EAF3EC] text-[#2D6E3E] flex items-center justify-center font-bold text-base shrink-0 shadow-xs">
                                         {otherData.name?.charAt(0).toUpperCase()}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between gap-2 mb-1">
-                                            <h3 className="font-black italic text-sm truncate uppercase tracking-tighter shrink-0">{otherData.name}</h3>
-                                            <span className="text-[10px] font-bold text-gray-400">{timestamp}</span>
+                                        <div className="flex items-center justify-between gap-2 mb-0.5">
+                                            <h3 className="font-semibold text-sm text-[#111612] truncate shrink-0">{otherData.name}</h3>
+                                            <span className="text-[11px] font-medium text-[#9AA29C]">{timestamp}</span>
                                         </div>
                                         <div className="flex items-center justify-between gap-2">
-                                            <p className="text-[11px] font-bold text-gray-500 truncate leading-none mb-0.5 opacity-60 uppercase tracking-widest">{lastMsg}</p>
+                                            <p className={`text-xs truncate leading-snug ${unread > 0 ? "font-semibold text-[#111612]" : "text-[#737D75]"}`}>
+                                                {lastMsg}
+                                            </p>
                                             {unread > 0 && (
-                                                <div style={{ minWidth: 20, height: 20, padding: "0 6px", background: "#2D6E3E", color: "#fff", borderRadius: 10, fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                                <div className="min-w-[20px] h-5 px-1.5 bg-[#2D6E3E] text-white rounded-full text-[11px] font-bold flex items-center justify-center shrink-0 shadow-xs">
                                                     {unread}
                                                 </div>
                                             )}
@@ -302,14 +342,14 @@ export default function MessagesPage() {
 
                         {/* Global Search Results (Users to start new chat with) */}
                         {searchQuery.trim().length >= 2 && (
-                            <div className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
-                                <h2 className="px-4 text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4">{t.common.users}</h2>
+                            <div className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-300 pb-8">
+                                <h2 className="px-2 text-xs font-semibold text-[#737D75] uppercase tracking-wider mb-2.5">{t.common.users}</h2>
                                 {isSearching ? (
-                                    <div className="flex justify-center py-6 opacity-20"><Loader2 className="animate-spin" size={24} /></div>
+                                    <div className="flex justify-center py-6"><Loader2 className="animate-spin text-[#2D6E3E]" size={22} /></div>
                                 ) : userResults.length === 0 ? (
-                                    <p className="px-4 text-[11px] font-bold italic text-gray-300 uppercase">{t.common.noUserFound}</p>
+                                    <p className="px-2 text-xs font-medium text-[#9AA29C] italic">{t.common.noUserFound}</p>
                                 ) : (
-                                    <div className="space-y-1">
+                                    <div className="space-y-1.5">
                                         {userResults.map(u => {
                                             // Check if already in active chats
                                             const isInActive = chats.some(c => c.participants.includes(u.phone));
@@ -319,14 +359,15 @@ export default function MessagesPage() {
                                                 <Link
                                                     key={u.phone}
                                                     href={`/messages/${u.phone}`}
-                                                    className="flex items-center gap-4 p-4 rounded-3xl hover:bg-gray-50 active:scale-[0.98] transition-all group"
+                                                    onClick={() => videoPreWarmer.triggerHaptic("light")}
+                                                    className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform flex items-center gap-3.5 p-3 rounded-2xl bg-white/80 backdrop-blur-md border border-[rgba(15,20,16,0.06)] hover:border-[#2D6E3E]/30"
                                                 >
-                                                    <div style={{ width: 48, height: 48, borderRadius: 16, background: "#EAF3EC", color: "#2D6E3E", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 16, flexShrink: 0 }}>
+                                                    <div className="w-11 h-11 rounded-xl bg-[#EAF3EC] text-[#2D6E3E] flex items-center justify-center font-bold text-sm shrink-0">
                                                         {u.name?.charAt(0).toUpperCase() || u.username?.charAt(0).toUpperCase()}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <h3 className="font-black italic text-sm truncate uppercase tracking-tighter">{u.name}</h3>
-                                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate">
+                                                        <h3 className="font-semibold text-sm text-[#111612] truncate">{u.name}</h3>
+                                                        <p className="text-xs text-[#737D75] truncate">
                                                             {u.username ? `@${u.username}` : u.phone}
                                                         </p>
                                                     </div>

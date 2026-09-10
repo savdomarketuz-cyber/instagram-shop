@@ -5,6 +5,7 @@ import { useStore } from "@/store/store";
 import { Send, ChevronLeft, Loader2, Paperclip, MoreVertical } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 const GREEN = "#2D6E3E";
 const GREEN_DEEP = "#1F5A30";
@@ -219,50 +220,61 @@ export default function P2PChatPage() {
 
     if (!mounted || (loading && !messages.length)) {
         return (
-            <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#FAFAF6" }}>
-                <Loader2 style={{ color: GREEN }} size={32} className="animate-spin" />
+            <div className="min-h-screen flex items-center justify-center bg-[#FAFAF6]">
+                <Loader2 className="animate-spin text-[#2D6E3E]" size={32} />
             </div>
         );
     }
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "#FAFAF6", maxWidth: 480, margin: "0 auto", position: "relative", overflow: "hidden" }}>
+        <div className="flex flex-col h-[100dvh] bg-[#FAFAF6] max-w-[480px] mx-auto relative overflow-hidden">
             {/* Header */}
-            <div style={{ background: "rgba(250,250,246,0.92)", backdropFilter: "blur(20px)", padding: "54px 16px 12px", display: "flex", alignItems: "center", gap: 12, borderBottom: "0.5px solid rgba(15,20,16,0.06)", flexShrink: 0, zIndex: 10 }}>
+            <div className="bg-[#FAFAF6]/85 backdrop-blur-2xl px-4 pt-12 pb-3 flex items-center gap-3 border-b border-[rgba(15,20,16,0.06)] shrink-0 sticky top-0 z-40">
                 <button
-                    onClick={() => router.back()}
-                    style={{ width: 40, height: 40, borderRadius: 20, background: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", cursor: "pointer", flexShrink: 0 }}
+                    onClick={() => {
+                        videoPreWarmer.triggerHaptic("light");
+                        router.back();
+                    }}
+                    className="ios-tap-feedback active:scale-90 transition-transform w-10 h-10 rounded-2xl bg-white/80 backdrop-blur-md border border-[rgba(15,20,16,0.08)] text-[#111612] flex items-center justify-center shadow-xs shrink-0"
+                    aria-label="Back"
                 >
-                    <ChevronLeft size={20} color="#0F1410" />
+                    <ChevronLeft size={20} />
                 </button>
 
-                <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 14, background: GREEN_TINT, color: GREEN, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 16, flexShrink: 0 }}>
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-10 h-10 rounded-2xl bg-[#EAF3EC] text-[#2D6E3E] flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
                         {targetUserData?.name?.charAt(0).toUpperCase() || "U"}
                     </div>
-                    <div style={{ minWidth: 0 }}>
-                        <h1 style={{ fontSize: 15, fontWeight: 700, color: "#0F1410", letterSpacing: -0.2, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <div className="min-w-0">
+                        <h1 className="text-sm font-bold text-[#111612] tracking-tight truncate leading-tight mb-0.5">
                             {targetUserData?.name}
                         </h1>
-                        <p style={{ fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 4, color: targetUserData?.isOnline ? GREEN : "#9AA29C" }}>
+                        <p className={`text-[11px] font-semibold flex items-center gap-1.5 ${targetUserData?.isOnline ? "text-[#2D6E3E]" : "text-[#737D75]"}`}>
                             {targetUserData?.isOnline ? (
-                                <><span style={{ width: 6, height: 6, borderRadius: 3, background: GREEN, display: "inline-block" }} />Online</>
-                            ) : `@${targetUserData?.username}`}
+                                <>
+                                    <span className="w-2 h-2 rounded-full bg-[#2D6E3E] inline-block ring-2 ring-[#2D6E3E]/20 animate-pulse" />
+                                    Online
+                                </>
+                            ) : `@${targetUserData?.username || targetUserData?.phone}`}
                         </p>
                     </div>
                 </div>
 
-                <div style={{ position: "relative" }} className="group/menu">
+                <div className="relative group/menu">
                     <button
-                        style={{ width: 40, height: 40, borderRadius: 14, background: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 2px 8px rgba(15,20,16,0.06)" }}
-                        className="group/btn"
+                        onClick={() => videoPreWarmer.triggerHaptic("light")}
+                        className="ios-icon-tap active:scale-90 transition-transform w-10 h-10 rounded-2xl bg-white/80 backdrop-blur-md border border-[rgba(15,20,16,0.08)] text-[#737D75] flex items-center justify-center shadow-xs"
+                        aria-label="More options"
                     >
-                        <MoreVertical size={18} color="#9AA29C" />
+                        <MoreVertical size={18} />
                     </button>
-                    <div style={{ position: "absolute", right: 0, top: "calc(100% + 8px)", background: "#fff", borderRadius: 20, boxShadow: "0 8px 32px rgba(15,20,16,0.12)", minWidth: 180, zIndex: 20, padding: 8 }} className="opacity-0 pointer-events-none group-hover/menu:opacity-100 group-hover/menu:pointer-events-auto transition-all">
+                    <div className="absolute right-0 top-full mt-2 bg-white/95 backdrop-blur-2xl rounded-2xl shadow-xl border border-[rgba(15,20,16,0.08)] min-w-[170px] z-50 p-1.5 opacity-0 pointer-events-none group-hover/menu:opacity-100 group-hover/menu:pointer-events-auto transition-all">
                         <button
-                            onClick={handleDeleteChat}
-                            style={{ width: "100%", textAlign: "left", padding: "10px 14px", borderRadius: 12, border: "none", background: "none", cursor: "pointer", color: "#FF3B30", fontSize: 13, fontWeight: 700 }}
+                            onClick={() => {
+                                videoPreWarmer.triggerHaptic("medium");
+                                handleDeleteChat();
+                            }}
+                            className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors"
                         >
                             {language === 'uz' ? "Suhbatni o'chirish" : "Удалить чат"}
                         </button>
@@ -271,9 +283,9 @@ export default function P2PChatPage() {
             </div>
 
             {/* Chat Area */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 10 }} className="no-scrollbar">
-                <div style={{ textAlign: "center", marginBottom: 8 }}>
-                    <span style={{ background: "rgba(15,20,16,0.05)", backdropFilter: "blur(8px)", fontSize: 10, fontWeight: 700, color: "#9AA29C", padding: "4px 14px", borderRadius: 20, letterSpacing: 0.5 }}>
+            <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2.5 no-scrollbar">
+                <div className="text-center mb-1">
+                    <span className="bg-white/80 backdrop-blur-md border border-[rgba(15,20,16,0.06)] text-[#737D75] text-[11px] font-medium py-1 px-3.5 rounded-full shadow-xs inline-block">
                         {language === 'uz' ? "Xavfsiz muloqot boshlandi" : "Защищённый чат начат"}
                     </span>
                 </div>
@@ -282,38 +294,60 @@ export default function P2PChatPage() {
                     const isMe = msg.sender_id === user?.phone;
                     const hasMedia = msg.image || msg.video;
                     return (
-                        <div key={msg.id} style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start", marginBottom: 2 }} className="group/msg">
-                            <div style={{ maxWidth: "82%", borderRadius: isMe ? "20px 20px 4px 20px" : "20px 20px 20px 4px", overflow: "hidden", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", position: "relative" }}>
+                        <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"} group/msg relative`}>
+                            <div className={`max-w-[82%] rounded-[22px] overflow-hidden shadow-xs relative ${
+                                isMe 
+                                    ? "rounded-br-[6px] text-white border border-[#2D6E3E]/20" 
+                                    : "rounded-bl-[6px] bg-white/95 backdrop-blur-md border border-[rgba(15,20,16,0.06)] text-[#111612]"
+                            }`}
+                            style={isMe ? { background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" } : {}}
+                            >
                                 {msg.image && (
-                                    <img src={msg.image} style={{ width: "100%", maxHeight: 280, objectFit: "cover", display: "block", cursor: "pointer" }} alt="Media" onClick={() => window.open(msg.image, '_blank')} />
+                                    <img 
+                                        src={msg.image} 
+                                        className="w-full max-h-[280px] object-cover block cursor-pointer" 
+                                        alt="Media" 
+                                        onClick={() => window.open(msg.image, '_blank')} 
+                                    />
                                 )}
                                 {msg.video && (
-                                    <video src={msg.video} style={{ width: "100%", maxHeight: 280, objectFit: "cover" }} controls playsInline />
+                                    <video src={msg.video} className="w-full max-h-[280px] object-cover" controls playsInline />
                                 )}
-                                <div style={{ padding: "10px 14px", background: isMe ? `linear-gradient(135deg, ${GREEN} 0%, ${GREEN_DEEP} 100%)` : "#fff" }}>
+                                <div className="px-3.5 py-2.5">
                                     {msg.text && (
-                                        <p style={{ fontSize: 14, fontWeight: 500, color: isMe ? "#fff" : "#0F1410", lineHeight: 1.45, marginBottom: 4 }}>{msg.text}</p>
+                                        <p className={`text-sm font-normal leading-relaxed mb-1 ${isMe ? "text-white" : "text-[#111612]"}`}>
+                                            {msg.text}
+                                        </p>
                                     )}
-                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
-                                        <span style={{ fontSize: 10, color: isMe ? "rgba(255,255,255,0.6)" : "#9AA29C" }}>
+                                    <div className={`flex items-center justify-end gap-1.5 text-[10px] font-medium ${isMe ? "text-white/70" : "text-[#9AA29C]"}`}>
+                                        <span>
                                             {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </span>
-                                        {isMe && <span style={{ fontSize: 10, color: "rgba(255,255,255,0.6)" }}>✓✓</span>}
+                                        {isMe && <span>✓✓</span>}
                                     </div>
                                 </div>
 
-                                {/* Context menu */}
-                                <div style={{ position: "absolute", top: -8, ...(isMe ? { left: -36 } : { right: -36 }) }} className="opacity-0 group-hover/msg:opacity-100 transition-all">
+                                {/* Message context actions */}
+                                <div className={`absolute top-1 ${isMe ? "-left-8" : "-right-8"} opacity-0 group-hover/msg:opacity-100 transition-opacity`}>
                                     <div className="relative group/opt">
-                                        <button style={{ width: 28, height: 28, borderRadius: 14, background: "rgba(255,255,255,0.9)", backdropFilter: "blur(8px)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 2px 8px rgba(15,20,16,0.1)" }}>
-                                            <MoreVertical size={12} color="#9AA29C" />
+                                        <button 
+                                            className="w-6 h-6 rounded-full bg-white/90 backdrop-blur-md shadow-xs border border-[rgba(15,20,16,0.08)] flex items-center justify-center text-[#737D75] hover:text-[#111612]"
+                                            aria-label="Message options"
+                                        >
+                                            <MoreVertical size={11} />
                                         </button>
-                                        <div style={{ position: "absolute", ...(isMe ? { right: 0 } : { left: 0 }), top: "calc(100% + 4px)", background: "#fff", borderRadius: 16, boxShadow: "0 8px 24px rgba(15,20,16,0.12)", minWidth: 120, zIndex: 20, padding: 6 }} className="opacity-0 pointer-events-none group-hover/opt:opacity-100 group-hover/opt:pointer-events-auto transition-all">
-                                            <button onClick={() => handleDeleteMessage(msg.id, false)} style={{ width: "100%", padding: "8px 12px", borderRadius: 10, border: "none", background: "none", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#0F1410", textAlign: "left" }}>
+                                        <div className={`absolute ${isMe ? "right-0" : "left-0"} top-full mt-1 bg-white/95 backdrop-blur-2xl rounded-xl shadow-lg border border-[rgba(15,20,16,0.08)] min-w-[110px] z-20 p-1 opacity-0 pointer-events-none group-hover/opt:opacity-100 group-hover/opt:pointer-events-auto transition-all`}>
+                                            <button 
+                                                onClick={() => handleDeleteMessage(msg.id, false)} 
+                                                className="w-full px-2.5 py-1.5 rounded-lg text-left text-[11px] font-semibold text-[#111612] hover:bg-[#F5F7F5]"
+                                            >
                                                 {language === 'uz' ? "Mendan" : "У меня"}
                                             </button>
                                             {isMe && (
-                                                <button onClick={() => handleDeleteMessage(msg.id, true)} style={{ width: "100%", padding: "8px 12px", borderRadius: 10, border: "none", background: "none", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#FF3B30", textAlign: "left" }}>
+                                                <button 
+                                                    onClick={() => handleDeleteMessage(msg.id, true)} 
+                                                    className="w-full px-2.5 py-1.5 rounded-lg text-left text-[11px] font-semibold text-rose-600 hover:bg-rose-50"
+                                                >
                                                     {language === 'uz' ? "Hamma uchun" : "Для всех"}
                                                 </button>
                                             )}
@@ -324,45 +358,77 @@ export default function P2PChatPage() {
                         </div>
                     );
                 })}
-                <div ref={scrollRef} style={{ height: 4 }} />
+                <div ref={scrollRef} className="h-1" />
             </div>
 
             {/* Input Area */}
-            <div style={{ padding: "12px 16px 24px", background: "rgba(250,250,246,0.92)", backdropFilter: "blur(20px)", borderTop: "0.5px solid rgba(15,20,16,0.06)", flexShrink: 0 }}>
+            <div className="bg-[#FAFAF6]/85 backdrop-blur-2xl px-4 pt-2.5 pb-6 border-t border-[rgba(15,20,16,0.06)] shrink-0">
                 {mediaPreview && (
-                    <div style={{ marginBottom: 10, position: "relative", width: 120 }}>
+                    <div className="mb-2 relative w-24">
                         {selectedFile?.type.startsWith('video/') ? (
-                            <video src={mediaPreview} style={{ width: 120, height: 80, objectFit: "cover", borderRadius: 12 }} muted />
+                            <video src={mediaPreview} className="w-24 h-16 object-cover rounded-xl border border-[rgba(15,20,16,0.08)]" muted />
                         ) : (
-                            <img src={mediaPreview} style={{ width: 120, height: 80, objectFit: "cover", borderRadius: 12 }} alt="Preview" />
+                            <img src={mediaPreview} className="w-24 h-16 object-cover rounded-xl border border-[rgba(15,20,16,0.08)]" alt="Preview" />
                         )}
-                        <button onClick={() => { setSelectedFile(null); setMediaPreview(null); }} style={{ position: "absolute", top: -8, right: -8, width: 24, height: 24, borderRadius: 12, background: "#FF3B30", border: "none", cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
-                        {isUploadingMedia && <div style={{ position: "absolute", inset: 0, background: "rgba(15,20,16,0.5)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}><Loader2 size={20} color="#fff" className="animate-spin" /></div>}
+                        <button 
+                            onClick={() => { setSelectedFile(null); setMediaPreview(null); }} 
+                            className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs shadow-xs"
+                        >
+                            ✕
+                        </button>
+                        {isUploadingMedia && (
+                            <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center">
+                                <Loader2 size={16} className="text-white animate-spin" />
+                            </div>
+                        )}
                     </div>
                 )}
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <input type="file" ref={fileInputRef} onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) { setSelectedFile(file); setMediaPreview(URL.createObjectURL(file)); }
-                    }} className="hidden" accept="image/*,video/*" />
-                    <button onClick={() => fileInputRef.current?.click()} style={{ width: 44, height: 44, borderRadius: 14, background: GREEN_TINT, border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
-                        <Paperclip size={18} color={GREEN} />
+                <div className="flex items-center gap-2.5">
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) { setSelectedFile(file); setMediaPreview(URL.createObjectURL(file)); }
+                        }} 
+                        className="hidden" 
+                        accept="image/*,video/*" 
+                    />
+                    <button 
+                        onClick={() => {
+                            videoPreWarmer.triggerHaptic("light");
+                            fileInputRef.current?.click();
+                        }} 
+                        className="ios-icon-tap active:scale-90 transition-transform w-11 h-11 rounded-2xl bg-[#EAF3EC] text-[#2D6E3E] flex items-center justify-center shrink-0 shadow-xs"
+                        aria-label="Attach media"
+                    >
+                        <Paperclip size={18} />
                     </button>
-                    <div style={{ flex: 1, position: "relative" }}>
+                    <div className="flex-1 relative flex items-center">
                         <input
                             type="text"
                             value={inputText}
                             onChange={(e) => setInputText(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                             placeholder={language === 'uz' ? "Xabar yozing..." : "Напишите сообщение..."}
-                            style={{ width: "100%", background: "#fff", border: "1.5px solid rgba(15,20,16,0.06)", borderRadius: 20, padding: "12px 48px 12px 18px", fontSize: 14, fontWeight: 500, color: "#0F1410", outline: "none", boxSizing: "border-box" }}
+                            className="w-full bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.08)] focus:border-[#2D6E3E] rounded-2xl pl-4 pr-12 py-3 text-sm font-medium text-[#111612] outline-none shadow-xs placeholder:text-[#9AA29C] transition-all"
                         />
                         <button
-                            onClick={handleSendMessage}
+                            onClick={() => {
+                                videoPreWarmer.triggerHaptic("medium");
+                                handleSendMessage();
+                            }}
                             disabled={isSending || (!inputText.trim() && !selectedFile)}
-                            style={{ position: "absolute", right: 6, top: 6, width: 34, height: 34, borderRadius: 14, background: (inputText.trim() || selectedFile) ? `linear-gradient(135deg, ${GREEN} 0%, ${GREEN_DEEP} 100%)` : "#F5F5F0", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 200ms ease" }}
+                            className="ios-tap-feedback active:scale-90 transition-transform absolute right-2 w-8 h-8 rounded-xl flex items-center justify-center disabled:opacity-30 shadow-xs"
+                            style={{
+                                background: (inputText.trim() || selectedFile) 
+                                    ? "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" 
+                                    : "#F5F7F5",
+                                color: (inputText.trim() || selectedFile) ? "#fff" : "#9AA29C"
+                            }}
+                            aria-label="Send message"
                         >
-                            {isSending ? <Loader2 size={14} color="#fff" className="animate-spin" /> : <Send size={14} color={(inputText.trim() || selectedFile) ? "#fff" : "#9AA29C"} />}
+                            {isSending ? <Loader2 size={15} className="animate-spin text-white" /> : <Send size={15} />}
                         </button>
                     </div>
                 </div>
