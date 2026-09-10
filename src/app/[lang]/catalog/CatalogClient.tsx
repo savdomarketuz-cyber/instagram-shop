@@ -275,20 +275,35 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
             <div className="max-w-[1600px] mx-auto px-4 md:px-10 py-5 md:py-10">
 
                 {/* Title */}
-                <h1 className="text-3xl md:text-5xl font-black tracking-tighter mb-5">
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#111612] mb-4">
                     {language === "uz" ? "Katalog" : "Каталог"}
                 </h1>
 
                 {/* Search */}
                 <div className="relative mb-5 active:scale-[0.99] transition-transform duration-150 will-change-transform">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                    <input
-                        type="text"
-                        placeholder={language === "uz" ? "Mahsulot, brend, kategoriya..." : "Товар, бренд, категория..."}
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        className="w-full bg-white rounded-[20px] py-4 pl-12 pr-4 text-sm font-medium border border-gray-100 shadow-sm outline-none focus:border-gray-200 transition-colors"
-                    />
+                    <div className="w-full bg-white/85 backdrop-blur-md rounded-[22px] flex items-center gap-3 px-4 py-3 border border-black/5 shadow-sm">
+                        <Search size={18} className="text-[#9AA29C] shrink-0" />
+                        <input
+                            type="text"
+                            placeholder={language === "uz" ? "Mahsulot, brend, kategoriya..." : "Товар, бренд, категория..."}
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            className="w-full bg-transparent text-[14px] font-medium text-[#111612] outline-none placeholder:text-[#9AA29C]"
+                        />
+                        {searchQuery && (
+                            <button
+                                type="button"
+                                aria-label="Tozalash"
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("light");
+                                    setSearchQuery("");
+                                }}
+                                className="ios-icon-tap active:scale-85 transition-transform duration-150 p-1 text-[#9AA29C] hover:text-[#111612]"
+                            >
+                                <X size={16} />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Main category pills */}
@@ -330,12 +345,12 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                             videoPreWarmer.triggerHaptic("light");
                             openFilters();
                         }}
-                        className="flex items-center justify-center gap-2 bg-white border border-gray-100 rounded-2xl py-3.5 text-sm font-bold shadow-sm ios-tap-feedback active:scale-[0.96] transition-transform duration-150 ease-out will-change-transform"
+                        className="flex items-center justify-center gap-2 bg-white/85 backdrop-blur-md border border-[rgba(15,20,16,0.06)] rounded-2xl py-3.5 text-[13.5px] font-semibold text-[#111612] shadow-sm ios-tap-feedback active:scale-[0.97] transition-transform duration-150 ease-out will-change-transform"
                     >
-                        <SlidersHorizontal size={16} />
+                        <SlidersHorizontal size={16} className="text-[#2D6E3E]" />
                         {language === "uz" ? "Filtrlar" : "Фильтры"}
                         {activeFilterCount > 0 && (
-                            <span className="ml-1 w-5 h-5 rounded-full text-white text-[10px] font-black flex items-center justify-center" style={{ background: GREEN }}>
+                            <span className="ml-1 w-5 h-5 rounded-full text-white text-[10.5px] font-bold flex items-center justify-center bg-gradient-to-r from-[#2D6E3E] to-[#1F5A30] shadow-sm">
                                 {activeFilterCount}
                             </span>
                         )}
@@ -345,9 +360,9 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                             videoPreWarmer.triggerHaptic("light");
                             setShowSort(true);
                         }}
-                        className="flex items-center justify-center gap-2 bg-white border border-gray-100 rounded-2xl py-3.5 text-sm font-bold shadow-sm ios-tap-feedback active:scale-[0.96] transition-transform duration-150 ease-out will-change-transform"
+                        className="flex items-center justify-center gap-2 bg-white/85 backdrop-blur-md border border-[rgba(15,20,16,0.06)] rounded-2xl py-3.5 text-[13.5px] font-semibold text-[#111612] shadow-sm ios-tap-feedback active:scale-[0.97] transition-transform duration-150 ease-out will-change-transform"
                     >
-                        <ArrowUpDown size={16} />
+                        <ArrowUpDown size={16} className="text-[#5A625C]" />
                         {language === "uz" ? "Saralash" : "Сортировка"}
                     </button>
                 </div>
@@ -360,10 +375,13 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                         ))}
                     </div>
                 ) : filteredProducts.length === 0 ? (
-                    <div className="py-24 text-center">
-                        <PackageSearch size={56} className="mx-auto mb-4 text-gray-200" />
-                        <p className="text-sm font-bold text-gray-400">
+                    <div className="py-20 text-center flex flex-col items-center justify-center glass-surface rounded-[28px] p-8 max-w-md mx-auto my-8">
+                        <PackageSearch size={52} className="text-[#9AA29C] mb-3" strokeWidth={1.5} />
+                        <h3 className="text-base font-semibold text-[#111612]">
                             {language === "uz" ? "Mahsulot topilmadi" : "Товары не найдены"}
+                        </h3>
+                        <p className="text-xs text-[#737D75] mt-1 max-w-[260px]">
+                            {language === "uz" ? "Qidiruv yoki filtr parametrlarini o'zgartirib ko'ring" : "Попробуйте изменить параметры поиска или фильтров"}
                         </p>
                     </div>
                 ) : (
@@ -395,12 +413,12 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
             >
                 {/* Price */}
                 <Section title={language === "uz" ? "Narx" : "Цена"}>
-                    <div className="flex items-center justify-between mb-3 text-sm font-black">
+                    <div className="flex items-center justify-between mb-3 text-[14px] font-bold text-[#111612]">
                         <span>{fmt(draftMinPrice)}</span>
                         <span className="text-gray-300">—</span>
                         <span>{fmt(draftMaxPrice || maxProductPrice)}</span>
                     </div>
-                    <label className="block text-[11px] font-bold text-gray-400 mb-1">
+                    <label className="block text-[11px] font-medium text-gray-400 mb-1">
                         {language === "uz" ? "Eng kam" : "Минимум"}
                     </label>
                     <input
@@ -413,9 +431,9 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                             const v = Math.min(Number(e.target.value), (draftMaxPrice || maxProductPrice));
                             setDraftMinPrice(v);
                         }}
-                        className="w-full accent-[#2D6E3E] mb-4"
+                        className="w-full accent-[#2D6E3E] mb-4 cursor-pointer"
                     />
-                    <label className="block text-[11px] font-bold text-gray-400 mb-1">
+                    <label className="block text-[11px] font-medium text-gray-400 mb-1">
                         {language === "uz" ? "Eng ko'p" : "Максимум"}
                     </label>
                     <input
@@ -428,7 +446,7 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                             const v = Math.max(Number(e.target.value), draftMinPrice);
                             setDraftMaxPrice(v);
                         }}
-                        className="w-full accent-[#2D6E3E]"
+                        className="w-full accent-[#2D6E3E] cursor-pointer"
                     />
                 </Section>
 
@@ -444,8 +462,7 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                                             videoPreWarmer.triggerHaptic("light");
                                             setDraftBrands(on ? draftBrands.filter(x => x !== b.id) : [...draftBrands, b.id]);
                                         }}
-                                        className={`px-4 py-2.5 rounded-full text-xs font-bold border transition-colors ios-tap-feedback active:scale-95 transition-transform duration-150 ease-out will-change-transform ${on ? "text-white border-transparent" : "bg-white text-gray-700 border-gray-200"}`}
-                                        style={on ? { background: GREEN } : undefined}
+                                        className={`px-4 py-2.5 rounded-full text-[12.5px] font-semibold border transition-all ios-tap-feedback active:scale-95 duration-150 will-change-transform ${on ? "bg-gradient-to-r from-[#2D6E3E] to-[#1F5A30] text-white border-transparent shadow-sm shadow-[#2D6E3E]/20" : "bg-white/80 backdrop-blur-md text-[#2C332E] border-black/10 hover:bg-white"}`}
                                     >
                                         {(language === "uz" ? b.name_uz : b.name_ru) || b.name}
                                     </button>
@@ -464,11 +481,10 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                                 setDraftRating(r);
                             }}
                             className="w-full flex items-center gap-3 py-3 border-b border-gray-50 last:border-0 ios-tap-feedback active:scale-[0.98] transition-transform duration-150 ease-out">
-                            <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${draftRating === r ? "border-transparent" : "border-gray-200"}`}
-                                style={draftRating === r ? { background: GREEN } : undefined}>
+                            <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${draftRating === r ? "bg-gradient-to-r from-[#2D6E3E] to-[#1F5A30] border-transparent shadow-sm" : "border-gray-200 bg-white"}`}>
                                 {draftRating === r && <Check size={12} color="#fff" strokeWidth={3} />}
                             </span>
-                            <span className="text-sm font-bold">
+                            <span className="text-[13.5px] font-semibold text-[#111612]">
                                 {r === 0 ? (language === "uz" ? "Har qanday" : "Любой") : `${r}+ ⭐`}
                             </span>
                         </button>
@@ -476,7 +492,7 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                 </Section>
 
                 <div
-                    className="sticky bottom-0 -mx-6 px-6 pt-3 bg-white border-t border-gray-50"
+                    className="sticky bottom-0 -mx-6 px-6 pt-3 bg-white/95 backdrop-blur-md border-t border-gray-100"
                     style={{ paddingBottom: "max(14px, env(safe-area-inset-bottom, 14px))" }}
                 >
                     <button
@@ -484,8 +500,7 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                             videoPreWarmer.triggerHaptic("medium");
                             applyFilters();
                         }}
-                        className="w-full py-4 rounded-2xl text-white font-bold text-sm ios-tap-feedback active:scale-[0.98] transition-transform duration-150 ease-out will-change-transform"
-                        style={{ background: GREEN, boxShadow: "0 8px 20px rgba(45,110,62,0.28)" }}
+                        className="w-full py-3.5 rounded-2xl text-white font-semibold text-[14px] ios-tap-feedback active:scale-[0.98] transition-transform duration-150 ease-out will-change-transform bg-gradient-to-r from-[#2D6E3E] to-[#1F5A30] shadow-md shadow-[#2D6E3E]/30"
                     >
                         {language === "uz" ? "Natijalarni ko'rsatish" : "Показать результаты"}
                     </button>
@@ -503,8 +518,8 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                             setSortBy(o.key);
                             setShowSort(false);
                         }}
-                        className="w-full flex items-center justify-between py-4 border-b border-gray-50 last:border-0 ios-tap-feedback active:scale-[0.98] transition-transform duration-150 ease-out">
-                        <span className={`text-sm ${sortBy === o.key ? "font-black" : "font-medium text-gray-600"}`}>
+                        className="w-full flex items-center justify-between py-3.5 border-b border-gray-50 last:border-0 ios-tap-feedback active:scale-[0.98] transition-transform duration-150 ease-out">
+                        <span className={`text-[14px] ${sortBy === o.key ? "font-bold text-[#2D6E3E]" : "font-medium text-[#2C332E]"}`}>
                             {language === "uz" ? o.label_uz : o.label_ru}
                         </span>
                         {sortBy === o.key && <Check size={18} color={GREEN} strokeWidth={3} />}
@@ -522,7 +537,13 @@ function Pill({ children, active, onClick, small }: { children: React.ReactNode;
                 videoPreWarmer.triggerHaptic("light");
                 onClick();
             }}
-            className={`shrink-0 rounded-full font-bold transition-colors whitespace-nowrap ios-tap-feedback active:scale-95 transition-transform duration-150 ease-out will-change-transform ${small ? "px-4 py-2 text-xs" : "px-5 py-2.5 text-sm"} ${active ? "bg-black text-white" : "bg-white text-gray-600 border border-gray-100"}`}
+            className={`shrink-0 rounded-full font-semibold transition-all duration-150 whitespace-nowrap ios-tap-feedback active:scale-95 will-change-transform border ${
+                small ? "px-4 py-2 text-xs" : "px-5 py-2.5 text-[13.5px]"
+            } ${
+                active
+                    ? "bg-gradient-to-r from-[#2D6E3E] to-[#1F5A30] text-white border-transparent shadow-md shadow-[#2D6E3E]/20"
+                    : "bg-white/80 backdrop-blur-md text-[#2C332E] border-black/5 hover:bg-white hover:text-black hover:shadow-sm"
+            }`}
         >
             {children}
         </button>
@@ -532,7 +553,7 @@ function Pill({ children, active, onClick, small }: { children: React.ReactNode;
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
     return (
         <div className="mb-6">
-            <p className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-3">{title}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#737D75] mb-3">{title}</p>
             {children}
         </div>
     );
@@ -738,7 +759,7 @@ function BottomSheet({ open, onClose, title, leftAction, children }: {
                         ? "velari-sheet-up 320ms cubic-bezier(0.22, 1, 0.36, 1)"
                         : "none",
                 }}
-                className="relative w-full max-w-[480px] bg-white rounded-t-[32px] px-6 pt-3 pb-4 max-h-[88vh] flex flex-col overscroll-contain"
+                className="relative w-full max-w-[480px] bg-white/95 backdrop-blur-2xl rounded-t-[32px] px-6 pt-3 pb-4 max-h-[88vh] flex flex-col overscroll-contain border-t border-white/60 shadow-2xl"
             >
                 {/* Drag handle & Header (Dedicated Touch-Action None Drag Zone) */}
                 <div
@@ -750,13 +771,13 @@ function BottomSheet({ open, onClose, title, leftAction, children }: {
                     style={{ touchAction: "none" }}
                 >
                     <div className="py-2.5 -mt-1 flex justify-center w-full">
-                        <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
+                        <div className="w-10 h-1 bg-gray-300 rounded-full" />
                     </div>
 
                     {/* Header */}
                     <div className="flex items-center justify-between mb-5 select-none">
                         <div className="w-16">{leftAction}</div>
-                        <h3 className="text-base font-black text-[#0F1410] pointer-events-none">{title}</h3>
+                        <h3 className="text-[15px] font-bold text-[#111612] pointer-events-none">{title}</h3>
                         <button
                             type="button"
                             onClick={handleCloseWithAnimation}
