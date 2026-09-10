@@ -241,50 +241,50 @@ function AccountContent() {
 
     if (view === "edit-profile") {
         return (
-            <div className="bg-[#FAFAF6] min-h-screen pb-24 px-4 md:px-10">
-                <div className="max-w-xl mx-auto pt-10">
+            <div className="bg-[#FAFAF6] min-h-screen pb-24 px-4 md:px-8">
+                <div className="max-w-xl mx-auto pt-8">
                     <button
                         onClick={() => {
                             videoPreWarmer.triggerHaptic("light");
                             setView("menu");
                         }}
-                        className="ios-icon-tap active:scale-90 flex items-center gap-2 text-gray-400 font-bold mb-8 hover:text-black transition-colors duration-150 will-change-transform"
+                        className="ios-icon-tap active:scale-90 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.08)] shadow-sm flex items-center justify-center text-[#111612] mb-6 transition-transform duration-150 will-change-transform hover:bg-white"
+                        aria-label={language === 'uz' ? 'Orqaga' : 'Назад'}
                     >
                         <ChevronLeft size={20} />
-                        {language === 'uz' ? 'Orqaga' : 'Назад'}
                     </button>
                     
-                    <h1 className="text-3xl font-black tracking-tighter mb-10 italic uppercase">{(t.account as any).myInfo}</h1>
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#111612] mb-6">{(t.account as any).myInfo}</h1>
                     
-                    <div className="bg-white p-8 rounded-[40px] shadow-sm space-y-6">
+                    <div className="bg-white/90 backdrop-blur-md p-6 sm:p-8 rounded-[28px] border border-[rgba(15,20,16,0.06)] shadow-sm space-y-5">
                         <div>
-                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4 mb-2 block">{t.account.name}</label>
+                            <label className="text-xs font-semibold text-[#737D75] uppercase tracking-wider ml-1 mb-2 block">{t.account.name}</label>
                             <input
                                 type="text"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-2xl px-6 py-4 font-bold outline-none transition-colors duration-150"
+                                className="w-full bg-[#F5F7F5] border border-[rgba(15,20,16,0.08)] focus:border-[#2D6E3E] rounded-2xl px-5 py-3.5 font-medium text-[#111612] outline-none transition-colors duration-150"
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4 mb-2 block">Username (@)</label>
+                            <label className="text-xs font-semibold text-[#737D75] uppercase tracking-wider ml-1 mb-2 block">Username (@)</label>
                             <input
                                 type="text"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                className={`w-full bg-gray-50 border-2 ${usernameError ? 'border-red-500' : 'border-transparent focus:border-black'} rounded-2xl px-6 py-4 font-bold outline-none transition-colors duration-150`}
+                                className={`w-full bg-[#F5F7F5] border ${usernameError ? 'border-red-500' : 'border-[rgba(15,20,16,0.08)] focus:border-[#2D6E3E]'} rounded-2xl px-5 py-3.5 font-medium text-[#111612] outline-none transition-colors duration-150`}
                             />
-                            {usernameError && <p className="text-red-500 text-[10px] font-bold mt-2 ml-4">{usernameError}</p>}
+                            {usernameError && <p className="text-red-500 text-xs font-medium mt-1.5 ml-2">{usernameError}</p>}
                         </div>
 
                         <div>
-                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4 mb-2 block">{language === 'uz' ? 'Tasdiqlash uchun parolingiz' : 'Пароль для подтверждения'}</label>
+                            <label className="text-xs font-semibold text-[#737D75] uppercase tracking-wider ml-1 mb-2 block">{language === 'uz' ? 'Tasdiqlash uchun parolingiz' : 'Пароль для подтверждения'}</label>
                             <input
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="******"
-                                className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-2xl px-6 py-4 font-bold outline-none transition-colors duration-150"
+                                className="w-full bg-[#F5F7F5] border border-[rgba(15,20,16,0.08)] focus:border-[#2D6E3E] rounded-2xl px-5 py-3.5 font-medium text-[#111612] outline-none transition-colors duration-150"
                             />
                         </div>
 
@@ -294,8 +294,8 @@ function AccountContent() {
                                 handleSave();
                             }}
                             disabled={isSaving}
-                            className="ios-tap-feedback active:scale-[0.98] w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-transform duration-150 will-change-transform disabled:opacity-50"
-                            style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff" }}
+                            className="ios-tap-feedback active:scale-[0.98] w-full py-4 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2.5 transition-transform duration-150 will-change-transform disabled:opacity-50 text-white shadow-md shadow-[#2D6E3E]/20"
+                            style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" }}
                         >
                             {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                             {language === 'uz' ? 'Saqlash' : 'Сохранить'}
@@ -303,7 +303,7 @@ function AccountContent() {
                     </div>
                 </div>
                 {showSuccess && (
-                    <div className="fixed bottom-10 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-bold flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", boxShadow: "0 8px 24px rgba(45,110,62,0.3)" }}>
+                    <div className="fixed bottom-10 left-1/2 -translate-x-1/2 px-6 py-3.5 rounded-2xl font-semibold text-sm flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-4 shadow-xl z-50" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", boxShadow: "0 8px 24px rgba(45,110,62,0.3)" }}>
                         <CheckCircle2 size={18} style={{ color: "#A8EFB8" }} /> {language === 'uz' ? 'Saqlandi' : 'Сохранено'}
                     </div>
                 )}
@@ -313,21 +313,21 @@ function AccountContent() {
 
     if (view === "language") {
         return (
-            <div className="bg-[#FAFAF6] min-h-screen px-4 md:px-10">
-                <div className="max-w-xl mx-auto pt-10">
+            <div className="bg-[#FAFAF6] min-h-screen px-4 md:px-8">
+                <div className="max-w-xl mx-auto pt-8">
                     <button
                         onClick={() => {
                             videoPreWarmer.triggerHaptic("light");
                             setView("menu");
                         }}
-                        className="ios-icon-tap active:scale-90 flex items-center gap-2 text-gray-400 font-bold mb-8 transition-colors duration-150 will-change-transform"
+                        className="ios-icon-tap active:scale-90 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.08)] shadow-sm flex items-center justify-center text-[#111612] mb-6 transition-transform duration-150 will-change-transform hover:bg-white"
+                        aria-label={language === 'uz' ? 'Orqaga' : 'Назад'}
                     >
                         <ChevronLeft size={20} />
-                        {language === 'uz' ? 'Orqaga' : 'Назад'}
                     </button>
-                    <h1 className="text-3xl font-black tracking-tighter mb-10 italic uppercase">{(t.account.sections as any).language}</h1>
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#111612] mb-6">{(t.account.sections as any).language}</h1>
                     
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         <button 
                             onClick={() => {
                                 videoPreWarmer.triggerHaptic("selection");
@@ -335,9 +335,10 @@ function AccountContent() {
                                 router.push("/uz/account");
                                 setView("menu"); 
                             }}
-                            className={`ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform w-full p-6 bg-white rounded-3xl flex items-center justify-between font-black italic tracking-tighter text-xl ${language === 'uz' ? 'ring-2 ring-black' : ''}`}
+                            className={`ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform w-full p-5 bg-white/90 backdrop-blur-md rounded-[22px] border border-[rgba(15,20,16,0.06)] shadow-sm flex items-center justify-between font-semibold text-base text-[#111612] ${language === 'uz' ? 'ring-2 ring-[#2D6E3E] border-transparent' : ''}`}
                         >
-                            O'zbekcha {language === 'uz' && <CheckCircle2 size={24} />}
+                            <span>O'zbekcha</span>
+                            {language === 'uz' && <CheckCircle2 size={22} className="text-[#2D6E3E]" />}
                         </button>
                         <button 
                             onClick={() => {
@@ -346,9 +347,10 @@ function AccountContent() {
                                 router.push("/ru/account");
                                 setView("menu"); 
                             }}
-                            className={`ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform w-full p-6 bg-white rounded-3xl flex items-center justify-between font-black italic tracking-tighter text-xl ${language === 'ru' ? 'ring-2 ring-black' : ''}`}
+                            className={`ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform w-full p-5 bg-white/90 backdrop-blur-md rounded-[22px] border border-[rgba(15,20,16,0.06)] shadow-sm flex items-center justify-between font-semibold text-base text-[#111612] ${language === 'ru' ? 'ring-2 ring-[#2D6E3E] border-transparent' : ''}`}
                         >
-                            Русский {language === 'ru' && <CheckCircle2 size={24} />}
+                            <span>Русский</span>
+                            {language === 'ru' && <CheckCircle2 size={22} className="text-[#2D6E3E]" />}
                         </button>
                     </div>
                 </div>
@@ -380,13 +382,14 @@ function AccountContent() {
 
     return (
         <div style={{ background: "#FAFAF6", minHeight: "100vh", paddingBottom: 100 }}>
-            <div className="max-w-xl mx-auto">
+            <div className="max-w-xl mx-auto px-4 pt-4">
 
                 {/* Gradient Header Card */}
                 <div style={{
-                    margin: "54px 16px 12px",
+                    marginTop: "20px",
+                    marginBottom: "16px",
                     borderRadius: 28,
-                    padding: "22px 20px 26px",
+                    padding: "24px 22px 26px",
                     background: `linear-gradient(135deg, ${GREEN} 0%, ${GREEN_DEEP} 100%)`,
                     color: "#fff",
                     position: "relative",
@@ -425,36 +428,33 @@ function AccountContent() {
                         <Link
                             href={`/${language}/orders`}
                             onClick={() => videoPreWarmer.triggerHaptic("light")}
-                            className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
-                            style={{ flex: 1, padding: 10, borderRadius: 14, background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)", textDecoration: "none", color: "#fff", display: "block" }}
+                            className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform flex-1 p-2.5 rounded-[18px] bg-white/12 backdrop-blur-md border border-white/15 text-white no-underline block text-center"
                         >
-                            <div style={{ fontSize: 18, fontWeight: 700 }}>{orderCount}</div>
-                            <div style={{ fontSize: 11, opacity: 0.8 }}>{t.account.orders}</div>
+                            <div className="text-lg font-bold">{orderCount}</div>
+                            <div className="text-[11px] opacity-80 font-medium mt-0.5">{t.account.orders}</div>
                         </Link>
                         <Link
                             href={`/${language}/wishlist`}
                             onClick={() => videoPreWarmer.triggerHaptic("light")}
-                            className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
-                            style={{ flex: 1, padding: 10, borderRadius: 14, background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)", textDecoration: "none", color: "#fff", display: "block" }}
+                            className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform flex-1 p-2.5 rounded-[18px] bg-white/12 backdrop-blur-md border border-white/15 text-white no-underline block text-center"
                         >
-                            <div style={{ fontSize: 18, fontWeight: 700 }}>{wishlist.length}</div>
-                            <div style={{ fontSize: 11, opacity: 0.8 }}>{t.nav.wishlist}</div>
+                            <div className="text-lg font-bold">{wishlist.length}</div>
+                            <div className="text-[11px] opacity-80 font-medium mt-0.5">{t.nav.wishlist}</div>
                         </Link>
                         <Link
                             href={`/${language}/wallet`}
                             onClick={() => videoPreWarmer.triggerHaptic("light")}
-                            className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
-                            style={{ flex: 1, padding: 10, borderRadius: 14, background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)", textDecoration: "none", color: "#fff", display: "block" }}
+                            className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform flex-1 p-2.5 rounded-[18px] bg-white/12 backdrop-blur-md border border-white/15 text-white no-underline block text-center"
                         >
-                            <div style={{ fontSize: 18, fontWeight: 700 }}>{(balance || 0).toLocaleString()}</div>
-                            <div style={{ fontSize: 11, opacity: 0.8 }}>{language === 'uz' ? 'Cashback' : 'Кэшбэк'}</div>
+                            <div className="text-lg font-bold">{(balance || 0).toLocaleString()}</div>
+                            <div className="text-[11px] opacity-80 font-medium mt-0.5">{language === 'uz' ? 'Cashback' : 'Кэшбэк'}</div>
                         </Link>
                     </div>
                 </div>
 
                 {/* Menu Group 1: Shopping */}
-                <div style={{ padding: "10px 16px 0" }}>
-                    <div style={{ background: "#fff", borderRadius: 20, overflow: "hidden" }}>
+                <div className="mb-3">
+                    <div className="bg-white/90 backdrop-blur-md rounded-[24px] border border-[rgba(15,20,16,0.06)] shadow-sm overflow-hidden">
                         <MenuItem href="/orders" icon={<Package size={20} color={GREEN} />} label={t.account.orders} language={language} />
                         <VDivider />
                         <MenuItem onClick={() => setView("returns")} icon={<RotateCcw size={20} color={GREEN} />} label={t.account.sections.returns} language={language} />
@@ -470,8 +470,8 @@ function AccountContent() {
                 </div>
 
                 {/* Menu Group 2: Magazine + Affiliate */}
-                <div style={{ padding: "12px 16px 0" }}>
-                    <div style={{ background: "#fff", borderRadius: 20, overflow: "hidden" }}>
+                <div className="mb-3">
+                    <div className="bg-white/90 backdrop-blur-md rounded-[24px] border border-[rgba(15,20,16,0.06)] shadow-sm overflow-hidden">
                         <MenuItem onClick={() => setView("affiliate")} icon={<Sparkles size={20} color={GREEN} />} label={language === 'uz' ? 'Hamkorlik (Pul ishlash)' : 'Партнерство (Заработок)'} language={language} />
                         <VDivider />
                         <MenuItem href="/messages" icon={<MessageSquare size={20} color={GREEN} />} label={language === 'uz' ? 'Suhbatlar' : 'Беседы'} language={language} />
@@ -479,8 +479,8 @@ function AccountContent() {
                 </div>
 
                 {/* Menu Group 3: Settings */}
-                <div style={{ padding: "12px 16px 0" }}>
-                    <div style={{ background: "#fff", borderRadius: 20, overflow: "hidden" }}>
+                <div className="mb-4">
+                    <div className="bg-white/90 backdrop-blur-md rounded-[24px] border border-[rgba(15,20,16,0.06)] shadow-sm overflow-hidden">
                         <MenuItem href="/chat" icon={<Headset size={20} color={GREEN} />} label={t.account.sections.support} language={language} />
                         <VDivider />
                         <MenuItem onClick={() => setView("language")} icon={<Globe size={20} color={GREEN} />} label={(t.account.sections as any).language} language={language} />
@@ -488,28 +488,22 @@ function AccountContent() {
                 </div>
 
                 {/* Logout */}
-                <div style={{ padding: "16px 16px 0" }}>
+                <div className="mb-6">
                     <button
                         onClick={() => {
                             videoPreWarmer.triggerHaptic("medium");
                             logout();
                         }}
-                        className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
-                        style={{
-                            width: "100%", padding: "14px 16px", borderRadius: 18,
-                            background: "#fff", border: "none", cursor: "pointer",
-                            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                            color: "#FF3B30", fontSize: 15, fontWeight: 600,
-                        }}
+                        className="ios-tap-feedback active:scale-[0.98] w-full py-4 px-4 rounded-[22px] bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.06)] shadow-sm flex items-center justify-center gap-2.5 text-rose-600 text-[15px] font-semibold transition-transform duration-150 will-change-transform hover:bg-rose-50/50"
                     >
-                        <LogOut size={18} color="#FF3B30" />
+                        <LogOut size={18} className="text-rose-600" />
                         {t.account.logout}
                     </button>
                 </div>
 
                 {/* Footer */}
-                <div style={{ padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                    <div style={{ fontSize: 11, color: "#9AA29C" }}>Velari v1.2.5</div>
+                <div className="py-4 flex flex-col items-center gap-1">
+                    <div className="text-xs font-medium text-[#737D75]/60">Velari v1.2.5</div>
                 </div>
 
             </div>
@@ -631,22 +625,23 @@ function ReviewsView({ user, language, showToast, onBack }: any) {
     if (loading) return <div className="min-h-screen bg-[#FAFAF6] flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
 
     return (
-        <div className="bg-[#FAFAF6] min-h-screen pb-24 px-4 md:px-10">
-            <div className="max-w-xl mx-auto pt-10">
+        <div className="bg-[#FAFAF6] min-h-screen pb-24 px-4 md:px-8">
+            <div className="max-w-xl mx-auto pt-8">
                 <button
                     onClick={() => {
                         videoPreWarmer.triggerHaptic("light");
                         onBack();
                     }}
-                    className="ios-icon-tap active:scale-90 flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8 hover:text-black transition-colors duration-150 will-change-transform"
+                    className="ios-icon-tap active:scale-90 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.08)] shadow-sm flex items-center justify-center text-[#111612] mb-6 transition-transform duration-150 will-change-transform hover:bg-white"
+                    aria-label={language === 'uz' ? 'Orqaga' : 'Назад'}
                 >
-                    <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
+                    <ChevronLeft size={20} />
                 </button>
 
-                <div className="space-y-10">
+                <div className="space-y-8">
                     <div>
-                        <h1 className="text-3xl font-black tracking-tighter italic uppercase">{language === 'uz' ? 'Sharhlar va savollar' : 'Отзывы и вопросы'}</h1>
-                        <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-2">{language === 'uz' ? 'Sizning fikringiz biz uchun muhim' : 'Ваше мнение важно для нас'}</p>
+                        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#111612]">{language === 'uz' ? 'Sharhlar va savollar' : 'Отзывы и вопросы'}</h1>
+                        <p className="text-sm font-medium text-[#737D75] mt-1">{language === 'uz' ? 'Sizning fikringiz biz uchun muhim' : 'Ваше мнение важно для нас'}</p>
                     </div>
 
                     {/* Pending Reviews */}
@@ -943,23 +938,26 @@ function ReturnsView({ user, t, language, onBack }: any) {
                         if (selectedOrder) setSelectedOrder(null);
                         else onBack();
                     }}
-                    className="ios-icon-tap active:scale-90 flex items-center gap-2 mb-8 bg-white border border-gray-100 shadow-sm rounded-2xl pl-3 pr-5 py-3 text-gray-700 font-black uppercase tracking-widest text-[11px] hover:bg-black hover:text-white transition-colors duration-150 will-change-transform"
+                    className="ios-icon-tap active:scale-90 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.08)] shadow-sm flex items-center justify-center text-[#111612] mb-6 transition-transform duration-150 will-change-transform hover:bg-white"
+                    aria-label={language === 'uz' ? 'Orqaga' : 'Назад'}
                 >
-                    <ChevronLeft size={18} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
+                    <ChevronLeft size={20} />
                 </button>
 
                 {!selectedOrder ? (
                     <div className="space-y-6">
-                        <h1 className="text-3xl font-black tracking-tighter italic uppercase">{t.account.sections.returns}</h1>
-                        <p className="text-gray-400 text-xs font-bold uppercase tracking-widest leading-relaxed">
-                            {language === 'uz' ? 'Yetkazib berilganidan so\'ng 14 kun ichida mahsulotlarni qaytarishingiz mumkin.' : 'Вы можете вернуть товары в течение 14 дней после доставки.'}
-                        </p>
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#111612]">{t.account.sections.returns}</h1>
+                            <p className="text-xs font-medium text-[#737D75] mt-1 leading-relaxed">
+                                {language === 'uz' ? 'Yetkazib berilganidan so\'ng 14 kun ichida mahsulotlarni qaytarishingiz mumkin.' : 'Вы можете вернуть товары в течение 14 дней после доставки.'}
+                            </p>
+                        </div>
 
                         {/* Qaytarish shartlari (return-policy) — chiroyli havola tugma */}
                         <Link
                             href={`/${language}/return-policy`}
                             onClick={() => videoPreWarmer.triggerHaptic("light")}
-                            className="group flex items-center gap-4 rounded-[28px] p-5 text-white overflow-hidden relative ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
+                            className="group flex items-center gap-4 rounded-[24px] p-5 text-white overflow-hidden relative ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
                             style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", boxShadow: "0 8px 24px rgba(45,110,62,0.25)" }}
                         >
                             <div className="absolute -bottom-6 -right-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
@@ -969,20 +967,20 @@ function ReturnsView({ user, t, language, onBack }: any) {
                                 <ShieldCheck size={24} />
                             </div>
                             <div className="flex-1 min-w-0 relative">
-                                <p className="text-sm font-black italic tracking-tighter uppercase">{language === 'uz' ? 'Qaytarish shartlari' : 'Условия возврата'}</p>
-                                <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mt-0.5">{language === 'uz' ? 'To\'liq qoidalar bilan tanishing' : 'Ознакомьтесь с полными правилами'}</p>
+                                <p className="text-sm font-semibold tracking-tight">{language === 'uz' ? 'Qaytarish shartlari' : 'Условия возврата'}</p>
+                                <p className="text-xs font-medium text-white/75 mt-0.5">{language === 'uz' ? 'To\'liq qoidalar bilan tanishing' : 'Ознакомьтесь с полными правилами'}</p>
                             </div>
                             <ChevronRight className="text-white/80 group-hover:translate-x-1 transition-transform relative shrink-0" size={20} />
                         </Link>
 
                         {loading ? (
-                            <div className="flex justify-center py-20"><Loader2 className="animate-spin text-black" /></div>
+                            <div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#2D6E3E]" /></div>
                         ) : orders.length === 0 ? (
-                            <div className="bg-white p-12 rounded-[40px] text-center border border-gray-100 italic font-bold text-gray-400">
+                            <div className="bg-white/90 backdrop-blur-md p-10 rounded-[24px] text-center border border-[rgba(15,20,16,0.06)] font-medium text-sm text-[#737D75]">
                                 {language === 'uz' ? 'Hozircha qaytarish uchun buyurtmalar yo\'q.' : 'Нет заказов для возврата.'}
                             </div>
                         ) : (
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                                 {orders.map(order => (
                                     <div 
                                         key={order.id} 
@@ -990,27 +988,25 @@ function ReturnsView({ user, t, language, onBack }: any) {
                                             videoPreWarmer.triggerHaptic("light");
                                             setSelectedOrder(order);
                                         }}
-                                        className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100 ios-tap-feedback active:scale-[0.99] transition-transform duration-150 will-change-transform cursor-pointer group"
+                                        className="bg-white/90 backdrop-blur-md p-5 rounded-[22px] shadow-sm border border-[rgba(15,20,16,0.06)] ios-tap-feedback active:scale-[0.99] transition-transform duration-150 will-change-transform cursor-pointer group flex justify-between items-center"
                                     >
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div>
-                                                <p className="text-[10px] font-black text-gray-400 uppercase">#{order.id.slice(0,8)}</p>
-                                                <p className="font-black text-lg italic tracking-tighter">{order.total.toLocaleString()} {language === 'uz' ? "so'm" : "сум"}</p>
-                                            </div>
-                                            <ChevronRight className="text-gray-300 group-hover:text-black transition-colors" />
+                                        <div>
+                                            <p className="text-xs font-medium text-[#737D75]">#{order.id.slice(0,8)}</p>
+                                            <p className="font-bold text-base text-[#111612] mt-0.5">{order.total.toLocaleString()} {language === 'uz' ? "so'm" : "сум"}</p>
                                         </div>
+                                        <ChevronRight className="text-[#C7CDC8] group-hover:text-[#111612] transition-colors" size={20} />
                                     </div>
                                 ))}
                             </div>
                         )}
                     </div>
                 ) : (
-                    <div className="space-y-8">
-                        <h1 className="text-2xl font-black tracking-tighter italic uppercase">{language === 'uz' ? 'Qaytarish tafsilotlari' : 'Детали возврата'}</h1>
-                        <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 space-y-8">
-                            <div className="space-y-4">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">{language === 'uz' ? 'Qaysi mahsulotlarni qaytarmoqchisiz?' : 'Какие товары хотите вернуть?'}</label>
-                                <div className="space-y-3">
+                    <div className="space-y-6">
+                        <h1 className="text-2xl font-bold tracking-tight text-[#111612]">{language === 'uz' ? 'Qaytarish tafsilotlari' : 'Детали возврата'}</h1>
+                        <div className="bg-white/90 backdrop-blur-md p-6 sm:p-8 rounded-[28px] shadow-sm border border-[rgba(15,20,16,0.06)] space-y-6">
+                            <div className="space-y-3">
+                                <label className="text-xs font-semibold text-[#737D75] uppercase tracking-wider ml-1">{language === 'uz' ? 'Qaysi mahsulotlarni qaytarmoqchisiz?' : 'Какие товары хотите вернуть?'}</label>
+                                <div className="space-y-2.5">
                                     {selectedOrder.items.map((item: any, i: number) => {
                                         const isSelected = selectedItems.find(si => si.id === item.id);
                                         return (
@@ -1021,20 +1017,20 @@ function ReturnsView({ user, t, language, onBack }: any) {
                                                     if (isSelected) setSelectedItems(selectedItems.filter(si => si.id !== item.id));
                                                     else setSelectedItems([...selectedItems, item]);
                                                 }}
-                                                className={`p-4 rounded-2xl border-2 transition-colors duration-150 cursor-pointer flex items-center justify-between ios-tap-feedback active:scale-[0.98] will-change-transform ${isSelected ? 'border-black bg-gray-50' : 'border-gray-50 hover:border-gray-200'}`}
+                                                className={`p-4 rounded-2xl border transition-colors duration-150 cursor-pointer flex items-center justify-between ios-tap-feedback active:scale-[0.98] will-change-transform ${isSelected ? 'border-[#2D6E3E] bg-[#EAF3EC]/40' : 'border-[rgba(15,20,16,0.06)] bg-white hover:border-gray-300'}`}
                                             >
-                                                <div className="font-bold text-sm tracking-tighter italic uppercase">{item.name}</div>
-                                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 ${isSelected ? 'border-transparent text-white' : 'border-gray-100'}" style={isSelected ? { background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" } : {}}`}>
-                                                    {isSelected && <CheckCircle2 size={12} />}
+                                                <div className="font-medium text-sm text-[#111612]">{item.name}</div>
+                                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center border transition-colors ${isSelected ? 'border-transparent bg-[#2D6E3E] text-white' : 'border-gray-200 text-transparent'}`}>
+                                                    {isSelected && <CheckCircle2 size={14} />}
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
                             </div>
-                            <div className="space-y-4">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">{language === 'uz' ? 'Qaytarish sababi' : 'Причина возврата'}</label>
-                                <textarea value={reason} onChange={e => setReason(e.target.value)} className="w-full bg-gray-50 border-none rounded-3xl p-6 text-sm font-medium h-32 resize-none" />
+                            <div className="space-y-2">
+                                <label className="text-xs font-semibold text-[#737D75] uppercase tracking-wider ml-1">{language === 'uz' ? 'Qaytarish sababi' : 'Причина возврата'}</label>
+                                <textarea value={reason} onChange={e => setReason(e.target.value)} className="w-full bg-[#F5F7F5] border border-[rgba(15,20,16,0.08)] focus:border-[#2D6E3E] rounded-2xl p-4 text-sm font-medium h-32 resize-none outline-none transition-colors" />
                             </div>
                             <button
                                 onClick={() => {
@@ -1042,10 +1038,10 @@ function ReturnsView({ user, t, language, onBack }: any) {
                                     handleSubmit();
                                 }}
                                 disabled={submitting || selectedItems.length === 0 || !reason.trim()}
-                                className="ios-tap-feedback active:scale-[0.98] w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest disabled:opacity-20 transition-transform duration-150 will-change-transform"
-                                style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff" }}
+                                className="ios-tap-feedback active:scale-[0.98] w-full py-4 rounded-2xl font-semibold text-sm disabled:opacity-40 transition-transform duration-150 will-change-transform text-white shadow-md shadow-[#2D6E3E]/20"
+                                style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" }}
                             >
-                                TASDIQLASH
+                                {language === 'uz' ? 'Tasdiqlash' : 'Подтвердить'}
                             </button>
                         </div>
                     </div>
@@ -1069,28 +1065,35 @@ function PromoCodesView({ t, language, onBack }: any) {
     }, []);
 
     return (
-        <div className="bg-[#FAFAF6] min-h-screen pb-24 px-4 md:px-10">
-            <div className="max-w-xl mx-auto pt-10">
+        <div className="bg-[#FAFAF6] min-h-screen pb-24 px-4 md:px-8">
+            <div className="max-w-xl mx-auto pt-8">
                 <button
                     onClick={() => {
                         videoPreWarmer.triggerHaptic("light");
                         onBack();
                     }}
-                    className="ios-icon-tap active:scale-90 flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] mb-8 hover:text-black transition-colors duration-150 will-change-transform"
+                    className="ios-icon-tap active:scale-90 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.08)] shadow-sm flex items-center justify-center text-[#111612] mb-6 transition-transform duration-150 will-change-transform hover:bg-white"
+                    aria-label={language === 'uz' ? 'Orqaga' : 'Назад'}
                 >
-                    <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
+                    <ChevronLeft size={20} />
                 </button>
                 <div className="space-y-6">
-                    <h1 className="text-3xl font-black tracking-tighter italic uppercase">{t.account.sections.promoCodes}</h1>
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#111612]">{t.account.sections.promoCodes}</h1>
                     <div className="grid grid-cols-1 gap-4">
-                        {promos.map(p => (
-                            <div key={p.id} className="bg-white p-8 rounded-[40px] border-2 border-dashed border-gray-100 text-center relative overflow-hidden group">
-                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-6 bg-[#FAFAF6] rounded-b-full border-x border-b border-gray-100" />
-                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-6 bg-[#FAFAF6] rounded-t-full border-x border-t border-gray-100" />
-                                <h3 className="text-4xl font-black italic tracking-tighter uppercase mb-2 group-hover:scale-110 transition-transform">{p.code}</h3>
-                                <p className="text-[10px] font-black text-purple-500 uppercase tracking-widest">{p.discount_type === 'percent' ? `${p.discount_value}%` : `${p.discount_value.toLocaleString()} so'm`} Chegirma</p>
+                        {promos.length === 0 && !loading ? (
+                            <div className="bg-white/90 backdrop-blur-md p-10 rounded-[24px] text-center border border-[rgba(15,20,16,0.06)] font-medium text-sm text-[#737D75]">
+                                {language === 'uz' ? 'Hozircha faol promo-kodlar yo\'q.' : 'Нет активных промокодов.'}
                             </div>
-                        ))}
+                        ) : (
+                            promos.map(p => (
+                                <div key={p.id} className="bg-white/90 backdrop-blur-md p-6 rounded-[24px] border border-[rgba(15,20,16,0.06)] shadow-sm text-center relative overflow-hidden group">
+                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-4 bg-[#FAFAF6] rounded-b-full border-x border-b border-gray-200" />
+                                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-4 bg-[#FAFAF6] rounded-t-full border-x border-t border-gray-200" />
+                                    <h3 className="text-3xl font-bold tracking-tight text-[#111612] mb-2">{p.code}</h3>
+                                    <p className="text-xs font-semibold text-[#2D6E3E] uppercase tracking-wider">{p.discount_type === 'percent' ? `${p.discount_value}%` : `${p.discount_value.toLocaleString()} so'm`} {language === 'uz' ? 'Chegirma' : 'Скидка'}</p>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
             </div>
@@ -1521,15 +1524,15 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
     if (step === "contract") {
         return (
             <div className="bg-[#FAFAF6] min-h-screen p-6 flex flex-col items-center justify-center">
-                <div className="max-w-md w-full bg-white p-10 rounded-[40px] shadow-2xl space-y-8">
-                    <div className="w-20 h-20 bg-[#EAF3EC] rounded-3xl flex items-center justify-center mx-auto">
-                        <ShieldCheck className="text-[#2D6E3E]" size={40} />
+                <div className="max-w-md w-full bg-white/95 backdrop-blur-xl p-8 rounded-[32px] border border-[rgba(15,20,16,0.06)] shadow-xl space-y-6">
+                    <div className="w-16 h-16 bg-[#EAF3EC] rounded-2xl flex items-center justify-center mx-auto text-[#2D6E3E]">
+                        <ShieldCheck size={32} />
                     </div>
-                    <div className="text-center space-y-2">
-                        <h2 className="text-2xl font-black italic tracking-tighter uppercase">{language === 'uz' ? 'Hamkorlik Shartnomasi' : 'Партнерское Соглашение'}</h2>
-                        <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">Tizimga qo'shilishdan oldin tanishib chiqing</p>
+                    <div className="text-center space-y-1.5">
+                        <h2 className="text-2xl font-bold tracking-tight text-[#111612]">{language === 'uz' ? 'Hamkorlik Shartnomasi' : 'Партнерское Соглашение'}</h2>
+                        <p className="text-[#737D75] text-xs font-medium">{language === 'uz' ? "Tizimga qo'shilishdan oldin tanishib chiqing" : "Ознакомьтесь перед началом сотрудничества"}</p>
                     </div>
-                    <div className="max-h-60 overflow-y-auto p-4 bg-gray-50 rounded-2xl text-[10px] text-gray-500 leading-relaxed font-bold italic border border-gray-100">
+                    <div className="max-h-60 overflow-y-auto p-4 bg-[#F5F7F5] rounded-2xl text-xs text-[#737D75] leading-relaxed font-medium border border-[rgba(15,20,16,0.06)]">
                         {language === 'uz' ? (
                             <>
                                 1. Hamkorlik tizimi orqali real daromad olishingiz mumkin.<br/>
@@ -1551,10 +1554,10 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                     <button 
                         onClick={handleAgree}
                         disabled={isActionLoading}
-                        className="w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95"
-                        style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", boxShadow: "0 8px 20px rgba(45,110,62,0.28)" }}
+                        className="ios-tap-feedback active:scale-[0.98] w-full py-4 rounded-2xl font-semibold text-sm transition-transform duration-150 will-change-transform text-white shadow-md shadow-[#2D6E3E]/20"
+                        style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" }}
                     >
-                        {isActionLoading ? <Loader2 className="animate-spin mx-auto" /> : (language === 'uz' ? 'TANISHIB CHIQDIM VA ROZIMAN' : 'Я ОЗНАКОМЛЕН И СОГЛАСЕН')}
+                        {isActionLoading ? <Loader2 className="animate-spin mx-auto" size={18} /> : (language === 'uz' ? 'Tanishib chiqdim va roziman' : 'Я ознакомлен и согласен')}
                     </button>
                 </div>
             </div>
@@ -1569,25 +1572,26 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
     else if (currentRole === 'agent') roleName = language === 'uz' ? 'Agent' : 'Агент';
 
     return (
-        <div className="bg-[#FAFAF6] min-h-screen pb-24 px-4 md:px-10 overflow-x-hidden">
-            <div className="max-w-4xl mx-auto pt-10">
-                <div className="flex justify-between items-center mb-8">
+        <div className="bg-[#FAFAF6] min-h-screen pb-24 px-4 md:px-8 overflow-x-hidden">
+            <div className="max-w-4xl mx-auto pt-8">
+                <div className="flex justify-between items-center mb-6">
                     <button
                         onClick={() => {
                             videoPreWarmer.triggerHaptic("light");
                             onBack();
                         }}
-                        className="ios-icon-tap active:scale-90 flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px] hover:text-black transition-colors duration-150 will-change-transform"
+                        className="ios-icon-tap active:scale-90 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.08)] shadow-sm flex items-center justify-center text-[#111612] transition-transform duration-150 will-change-transform hover:bg-white"
+                        aria-label={language === 'uz' ? 'Orqaga' : 'Назад'}
                     >
-                        <ChevronLeft size={16} /> {language === 'uz' ? 'Orqaga' : 'Назад'}
+                        <ChevronLeft size={20} />
                     </button>
-                    <div className="flex items-center gap-2 px-4 py-1.5 rounded-full scale-90" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff" }}>
-                         <Award size={14} className="text-yellow-400" />
-                         <span className="text-[10px] font-black uppercase italic tracking-tighter">{roleName}</span>
+                    <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#EAF3EC] text-[#2D6E3E] border border-[#2D6E3E]/20 text-xs font-semibold">
+                         <Award size={14} className="text-amber-500" />
+                         <span>{roleName}</span>
                     </div>
                 </div>
 
-                <div className="flex bg-white/50 backdrop-blur-sm p-1.5 rounded-[28px] border border-gray-100 mb-8 overflow-x-auto no-scrollbar gap-1">
+                <div className="flex bg-[rgba(15,20,16,0.04)] p-1 rounded-[20px] mb-6 overflow-x-auto no-scrollbar gap-1">
                     {[
                         { id: 'dashboard', label: language === 'uz' ? 'Asosiy' : 'Главная', icon: LayoutGrid },
                         { id: 'products', label: language === 'uz' ? 'Mahsulotlar' : 'Товары', icon: Package },
@@ -1600,9 +1604,9 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                 videoPreWarmer.triggerHaptic("selection");
                                 setActiveTab(tab.id as any);
                             }}
-                            className={`ios-tap-feedback active:scale-95 flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-transform duration-150 will-change-transform whitespace-nowrap ${activeTab === tab.id ? 'velari-green-btn' : 'text-gray-400 hover:text-black hover:bg-white'}`}
+                            className={`ios-tap-feedback active:scale-[0.98] flex items-center gap-2 px-5 py-2.5 rounded-[16px] text-xs font-semibold transition-all duration-150 will-change-transform whitespace-nowrap ${activeTab === tab.id ? 'bg-white text-[#111612] shadow-sm' : 'text-[#737D75] hover:text-[#111612]'}`}
                         >
-                            <tab.icon size={14} />
+                            <tab.icon size={15} />
                             {tab.label}
                         </button>
                     ))}
@@ -2307,8 +2311,6 @@ function VDivider() {
 }
 
 function MenuItem({ href, icon, label, language, onClick, badge }: any) {
-    const GREEN_TINT = "#EAF3EC";
-
     const handleClick = (e: React.MouseEvent) => {
         videoPreWarmer.triggerHaptic("light");
         if (onClick) onClick(e);
@@ -2316,37 +2318,25 @@ function MenuItem({ href, icon, label, language, onClick, badge }: any) {
 
     const Content = (
         <div
-            className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
-            style={{
-                width: "100%", display: "flex", alignItems: "center", gap: 14,
-                padding: "14px 16px", cursor: "pointer",
-            }}
+            className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform min-h-[52px] w-full flex items-center gap-3.5 px-4 py-3.5 cursor-pointer hover:bg-[rgba(15,20,16,0.02)]"
         >
-            <div style={{
-                width: 36, height: 36, borderRadius: 10, background: GREEN_TINT,
-                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-            }}>
+            <div className="w-9 h-9 rounded-xl bg-[#EAF3EC] text-[#2D6E3E] flex items-center justify-center shrink-0">
                 {icon}
             </div>
-            <span style={{ flex: 1, fontSize: 15, fontWeight: 500, color: "#0F1410", letterSpacing: -0.2 }}>
+            <span className="flex-1 text-[15px] font-medium text-[#111612] tracking-tight">
                 {label}
             </span>
             {badge != null && badge > 0 && (
-                <span style={{
-                    minWidth: 22, height: 22, padding: "0 7px", borderRadius: 11,
-                    background: GREEN_TINT, color: "#2D6E3E",
-                    fontSize: 12, fontWeight: 700,
-                    display: "inline-flex", alignItems: "center", justifyContent: "center",
-                }}>
+                <span className="min-w-[22px] h-[22px] px-2 rounded-full bg-[#EAF3EC] text-[#2D6E3E] text-xs font-bold inline-flex items-center justify-center">
                     {badge}
                 </span>
             )}
-            <ChevronRight size={18} color="#C7CDC8" />
+            <ChevronRight size={18} className="text-[#C7CDC8]" />
         </div>
     );
 
     if (href && href !== "#") {
-        return <Link href={`/${language}${href}`} onClick={handleClick} style={{ display: "block", textDecoration: "none" }}>{Content}</Link>;
+        return <Link href={`/${language}${href}`} onClick={handleClick} className="block no-underline">{Content}</Link>;
     }
     return <div onClick={handleClick}>{Content}</div>;
 }

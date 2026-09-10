@@ -330,122 +330,159 @@ export default function OrdersPage() {
     }
 
     return (
-        <div className="p-6 min-h-screen pt-12 pb-24" style={{ background: "#FAFAF6" }}>
-            <div className="flex items-center gap-4 mb-8">
-                <Link
-                    href={`/${language}/account`}
-                    onClick={() => videoPreWarmer.triggerHaptic("light")}
-                    className="ios-icon-tap active:scale-90 w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm border border-gray-100 text-black transition-transform duration-150 will-change-transform"
-                >
-                    <ChevronLeft size={20} />
-                </Link>
-                <h1 className="text-3xl font-black tracking-tighter italic uppercase">{t.account.orders}</h1>
-            </div>
-
-            {loading ? (
-                <div className="space-y-6">
-                    {[1, 2, 3].map((i) => (
-                        <div key={i} className="bg-gray-50 rounded-[32px] p-6 border border-gray-100 animate-pulse">
-                            <div className="h-4 bg-gray-200 rounded-full w-24 mb-4"></div>
-                            <div className="h-6 bg-gray-200 rounded-full w-48 mb-6"></div>
-                            <div className="h-4 bg-gray-200 rounded-full w-32 mb-6"></div>
-                            <div className="flex justify-between items-center pt-5 border-t border-gray-200/50">
-                                <div className="h-8 bg-gray-200 rounded-full w-32"></div>
-                                <div className="h-4 bg-gray-200 rounded-full w-20"></div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            ) : orders.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                    <Truck size={48} className="mb-4 opacity-20" />
-                    <p className="font-medium text-xs uppercase tracking-widest">
-                        {t.common.noOrders}
-                    </p>
-                    <Link href="/" className="mt-4 text-black font-black border-b-2 border-black italic uppercase text-xs">
-                        {t.cart.startShopping}
+        <div className="p-4 md:p-8 min-h-screen pt-8 pb-24" style={{ background: "#FAFAF6" }}>
+            <div className="max-w-2xl mx-auto">
+                <div className="flex items-center gap-4 mb-6">
+                    <Link
+                        href={`/${language}/account`}
+                        onClick={() => videoPreWarmer.triggerHaptic("light")}
+                        className="ios-icon-tap active:scale-90 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.08)] shadow-sm flex items-center justify-center text-[#111612] transition-transform duration-150 will-change-transform hover:bg-white"
+                        aria-label={language === 'uz' ? 'Orqaga' : 'Назад'}
+                    >
+                        <ChevronLeft size={20} />
                     </Link>
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#111612]">{t.account.orders}</h1>
                 </div>
-            ) : (
-                <div className="space-y-6">
-                    {orders.map((order) => (
-                        <div
-                            key={order.id}
-                            onClick={() => {
-                                videoPreWarmer.triggerHaptic("light");
-                                setSelectedOrder(order);
-                            }}
-                            className="rounded-[22px] p-5 ios-tap-feedback active:scale-[0.99] transition-transform duration-150 will-change-transform cursor-pointer"
-                            style={{ background: "#fff", boxShadow: "0 2px 12px rgba(15,20,16,0.06)", border: "1px solid rgba(15,20,16,0.05)" }}
-                        >
-                            <div className="mb-6">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t.common.orderId}</p>
-                                <div className="font-bold text-gray-900 text-sm break-all">#{order.id}</div>
-                            </div>
 
-                            <div className="flex items-center gap-3 text-xs font-bold text-gray-500 mb-6">
-                                <Clock size={14} />
-                                <span>
-                                    {formatDate(order.createdAt)} • {order.items?.length || 0} {t.cart.items}
-                                </span>
-                            </div>
-
-                            <div className="mb-5 flex flex-wrap items-center gap-2">
-                                <div className={`inline-block text-[10px] px-3 py-1.5 rounded-full font-black uppercase tracking-tighter ${normalizeOrderStatus(order.status) === 'delivered' ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' :
-                                    normalizeOrderStatus(order.status) === 'paid' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' :
-                                        normalizeOrderStatus(order.status) === 'awaiting_payment' ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/20' :
-                                            normalizeOrderStatus(order.status) === 'cancelled' ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' :
-                                                'velari-green-btn'
-                                    }`}>
-                                    {getStatusLabel(order.status, language)}
+                {loading ? (
+                    <div className="space-y-4">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="bg-white/80 rounded-[24px] p-6 border border-[rgba(15,20,16,0.06)] animate-pulse">
+                                <div className="h-4 bg-gray-200 rounded-full w-24 mb-4"></div>
+                                <div className="h-5 bg-gray-200 rounded-full w-48 mb-4"></div>
+                                <div className="h-4 bg-gray-200 rounded-full w-32 mb-6"></div>
+                                <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                                    <div className="h-6 bg-gray-200 rounded-full w-28"></div>
+                                    <div className="h-4 bg-gray-200 rounded-full w-16"></div>
                                 </div>
-                                {returnsMap[order.id] && (
-                                    <span className={`inline-flex items-center gap-1 text-[10px] px-3 py-1.5 rounded-full font-black uppercase tracking-tighter ${returnStatusInfo(returnsMap[order.id]).cls}`}>
-                                        <RefreshCw size={10} /> {returnStatusInfo(returnsMap[order.id]).label}
-                                    </span>
-                                )}
                             </div>
-
-                            <div className="flex justify-between items-center pt-5 border-t border-gray-200/50">
-                                <div className="text-xl font-black italic tracking-tighter">{order.total?.toLocaleString()} so'm</div>
-                                <button className="flex items-center text-[10px] font-black uppercase tracking-widest text-black/40 group-hover:text-black transition-colors">
-                                    {t.common.details} <ChevronRight size={14} className="ml-1" />
-                                </button>
-                            </div>
+                        ))}
+                    </div>
+                ) : orders.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-[#737D75]">
+                        <div className="w-16 h-16 rounded-full bg-[#EAF3EC] flex items-center justify-center text-[#2D6E3E] mb-4">
+                            <Truck size={32} />
                         </div>
-                    ))}
-                </div>
-            )}
+                        <p className="font-semibold text-sm mb-4">
+                            {t.common.noOrders}
+                        </p>
+                        <Link
+                            href={`/${language}`}
+                            className="px-6 py-3 rounded-full bg-[#2D6E3E] text-white font-semibold text-xs tracking-wide shadow-md shadow-[#2D6E3E]/20 ios-tap-feedback active:scale-95 transition-transform"
+                        >
+                            {t.cart.startShopping}
+                        </Link>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {orders.map((order) => {
+                            const s = normalizeOrderStatus(order.status);
+                            return (
+                                <div
+                                    key={order.id}
+                                    onClick={() => {
+                                        videoPreWarmer.triggerHaptic("light");
+                                        setSelectedOrder(order);
+                                    }}
+                                    className="bg-white/90 backdrop-blur-md rounded-[24px] p-5 border border-[rgba(15,20,16,0.06)] shadow-sm hover:shadow-md ios-tap-feedback active:scale-[0.99] transition-all duration-150 will-change-transform cursor-pointer"
+                                >
+                                    <div className="flex items-start justify-between gap-2 mb-3">
+                                        <div>
+                                            <p className="text-[11px] font-semibold text-[#737D75] uppercase tracking-wider mb-0.5">{t.common.orderId}</p>
+                                            <div className="font-mono text-sm font-semibold text-[#111612]">#{order.id.slice(0, 12)}</div>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-1.5 justify-end">
+                                            {s === 'delivered' && (
+                                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                                    {getStatusLabel(order.status, language)}
+                                                </span>
+                                            )}
+                                            {s === 'paid' && (
+                                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                                    {getStatusLabel(order.status, language)}
+                                                </span>
+                                            )}
+                                            {s === 'awaiting_payment' && (
+                                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200/60">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                                    {getStatusLabel(order.status, language)}
+                                                </span>
+                                            )}
+                                            {s === 'cancelled' && (
+                                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200/60">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                                    {getStatusLabel(order.status, language)}
+                                                </span>
+                                            )}
+                                            {!['delivered', 'paid', 'awaiting_payment', 'cancelled'].includes(s) && (
+                                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-[#EAF3EC] text-[#2D6E3E] border border-[#2D6E3E]/20">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-[#2D6E3E]" />
+                                                    {getStatusLabel(order.status, language)}
+                                                </span>
+                                            )}
+                                            {returnsMap[order.id] && (
+                                                <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold ${returnStatusInfo(returnsMap[order.id]).cls}`}>
+                                                    <RefreshCw size={11} /> {returnStatusInfo(returnsMap[order.id]).label}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 text-xs font-medium text-[#737D75] mb-4">
+                                        <Clock size={14} className="text-[#737D75]" />
+                                        <span>
+                                            {formatDate(order.createdAt)} • {order.items?.length || 0} {t.cart.items}
+                                        </span>
+                                    </div>
+
+                                    <div className="flex justify-between items-center pt-3.5 border-t border-[rgba(15,20,16,0.06)]">
+                                        <div className="text-base font-bold text-[#111612] tracking-tight">{order.total?.toLocaleString()} so'm</div>
+                                        <span className="flex items-center text-xs font-semibold text-[#2D6E3E]">
+                                            {t.common.details} <ChevronRight size={14} className="ml-0.5" />
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
 
             {/* Order Details Modal */}
             {selectedOrder && (
-                <div onClick={() => setSelectedOrder(null)} className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-end justify-center animate-in fade-in duration-300 p-4">
-                    <div onClick={e => e.stopPropagation()} className="bg-white w-full max-w-md rounded-[40px] shadow-2xl animate-in slide-in-from-bottom duration-300 overflow-hidden pb-10">
-                        <div className="p-8 border-b border-gray-100 flex justify-between items-center">
+                <div onClick={() => setSelectedOrder(null)} className="fixed inset-0 bg-black/40 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+                    <div onClick={e => e.stopPropagation()} className="bg-white/95 backdrop-blur-xl w-full max-w-lg rounded-t-[32px] sm:rounded-[32px] shadow-2xl border border-[rgba(15,20,16,0.08)] overflow-hidden pb-8 max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300">
+                        {/* Grab bar on mobile */}
+                        <div className="w-12 h-1.5 bg-black/15 rounded-full mx-auto mt-3 sm:hidden" />
+
+                        <div className="p-6 pb-4 border-b border-[rgba(15,20,16,0.06)] flex justify-between items-center">
                             <div>
-                                <h2 className="text-2xl font-black italic tracking-tighter uppercase">
+                                <h2 className="text-xl font-bold tracking-tight text-[#111612]">
                                     {t.common.orderDetail}
                                 </h2>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ID: #{selectedOrder.id}</p>
+                                <p className="text-xs font-medium text-[#737D75] font-mono mt-0.5">#{selectedOrder.id}</p>
                             </div>
                             <button
                                 onClick={() => {
                                     videoPreWarmer.triggerHaptic("light");
                                     setSelectedOrder(null);
                                 }}
-                                className="ios-icon-tap active:scale-90 w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 transition-transform duration-150 will-change-transform"
+                                className="ios-icon-tap active:scale-90 w-9 h-9 bg-black/5 rounded-full flex items-center justify-center text-[#111612] transition-transform duration-150 will-change-transform hover:bg-black/10"
+                                aria-label="Close"
                             >
-                                <ChevronRight size={24} className="rotate-90" />
+                                <ChevronRight size={20} className="rotate-90" />
                             </button>
                         </div>
 
-                        <div className="p-8 overflow-y-auto max-h-[60vh] no-scrollbar">
+                        <div className="p-6 overflow-y-auto no-scrollbar flex-1 space-y-6">
                             {/* Items List */}
-                            <div className="space-y-4 mb-10">
+                            <div className="space-y-3">
                                 {enrichedItems.map((item: any, i: number) => (
-                                    <div key={i} className="bg-gray-50/50 p-5 rounded-[32px] border border-gray-50 space-y-4 group/item">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-16 h-20 bg-white rounded-2xl overflow-hidden shrink-0 shadow-sm border border-gray-200 relative">
+                                    <div key={i} className="bg-[#F8FAF8] p-4 rounded-[22px] border border-[rgba(15,20,16,0.05)] space-y-3">
+                                        <div className="flex items-center gap-3.5">
+                                            <div className="w-16 h-20 bg-white rounded-xl overflow-hidden shrink-0 shadow-xs border border-[rgba(15,20,16,0.06)] relative">
                                                 {(item.image || item.imageUrl || item.image_url) && (String(item.image || item.imageUrl || item.image_url).startsWith('http') || String(item.image || item.imageUrl || item.image_url).startsWith('/')) ? (
                                                     <Image
                                                         src={getOptimizedImageUrl(item.image_metadata, item.image || item.imageUrl || item.image_url, 'xs')}
@@ -462,23 +499,23 @@ export default function OrdersPage() {
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="font-black text-[13px] uppercase italic tracking-tighter leading-tight mb-1">
+                                                <p className="font-semibold text-sm text-[#111612] leading-snug line-clamp-2 mb-1">
                                                     {item[`name_${language}`] || item.name}
                                                 </p>
-                                                <p className="text-[10px] font-bold text-gray-400">
-                                                    {item.quantity} {language === 'uz' ? 'dona' : 'шт'} x {item.price.toLocaleString()} so'm
+                                                <p className="text-xs font-medium text-[#737D75]">
+                                                    {item.quantity} {language === 'uz' ? 'dona' : 'шт'} × {item.price.toLocaleString()} so'm
                                                 </p>
-                                                <div className="font-black italic text-black mt-1">
+                                                <div className="font-bold text-sm text-[#111612] mt-1">
                                                     {(item.price * item.quantity).toLocaleString()} so'm
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="flex gap-2 w-full">
+                                        <div className="flex gap-2 w-full pt-1">
                                             <Link
                                                 href={`/products/${getProductSlug(item, language)}`}
                                                 onClick={() => videoPreWarmer.triggerHaptic("light")}
-                                                className="ios-tap-feedback active:scale-[0.98] flex-1 py-3 bg-white border border-gray-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-2 hover:bg-gray-50 transition-transform duration-150 will-change-transform"
+                                                className="ios-tap-feedback active:scale-[0.98] flex-1 py-2.5 bg-white border border-[rgba(15,20,16,0.08)] rounded-xl text-xs font-semibold text-[#111612] text-center flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-transform duration-150 will-change-transform"
                                             >
                                                 {t.common.inMarket}
                                             </Link>
@@ -488,10 +525,10 @@ export default function OrdersPage() {
                                                         videoPreWarmer.triggerHaptic("light");
                                                         setReviewProduct(item);
                                                     }}
-                                                    className="ios-tap-feedback active:scale-[0.98] flex-1 py-3 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-2 shadow-lg transition-transform duration-150 will-change-transform"
+                                                    className="ios-tap-feedback active:scale-[0.98] flex-1 py-2.5 text-white rounded-xl text-xs font-semibold text-center flex items-center justify-center gap-1.5 shadow-sm transition-transform duration-150 will-change-transform"
                                                     style={{ background: "#2D6E3E" }}
                                                 >
-                                                    <Star size={12} fill="currentColor" />
+                                                    <Star size={13} fill="currentColor" />
                                                     {t.common.review}
                                                 </button>
                                             )}
@@ -501,28 +538,28 @@ export default function OrdersPage() {
                             </div>
 
                             {/* Info Section */}
-                            <div className="space-y-4 pt-10 border-t border-gray-100">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "#EAF3EC", color: "#2D6E3E" }}>
-                                        <CheckCircle size={18} />
+                            <div className="bg-[#F5F7F5] p-4 rounded-[22px] space-y-3 border border-[rgba(15,20,16,0.05)]">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#EAF3EC] text-[#2D6E3E]">
+                                        <CheckCircle size={16} />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t.common.status}</p>
-                                        <p className="font-black text-xs italic uppercase tracking-tighter">{getStatusLabel(selectedOrder.status, language)}</p>
+                                        <p className="text-[11px] font-semibold text-[#737D75] uppercase tracking-wider">{t.common.status}</p>
+                                        <p className="font-semibold text-xs text-[#111612]">{getStatusLabel(selectedOrder.status, language)}</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "#EAF3EC", color: "#2D6E3E" }}>
-                                        <Truck size={18} />
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#EAF3EC] text-[#2D6E3E]">
+                                        <Truck size={16} />
                                     </div>
-                                    <div className="flex-1">
-                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t.common.delivery} {language === 'uz' ? 'manzili' : 'адрес'}</p>
-                                        <p className="font-black text-xs italic uppercase tracking-tighter line-clamp-2">{(selectedOrder as any).address || t.common.addressNotSet}</p>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[11px] font-semibold text-[#737D75] uppercase tracking-wider">{t.common.delivery} {language === 'uz' ? 'manzili' : 'адрес'}</p>
+                                        <p className="font-medium text-xs text-[#111612] line-clamp-2">{(selectedOrder as any).address || t.common.addressNotSet}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Cancel Order Button — faqat jo'natilmagan/yetkazilmagan buyurtmalar */}
+                            {/* Cancel Order Button */}
                             {['awaiting_payment', 'accepted', 'pending'].includes(normalizeOrderStatus(selectedOrder.status)) && (
                                 <button
                                     onClick={() => {
@@ -530,7 +567,7 @@ export default function OrdersPage() {
                                         handleCancelOrder(selectedOrder.id);
                                     }}
                                     disabled={isCancelling}
-                                    className="ios-tap-feedback active:scale-[0.98] w-full mt-10 py-4 bg-red-50 text-red-500 rounded-3xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-transform duration-150 will-change-transform disabled:opacity-50 border border-red-100"
+                                    className="ios-tap-feedback active:scale-[0.98] w-full py-3.5 bg-rose-50 text-rose-600 rounded-2xl text-xs font-semibold flex items-center justify-center gap-2 transition-transform duration-150 will-change-transform disabled:opacity-50 border border-rose-100"
                                 >
                                     {isCancelling ? (
                                         <Loader2 className="animate-spin" size={16} />
@@ -543,19 +580,17 @@ export default function OrdersPage() {
                                 </button>
                             )}
 
-                            {/* Qaytarish (vozvrat) — faqat yetkazilgan buyurtmalar */}
+                            {/* Qaytarish (vozvrat) */}
                             {normalizeOrderStatus(selectedOrder.status) === 'delivered' && (() => {
                                 const rStatus = returnsMap[selectedOrder.id];
-                                // Aktiv so'rov bor (rad etilmagan) -> holat ko'rsatamiz, qayta yuborishga ruxsat yo'q
                                 if (rStatus && rStatus !== 'rejected') {
                                     const info = returnStatusInfo(rStatus);
                                     return (
-                                        <div className={`w-full mt-10 py-4 rounded-3xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 ${info.cls}`}>
-                                            <RefreshCw size={16} /> {info.label}
+                                        <div className={`w-full py-3.5 rounded-2xl text-xs font-semibold flex items-center justify-center gap-2 ${info.cls}`}>
+                                            <RefreshCw size={14} /> {info.label}
                                         </div>
                                     );
                                 }
-                                // So'rov yo'q yoki rad etilgan -> qaytarishni so'rash mumkin
                                 return (
                                     <button
                                         onClick={() => {
@@ -563,9 +598,9 @@ export default function OrdersPage() {
                                             setReturnOrder(selectedOrder);
                                             setReturnReason("");
                                         }}
-                                        className="ios-tap-feedback active:scale-[0.98] w-full mt-10 py-4 bg-orange-50 text-orange-600 rounded-3xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-transform duration-150 will-change-transform border border-orange-100"
+                                        className="ios-tap-feedback active:scale-[0.98] w-full py-3.5 bg-amber-50 text-amber-700 rounded-2xl text-xs font-semibold flex items-center justify-center gap-2 transition-transform duration-150 will-change-transform border border-amber-200/60"
                                     >
-                                        <RefreshCw size={16} />
+                                        <RefreshCw size={14} />
                                         {rStatus === 'rejected'
                                             ? (language === 'uz' ? "Qayta so'rov yuborish" : "Запросить снова")
                                             : (language === 'uz' ? "Mahsulotni qaytarish" : "Вернуть товар")}
@@ -574,9 +609,9 @@ export default function OrdersPage() {
                             })()}
 
                             {/* Total */}
-                            <div className="mt-10 p-8 rounded-[32px] flex justify-between items-center" style={{ background: "#2D6E3E", color: "#fff" }}>
-                                <div className="text-xs font-black uppercase tracking-widest opacity-70">{t.common.total}</div>
-                                <div className="text-3xl font-black italic tracking-tighter">{selectedOrder.total?.toLocaleString()} so'm</div>
+                            <div className="p-5 rounded-[22px] flex justify-between items-center text-white shadow-md shadow-[#2D6E3E]/20" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" }}>
+                                <div className="text-xs uppercase tracking-wider font-semibold opacity-80">{t.common.total}</div>
+                                <div className="text-2xl font-bold tracking-tight">{selectedOrder.total?.toLocaleString()} so'm</div>
                             </div>
                         </div>
                     </div>
@@ -584,10 +619,10 @@ export default function OrdersPage() {
             )}
             {/* Review Modal */}
             {reviewProduct && (
-                <div onClick={() => setReviewProduct(null)} className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
-                    <div onClick={e => e.stopPropagation()} className="bg-white w-full max-w-sm rounded-[48px] overflow-hidden shadow-2xl animate-in zoom-in duration-300 flex flex-col max-h-[90vh]">
-                        <div className="p-10 pb-6 flex justify-between items-center">
-                            <h3 className="text-2xl font-black italic tracking-tighter uppercase">
+                <div onClick={() => setReviewProduct(null)} className="fixed inset-0 bg-black/40 backdrop-blur-md z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+                    <div onClick={e => e.stopPropagation()} className="bg-white/95 backdrop-blur-xl w-full max-w-sm rounded-[32px] overflow-hidden shadow-2xl border border-white/20 animate-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+                        <div className="p-6 pb-4 flex justify-between items-center border-b border-[rgba(15,20,16,0.06)]">
+                            <h3 className="text-lg font-bold tracking-tight text-[#111612]">
                                 {t.common.leaveReviewTitle}
                             </h3>
                             <button
@@ -595,27 +630,28 @@ export default function OrdersPage() {
                                     videoPreWarmer.triggerHaptic("light");
                                     setReviewProduct(null);
                                 }}
-                                className="ios-icon-tap active:scale-90 w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 transition-transform duration-150 will-change-transform"
+                                className="ios-icon-tap active:scale-90 w-8 h-8 bg-black/5 rounded-full flex items-center justify-center text-[#111612] transition-transform duration-150 will-change-transform hover:bg-black/10"
+                                aria-label="Close"
                             >
-                                <XCircle size={20} />
+                                <XCircle size={18} />
                             </button>
                         </div>
 
-                        <div className="px-10 overflow-y-auto no-scrollbar pb-10 space-y-8">
+                        <div className="p-6 overflow-y-auto no-scrollbar space-y-6">
                             {/* Product Info */}
-                            <div className="flex items-center gap-4 bg-gray-50/50 p-4 rounded-3xl border border-gray-50">
-                                <div className="w-12 h-12 rounded-xl bg-white overflow-hidden border border-gray-100 flex-shrink-0">
+                            <div className="flex items-center gap-3 bg-[#F8FAF8] p-3 rounded-2xl border border-[rgba(15,20,16,0.05)]">
+                                <div className="w-11 h-11 rounded-xl bg-white overflow-hidden border border-[rgba(15,20,16,0.06)] shrink-0">
                                     <img src={reviewProduct.image || reviewProduct.imageUrl} className="w-full h-full object-cover" />
                                 </div>
-                                <p className="font-extrabold text-[11px] uppercase tracking-tighter line-clamp-2 leading-tight">
+                                <p className="font-semibold text-xs text-[#111612] line-clamp-2 leading-snug">
                                     {reviewProduct[`name_${language}`] || reviewProduct.name}
                                 </p>
                             </div>
 
                             {/* Stars */}
                             <div>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 text-center">{t.product.rating}</p>
-                                <div className="flex justify-center gap-3">
+                                <p className="text-xs font-semibold text-[#737D75] uppercase tracking-wider mb-3 text-center">{t.product.rating}</p>
+                                <div className="flex justify-center gap-2">
                                     {[1, 2, 3, 4, 5].map((star) => (
                                         <button
                                             key={star}
@@ -623,29 +659,29 @@ export default function OrdersPage() {
                                                 videoPreWarmer.triggerHaptic("selection");
                                                 setReviewRating(star);
                                             }}
-                                            className={`ios-icon-tap p-2 transition-transform duration-150 will-change-transform ${reviewRating >= star ? 'scale-125' : 'opacity-30 grayscale'}`}
+                                            className={`ios-icon-tap p-1.5 transition-transform duration-150 will-change-transform ${reviewRating >= star ? 'scale-110' : 'opacity-30'}`}
                                         >
-                                            <Star size={32} fill={reviewRating >= star ? "#fbbf24" : "none"} className={reviewRating >= star ? "text-yellow-400" : "text-gray-300"} />
+                                            <Star size={28} fill={reviewRating >= star ? "#F59E0B" : "none"} className={reviewRating >= star ? "text-amber-500" : "text-gray-300"} />
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
                             {/* Text Input */}
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.common.yourOpinion}</label>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-[#737D75] uppercase tracking-wider ml-1">{t.common.yourOpinion}</label>
                                 <textarea
                                     value={reviewText}
                                     onChange={(e) => setReviewText(e.target.value)}
                                     placeholder={t.common.productOpinionPlaceholder}
-                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-[32px] p-6 text-sm font-bold h-32 outline-none transition-shadow resize-none shadow-inner"
+                                    className="w-full bg-[#F5F7F5] border border-[rgba(15,20,16,0.08)] focus:border-[#2D6E3E] rounded-2xl p-4 text-sm font-medium h-28 outline-none transition-colors resize-none"
                                 />
                             </div>
 
                             {/* Media Upload Simulation */}
-                            <div className="space-y-4">
-                                <div className="flex gap-3">
-                                    <label className={`flex-1 bg-gray-50 border border-gray-100 py-4 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors border-dashed hover:bg-gray-100 ${isUploadingMedia ? 'opacity-50 pointer-events-none' : ''}`}>
+                            <div className="space-y-3">
+                                <div className="flex gap-2.5">
+                                    <label className={`flex-1 bg-[#F5F7F5] border border-dashed border-[rgba(15,20,16,0.12)] py-3.5 rounded-2xl flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-colors hover:bg-black/5 ${isUploadingMedia ? 'opacity-50 pointer-events-none' : ''}`}>
                                         <input
                                             type="file"
                                             accept="image/*"
@@ -665,13 +701,13 @@ export default function OrdersPage() {
                                                 }
                                             }}
                                         />
-                                        {isUploadingMedia ? <Loader2 size={18} className="text-black animate-spin" /> : <Camera size={18} className="text-gray-400" />}
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                                        {isUploadingMedia ? <Loader2 size={16} className="animate-spin text-[#2D6E3E]" /> : <Camera size={16} className="text-[#737D75]" />}
+                                        <span className="text-[10px] font-semibold uppercase tracking-wider text-[#737D75]">
                                             {isUploadingMedia ? "..." : t.common.photo}
                                         </span>
                                     </label>
 
-                                    <label className={`flex-1 bg-gray-50 border border-gray-100 py-4 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors border-dashed hover:bg-gray-100 ${isUploadingMedia || reviewVideo ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <label className={`flex-1 bg-[#F5F7F5] border border-dashed border-[rgba(15,20,16,0.12)] py-3.5 rounded-2xl flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-colors hover:bg-black/5 ${isUploadingMedia || reviewVideo ? 'opacity-50 pointer-events-none' : ''}`}>
                                         <input
                                             type="file"
                                             accept="video/*"
@@ -691,8 +727,8 @@ export default function OrdersPage() {
                                                 }
                                             }}
                                         />
-                                        {isUploadingMedia ? <Loader2 size={18} className="text-black animate-spin" /> : <Video size={18} className="text-gray-400" />}
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                                        {isUploadingMedia ? <Loader2 size={16} className="animate-spin text-[#2D6E3E]" /> : <Video size={16} className="text-[#737D75]" />}
+                                        <span className="text-[10px] font-semibold uppercase tracking-wider text-[#737D75]">
                                             {isUploadingMedia ? "..." : t.common.video}
                                         </span>
                                     </label>
@@ -700,21 +736,21 @@ export default function OrdersPage() {
 
                                 {/* Media Previews */}
                                 {(reviewImages.length > 0 || reviewVideo) && (
-                                    <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+                                    <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                                         {reviewImages.map((img, i) => (
-                                            <div key={i} className="w-16 h-16 rounded-xl overflow-hidden border border-gray-200 relative shrink-0">
+                                            <div key={i} className="w-14 h-14 rounded-xl overflow-hidden border border-gray-200 relative shrink-0">
                                                 <img src={img} className="w-full h-full object-cover" />
-                                                <button onClick={() => setReviewImages(reviewImages.filter((_, idx) => idx !== i))} className="absolute top-0.5 right-0.5 bg-black/50 text-white rounded-full p-0.5">
-                                                    <XCircle size={10} />
+                                                <button onClick={() => setReviewImages(reviewImages.filter((_, idx) => idx !== i))} className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5">
+                                                    <XCircle size={12} />
                                                 </button>
                                             </div>
                                         ))}
                                         {reviewVideo && (
-                                            <div className="w-16 h-16 rounded-xl bg-black overflow-hidden relative shrink-0">
+                                            <div className="w-14 h-14 rounded-xl bg-black overflow-hidden relative shrink-0">
                                                 <video src={reviewVideo} className="w-full h-full object-cover opacity-50" />
-                                                <Play size={10} className="absolute inset-0 m-auto text-white" />
-                                                <button onClick={() => setReviewVideo("")} className="absolute top-0.5 right-0.5 bg-black/50 text-white rounded-full p-0.5">
-                                                    <XCircle size={10} />
+                                                <Play size={12} className="absolute inset-0 m-auto text-white" />
+                                                <button onClick={() => setReviewVideo("")} className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5">
+                                                    <XCircle size={12} />
                                                 </button>
                                             </div>
                                         )}
@@ -728,13 +764,13 @@ export default function OrdersPage() {
                                     handleSubmitReview();
                                 }}
                                 disabled={isSubmittingReview || !reviewText.trim()}
-                                className="ios-tap-feedback active:scale-[0.98] w-full py-5 rounded-[32px] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-transform duration-150 will-change-transform disabled:opacity-50"
-                                style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", boxShadow: "0 8px 20px rgba(45,110,62,0.28)" }}
+                                className="ios-tap-feedback active:scale-[0.98] w-full py-3.5 rounded-2xl font-semibold text-xs tracking-wide uppercase flex items-center justify-center gap-2 transition-transform duration-150 will-change-transform disabled:opacity-50 text-white shadow-md shadow-[#2D6E3E]/20"
+                                style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" }}
                             >
-                                {isSubmittingReview ? <Loader2 className="animate-spin" size={18} /> : (
+                                {isSubmittingReview ? <Loader2 className="animate-spin" size={16} /> : (
                                     <>
                                         {t.common.send}
-                                        <MessageCircle size={16} />
+                                        <MessageCircle size={15} />
                                     </>
                                 )}
                             </button>
@@ -745,26 +781,26 @@ export default function OrdersPage() {
 
             {/* Cancellation Confirmation Modal */}
             {orderToCancel && (
-                <div onClick={() => setOrderToCancel(null)} className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
-                    <div onClick={e => e.stopPropagation()} className="bg-white w-full max-w-sm rounded-[48px] p-10 text-center space-y-8 animate-in zoom-in duration-300 shadow-2xl">
-                        <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto shadow-xl shadow-red-500/10">
-                            <XCircle size={40} />
+                <div onClick={() => setOrderToCancel(null)} className="fixed inset-0 bg-black/40 backdrop-blur-md z-[200] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+                    <div onClick={e => e.stopPropagation()} className="bg-white/95 backdrop-blur-xl w-full max-w-sm rounded-[32px] p-7 text-center space-y-5 shadow-2xl border border-white/20 animate-in zoom-in duration-200">
+                        <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto shadow-sm">
+                            <XCircle size={32} />
                         </div>
-                        <div className="space-y-4">
-                            <h3 className="text-2xl font-black italic tracking-tighter uppercase leading-tight">
+                        <div className="space-y-1.5">
+                            <h3 className="text-xl font-bold tracking-tight text-[#111612]">
                                 {t.common.cancelConfirmTitle}
                             </h3>
-                            <p className="text-sm font-bold text-gray-400">
+                            <p className="text-xs font-medium text-[#737D75]">
                                 {t.common.cancelConfirmText}
                             </p>
                         </div>
-                        <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-2.5">
                             <button
                                 onClick={() => {
                                     videoPreWarmer.triggerHaptic("medium");
                                     confirmCancelOrder();
                                 }}
-                                className="ios-tap-feedback active:scale-[0.98] w-full py-5 bg-red-500 text-white rounded-[28px] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-red-500/20 transition-transform duration-150 will-change-transform"
+                                className="ios-tap-feedback active:scale-[0.98] w-full py-3.5 bg-rose-500 text-white rounded-2xl font-semibold text-xs uppercase tracking-wider shadow-md shadow-rose-500/20 transition-transform duration-150 will-change-transform"
                             >
                                 {t.common.confirm}
                             </button>
@@ -773,7 +809,7 @@ export default function OrdersPage() {
                                     videoPreWarmer.triggerHaptic("light");
                                     setOrderToCancel(null);
                                 }}
-                                className="ios-tap-feedback active:scale-[0.98] w-full py-5 bg-gray-50 text-gray-400 rounded-[28px] font-black text-xs uppercase tracking-[0.2em] transition-transform duration-150 will-change-transform"
+                                className="ios-tap-feedback active:scale-[0.98] w-full py-3.5 bg-[#F5F7F5] text-[#737D75] rounded-2xl font-semibold text-xs uppercase tracking-wider hover:text-[#111612] transition-colors duration-150 will-change-transform"
                             >
                                 {t.common.back}
                             </button>
@@ -784,16 +820,16 @@ export default function OrdersPage() {
 
             {/* Qaytarish (Return) Modal */}
             {returnOrder && (
-                <div onClick={() => { setReturnOrder(null); setReturnReason(""); }} className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
-                    <div onClick={e => e.stopPropagation()} className="bg-white w-full max-w-sm rounded-[48px] p-10 space-y-8 animate-in zoom-in duration-300 shadow-2xl">
-                        <div className="flex flex-col items-center text-center space-y-4">
-                            <div className="w-20 h-20 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center shadow-xl shadow-orange-500/10">
-                                <RefreshCw size={36} />
+                <div onClick={() => { setReturnOrder(null); setReturnReason(""); }} className="fixed inset-0 bg-black/40 backdrop-blur-md z-[200] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+                    <div onClick={e => e.stopPropagation()} className="bg-white/95 backdrop-blur-xl w-full max-w-sm rounded-[32px] p-7 space-y-5 shadow-2xl border border-white/20 animate-in zoom-in duration-200">
+                        <div className="flex flex-col items-center text-center space-y-3">
+                            <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center shadow-sm">
+                                <RefreshCw size={28} />
                             </div>
-                            <h3 className="text-2xl font-black italic tracking-tighter uppercase leading-tight">
+                            <h3 className="text-xl font-bold tracking-tight text-[#111612]">
                                 {language === 'uz' ? "Mahsulotni qaytarish" : "Возврат товара"}
                             </h3>
-                            <p className="text-sm font-bold text-gray-400">
+                            <p className="text-xs font-medium text-[#737D75]">
                                 {language === 'uz'
                                     ? "Qaytarish sababini yozing. So'rovingiz ko'rib chiqiladi."
                                     : "Укажите причину возврата. Ваш запрос будет рассмотрен."}
@@ -804,17 +840,17 @@ export default function OrdersPage() {
                             value={returnReason}
                             onChange={(e) => setReturnReason(e.target.value)}
                             placeholder={language === 'uz' ? "Qaytarish sababi..." : "Причина возврата..."}
-                            className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-[28px] p-6 text-sm font-bold h-28 outline-none transition-shadow resize-none shadow-inner"
+                            className="w-full bg-[#F5F7F5] border border-[rgba(15,20,16,0.08)] focus:border-[#2D6E3E] rounded-2xl p-4 text-sm font-medium h-28 outline-none transition-colors resize-none"
                         />
 
-                        <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-2.5">
                             <button
                                 onClick={() => {
                                     videoPreWarmer.triggerHaptic("medium");
                                     handleSubmitReturn();
                                 }}
                                 disabled={isReturning || !returnReason.trim()}
-                                className="ios-tap-feedback active:scale-[0.98] w-full py-5 bg-orange-500 text-white rounded-[28px] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-orange-500/20 transition-transform duration-150 will-change-transform disabled:opacity-40 flex items-center justify-center gap-3"
+                                className="ios-tap-feedback active:scale-[0.98] w-full py-3.5 bg-amber-600 text-white rounded-2xl font-semibold text-xs uppercase tracking-wider shadow-md shadow-amber-600/20 transition-transform duration-150 will-change-transform disabled:opacity-40 flex items-center justify-center gap-2"
                             >
                                 {isReturning ? <Loader2 className="animate-spin" size={16} /> : (language === 'uz' ? "So'rov yuborish" : "Отправить запрос")}
                             </button>
@@ -824,7 +860,7 @@ export default function OrdersPage() {
                                     setReturnOrder(null);
                                     setReturnReason("");
                                 }}
-                                className="ios-tap-feedback active:scale-[0.98] w-full py-5 bg-gray-50 text-gray-400 rounded-[28px] font-black text-xs uppercase tracking-[0.2em] transition-transform duration-150 will-change-transform"
+                                className="ios-tap-feedback active:scale-[0.98] w-full py-3.5 bg-[#F5F7F5] text-[#737D75] rounded-2xl font-semibold text-xs uppercase tracking-wider hover:text-[#111612] transition-colors duration-150 will-change-transform"
                             >
                                 {t.common.back}
                             </button>
