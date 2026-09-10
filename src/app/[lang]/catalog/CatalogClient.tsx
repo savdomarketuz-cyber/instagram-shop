@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useStore } from "@/store/store";
 import { useShallow } from "zustand/react/shallow";
-import { Search, SlidersHorizontal, ArrowUpDown, X, Check, Loader2, PackageSearch } from "lucide-react";
+import { Search, SlidersHorizontal, ArrowUpDown, X, Check, Loader2, PackageSearch, Camera } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { translations } from "@/lib/translations";
 import { supabase } from "@/lib/supabase";
@@ -11,6 +11,7 @@ import { mapProduct } from "@/lib/mappers";
 import { ProductCard } from "@/components/home/ProductCard";
 import { ProductSkeleton } from "@/components/home/ProductSkeleton";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
+import { getProductRealStock } from "@/lib/stock";
 import type { Product } from "@/types";
 
 const GREEN = "#2D6E3E";
@@ -65,6 +66,11 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
     const [productCatIds, setProductCatIds] = useState<Set<string>>(new Set());
 
     const [searchQuery, setSearchQuery] = useState("");
+    const [searchResults, setSearchResults] = useState<Product[] | null>(null);
+    const [isSearching, setIsSearching] = useState(false);
+    const [isVisualUploading, setIsVisualUploading] = useState(false);
+    const searchAbortRef = useRef<AbortController | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     // Toza URL (/catalog/[slug]) orqali kelgan kategoriyani oldindan tanlaymiz.
     // Subkategoriya bo'lsa: asosiy = ota, sub = o'zi; aks holda asosiy = o'zi.
     const [mainCat, setMainCat] = useState<string>(() => {
@@ -147,16 +153,15 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
         load();
     }, []);
 
-    // Fetch products when category/subcategory changes
+    // Fetch products when category/subcategory changes (when not searching)
     useEffect(() => {
+        if (searchQuery.trim()) return;
         const fetchProducts = async () => {
             setLoadingProducts(true);
             try {
-                // Karta uchun kerakli ustunlargina — select("*") uzun tavsiflar/paramlar bilan
-                // payload'ni bir necha baravar katta qilardi (bosh sahifa bilan bir xil ro'yxat).
                 let query = supabase.from("products")
                     .select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,avg_rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,express_delivery,created_at")
-                    .eq("is_deleted", false).gt("stock", 0);
+                    .eq("is_deleted", false);
 
                 const activeCat = subCat !== "all" ? subCat : mainCat;
                 if (activeCat !== "all") {
@@ -169,8 +174,9 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                     query = query.in("category_id", getAllIds(activeCat));
                 }
 
-                const { data } = await query.order("sales", { ascending: false }).limit(120);
-                setProducts((data || []).map(mapProduct));
+                const { data } = await query.order("sales", { ascending: false }).limit(150);
+                const inStock = (data || []).map(mapProduct).filter((p: any) => getProductRealStock(p) > 0);
+                setProducts(inStock);
             } catch (e) {
                 console.error("Catalog products fetch failed", e);
             } finally {
@@ -178,7 +184,89 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
             }
         };
         fetchProducts();
-    }, [mainCat, subCat, allCategories.length]);
+    }, [mainCat, subCat, allCategories.length, searchQuery]);
+
+    // Live search via /api/search backend with filters & semantic ranking
+    useEffect(() => {
+        const q = searchQuery.trim();
+        if (!q) {
+            setSearchResults(null);
+            setIsSearching(false);
+            if (searchAbortRef.current) searchAbortRef.current.abort();
+            return;
+        }
+
+        if (searchAbortRef.current) searchAbortRef.current.abort();
+        const controller = new AbortController();
+        searchAbortRef.current = controller;
+        setIsSearching(true);
+
+        const timer = setTimeout(async () => {
+            try {
+                const activeCat = subCat !== "all" ? subCat : mainCat !== "all" ? mainCat : undefined;
+                const res = await fetch("/api/search", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        query: q,
+                        category: activeCat,
+                        brand: selectedBrands.length === 1 ? selectedBrands[0] : undefined,
+                        minPrice: priceRange[0] > 0 ? priceRange[0] : undefined,
+                        maxPrice: priceRange[1] > 0 ? priceRange[1] : undefined,
+                        rating: minRating > 0 ? minRating : undefined,
+                        sort: sortBy,
+                        limit: 50,
+                    }),
+                    signal: controller.signal
+                });
+                if (controller.signal.aborted) return;
+                const data = await res.json();
+                if (data.results) {
+                    setSearchResults(data.results);
+                }
+            } catch (err: any) {
+                if (err?.name !== "AbortError") {
+                    console.error("Catalog search error:", err);
+                }
+            } finally {
+                if (!controller.signal.aborted) {
+                    setIsSearching(false);
+                }
+            }
+        }, 300);
+
+        return () => {
+            clearTimeout(timer);
+            controller.abort();
+        };
+    }, [searchQuery, mainCat, subCat, selectedBrands, minRating, priceRange, sortBy]);
+
+    const handleVisualUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setIsVisualUploading(true);
+        const reader = new FileReader();
+        reader.onload = async () => {
+            const base64 = reader.result as string;
+            try {
+                const res = await fetch("/api/search", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ image: base64, limit: 50 })
+                });
+                const data = await res.json();
+                if (data.results) {
+                    setSearchResults(data.results);
+                    setSearchQuery(data.results[0]?.name ? `${data.results[0].name.slice(0, 25)}...` : "Rasm qidiruvi");
+                }
+            } catch (err) {
+                console.error("Visual search error:", err);
+            } finally {
+                setIsVisualUploading(false);
+            }
+        };
+        reader.readAsDataURL(file);
+    };
 
     const brandName = (id?: string) => {
         const b = brands.find(x => x.id === id);
@@ -187,31 +275,19 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
 
     // Max price across current product set (for the slider bound)
     const maxProductPrice = useMemo(() => {
-        const max = products.reduce((m, p) => Math.max(m, p.oldPrice || p.price || 0), 0);
+        const source = searchResults !== null ? searchResults : products;
+        const max = source.reduce((m, p) => Math.max(m, p.oldPrice || p.price || 0), 0);
         return max > 0 ? Math.ceil(max / 100000) * 100000 : 5000000;
-    }, [products]);
+    }, [products, searchResults]);
 
     const filteredProducts = useMemo(() => {
-        let list = products;
-
-        // Faqat HAQIQIY qoldig'i bor mahsulotlar — ombor (stock_details) yig'indisi manba.
-        // SQL .gt("stock",0) allaqachon filtrlaydi; bu drift'ga (stock != ombor) qarshi himoya.
-        list = list.filter((p: any) => {
-            const sd = p.stockDetails
-                ? Object.values(p.stockDetails).reduce((a: number, b: any) => a + (Number(b) || 0), 0)
-                : (p.stock || 0);
-            return sd > 0;
-        });
-
-        if (searchQuery.trim()) {
-            const q = searchQuery.toLowerCase();
-            list = list.filter(p =>
-                (p.name || "").toLowerCase().includes(q) ||
-                (p.name_uz || "").toLowerCase().includes(q) ||
-                (p.name_ru || "").toLowerCase().includes(q) ||
-                brandName((p as any).brand || p.brand_id).toLowerCase().includes(q)
-            );
+        // If backend search is active, results are already ranked and filtered
+        if (searchResults !== null) {
+            return searchResults.filter((p: any) => getProductRealStock(p) > 0);
         }
+
+        let list = products.filter((p: any) => getProductRealStock(p) > 0);
+
         if (selectedBrands.length > 0) {
             list = list.filter(p => selectedBrands.includes((p as any).brand || p.brand_id || ""));
         }
@@ -235,7 +311,7 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
             default: sorted.sort((a, b) => (b.sales || 0) - (a.sales || 0));
         }
         return sorted;
-    }, [products, searchQuery, selectedBrands, minRating, priceRange, sortBy, brands, language]);
+    }, [products, searchResults, selectedBrands, minRating, priceRange, sortBy]);
 
     const activeFilterCount = (selectedBrands.length > 0 ? 1 : 0) + (minRating > 0 ? 1 : 0) + (priceRange[0] > 0 || priceRange[1] > 0 ? 1 : 0);
 
@@ -290,6 +366,9 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                             onChange={e => setSearchQuery(e.target.value)}
                             className="w-full bg-transparent text-[14px] font-medium text-[#111612] outline-none placeholder:text-[#9AA29C]"
                         />
+                        {isSearching && (
+                            <Loader2 size={16} className="animate-spin text-[#2D6E3E] shrink-0" />
+                        )}
                         {searchQuery && (
                             <button
                                 type="button"
@@ -297,12 +376,29 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                                 onClick={() => {
                                     videoPreWarmer.triggerHaptic("light");
                                     setSearchQuery("");
+                                    setSearchResults(null);
                                 }}
                                 className="ios-icon-tap active:scale-85 transition-transform duration-150 p-1 text-[#9AA29C] hover:text-[#111612]"
                             >
                                 <X size={16} />
                             </button>
                         )}
+                        <button
+                            type="button"
+                            aria-label="Rasm orqali qidirish"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="ios-icon-tap active:scale-85 transition-transform duration-150 p-1 text-[#2D6E3E] hover:bg-[#EAF3EC] rounded-xl shrink-0"
+                            title={language === "uz" ? "Rasm orqali qidirish" : "Поиск по фото"}
+                        >
+                            {isVisualUploading ? <Loader2 size={16} className="animate-spin text-[#2D6E3E]" /> : <Camera size={18} />}
+                        </button>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleVisualUpload}
+                        />
                     </div>
                 </div>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Heart, ShoppingBag, MessageSquare, Clapperboard, LayoutGrid, User, ShoppingCart, BookOpen, Loader2, Sparkles, X, Home } from "lucide-react";
+import { Search, Heart, ShoppingBag, MessageSquare, Clapperboard, LayoutGrid, User, ShoppingCart, BookOpen, Loader2, Sparkles, X, Home, Camera } from "lucide-react";
 import Image from "next/image";
 import Logo from "./Logo";
 import { getProductSlug } from "@/lib/slugify";
@@ -63,6 +63,36 @@ export default function Navigation() {
         setSearchResults: s.setSearchResults, isSearchLoading: s.isSearchLoading, setHomeSearchQuery: s.setHomeSearchQuery
     })));
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isVisualSearching, setIsVisualSearching] = useState(false);
+
+    const handleVisualSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setIsVisualSearching(true);
+        const reader = new FileReader();
+        reader.onload = async () => {
+            const base64 = reader.result as string;
+            try {
+                useStore.setState({ isSearchLoading: true });
+                const res = await fetch("/api/search", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ image: base64, limit: 50 })
+                });
+                const data = await res.json();
+                setSearchResults(data.results || [], data.facets || null, data.didYouMean || null, !!data.isFallback);
+                setStoreGlobalQuery("Rasm qidiruvi");
+                setSearch("Rasm qidiruvi");
+                if (!isHomePage) router.push(`/${language}`);
+            } catch (err) {
+                console.error("Visual search error:", err);
+            } finally {
+                setIsVisualSearching(false);
+                useStore.setState({ isSearchLoading: false });
+            }
+        };
+        reader.readAsDataURL(file);
+    };
 
     const handleSearch = async (e?: React.FormEvent, forceQuery?: string) => {
         if (e) e.preventDefault();
@@ -214,6 +244,22 @@ export default function Navigation() {
                                     <X size={18} />
                                 </button>
                             )}
+                            <button
+                                type="button"
+                                aria-label="Rasm orqali qidirish"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="ios-icon-tap active:scale-85 transition-transform duration-150 p-2 text-gray-400 hover:text-[#2d6e3e] will-change-transform"
+                                title={language === "uz" ? "Rasm orqali qidirish" : "Поиск по фото"}
+                            >
+                                {isVisualSearching ? <Loader2 size={18} className="animate-spin text-[#2d6e3e]" /> : <Camera size={18} />}
+                            </button>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleVisualSearch}
+                            />
                             <button
                                 type="submit"
                                 onClick={() => videoPreWarmer.triggerHaptic("light")}

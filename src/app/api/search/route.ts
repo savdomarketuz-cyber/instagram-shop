@@ -4,14 +4,13 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import { mapProduct } from '@/lib/mappers';
 import { checkRateLimit } from '@/lib/rate-limiter';
 import { normalizeQuery, transliterateLatin } from '@/lib/query-normalize';
+import { generateQueryEmbedding } from '@/lib/embeddings';
+import { getProductRealStock } from '@/lib/stock';
 
 /**
  * Admin "Qidiruv Lug'ati" (search_synonyms) jadvalidagi sinonimlarni qo'llaydi.
  * keyword (xaridor yozadigan) → maps_to (asl izlanadigan). RLS chetlab service role bilan o'qiladi.
- *
- * Lug'at kichik va kam o'zgaradi — butun jadval funksiya xotirasida 5 daqiqa
- * keshlanadi. Aks holda suggest har keystroke'da bitta qo'shimcha DB so'rov
- * (ketma-ket, qidiruvdan OLDIN) qilardi.
+ * Lug'at xotirada 5 daqiqa keshlanadi.
  */
 const SYNONYMS_TTL_MS = 5 * 60 * 1000;
 let synonymsCache: { map: Record<string, string>; expires: number } | null = null;
@@ -30,7 +29,6 @@ async function getSynonymsMap(): Promise<Record<string, string>> {
         synonymsCache = { map, expires: now + SYNONYMS_TTL_MS };
         return map;
     } catch {
-        // DB xatosida muddati o'tgan bo'lsa ham eski keshni ishlatamiz
         return synonymsCache?.map || {};
     }
 }
@@ -39,9 +37,7 @@ async function applyDbSynonyms(raw: string): Promise<string> {
     const lower = (raw || '').toLowerCase().trim();
     if (!lower) return raw;
     const map = await getSynonymsMap();
-    // To'liq so'rov mosligi ustuvor
     if (map[lower]) return map[lower];
-    // So'zma-so'z almashtirish
     return lower.split(/\s+/).map(w => map[w] || w).join(' ');
 }
 
@@ -49,7 +45,6 @@ async function applyDbSynonyms(raw: string): Promise<string> {
 async function extractKeywordsFromImage(imageDataUrl: string): Promise<string | null> {
     const apiKey = process.env.GROQ_API_KEY_1 || process.env.GROQ_API_KEY_2;
     if (!apiKey) return null;
-    // base64 hajm cheklovi (~4MB)
     if (imageDataUrl.length > 6_000_000) return null;
 
     try {
@@ -82,18 +77,31 @@ export async function POST(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
 
     try {
-        const { query, image, suggest, userPhone } = await req.json();
+        const body = await req.json();
+        const { 
+            query, 
+            image, 
+            suggest, 
+            userPhone,
+            page = 1,
+            limit = suggest ? 6 : 24,
+            category,
+            brand,
+            minPrice,
+            maxPrice,
+            rating,
+            sort
+        } = body;
 
-        // 0. RATE LIMITING — typeahead (suggest) har keystroke'da chaqirilgani uchun
-        // yumshoqroq cheklov; to'liq qidiruv qattiqroq.
-        const rlMax = suggest ? 40 : 12;
+        // 0. RATE LIMITING
+        const rlMax = suggest ? 50 : 15;
         if (!await checkRateLimit(suggest ? `${ip}:s` : ip, rlMax, 60)) {
             return NextResponse.json({ success: false, message: "Juda ko'p urinish.", results: [] }, { status: 429 });
         }
 
         let searchQuery = (query || "").trim();
 
-        // 1. Visual Search — rasmni Groq vision bilan tahlil qilib kalit so'z chiqarish
+        // 1. Visual Search — rasm orqali qidiruv
         if (image && !searchQuery) {
             const visionKeywords = await extractKeywordsFromImage(image);
             if (!visionKeywords) {
@@ -102,94 +110,142 @@ export async function POST(req: NextRequest) {
             searchQuery = visionKeywords;
         }
 
-        if (!searchQuery) {
-            return NextResponse.json({ results: [] });
-        }
-
-        // Typeahead uchun bitta belgi RPC chaqirmasin
+        // Typeahead uchun kamida 2 ta belgi bo'lsin
         if (suggest && searchQuery.length < 2) {
             return NextResponse.json({ success: true, results: [], count: 0 });
         }
 
-        // 1.5 Identify User for Affinity Profiling
+        // 1.5 User Identifikatsiya
         const userPhoneCookie = req.cookies.get('user_phone')?.value;
         const userIdentifier = userPhone || userPhoneCookie || null;
 
-        // 2. Normalize query — kod ichidagi typo/transliteratsiya xaritasi (0ms, sinxron).
-        // Admin DB sinonim lug'ati endi xotirada keshlanadi (5 min TTL), shuning uchun
-        // suggest'da ham qo'llash bepul — avval har keystroke'ga DB roundtrip bo'lgani
-        // uchun faqat to'liq qidiruvda ishlatilardi.
+        // 2. Normalizatsiya & Sinonimlar
         const dbNormalized = await applyDbSynonyms(searchQuery);
         const normalizedQuery = normalizeQuery(dbNormalized);
 
-        // 3. Behavioral + affinity ranked search (tokenized + word_similarity + telemetry + profile)
-        let finalResults: any[] = [];
+        // ==========================================
+        // TYPEAHEAD MODE: FAST LIGHTWEIGHT RPC
+        // ==========================================
+        if (suggest) {
+            const { data: suggestRows, error: suggestErr } = await supabase.rpc('suggest_products', {
+                search_query: normalizedQuery,
+                match_count: limit || 6
+            });
+
+            if (!suggestErr && suggestRows) {
+                const mapped = suggestRows.map(mapProduct).filter((p: any) => getProductRealStock(p) > 0);
+                return NextResponse.json({
+                    success: true,
+                    results: mapped,
+                    count: mapped.length
+                });
+            }
+
+            // Fallback for suggest
+            const { data: fallbackRows } = await supabase
+                .from('products')
+                .select('id, name, name_uz, name_ru, price, old_price, image, images, image_metadata, category_id, model, article, stock, stock_details')
+                .or(`name.ilike.%${normalizedQuery}%,name_uz.ilike.%${normalizedQuery}%,name_ru.ilike.%${normalizedQuery}%,model.ilike.%${normalizedQuery}%,article.ilike.%${normalizedQuery}%`)
+                .eq('is_deleted', false)
+                .limit(limit || 6);
+
+            const mapped = (fallbackRows || []).map(mapProduct).filter((p: any) => getProductRealStock(p) > 0);
+            return NextResponse.json({
+                success: true,
+                results: mapped,
+                count: mapped.length
+            });
+        }
+
+        // ==========================================
+        // FULL SEARCH MODE: SEMANTIC + BEHAVIORAL RPC
+        // ==========================================
+        const currentPage = Math.max(1, Number(page) || 1);
+        const currentLimit = Math.min(100, Math.max(1, Number(limit) || 24));
+        const offset = (currentPage - 1) * currentLimit;
+
+        // Semantic Query Embedding yaratish (384-dim, cached)
+        let queryEmbedding: string | null = null;
+        if (normalizedQuery) {
+            queryEmbedding = await generateQueryEmbedding(normalizedQuery);
+        }
+
         let isFallback = false;
 
-        const runRpc = (q: string, threshold: number) => supabase.rpc('advanced_smart_search', {
-            search_query: q,
-            query_embedding: null,
-            match_threshold: threshold,
-            match_count: suggest ? 6 : 50,
-            p_user_identifier: suggest ? null : userIdentifier,
-        });
+        const runRpc = async (q: string, threshold: number) => {
+            return supabase.rpc('advanced_smart_search', {
+                search_query: q,
+                query_embedding: queryEmbedding,
+                match_threshold: threshold,
+                match_count: currentLimit + 1, // +1 to determine hasMore accurately
+                p_user_identifier: userIdentifier,
+                p_category_id: category || null,
+                p_min_price: minPrice && minPrice > 0 ? Number(minPrice) : null,
+                p_max_price: maxPrice && maxPrice > 0 ? Number(maxPrice) : null,
+                p_brand_id: brand || null,
+                p_min_rating: rating && rating > 0 ? Number(rating) : null,
+                p_sort: sort || null,
+                p_offset: offset
+            });
+        };
 
-        // match_threshold endi word_similarity chegarasi (token darajasida fuzzy).
-        const { data: results, error } = await runRpc(normalizedQuery, 0.30);
+        let { data: results, error } = await runRpc(normalizedQuery, 0.25);
 
         if (error) {
             console.error("advanced_smart_search RPC error:", error);
             const sanitizedQuery = normalizedQuery.replace(/[,"'\\]/g, ' ').trim();
-            const { data: textResults } = await supabase
+            let fallbackQuery = supabase
                 .from('products')
                 .select('*')
-                .or(`name.ilike.%${sanitizedQuery}%,name_uz.ilike.%${sanitizedQuery}%,name_ru.ilike.%${sanitizedQuery}%,article.ilike.%${sanitizedQuery}%,model.ilike.%${sanitizedQuery}%`)
-                .eq('is_deleted', false)
-                .limit(suggest ? 6 : 20);
+                .eq('is_deleted', false);
 
-            if (textResults) finalResults = textResults;
-        } else {
-            finalResults = results || [];
+            if (sanitizedQuery) {
+                fallbackQuery = fallbackQuery.or(`name.ilike.%${sanitizedQuery}%,name_uz.ilike.%${sanitizedQuery}%,name_ru.ilike.%${sanitizedQuery}%,article.ilike.%${sanitizedQuery}%,model.ilike.%${sanitizedQuery}%`);
+            }
+            if (category) fallbackQuery = fallbackQuery.eq('category_id', category);
+            if (brand) fallbackQuery = fallbackQuery.eq('brand_id', brand);
+            if (minPrice && minPrice > 0) fallbackQuery = fallbackQuery.gte('price', Number(minPrice));
+            if (maxPrice && maxPrice > 0) fallbackQuery = fallbackQuery.lte('price', Number(maxPrice));
+
+            const { data: textResults } = await fallbackQuery
+                .range(offset, offset + currentLimit);
+
+            results = textResults || [];
         }
 
-        // 3.1 FALLBACK — hech narsa topilmasa, hech qachon bo'sh ko'cha bermaslik.
-        // (a) kirillcha so'rovni lotinga o'girib qayta sinash (klipper→clipper),
-        // (b) word_similarity chegarasini pasaytirib eng yaqin mahsulotlarni ko'rsatish.
-        if (!error && finalResults.length === 0 && searchQuery) {
+        let rawResults = results || [];
+
+        // 3.1 Fallback — Kirill translit yoki threshold yumshatish
+        if (!error && rawResults.length === 0 && searchQuery) {
             const translit = normalizeQuery(transliterateLatin(dbNormalized));
             if (translit && translit.toLowerCase() !== normalizedQuery.toLowerCase()) {
-                const { data: tr } = await runRpc(translit, 0.30);
-                if (tr && tr.length > 0) finalResults = tr;
+                const { data: tr } = await runRpc(translit, 0.25);
+                if (tr && tr.length > 0) rawResults = tr;
             }
-            if (finalResults.length === 0) {
-                const { data: relaxed } = await runRpc(normalizedQuery, 0.18);
-                if (relaxed && relaxed.length > 0) { finalResults = relaxed; isFallback = true; }
+            if (rawResults.length === 0) {
+                const { data: relaxed } = await runRpc(normalizedQuery, 0.15);
+                if (relaxed && relaxed.length > 0) {
+                    rawResults = relaxed;
+                    isFallback = true;
+                }
             }
         }
 
-        // Map results consistently with the rest of the app
-        let mappedResults = finalResults.map(mapProduct);
+        // Pagination: hasMore hisoblash
+        const hasMore = rawResults.length > currentLimit;
+        const pageItems = hasMore ? rawResults.slice(0, currentLimit) : rawResults;
 
-        // Tugagan (qoldiq 0) mahsulotlarni qidiruvdan ham yashiramiz — sotib bo'lmaydi.
-        // Ombor (stock_details) yig'indisi manba; bo'lmasa denormalizatsiya stock.
-        // (place_order RPC checkout'da qoldiqni kamaytiradi; restore_expired_orders qaytaradi.)
-        mappedResults = mappedResults.filter((p: any) => {
-            const sd = p.stockDetails
-                ? Object.values(p.stockDetails).reduce((a: number, b: any) => a + (Number(b) || 0), 0)
-                : (p.stock || 0);
-            return sd > 0;
-        });
+        // Map results consistently
+        let mappedResults = pageItems.map(mapProduct).filter((p: any) => getProductRealStock(p) > 0);
 
-        // Kategoriya ID -> NOM boyitish. mapProduct `category` ni category_id ga
-        // o'rnatadi, shuning uchun UI'da ID (masalan "406") ko'rinardi. Bu yerda har
-        // mahsulotga category_uz / category_ru NOMINI qo'shamiz (dropdown shu maydonni
-        // o'qiydi) va facet chiplari uchun categoryNames lookup tayyorlaymiz.
+        // Kategoriya ID -> NOM boyitish
         const categoryNames: Record<string, { uz: string; ru: string }> = {};
         const catIds = Array.from(new Set(
             mappedResults
                 .map((p: any) => p.category ?? p.category_id)
                 .filter((v: any) => v !== null && v !== undefined && v !== '')
         ));
+
         if (catIds.length > 0) {
             const { data: cats } = await supabase
                 .from('categories')
@@ -209,61 +265,29 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // 3.5 Personalization logic
-        if (userPhone && mappedResults.length > 0 && !suggest) {
-            const { data: interests } = await supabase
-                .from('user_interests')
-                .select('categories')
-                .eq('user_phone', userPhone)
-                .single();
-                
-            if (interests && interests.categories) {
-                const catWeights = interests.categories as Record<string, number>;
-                const maxWeight = Math.max(...Object.values(catWeights).map(Number), 1);
-
-                // Personalization bonusi qo'shish (20%), relevance order-ni buzmaslik uchun
-                const totalItems = mappedResults.length;
-                mappedResults = mappedResults
-                    .map((item: any, index: number) => {
-                        const cat = item.category || item.category_id || item.category_uz || '';
-                        const personalScore = (Number(catWeights[cat]) || 0) / maxWeight; // 0..1
-                        const relevanceScore = totalItems > 1 ? 1 - (index / (totalItems - 1)) : 1; // 1..0
-                        return { ...item, _blendedScore: relevanceScore * 0.8 + personalScore * 0.2 };
-                    })
-                    .sort((a: any, b: any) => b._blendedScore - a._blendedScore)
-                    .map(({ _blendedScore, ...rest }: any) => rest);
-            }
-        }
-
-        let didYouMean = null;
+        // Facets tayyorlash
         const facets = {
             categories: {} as Record<string, number>,
             tags: {} as Record<string, number>,
-            // ID -> {uz, ru} — frontend facet chipida ID o'rniga NOM ko'rsatish uchun.
-            // Filtr hamon ID (kalit) bo'yicha ishlaydi, faqat ko'rsatish nomga aylanadi.
             categoryNames,
         };
 
-        if (!suggest) {
-            mappedResults.forEach((p: any) => {
-                const cat = p.category || p.category_id || p.category_uz || "Boshqa";
-                facets.categories[cat] = (facets.categories[cat] || 0) + 1;
-                
-                if (p.tag) {
-                    facets.tags[p.tag] = (facets.tags[p.tag] || 0) + 1;
-                }
-            });
-
-            // "Balki shuni nazarda tutdingizmi?" — normalizatsiya/transliteratsiya
-            // so'rovni o'zgartirgan bo'lsa (ayrpods→AirPods, клиппер→clipper), shuni taklif qilamiz.
-            // Mahsulot nomidan tasodifiy so'z olishdan ko'ra ishonchli signal.
-            if (searchQuery.length >= 3 && normalizedQuery.toLowerCase() !== searchQuery.toLowerCase()) {
-                didYouMean = normalizedQuery;
+        mappedResults.forEach((p: any) => {
+            const cat = p.category || p.category_id || p.category_uz || "Boshqa";
+            facets.categories[cat] = (facets.categories[cat] || 0) + 1;
+            if (p.tag) {
+                facets.tags[p.tag] = (facets.tags[p.tag] || 0) + 1;
             }
+        });
+
+        // "Balki shuni nazarda tutdingizmi?"
+        let didYouMean = null;
+        if (searchQuery.length >= 3 && normalizedQuery.toLowerCase() !== searchQuery.toLowerCase()) {
+            didYouMean = normalizedQuery;
         }
 
         // 4. Record Search Analytics (Non-blocking)
-        if (!suggest) {
+        if (searchQuery) {
             supabase.from('search_analytics').insert({
                 query: searchQuery,
                 results_count: mappedResults.length
@@ -278,6 +302,9 @@ export async function POST(req: NextRequest) {
             facets,
             didYouMean,
             isFallback,
+            page: currentPage,
+            limit: currentLimit,
+            hasMore,
             count: mappedResults.length
         });
 
@@ -286,4 +313,3 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Search failed: " + error.message, results: [] }, { status: 500 });
     }
 }
-

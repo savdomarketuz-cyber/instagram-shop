@@ -64,7 +64,7 @@ const nextConfig = {
         ignoreDuringBuilds: true,
     },
     experimental: {
-        serverComponentsExternalPackages: ['sharp', 'web-push'],
+        serverComponentsExternalPackages: ['sharp', 'web-push', 'onnxruntime-node', '@xenova/transformers'],
     },
     images: {
         unoptimized: true,
@@ -85,7 +85,7 @@ const nextConfig = {
     },
     webpack: (config, { isServer }) => {
         if (isServer) {
-            config.externals.push('sharp');
+            config.externals.push('sharp', 'onnxruntime-node', '@xenova/transformers');
         }
         return config;
     }
