@@ -12,56 +12,70 @@ export const revalidate = 86400; // 24 soat cache (Admin panelda mahsulot ozgars
 
 // 🚀 Memoize the database call to prevent double-fetching in Metadata & Page
 const getProductData = cache(async (identifier: string) => {
-    if (!identifier) return null;
+    if (!identifier || !process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
 
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+    try {
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
 
-    let query = supabaseAdmin
-        .from("products")
-        .select("*")
-        .eq("is_deleted", false);
+        let query = supabaseAdmin
+            .from("products")
+            .select("*")
+            .eq("is_deleted", false);
 
-    if (isUUID) {
-        query = query.or(`id.eq.${identifier},article.eq.${identifier}`);
-    } else {
-        query = query.eq("article", identifier);
-    }
-
-    const { data } = await query.single();
-    if (!data) return null;
-
-    let brandName: string | undefined = undefined;
-    if (data.brand_id) {
-        const { data: brand } = await supabaseAdmin
-            .from("brands")
-            .select("name")
-            .eq("id", data.brand_id)
-            .single();
-        if (brand?.name) {
-            brandName = brand.name;
+        if (isUUID) {
+            query = query.or(`id.eq.${identifier},article.eq.${identifier}`);
+        } else {
+            query = query.eq("article", identifier);
         }
-    }
 
-    return { ...mapProduct(data), brand_name: brandName };
+        const { data } = await query.single();
+        if (!data) return null;
+
+        let brandName: string | undefined = undefined;
+        if (data.brand_id) {
+            const { data: brand } = await supabaseAdmin
+                .from("brands")
+                .select("name")
+                .eq("id", data.brand_id)
+                .single();
+            if (brand?.name) {
+                brandName = brand.name;
+            }
+        }
+
+        return { ...mapProduct(data), brand_name: brandName };
+    } catch (err) {
+        console.error("getProductData error:", err);
+        return null;
+    }
 });
 
 // ⚡ Eng mashhur 200 mahsulotni SEO slug shaklida pre-render (CDN'dan 0ms).
 // Har mahsulot uchun uz va ru slug — sitemap/canonical bilan AYNAN mos bo'ladi.
 // (Avval UUID + artikul render qilinardi: UUID dublikat, artikul esa buzilgan 404 edi.)
 export async function generateStaticParams() {
-    const { data: products } = await supabaseAdmin
-        .from("products")
-        .select("id, article, name, name_uz, name_ru")
-        .eq("is_deleted", false)
-        .order("sales", { ascending: false })
-        .limit(200);
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        return [];
+    }
 
-    if (!products) return [];
+    try {
+        const { data: products } = await supabaseAdmin
+            .from("products")
+            .select("id, article, name, name_uz, name_ru")
+            .eq("is_deleted", false)
+            .order("sales", { ascending: false })
+            .limit(200);
 
-    return products.flatMap((p) => [
-        { id: getProductSlug(p, 'uz') },
-        { id: getProductSlug(p, 'ru') },
-    ]);
+        if (!products) return [];
+
+        return products.flatMap((p) => [
+            { id: getProductSlug(p, 'uz') },
+            { id: getProductSlug(p, 'ru') },
+        ]);
+    } catch (err) {
+        console.error("generateStaticParams error:", err);
+        return [];
+    }
 }
 
 export async function generateMetadata({ params }: { params: { lang: string, id: string } }): Promise<Metadata> {

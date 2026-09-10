@@ -867,52 +867,49 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                     {/* Right: Info Panels */}
                     <div className="col-span-12 lg:col-span-5 space-y-10">
                         {/* 1. Header & Price */}
-                        <div className="bg-white p-10 rounded-[40px] border border-gray-100 shadow-sm">
-                            <h1 className="text-4xl font-black tracking-tighter italic uppercase mb-6 leading-tight">
+                        <div className="bg-white p-8 lg:p-10 rounded-[32px] border border-gray-100 shadow-sm">
+                            <h1 className="text-2xl lg:text-3xl font-semibold tracking-tight text-[#111612] mb-3 leading-snug">
                                 {product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name}
                             </h1>
-                            <div className="flex items-center gap-2 mb-8 bg-gray-50/50 w-fit px-4 py-2 rounded-2xl">
-                                <Star size={16} className="text-yellow-400 fill-yellow-400" />
-                                <span className="font-black text-sm">{product.rating || 4.9}</span>
-                                <span className="text-xs text-gray-400 font-bold uppercase tracking-widest ml-2">({product.reviewCount || 0} {language === 'uz' ? 'sharh' : 'отзыв'})</span>
+                            <div className="flex items-center gap-2 mb-6 bg-gray-50/70 w-fit px-3.5 py-1.5 rounded-xl">
+                                <Star size={15} className="text-yellow-400 fill-yellow-400" />
+                                <span className="font-semibold text-xs text-[#111612]">{product.rating || 4.9}</span>
+                                <span className="text-xs text-gray-400 font-medium ml-1.5">({product.reviewCount || 0} {language === 'uz' ? 'sharh' : 'отзыв'})</span>
                             </div>
 
-                             <div className="flex flex-col gap-1 mb-8">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{t.common.price}</p>
+                             <div className="flex flex-col gap-1 mb-6">
+                                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{t.common.price}</p>
                                 {personalOffer ? (
                                     // Shaxsiy chegirma: faqat 2 narx — eski narx (chizilgan) + shaxsiy narx. Oraliq narx yo'q.
                                     <>
                                         <div className="flex items-center gap-2 mb-1">
-                                            <span className="px-2 py-1 bg-indigo-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest">-{personalOffer.percent}%</span>
-                                            <span className="text-[11px] font-black text-indigo-700 uppercase tracking-widest">
+                                            <span className="px-2 py-0.5 bg-indigo-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider">-{personalOffer.percent}%</span>
+                                            <span className="text-[11px] font-semibold text-indigo-700">
                                                 {language === 'uz' ? 'Siz uchun shaxsiy narx' : 'Персональная цена для вас'}
                                             </span>
                                         </div>
                                         <div className="flex items-baseline gap-4">
-                                            <div className="text-6xl font-black italic tracking-tighter text-indigo-700">
-                                                {Math.round(product.price * (1 - personalOffer.percent / 100)).toLocaleString()} <span className="text-2xl not-italic">{language === 'uz' ? "so'm" : "сум"}</span>
+                                            <div className="text-3xl lg:text-4xl font-bold tracking-tight text-indigo-700">
+                                                {Math.round(product.price * (1 - personalOffer.percent / 100)).toLocaleString()} <span className="text-xl font-normal text-indigo-600">{language === 'uz' ? "so'm" : "сум"}</span>
                                             </div>
-                                            <span className="text-gray-300 line-through font-bold text-2xl">
+                                            <span className="text-gray-300 line-through font-medium text-xl">
                                                 {Number((product.oldPrice && product.oldPrice > product.price ? product.oldPrice : product.price) || 0).toLocaleString()}
                                             </span>
                                         </div>
-                                        <p className="text-[10px] font-bold text-indigo-500/80 tracking-wide mt-1">
+                                        <p className="text-[10px] font-medium text-indigo-500/80 mt-1">
                                             {(language === 'uz' ? personalOffer.reason_uz : personalOffer.reason_ru) || (language === 'uz' ? 'Siz uchun shaxsiy chegirma' : 'Персональная скидка')}
                                             {personalOffer.expires_at
                                                 ? ` · ${new Date(personalOffer.expires_at).toLocaleDateString(language === 'uz' ? 'uz' : 'ru')} ${language === 'uz' ? 'gacha' : 'до'}`
                                                 : ''}
                                         </p>
-                                        <p className="text-[9px] font-bold text-gray-400 tracking-wide">
-                                            {language === 'uz' ? 'Chegirma buyurtma berishda avtomatik qo\'llanadi' : 'Скидка применится автоматически при оформлении'}
-                                        </p>
                                     </>
                                 ) : (
                                     <div className="flex items-baseline gap-4">
-                                        <div className="text-6xl font-black italic tracking-tighter text-black">
-                                            {Number(product.price || 0).toLocaleString()} <span className="text-2xl not-italic">{language === 'uz' ? "so'm" : "сум"}</span>
+                                        <div className="text-3xl lg:text-4xl font-bold tracking-tight text-[#111612]">
+                                            {Number(product.price || 0).toLocaleString()} <span className="text-xl font-normal text-gray-500">{language === 'uz' ? "so'm" : "сум"}</span>
                                         </div>
                                         {product.oldPrice && product.oldPrice > product.price && (
-                                            <span className="text-gray-300 line-through font-bold text-2xl">{Number(product.oldPrice || 0).toLocaleString()}</span>
+                                            <span className="text-gray-300 line-through font-medium text-xl">{Number(product.oldPrice || 0).toLocaleString()}</span>
                                         )}
                                     </div>
                                 )}
@@ -977,44 +974,44 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                             )}
 
                             {/* Action Buttons */}
-                            <div className="grid grid-cols-1 gap-4 mt-12">
-                                <div className="flex gap-4 items-stretch">
+                            <div className="grid grid-cols-1 gap-3 mt-8">
+                                <div className="flex gap-3 items-stretch">
                                     <button 
                                         onClick={handleFastBuy}
-                                        className="ios-tap-feedback flex-1 bg-white border-2 border-black text-black py-5 rounded-[28px] font-black text-sm uppercase tracking-widest hover:bg-gray-50 active:scale-[0.98] transition-transform duration-150 shadow-xl shadow-black/5 will-change-transform"
+                                        className="glass-tinted-button flex-1 h-[52px] text-sm font-semibold rounded-[var(--radius-control)]"
                                     >
-                                        {language === 'uz' ? "TEZKOR XARID" : "КУПИТЬ СЕЙЧАС"}
+                                        {language === 'uz' ? "Tezkor xarid" : "Купить сейчас"}
                                     </button>
 
                                     {cartItem ? (
-                                        <div className="flex-1 flex items-center gap-2 animate-in fade-in zoom-in duration-300">
-                                            <div className="flex-1 bg-[#F2F3F5] h-[60px] rounded-[28px] flex items-center justify-around">
+                                        <div className="flex-1 flex items-center gap-2 animate-in fade-in zoom-in duration-200">
+                                            <div className="flex-1 bg-[#EAF3EC] h-[52px] rounded-[var(--radius-control)] flex items-center justify-around">
                                                 <button 
                                                     onClick={() => {
                                                         videoPreWarmer.triggerHaptic("light");
                                                         updateQuantity(product.id, cartItem.quantity - 1);
                                                     }} 
-                                                    className="ios-icon-tap active:scale-85 p-3 text-gray-400 hover:text-black transition-transform duration-150"
+                                                    className="ios-icon-tap active:scale-85 p-2.5 text-[#2D6E3E] transition-transform duration-150"
                                                 >
-                                                    <Minus size={20} strokeWidth={3} />
+                                                    <Minus size={18} strokeWidth={2.4} />
                                                 </button>
-                                                <span className="text-xl font-black italic">{cartItem.quantity}</span>
+                                                <span className="text-base font-bold text-[#111612]">{cartItem.quantity}</span>
                                                 <button 
                                                     onClick={() => {
                                                         videoPreWarmer.triggerHaptic("light");
                                                         updateQuantity(product.id, cartItem.quantity + 1);
                                                     }} 
-                                                    className="ios-icon-tap active:scale-85 p-3 text-gray-400 hover:text-black transition-transform duration-150"
+                                                    className="ios-icon-tap active:scale-85 p-2.5 text-[#2D6E3E] transition-transform duration-150"
                                                 >
-                                                    <Plus size={20} strokeWidth={3} />
+                                                    <Plus size={18} strokeWidth={2.4} />
                                                 </button>
                                             </div>
                                             <Link
-                                                href="/cart"
+                                                href={`/${language}/cart`}
                                                 onClick={() => videoPreWarmer.triggerHaptic("light")}
-                                                className="ios-icon-tap p-5 rounded-[28px] active:scale-90 transition-transform duration-150 velari-green-btn"
+                                                className="glass-prominent-button h-[52px] px-5 rounded-[var(--radius-control)]"
                                             >
-                                                <ShoppingBag size={20} strokeWidth={3} />
+                                                <ShoppingBag size={18} strokeWidth={2} />
                                             </Link>
                                         </div>
                                     ) : (
@@ -1023,9 +1020,10 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                                 videoPreWarmer.triggerHaptic("medium");
                                                 addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any);
                                             }}
-                                            className="ios-tap-feedback flex-1 py-5 rounded-[28px] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 active:scale-[0.98] transition-transform duration-150 velari-green-btn will-change-transform"
+                                            className="glass-prominent-button flex-1 h-[52px] text-sm font-semibold rounded-[var(--radius-control)]"
                                         >
-                                            <Plus size={20} strokeWidth={3} /> {language === 'uz' ? "SAVATGA" : "В КОРЗИНУ"}
+                                            <ShoppingBag size={18} strokeWidth={2} />
+                                            <span>{language === 'uz' ? "Savatga qo'shish" : "В корзину"}</span>
                                         </button>
                                     )}
                                 </div>
@@ -1166,58 +1164,59 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                 language={language}
             />
 
-            {/* Mobile Sticky CTA — Velari style */}
-            <div className={`md:hidden fixed bottom-[66px] left-0 right-0 z-[60] transition-transform duration-300 transition-opacity duration-300 ease-out will-change-transform transform ${isScrolledPast ? 'translate-y-40 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}
-                style={{ padding: "14px 20px 20px", background: "rgba(250,250,246,0.92)", backdropFilter: "blur(20px) saturate(180%)", borderTop: "0.5px solid rgba(15,20,16,0.06)" }}>
-                <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
-                    {/* Tezkor xarid (like o'rniga) */}
+            {/* Mobile Floating Sticky CTA — Liquid Glass Capsule */}
+            <div 
+                className="md:hidden fixed bottom-3 left-3 right-3 max-w-lg mx-auto z-[95] glass-strong rounded-[24px] p-2 border border-white/80 shadow-[0_12px_36px_rgba(28,70,42,0.18)] select-none"
+                style={{
+                    paddingBottom: "max(env(safe-area-inset-bottom, 8px), 8px)",
+                }}
+            >
+                <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
+                    {/* Tezkor xarid (Secondary Action) */}
                     <button
                         onClick={handleFastBuy}
-                        className="ios-tap-feedback active:scale-[0.96] transition-transform duration-150 will-change-transform"
+                        className="glass-tinted-button text-xs font-semibold"
                         style={{
-                            flexShrink: 0, height: 54, borderRadius: 18, padding: "0 18px",
-                            background: "#fff", border: "1.5px solid rgba(45,110,62,0.25)",
-                            color: "#2D6E3E", fontSize: 14, fontWeight: 700, letterSpacing: -0.2,
-                            display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                            WebkitTapHighlightColor: "transparent",
+                            flexShrink: 0, height: 48, borderRadius: 16, padding: "0 16px",
                         }}
                     >
-                        {language === 'uz' ? "Tezkor xarid" : "Купить сейчас"}
+                        {language === 'uz' ? "Tezkor xarid" : "Купить"}
                     </button>
 
-                    {/* Cart CTA */}
+                    {/* Cart CTA (Primary Action) */}
                     {cartItem ? (
-                        <div style={{ flex: 1, display: "flex", gap: 8, alignItems: "stretch" }}>
-                            <div style={{ flex: 1, background: "#EAF3EC", borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "space-around" }}>
+                        <div style={{ flex: 1, display: "flex", gap: 6, alignItems: "stretch" }}>
+                            <div style={{ flex: 1, background: "#EAF3EC", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "space-around", height: 48 }}>
                                 <button
+                                    aria-label="Kamaytirish"
                                     onClick={() => {
                                         videoPreWarmer.triggerHaptic("light");
                                         updateQuantity(product.id, cartItem.quantity - 1);
                                     }}
-                                    className="ios-icon-tap active:scale-85 transition-transform duration-150"
-                                    style={{ padding: 10, background: "none", border: "none", cursor: "pointer", color: "#2D6E3E" }}
+                                    className="ios-icon-tap active:scale-85 p-2 text-[#2D6E3E]"
                                 >
-                                    <Minus size={16} />
+                                    <Minus size={17} strokeWidth={2.4} />
                                 </button>
-                                <span style={{ fontSize: 16, fontWeight: 700, color: "#0F1410" }}>{cartItem.quantity}</span>
+                                <span style={{ fontSize: 15, fontWeight: 700, color: "#111612" }}>{cartItem.quantity}</span>
                                 <button
+                                    aria-label="Ko'paytirish"
                                     onClick={() => {
                                         videoPreWarmer.triggerHaptic("light");
                                         updateQuantity(product.id, cartItem.quantity + 1);
                                     }}
-                                    className="ios-icon-tap active:scale-85 transition-transform duration-150"
-                                    style={{ padding: 10, background: "none", border: "none", cursor: "pointer", color: "#2D6E3E" }}
+                                    className="ios-icon-tap active:scale-85 p-2 text-[#2D6E3E]"
                                 >
-                                    <Plus size={16} />
+                                    <Plus size={17} strokeWidth={2.4} />
                                 </button>
                             </div>
                             <Link
                                 href={`/${language}/cart`}
                                 onClick={() => videoPreWarmer.triggerHaptic("light")}
-                                className="ios-icon-tap active:scale-90 transition-transform duration-150"
-                                style={{ width: 54, height: 54, borderRadius: 27, background: "#2D6E3E", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", flexShrink: 0 }}
+                                className="glass-prominent-button"
+                                style={{ width: 48, height: 48, borderRadius: 16, flexShrink: 0, padding: 0 }}
+                                aria-label="Savatga o'tish"
                             >
-                                <ShoppingBag size={20} color="#fff" />
+                                <ShoppingBag size={19} color="#fff" strokeWidth={2} />
                             </Link>
                         </div>
                     ) : (
@@ -1226,18 +1225,13 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                 videoPreWarmer.triggerHaptic("medium");
                                 addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any);
                             }}
-                            className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
+                            className="glass-prominent-button flex-1 text-sm font-semibold"
                             style={{
-                                flex: 1, height: 54, borderRadius: 18, border: "none", cursor: "pointer",
-                                background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)",
-                                color: "#fff", fontSize: 15, fontWeight: 700, letterSpacing: -0.2,
-                                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                                boxShadow: "0 8px 20px rgba(45,110,62,0.28)",
-                                WebkitTapHighlightColor: "transparent",
+                                height: 48, borderRadius: 16,
                             }}
                         >
-                            <ShoppingBag size={18} color="#fff" />
-                            {language === 'uz' ? "Savatga qo'shish" : "В корзину"}
+                            <ShoppingBag size={17} color="#fff" strokeWidth={2} />
+                            <span>{language === 'uz' ? "Savatga qo'shish" : "В корзину"}</span>
                         </button>
                     )}
                 </div>

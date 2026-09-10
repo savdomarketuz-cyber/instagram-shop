@@ -80,17 +80,32 @@ body {
   top: 0;
 }
 
-/* ─── Velari Design System — CSS Variables ─── */
+/* ─── Velari Liquid Glass Design System — CSS Variables ─── */
 :root {
   --velari-green: #2D6E3E;
+  --velari-green-soft: #EAF3EC;
   --velari-green-deep: #1F5A30;
   --velari-green-tint: #EAF3EC;
+  --velari-cream: #F7F8F4;
   --velari-page: #FAFAF6;
-  --velari-text-primary: #0F1410;
+  --velari-ink: #111612;
+  --velari-muted: #737D75;
+  --velari-text-primary: #111612;
   --velari-text-secondary: #5A625C;
   --velari-text-tertiary: #9AA29C;
   --velari-danger: #FF3B30;
   --velari-star: #F6B100;
+
+  --glass-bg: rgba(255, 255, 255, 0.64);
+  --glass-bg-strong: rgba(255, 255, 255, 0.78);
+  --glass-border: rgba(255, 255, 255, 0.72);
+  --glass-divider: rgba(15, 20, 16, 0.08);
+  --glass-shadow: 0 12px 36px rgba(28, 70, 42, 0.12);
+
+  --radius-control: 18px;
+  --radius-card: 26px;
+  --radius-sheet: 30px;
+  --ios-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -338,6 +353,133 @@ body.affiliate-active footer {
 
 .safe-area-top {
   padding-top: max(12px, env(safe-area-inset-top, 12px));
+}
+
+/* ─── Velari Liquid Glass Utility Classes ─── */
+.glass-surface {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-strong {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-card {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-pill {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 9999px;
+  box-shadow: 0 4px 16px rgba(15, 20, 16, 0.06);
+}
+
+.glass-icon-button {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 12px rgba(15, 20, 16, 0.08);
+  transition: transform 140ms cubic-bezier(0.32, 0.72, 0, 1), background-color 140ms ease;
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
+}
+.glass-icon-button:active {
+  transform: scale3d(0.90, 0.90, 1);
+}
+
+.glass-prominent-button {
+  height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%);
+  color: #ffffff;
+  border-radius: var(--radius-control);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.2px;
+  box-shadow: 0 8px 24px rgba(45, 110, 62, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transition: transform 140ms cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
+}
+.glass-prominent-button:active {
+  transform: scale3d(0.97, 0.97, 1);
+}
+
+.glass-tinted-button {
+  height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--velari-green-soft);
+  color: var(--velari-green);
+  border: 1px solid rgba(45, 110, 62, 0.16);
+  border-radius: var(--radius-control);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.2px;
+  transition: transform 140ms cubic-bezier(0.32, 0.72, 0, 1), background-color 140ms ease;
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
+}
+.glass-tinted-button:active {
+  transform: scale3d(0.97, 0.97, 1);
+  background: rgba(45, 110, 62, 0.18);
+}
+
+.ios-grouped-section {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(15, 20, 16, 0.04);
+}
+
+.ios-divider {
+  height: 0.5px;
+  background: var(--glass-divider);
+  width: 100%;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass-surface,
+  .glass-strong,
+  .glass-card,
+  .glass-pill,
+  .glass-icon-button,
+  .ios-grouped-section {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #ffffff !important;
+  }
 }
 
 

@@ -248,30 +248,33 @@ export const ProductMedia = ({
                 {/* Floating Top Controls */}
                 <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-30 pointer-events-none">
                     {/* Left Group */}
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2.5">
                         <button
+                            aria-label="Orqaga qaytish"
                             onClick={() => {
                                 videoPreWarmer.triggerHaptic("light");
                                 router.back();
                             }}
-                            className="p-3 bg-white/60 backdrop-blur-xl text-black rounded-full shadow-lg ios-icon-tap active:scale-90 transition-transform duration-150 ease-out will-change-transform border border-white/60 pointer-events-auto"
+                            className="glass-icon-button w-11 h-11 text-[#111612] pointer-events-auto"
                         >
-                            <ChevronLeft size={20} strokeWidth={3} />
+                            <ChevronLeft size={20} strokeWidth={2} />
                         </button>
                         <button
+                            aria-label="Qidiruv"
                             onClick={() => {
                                 videoPreWarmer.triggerHaptic("light");
                                 router.push(`/${language}/?focus=true`);
                             }}
-                            className="p-3 bg-white/60 backdrop-blur-xl text-black rounded-full shadow-lg ios-icon-tap active:scale-90 transition-transform duration-150 ease-out will-change-transform border border-white/60 pointer-events-auto"
+                            className="glass-icon-button w-11 h-11 text-[#111612] pointer-events-auto"
                         >
-                            <Search size={20} strokeWidth={3} />
+                            <Search size={19} strokeWidth={2} />
                         </button>
                     </div>
 
                     {/* Right Group */}
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2.5">
                         <button 
+                            aria-label="Ulashish"
                             onClick={async () => {
                                 videoPreWarmer.triggerHaptic("light");
                                 try {
@@ -284,18 +287,19 @@ export const ProductMedia = ({
                                     console.warn("Sharing failed", err);
                                 }
                             }} 
-                            className="p-3 bg-white/60 backdrop-blur-xl text-black rounded-full shadow-lg ios-icon-tap active:scale-90 transition-transform duration-150 ease-out will-change-transform border border-white/60 pointer-events-auto"
+                            className="glass-icon-button w-11 h-11 text-[#111612] pointer-events-auto"
                         >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
                         </button>
                         <button 
+                            aria-label="Saralanganlarga qo'shish"
                             onClick={() => {
                                 videoPreWarmer.triggerHaptic("light");
                                 toggleWishlist(product);
                             }} 
-                            className="p-3 bg-white/60 backdrop-blur-xl text-black rounded-full shadow-lg ios-icon-tap active:scale-90 transition-transform duration-150 ease-out will-change-transform border border-white/60 pointer-events-auto"
+                            className="glass-icon-button w-11 h-11 text-[#111612] pointer-events-auto"
                         >
-                            <Heart size={20} fill={isWishlisted ? "#ef4444" : "none"} className={isWishlisted ? "text-red-500" : "text-gray-400"} />
+                            <Heart size={19} strokeWidth={2} fill={isWishlisted ? "#FF3B30" : "none"} color={isWishlisted ? "#FF3B30" : "currentColor"} />
                         </button>
                     </div>
                 </div>

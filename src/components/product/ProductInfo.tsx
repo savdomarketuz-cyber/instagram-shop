@@ -48,18 +48,18 @@ export const ProductInfo = ({
             )}
 
             {/* Name */}
-            <h1 style={{ fontSize: 20, fontWeight: 800, letterSpacing: -0.5, color: "#0F1410", lineHeight: 1.25, margin: "0 0 10px" }}>
+            <h1 style={{ fontSize: 21, fontWeight: 600, letterSpacing: -0.3, color: "var(--velari-ink)", lineHeight: 1.3, margin: "0 0 8px" }}>
                 {name}
             </h1>
 
             {/* Rating */}
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
                 <div style={{ display: "flex", gap: 2 }}>
                     {[...Array(5)].map((_, i) => (
                         <Star key={i} size={13} fill={(product.rating || 0) > i ? "#F6B100" : "none"} color={(product.rating || 0) > i ? "#F6B100" : "#D0D5CF"} />
                     ))}
                 </div>
-                <span style={{ fontSize: 12, fontWeight: 600, color: "#9AA29C" }}>
+                <span style={{ fontSize: 13, fontWeight: 500, color: "var(--velari-muted)" }}>
                     {(product.reviewCount || 0) > 0
                         ? `${(product.rating || 0).toFixed(1)} (${product.reviewCount} ${language === "uz" ? "sharh" : "отзыв"})`
                         : (language === "uz" ? "Yangi mahsulot" : "Новый товар")}
@@ -67,42 +67,39 @@ export const ProductInfo = ({
             </div>
 
             {/* Price card */}
-            <div style={{ background: "#fff", borderRadius: 20, padding: "16px 18px", marginBottom: 14, boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: "#9AA29C", letterSpacing: 0.4, textTransform: "uppercase", display: "block", marginBottom: 4 }}>{t.common.price}</span>
+            <div className="glass-card" style={{ padding: "16px 18px", marginBottom: 14 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "var(--velari-muted)", letterSpacing: 0.3, textTransform: "uppercase", display: "block", marginBottom: 4 }}>{t.common.price}</span>
                 {hasPersonal ? (
                     // Shaxsiy chegirma: faqat 2 narx — yakuniy shaxsiy narx + chizilgan asl narx
                     <>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                            <span style={{ fontSize: 11, fontWeight: 800, background: "#4F46E5", color: "#fff", borderRadius: 7, padding: "2px 8px", letterSpacing: 0.3 }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, background: "#4F46E5", color: "#fff", borderRadius: 8, padding: "2px 8px" }}>
                                 -{personalOffer!.percent}%
                             </span>
-                            <span style={{ fontSize: 10, fontWeight: 800, color: "#4F46E5", letterSpacing: 0.3, textTransform: "uppercase" }}>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: "#4F46E5" }}>
                                 {language === "uz" ? "Siz uchun shaxsiy narx" : "Персональная цена"}
                             </span>
                         </div>
                         <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-                            <span style={{ fontSize: 28, fontWeight: 900, letterSpacing: -1, color: "#4F46E5" }}>
+                            <span style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5, color: "#4F46E5" }}>
                                 {fmtPrice(personalPrice)}
                             </span>
-                            <span style={{ fontSize: 14, fontWeight: 600, color: "#C0C5BF", textDecoration: "line-through" }}>
+                            <span style={{ fontSize: 14, fontWeight: 500, color: "#9AA29C", textDecoration: "line-through" }}>
                                 {fmtPrice((product.oldPrice && product.oldPrice > product.price ? product.oldPrice : product.price) || 0)}
                             </span>
                         </div>
-                        <p style={{ fontSize: 10, fontWeight: 600, color: "#9AA29C", margin: "4px 0 0" }}>
-                            {language === "uz" ? "Chegirma buyurtmada avtomatik qo'llanadi" : "Скидка применится автоматически при оформлении"}
-                        </p>
                     </>
                 ) : (
                     <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 28, fontWeight: 900, letterSpacing: -1, color: product.oldPrice && product.oldPrice > product.price ? "#FF3B30" : "#0F1410" }}>
+                        <span style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5, color: product.oldPrice && product.oldPrice > product.price ? "#FF3B30" : "var(--velari-ink)" }}>
                             {fmtPrice(product.price || 0)}
                         </span>
                         {product.oldPrice && product.oldPrice > product.price && (
                             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                <span style={{ fontSize: 14, fontWeight: 600, color: "#C0C5BF", textDecoration: "line-through" }}>
+                                <span style={{ fontSize: 14, fontWeight: 500, color: "#9AA29C", textDecoration: "line-through" }}>
                                     {fmtPrice(product.oldPrice)}
                                 </span>
-                                <span style={{ fontSize: 11, fontWeight: 800, background: "#FF3B30", color: "#fff", borderRadius: 7, padding: "2px 7px" }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, background: "#FF3B30", color: "#fff", borderRadius: 8, padding: "2px 7px" }}>
                                     -{Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)}%
                                 </span>
                             </div>
@@ -114,8 +111,8 @@ export const ProductInfo = ({
             {/* Variants / Group */}
             {groupProducts.length > 1 && (
                 <div style={{ marginBottom: 14 }}>
-                    <p style={{ fontSize: 11, fontWeight: 700, color: "#9AA29C", letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 10 }}>
-                        {language === "uz" ? "Rang" : "Цвет"}: <span style={{ color: "#0F1410", fontWeight: 800 }}>{product.colorName || "—"}</span>
+                    <p style={{ fontSize: 11, fontWeight: 600, color: "var(--velari-muted)", letterSpacing: 0.2, textTransform: "uppercase", marginBottom: 8 }}>
+                        {language === "uz" ? "Rang" : "Цвет"}: <span style={{ color: "var(--velari-ink)", fontWeight: 600 }}>{product.colorName || "—"}</span>
                     </p>
                     <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4, WebkitOverflowScrolling: "touch" }} className="no-scrollbar overscroll-x-contain touch-pan-x">
                         {groupProducts.map(v => (
@@ -134,41 +131,46 @@ export const ProductInfo = ({
             {/* Stock */}
             {totalStock > 0 && (
                 <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#EAF3EC", borderRadius: 16, padding: "12px 14px", marginBottom: 10 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 10, background: GREEN, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <Check size={16} color="#fff" strokeWidth={3} />
+                    <div style={{ width: 28, height: 28, borderRadius: 9, background: GREEN, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <Check size={15} color="#fff" strokeWidth={3} />
                     </div>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "#1F5A30" }}>
-                        {language === "uz" ? "Omborda mavjud" : "В наличии"}: <strong>{Number(totalStock)} {language === "uz" ? "ta" : "шт"}</strong>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#1F5A30" }}>
+                        {language === "uz" ? "Omborda mavjud" : "В наличии"}: <strong style={{ fontWeight: 700 }}>{Number(totalStock)} {language === "uz" ? "ta" : "шт"}</strong>
                     </span>
                 </div>
             )}
 
-            {/* Delivery card */}
-            <div style={{ background: "#fff", borderRadius: 20, padding: "14px", display: "flex", alignItems: "center", gap: 12, marginBottom: 10, boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}>
-                <div style={{ width: 44, height: 44, borderRadius: 14, background: GREEN, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <Truck size={20} color="#fff" strokeWidth={2} />
-                </div>
-                <div>
-                    <p style={{ fontSize: 10, fontWeight: 700, color: "#9AA29C", letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 2 }}>{t.common.delivery}</p>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 15, fontWeight: 800, color: "#0F1410", letterSpacing: -0.3 }}>{getDeliveryDateText()}</span>
-                        <span style={{ fontSize: 11, fontWeight: 600, color: GREEN }}>· {language === "uz" ? "Tezkor" : "Быстро"}</span>
+            {/* Delivery & Return - iOS Grouped Section */}
+            <div className="ios-grouped-section" style={{ marginBottom: 16 }}>
+                {/* Delivery row */}
+                <div style={{ padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 38, height: 38, borderRadius: 12, background: "#EAF3EC", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <Truck size={19} color={GREEN} strokeWidth={2} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: 11, fontWeight: 600, color: "var(--velari-muted)", marginBottom: 1 }}>{t.common.delivery}</p>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--velari-ink)" }}>{getDeliveryDateText()}</span>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: GREEN }}>· {language === "uz" ? "Tezkor" : "Быстро"}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Return card */}
-            <div style={{ background: "#fff", borderRadius: 20, padding: "14px", display: "flex", alignItems: "center", gap: 12, marginBottom: 16, boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}>
-                <div style={{ width: 44, height: 44, borderRadius: 14, background: "#F0F0EC", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <RefreshCw size={20} color="#5A625C" strokeWidth={2} />
-                </div>
-                <div>
-                    <p style={{ fontSize: 10, fontWeight: 700, color: "#9AA29C", letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 2 }}>
-                        {language === "uz" ? "Qaytarish" : "Возврат"}
-                    </p>
-                    <span style={{ fontSize: 15, fontWeight: 800, color: "#0F1410", letterSpacing: -0.3 }}>
-                        {language === "uz" ? "14 kun ichida" : "В течение 14 дней"}
-                    </span>
+                <div className="ios-divider" />
+
+                {/* Return row */}
+                <div style={{ padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(17,22,18,0.05)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <RefreshCw size={18} color="#5A625C" strokeWidth={2} />
+                    </div>
+                    <div>
+                        <p style={{ fontSize: 11, fontWeight: 600, color: "var(--velari-muted)", marginBottom: 1 }}>
+                            {language === "uz" ? "Qaytarish" : "Возврат"}
+                        </p>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: "var(--velari-ink)" }}>
+                            {language === "uz" ? "14 kun ichida" : "В течение 14 дней"}
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -178,11 +180,11 @@ export const ProductInfo = ({
                     videoPreWarmer.triggerHaptic("light");
                     onDescriptionOpen();
                 }}
-                className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 ease-out will-change-transform"
-                style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: "#fff", border: `1.5px solid rgba(45,110,62,0.15)`, borderRadius: 18, fontSize: 14, fontWeight: 700, color: GREEN, cursor: "pointer", boxShadow: "0 2px 8px rgba(15,20,16,0.04)", WebkitTapHighlightColor: "transparent" }}
+                className="glass-tinted-button w-full"
+                style={{ width: "100%", height: 50, borderRadius: 16 }}
             >
-                <FileText size={16} color={GREEN} />
-                {language === "uz" ? "To'liq tavsifni ko'rish" : "Полное описание"}
+                <FileText size={17} color={GREEN} strokeWidth={2} />
+                <span>{language === "uz" ? "To'liq tavsifni ko'rish" : "Полное описание"}</span>
             </button>
 
             {/* Instagram Direct style "Sotuvchiga savol berish" button */}

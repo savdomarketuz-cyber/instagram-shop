@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Heart, ShoppingBag, MessageSquare, Clapperboard, LayoutGrid, User, ShoppingCart, BookOpen, Loader2, Sparkles, X } from "lucide-react";
+import { Search, Heart, ShoppingBag, MessageSquare, Clapperboard, LayoutGrid, User, ShoppingCart, BookOpen, Loader2, Sparkles, X, Home } from "lucide-react";
 import Image from "next/image";
 import Logo from "./Logo";
 import { getProductSlug } from "@/lib/slugify";
@@ -149,18 +149,18 @@ export default function Navigation() {
     return (
         <>
             {/* Main Header - Top Fixed */}
-            <header className={`fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-2xl z-[100] border-b border-gray-100 h-16 md:h-24 ${pathname?.includes('/admin') || pathname?.includes('/reels') ? 'hidden' : (isHomePage || isProductPage) ? 'hidden md:block' : 'block'}`}>
-                <div className="max-w-[1600px] mx-auto h-full px-4 md:px-10 flex items-center gap-3 md:gap-12">
+            <header className={`fixed top-0 left-0 right-0 glass-surface z-[100] border-b border-[var(--glass-divider)] h-16 md:h-20 ${pathname?.includes('/admin') || pathname?.includes('/reels') ? 'hidden' : (isHomePage || isProductPage) ? 'hidden md:block' : 'block'}`}>
+                <div className="max-w-[1600px] mx-auto h-full px-4 md:px-10 flex items-center gap-3 md:gap-10">
                     
                     <div className="shrink-0 group">
                         <div className="md:hidden">
                             <Link
                                 href={l("/catalog")}
                                 onClick={() => videoPreWarmer.triggerHaptic("light")}
-                                className="ios-tap-feedback active:scale-95 transition-transform duration-150 flex items-center gap-2 bg-[#E8F5EC] px-4 py-2.5 rounded-xl outline-none will-change-transform"
+                                className="ios-tap-feedback active:scale-95 transition-transform duration-150 flex items-center gap-2 bg-[#EAF3EC] px-4 py-2.5 rounded-xl outline-none will-change-transform"
                             >
-                                <LayoutGrid size={20} strokeWidth={3} className="text-[#2d6e3e]" />
-                                <span className="text-[11px] font-black uppercase tracking-tighter text-[#2d6e3e]">Katalog</span>
+                                <LayoutGrid size={19} strokeWidth={2.2} className="text-[#2D6E3E]" />
+                                <span className="text-xs font-semibold text-[#2D6E3E]">Katalog</span>
                             </Link>
                         </div>
                         <div className="hidden md:block">
@@ -177,10 +177,10 @@ export default function Navigation() {
                     <Link
                         href={l("/catalog")}
                         onClick={() => videoPreWarmer.triggerHaptic("light")}
-                        className="hidden lg:flex items-center gap-3 bg-[#2d6e3e] text-white px-6 py-3.5 rounded-2xl active:scale-95 transition-transform duration-150 group shadow-xl shadow-emerald-800/20 will-change-transform"
+                        className="hidden lg:flex items-center gap-2.5 bg-[#2D6E3E] hover:bg-[#1F5A30] text-white px-5 py-2.5 rounded-[var(--radius-control)] active:scale-95 transition-transform duration-150 group shadow-md shadow-[#2D6E3E]/20 will-change-transform font-semibold text-xs uppercase tracking-wider"
                     >
-                        <LayoutGrid size={20} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-500" />
-                        <span className="text-[11px] font-black uppercase tracking-[0.2em]">{language === 'uz' ? 'Katalog' : 'Каталог'}</span>
+                        <LayoutGrid size={18} strokeWidth={2.2} className="group-hover:rotate-90 transition-transform duration-300" />
+                        <span>{language === 'uz' ? 'Katalog' : 'Каталог'}</span>
                     </Link>
 
                     <form onSubmit={handleSearch} className="flex-1 relative group max-w-2xl">
@@ -363,86 +363,100 @@ export default function Navigation() {
                 </div>
             </header>
 
-            {/* Velari — iOS-style Glass Bottom Tab Bar (Instagram Dark style on /reels).
-                Savat (cart) sahifasida ham ko'rinadi: u yerdagi "Buyurtma berish"
-                tugmasi tab bar ustida turadi (ustma-ust tushmaydi). */}
-            {!pathname?.includes('/admin') && (() => {
+            {/* Velari — Floating Liquid Glass Bottom Tab Bar */}
+            {!pathname?.includes('/admin') && !isProductPage && (() => {
                 const isReels = !!pathname?.includes('/reels');
+                const tabs = [
+                    { 
+                        href: l("/"), 
+                        label: t.nav.home, 
+                        active: isHomePage, 
+                        icon: (on: boolean) => <Home size={22} strokeWidth={on ? 2.4 : 1.8} /> 
+                    },
+                    { 
+                        href: l("/catalog"), 
+                        label: language === 'uz' ? 'Katalog' : 'Каталог', 
+                        active: pathname === l("/catalog") || pathname?.startsWith(l("/catalog/")), 
+                        icon: (on: boolean) => <LayoutGrid size={22} strokeWidth={on ? 2.4 : 1.8} /> 
+                    },
+                    { 
+                        href: l("/cart"), 
+                        label: t.nav.cart, 
+                        active: pathname === l("/cart"), 
+                        badge: cartCount, 
+                        icon: (on: boolean) => <ShoppingCart size={22} strokeWidth={on ? 2.4 : 1.8} /> 
+                    },
+                    { 
+                        href: l("/messages"), 
+                        label: language === 'uz' ? 'Xabarlar' : 'Чаты', 
+                        active: pathname === l("/messages") || pathname?.startsWith(l("/messages/")), 
+                        icon: (on: boolean) => <MessageSquare size={22} strokeWidth={on ? 2.4 : 1.8} /> 
+                    },
+                    { 
+                        href: user ? l("/account") : l("/login"), 
+                        label: t.nav.profile, 
+                        active: !!pathname?.includes("/account") || (!user && !!pathname?.includes("/login")), 
+                        icon: (on: boolean) => <User size={22} strokeWidth={on ? 2.4 : 1.8} /> 
+                    },
+                ];
+
                 return (
                     <nav
-                        className="flex md:hidden fixed bottom-0 left-0 right-0 w-screen max-w-full z-[110]"
+                        className="flex md:hidden fixed bottom-2 left-3 right-3 max-w-lg mx-auto z-[110] rounded-[26px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] border select-none"
                         style={{
-                            background: isReels ? "rgba(10, 10, 10, 0.88)" : "rgba(255,255,255,0.82)",
+                            background: isReels ? "rgba(18, 18, 18, 0.88)" : "rgba(255, 255, 255, 0.82)",
                             backdropFilter: "blur(24px) saturate(180%)",
                             WebkitBackdropFilter: "blur(24px) saturate(180%)",
-                            borderTop: isReels ? "0.5px solid rgba(255,255,255,0.12)" : "0.5px solid rgba(15,20,16,0.08)",
-                            paddingBottom: "max(env(safe-area-inset-bottom, 8px), 8px)",
+                            borderColor: isReels ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.72)",
+                            paddingBottom: "max(env(safe-area-inset-bottom, 6px), 6px)",
                             paddingTop: 6,
+                            paddingLeft: 4,
+                            paddingRight: 4,
                             justifyContent: "space-around",
+                            alignItems: "center",
                         }}
                     >
-                        {[
-                            { href: l("/"), label: t.nav.home, active: isHomePage, icon: (on: boolean) => <LayoutGrid size={26} strokeWidth={on ? 2.5 : 1.8} /> },
-                            { href: l("/cart"), label: t.nav.cart, active: pathname === l("/cart"), badge: cartCount, icon: (on: boolean) => <ShoppingCart size={26} strokeWidth={on ? 2.5 : 1.8} /> },
-                            { href: l("/reels"), label: t.nav.reels, active: pathname === l("/reels"), icon: (on: boolean) => <Clapperboard size={26} strokeWidth={on ? 2.5 : 1.8} /> },
-                            { href: l("/wishlist"), label: t.nav.wishlist, active: pathname === l("/wishlist"), icon: (on: boolean) => <Heart size={26} strokeWidth={on ? 2.5 : 1.8} fill={on ? "currentColor" : "none"} /> },
-                            { href: user ? l("/account") : l("/login"), label: t.nav.profile, active: !!pathname?.includes("/account"), icon: (on: boolean) => <User size={26} strokeWidth={on ? 2.5 : 1.8} /> },
-                        ].map((tab) => {
-                            const activeColor = isReels ? "#ffffff" : "#2D6E3E";
-                            const inactiveColor = isReels ? "#8e8e8e" : "#9AA29C";
+                        {tabs.map((tab) => {
                             return (
                                 <Link
                                     key={tab.href}
                                     href={tab.href}
-                                    onClick={() => videoPreWarmer.triggerHaptic("light")}
-                                    className="ios-icon-tap active:scale-90 transition-transform duration-150 ease-out will-change-transform select-none"
+                                    onClick={() => videoPreWarmer.triggerHaptic("selection")}
+                                    className="ios-icon-tap active:scale-90 transition-transform duration-150 ease-out will-change-transform"
                                     style={{
                                         flex: 1,
                                         display: "flex",
                                         flexDirection: "column",
                                         alignItems: "center",
-                                        gap: 3,
-                                        padding: "6px 0",
-                                        position: "relative",
-                                        color: tab.active ? activeColor : inactiveColor,
                                         textDecoration: "none",
                                         WebkitTapHighlightColor: "transparent",
-                                        transition: "color 150ms ease",
                                     }}
                                 >
-                                    <div style={{ position: "relative" }}>
-                                        {tab.icon(tab.active)}
-                                        {(tab.badge ?? 0) > 0 && (
-                                            <div style={{
-                                                position: "absolute",
-                                                top: -4,
-                                                right: -10,
-                                                minWidth: 18,
-                                                height: 18,
-                                                borderRadius: 9,
-                                                padding: "0 5px",
-                                                background: "#FF3B30",
-                                                color: "#fff",
-                                                fontSize: 11,
-                                                fontWeight: 700,
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                boxShadow: isReels ? "0 0 0 2px rgba(0,0,0,0.8)" : "0 0 0 2px rgba(255,255,255,0.9)",
-                                                animation: "velari-badge-pop 360ms cubic-bezier(0.34,1.56,0.64,1)",
-                                            }}>
-                                                {tab.badge}
-                                            </div>
-                                        )}
+                                    <div
+                                        className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-full transition-colors duration-200 ${
+                                            tab.active 
+                                                ? (isReels ? "bg-white/20 text-white" : "bg-[#EAF3EC] text-[#2D6E3E]")
+                                                : (isReels ? "text-white/60" : "text-[#737D75]")
+                                        }`}
+                                    >
+                                        <div className="relative">
+                                            {tab.icon(tab.active)}
+                                            {(tab.badge ?? 0) > 0 && (
+                                                <div 
+                                                    className="absolute -top-1 -right-2.5 min-w-[17px] h-[17px] px-1 rounded-full bg-[#FF3B30] text-white text-[10px] font-bold flex items-center justify-center border-2 border-white shadow-sm"
+                                                    style={{ animation: "velari-badge-pop 360ms cubic-bezier(0.34,1.56,0.64,1)" }}
+                                                >
+                                                    {tab.badge}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <span 
+                                            className="text-[10px] font-semibold tracking-tight"
+                                            style={{ lineHeight: 1.1 }}
+                                        >
+                                            {tab.label}
+                                        </span>
                                     </div>
-                                    <span style={{
-                                        fontSize: 10.5,
-                                        fontWeight: 600,
-                                        letterSpacing: 0.1,
-                                        color: tab.active ? activeColor : inactiveColor,
-                                    }}>
-                                        {tab.label}
-                                    </span>
                                 </Link>
                             );
                         })}

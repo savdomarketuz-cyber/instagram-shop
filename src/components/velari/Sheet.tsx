@@ -1,5 +1,6 @@
 "use client";
 import { ReactNode, useEffect, useState, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 interface SheetProps {
@@ -11,8 +12,13 @@ interface SheetProps {
 }
 
 export default function Sheet({ open, onClose, children, height = "auto", title }: SheetProps) {
+  const [mounted, setMounted] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [translateY, setTranslateY] = useState(0);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
   const dragStartY = useRef(0);
@@ -164,8 +170,9 @@ export default function Sheet({ open, onClose, children, height = "auto", title 
   };
 
   if (!open && !isClosing) return null;
+  if (!mounted) return null;
 
-  return (
+  const content = (
     <div
       style={{ position: "fixed", inset: 0, zIndex: 200, overscrollBehavior: "none" }}
       onTouchStart={(e) => e.stopPropagation()}
@@ -180,16 +187,19 @@ export default function Sheet({ open, onClose, children, height = "auto", title 
         style={{
           position: "absolute",
           inset: 0,
-          background: "rgba(0,0,0,0.4)",
+          background: "rgba(0,0,0,0.45)",
+          backdropFilter: "blur(4px)",
+          WebkitBackdropFilter: "blur(4px)",
           touchAction: "none",
           transition: "opacity 240ms ease-out",
           opacity: isClosing ? 0 : 1,
-          animation: isClosing ? "none" : "velari-fade-in 240ms ease-out forwards",
+          animation: isClosing ? "none" : "velari-fade-in 240ms ease-out",
         }}
       />
       {/* Sheet Container */}
       <div
         ref={sheetContentRef}
+        onClick={(e) => e.stopPropagation()}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -199,12 +209,15 @@ export default function Sheet({ open, onClose, children, height = "auto", title 
           bottom: 0,
           left: 0,
           right: 0,
-          background: "#fff",
-          borderTopLeftRadius: 28,
-          borderTopRightRadius: 28,
+          background: "rgba(255, 255, 255, 0.95)",
+          backdropFilter: "blur(28px)",
+          WebkitBackdropFilter: "blur(28px)",
+          borderTopLeftRadius: 30,
+          borderTopRightRadius: 30,
+          borderTop: "1px solid rgba(255, 255, 255, 0.8)",
           zIndex: 201,
           height,
-          maxHeight: "90dvh",
+          maxHeight: "92dvh",
           overflowY: "auto",
           overscrollBehavior: "contain",
           paddingBottom: "max(16px, env(safe-area-inset-bottom, 16px))",
@@ -217,9 +230,9 @@ export default function Sheet({ open, onClose, children, height = "auto", title 
             ? "none"
             : "transform 300ms cubic-bezier(0.32, 0.72, 0, 1)",
           animation: (!isClosing && !isDragging && translateY === 0)
-            ? "velari-sheet-up 380ms cubic-bezier(0.22,1,0.36,1) forwards"
+            ? "velari-sheet-up 380ms cubic-bezier(0.22,1,0.36,1)"
             : "none",
-          boxShadow: "0 -8px 40px rgba(0,0,0,0.18)",
+          boxShadow: "0 -12px 40px rgba(0,0,0,0.14)",
           willChange: "transform",
         }}
       >
@@ -241,13 +254,13 @@ export default function Sheet({ open, onClose, children, height = "auto", title 
             width: "100%",
           }}
         >
-          <div style={{ width: 40, height: 5, borderRadius: 3, background: "rgba(15,20,16,0.18)" }} />
+          <div style={{ width: 42, height: 5, borderRadius: 3, background: "rgba(17,22,18,0.2)" }} />
           {title && (
             <div style={{
               paddingTop: 10,
               fontSize: 17,
-              fontWeight: 700,
-              color: "#0F1410",
+              fontWeight: 600,
+              color: "#111612",
               letterSpacing: -0.3,
               textAlign: "center",
               width: "100%",
@@ -260,4 +273,6 @@ export default function Sheet({ open, onClose, children, height = "auto", title 
       </div>
     </div>
   );
+
+  return createPortal(content, document.body);
 }

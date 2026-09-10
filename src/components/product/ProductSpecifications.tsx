@@ -40,33 +40,31 @@ export function ProductSpecifications({ productId, language }: { productId: stri
 
     return (
         <div className="mx-4 md:mx-10 my-8">
-            <div className="bg-white rounded-[32px] md:rounded-[40px] border border-gray-100 overflow-hidden shadow-sm">
+            <div className="ios-grouped-section">
                 {/* Header */}
-                <div className="flex items-center gap-3 px-6 md:px-8 py-5 border-b border-gray-50 bg-gray-50/30">
-                    <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-amber-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/15">
-                        <Settings size={15} />
+                <div className="flex items-center gap-3 px-6 md:px-8 py-4 border-b border-[var(--glass-divider)] bg-black/[0.02]">
+                    <div className="w-8 h-8 bg-[#EAF3EC] text-[#2D6E3E] rounded-xl flex items-center justify-center">
+                        <Settings size={15} strokeWidth={2} />
                     </div>
-                    <h3 className="text-sm md:text-base font-black text-gray-900 tracking-tight">
+                    <h3 className="text-sm md:text-base font-semibold text-[#111612] tracking-tight">
                         {language === "uz" ? "Xususiyatlari" : "Характеристики"}
                     </h3>
-                    <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] font-semibold text-[#2D6E3E] bg-[#EAF3EC] px-2.5 py-0.5 rounded-full">
                         {specs.length}
                     </span>
                 </div>
 
                 {/* Specs table */}
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y divide-[var(--glass-divider)]">
                     {specs.map((spec, idx) => (
                         <div
                             key={idx}
-                            className={`flex items-center justify-between px-6 md:px-8 py-3.5 transition-colors hover:bg-gray-50/50 ${
-                                idx % 2 === 0 ? "bg-white" : "bg-gray-50/20"
-                            }`}
+                            className="flex items-center justify-between px-6 md:px-8 py-3.5 hover:bg-black/[0.01]"
                         >
-                            <span className="text-xs md:text-sm font-semibold text-gray-400 flex-shrink-0 max-w-[45%]">
+                            <span className="text-xs md:text-sm font-normal text-[#737D75] flex-shrink-0 max-w-[45%]">
                                 {language === "uz" ? (spec.name_uz || spec.name) : (spec.name_ru || spec.name)}
                             </span>
-                            <span className="text-xs md:text-sm font-bold text-gray-900 text-right">
+                            <span className="text-xs md:text-sm font-semibold text-[#111612] text-right">
                                 {spec.value}
                             </span>
                         </div>

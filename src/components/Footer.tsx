@@ -137,9 +137,9 @@ export default function Footer() {
                                         target="_blank" 
                                         rel="noopener noreferrer" 
                                         aria-label="Instagram"
-                                        className="p-2.5 bg-gray-50 rounded-xl text-gray-600 hover:bg-black hover:text-white transition-all scale-95 hover:scale-105"
+                                        className="ios-icon-tap w-11 h-11 inline-flex items-center justify-center rounded-2xl bg-black/[0.04] hover:bg-[#2D6E3E] hover:text-white text-[#111612] border border-black/[0.04] transition-colors duration-150 active:scale-95 will-change-transform"
                                     >
-                                        <Instagram size={20} />
+                                        <Instagram size={20} strokeWidth={1.9} />
                                     </a>
                                 )}
                                 {settings.telegram_channel && (
@@ -148,9 +148,9 @@ export default function Footer() {
                                         target="_blank" 
                                         rel="noopener noreferrer" 
                                         aria-label="Telegram"
-                                        className="p-2.5 bg-gray-50 rounded-xl text-gray-600 hover:bg-black hover:text-white transition-all scale-95 hover:scale-105"
+                                        className="ios-icon-tap w-11 h-11 inline-flex items-center justify-center rounded-2xl bg-black/[0.04] hover:bg-[#2D6E3E] hover:text-white text-[#111612] border border-black/[0.04] transition-colors duration-150 active:scale-95 will-change-transform"
                                     >
-                                        <Send size={20} />
+                                        <Send size={20} strokeWidth={1.9} />
                                     </a>
                                 )}
                                 {settings.facebook && (
@@ -159,9 +159,9 @@ export default function Footer() {
                                         target="_blank" 
                                         rel="noopener noreferrer" 
                                         aria-label="Facebook"
-                                        className="p-2.5 bg-gray-50 rounded-xl text-gray-600 hover:bg-black hover:text-white transition-all scale-95 hover:scale-105"
+                                        className="ios-icon-tap w-11 h-11 inline-flex items-center justify-center rounded-2xl bg-black/[0.04] hover:bg-[#2D6E3E] hover:text-white text-[#111612] border border-black/[0.04] transition-colors duration-150 active:scale-95 will-change-transform"
                                     >
-                                        <Facebook size={20} />
+                                        <Facebook size={20} strokeWidth={1.9} />
                                     </a>
                                 )}
                                 {settings.youtube && (
@@ -170,9 +170,9 @@ export default function Footer() {
                                         target="_blank" 
                                         rel="noopener noreferrer" 
                                         aria-label="YouTube"
-                                        className="p-2.5 bg-gray-50 rounded-xl text-gray-600 hover:bg-black hover:text-white transition-all scale-95 hover:scale-105"
+                                        className="ios-icon-tap w-11 h-11 inline-flex items-center justify-center rounded-2xl bg-black/[0.04] hover:bg-[#2D6E3E] hover:text-white text-[#111612] border border-black/[0.04] transition-colors duration-150 active:scale-95 will-change-transform"
                                     >
-                                        <Youtube size={20} />
+                                        <Youtube size={20} strokeWidth={1.9} />
                                     </a>
                                 )}
                             </div>
