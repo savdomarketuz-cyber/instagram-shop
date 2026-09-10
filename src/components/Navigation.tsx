@@ -254,11 +254,11 @@ export default function Navigation() {
                                                     />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <h4 className="text-xs font-bold text-black truncate">{item[`name_${language}`] || item.name}</h4>
-                                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">{item[`category_${language}`] || item.category}</p>
+                                                    <h4 className="text-xs font-semibold text-[#111612] truncate">{item[`name_${language}`] || item.name}</h4>
+                                                    <p className="text-[11px] font-medium text-[#737D75] truncate">{item[`category_${language}`] || item.category}</p>
                                                 </div>
                                                 <div className="shrink-0 text-right">
-                                                    <p className="text-xs font-black italic">{item.price?.toLocaleString()} {language === 'uz' ? "so'm" : "сум"}</p>
+                                                    <p className="text-xs font-bold text-[#111612]">{item.price?.toLocaleString()} {language === 'uz' ? "so'm" : "сум"}</p>
                                                 </div>
                                             </Link>
                                         ))}
@@ -268,7 +268,7 @@ export default function Navigation() {
                                                 videoPreWarmer.triggerHaptic("medium");
                                                 handleSearch();
                                             }}
-                                            className="ios-tap-feedback active:scale-[0.98] w-full p-4 bg-gray-50 hover:bg-gray-100 text-xs font-black text-black uppercase tracking-widest transition-transform duration-150 will-change-transform"
+                                            className="ios-tap-feedback active:scale-[0.98] w-full p-3.5 bg-[#F5F7F5] hover:bg-[#EAF3EC] text-xs font-semibold text-[#111612] transition-all rounded-b-[20px]"
                                         >
                                             {language === 'uz' ? "Barcha natijalarni ko'rish" : "Посмотреть все результаты"}
                                         </button>

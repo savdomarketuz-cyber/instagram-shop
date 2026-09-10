@@ -171,64 +171,64 @@ export default async function ReturnPolicyPage({ params }: { params: { lang: str
                 </Link>
 
                 {/* Hero */}
-                <div className="rounded-[40px] p-8 md:p-12 text-white relative overflow-hidden mb-8" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" }}>
+                <div className="rounded-[32px] p-8 md:p-12 text-white relative overflow-hidden mb-8 border border-white/20 shadow-lg shadow-[#2D6E3E]/20" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" }}>
                     <div className="absolute -bottom-12 -right-12 opacity-10">
                         <RotateCcw size={200} />
                     </div>
                     <div className="relative">
-                        <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-2 rounded-full mb-6">
+                        <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md px-3.5 py-1.5 rounded-full mb-5 border border-white/20">
                             <FileText size={14} />
-                            <span className="text-[10px] font-black uppercase tracking-widest">{c.badge}</span>
+                            <span className="text-[11px] font-semibold uppercase tracking-wider">{c.badge}</span>
                         </div>
-                        <h1 className="text-3xl md:text-5xl font-black italic tracking-tighter uppercase leading-[0.95] mb-5">{c.title}</h1>
-                        <p className="text-sm md:text-base text-white/80 leading-relaxed font-medium max-w-2xl">{c.intro}</p>
+                        <h1 className="text-2xl md:text-4xl font-bold tracking-tight mb-3 leading-tight">{c.title}</h1>
+                        <p className="text-sm md:text-base text-white/85 leading-relaxed font-normal max-w-2xl">{c.intro}</p>
                     </div>
                 </div>
 
                 {/* Sections */}
-                <div className="space-y-6">
+                <div className="space-y-4">
                     {c.sections.map((s: any, i: number) => {
                         const Icon = ICONS[s.icon] || RotateCcw;
                         return (
-                            <section key={i} className="bg-white rounded-[36px] p-7 md:p-9 border border-gray-100 shadow-sm">
-                                <div className="flex items-start gap-4 mb-5">
-                                    <div className="shrink-0 w-12 h-12 bg-[#EAF3EC] rounded-2xl flex items-center justify-center">
-                                        <Icon className="text-[#2D6E3E]" size={24} />
+                            <section key={i} className="bg-white/90 backdrop-blur-md rounded-[28px] p-6 md:p-8 border border-[rgba(15,20,16,0.06)] shadow-xs">
+                                <div className="flex items-start gap-4 mb-4">
+                                    <div className="shrink-0 w-12 h-12 bg-[#EAF3EC] text-[#2D6E3E] rounded-2xl flex items-center justify-center shadow-xs">
+                                        <Icon size={22} />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1.5">
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-[#2D6E3E] bg-[#EAF3EC] px-2.5 py-1 rounded-full">{s.tag}</span>
-                                            <span className="text-[10px] font-black text-gray-300">0{i + 1}</span>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-[#2D6E3E] bg-[#EAF3EC] px-2.5 py-0.5 rounded-full">{s.tag}</span>
+                                            <span className="text-xs font-semibold text-[#9AA29C]">0{i + 1}</span>
                                         </div>
-                                        <h2 className="text-lg md:text-xl font-black italic tracking-tighter uppercase leading-tight">{s.title}</h2>
+                                        <h2 className="text-base md:text-lg font-bold tracking-tight leading-tight text-[#111612]">{s.title}</h2>
                                     </div>
                                 </div>
 
-                                <p className="text-sm text-gray-600 leading-relaxed font-medium mb-5">{s.body}</p>
+                                <p className="text-sm text-[#737D75] leading-relaxed font-normal mb-4">{s.body}</p>
 
                                 {s.listTitle && (
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">{s.listTitle}</p>
+                                    <p className="text-xs font-semibold text-[#111612] uppercase tracking-wider mb-2.5">{s.listTitle}</p>
                                 )}
-                                <ul className="space-y-2.5 mb-5">
+                                <ul className="space-y-2 mb-4">
                                     {s.list.map((item: string, j: number) => (
-                                        <li key={j} className="flex items-start gap-3">
-                                            <CheckCircle2 className="text-[#2D6E3E] shrink-0 mt-0.5" size={17} />
-                                            <span className="text-sm text-gray-700 leading-relaxed">{item}</span>
+                                        <li key={j} className="flex items-start gap-2.5">
+                                            <CheckCircle2 className="text-[#2D6E3E] shrink-0 mt-0.5" size={16} />
+                                            <span className="text-sm text-[#111612] leading-relaxed">{item}</span>
                                         </li>
                                     ))}
                                 </ul>
 
                                 {s.note && (
-                                    <div className="flex items-start gap-3 bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-5">
-                                        <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={18} />
-                                        <p className="text-[12px] text-amber-800 leading-relaxed font-medium">{s.note}</p>
+                                    <div className="flex items-start gap-2.5 bg-amber-50/80 border border-amber-200/60 rounded-2xl p-3.5 mb-4">
+                                        <AlertTriangle className="text-amber-600 shrink-0 mt-0.5" size={17} />
+                                        <p className="text-xs text-amber-900 leading-relaxed font-medium">{s.note}</p>
                                     </div>
                                 )}
 
                                 {s.delivery && (
-                                    <div className={`flex items-center gap-3 rounded-2xl p-4 ${s.deliveryBy === "seller" ? "bg-[#EAF3EC]" : "bg-gray-50"}`}>
-                                        <Truck className={s.deliveryBy === "seller" ? "text-[#2D6E3E] shrink-0" : "text-gray-400 shrink-0"} size={18} />
-                                        <p className={`text-[12px] leading-relaxed font-bold ${s.deliveryBy === "seller" ? "text-[#2D6E3E]" : "text-gray-500"}`}>{s.delivery}</p>
+                                    <div className={`flex items-center gap-3 rounded-2xl p-3.5 ${s.deliveryBy === "seller" ? "bg-[#EAF3EC]" : "bg-[#F5F7F5]"}`}>
+                                        <Truck className={s.deliveryBy === "seller" ? "text-[#2D6E3E] shrink-0" : "text-[#737D75] shrink-0"} size={17} />
+                                        <p className={`text-xs leading-relaxed font-semibold ${s.deliveryBy === "seller" ? "text-[#2D6E3E]" : "text-[#737D75]"}`}>{s.delivery}</p>
                                     </div>
                                 )}
                             </section>
@@ -237,10 +237,10 @@ export default async function ReturnPolicyPage({ params }: { params: { lang: str
                 </div>
 
                 {/* Contacts */}
-                <section className="bg-black text-white rounded-[36px] p-8 md:p-10 mt-6">
+                <section className="bg-gradient-to-br from-[#111612] to-[#1E2620] text-white rounded-[32px] p-6 md:p-8 mt-6 shadow-xl border border-white/10">
                     <div className="flex items-center gap-2 mb-2">
-                        <Phone size={16} className="text-[#4CAF71]" />
-                        <h2 className="text-xl font-black italic tracking-tighter uppercase">{c.contactTitle}</h2>
+                        <Phone size={17} className="text-[#4CAF71]" />
+                        <h2 className="text-lg font-bold tracking-tight text-white">{c.contactTitle}</h2>
                     </div>
                     <p className="text-xs text-gray-400 font-medium mb-7 max-w-lg">{c.contactSubtitle}</p>
 

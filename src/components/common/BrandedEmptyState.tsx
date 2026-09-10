@@ -100,33 +100,33 @@ export default function BrandedEmptyState({
         : "К сожалению, запрашиваемая вами информация не существует в системе или могла быть удалена.");
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen bg-[#FAFAF6]">
             {/* Hero Section */}
-            <div className="pt-32 pb-20 px-6 text-center max-w-4xl mx-auto">
-                <div className="relative mb-10 inline-block">
-                    <div className="text-[120px] md:text-[200px] font-black italic tracking-tighter leading-none text-gray-50 select-none animate-in fade-in zoom-in duration-1000">
+            <div className="pt-28 pb-16 px-6 text-center max-w-4xl mx-auto">
+                <div className="relative mb-8 inline-block">
+                    <div className="text-[100px] md:text-[160px] font-bold tracking-tight leading-none text-black/5 select-none animate-in fade-in zoom-in duration-700">
                         {type === '404' ? '404' : 'OOP!'}
                     </div>
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-[40px] flex items-center justify-center shadow-2xl rotate-12 animate-bounce duration-[2000ms]" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" }}>
-                            <Search size={40} className="text-white -rotate-12" strokeWidth={3} />
+                        <div className="w-20 h-20 md:w-28 md:h-28 rounded-3xl flex items-center justify-center shadow-2xl rotate-6 animate-bounce duration-[2500ms]" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" }}>
+                            <Search size={36} className="text-white -rotate-6" strokeWidth={2.5} />
                         </div>
                     </div>
                 </div>
 
-                <h1 className="text-3xl md:text-5xl font-black italic uppercase tracking-tighter mb-6 text-black">
+                <h1 className="text-2xl md:text-4xl font-bold tracking-tight mb-4 text-[#111612]">
                     {displayTitle}
                 </h1>
-                <p className="text-sm md:text-lg text-gray-400 font-medium max-w-xl mx-auto mb-12 leading-relaxed">
+                <p className="text-sm md:text-base text-[#737D75] font-medium max-w-xl mx-auto mb-10 leading-relaxed">
                     {displayDesc}
                 </p>
 
-                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                    <Link href="/" className="px-10 py-5 velari-green-btn rounded-[24px] font-black text-xs uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
-                        <Home size={18} strokeWidth={3} /> {language === 'uz' ? "Bosh sahifa" : "Главная"}
+                <div className="flex flex-col sm:flex-row gap-3.5 justify-center items-center">
+                    <Link href="/" className="ios-tap-feedback active:scale-[0.98] transition-transform px-8 py-3.5 velari-green-btn rounded-2xl font-semibold text-sm shadow-md shadow-[#2D6E3E]/20 flex items-center gap-2.5 text-white">
+                        <Home size={17} /> {language === 'uz' ? "Bosh sahifa" : "Главная"}
                     </Link>
-                    <Link href="/catalog" className="px-10 py-5 bg-gray-50 text-black border border-gray-100 rounded-[24px] font-black text-xs uppercase tracking-[0.2em] hover:bg-white hover:shadow-xl active:scale-95 transition-all flex items-center gap-3">
-                        <ShoppingBag size={18} strokeWidth={3} /> {language === 'uz' ? "Katalog" : "Каталог"}
+                    <Link href="/catalog" className="ios-tap-feedback active:scale-[0.98] transition-transform px-8 py-3.5 bg-white/90 backdrop-blur-md text-[#111612] border border-[rgba(15,20,16,0.08)] rounded-2xl font-semibold text-sm hover:bg-white shadow-xs flex items-center gap-2.5">
+                        <ShoppingBag size={17} /> {language === 'uz' ? "Katalog" : "Каталог"}
                     </Link>
                 </div>
             </div>
@@ -134,14 +134,14 @@ export default function BrandedEmptyState({
             {/* Popular Products Section */}
             {showPopular && (
                 <div className="max-w-[1600px] mx-auto px-6 md:px-10 pb-32">
-                    <div className="flex items-center justify-between mb-12">
+                    <div className="flex items-center justify-between mb-8">
                         <div className="space-y-1">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Velari Trend</p>
-                            <h2 className="text-2xl md:text-3xl font-black italic uppercase tracking-tighter text-black">
+                            <p className="text-xs font-semibold text-[#737D75] uppercase tracking-wider">Velari Trend</p>
+                            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#111612]">
                                 {language === 'uz' ? "Ommabop mahsulotlar" : "Популярные товары"}
                             </h2>
                         </div>
-                        <Link href="/catalog" className="text-[10px] font-black uppercase tracking-widest text-black border-b-2 border-black pb-1 hover:text-gray-400 hover:border-gray-400 transition-all">
+                        <Link href="/catalog" className="text-xs font-semibold text-[#2D6E3E] hover:underline">
                             {language === 'uz' ? "Barchasi" : "Все"}
                         </Link>
                     </div>

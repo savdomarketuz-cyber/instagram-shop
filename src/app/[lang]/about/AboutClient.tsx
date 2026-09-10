@@ -134,11 +134,11 @@ export default function AboutClient({ initialSettings }: AboutClientProps) {
                     </section>
 
                     {/* 2. Mission Section */}
-                    <section className="bg-gray-50 rounded-[48px] p-8 md:p-16 border border-gray-100">
-                        <h3 className="text-2xl font-black italic mb-6 uppercase tracking-tighter">{t.aboutUs.missionTitle}</h3>
-                        <div className="space-y-6">
+                    <section className="bg-white/90 backdrop-blur-md rounded-[32px] p-8 md:p-12 border border-[rgba(15,20,16,0.06)] shadow-xs">
+                        <h3 className="text-xl md:text-2xl font-bold tracking-tight mb-4 text-[#111612]">{t.aboutUs.missionTitle}</h3>
+                        <div className="space-y-4">
                             {t.aboutUs.missionText.split('\n').map((line: string, i: number) => (
-                                <p key={i} className="text-base md:text-lg text-gray-500 leading-relaxed">
+                                <p key={i} className="text-sm md:text-base text-[#737D75] leading-relaxed">
                                     {line}
                                 </p>
                             ))}
@@ -146,34 +146,34 @@ export default function AboutClient({ initialSettings }: AboutClientProps) {
                     </section>
 
                     {/* 3. Why Us Grid */}
-                    <section className="space-y-12">
-                        <div className="text-center space-y-4">
-                            <h3 className="text-3xl md:text-4xl font-black italic tracking-tighter uppercase">{t.aboutUs.whyTitle}</h3>
-                            <div className="h-1.5 w-20 mx-auto rounded-full" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" }} />
+                    <section className="space-y-8">
+                        <div className="text-center space-y-3">
+                            <h3 className="text-2xl md:text-3xl font-bold tracking-tight text-[#111612]">{t.aboutUs.whyTitle}</h3>
+                            <div className="h-1 w-16 mx-auto rounded-full" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" }} />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             {t.aboutUs.whyItems.map((item: any, i: number) => (
-                                <div key={i} className="p-8 bg-white border border-gray-100 rounded-[32px] hover:shadow-2xl transition-all duration-500 group">
-                                    <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                                        {icons[i] || <Rocket size={24} />}
+                                <div key={i} className="p-7 bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.06)] rounded-[28px] shadow-xs hover:border-[#2D6E3E]/30 transition-all duration-300 group">
+                                    <div className="w-12 h-12 bg-[#EAF3EC] text-[#2D6E3E] rounded-2xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform shadow-xs">
+                                        {icons[i] || <Rocket size={22} />}
                                     </div>
-                                    <h4 className="text-xl font-black italic mb-3 tracking-tighter">{item.title}</h4>
-                                    <p className="text-sm md:text-base text-gray-500 leading-relaxed">{item.text}</p>
+                                    <h4 className="text-base md:text-lg font-bold tracking-tight mb-2 text-[#111612]">{item.title}</h4>
+                                    <p className="text-xs md:text-sm text-[#737D75] leading-relaxed">{item.text}</p>
                                 </div>
                             ))}
                         </div>
                     </section>
 
                     {/* 4. Stats Grid */}
-                    <section className="space-y-10">
-                         <h3 className="text-2xl font-black italic text-center md:text-left uppercase tracking-tighter">{t.aboutUs.statsTitle}</h3>
+                    <section className="space-y-6">
+                         <h3 className="text-xl md:text-2xl font-bold tracking-tight text-center md:text-left text-[#111612]">{t.aboutUs.statsTitle}</h3>
                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             {t.aboutUs.stats.map((stat: string, i: number) => (
-                                <div key={i} className="p-6 rounded-3xl flex flex-col justify-center items-center text-center group transition-all" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff" }}>
-                                    <span className="text-2xl font-black italic tracking-tighter mb-2 group-hover:scale-105 transition-transform">
+                                <div key={i} className="p-6 rounded-[24px] flex flex-col justify-center items-center text-center group transition-all shadow-sm shadow-[#2D6E3E]/15 border border-white/15" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff" }}>
+                                    <span className="text-2xl md:text-3xl font-bold tracking-tight mb-1 group-hover:scale-105 transition-transform">
                                         {stat.split(' ')[0]}
                                     </span>
-                                    <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.6)" }}>
+                                    <span className="text-xs font-semibold uppercase tracking-wider text-white/75">
                                         {stat.substring(stat.indexOf(' ') + 1)}
                                     </span>
                                 </div>
@@ -182,49 +182,47 @@ export default function AboutClient({ initialSettings }: AboutClientProps) {
                     </section>
 
                     {/* 5. Promise */}
-                    <section className="relative overflow-hidden text-white rounded-[48px] p-10 md:p-20" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" }}>
-                         <div className="relative z-10 space-y-8">
-                            <h3 className="text-3xl md:text-4xl font-black italic tracking-tighter uppercase">{t.aboutUs.promiseTitle}</h3>
-                            <div className="space-y-6">
+                    <section className="relative overflow-hidden text-white rounded-[32px] p-8 md:p-14 border border-white/20 shadow-xl shadow-[#2D6E3E]/20" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" }}>
+                         <div className="relative z-10 space-y-6">
+                            <h3 className="text-2xl md:text-3xl font-bold tracking-tight text-white">{t.aboutUs.promiseTitle}</h3>
+                            <div className="space-y-4">
                                 {t.aboutUs.promiseText.split('\n').map((line: string, i: number) => (
-                                    <p key={i} className="text-lg md:text-xl font-medium leading-relaxed" style={{ color: "rgba(255,255,255,0.7)" }}>
+                                    <p key={i} className="text-base md:text-lg font-normal leading-relaxed text-white/85">
                                         {line}
                                     </p>
                                 ))}
                             </div>
                          </div>
-                         <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/8 rounded-full blur-3xl" />
-                         <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
+                         <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+                         <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
                     </section>
 
                     {/* 6. Contacts */}
-                    <section className="space-y-12 pb-10">
-                        <div className="text-center md:text-left space-y-4">
-                            <h3 className="text-3xl font-black italic tracking-tighter uppercase">{t.aboutUs.contactTitle}</h3>
-                            <p className="text-gray-500 font-medium text-lg">{t.aboutUs.contactSubtitle}</p>
+                    <section className="space-y-8 pb-10">
+                        <div className="text-center md:text-left space-y-3">
+                            <h3 className="text-2xl md:text-3xl font-bold tracking-tight text-[#111612]">{t.aboutUs.contactTitle}</h3>
+                            <p className="text-[#737D75] font-normal text-sm md:text-base">{t.aboutUs.contactSubtitle}</p>
                             {workingHours && (
-                                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
-                                    <Clock size={14} className="text-emerald-600" />
+                                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EAF3EC] border border-[#2D6E3E]/20 text-[#2D6E3E] text-xs font-semibold">
+                                    <Clock size={14} />
                                     <span>{language === 'ru' ? "Режим работы:" : "Ish vaqti:"} {workingHours}</span>
                                 </div>
                             )}
                         </div>
-                        <div className={`grid grid-cols-1 md:grid-cols-2 ${contacts.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"} gap-6`}>
+                        <div className={`grid grid-cols-1 md:grid-cols-2 ${contacts.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"} gap-4`}>
                             {contacts.map((contact: any, i: number) => (
                                 <a 
                                     key={i} 
                                     href={contact.link}
                                     target="_blank"
                                     rel="noopener noreferrer" 
-                                    className="p-8 bg-gray-50 hover:bg-white border border-gray-100 hover:border-black rounded-[32px] transition-all hover:shadow-2xl group flex flex-col items-center md:items-start text-center md:text-left gap-4"
+                                    className="p-6 bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.06)] hover:border-[#2D6E3E]/30 rounded-[24px] transition-all hover:shadow-md group flex flex-col items-center md:items-start text-center md:text-left gap-3"
                                 >
-                                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", boxShadow: "0 4px 12px rgba(45,110,62,0.3)" }}>
-                                        {contactIcons[contact.label] || <MessageCircle size={20} />}
+                                    <div className="w-11 h-11 bg-[#EAF3EC] text-[#2D6E3E] rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs">
+                                        {contact.icon}
                                     </div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">{contact.label}</p>
-                                        <p className="text-base font-black italic group-hover:text-black transition-colors break-all">{contact.value}</p>
-                                    </div>
+                                    <span className="text-[11px] font-semibold text-[#737D75] uppercase tracking-wider">{contact.label}</span>
+                                    <p className="text-sm font-semibold group-hover:text-[#2D6E3E] transition-colors break-all text-[#111612]">{contact.value}</p>
                                 </a>
                             ))}
                         </div>

@@ -265,7 +265,7 @@ export default async function RootLayout({
                     dangerouslySetInnerHTML={{ __html: JSON.stringify(storeJsonLd) }}
                 />
             </head>
-            <body className="bg-white text-gray-900 antialiased font-sans w-full max-w-full min-h-screen">
+            <body className="bg-[#FAFAF6] text-[#111612] antialiased font-sans w-full max-w-full min-h-screen selection:bg-[#2D6E3E]/15 selection:text-[#2D6E3E]">
                 <a href="#main-content" className="skip-to-main">
                     Asosiy kontentga o&apos;tish
                 </a>
