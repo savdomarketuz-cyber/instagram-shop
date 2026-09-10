@@ -32,47 +32,41 @@ export default function StoreClient({ warehouse, products, language }: Props) {
     const t = translations[language];
 
     return (
-        <div style={{ minHeight: "100vh", background: "#FAFAF6" }}>
+        <div className="min-h-screen bg-[#FAFAF6]">
             <div className="max-w-[1600px] mx-auto px-4 md:px-10 pt-6 md:pt-28 pb-24">
                 {/* Orqaga */}
                 <button
                     onClick={() => router.back()}
-                    className="flex items-center gap-1 text-gray-500 font-bold text-sm mb-5 hover:text-black transition-colors"
+                    className="inline-flex items-center gap-1.5 text-[rgba(15,20,16,0.62)] font-semibold text-xs mb-6 hover:text-[#111612] active:scale-95 transition-transform duration-150 will-change-transform"
                 >
-                    <ChevronLeft size={20} /> {language === "uz" ? "Orqaga" : "Назад"}
+                    <ChevronLeft size={16} /> {language === "uz" ? "Orqaga" : "Назад"}
                 </button>
 
                 {/* Do'kon sarlavhasi */}
-                <div
-                    className="flex items-center gap-5 p-6 md:p-8 rounded-[32px] mb-8"
-                    style={{ background: "linear-gradient(135deg,#FFFFFF 0%,#F2F8F3 100%)", border: "1px solid #E6EFE8", boxShadow: "0 8px 28px rgba(45,110,62,0.06)" }}
-                >
-                    <div
-                        className="shrink-0 overflow-hidden flex items-center justify-center"
-                        style={{ width: 88, height: 88, borderRadius: 24, background: warehouse.logo ? "#fff" : GREEN, boxShadow: "0 6px 18px rgba(15,20,16,0.1)" }}
-                    >
+                <div className="flex items-center gap-5 p-6 md:p-8 rounded-[28px] mb-8 bg-white/90 backdrop-blur-xl border border-[rgba(15,20,16,0.06)] shadow-xs">
+                    <div className="shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden flex items-center justify-center bg-white border border-[rgba(15,20,16,0.08)] shadow-xs">
                         {warehouse.logo ? (
                             <img src={warehouse.logo} alt={warehouse.name} className="w-full h-full object-cover" />
                         ) : (
-                            <StoreIcon size={38} color="#fff" />
+                            <div className="w-full h-full bg-[#2D6E3E] flex items-center justify-center text-white">
+                                <StoreIcon size={28} />
+                            </div>
                         )}
                     </div>
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                            <StoreIcon size={13} color={GREEN} strokeWidth={2.4} />
-                            <span style={{ fontSize: 11, fontWeight: 800, color: GREEN, letterSpacing: 0.6, textTransform: "uppercase" }}>
-                                {language === "uz" ? "Do'kon" : "Магазин"}
-                            </span>
+                    <div className="min-w-0 flex-1">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-semibold tracking-wide mb-1 border border-emerald-500/15">
+                            <StoreIcon size={12} className="text-[#2D6E3E]" />
+                            <span>{language === "uz" ? "Do'kon" : "Магазин"}</span>
                         </div>
-                        <h1 style={{ fontSize: 26, fontWeight: 800, color: "#0F1410", letterSpacing: -0.6, lineHeight: 1.1, margin: 0 }} className="truncate">
+                        <h1 className="text-xl md:text-2xl font-bold text-[#111612] tracking-tight truncate">
                             {warehouse.name}
                         </h1>
                         {warehouse.address && (
-                            <p style={{ fontSize: 13, color: "#7A857C", fontWeight: 500, marginTop: 4 }} className="truncate">
+                            <p className="text-xs md:text-sm text-[rgba(15,20,16,0.62)] font-normal mt-1 truncate">
                                 {warehouse.address}
                             </p>
                         )}
-                        <p style={{ fontSize: 12, color: "#9AA29C", fontWeight: 700, marginTop: 6, textTransform: "uppercase", letterSpacing: 0.4 }}>
+                        <p className="text-[11px] text-[rgba(15,20,16,0.5)] font-semibold mt-1.5 uppercase tracking-wider">
                             {products.length} {language === "uz" ? "ta mahsulot" : "товаров"}
                         </p>
                     </div>

@@ -3,7 +3,7 @@ import { mapProduct } from "@/lib/mappers";
 import { notFound } from "next/navigation";
 import StoreClient from "./StoreClient";
 
-export const dynamic = "force-dynamic"; // qoldiqlar o'zgaruvchan
+export const revalidate = 300; // 5 daqiqalik Edge Cache — Vercel CPU sarfini tejaydi
 
 export async function generateMetadata({ params }: { params: { lang: string; id: string } }) {
     const lang = params.lang === "ru" ? "ru" : "uz";

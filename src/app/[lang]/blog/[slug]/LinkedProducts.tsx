@@ -27,11 +27,11 @@ export default function LinkedProducts({ products, lang }: LinkedProductsProps) 
 
     return (
         <div className="max-w-6xl mx-auto px-6 md:px-0 mt-32">
-            <div className="flex items-center gap-4 mb-12">
-                <div className="w-12 h-12 bg-[#EAF3EC] rounded-2xl flex items-center justify-center text-[#2D6E3E] shadow-xl shadow-none">
-                    <Sparkles size={24} />
+            <div className="flex items-center gap-3.5 mb-8">
+                <div className="w-10 h-10 bg-emerald-50 border border-emerald-500/10 rounded-2xl flex items-center justify-center text-[#2D6E3E]">
+                    <Sparkles size={20} />
                 </div>
-                <h3 className="text-3xl font-black italic tracking-tighter uppercase">
+                <h3 className="text-xl md:text-2xl font-bold tracking-tight text-[#111612]">
                     {t.blog.relatedProducts}
                 </h3>
             </div>

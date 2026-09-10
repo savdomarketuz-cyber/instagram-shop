@@ -268,7 +268,7 @@ export default function P2PChatPage() {
                     >
                         <MoreVertical size={18} />
                     </button>
-                    <div className="absolute right-0 top-full mt-2 bg-white/95 backdrop-blur-2xl rounded-2xl shadow-xl border border-[rgba(15,20,16,0.08)] min-w-[170px] z-50 p-1.5 opacity-0 pointer-events-none group-hover/menu:opacity-100 group-hover/menu:pointer-events-auto transition-all">
+                    <div className="absolute right-0 top-full mt-2 bg-white/95 backdrop-blur-2xl rounded-2xl shadow-xl border border-[rgba(15,20,16,0.08)] min-w-[170px] z-50 p-1.5 opacity-0 pointer-events-none group-hover/menu:opacity-100 group-hover/menu:pointer-events-auto transition-opacity duration-150">
                         <button
                             onClick={() => {
                                 videoPreWarmer.triggerHaptic("medium");
@@ -336,7 +336,7 @@ export default function P2PChatPage() {
                                         >
                                             <MoreVertical size={11} />
                                         </button>
-                                        <div className={`absolute ${isMe ? "right-0" : "left-0"} top-full mt-1 bg-white/95 backdrop-blur-2xl rounded-xl shadow-lg border border-[rgba(15,20,16,0.08)] min-w-[110px] z-20 p-1 opacity-0 pointer-events-none group-hover/opt:opacity-100 group-hover/opt:pointer-events-auto transition-all`}>
+                                        <div className={`absolute ${isMe ? "right-0" : "left-0"} top-full mt-1 bg-white/95 backdrop-blur-2xl rounded-xl shadow-lg border border-[rgba(15,20,16,0.08)] min-w-[110px] z-20 p-1 opacity-0 pointer-events-none group-hover/opt:opacity-100 group-hover/opt:pointer-events-auto transition-opacity duration-150`}>
                                             <button 
                                                 onClick={() => handleDeleteMessage(msg.id, false)} 
                                                 className="w-full px-2.5 py-1.5 rounded-lg text-left text-[11px] font-semibold text-[#111612] hover:bg-[#F5F7F5]"
@@ -411,7 +411,7 @@ export default function P2PChatPage() {
                             onChange={(e) => setInputText(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                             placeholder={language === 'uz' ? "Xabar yozing..." : "Напишите сообщение..."}
-                            className="w-full bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.08)] focus:border-[#2D6E3E] rounded-2xl pl-4 pr-12 py-3 text-sm font-medium text-[#111612] outline-none shadow-xs placeholder:text-[#9AA29C] transition-all"
+                            className="w-full bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.08)] focus:border-[#2D6E3E] rounded-2xl pl-4 pr-12 py-3 text-sm font-medium text-[#111612] outline-none shadow-xs placeholder:text-[#9AA29C] transition-colors duration-150"
                         />
                         <button
                             onClick={() => {

@@ -76,28 +76,28 @@ export default function PWAInstallPrompt() {
         <>
             {/* Top Banner (Always Visible if not installed) */}
             {isVisible && (
-                <div className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between sticky top-0 z-[100] shadow-sm animate-in fade-in slide-in-from-top duration-500">
+                <div className="bg-white/90 backdrop-blur-2xl border-b border-[rgba(15,20,16,0.08)] px-4 py-2.5 flex items-center justify-between sticky top-0 z-[100] shadow-xs animate-in fade-in slide-in-from-top duration-300">
                     <div className="flex items-center gap-3">
                         <button 
                             onClick={handleDismiss}
-                            className="p-1 text-gray-400 hover:text-gray-600"
+                            className="p-1.5 text-[rgba(15,20,16,0.4)] hover:text-[#111612] transition-colors rounded-full hover:bg-black/5"
                         >
-                            <X size={18} />
+                            <X size={16} />
                         </button>
                         <div className="flex items-center gap-3 text-left">
-                            <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center overflow-hidden border border-gray-100 flex-shrink-0">
+                            <div className="w-9 h-9 bg-white rounded-xl shadow-xs flex items-center justify-center overflow-hidden border border-[rgba(15,20,16,0.06)] flex-shrink-0">
                                 <Logo size="sm" showSmile={false} />
                             </div>
                             <div>
-                                <p className="text-[13px] font-bold text-gray-900 leading-none">Velari Market</p>
-                                <p className="text-[11px] text-gray-500 mt-1 font-medium">Tez va qulay ilovamizni o&apos;rnating</p>
+                                <p className="text-xs font-bold text-[#111612] leading-none">Velari Market</p>
+                                <p className="text-[11px] text-[rgba(15,20,16,0.6)] mt-0.5 font-medium">Tez va qulay ilovamizni o&apos;rnating</p>
                             </div>
                         </div>
                     </div>
 
                     <button 
                         onClick={handleInstallClick}
-                        className="bg-[#2d6e3e] hover:bg-[#1f5430] text-white text-[11px] font-bold px-5 py-2.5 rounded-lg active:scale-95 transition-all"
+                        className="bg-[#2D6E3E] hover:bg-[#235831] text-white text-xs font-semibold px-4 py-2 rounded-full active:scale-95 transition-transform duration-150 will-change-transform shadow-xs"
                     >
                         O&apos;rnatish
                     </button>

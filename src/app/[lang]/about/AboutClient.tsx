@@ -153,7 +153,7 @@ export default function AboutClient({ initialSettings }: AboutClientProps) {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             {t.aboutUs.whyItems.map((item: any, i: number) => (
-                                <div key={i} className="p-7 bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.06)] rounded-[28px] shadow-xs hover:border-[#2D6E3E]/30 transition-all duration-300 group">
+                                <div key={i} className="p-7 bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.06)] rounded-[28px] shadow-xs hover:border-[#2D6E3E]/30 transition-colors duration-200 group">
                                     <div className="w-12 h-12 bg-[#EAF3EC] text-[#2D6E3E] rounded-2xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform shadow-xs">
                                         {icons[i] || <Rocket size={22} />}
                                     </div>
@@ -169,7 +169,7 @@ export default function AboutClient({ initialSettings }: AboutClientProps) {
                          <h3 className="text-xl md:text-2xl font-bold tracking-tight text-center md:text-left text-[#111612]">{t.aboutUs.statsTitle}</h3>
                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             {t.aboutUs.stats.map((stat: string, i: number) => (
-                                <div key={i} className="p-6 rounded-[24px] flex flex-col justify-center items-center text-center group transition-all shadow-sm shadow-[#2D6E3E]/15 border border-white/15" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff" }}>
+                                <div key={i} className="p-6 rounded-[24px] flex flex-col justify-center items-center text-center group transition-transform duration-200 shadow-sm shadow-[#2D6E3E]/15 border border-white/15" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff" }}>
                                     <span className="text-2xl md:text-3xl font-bold tracking-tight mb-1 group-hover:scale-105 transition-transform">
                                         {stat.split(' ')[0]}
                                     </span>
@@ -216,7 +216,7 @@ export default function AboutClient({ initialSettings }: AboutClientProps) {
                                     href={contact.link}
                                     target="_blank"
                                     rel="noopener noreferrer" 
-                                    className="p-6 bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.06)] hover:border-[#2D6E3E]/30 rounded-[24px] transition-all hover:shadow-md group flex flex-col items-center md:items-start text-center md:text-left gap-3"
+                                    className="p-6 bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.06)] hover:border-[#2D6E3E]/30 rounded-[24px] transition-colors duration-200 hover:shadow-md group flex flex-col items-center md:items-start text-center md:text-left gap-3"
                                 >
                                     <div className="w-11 h-11 bg-[#EAF3EC] text-[#2D6E3E] rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs">
                                         {contact.icon}

@@ -462,7 +462,7 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                                             videoPreWarmer.triggerHaptic("light");
                                             setDraftBrands(on ? draftBrands.filter(x => x !== b.id) : [...draftBrands, b.id]);
                                         }}
-                                        className={`px-4 py-2.5 rounded-full text-[12.5px] font-semibold border transition-all ios-tap-feedback active:scale-95 duration-150 will-change-transform ${on ? "bg-gradient-to-r from-[#2D6E3E] to-[#1F5A30] text-white border-transparent shadow-sm shadow-[#2D6E3E]/20" : "bg-white/80 backdrop-blur-md text-[#2C332E] border-black/10 hover:bg-white"}`}
+                                        className={`px-4 py-2.5 rounded-full text-[12.5px] font-semibold border transition-[transform,colors] ios-tap-feedback active:scale-95 duration-150 will-change-transform ${on ? "bg-gradient-to-r from-[#2D6E3E] to-[#1F5A30] text-white border-transparent shadow-sm shadow-[#2D6E3E]/20" : "bg-white/80 backdrop-blur-md text-[#2C332E] border-black/10 hover:bg-white"}`}
                                     >
                                         {(language === "uz" ? b.name_uz : b.name_ru) || b.name}
                                     </button>
@@ -537,7 +537,7 @@ function Pill({ children, active, onClick, small }: { children: React.ReactNode;
                 videoPreWarmer.triggerHaptic("light");
                 onClick();
             }}
-            className={`shrink-0 rounded-full font-semibold transition-all duration-150 whitespace-nowrap ios-tap-feedback active:scale-95 will-change-transform border ${
+            className={`shrink-0 rounded-full font-semibold transition-[transform,colors] duration-150 whitespace-nowrap ios-tap-feedback active:scale-95 will-change-transform border ${
                 small ? "px-4 py-2 text-xs" : "px-5 py-2.5 text-[13.5px]"
             } ${
                 active

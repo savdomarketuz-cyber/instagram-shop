@@ -233,12 +233,12 @@ export default function MessagesPage() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder={t.common.search}
-                        className="w-full bg-white/80 backdrop-blur-md border border-[rgba(15,20,16,0.08)] focus:border-[#2D6E3E] rounded-2xl pl-10 pr-9 py-2.5 text-sm font-medium text-[#111612] outline-none transition-all placeholder:text-[#9AA29C] shadow-xs"
+                        className="w-full bg-white/80 backdrop-blur-md border border-[rgba(15,20,16,0.08)] focus:border-[#2D6E3E] rounded-2xl pl-10 pr-9 py-2.5 text-sm font-medium text-[#111612] outline-none transition-colors duration-150 placeholder:text-[#9AA29C] shadow-xs"
                     />
                     {searchQuery && (
                         <button
                             onClick={() => setSearchQuery("")}
-                            className="absolute right-3 w-5 h-5 rounded-full bg-black/5 text-[#737D75] flex items-center justify-center hover:bg-black/10 active:scale-90 transition-all"
+                            className="absolute right-3 w-5 h-5 rounded-full bg-black/5 text-[#737D75] flex items-center justify-center hover:bg-black/10 active:scale-90 transition-transform duration-150 will-change-transform"
                         >
                             <X size={12} />
                         </button>
