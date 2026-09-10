@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useStore } from "@/store/store";
 import { useShallow } from "zustand/react/shallow";
-import { Search, SlidersHorizontal, ArrowUpDown, X, Check, Loader2, PackageSearch, Camera } from "lucide-react";
+import { Search, SlidersHorizontal, ArrowUpDown, X, Check, Loader2, PackageSearch, Camera, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { translations } from "@/lib/translations";
 import { supabase } from "@/lib/supabase";
@@ -72,6 +72,7 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
     const [searchPage, setSearchPage] = useState(1);
     const [hasMoreSearch, setHasMoreSearch] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [didYouMean, setDidYouMean] = useState<string | null>(null);
     const isVisualActiveRef = useRef(false);
     const searchAbortRef = useRef<AbortController | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -203,6 +204,7 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
             setIsSearching(false);
             setHasMoreSearch(false);
             setSearchPage(1);
+            setDidYouMean(null);
             isVisualActiveRef.current = false;
             if (searchAbortRef.current) searchAbortRef.current.abort();
             return;
@@ -244,6 +246,7 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                 if (data.results) {
                     setSearchResults(data.results);
                     setHasMoreSearch(!!data.hasMore);
+                    setDidYouMean(data.didYouMean || null);
                 }
             } catch (err: any) {
                 if (err?.name !== "AbortError") {
@@ -521,6 +524,22 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                         {language === "uz" ? "Saralash" : "Сортировка"}
                     </button>
                 </div>
+
+                {/* DID YOU MEAN BANNER */}
+                {didYouMean && searchQuery.trim() && (
+                    <div className="mb-4 p-3.5 rounded-2xl glass-surface flex items-center gap-2 text-sm border border-emerald-500/20 bg-emerald-50/40">
+                        <Sparkles size={16} className="text-[#2D6E3E] shrink-0" />
+                        <span className="text-[#737D75]">
+                            {language === "uz" ? "Balki shuni nazarda tutdingizmi:" : "Возможно, вы имели в виду:"}
+                        </span>
+                        <button
+                            onClick={() => setSearchQuery(didYouMean)}
+                            className="font-bold text-[#2D6E3E] hover:underline"
+                        >
+                            {didYouMean}
+                        </button>
+                    </div>
+                )}
 
                 {/* Product grid with 1:1 skeleton layout */}
                 {loadingProducts ? (

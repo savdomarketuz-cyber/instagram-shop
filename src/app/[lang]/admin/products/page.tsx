@@ -766,9 +766,8 @@ function AdminProducts() {
             if (filterBrand) query = query.eq("brand_id", filterBrand);
             const pMin = Number(filterPriceMin), pMax = Number(filterPriceMax);
             if (filterPriceMin && !isNaN(pMin)) query = query.gte("price", pMin);
-            if (filterPriceMax && !isNaN(pMax)) query = query.lte("price", pMax);
-            if (filterStock === "in") query = query.gt("stock", 0);
-            else if (filterStock === "out") query = query.lte("stock", 0);
+            if (filterStock === "in") query = query.or("stock.gt.0,stock_details.neq.{}");
+            else if (filterStock === "out") query = query.lte("stock", 0).or("stock_details.is.null,stock_details.eq.{}");
             if (filterOriginal === "yes") query = query.eq("is_original", true);
             else if (filterOriginal === "no") query = query.eq("is_original", false);
             if (filterDiscount) query = query.gt("old_price", 0);

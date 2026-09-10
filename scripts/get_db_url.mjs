@@ -15,13 +15,5 @@ export function getDatabaseUrl() {
         }
     } catch {}
 
-    // Check local scratch path fallback
-    const scratchPath = 'C:/Users/user/.gemini/antigravity/brain/132d8379-3723-45a6-a02d-bb9203322573/scratch/db_url.txt';
-    try {
-        if (fs.existsSync(scratchPath)) {
-            return fs.readFileSync(scratchPath, 'utf8').trim();
-        }
-    } catch {}
-
-    throw new Error('DATABASE_URL is not defined in environment variables, .env.local, or local fallback.');
+    throw new Error('DATABASE_URL is not defined in environment variables or .env.local.');
 }

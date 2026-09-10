@@ -19,16 +19,10 @@ import { readFileSync } from 'fs';
 import { createHash } from 'crypto';
 import pg from 'pg';
 import { pipeline } from '@xenova/transformers';
+import { getDatabaseUrl } from './get_db_url.mjs';
+import { buildEmbeddingText, hashText, toVectorLiteral } from './embedding_utils.mjs';
 
-// DATABASE_URL: avval muhit o'zgaruvchisidan (CI), aks holda .env.local'dan
-let DATABASE_URL = process.env.DATABASE_URL;
-if (!DATABASE_URL) {
-    try {
-        const env = readFileSync('.env.local', 'utf8');
-        DATABASE_URL = env.match(/^DATABASE_URL=(.+)$/m)?.[1]?.trim().replace(/^["']|["']$/g, '');
-    } catch { /* .env.local yo'q (CI muhiti) */ }
-}
-if (!DATABASE_URL) { console.error('❌ DATABASE_URL topilmadi (env yoki .env.local)'); process.exit(1); }
+const DATABASE_URL = getDatabaseUrl();
 
 const args = process.argv.slice(2);
 const FORCE = args.includes('--force');
@@ -36,36 +30,6 @@ const LIMIT = args.includes('--limit') ? parseInt(args[args.indexOf('--limit') +
 
 const MODEL = 'Xenova/all-MiniLM-L6-v2';
 const BATCH = 16;
-
-function parsePersona(raw) {
-    if (!raw) return null;
-    if (typeof raw === 'string') { try { return JSON.parse(raw); } catch { return null; } }
-    return raw;
-}
-
-// Mahsulotning embedding matni — qidiruv/o'xshashlik uchun ma'noli, ko'p tilli.
-function buildText(p) {
-    const persona = parsePersona(p.ai_persona);
-    const parts = [
-        p.name_uz || p.name || '',
-        p.name_ru || '',
-        p.category_name || '',
-    ];
-    if (persona) {
-        parts.push((persona.personas || []).join(', '));
-        parts.push((persona.use_cases || []).join(', '));
-        parts.push((persona.value_props || []).join(', '));
-        parts.push((persona.search_terms || []).join(', '));
-        parts.push(persona.one_liner_uz || '');
-        parts.push(persona.one_liner_ru || '');
-    }
-    const desc = (p.description_uz || p.description || '').toString();
-    if (desc) parts.push(desc.slice(0, 400));
-    return parts.filter(Boolean).join('. ').slice(0, 2000);
-}
-
-const toVectorLiteral = (arr) => '[' + arr.join(',') + ']';
-const hashText = (t) => createHash('sha256').update(t).digest('hex');
 
 async function main() {
     const c = new pg.Client({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false } });
@@ -77,6 +41,7 @@ async function main() {
     const limitSql = LIMIT ? `LIMIT ${LIMIT}` : '';
     const { rows } = await c.query(`
         SELECT p.id, p.name, p.name_uz, p.name_ru, p.description, p.description_uz,
+               p.model, p.article, p.image_metadata,
                p.ai_persona, c.name AS category_name,
                (p.embedding IS NOT NULL) AS has_emb, p.embedding_hash
         FROM products p
@@ -88,7 +53,7 @@ async function main() {
     const toEmbed = [];
     let stamped = 0;
     for (const p of rows) {
-        const text = buildText(p);
+        const text = buildEmbeddingText(p);
         const h = hashText(text);
         p._text = text; p._hash = h;
 
