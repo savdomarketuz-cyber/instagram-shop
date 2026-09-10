@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, ChevronRight, CheckCircle, Truck, Clock, XCircle, MoreVertical, MapPin, Phone, Package, User, Globe, X, Info, Tag, Layers, Hash } from "lucide-react";
+import { Search, ChevronRight, CheckCircle, Truck, Clock, XCircle, MoreVertical, MapPin, Phone, Package, User, Globe, X, Info, Tag, Layers, Hash, ShieldCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { normalizeOrderStatus, getStatusLabel, ADMIN_STATUS_TABS } from "@/lib/order-status";
 import Image from "next/image";
@@ -385,6 +385,15 @@ export default function AdminOrders() {
                                         <span className="italic tracking-tighter">{selectedOrder.total?.toLocaleString()} so'm</span>
                                     </div>
                                 </div>
+
+                                {/* Kafolat Taloni Tugmasi */}
+                                <a
+                                    href={`/admin/warranty?orderId=${selectedOrder.id}`}
+                                    className="w-full py-3.5 px-4 bg-teal-700 hover:bg-teal-800 text-white rounded-2xl text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-teal-700/20 transition-all active:scale-95"
+                                >
+                                    <ShieldCheck size={16} />
+                                    <span>Kafolat Taloni (PDF / Print)</span>
+                                </a>
                             </div>
                         </div>
 

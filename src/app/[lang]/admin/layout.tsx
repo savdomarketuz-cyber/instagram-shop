@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutDashboard, ShoppingCart, Package, Layers, LogOut, Menu, X, Users, Image as ImageIcon, Database, Settings, Sparkles, Activity, Zap, MessageSquare, ShieldAlert, Truck, Warehouse, RotateCcw, Tag, Banknote, Wallet, BookOpen, ClipboardList, BookA, Bell, Timer, Percent, Grid, ChevronDown, DollarSign, Brain, HelpCircle } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Package, Layers, LogOut, Menu, X, Users, Image as ImageIcon, Database, Settings, Sparkles, Activity, Zap, MessageSquare, ShieldAlert, ShieldCheck, Truck, Warehouse, RotateCcw, Tag, Banknote, Wallet, BookOpen, ClipboardList, BookA, Bell, Timer, Percent, Grid, ChevronDown, DollarSign, Brain, HelpCircle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -261,6 +261,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             title: "Savdo",
             items: [
                 { name: "Buyurtmalar", href: l("/admin/orders"), icon: ShoppingCart, hint: "Barcha xaridlar ro'yxati" },
+                { name: "Kafolat Talonlari", href: l("/admin/warranty"), icon: ShieldCheck, hint: "Kafolat xatlari va PDF generator" },
                 { name: "Tark etilgan savat", href: l("/admin/carts"), icon: ShoppingCart, hint: "Sotib olinmagan savatchalar" },
                 { name: "Qaytarishlar", href: l("/admin/returns"), icon: RotateCcw, hint: "Mahsulotni qaytarish arizalari" },
                 { name: "Tezkor yetkazish", href: l("/admin/express-delivery"), icon: Truck, hint: "Yandex Delivery va kuryerlar" },
