@@ -128,8 +128,8 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
 
     const handleTouchStart = (e: React.TouchEvent) => {
         e.stopPropagation();
+        if (isDragging.current) return;
         if (commentsListRef.current && commentsListRef.current.scrollTop > 0) {
-            isDragging.current = false;
             return;
         }
         const y = e.touches[0].clientY;
@@ -283,10 +283,11 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
                     overscrollBehavior: "contain",
                     transition: isClosing ? "transform 250ms cubic-bezier(0.32, 0.72, 0, 1), opacity 220ms ease-out" : undefined,
                     transform: isClosing ? "translate3d(0, 100%, 0)" : undefined,
+                    animation: (!isClosing && !isDragging.current && currentTranslateY.current === 0)
+                        ? "velari-sheet-up 320ms cubic-bezier(0.22, 1, 0.36, 1)"
+                        : "none",
                 }}
-                className={`relative bg-white text-black h-[70dvh] max-w-[500px] mx-auto w-full rounded-t-[36px] flex flex-col shadow-2xl overflow-hidden will-change-transform overscroll-contain ${
-                    !isClosing ? "animate-in slide-in-from-bottom duration-300" : ""
-                }`}
+                className="relative bg-white text-[#111612] h-[70dvh] max-w-[500px] mx-auto w-full rounded-t-[32px] flex flex-col shadow-2xl overflow-hidden will-change-transform overscroll-contain"
             >
                 {/* Drag pill handle & header (Dedicated Touch-Action None Drag Zone) */}
                 <div
@@ -298,21 +299,22 @@ export const CommentsSheet = ({ productId, onClose, language, t }: CommentsSheet
                     style={{ touchAction: "none" }}
                 >
                     <div className="w-full flex items-center justify-center pt-3 pb-2">
-                        <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+                        <div className="w-11 h-1.5 bg-gray-200 rounded-full" />
                     </div>
 
-                    <div className="px-6 py-2 border-b border-gray-100 flex items-center justify-between">
-                        <h3 className="font-black italic uppercase tracking-tighter text-lg pointer-events-none">
-                            {t.reels?.comments || "Comments"}
-                            <span className="ml-2 text-gray-300">({comments.length})</span>
+                    <div className="px-5 py-2 border-b border-gray-100 flex items-center justify-between">
+                        <h3 className="font-semibold text-[17px] text-[#111612] tracking-tight pointer-events-none">
+                            {t.reels?.comments || "Sharhlar"}
+                            <span className="ml-2 text-sm text-gray-400 font-normal">({comments.length})</span>
                         </h3>
                         <button
                             type="button"
                             onClick={handleCloseWithAnimation}
                             onPointerDown={(e) => e.stopPropagation()}
-                            className="p-2 bg-gray-50 rounded-full text-gray-400 hover:text-black transition-colors"
+                            className="w-10 h-10 flex items-center justify-center bg-gray-100/80 rounded-full text-gray-500 hover:text-black active:scale-90 transition-transform"
+                            aria-label="Close"
                         >
-                            <X size={20} />
+                            <X size={18} />
                         </button>
                     </div>
                 </div>

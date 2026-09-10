@@ -78,7 +78,7 @@ export const SingleReel = ({
     const [soundBadge, setSoundBadge] = useState<{ visible: boolean; isMuted: boolean } | null>(null);
     const [isHolding, setIsHolding] = useState(false);
 
-    // Notify parent container to lock snap scrolling when child modal is open
+    // Synchronize modal open state to parent so Reels snap container scrolling freezes
     useEffect(() => {
         onModalStateChange?.(isQuickBuyOpen || isOptionsOpen);
     }, [isQuickBuyOpen, isOptionsOpen, onModalStateChange]);
@@ -1113,10 +1113,11 @@ function ReelOptionsSheet({
                     overscrollBehavior: "contain",
                     transition: isClosing ? "transform 250ms cubic-bezier(0.32, 0.72, 0, 1), opacity 220ms ease-out" : undefined,
                     transform: isClosing ? "translate3d(0, 100%, 0)" : undefined,
+                    animation: (!isClosing && !isDragging.current && currentTranslateY.current === 0)
+                        ? "velari-sheet-up 300ms cubic-bezier(0.22, 1, 0.36, 1)"
+                        : "none",
                 }}
-                className={`relative bg-[#262626] text-white rounded-t-3xl overflow-hidden p-3 pb-[max(24px,env(safe-area-inset-bottom))] space-y-1 shadow-2xl max-w-md mx-auto w-full will-change-transform overscroll-contain ${
-                    !isClosing ? "animate-in slide-in-from-bottom duration-300" : ""
-                }`}
+                className="relative bg-[#262626] text-white rounded-t-3xl overflow-hidden p-3 pb-[max(24px,env(safe-area-inset-bottom))] space-y-1 shadow-2xl max-w-md mx-auto w-full will-change-transform overscroll-contain"
             >
                 <div
                     onPointerDown={handlePointerDown}

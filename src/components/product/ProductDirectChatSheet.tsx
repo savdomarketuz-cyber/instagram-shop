@@ -125,8 +125,8 @@ export const ProductDirectChatSheet = ({
 
     const handleTouchStart = (e: React.TouchEvent) => {
         e.stopPropagation();
+        if (isDragging.current) return;
         if (scrollRef.current && scrollRef.current.scrollTop > 0) {
-            isDragging.current = false;
             return;
         }
         const y = e.touches[0].clientY;
@@ -136,6 +136,7 @@ export const ProductDirectChatSheet = ({
         velocity.current = 0;
         isDragging.current = true;
         if (sheetRef.current) {
+            sheetRef.current.style.animation = "none";
             sheetRef.current.style.transition = "none";
         }
     };
@@ -276,11 +277,12 @@ export const ProductDirectChatSheet = ({
                     willChange: "transform",
                     transition: isClosing ? "transform 250ms cubic-bezier(0.32, 0.72, 0, 1), opacity 220ms ease-out" : undefined,
                     transform: isClosing ? "translate3d(0, 100%, 0)" : undefined,
+                    animation: (!isClosing && !isDragging.current && currentTranslateY.current === 0)
+                        ? "velari-sheet-up 320ms cubic-bezier(0.22, 1, 0.36, 1)"
+                        : "none",
                     paddingBottom: "max(16px, env(safe-area-inset-bottom, 16px))",
                 }}
-                className={`relative w-full max-w-[500px] mx-auto bg-white text-black rounded-t-[32px] shadow-2xl flex flex-col max-h-[85dvh] overflow-hidden overscroll-contain ${
-                    !isClosing ? "animate-in slide-in-from-bottom duration-400" : ""
-                }`}
+                className="relative w-full max-w-[500px] mx-auto bg-white text-black rounded-t-[32px] shadow-2xl flex flex-col max-h-[85dvh] overflow-hidden overscroll-contain"
             >
                 {/* Drag handle & Header (Dedicated Touch-Action None Drag Zone) */}
                 <div

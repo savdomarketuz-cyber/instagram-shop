@@ -1,9 +1,8 @@
 "use client";
 
-import { X, Image as ImageIcon } from "lucide-react";
-import { useEffect } from "react";
+import { Image as ImageIcon } from "lucide-react";
+import Sheet from "@/components/velari/Sheet";
 import { getOptimizedImageUrl } from "@/lib/imageVariants";
-import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 interface ProductDescriptionModalProps {
     isOpen: boolean;
@@ -13,23 +12,12 @@ interface ProductDescriptionModalProps {
 }
 
 export const ProductDescriptionModal = ({
-    isOpen, onClose, product, language
+    isOpen,
+    onClose,
+    product,
+    language
 }: ProductDescriptionModalProps) => {
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape") onClose();
-        };
-        if (isOpen) {
-            window.addEventListener("keydown", handleKeyDown);
-            document.body.style.overflow = "hidden";
-        }
-        return () => {
-            window.removeEventListener("keydown", handleKeyDown);
-            document.body.style.overflow = "";
-        };
-    }, [isOpen, onClose]);
-
-    if (!isOpen || !product) return null;
+    if (!product) return null;
 
     const allImages = product?.images && product.images.length > 0 ? product.images : [product?.image || ""];
     const allMedia = [
@@ -37,81 +25,79 @@ export const ProductDescriptionModal = ({
         ...(product?.videoUrl ? [{ type: 'video' as const, url: product.videoUrl }] : [])
     ];
 
+    const title = language === 'uz' ? 'Mahsulot haqida' : 'О товаре';
+
     return (
-        <div className="fixed inset-0 z-[180] bg-black/60 backdrop-blur-md flex items-center justify-center p-3 md:p-8 animate-in fade-in duration-300">
-            <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-[32px] md:rounded-[44px] shadow-2xl flex flex-col overflow-hidden border border-gray-100 animate-in zoom-in-95 duration-300">
-                {/* Header */}
-                <div className="p-6 md:p-8 flex items-center justify-between border-b border-gray-100 shrink-0 bg-white/80 backdrop-blur-md sticky top-0 z-10">
-                    <div>
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">
-                            {language === 'uz' ? 'Mahsulot haqida' : 'О товаре'}
-                        </span>
-                        <h2 className="text-base md:text-xl font-black text-gray-900 tracking-tight line-clamp-1">
-                            {product[`name_${language}`] || product.name}
-                        </h2>
-                    </div>
-                    <button
-                        onClick={() => {
-                            videoPreWarmer.triggerHaptic("light");
-                            onClose();
-                        }}
-                        className="ios-icon-tap active:scale-90 p-3 bg-gray-100 hover:bg-black hover:text-white rounded-full text-gray-600 transition-transform duration-150 ease-out will-change-transform"
-                    >
-                        <X size={20} />
-                    </button>
+        <Sheet
+            open={isOpen}
+            onClose={onClose}
+            height="88dvh"
+            title={title}
+        >
+            <div className="px-5 md:px-8 pb-10 space-y-8">
+                {/* Product Name */}
+                <div className="border-b border-gray-100/80 pb-4">
+                    <span className="text-[11px] font-medium text-[#737D75] uppercase tracking-wider block mb-1">
+                        {product.brand || (language === 'uz' ? 'Mahsulot' : 'Товар')}
+                    </span>
+                    <h2 className="text-lg md:text-xl font-semibold text-[#111612] tracking-tight leading-snug">
+                        {product[`name_${language}`] || product.name}
+                    </h2>
                 </div>
 
-                {/* Body Content */}
-                <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-12 no-scrollbar overscroll-contain touch-pan-y [WebkitOverflowScrolling:touch]">
-                    {/* Description Text */}
-                    <div className="space-y-6">
-                        <h3 className="text-xl md:text-2xl font-black text-gray-900 italic uppercase tracking-tight">
-                            {language === 'uz' ? "Batafsil tavsif" : "Подробное описание"}
-                        </h3>
-                        <div className="text-gray-700 text-sm md:text-base leading-relaxed font-medium bg-gray-50/70 p-6 md:p-8 rounded-[32px] border border-gray-100">
-                            {(() => {
-                                const desc = product[`description_${language}`] || product.description || '';
-                                const hasHtml = /<[a-z][\s\S]*>/i.test(desc);
-                                if (hasHtml) {
-                                    return <div dangerouslySetInnerHTML={{ __html: desc }} className="prose max-w-none text-gray-700 font-medium" />;
-                                }
-                                return (
-                                    <div className="space-y-4">
-                                        {desc.split('\n').map((line: string, i: number) => (
-                                            <p key={i}>{line}</p>
-                                        ))}
-                                    </div>
-                                );
-                            })()}
-                        </div>
-                    </div>
-
-                    {/* Media Gallery Section */}
-                    {allMedia.length > 0 && (
-                        <div className="space-y-6 pt-4 border-t border-gray-100">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2.5 bg-green-50 text-[#2D6E3E] rounded-2xl">
-                                    <ImageIcon size={20} />
+                {/* Description Text */}
+                <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-[#737D75] uppercase tracking-wider">
+                        {language === 'uz' ? "Batafsil tavsif" : "Подробное описание"}
+                    </h3>
+                    <div className="text-[#111612] text-[15px] leading-relaxed font-normal bg-[#F7F8F4] p-5 md:p-6 rounded-[22px] border border-black/5">
+                        {(() => {
+                            const desc = product[`description_${language}`] || product.description || '';
+                            const hasHtml = /<[a-z][\s\S]*>/i.test(desc);
+                            if (hasHtml) {
+                                return <div dangerouslySetInnerHTML={{ __html: desc }} className="prose max-w-none text-[#111612] font-normal" />;
+                            }
+                            return (
+                                <div className="space-y-3">
+                                    {desc.split('\n').map((line: string, i: number) => (
+                                        <p key={i}>{line}</p>
+                                    ))}
                                 </div>
-                                <h3 className="text-lg md:text-xl font-black text-gray-900 italic uppercase tracking-tight">
-                                    {language === 'uz' ? "Mahsulot fotolavhalari" : "Галерея изображений"}
-                                </h3>
-                            </div>
-                            <div className="space-y-6">
-                                {allMedia.map((m, i) => (
-                                    <div key={i} className="rounded-[32px] overflow-hidden bg-gray-50 border border-gray-100 shadow-sm flex items-center justify-center p-4">
-                                        {m.type === 'video' ? (
-                                            <video src={m.url} controls className="w-full max-h-[600px] object-contain rounded-2xl" />
-                                        ) : (
-                                            <img src={getOptimizedImageUrl(product?.image_metadata, m.url, 'md')} alt={`Gallery-${i}`} className="w-full max-h-[700px] object-contain rounded-2xl" />
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                            );
+                        })()}
+                    </div>
                 </div>
+
+                {/* Media Gallery Section */}
+                {allMedia.length > 0 && (
+                    <div className="space-y-4 pt-2">
+                        <div className="flex items-center gap-2">
+                            <div className="p-2 bg-[#EAF3EC] text-[#2D6E3E] rounded-xl">
+                                <ImageIcon size={18} />
+                            </div>
+                            <h3 className="text-sm font-semibold text-[#737D75] uppercase tracking-wider">
+                                {language === 'uz' ? "Mahsulot fotolavhalari" : "Галерея изображений"}
+                            </h3>
+                        </div>
+                        <div className="space-y-4">
+                            {allMedia.map((m, i) => (
+                                <div key={i} className="rounded-[24px] overflow-hidden bg-[#F7F8F4] border border-black/5 flex items-center justify-center p-3">
+                                    {m.type === 'video' ? (
+                                        <video src={m.url} controls className="w-full max-h-[500px] object-contain rounded-xl" />
+                                    ) : (
+                                        <img
+                                            src={getOptimizedImageUrl(product?.image_metadata, m.url, 'md')}
+                                            alt={`Gallery-${i}`}
+                                            className="w-full max-h-[600px] object-contain rounded-xl"
+                                            loading="lazy"
+                                        />
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
-        </div>
+        </Sheet>
     );
 };

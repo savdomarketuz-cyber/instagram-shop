@@ -283,8 +283,8 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
 
     const handleTouchStart = (e: React.TouchEvent) => {
         e.stopPropagation();
+        if (isDragging.current) return;
         if (contentRef.current && contentRef.current.scrollTop > 0) {
-            isDragging.current = false;
             return;
         }
         const y = e.touches[0].clientY;
@@ -385,10 +385,11 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                     overscrollBehavior: "contain",
                     transition: isClosing ? "transform 250ms cubic-bezier(0.32, 0.72, 0, 1), opacity 220ms ease-out" : undefined,
                     transform: isClosing ? "translate3d(0, 100%, 0)" : undefined,
+                    animation: (!isClosing && !isDragging.current && currentTranslateY.current === 0)
+                        ? "velari-sheet-up 320ms cubic-bezier(0.22, 1, 0.36, 1)"
+                        : "none",
                 }}
-                className={`relative w-full max-w-[500px] mx-auto bg-white text-black rounded-t-[36px] shadow-[0_-15px_40px_rgba(0,0,0,0.4)] flex flex-col max-h-[85dvh] overflow-hidden will-change-transform overscroll-contain ${
-                    !isClosing ? "animate-in slide-in-from-bottom duration-300" : ""
-                }`}
+                className="relative w-full max-w-[500px] mx-auto bg-white text-[#111612] rounded-t-[32px] shadow-[0_-15px_40px_rgba(0,0,0,0.3)] flex flex-col max-h-[85dvh] overflow-hidden will-change-transform overscroll-contain"
             >
                 {/* Drag pill handle & Header (Dedicated Touch-Action None Drag Zone) */}
                 <div
@@ -400,16 +401,16 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                     style={{ touchAction: "none" }}
                 >
                     <div className="w-full flex items-center justify-center pt-3 pb-2">
-                        <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+                        <div className="w-11 h-1.5 bg-gray-200 rounded-full" />
                     </div>
 
                     {/* Header */}
                     <div className="px-5 pb-3 flex items-center justify-between border-b border-gray-100">
                         <div className="flex items-center gap-2 pointer-events-none">
-                            <span className="p-1.5 bg-[#6335ED]/10 text-[#6335ED] rounded-xl">
+                            <span className="p-1.5 bg-[#2D6E3E]/10 text-[#2D6E3E] rounded-xl">
                                 <Sparkles size={16} />
                             </span>
-                            <h3 className="font-black text-sm tracking-tight uppercase">
+                            <h3 className="font-semibold text-[17px] text-[#111612] tracking-tight">
                                 {language === "uz" ? "Tezkor Xarid" : "Быстрая покупка"}
                             </h3>
                         </div>
@@ -417,7 +418,8 @@ export const QuickBuySheet = ({ product, onClose, language, t }: QuickBuySheetPr
                             type="button"
                             onClick={handleCloseWithAnimation}
                             onPointerDown={(e) => e.stopPropagation()}
-                            className="p-1.5 bg-gray-50 rounded-full text-gray-400 hover:text-black transition-colors"
+                            className="w-10 h-10 flex items-center justify-center bg-gray-100/80 rounded-full text-gray-500 hover:text-black active:scale-90 transition-transform"
+                            aria-label="Close"
                         >
                             <X size={18} />
                         </button>

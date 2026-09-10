@@ -734,10 +734,11 @@ function BottomSheet({ open, onClose, title, leftAction, children }: {
                     willChange: "transform",
                     transition: isClosing ? "transform 250ms cubic-bezier(0.32, 0.72, 0, 1), opacity 220ms ease-out" : undefined,
                     transform: isClosing ? "translate3d(0, 100%, 0)" : undefined,
+                    animation: (!isClosing && !isDragging.current && currentTranslateY.current === 0)
+                        ? "velari-sheet-up 320ms cubic-bezier(0.22, 1, 0.36, 1)"
+                        : "none",
                 }}
-                className={`relative w-full max-w-[480px] bg-white rounded-t-[32px] px-6 pt-3 pb-4 max-h-[88vh] flex flex-col overscroll-contain ${
-                    !isClosing ? "animate-in slide-in-from-bottom duration-300" : ""
-                }`}
+                className="relative w-full max-w-[480px] bg-white rounded-t-[32px] px-6 pt-3 pb-4 max-h-[88vh] flex flex-col overscroll-contain"
             >
                 {/* Drag handle & Header (Dedicated Touch-Action None Drag Zone) */}
                 <div

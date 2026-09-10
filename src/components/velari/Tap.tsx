@@ -28,6 +28,7 @@ export default function Tap({
       onPointerDown={() => setPressed(true)}
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
+      onPointerCancel={() => setPressed(false)}
       onClick={onClick}
       className={className}
       style={{
