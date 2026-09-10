@@ -42,7 +42,7 @@ export const PinKeypad: React.FC<PinKeypadProps> = ({ onComplete, onForgotPin, t
                 {[1, 2, 3, 4].map((i) => (
                     <div
                         key={i}
-                        className={`w-3.5 h-3.5 rounded-full border-2 transition-all duration-200 ${
+                        className={`w-3.5 h-3.5 rounded-full border-2 transition-[transform,background-color,border-color] duration-150 will-change-transform ${
                             pin.length >= i ? 'border-[#2D6E3E] bg-[#2D6E3E] scale-110' : 'border-[rgba(15,20,16,0.2)] bg-transparent'
                         }`}
                     />
@@ -55,7 +55,7 @@ export const PinKeypad: React.FC<PinKeypadProps> = ({ onComplete, onForgotPin, t
                     <button
                         key={num}
                         onClick={() => handlePress(num.toString())}
-                        className="w-18 h-18 rounded-full bg-white/90 backdrop-blur-md text-2xl font-semibold text-[#111612] shadow-xs border border-[rgba(15,20,16,0.08)] active:bg-[#2D6E3E] active:text-white active:scale-95 transition-all flex items-center justify-center"
+                        className="w-18 h-18 rounded-full bg-white/90 backdrop-blur-md text-2xl font-semibold text-[#111612] shadow-xs border border-[rgba(15,20,16,0.08)] active:bg-[#2D6E3E] active:text-white active:scale-95 transition-[transform,background-color,color] duration-150 will-change-transform flex items-center justify-center"
                     >
                         {num}
                     </button>
@@ -63,13 +63,13 @@ export const PinKeypad: React.FC<PinKeypadProps> = ({ onComplete, onForgotPin, t
                 <div />
                 <button
                     onClick={() => handlePress('0')}
-                    className="w-18 h-18 rounded-full bg-white/90 backdrop-blur-md text-2xl font-semibold text-[#111612] shadow-xs border border-[rgba(15,20,16,0.08)] active:bg-[#2D6E3E] active:text-white active:scale-95 transition-all flex items-center justify-center"
+                    className="w-18 h-18 rounded-full bg-white/90 backdrop-blur-md text-2xl font-semibold text-[#111612] shadow-xs border border-[rgba(15,20,16,0.08)] active:bg-[#2D6E3E] active:text-white active:scale-95 transition-[transform,background-color,color] duration-150 will-change-transform flex items-center justify-center"
                 >
                     0
                 </button>
                 <button
                     onClick={handleDelete}
-                    className="w-18 h-18 rounded-full bg-[#F5F7F5] text-[#737D75] flex items-center justify-center active:scale-90 transition-all border border-[rgba(15,20,16,0.06)]"
+                    className="w-18 h-18 rounded-full bg-[#F5F7F5] text-[#737D75] flex items-center justify-center active:scale-90 transition-transform duration-150 will-change-transform border border-[rgba(15,20,16,0.06)]"
                 >
                     <Delete size={22} />
                 </button>

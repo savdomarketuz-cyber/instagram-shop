@@ -1604,7 +1604,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                 videoPreWarmer.triggerHaptic("selection");
                                 setActiveTab(tab.id as any);
                             }}
-                            className={`ios-tap-feedback active:scale-[0.98] flex items-center gap-2 px-5 py-2.5 rounded-[16px] text-xs font-semibold transition-all duration-150 will-change-transform whitespace-nowrap ${activeTab === tab.id ? 'bg-white text-[#111612] shadow-sm' : 'text-[#737D75] hover:text-[#111612]'}`}
+                            className={`ios-tap-feedback active:scale-[0.98] flex items-center gap-2 px-5 py-2.5 rounded-[16px] text-xs font-semibold transition-[transform,colors] duration-150 will-change-transform whitespace-nowrap ${activeTab === tab.id ? 'bg-white text-[#111612] shadow-sm' : 'text-[#737D75] hover:text-[#111612]'}`}
                         >
                             <tab.icon size={15} />
                             {tab.label}
@@ -1622,7 +1622,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                         <div className="w-12 h-12 bg-[#EAF3EC] rounded-2xl flex items-center justify-center">
                                             <Banknote className="text-[#2D6E3E]" size={24} />
                                         </div>
-                                        <button onClick={() => setShowWithdraw(true)} className="text-[10px] font-black text-[#2D6E3E] uppercase tracking-widest bg-[#EAF3EC] px-3 py-1.5 rounded-xl hover:bg-[#D4EBDA] transition-all">
+                                        <button onClick={() => setShowWithdraw(true)} className="text-[10px] font-black text-[#2D6E3E] uppercase tracking-widest bg-[#EAF3EC] px-3 py-1.5 rounded-xl hover:bg-[#D4EBDA] transition-colors duration-150">
                                             {language === 'uz' ? 'Yechish' : 'Вывод'}
                                         </button>
                                     </div>
@@ -1631,7 +1631,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                 </div>
                                 <button 
                                     onClick={() => setShowTransfer(true)}
-                                    className="w-full bg-gray-50 text-gray-500 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-gray-100 hover:bg-black hover:text-white transition-all flex items-center justify-center gap-2 group"
+                                    className="w-full bg-gray-50 text-gray-500 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-gray-100 hover:bg-black hover:text-white transition-colors duration-150 flex items-center justify-center gap-2 group"
                                 >
                                     <RotateCcw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
                                     {language === 'uz' ? "Cashback hamyonga o'tkazish" : "Перевод na кэшбэк"}
@@ -1655,7 +1655,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="text-lg font-black italic tracking-tighter uppercase">{language === 'uz' ? 'Mening Jamoam' : 'Моя Команда'}</h3>
                                     {data?.user?.affiliate_role !== 'agent' && (
-                                        <button onClick={() => setShowAddMember(true)} className="p-2 rounded-xl hover:scale-110 transition-all velari-green-btn">
+                                        <button onClick={() => setShowAddMember(true)} className="p-2 rounded-xl hover:scale-110 active:scale-95 transition-transform duration-150 velari-green-btn will-change-transform">
                                             <Users size={18} />
                                         </button>
                                     )}
@@ -1695,7 +1695,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                 <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{language === 'uz' ? 'Mening Kodim' : 'Мой Код'}</h3>
                                 <div className="flex items-center justify-between">
                                     <span className="text-3xl font-black italic tracking-tighter">{data?.user?.affiliate_code || "KOD_YO'Q"}</span>
-                                    <button onClick={() => copyToClipboard(data?.user?.affiliate_code)} className="p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-all">
+                                    <button onClick={() => copyToClipboard(data?.user?.affiliate_code)} className="p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-colors duration-150">
                                         <Share2 size={20} />
                                     </button>
                                 </div>
@@ -1713,7 +1713,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                 value={productSearch}
                                 onChange={(e) => setProductSearch(e.target.value)}
                                 placeholder={language === 'uz' ? 'Mahsulot qidirish...' : 'Поиск товара...'}
-                                className="w-full bg-white border border-gray-100 rounded-[28px] pl-14 pr-12 py-4 text-sm font-bold text-black placeholder:text-gray-300 outline-none focus:border-[#2D6E3E]/30 transition-all"
+                                className="w-full bg-white border border-gray-100 rounded-[28px] pl-14 pr-12 py-4 text-sm font-bold text-black placeholder:text-gray-300 outline-none focus:border-[#2D6E3E]/30 transition-colors duration-150"
                             />
                             {productSearch && (
                                 <button onClick={() => setProductSearch("")} className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-gray-300 hover:text-black transition-colors">
@@ -1767,7 +1767,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                                     <button
                                                         onClick={() => handleCreateLink(p)}
                                                         disabled={isActionLoading}
-                                                        className="p-3 rounded-2xl hover:scale-110 active:scale-95 transition-all velari-green-btn disabled:opacity-50"
+                                                        className="p-3 rounded-2xl hover:scale-110 active:scale-95 transition-transform duration-150 velari-green-btn disabled:opacity-50 will-change-transform"
                                                     >
                                                         <LinkIcon size={18} />
                                                     </button>
@@ -1840,7 +1840,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                                 setSelectedTariff(t);
                                                 setShowCreatePromo(true);
                                             }}
-                                            className="w-full bg-white text-black py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#2D6E3E] transition-all"
+                                            className="w-full bg-white text-black py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#2D6E3E] hover:text-white transition-colors duration-150"
                                         >
                                             Kod yaratish
                                         </button>
@@ -1912,7 +1912,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                                         <td className="p-5 text-right">
                                                             <button
                                                                 onClick={() => copyToClipboard(`${window.location.origin}/${language}/ref/${l.slug}`)}
-                                                                className="p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-all"
+                                                                className="p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-colors duration-150"
                                                             >
                                                                 <Share2 size={16} />
                                                             </button>
@@ -2039,7 +2039,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                 return (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md" onClick={() => setLinkModal(null)}>
                         <div className="bg-white w-full max-w-md p-8 rounded-[40px] shadow-2xl space-y-6 relative animate-in fade-in zoom-in duration-300" onClick={e => e.stopPropagation()}>
-                            <button onClick={() => setLinkModal(null)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-all"><X size={18} /></button>
+                            <button onClick={() => setLinkModal(null)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-colors duration-150"><X size={18} /></button>
                             <div className="w-16 h-16 bg-[#EAF3EC] rounded-3xl flex items-center justify-center mx-auto">
                                 <LinkIcon className="text-[#2D6E3E]" size={30} />
                             </div>
@@ -2051,14 +2051,14 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                 <span className="flex-1 text-xs font-bold text-gray-600 font-mono truncate">{fullUrl}</span>
                                 <button
                                     onClick={() => copyToClipboard(fullUrl)}
-                                    className="shrink-0 flex items-center gap-2 px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all velari-green-btn"
+                                    className="shrink-0 flex items-center gap-2 px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-transform duration-150 will-change-transform velari-green-btn"
                                 >
                                     <Copy size={14} /> {language === 'uz' ? 'Nusxa' : 'Копир.'}
                                 </button>
                             </div>
                             <button
                                 onClick={() => { setLinkModal(null); setActiveTab("links"); }}
-                                className="w-full py-4 rounded-2xl bg-gray-50 text-gray-500 font-black text-[10px] uppercase tracking-widest border border-gray-100 hover:bg-black hover:text-white transition-all"
+                                className="w-full py-4 rounded-2xl bg-gray-50 text-gray-500 font-black text-[10px] uppercase tracking-widest border border-gray-100 hover:bg-black hover:text-white transition-colors duration-150"
                             >
                                 {language === 'uz' ? 'Havolalarim' : 'Мои ссылки'}
                             </button>
@@ -2069,7 +2069,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
             {showAddMember && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
                     <div className="bg-white w-full max-w-md p-10 rounded-[40px] shadow-2xl space-y-6 relative animate-in fade-in zoom-in duration-300">
-                        <button onClick={() => { setShowAddMember(false); setCodeSent(false); setMemberPhone(""); setVCode(""); }} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-all"><X size={18} /></button>
+                        <button onClick={() => { setShowAddMember(false); setCodeSent(false); setMemberPhone(""); setVCode(""); }} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-colors duration-150"><X size={18} /></button>
                         <h2 className="text-2xl font-black italic tracking-tighter uppercase">{language === 'uz' ? "A'zo Qo'shish" : 'Добавить Участника'}</h2>
                         <div className="space-y-4">
                             {/* Step 1: Phone + Send Code */}
@@ -2082,12 +2082,12 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                         onChange={e => { setMemberPhone(e.target.value); setCodeSent(false); setVCode(""); }}
                                         placeholder="+998"
                                         disabled={codeSent}
-                                        className="flex-1 bg-gray-50 border-none rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-black transition-all disabled:opacity-50"
+                                        className="flex-1 bg-gray-50 border-none rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-black transition-[box-shadow] duration-150 disabled:opacity-50"
                                     />
                                     <button
                                         onClick={handleSendMemberCode}
                                         disabled={isActionLoading || !memberPhone || codeSent}
-                                        className="shrink-0 px-5 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest disabled:opacity-40 hover:scale-105 active:scale-95 transition-all velari-green-btn"
+                                        className="shrink-0 px-5 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest disabled:opacity-40 hover:scale-105 active:scale-95 transition-transform duration-150 will-change-transform velari-green-btn"
                                     >
                                         {isActionLoading && !codeSent ? <Loader2 size={16} className="animate-spin" /> : codeSent ? <Check size={16} /> : (language === 'uz' ? 'Kod' : 'Код')}
                                     </button>
@@ -2110,7 +2110,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                             onChange={e => setVCode(e.target.value)}
                                             placeholder="1234"
                                             maxLength={4}
-                                            className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-black outline-none focus:ring-2 focus:ring-black transition-all text-center tracking-[1em] text-2xl"
+                                            className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-black outline-none focus:ring-2 focus:ring-black transition-[box-shadow] duration-150 text-center tracking-[1em] text-2xl"
                                         />
                                     </div>
                                     <button
@@ -2131,7 +2131,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
             {showCreatePromo && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
                     <div className="bg-white w-full max-w-md p-10 rounded-[40px] shadow-2xl space-y-6 relative animate-in fade-in zoom-in duration-300">
-                        <button onClick={() => setShowCreatePromo(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-all"><X size={18} /></button>
+                        <button onClick={() => setShowCreatePromo(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-colors duration-150"><X size={18} /></button>
                         <h2 className="text-2xl font-black italic tracking-tighter uppercase">Promo-kod yaratish</h2>
                         <div className="space-y-4">
                             <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
@@ -2145,13 +2145,13 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                     value={customPromoCode}
                                     onChange={e => setCustomPromoCode(e.target.value)}
                                     placeholder="MASALAN: ALISHER20"
-                                    className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-black uppercase outline-none focus:ring-2 focus:ring-black transition-all"
+                                    className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-black uppercase outline-none focus:ring-2 focus:ring-black transition-[box-shadow] duration-150"
                                 />
                             </div>
                             <button 
                                 onClick={handleCreatePromo}
                                 disabled={isActionLoading || !customPromoCode}
-                                className="w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 velari-green-btn"
+                                className="w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-transform duration-150 will-change-transform velari-green-btn"
                             >
                                 {isActionLoading ? <Loader2 className="animate-spin mx-auto" /> : 'YARATISH VA TASDIQLASH'}
                             </button>
@@ -2164,7 +2164,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
             {showTransfer && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
                     <div className="bg-white w-full max-w-md p-10 rounded-[40px] shadow-2xl space-y-6 relative animate-in fade-in zoom-in duration-300">
-                        <button onClick={() => setShowTransfer(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-all"><X size={18} /></button>
+                        <button onClick={() => setShowTransfer(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-colors duration-150"><X size={18} /></button>
                         <h2 className="text-2xl font-black italic tracking-tighter uppercase">{language === 'uz' ? "Ichki O'tkazma" : 'Внутренний Перевод'}</h2>
                         <p className="text-gray-400 text-xs font-bold italic">Sizning mablag'ingiz cashback hamyoniga o'tkaziladi va uni saytda ishlatishingiz mumkin bo'ladi.</p>
                         <div className="space-y-4">
@@ -2173,12 +2173,12 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                 value={transferAmount}
                                 onChange={e => setTransferAmount(e.target.value)}
                                 placeholder={language === 'uz' ? "O'tkazish summasi" : "Сумма перевода"}
-                                className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-black italic text-xl outline-none focus:ring-2 focus:ring-black transition-all"
+                                className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-black italic text-xl outline-none focus:ring-2 focus:ring-black transition-[box-shadow] duration-150"
                             />
                             <button 
                                 onClick={handleTransfer}
                                 disabled={isActionLoading || !transferAmount}
-                                className="w-full bg-[#EAF3EC]0 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 shadow-xl shadow-emerald-500/20"
+                                className="w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-transform duration-150 will-change-transform velari-green-btn"
                             >
                                 {isActionLoading ? <Loader2 className="animate-spin mx-auto" /> : (language === 'uz' ? 'O\'TKAZISH' : 'ПЕРЕВЕСТИ')}
                             </button>
@@ -2190,7 +2190,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
             {showWithdraw && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
                     <div className="bg-white w-full max-w-md p-10 rounded-[40px] shadow-2xl space-y-6 relative animate-in fade-in zoom-in duration-300">
-                        <button onClick={() => setShowWithdraw(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-all"><X size={18} /></button>
+                        <button onClick={() => setShowWithdraw(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-colors duration-150"><X size={18} /></button>
                         <h2 className="text-2xl font-black italic tracking-tighter uppercase">{language === 'uz' ? 'Kartaga Yechish' : 'Вывод на Карту'}</h2>
                         <div className="space-y-4">
                             <input 
@@ -2198,19 +2198,19 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                 value={withdrawAmount}
                                 onChange={e => setWithdrawAmount(e.target.value)}
                                 placeholder={language === 'uz' ? "Summa (min: 50k)" : "Сумма (мин: 50к)"}
-                                className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-black transition-all"
+                                className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-black transition-[box-shadow] duration-150"
                             />
                             <input 
                                 type="text"
                                 value={cardNumber}
                                 onChange={e => setCardNumber(e.target.value)}
                                 placeholder="8600 **** **** ****"
-                                className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-black transition-all"
+                                className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-black transition-[box-shadow] duration-150"
                             />
                             <button 
                                 onClick={handleWithdraw}
                                 disabled={isActionLoading || !withdrawAmount || !cardNumber}
-                                className="w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 velari-green-btn"
+                                className="w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-transform duration-150 will-change-transform velari-green-btn"
                             >
                                 {isActionLoading ? <Loader2 className="animate-spin mx-auto" /> : (language === 'uz' ? 'Yuborish' : 'Отправить')}
                             </button>
@@ -2221,7 +2221,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
             {showRecovery && (
                 <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
                     <div className="bg-white w-full max-w-md p-10 rounded-[40px] shadow-2xl space-y-6 relative animate-in fade-in zoom-in duration-300">
-                        <button onClick={() => setShowRecovery(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-all"><X size={18} /></button>
+                        <button onClick={() => setShowRecovery(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-xl hover:bg-black hover:text-white transition-colors duration-150"><X size={18} /></button>
                         
                         {recoveryStep === "password" && (
                             <div className="space-y-6">
@@ -2234,19 +2234,19 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                     value={recoveryPassword}
                                     onChange={e => setRecoveryPassword(e.target.value)}
                                     placeholder="******"
-                                    className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-black transition-all"
+                                    className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-black transition-[box-shadow] duration-150"
                                 />
                                 {recoveryError && <p className="text-red-500 text-[10px] font-bold text-center uppercase tracking-widest">{recoveryError}</p>}
                                 <button 
                                     onClick={handleVerifyPassword}
                                     disabled={isActionLoading || !recoveryPassword}
-                                    className="w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 velari-green-btn"
+                                    className="w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-transform duration-150 will-change-transform velari-green-btn"
                                 >
                                     {isActionLoading ? <Loader2 className="animate-spin mx-auto" /> : (language === 'uz' ? 'DAVOM ETISH' : 'ПРОДОЛЖИТЬ')}
                                 </button>
                                 <button 
                                     onClick={handleRequestTelegramCode}
-                                    className="w-full text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-black transition-all"
+                                    className="w-full text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-black transition-colors duration-150"
                                 >
                                     Parolni ham unutdim (Telegram)
                                 </button>
@@ -2265,7 +2265,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                         value={recoveryTelegramCode}
                                         onChange={e => setRecoveryTelegramCode(e.target.value)}
                                         placeholder="----"
-                                        className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-black text-center tracking-[1em] outline-none focus:ring-2 focus:ring-black transition-all"
+                                        className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-black text-center tracking-[1em] outline-none focus:ring-2 focus:ring-black transition-[box-shadow] duration-150"
                                     />
                                     <div className="pt-4 border-t border-gray-100">
                                         <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-4">Yangi PIN o'rnating</p>
@@ -2275,7 +2275,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                             value={recoveryNewPin}
                                             onChange={e => setRecoveryNewPin(e.target.value)}
                                             placeholder="****"
-                                            className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-black text-center tracking-[1em] outline-none focus:ring-2 focus:ring-black transition-all"
+                                            className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 font-black text-center tracking-[1em] outline-none focus:ring-2 focus:ring-black transition-[box-shadow] duration-150"
                                         />
                                     </div>
                                 </div>
@@ -2283,7 +2283,7 @@ function AffiliateView({ user, language, showToast, onBack }: any) {
                                 <button 
                                     onClick={handleVerifyTelegramAndReset}
                                     disabled={isActionLoading || recoveryTelegramCode.length < 4 || recoveryNewPin.length !== 4}
-                                    className="w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 velari-green-btn"
+                                    className="w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-transform duration-150 will-change-transform velari-green-btn"
                                 >
                                     {isActionLoading ? <Loader2 className="animate-spin mx-auto" /> : (language === 'uz' ? 'TASDIQLASH' : 'ПОДТВЕРДИТЬ')}
                                 </button>

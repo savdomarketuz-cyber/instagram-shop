@@ -296,7 +296,7 @@ export default function YandexMapPicker({
                             {language === 'uz' ? 'Yandex Maps integratsiyasi' : 'Интеграция Yandex Maps'}
                         </p>
                     </div>
-                    <button onClick={onClose} className="p-3 md:p-4 bg-gray-50 rounded-2xl text-gray-400 hover:text-black transition-all">
+                    <button onClick={onClose} className="p-3 md:p-4 bg-gray-50 rounded-2xl text-gray-400 hover:text-black transition-colors duration-150">
                         <X size={20} className="md:w-6 md:h-6" />
                     </button>
                 </div>
@@ -314,7 +314,7 @@ export default function YandexMapPicker({
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                                className="w-full h-full pl-14 pr-28 bg-transparent border-none focus:ring-0 outline-none font-bold text-sm transition-all"
+                                className="w-full h-full pl-14 pr-28 bg-transparent border-none focus:ring-0 outline-none font-bold text-sm"
                             />
                             <div className="absolute left-5 text-gray-400 pointer-events-none">
                                 <Search size={20} className="group-focus-within:text-black transition-colors" />
@@ -324,7 +324,7 @@ export default function YandexMapPicker({
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            setSearchQuery("");
+                                             setSearchQuery("");
                                             setSuggestions([]);
                                             setShowSuggestions(false);
                                         }}
@@ -335,7 +335,7 @@ export default function YandexMapPicker({
                                 )}
                                 <button
                                     type="submit"
-                                    className="px-5 py-2.5 velari-green-btn rounded-[20px] flex items-center justify-center transition-all shadow-xl active:scale-90"
+                                    className="px-5 py-2.5 velari-green-btn rounded-[20px] flex items-center justify-center transition-transform duration-150 will-change-transform shadow-xl active:scale-90"
                                 >
                                     <Search size={18} strokeWidth={3} />
                                 </button>
@@ -377,7 +377,7 @@ export default function YandexMapPicker({
                     {/* Current Location Button */}
                     <button
                         onClick={handleCurrentLocation}
-                        className="absolute bottom-6 md:bottom-8 right-6 md:right-8 p-5 md:p-6 bg-white rounded-2xl md:rounded-3xl shadow-2xl text-blue-500 hover:scale-110 active:scale-95 transition-all z-10 border border-gray-100"
+                        className="absolute bottom-6 md:bottom-8 right-6 md:right-8 p-5 md:p-6 bg-white rounded-2xl md:rounded-3xl shadow-2xl text-blue-500 hover:scale-110 active:scale-95 transition-transform duration-150 will-change-transform z-10 border border-gray-100"
                     >
                         <Navigation size={20} className="md:w-6 md:h-6" strokeWidth={3} />
                     </button>
@@ -417,7 +417,7 @@ export default function YandexMapPicker({
                         <button
                             disabled={!selectedCoords || isSearching}
                             onClick={handleConfirm}
-                            className="w-full md:w-auto px-10 py-4 md:px-12 md:py-5 velari-green-btn rounded-full font-black text-base md:text-lg flex items-center justify-center gap-3 disabled:opacity-50 active:scale-95 transition-all shrink-0"
+                            className="w-full md:w-auto px-10 py-4 md:px-12 md:py-5 velari-green-btn rounded-full font-black text-base md:text-lg flex items-center justify-center gap-3 disabled:opacity-50 active:scale-95 transition-transform duration-150 will-change-transform shrink-0"
                         >
                             <Check size={20} className="md:w-6 md:h-6" strokeWidth={3} />
                             {language === 'uz' ? 'Tasdiqlash' : 'Подтвердить'}

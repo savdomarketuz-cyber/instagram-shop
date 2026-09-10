@@ -164,7 +164,7 @@ function PaymentContent() {
                 {/* Click Option */}
                 <div
                     onClick={() => setPaymentMethod("click")}
-                    className={`p-6 border-2 rounded-[32px] cursor-pointer transition-all ${paymentMethod === "click" ? "border-[#00a1ff] bg-[#00a1ff]/5 shadow-xl shadow-[#00a1ff]/10" : "border-gray-100"
+                    className={`p-6 border-2 rounded-[32px] cursor-pointer transition-[border-color,background-color,box-shadow] duration-150 ${paymentMethod === "click" ? "border-[#00a1ff] bg-[#00a1ff]/5 shadow-xl shadow-[#00a1ff]/10" : "border-gray-100"
                         }`}
                 >
                     <div className="flex items-center justify-between mb-2">
@@ -188,7 +188,7 @@ function PaymentContent() {
                 {/* Cash on Delivery Option */}
                 <div
                     onClick={() => setPaymentMethod("cash")}
-                    className={`p-6 border-2 rounded-[32px] cursor-pointer transition-all ${paymentMethod === "cash" ? "bg-white shadow-xl" : "border-gray-100"}`}
+                    className={`p-6 border-2 rounded-[32px] cursor-pointer transition-[border-color,background-color,box-shadow] duration-150 ${paymentMethod === "cash" ? "bg-white shadow-xl" : "border-gray-100"}`}
                     style={paymentMethod === "cash" ? { borderColor: "#2D6E3E" } : {}}
                 >
                     <div className="flex items-center justify-between mb-2">
@@ -256,7 +256,7 @@ function PaymentContent() {
             <button
                 onClick={handlePayment}
                 disabled={isProcessing}
-                className={`w-full py-6 rounded-[20px] font-black text-sm uppercase tracking-widest flex justify-center items-center gap-3 active:scale-95 transition-all disabled:opacity-70 ${
+                className={`w-full py-6 rounded-[20px] font-black text-sm uppercase tracking-widest flex justify-center items-center gap-3 active:scale-95 transition-transform duration-150 will-change-transform disabled:opacity-70 ${
                     paymentMethod === "click" ? "bg-[#00a1ff] text-white" : ""
                 }`}
                 style={paymentMethod !== "click" ? { background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", boxShadow: "0 8px 20px rgba(45,110,62,0.28)" } : { boxShadow: "0 8px 20px rgba(0,161,255,0.3)" }}

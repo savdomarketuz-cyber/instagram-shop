@@ -268,7 +268,7 @@ export default function Navigation() {
                                                 videoPreWarmer.triggerHaptic("medium");
                                                 handleSearch();
                                             }}
-                                            className="ios-tap-feedback active:scale-[0.98] w-full p-3.5 bg-[#F5F7F5] hover:bg-[#EAF3EC] text-xs font-semibold text-[#111612] transition-all rounded-b-[20px]"
+                                            className="ios-tap-feedback active:scale-[0.98] w-full p-3.5 bg-[#F5F7F5] hover:bg-[#EAF3EC] text-xs font-semibold text-[#111612] transition-[transform,colors] duration-150 will-change-transform rounded-b-[20px]"
                                         >
                                             {language === 'uz' ? "Barcha natijalarni ko'rish" : "Посмотреть все результаты"}
                                         </button>

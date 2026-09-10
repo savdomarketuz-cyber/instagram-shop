@@ -210,7 +210,7 @@ export const CategoryFilter = ({
                 <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-2 overscroll-x-contain touch-pan-x" style={{ WebkitOverflowScrolling: "touch" }}>
                     <button
                         onClick={() => handleMainClick("all")}
-                        className={`shrink-0 px-6 py-2.5 rounded-full text-[13.5px] font-semibold tracking-tight transition-all duration-150 ios-tap-feedback active:scale-95 will-change-transform border ${activeFilter === "all" ? "bg-gradient-to-r from-[#2D6E3E] to-[#1F5A30] text-white border-transparent shadow-md shadow-[#2D6E3E]/20" : "bg-white/80 backdrop-blur-md text-[#2C332E] border-black/5 hover:bg-white hover:text-black hover:shadow-sm"}`}
+                        className={`shrink-0 px-6 py-2.5 rounded-full text-[13.5px] font-semibold tracking-tight transition-[transform,colors,box-shadow] duration-150 ios-tap-feedback active:scale-95 will-change-transform border ${activeFilter === "all" ? "bg-gradient-to-r from-[#2D6E3E] to-[#1F5A30] text-white border-transparent shadow-md shadow-[#2D6E3E]/20" : "bg-white/80 backdrop-blur-md text-[#2C332E] border-black/5 hover:bg-white hover:text-black hover:shadow-sm"}`}
                     >
                         {t.common.all}
                     </button>
@@ -220,7 +220,7 @@ export const CategoryFilter = ({
                             <button
                                 key={cat.id}
                                 onClick={() => handleMainClick(cat.id)}
-                                className={`shrink-0 px-6 py-2.5 rounded-full text-[13.5px] font-semibold tracking-tight transition-all duration-150 ios-tap-feedback active:scale-95 will-change-transform border ${isActive ? "bg-gradient-to-r from-[#2D6E3E] to-[#1F5A30] text-white border-transparent shadow-md shadow-[#2D6E3E]/20" : "bg-white/80 backdrop-blur-md text-[#2C332E] border-black/5 hover:bg-white hover:text-black hover:shadow-sm"}`}
+                                className={`shrink-0 px-6 py-2.5 rounded-full text-[13.5px] font-semibold tracking-tight transition-[transform,colors,box-shadow] duration-150 ios-tap-feedback active:scale-95 will-change-transform border ${isActive ? "bg-gradient-to-r from-[#2D6E3E] to-[#1F5A30] text-white border-transparent shadow-md shadow-[#2D6E3E]/20" : "bg-white/80 backdrop-blur-md text-[#2C332E] border-black/5 hover:bg-white hover:text-black hover:shadow-sm"}`}
                             >
                                 {catName(cat)}
                             </button>
@@ -245,7 +245,7 @@ export const CategoryFilter = ({
                                 <button
                                     key={sub.id}
                                     onClick={() => handleSubClick(sub.id)}
-                                    className={`shrink-0 px-4 py-2 rounded-xl text-[12.5px] font-semibold transition-all duration-150 ios-tap-feedback active:scale-95 will-change-transform border ${isSubActive ? "bg-[#EAF3EC] text-[#2D6E3E] border-[#2D6E3E]/30" : "bg-white/70 backdrop-blur-md text-[#5A625C] border-black/5 hover:bg-white hover:text-black"}`}
+                                    className={`shrink-0 px-4 py-2 rounded-xl text-[12.5px] font-semibold transition-[transform,colors,border-color] duration-150 ios-tap-feedback active:scale-95 will-change-transform border ${isSubActive ? "bg-[#EAF3EC] text-[#2D6E3E] border-[#2D6E3E]/30" : "bg-white/70 backdrop-blur-md text-[#5A625C] border-black/5 hover:bg-white hover:text-black"}`}
                                 >
                                     {catName(sub)}
                                 </button>

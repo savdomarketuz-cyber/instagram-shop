@@ -384,7 +384,7 @@ export default function OrdersPage() {
                                         videoPreWarmer.triggerHaptic("light");
                                         setSelectedOrder(order);
                                     }}
-                                    className="bg-white/90 backdrop-blur-md rounded-[24px] p-5 border border-[rgba(15,20,16,0.06)] shadow-sm hover:shadow-md ios-tap-feedback active:scale-[0.99] transition-all duration-150 will-change-transform cursor-pointer"
+                                    className="bg-white/90 backdrop-blur-md rounded-[24px] p-5 border border-[rgba(15,20,16,0.06)] shadow-sm hover:shadow-md ios-tap-feedback active:scale-[0.99] transition-[transform,box-shadow] duration-150 will-change-transform cursor-pointer"
                                 >
                                     <div className="flex items-start justify-between gap-2 mb-3">
                                         <div>
