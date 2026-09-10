@@ -334,33 +334,34 @@ export default function CheckoutPage() {
 
     return (
         <div className="p-4 md:p-6 min-h-screen pt-8 md:pt-12 pb-32" style={{ background: "#FAFAF6" }}>
-            <div className="flex items-center gap-4 mb-8 md:mb-10">
+            <div className="flex items-center gap-4 mb-6 md:mb-8">
                 <button
                     onClick={() => {
                         videoPreWarmer.triggerHaptic("light");
                         router.back();
                     }}
+                    aria-label="Orqaga"
                     className="ios-icon-tap active:scale-90 transition-transform duration-150 will-change-transform"
-                    style={{ width: 40, height: 40, borderRadius: 20, background: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", cursor: "pointer", flexShrink: 0 }}
+                    style={{ width: 40, height: 40, borderRadius: 20, background: "#fff", border: "1px solid rgba(15,20,16,0.06)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(15,20,16,0.06)", cursor: "pointer", flexShrink: 0 }}
                 >
-                    <ArrowLeft size={20} />
+                    <ArrowLeft size={18} />
                 </button>
-                <h1 className="text-2xl md:text-3xl font-black tracking-tighter sm:truncate">{t.common.checkout}</h1>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#111612] sm:truncate">{t.common.checkout}</h1>
             </div>
 
             {stockErrors.length > 0 && (
-                <div className="mb-8 p-6 bg-red-50 rounded-[32px] border border-red-100 animate-in fade-in slide-in-from-top duration-500">
+                <div className="mb-8 p-6 bg-red-50 rounded-[28px] border border-red-100 animate-in fade-in slide-in-from-top duration-300">
                     <div className="flex items-center gap-3 text-red-600 mb-4">
-                        <AlertCircle size={24} strokeWidth={3} />
-                        <h3 className="font-black uppercase text-xs tracking-widest">
+                        <AlertCircle size={22} strokeWidth={2.5} />
+                        <h3 className="font-bold uppercase text-xs tracking-wider">
                             DIQQAT: {t.common.notEnoughStock.toUpperCase()}
                         </h3>
                     </div>
-                    <div className="space-y-3">
+                    <div className="space-y-2.5">
                         {stockErrors.map(err => (
-                            <div key={err.id} className="flex justify-between items-center bg-white/50 p-4 rounded-2xl border border-red-50">
-                                <span className="text-xs font-bold text-gray-600">{err.name}</span>
-                                <span className="text-xs font-black text-red-500 uppercase tracking-tighter">
+                            <div key={err.id} className="flex justify-between items-center bg-white/70 p-3.5 rounded-xl border border-red-50">
+                                <span className="text-xs font-semibold text-gray-700">{err.name}</span>
+                                <span className="text-xs font-bold text-red-500">
                                     {t.common.onlyLeft.replace('{count}', err.available.toString())}
                                 </span>
                             </div>
@@ -371,7 +372,7 @@ export default function CheckoutPage() {
                             videoPreWarmer.triggerHaptic("light");
                             router.push(`/${language}/cart`);
                         }}
-                        className="ios-tap-feedback active:scale-[0.98] w-full mt-6 py-4 bg-red-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-red-200 transition-transform duration-150 will-change-transform"
+                        className="ios-tap-feedback active:scale-[0.98] w-full mt-5 py-3.5 bg-red-500 text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-md shadow-red-200 transition-transform duration-150 will-change-transform"
                     >
                         {t.common.editCart}
                     </button>
@@ -380,20 +381,20 @@ export default function CheckoutPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Phone info card */}
-                <div style={{ background: "#fff", borderRadius: 22, padding: "16px 18px", boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}>
-                    <p style={{ fontSize: 10, fontWeight: 700, color: "#9AA29C", letterSpacing: 0.4, textTransform: "uppercase", marginBottom: 8 }}>
+                <div style={{ background: "#fff", borderRadius: 24, padding: "16px 18px", boxShadow: "0 4px 16px rgba(15,20,16,0.04)", border: "1px solid rgba(15,20,16,0.06)" }}>
+                    <p style={{ fontSize: 11, fontWeight: 600, color: "#737D75", letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>
                         {t.account.myInfo}
                     </p>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: 13, fontWeight: 500, color: "#9AA29C" }}>{t.account.phone}:</span>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: "#0F1410" }}>{user?.phone || "+998 ..."}</span>
+                        <span style={{ fontSize: 13.5, fontWeight: 500, color: "#737D75" }}>{t.account.phone}:</span>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: "#111612" }}>{user?.phone || "+998 ..."}</span>
                     </div>
                 </div>
 
                 {/* Address */}
                 <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                        <label style={{ fontSize: 11, fontWeight: 700, color: "#9AA29C", letterSpacing: 0.4, textTransform: "uppercase" }}>{t.common.address}</label>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: "#737D75", letterSpacing: 0.3, textTransform: "uppercase" }}>{t.common.address}</label>
                         <button
                             type="button"
                             onClick={() => {
@@ -401,7 +402,7 @@ export default function CheckoutPage() {
                                 setIsMapOpen(true);
                             }}
                             className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
-                            style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "#2D6E3E", background: "#EAF3EC", border: "none", borderRadius: 10, padding: "6px 12px", cursor: "pointer" }}
+                            style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, color: "#2D6E3E", background: "#EAF3EC", border: "none", borderRadius: 12, padding: "6px 12px", cursor: "pointer" }}
                         >
                             <MapPin size={12} />
                             {t.common.selectOnMap}
@@ -414,7 +415,7 @@ export default function CheckoutPage() {
                             value={address}
                             onChange={e => setAddress(e.target.value)}
                             placeholder={t.common.addressPlaceholder}
-                            style={{ width: "100%", background: "#fff", border: "none", borderRadius: 18, padding: "14px 48px 14px 18px", fontSize: 14, fontWeight: 600, color: "#0F1410", outline: "none", boxSizing: "border-box", boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}
+                            style={{ width: "100%", background: "#fff", border: "1px solid rgba(15,20,16,0.06)", borderRadius: 20, padding: "14px 48px 14px 18px", fontSize: 14, fontWeight: 500, color: "#111612", outline: "none", boxSizing: "border-box", boxShadow: "0 4px 16px rgba(15,20,16,0.04)" }}
                         />
                         {coords && <Globe size={16} color="#2D6E3E" style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)" }} />}
                     </div>
@@ -422,7 +423,7 @@ export default function CheckoutPage() {
 
                 {/* Yetkazib berish usuli */}
                 <div>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: "#9AA29C", letterSpacing: 0.4, textTransform: "uppercase", display: "block", marginBottom: 8 }}>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: "#737D75", letterSpacing: 0.3, textTransform: "uppercase", display: "block", marginBottom: 8 }}>
                         {language === "uz" ? "Yetkazib berish usuli" : "Способ доставки"}
                     </label>
 
@@ -436,16 +437,16 @@ export default function CheckoutPage() {
                                     setDeliveryType("standard");
                                 }}
                                 className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
-                                style={{ display: "flex", alignItems: "center", gap: 12, background: "#fff", border: deliveryType === "standard" ? "1.5px solid #2D6E3E" : "1.5px solid rgba(15,20,16,0.06)", borderRadius: 20, padding: "14px 16px", cursor: "pointer", textAlign: "left", boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}
+                                style={{ display: "flex", alignItems: "center", gap: 12, background: deliveryType === "standard" ? "#F8FAF8" : "#fff", border: deliveryType === "standard" ? "1.5px solid #2D6E3E" : "1px solid rgba(15,20,16,0.06)", borderRadius: 22, padding: "14px 16px", cursor: "pointer", textAlign: "left", boxShadow: "0 4px 16px rgba(15,20,16,0.04)" }}
                             >
-                                <div style={{ width: 42, height: 42, borderRadius: 13, background: deliveryType === "standard" ? "#2D6E3E" : "#F0F0EC", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                <div style={{ width: 42, height: 42, borderRadius: 14, background: deliveryType === "standard" ? "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" : "#F0F2EF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                                     <Truck size={20} color={deliveryType === "standard" ? "#fff" : "#9AA29C"} />
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                    <p style={{ fontSize: 14, fontWeight: 800, color: "#0F1410", margin: 0 }}>{language === "uz" ? "Standart yetkazish" : "Стандартная доставка"}</p>
-                                    <p style={{ fontSize: 12, fontWeight: 500, color: "#9AA29C", margin: "2px 0 0" }}>{language === "uz" ? "Toshkent shahri bo'ylab" : "По городу Ташкент"}</p>
+                                    <p style={{ fontSize: 14, fontWeight: 700, color: "#111612", margin: 0 }}>{language === "uz" ? "Standart yetkazish" : "Стандартная доставка"}</p>
+                                    <p style={{ fontSize: 12, fontWeight: 500, color: "#737D75", margin: "2px 0 0" }}>{language === "uz" ? "Toshkent shahri bo'ylab" : "По городу Ташкент"}</p>
                                 </div>
-                                <span style={{ fontSize: 13, fontWeight: 800, color: standardFee > 0 ? "#0F1410" : "#2D6E3E", flexShrink: 0 }}>
+                                <span style={{ fontSize: 13.5, fontWeight: 700, color: standardFee > 0 ? "#111612" : "#2D6E3E", flexShrink: 0 }}>
                                     {standardFee > 0 ? fmtSom(standardFee, language) : (language === "uz" ? "Bepul" : "Бесплатно")}
                                 </span>
                             </button>
@@ -459,14 +460,14 @@ export default function CheckoutPage() {
                                 }}
                                 disabled={!coords}
                                 className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
-                                style={{ display: "flex", alignItems: "center", gap: 12, background: "#fff", border: deliveryType === "express" ? "1.5px solid #4F46E5" : "1.5px solid rgba(15,20,16,0.06)", borderRadius: 20, padding: "14px 16px", cursor: coords ? "pointer" : "not-allowed", textAlign: "left", boxShadow: "0 2px 8px rgba(15,20,16,0.04)", opacity: coords ? 1 : 0.7 }}
+                                style={{ display: "flex", alignItems: "center", gap: 12, background: deliveryType === "express" ? "#F8FAF8" : "#fff", border: deliveryType === "express" ? "1.5px solid #2D6E3E" : "1px solid rgba(15,20,16,0.06)", borderRadius: 22, padding: "14px 16px", cursor: coords ? "pointer" : "not-allowed", textAlign: "left", boxShadow: "0 4px 16px rgba(15,20,16,0.04)", opacity: coords ? 1 : 0.7 }}
                             >
-                                <div style={{ width: 42, height: 42, borderRadius: 13, background: deliveryType === "express" ? "#4F46E5" : "#EEF0FF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                    <Zap size={20} color={deliveryType === "express" ? "#fff" : "#4F46E5"} />
+                                <div style={{ width: 42, height: 42, borderRadius: 14, background: deliveryType === "express" ? "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" : "#EEF0FF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                    <Zap size={20} color={deliveryType === "express" ? "#fff" : "#2D6E3E"} />
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                    <p style={{ fontSize: 14, fontWeight: 800, color: "#0F1410", margin: 0 }}>{language === "uz" ? "Tezkor yetkazish" : "Экспресс-доставка"}</p>
-                                    <p style={{ fontSize: 12, fontWeight: 500, color: "#9AA29C", margin: "2px 0 0", display: "flex", alignItems: "center", gap: 4 }}>
+                                    <p style={{ fontSize: 14, fontWeight: 700, color: "#111612", margin: 0 }}>{language === "uz" ? "Tezkor yetkazish" : "Экспресс-доставка"}</p>
+                                    <p style={{ fontSize: 12, fontWeight: 500, color: "#737D75", margin: "2px 0 0", display: "flex", alignItems: "center", gap: 4 }}>
                                         {loadingExpress
                                             ? (language === "uz" ? "Hisoblanmoqda..." : "Расчёт...")
                                             : !coords
@@ -474,21 +475,21 @@ export default function CheckoutPage() {
                                                 : (<><Clock size={11} /> {expressInfo?.etaText || (language === "uz" ? "30 daqiqa — 1.5 soat" : "30 мин — 1.5 ч")}</>)}
                                     </p>
                                 </div>
-                                <span style={{ fontSize: 13, fontWeight: 800, color: expressFee > 0 ? "#4F46E5" : "#2D6E3E", flexShrink: 0 }}>
+                                <span style={{ fontSize: 13.5, fontWeight: 700, color: expressFee > 0 ? "#2D6E3E" : "#2D6E3E", flexShrink: 0 }}>
                                     {!coords ? "—" : (expressFee > 0 ? fmtSom(expressFee, language) : (language === "uz" ? "Bepul" : "Бесплатно"))}
                                 </span>
                             </button>
                         </div>
                     ) : (
-                        <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#fff", borderRadius: 20, padding: "14px 16px", boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}>
-                            <div style={{ width: 42, height: 42, borderRadius: 13, background: "#2D6E3E", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#fff", border: "1px solid rgba(15,20,16,0.06)", borderRadius: 22, padding: "14px 16px", boxShadow: "0 4px 16px rgba(15,20,16,0.04)" }}>
+                            <div style={{ width: 42, height: 42, borderRadius: 14, background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                                 <Truck size={20} color="#fff" />
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{ fontSize: 14, fontWeight: 800, color: "#0F1410", margin: 0 }}>{language === "uz" ? "Standart yetkazish" : "Стандартная доставка"}</p>
-                                <p style={{ fontSize: 12, fontWeight: 500, color: "#9AA29C", margin: "2px 0 0" }}>{language === "uz" ? "Toshkent shahri bo'ylab" : "По городу Ташкент"}</p>
+                                <p style={{ fontSize: 14, fontWeight: 700, color: "#111612", margin: 0 }}>{language === "uz" ? "Standart yetkazish" : "Стандартная доставка"}</p>
+                                <p style={{ fontSize: 12, fontWeight: 500, color: "#737D75", margin: "2px 0 0" }}>{language === "uz" ? "Toshkent shahri bo'ylab" : "По городу Ташкент"}</p>
                             </div>
-                            <span style={{ fontSize: 13, fontWeight: 800, color: standardFee > 0 ? "#0F1410" : "#2D6E3E", flexShrink: 0 }}>
+                            <span style={{ fontSize: 13.5, fontWeight: 700, color: standardFee > 0 ? "#111612" : "#2D6E3E", flexShrink: 0 }}>
                                 {standardFee > 0 ? fmtSom(standardFee, language) : (language === "uz" ? "Bepul" : "Бесплатно")}
                             </span>
                         </div>
@@ -496,9 +497,9 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* Promo Code */}
-                <div style={{ background: "#fff", borderRadius: 22, padding: "16px 18px", boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}>
-                    <label style={{ fontSize: 11, fontWeight: 700, color: "#9AA29C", letterSpacing: 0.4, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-                        <Tag size={12} color="#9AA29C" />
+                <div style={{ background: "#fff", borderRadius: 24, padding: "16px 18px", boxShadow: "0 4px 16px rgba(15,20,16,0.04)", border: "1px solid rgba(15,20,16,0.06)" }}>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: "#737D75", letterSpacing: 0.3, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                        <Tag size={12} color="#737D75" />
                         {t.common.promoQuestion}
                     </label>
                     <div style={{ display: "flex", gap: 8 }}>
@@ -508,11 +509,12 @@ export default function CheckoutPage() {
                             onChange={e => setPromoCode(e.target.value.toUpperCase())}
                             placeholder={t.common.promoPlaceholder}
                             disabled={!!promoData}
-                            style={{ flex: 1, background: "#F5F5F0", border: promoData ? "1.5px solid #2D6E3E" : "1.5px solid transparent", borderRadius: 14, padding: "12px 16px", fontSize: 14, fontWeight: 700, color: "#0F1410", outline: "none", letterSpacing: 0.5, opacity: promoData ? 0.8 : 1 }}
+                            style={{ flex: 1, background: "#F5F5F0", border: promoData ? "1.5px solid #2D6E3E" : "1px solid transparent", borderRadius: 14, padding: "12px 16px", fontSize: 14, fontWeight: 600, color: "#111612", outline: "none", letterSpacing: 0.5, opacity: promoData ? 0.8 : 1 }}
                         />
                         {promoData ? (
                             <button
                                 type="button"
+                                aria-label="O'chirish"
                                 onClick={() => {
                                     videoPreWarmer.triggerHaptic("light");
                                     setPromoData(null);
@@ -533,14 +535,14 @@ export default function CheckoutPage() {
                                 }}
                                 disabled={isApplyingPromo || !promoCode.trim()}
                                 className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
-                                style={{ padding: "12px 20px", background: "#0F1410", color: "#fff", border: "none", borderRadius: 14, fontSize: 12, fontWeight: 800, cursor: "pointer", opacity: (!promoCode.trim() || isApplyingPromo) ? 0.3 : 1, display: "flex", alignItems: "center", gap: 6 }}
+                                style={{ padding: "12px 20px", background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", border: "none", borderRadius: 14, fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: (!promoCode.trim() || isApplyingPromo) ? 0.35 : 1, display: "flex", alignItems: "center", gap: 6 }}
                             >
                                 {isApplyingPromo ? <Loader2 size={16} className="animate-spin" /> : t.common.apply}
                             </button>
                         )}
                     </div>
                     {promoData && (
-                        <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: "#2D6E3E" }}>
+                        <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, color: "#2D6E3E" }}>
                             ✓ -{promoData.discount.toLocaleString()} so'm chegirma qo'llandi
                         </div>
                     )}
@@ -554,16 +556,16 @@ export default function CheckoutPage() {
                             setUseWallet(!useWallet);
                         }}
                         className="ios-tap-feedback active:scale-[0.98] will-change-transform"
-                        style={{ background: useWallet ? "#EAF3EC" : "#fff", border: useWallet ? "1.5px solid #2D6E3E" : "1.5px solid rgba(15,20,16,0.06)", borderRadius: 22, padding: "16px 18px", cursor: "pointer", boxShadow: "0 2px 8px rgba(15,20,16,0.04)", transition: "background-color 150ms ease, border-color 150ms ease, transform 150ms ease" }}
+                        style={{ background: useWallet ? "#EAF3EC" : "#fff", border: useWallet ? "1.5px solid #2D6E3E" : "1px solid rgba(15,20,16,0.06)", borderRadius: 24, padding: "16px 18px", cursor: "pointer", boxShadow: "0 4px 16px rgba(15,20,16,0.04)", transition: "background-color 150ms ease, border-color 150ms ease, transform 150ms ease" }}
                     >
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                                <div style={{ width: 40, height: 40, borderRadius: 13, background: useWallet ? "#2D6E3E" : "#F0F0EC", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                <div style={{ width: 40, height: 40, borderRadius: 14, background: useWallet ? "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" : "#F0F2EF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                                     <Wallet size={18} color={useWallet ? "#fff" : "#9AA29C"} />
                                 </div>
                                 <div>
-                                    <p style={{ fontSize: 13, fontWeight: 800, color: "#0F1410", marginBottom: 2 }}>{t.common.payFromWallet}</p>
-                                    <p style={{ fontSize: 11, fontWeight: 500, color: "#9AA29C" }}>
+                                    <p style={{ fontSize: 13.5, fontWeight: 700, color: "#111612", marginBottom: 2 }}>{t.common.payFromWallet}</p>
+                                    <p style={{ fontSize: 11.5, fontWeight: 500, color: "#737D75" }}>
                                         {t.common.availableBalance.replace("{balance}", walletBalance.toLocaleString())}
                                     </p>
                                 </div>
@@ -573,7 +575,7 @@ export default function CheckoutPage() {
                             </div>
                         </div>
                         {useWallet && (
-                            <p style={{ marginTop: 8, fontSize: 11, fontWeight: 700, color: "#2D6E3E", paddingLeft: 52 }}>
+                            <p style={{ marginTop: 8, fontSize: 11.5, fontWeight: 600, color: "#2D6E3E", paddingLeft: 52 }}>
                                 {t.common.walletUsageHint.replace("{amount}", Math.min(walletBalance, goodsTotal).toLocaleString())}
                             </p>
                         )}
@@ -581,26 +583,26 @@ export default function CheckoutPage() {
                 )}
 
                 {/* Summary card — Velari green */}
-                <div style={{ marginTop: 24, padding: "20px 20px", background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", borderRadius: 24, boxShadow: "0 16px 40px rgba(45,110,62,0.28)", position: "relative", overflow: "hidden" }}>
+                <div style={{ marginTop: 24, padding: "20px", background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", borderRadius: 24, boxShadow: "0 16px 40px rgba(45,110,62,0.28)", position: "relative", overflow: "hidden" }}>
                     <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: 60, background: "rgba(255,255,255,0.08)", pointerEvents: "none" }} />
                     <div style={{ position: "relative" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: 12, opacity: 0.8 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: 13, opacity: 0.85 }}>
                             <span>{t.common.products}</span>
                             <span>{subtotal.toLocaleString()} {language === "ru" ? "сум" : "so'm"}</span>
                         </div>
                         {smartDiscount > 0 && (
-                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: 12, color: "#A3F0B8" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: 13, color: "#A3F0B8" }}>
                                 <span style={{ display: "flex", alignItems: "center", gap: 6 }}>✦ {language === "ru" ? "Персональная скидка" : "Shaxsiy chegirma"}</span>
                                 <span>-{smartDiscount.toLocaleString()} {language === "ru" ? "сум" : "so'm"}</span>
                             </div>
                         )}
                         {promoData && (
-                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: 12, color: "#A3F0B8" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: 13, color: "#A3F0B8" }}>
                                 <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Tag size={12} /> {promoData.code}</span>
                                 <span>-{promoData.discount.toLocaleString()} {language === "ru" ? "сум" : "so'm"}</span>
                             </div>
                         )}
-                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14, fontSize: 12, opacity: 0.8 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14, fontSize: 13, opacity: 0.85 }}>
                             <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                 {useExpress ? <Zap size={12} /> : <Truck size={12} />}
                                 {t.common.delivery}{useExpress ? (language === "uz" ? " (tezkor)" : " (экспресс)") : ""}
@@ -610,8 +612,8 @@ export default function CheckoutPage() {
                             </span>
                         </div>
                         <div style={{ borderTop: "1px solid rgba(255,255,255,0.15)", paddingTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span style={{ fontSize: 13, opacity: 0.7, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>{t.common.total}</span>
-                            <span style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5 }}>
+                            <span style={{ fontSize: 13, opacity: 0.75, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.4 }}>{t.common.total}</span>
+                            <span style={{ fontSize: 24, fontWeight: 700, letterSpacing: -0.4 }}>
                                 {total.toLocaleString()} <span style={{ fontSize: 16, opacity: 0.8 }}>{language === "ru" ? "сум" : "so'm"}</span>
                             </span>
                         </div>
@@ -624,11 +626,11 @@ export default function CheckoutPage() {
                     disabled={isSubmitting || displayProducts.length === 0 || stockErrors.length > 0 || isValidating}
                     className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
                     style={{
-                        width: "100%", padding: "17px 0", borderRadius: 18, border: "none", cursor: "pointer",
+                        width: "100%", height: 54, borderRadius: 22, border: "none", cursor: "pointer",
                         background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)",
-                        color: "#fff", fontSize: 16, fontWeight: 700, letterSpacing: -0.2,
+                        color: "#fff", fontSize: 15, fontWeight: 600, letterSpacing: -0.1,
                         display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                        boxShadow: "0 8px 20px rgba(45,110,62,0.28)", marginTop: 12,
+                        boxShadow: "0 8px 20px rgba(45,110,62,0.28)", marginTop: 14,
                         opacity: (isSubmitting || displayProducts.length === 0 || stockErrors.length > 0 || isValidating) ? 0.4 : 1,
                     }}
                 >
