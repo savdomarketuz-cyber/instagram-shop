@@ -34,7 +34,7 @@ const args = process.argv.slice(2);
 const FORCE = args.includes('--force');
 const LIMIT = args.includes('--limit') ? parseInt(args[args.indexOf('--limit') + 1]) : null;
 
-const MODEL = 'Xenova/paraphrase-multilingual-MiniLM-L12-v2';
+const MODEL = 'Xenova/all-MiniLM-L6-v2';
 const BATCH = 16;
 
 function parsePersona(raw) {

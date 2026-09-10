@@ -69,6 +69,10 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
     const [searchResults, setSearchResults] = useState<Product[] | null>(null);
     const [isSearching, setIsSearching] = useState(false);
     const [isVisualUploading, setIsVisualUploading] = useState(false);
+    const [searchPage, setSearchPage] = useState(1);
+    const [hasMoreSearch, setHasMoreSearch] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const isVisualActiveRef = useRef(false);
     const searchAbortRef = useRef<AbortController | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     // Toza URL (/catalog/[slug]) orqali kelgan kategoriyani oldindan tanlaymiz.
@@ -145,9 +149,14 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
 
             // Which categories actually have products — to hide empty ones
             const { data: pcData } = await supabase
-                .from("products").select("category_id").eq("is_deleted", false).gt("stock", 0);
+                .from("products").select("category_id, stock, stock_details").eq("is_deleted", false)
+                .or("stock.gt.0,stock_details.neq.{}");
             if (pcData) {
-                setProductCatIds(new Set(pcData.map((r: any) => r.category_id).filter(Boolean)));
+                const validIds = pcData
+                    .filter((r: any) => getProductRealStock(r) > 0)
+                    .map((r: any) => r.category_id)
+                    .filter(Boolean);
+                setProductCatIds(new Set(validIds));
             }
         };
         load();
@@ -192,7 +201,16 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
         if (!q) {
             setSearchResults(null);
             setIsSearching(false);
+            setHasMoreSearch(false);
+            setSearchPage(1);
+            isVisualActiveRef.current = false;
             if (searchAbortRef.current) searchAbortRef.current.abort();
+            return;
+        }
+
+        // If visual search results were just set, skip overriding them with text search
+        if (isVisualActiveRef.current) {
+            isVisualActiveRef.current = false;
             return;
         }
 
@@ -200,6 +218,7 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
         const controller = new AbortController();
         searchAbortRef.current = controller;
         setIsSearching(true);
+        setSearchPage(1);
 
         const timer = setTimeout(async () => {
             try {
@@ -210,11 +229,12 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                     body: JSON.stringify({
                         query: q,
                         category: activeCat,
-                        brand: selectedBrands.length === 1 ? selectedBrands[0] : undefined,
+                        brands: selectedBrands.length > 0 ? selectedBrands : undefined,
                         minPrice: priceRange[0] > 0 ? priceRange[0] : undefined,
                         maxPrice: priceRange[1] > 0 ? priceRange[1] : undefined,
                         rating: minRating > 0 ? minRating : undefined,
                         sort: sortBy,
+                        page: 1,
                         limit: 50,
                     }),
                     signal: controller.signal
@@ -223,6 +243,7 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                 const data = await res.json();
                 if (data.results) {
                     setSearchResults(data.results);
+                    setHasMoreSearch(!!data.hasMore);
                 }
             } catch (err: any) {
                 if (err?.name !== "AbortError") {
@@ -241,6 +262,42 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
         };
     }, [searchQuery, mainCat, subCat, selectedBrands, minRating, priceRange, sortBy]);
 
+    const handleLoadMore = async () => {
+        if (isLoadingMore || !hasMoreSearch || !searchQuery.trim()) return;
+        setIsLoadingMore(true);
+        const nextPage = searchPage + 1;
+        try {
+            const activeCat = subCat !== "all" ? subCat : mainCat !== "all" ? mainCat : undefined;
+            const res = await fetch("/api/search", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    query: searchQuery.trim(),
+                    category: activeCat,
+                    brands: selectedBrands.length > 0 ? selectedBrands : undefined,
+                    minPrice: priceRange[0] > 0 ? priceRange[0] : undefined,
+                    maxPrice: priceRange[1] > 0 ? priceRange[1] : undefined,
+                    rating: minRating > 0 ? minRating : undefined,
+                    sort: sortBy,
+                    page: nextPage,
+                    limit: 50,
+                }),
+            });
+            const data = await res.json();
+            if (data.results && data.results.length > 0) {
+                setSearchResults(prev => [...(prev || []), ...data.results]);
+                setSearchPage(nextPage);
+                setHasMoreSearch(!!data.hasMore);
+            } else {
+                setHasMoreSearch(false);
+            }
+        } catch (err) {
+            console.error("Load more search error:", err);
+        } finally {
+            setIsLoadingMore(false);
+        }
+    };
+
     const handleVisualUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -256,7 +313,9 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                 });
                 const data = await res.json();
                 if (data.results) {
+                    isVisualActiveRef.current = true;
                     setSearchResults(data.results);
+                    setHasMoreSearch(!!data.hasMore);
                     setSearchQuery(data.results[0]?.name ? `${data.results[0].name.slice(0, 25)}...` : "Rasm qidiruvi");
                 }
             } catch (err) {
@@ -498,6 +557,20 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                                 brandLabel={brandName((p as any).brand || p.brand_id)}
                             />
                         ))}
+                    </div>
+                )}
+
+                {/* SEARCH LOAD MORE PAGINATION */}
+                {searchResults !== null && hasMoreSearch && (
+                    <div className="mt-8 mb-4 flex justify-center">
+                        <button
+                            onClick={handleLoadMore}
+                            disabled={isLoadingMore}
+                            className="px-8 py-3.5 rounded-2xl font-semibold text-[14px] text-white bg-gradient-to-r from-[#2D6E3E] to-[#1F5A30] shadow-md shadow-[#2D6E3E]/20 ios-tap-feedback active:scale-[0.98] transition-transform duration-150 disabled:opacity-50 flex items-center gap-2 will-change-transform"
+                        >
+                            {isLoadingMore && <Loader2 size={16} className="animate-spin" />}
+                            {language === "uz" ? "Yana ko'proq ko'rsatish" : "Показать ещё"}
+                        </button>
                     </div>
                 )}
             </div>

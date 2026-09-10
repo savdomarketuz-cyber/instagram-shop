@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getProductRealStock } from '@/lib/stock';
 import { getProductSlug } from '@/lib/slugify';
 
 export const runtime = 'nodejs';
@@ -51,15 +52,17 @@ export async function POST(req: NextRequest) {
                 .from('products')
                 .select('*')
                 .eq('is_deleted', false)
-                .gt('stock', 0);
+                .or('stock.gt.0,stock_details.neq.{}');
 
-            if (error || !data || data.length === 0) {
+            const inStockData = (data || []).filter((p: any) => getProductRealStock(p) > 0);
+
+            if (error || inStockData.length === 0) {
                 return NextResponse.json({ error: 'Sotuvda mahsulot topilmadi' }, { status: 404 });
             }
 
             // Tasodifiy bittasini tanlash
-            const randomIndex = Math.floor(Math.random() * data.length);
-            product = data[randomIndex];
+            const randomIndex = Math.floor(Math.random() * inStockData.length);
+            product = inStockData[randomIndex];
         }
 
         const mainImage = product.image || (Array.isArray(product.images) && product.images[0]) || '';

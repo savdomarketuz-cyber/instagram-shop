@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { mapProduct } from "@/lib/mappers";
+import { getProductRealStock } from "@/lib/stock";
 import { personalize, type AffinitySignals } from "@/lib/personalize";
 import { verifyJwt } from "@/lib/jwt-utils";
 
@@ -82,11 +83,11 @@ export async function POST(req: NextRequest) {
             .from("products")
             .select(PERSONA_SELECT)
             .eq("is_deleted", false)
-            .gt("stock", 0)
+            .or("stock.gt.0,stock_details.neq.{}")
             .order("sales", { ascending: false })
             .order("avg_rating", { ascending: false })
             .limit(200);
-        const candidates = (candData || []).map(mapProduct);
+        const candidates = (candData || []).map(mapProduct).filter(p => getProductRealStock(p) > 0);
 
         // 4. Moslashtirish
         const ranked = personalize(candidates, attentionProducts, affinity, { limit, excludeIds });

@@ -87,11 +87,16 @@ export async function POST(req: NextRequest) {
             limit = suggest ? 6 : 24,
             category,
             brand,
+            brands,
             minPrice,
             maxPrice,
             rating,
             sort
         } = body;
+
+        const brandIdsList: string[] = Array.isArray(brands) && brands.length > 0
+            ? brands.filter(Boolean)
+            : (brand ? [brand] : []);
 
         // 0. RATE LIMITING
         const rlMax = suggest ? 50 : 15;
@@ -182,10 +187,11 @@ export async function POST(req: NextRequest) {
                 p_category_id: category || null,
                 p_min_price: minPrice && minPrice > 0 ? Number(minPrice) : null,
                 p_max_price: maxPrice && maxPrice > 0 ? Number(maxPrice) : null,
-                p_brand_id: brand || null,
+                p_brand_id: brandIdsList.length === 1 ? brandIdsList[0] : (brand || null),
                 p_min_rating: rating && rating > 0 ? Number(rating) : null,
                 p_sort: sort || null,
-                p_offset: offset
+                p_offset: offset,
+                p_brand_ids: brandIdsList.length > 0 ? brandIdsList : null
             });
         };
 
@@ -196,14 +202,17 @@ export async function POST(req: NextRequest) {
             const sanitizedQuery = normalizedQuery.replace(/[,"'\\]/g, ' ').trim();
             let fallbackQuery = supabase
                 .from('products')
-                .select('*')
-                .eq('is_deleted', false);
+                .select('id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,avg_rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,express_delivery,created_at')
+                .eq('is_deleted', false)
+                .or('stock.gt.0,stock_details.neq.{}');
 
             if (sanitizedQuery) {
                 fallbackQuery = fallbackQuery.or(`name.ilike.%${sanitizedQuery}%,name_uz.ilike.%${sanitizedQuery}%,name_ru.ilike.%${sanitizedQuery}%,article.ilike.%${sanitizedQuery}%,model.ilike.%${sanitizedQuery}%`);
             }
             if (category) fallbackQuery = fallbackQuery.eq('category_id', category);
-            if (brand) fallbackQuery = fallbackQuery.eq('brand_id', brand);
+            if (brandIdsList.length > 0) {
+                fallbackQuery = fallbackQuery.in('brand_id', brandIdsList);
+            }
             if (minPrice && minPrice > 0) fallbackQuery = fallbackQuery.gte('price', Number(minPrice));
             if (maxPrice && maxPrice > 0) fallbackQuery = fallbackQuery.lte('price', Number(maxPrice));
 

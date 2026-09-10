@@ -4,6 +4,8 @@
  * Matches Postgres column: products.embedding vector(384)
  */
 
+export const EMBEDDING_MODEL = 'Xenova/all-MiniLM-L6-v2';
+
 let pipelinePromise: Promise<any> | null = null;
 const embeddingCache = new Map<string, string>();
 const MAX_CACHE_SIZE = 1000;
@@ -18,7 +20,7 @@ async function getEmbedder() {
             if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
                 env.cacheDir = '/tmp/.cache';
             }
-            return pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+            return pipeline('feature-extraction', EMBEDDING_MODEL);
         })().catch(err => {
             console.error('Failed to load Xenova embedding model:', err);
             pipelinePromise = null;

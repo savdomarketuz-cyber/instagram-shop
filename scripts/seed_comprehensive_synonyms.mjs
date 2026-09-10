@@ -1,7 +1,8 @@
 import fs from 'fs';
 import pg from 'pg';
+import { getDatabaseUrl } from './get_db_url.mjs';
 
-const url = fs.readFileSync('C:/Users/user/.gemini/antigravity/brain/132d8379-3723-45a6-a02d-bb9203322573/scratch/db_url.txt', 'utf8').trim();
+const url = getDatabaseUrl();
 
 const synonyms = [
     // --- 1. O'ZBEKCHA TILLARDAGI SO'ZLAR ---

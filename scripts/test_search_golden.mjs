@@ -1,14 +1,16 @@
 import fs from 'fs';
 import pg from 'pg';
+import { getDatabaseUrl } from './get_db_url.mjs';
 
-const url = fs.readFileSync('C:/Users/user/.gemini/antigravity/brain/132d8379-3723-45a6-a02d-bb9203322573/scratch/db_url.txt', 'utf8').trim();
+const url = getDatabaseUrl();
+const MODEL = 'Xenova/all-MiniLM-L6-v2';
 
 // Local embeddings generator
 let embedder = null;
 async function getEmbedding(text) {
     if (!embedder) {
         const { pipeline } = await import('@xenova/transformers');
-        embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+        embedder = await pipeline('feature-extraction', MODEL);
     }
     const out = await embedder(text, { pooling: 'mean', normalize: true });
     return `[${Array.from(out.data).join(',')}]`;

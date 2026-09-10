@@ -7,6 +7,7 @@ import { useStore } from "@/store/store";
 import { useShallow } from "zustand/react/shallow";
 import { supabase } from "@/lib/supabase";
 import { mapProduct, mapBanner } from "@/lib/mappers";
+import { getProductRealStock } from "@/lib/stock";
 import { translations } from "@/lib/translations";
 import { useSearchParams, useRouter } from "next/navigation";
 
@@ -340,7 +341,7 @@ export default function HomeClient({
                 .from("products")
                 .select("*")
                 .eq("is_deleted", false)
-                .gt("stock", 0);
+                .or("stock.gt.0,stock_details.neq.{}");
 
             if (activeFilter !== 'all') {
                 const targetCategory = allCategories.find(c => c.id === activeFilter || c.name === activeFilter);
@@ -392,10 +393,7 @@ export default function HomeClient({
 
             const newProducts = (newProductsData || []).map(mapProduct);
 
-            const availableProducts = newProducts.filter(p => {
-                const totalStock = p.stockDetails ? Object.values(p.stockDetails).reduce((a: number, b: number) => a + (Number(b) || 0), 0) : (p.stock || 0);
-                return totalStock > 0;
-            });
+            const availableProducts = newProducts.filter(p => getProductRealStock(p) > 0);
 
             if (isLoadMore) {
                 setAllProducts(prev => [...prev, ...availableProducts]);

@@ -1,42 +1,41 @@
-import fs from 'fs';
 import pg from 'pg';
+import { getDatabaseUrl } from './get_db_url.mjs';
 
-const url = fs.readFileSync('C:/Users/user/.gemini/antigravity/brain/132d8379-3723-45a6-a02d-bb9203322573/scratch/db_url.txt', 'utf8').trim();
+const url = getDatabaseUrl();
+const MODEL = 'Xenova/all-MiniLM-L6-v2';
 
 async function main() {
-    console.log('Loading Xenova pipeline for all-MiniLM-L6-v2...');
+    console.log(`Loading Xenova pipeline for canonical model: ${MODEL}...`);
     const { pipeline } = await import('@xenova/transformers');
-    const embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
-    console.log('✅ Model loaded successfully!');
+    const embedder = await pipeline('feature-extraction', MODEL);
+    console.log('✅ Model loaded successfully!\n');
 
-    let hasMore = true;
-    let totalProcessed = 0;
+    const client = new pg.Client({
+        connectionString: url,
+        ssl: { rejectUnauthorized: false },
+        connectionTimeoutMillis: 15000,
+    });
+    await client.connect();
 
-    while (hasMore) {
-        const client = new pg.Client({
-            connectionString: url,
-            ssl: { rejectUnauthorized: false },
-            connectionTimeoutMillis: 10000,
-        });
+    try {
+        const { rows: countRows } = await client.query('SELECT count(*) as total FROM products WHERE is_deleted = false');
+        const totalProducts = parseInt(countRows[0].total, 10);
+        console.log(`Starting full unified re-indexing for ${totalProducts} active products...`);
 
-        try {
-            await client.connect();
+        let lastId = '';
+        let processed = 0;
+        const BATCH_SIZE = 50;
 
-            // Fetch a batch of 50 items needing embeddings
-            const { rows: batch } = await client.query(`
-                SELECT id, name, name_uz, name_ru, description, description_uz, description_ru, category_id, model, article, image_metadata
-                FROM products
-                WHERE is_deleted = false AND (embedding IS NULL)
-                LIMIT 50
-            `);
+        while (true) {
+            const query = lastId
+                ? 'SELECT id, name, name_uz, name_ru, description, description_uz, description_ru, category_id, model, article, image_metadata FROM products WHERE is_deleted = false AND id > $1 ORDER BY id ASC LIMIT $2'
+                : 'SELECT id, name, name_uz, name_ru, description, description_uz, description_ru, category_id, model, article, image_metadata FROM products WHERE is_deleted = false ORDER BY id ASC LIMIT $1';
 
-            if (batch.length === 0) {
-                hasMore = false;
-                console.log('No more products needing embeddings!');
-                break;
-            }
+            const params = lastId ? [lastId, BATCH_SIZE] : [BATCH_SIZE];
+            const { rows: batch } = await client.query(query, params);
 
-            console.log(`Processing batch of ${batch.length} products...`);
+            if (batch.length === 0) break;
+
             for (const p of batch) {
                 const visionMeta = p.image_metadata ? Object.values(p.image_metadata).map(m => (m.alt_uz || '') + ' ' + (m.alt_ru || '')).join(' ') : '';
                 const searchBlob = `${p.name_uz || p.name || ''} ${p.name_ru || p.name || ''} ${p.model || ''} ${p.article || ''} ${visionMeta} ${(p.description_uz || p.description || '').slice(0, 300)}`.trim();
@@ -45,25 +44,21 @@ async function main() {
                 const vectorStr = `[${Array.from(output.data).join(',')}]`;
 
                 await client.query('UPDATE products SET embedding = $1 WHERE id = $2', [vectorStr, p.id]);
-                totalProcessed++;
+                processed++;
             }
-            console.log(`✅ Batch complete. Total indexed so far: ${totalProcessed}`);
 
-        } catch (err) {
-            console.error('Batch error, retrying in 2s:', err.message);
-            await new Promise(r => setTimeout(r, 2000));
-        } finally {
-            try { await client.end(); } catch {}
+            lastId = batch[batch.length - 1].id;
+            console.log(`✅ Progress: ${processed} / ${totalProducts} products indexed with ${MODEL}`);
         }
-    }
 
-    // Final verify
-    const verifyClient = new pg.Client({ connectionString: url, ssl: { rejectUnauthorized: false } });
-    await verifyClient.connect();
-    const checkFinal = await verifyClient.query('SELECT count(*) as total, count(embedding) as with_embedding FROM products WHERE is_deleted = false');
-    console.log('\n=== FINAL EMBEDDING STATUS ===');
-    console.table(checkFinal.rows);
-    await verifyClient.end();
+        const verifyResult = await client.query('SELECT count(*) as total, count(embedding) as with_embedding FROM products WHERE is_deleted = false');
+        console.log('\n=== RE-INDEXING COMPLETE ===');
+        console.table(verifyResult.rows);
+    } catch (err) {
+        console.error('Re-indexing error:', err);
+    } finally {
+        await client.end();
+    }
 }
 
 main();

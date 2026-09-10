@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import HomeClient from "./HomeClient";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { mapProduct, mapCategory, mapBanner } from "@/lib/mappers";
+import { getProductRealStock } from "@/lib/stock";
 import type { Product, Category, Banner } from "@/types";
 import type { Metadata } from 'next';
 
@@ -41,13 +42,13 @@ async function getInitialData() {
             { data: prodCatRows },
             { data: featuredSettingRow }
         ] = await Promise.all([
-            supabaseAdmin.from("products").select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,avg_rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,express_delivery,created_at").eq("is_deleted", false).gt("stock", 0).order("sales", { ascending: false }).order("avg_rating", { ascending: false }).limit(20),
+            supabaseAdmin.from("products").select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,avg_rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,express_delivery,created_at").eq("is_deleted", false).or("stock.gt.0,stock_details.neq.{}").order("sales", { ascending: false }).order("avg_rating", { ascending: false }).limit(30),
             supabaseAdmin.from("categories").select("id,name,name_uz,name_ru,parent_id,image,image_meta,icon,color,is_deleted").eq("is_deleted", false).order("name", { ascending: true }),
             supabaseAdmin.from("banners").select("id,title_uz,title_ru,html_uz,html_ru,active,order_index,tab_name_uz,tab_name_ru").eq("active", true).order("order_index", { ascending: true }),
             supabaseAdmin.from("settings").select("data").eq("id", "banners").single(),
             supabaseAdmin.from("site_settings").select("value").eq("key", "promo_countdown").single(),
             // Mahsuloti bor kategoriyalarni aniqlash uchun barcha mahsulot category_id lari
-            supabaseAdmin.from("products").select("category_id").eq("is_deleted", false).gt("stock", 0),
+            supabaseAdmin.from("products").select("category_id, stock, stock_details").eq("is_deleted", false).or("stock.gt.0,stock_details.neq.{}"),
             // Kategoriya vitrinasi sozlamasi (settings anon o'qishdan yopiq -> server orqali)
             supabaseAdmin.from("settings").select("data").eq("id", "featured_categories").maybeSingle(),
         ]);
@@ -56,19 +57,21 @@ async function getInitialData() {
         // Subkategoriyada mahsulot bo'lsa, uning parenti ham "bo'sh emas" hisoblanadi.
         const rawCats = categoriesData || [];
         const parentOf = new Map<string, string | null>(rawCats.map((c: any) => [String(c.id), c.parent_id ? String(c.parent_id) : null]));
-        const directCatIds = new Set<string>((prodCatRows || []).map((r: any) => String(r.category_id)).filter(Boolean));
+        const directCatIds = new Set<string>((prodCatRows || []).filter((r: any) => getProductRealStock(r) > 0).map((r: any) => String(r.category_id)).filter(Boolean));
         const nonEmpty = new Set<string>();
-        for (const id of Array.from(directCatIds)) {
-            let cur: string | null | undefined = id;
-            while (cur) {
-                if (nonEmpty.has(cur)) break;
+        directCatIds.forEach(id => {
+            let cur: string | null = id;
+            let guard = 0;
+            while (cur && guard < 10) {
                 nonEmpty.add(cur);
-                cur = parentOf.get(cur) ?? null;
+                cur = parentOf.get(cur) || null;
+                guard++;
             }
-        }
+        });
+
         const visibleCatRows = rawCats.filter((c: any) => nonEmpty.has(String(c.id)));
 
-        const products = (productsData || []).map(mapProduct);
+        const products = (productsData || []).map(mapProduct).filter((p: any) => getProductRealStock(p) > 0).slice(0, 20);
         const categories = visibleCatRows.map(mapCategory);
         const banners = (bannersData || []).map(mapBanner);
         const bannerSettings = settingsData?.data
