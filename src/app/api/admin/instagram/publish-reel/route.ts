@@ -4,21 +4,26 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Up to 60s for video processing status check
 
-const IG_ID = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID || '17841446090191717';
-const PAGE_TOKEN = process.env.INSTAGRAM_PAGE_ACCESS_TOKEN;
-const ADMIN_SECRET = process.env.ADMIN_SECRET || 'velari-admin-secret-2024';
-
 export async function POST(req: NextRequest) {
     try {
-        if (!PAGE_TOKEN) {
-            return NextResponse.json({ error: 'INSTAGRAM_PAGE_ACCESS_TOKEN sozlanmagan' }, { status: 500 });
+        const ADMIN_SECRET = process.env.ADMIN_SECRET;
+        if (!ADMIN_SECRET) {
+            return NextResponse.json({ error: 'ADMIN_SECRET tizimda sozlanmagan' }, { status: 500 });
         }
 
         const body = await req.json().catch(() => ({}));
-        const { videoUrl, caption, secret } = body;
+        const { videoUrl, caption, secret, pageAccessToken, instagramAccountId } = body;
+        const headerSecret = req.headers.get('x-admin-secret') || req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
 
-        if (secret !== ADMIN_SECRET) {
+        if (secret !== ADMIN_SECRET && headerSecret !== ADMIN_SECRET) {
             return NextResponse.json({ error: 'Ruxsatsiz kirish (Invalid secret)' }, { status: 401 });
+        }
+
+        const PAGE_TOKEN = pageAccessToken || process.env.INSTAGRAM_PAGE_ACCESS_TOKEN;
+        const IG_ID = instagramAccountId || process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID || '17841446090191717';
+
+        if (!PAGE_TOKEN) {
+            return NextResponse.json({ error: 'INSTAGRAM_PAGE_ACCESS_TOKEN sozlanmagan' }, { status: 500 });
         }
 
         if (!videoUrl) {

@@ -33,7 +33,7 @@ from config import (
     validate_credentials,
     record_posted_history,
 )
-from stock_utils import is_product_in_stock, get_product_real_stock
+from stock_utils import is_product_in_stock, get_product_real_stock, calculate_product_score
 from run_reels_bot import (
     fetch_products,
     fetch_single_product,
@@ -52,15 +52,6 @@ def log(msg, emoji="ℹ️"):
             f.write(entry + "\n")
     except Exception:
         pass
-
-
-def calculate_top_score(product: dict) -> float:
-    """FORMULA: Top Score = (total_views * 0.05) + (sales * 0.1) + (avg_rating * 0.4)"""
-    views = float(product.get("total_views") or 0)
-    sales = float(product.get("sales") or 0)
-    rating = float(product.get("avg_rating") or 0.0)
-    score = (views * 0.05) + (sales * 0.1) + (rating * 0.4)
-    return round(score, 2)
 
 
 def check_priority_1_ready_video():
@@ -103,29 +94,18 @@ def remove_first_custom_script():
 
 def select_top_product_from_supabase():
     """Supabase'dan faqat omborda bor va hali chiqarilmagan tovarlarni Top-Score bo'yicha saralaydi."""
-    log("Supabase'dan tovarlar olinmoqda va TOP-SCORE formulasi bo'yicha tahlil qilinmoqda...", "🔍")
-    products = fetch_products(limit=100, only_unposted=True)
+    log("Supabase bazasidan barcha tovarlar yuklanib, TOP-SCORE reytingi tahlil qilinmoqda...", "🔍")
+    ranked = fetch_products(only_unposted=True, sort_by_score=True)
 
-    if not products:
+    if not ranked:
         log("Sotuvda mavjud bo'lgan chiqarilmagan mahsulot qolmadi!", "⚠️")
         return None
-
-    ranked = []
-    for p in products:
-        score = calculate_top_score(p)
-        p_copy = dict(p)
-        p_copy["top_score"] = score
-        p_copy["real_stock"] = get_product_real_stock(p)
-        ranked.append(p_copy)
-
-    # Top-Score bo'yicha kamayish tartibida saralash
-    ranked.sort(key=lambda x: x["top_score"], reverse=True)
 
     # Dastlabki 3 ta tovar haqida log yozish
     log(f"Top 3 ta nomzod:", "📊")
     for idx, p in enumerate(ranked[:3], 1):
         name = (p.get("name_uz") or p.get("name") or "")[:35]
-        log(f"   {idx}. {name:<35} | Score: {p['top_score']} (Ko'rishlar:{p.get('total_views', 0)}, Sotuv:{p.get('sales', 0)}) | Qoldiq: {p['real_stock']}")
+        log(f"   {idx}. {name:<35} | Score: {p['top_score']:<5.2f} (Ko'rish: {p.get('total_views', 0)}, Sotuv: {p.get('sales', 0)}) | Qoldiq: {p['real_stock']}")
 
     winner = ranked[0]
     log(f"G'olib tovar tanlandi: '{winner.get('name_uz') or winner.get('name')}' (Score: {winner['top_score']})", "🎯")
@@ -134,10 +114,11 @@ def select_top_product_from_supabase():
 
 def run_auto_daily_task(is_test=False):
     log("=" * 60)
-    log("🤖 AUTO REELS BOT: Kunlik topshiriq boshlandi...", "🚀")
+    mode_str = " [TEST REJIMI]" if is_test else ""
+    log(f"🤖 AUTO REELS BOT: Kunlik topshiriq boshlandi...{mode_str}", "🚀")
     log("=" * 60)
 
-    if not validate_credentials():
+    if not validate_credentials(is_test=is_test):
         return
 
     # ----------------------------------------------------
@@ -156,6 +137,14 @@ def run_auto_daily_task(is_test=False):
         caption = f"🛍 Yangi mahsulot Velari do'konida!\n\nBuyurtma berish uchun bio-dagi saytimizga kiring:\n👉 {BASE_URL}\n\n#velari #reels #yangilik"
         res = publish_to_instagram_reels(s3_url, caption)
         log(f"Reels Instagramga chiqarildi: {res.get('url')}", "🎉")
+
+        record_posted_history(
+            product_id=f"ready_{int(time.time())}",
+            product_title=vid_name,
+            instagram_url=res.get("url", ""),
+            video_url=s3_url,
+            reel_id=str(res.get("reel_id", ""))
+        )
 
         try:
             os.remove(ready_video)

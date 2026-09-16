@@ -10,6 +10,13 @@ import os
 import sys
 import shutil
 import json
+import time
+import requests
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
 
 # Asosiy papkalar
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -52,7 +59,7 @@ S3_BUCKET = get_env("YANDEX_S3_BUCKET", "savdomarketimag")
 S3_REGION = get_env("YANDEX_S3_REGION", "ru-central1")
 IG_ID = get_env("INSTAGRAM_BUSINESS_ACCOUNT_ID", "17841446090191717")
 PAGE_TOKEN = get_env("INSTAGRAM_PAGE_ACCESS_TOKEN", "")
-ADMIN_SECRET = get_env("ADMIN_SECRET", "velari-admin-secret-2024")
+ADMIN_SECRET = get_env("ADMIN_SECRET", "")
 BASE_URL = "https://velari.uz"
 
 # 2. Portable FFmpeg qidirish
@@ -93,8 +100,11 @@ def resolve_font_path(bold: bool = True) -> str:
     return font_name
 
 # 4. Credential Validator
-def validate_credentials(silent: bool = False) -> bool:
-    """Zarur barcha API kalitlari mavjudligini tekshiradi."""
+def validate_credentials(silent: bool = False, is_test: bool = False) -> bool:
+    """Zarur barcha API kalitlari mavjudligini tekshiradi.
+    Agar is_test=True bo'lsa, faqat video yaratish uchun kerakli kalitlar (Supabase, Groq, UzbekVoice)
+    tekshiriladi; S3 va Instagram kalitlari talab qilinmaydi.
+    """
     missing = []
     if not SUPABASE_KEY:
         missing.append(("SUPABASE_SERVICE_ROLE_KEY", "Supabase ma'lumotlar bazasiga ulanish uchun"))
@@ -102,15 +112,20 @@ def validate_credentials(silent: bool = False) -> bool:
         missing.append(("GROQ_API_KEY_1 / GROQ_API_KEY", "AI SMM matnini yozish uchun"))
     if not UZBEKVOICE_API_KEY:
         missing.append(("UZBEKVOICE_API_KEY", "O'zbekcha diktor ovozini yaratish uchun"))
-    if not S3_ACCESS_KEY or not S3_SECRET_KEY:
-        missing.append(("YANDEX_S3_ACCESS_KEY / SECRET_KEY", "Videoni bulutga yuklash uchun"))
-    if not PAGE_TOKEN:
-        missing.append(("INSTAGRAM_PAGE_ACCESS_TOKEN", "Instagramga video joylash uchun"))
+
+    if not is_test:
+        if not S3_ACCESS_KEY or not S3_SECRET_KEY:
+            missing.append(("YANDEX_S3_ACCESS_KEY / SECRET_KEY", "Videoni bulutga yuklash uchun"))
+        if not PAGE_TOKEN:
+            missing.append(("INSTAGRAM_PAGE_ACCESS_TOKEN", "Instagramga video joylash uchun"))
+        if not ADMIN_SECRET:
+            missing.append(("ADMIN_SECRET", "Velari xavfsiz ma'muriy boshqaruv kaliti"))
 
     if missing:
         if not silent:
+            mode_str = " (TEST REJIMI)" if is_test else ""
             print("\n" + "=" * 65)
-            print("⚠️  DIQQAT: QUYIDAGI ZARUR SOZLAMALAR TOPILMADI (.env.local):")
+            print(f"⚠️  DIQQAT: QUYIDAGI ZARUR SOZLAMALAR TOPILMADI{mode_str} (.env.local):")
             print("=" * 65)
             for key, desc in missing:
                 print(f"  ❌ {key:<32} -> {desc}")
@@ -120,18 +135,83 @@ def validate_credentials(silent: bool = False) -> bool:
         return False
     return True
 
-# 5. Posted History Tracker
+# 5. Posted History Tracker (Supabase `reels` jadvali + lokal kesh)
 def load_posted_history() -> set:
+    """Supabase `reels` jadvali va lokal keshdan chiqarilgan barcha tovarlar ID to'plamini oladi."""
+    posted_ids = set()
+
+    # 1. Supabase `reels` jadvalidan o'qish
+    if SUPABASE_URL and SUPABASE_KEY:
+        try:
+            url = f"{SUPABASE_URL}/rest/v1/reels?select=product_id"
+            headers = {
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+            }
+            res = requests.get(url, headers=headers, timeout=10)
+            if res.status_code == 200:
+                for row in res.json():
+                    pid = row.get("product_id")
+                    if pid:
+                        posted_ids.add(str(pid))
+        except Exception as e:
+            print(f"⚠️ Supabase reels tarixini yuklashda ogohlantirish: {e}")
+
+    # 2. Mahalliy zaxira faylidan o'qish
     if os.path.exists(POSTED_HISTORY_FILE):
         try:
             with open(POSTED_HISTORY_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                return set(data if isinstance(data, list) else data.keys())
+                local_ids = set(data if isinstance(data, list) else data.keys())
+                posted_ids.update(local_ids)
         except Exception:
-            return set()
-    return set()
+            pass
 
-def record_posted_history(product_id: str, product_title: str = "", instagram_url: str = ""):
+    return posted_ids
+
+
+def record_posted_history(
+    product_id: str,
+    product_title: str = "",
+    instagram_url: str = "",
+    video_url: str = "",
+    reel_id: str = "",
+    price: float = 0,
+    image: str = ""
+):
+    """E'lon qilingan tovarni Supabase `reels` jadvaliga yozadi va lokal faylga saqlaydi."""
+    pid = str(product_id)
+    rid = str(reel_id) if reel_id else f"reel_{pid}_{int(time.time())}"
+
+    # 1. Supabase `reels` jadvaliga saqlash
+    if SUPABASE_URL and SUPABASE_KEY:
+        try:
+            url = f"{SUPABASE_URL}/rest/v1/reels"
+            headers = {
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "resolution=merge-duplicates"
+            }
+            row_data = {
+                "id": rid,
+                "product_id": pid,
+                "name": product_title,
+                "video_url": video_url or instagram_url,
+                "likes_count": 0,
+                "comment_count": 0,
+                "price": float(price or 0),
+                "image": image or ""
+            }
+            res = requests.post(url, headers=headers, json=row_data, timeout=10)
+            if res.status_code in (200, 201):
+                print(f"✅ Supabase `reels` jadvaliga muvaffaqiyatli saqlandi (Product ID: {pid})")
+            else:
+                print(f"⚠️ Supabase `reels` ga yozishda javob kodi ({res.status_code}): {res.text}")
+        except Exception as e:
+            print(f"⚠️ Supabase `reels` ga yozishda xatolik: {e}")
+
+    # 2. Mahalliy zaxira fayliga yozish
     history = {}
     if os.path.exists(POSTED_HISTORY_FILE):
         try:
@@ -144,10 +224,11 @@ def record_posted_history(product_id: str, product_title: str = "", instagram_ur
         except Exception:
             history = {}
 
-    import time
-    history[str(product_id)] = {
+    history[pid] = {
         "title": product_title,
         "instagram_url": instagram_url,
+        "video_url": video_url,
+        "reel_id": rid,
         "posted_at": time.strftime("%Y-%m-%d %H:%M:%S")
     }
 
@@ -155,4 +236,4 @@ def record_posted_history(product_id: str, product_title: str = "", instagram_ur
         with open(POSTED_HISTORY_FILE, "w", encoding="utf-8") as f:
             json.dump(history, f, ensure_ascii=False, indent=2)
     except Exception as e:
-        print(f"Error saving posted history: {e}")
+        print(f"Lokal posted history fayliga yozishda xato: {e}")

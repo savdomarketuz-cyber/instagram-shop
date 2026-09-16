@@ -84,11 +84,15 @@ export async function middleware(request: NextRequest) {
 
     // 3. Admin Protection (Pages & API)
     if (pathWithoutLocale.startsWith('/admin') || pathname.startsWith('/api/admin')) {
-        const adminToken = request.cookies.get('admin_token')?.value;
-        const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim() || "default-secret";
+        const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim();
+        const headerSecret = request.headers.get('x-admin-secret') || request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
 
-        const payload = adminToken ? await verifyJwt(adminToken, ADMIN_SECRET) : null;
-        const isAdmin = payload && payload.role === 'admin';
+        // Xizmatlararo (Service-to-Service) to'g'ri ADMIN_SECRET orqali chaqiruvlar
+        const isSecretAuthorized = Boolean(ADMIN_SECRET && headerSecret && headerSecret === ADMIN_SECRET);
+
+        const adminToken = request.cookies.get('admin_token')?.value;
+        const payload = adminToken && ADMIN_SECRET ? await verifyJwt(adminToken, ADMIN_SECRET) : null;
+        const isAdmin = isSecretAuthorized || Boolean(payload && payload.role === 'admin');
 
         if (!isAdmin) {
             // IF it's an API request, return 401

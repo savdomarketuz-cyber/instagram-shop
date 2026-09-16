@@ -22,6 +22,9 @@ import random
 import argparse
 import requests
 import boto3
+import hmac
+import hashlib
+import base64
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 if SCRIPT_DIR not in sys.path:
@@ -44,13 +47,24 @@ from config import (
     load_posted_history,
     record_posted_history,
 )
-from stock_utils import is_product_in_stock, get_product_real_stock
+from stock_utils import is_product_in_stock, get_product_real_stock, calculate_product_score
 from render_product_reels import build_product_reels, OUTPUT_DIR
 
 
 def log(msg, emoji="ℹ️"):
     now = time.strftime("%H:%M:%S")
     print(f"[{now}] {emoji} {msg}", flush=True)
+
+
+def create_admin_jwt_token(secret: str) -> str:
+    """Velari server ko'prigi uchun xavfsiz admin JWT tokenni yaratadi."""
+    if not secret:
+        return ""
+    header_b64 = base64.urlsafe_b64encode(json.dumps({"alg": "HS256", "typ": "JWT"}).encode()).decode().rstrip("=")
+    payload_b64 = base64.urlsafe_b64encode(json.dumps({"role": "admin"}).encode()).decode().rstrip("=")
+    data = f"{header_b64}.{payload_b64}".encode()
+    signature_b64 = base64.urlsafe_b64encode(hmac.new(secret.encode(), data, hashlib.sha256).digest()).decode().rstrip("=")
+    return f"{header_b64}.{payload_b64}.{signature_b64}"
 
 
 # --- SUPABASE INTEGRATION ---
@@ -62,28 +76,57 @@ def get_supabase_headers():
     }
 
 
-def fetch_products(limit=100, only_unposted=True):
-    """Supabase'dan tovarlarni oladi va Unified Stock bo'yicha filtrlaydi."""
-    url = (
-        f"{SUPABASE_URL}/rest/v1/products"
-        f"?select=id,name_uz,name,price,old_price,images,image,stock,stock_details,description_uz,description,sales,total_views,avg_rating"
-        f"&is_deleted=eq.false&limit={limit}"
-    )
-    res = requests.get(url, headers=get_supabase_headers(), timeout=15)
-    if res.status_code != 200:
-        raise Exception(f"Supabase xatosi ({res.status_code}): {res.text}")
+def fetch_all_raw_products():
+    """Supabase'dan bazadagi BARCHA mahsulotlarni sahifalab (pagination) to'liq yuklaydi."""
+    all_items = []
+    limit = 1000
+    offset = 0
+    while True:
+        url = (
+            f"{SUPABASE_URL}/rest/v1/products"
+            f"?select=id,name_uz,name,price,old_price,images,image,stock,stock_details,description_uz,description,sales,total_views,avg_rating"
+            f"&is_deleted=eq.false&limit={limit}&offset={offset}"
+        )
+        res = requests.get(url, headers=get_supabase_headers(), timeout=20)
+        if res.status_code != 200:
+            raise Exception(f"Supabase xatosi ({res.status_code}): {res.text}")
+        batch = res.json()
+        if not batch:
+            break
+        all_items.extend(batch)
+        if len(batch) < limit:
+            break
+        offset += limit
+    return all_items
 
-    items = res.json()
-    # 1. Unified Stock tekshiruvi (faqat omborda bor tovarlar)
+
+def fetch_products(only_unposted=True, sort_by_score=True):
+    """Barcha mahsulotlarni oladi, Unified Stock bo'yicha filtrlaydi va Top-Score bo'yicha saralaydi."""
+    items = fetch_all_raw_products()
+
+    # 1. Faqat omborda bor tovarlar
     in_stock_items = [p for p in items if is_product_in_stock(p)]
 
-    # 2. Instagramga allaqachon chiqarilgan tovarlarni chiqarib tashlash
+    # 2. Har bir mahsulot uchun top_score va haqiqiy qoldiqni hisoblash
+    for p in in_stock_items:
+        p["top_score"] = calculate_product_score(p)
+        p["real_stock"] = get_product_real_stock(p)
+
+    # 3. Instagramga allaqachon chiqarilgan tovarlarni chiqarib tashlash
+    candidates = in_stock_items
     if only_unposted:
         posted_set = load_posted_history()
         unposted = [p for p in in_stock_items if str(p.get("id")) not in posted_set]
-        return unposted if unposted else in_stock_items
+        if unposted:
+            candidates = unposted
+        else:
+            log("Barcha mavjud mahsulotlar e'lon qilingan. Barcha mahsulotlar orasidan eng yuqori ballisi tanlanadi.", "ℹ️")
 
-    return in_stock_items
+    # 4. Top-Score bo'yicha kamayish tartibida saralash
+    if sort_by_score:
+        candidates.sort(key=lambda x: x["top_score"], reverse=True)
+
+    return candidates
 
 
 def fetch_single_product(product_id):
@@ -92,7 +135,10 @@ def fetch_single_product(product_id):
     res = requests.get(url, headers=get_supabase_headers(), timeout=15)
     if res.status_code != 200 or not res.json():
         raise Exception(f"Mahsulot topilmadi: {product_id}")
-    return res.json()[0]
+    p = res.json()[0]
+    p["top_score"] = calculate_product_score(p)
+    p["real_stock"] = get_product_real_stock(p)
+    return p
 
 
 # --- GROQ AI MARKETING COPYWRITER ---
@@ -173,7 +219,7 @@ def publish_to_instagram_reels(video_url, caption):
     """Instagram Reels'ga video joylaydi (to'g'ridan-to'g'ri yoki velari.uz ko'prigi orqali)."""
     log("Instagram Reels ga joylash boshlanmoqda...", "📲")
 
-    # Usul 1: Direct Meta Graph API
+    # Usul 1: Direct Meta Graph API (agar O'zbekistonda bloklanmagan bo'lsa)
     try:
         log("1-urinish: To'g'ridan-to'g'ri Meta Graph API ga ulanish...", "🌐")
         container_res = requests.post(
@@ -185,7 +231,7 @@ def publish_to_instagram_reels(video_url, caption):
                 "share_to_feed": True,
                 "access_token": PAGE_TOKEN
             },
-            timeout=10
+            timeout=8
         )
         c_data = container_res.json()
         if "id" in c_data:
@@ -196,7 +242,7 @@ def publish_to_instagram_reels(video_url, caption):
                 time.sleep(3)
                 st_res = requests.get(
                     f"https://graph.facebook.com/v20.0/{creation_id}?fields=status_code&access_token={PAGE_TOKEN}",
-                    timeout=10
+                    timeout=8
                 )
                 status_code = st_res.json().get("status_code")
                 if status_code == "FINISHED":
@@ -204,7 +250,7 @@ def publish_to_instagram_reels(video_url, caption):
                     pub_res = requests.post(
                         f"https://graph.facebook.com/v20.0/{IG_ID}/media_publish",
                         json={"creation_id": creation_id, "access_token": PAGE_TOKEN},
-                        timeout=10
+                        timeout=8
                     )
                     pub_data = pub_res.json()
                     if "id" in pub_data:
@@ -217,13 +263,26 @@ def publish_to_instagram_reels(video_url, caption):
     # Usul 2: Velari.uz xavfsiz server ko'prigi (xorijiy server orqali)
     log("2-urinish: Velari.uz xavfsiz server ko'prigi orqali yuborilmoqda...", "🌉")
     bridge_url = f"{BASE_URL}/api/admin/instagram/publish-reel"
+    token = create_admin_jwt_token(ADMIN_SECRET) if ADMIN_SECRET else ""
+    headers = {
+        "Content-Type": "application/json",
+        "x-admin-secret": ADMIN_SECRET,
+        "Authorization": f"Bearer {ADMIN_SECRET}"
+    }
+    cookies = {"admin_token": token} if token else {}
+    payload = {
+        "videoUrl": video_url,
+        "caption": caption,
+        "secret": ADMIN_SECRET,
+        "pageAccessToken": PAGE_TOKEN,
+        "instagramAccountId": IG_ID
+    }
+
     res = requests.post(
         bridge_url,
-        json={
-            "videoUrl": video_url,
-            "caption": caption,
-            "secret": ADMIN_SECRET
-        },
+        json=payload,
+        headers=headers,
+        cookies=cookies,
         timeout=60
     )
 
@@ -231,16 +290,22 @@ def publish_to_instagram_reels(video_url, caption):
         data = res.json()
         return {"success": True, "reel_id": data.get("reelId"), "url": data.get("url")}
     else:
-        raise Exception(f"Instagramga joylashda xatolik: {res.text}")
+        raise Exception(f"Instagramga joylashda xatolik ({res.status_code}): {res.text}")
 
 
 # --- TO'LIQ ISH OQIMI (WORKFLOW) ---
 def process_and_publish_product(product, custom_script=None, is_test=False):
     """Har qanday mahsulot yoki maxsus ssenariy uchun to'liq Reels oqimini bajaradi."""
     title = product.get("name_uz") or product.get("name") or "Mahsulot"
+    real_stock = get_product_real_stock(product)
+
+    # Qat'iy qoldiq tekshiruvi (omborda yo'q tovar hech qachon ishlanmaydi)
+    if not is_product_in_stock(product):
+        log(f"XATOLIK: '{title}' mahsuloti omborda mavjud emas (qoldiq: {real_stock}). Jarayon to'xtatildi!", "❌")
+        return {"success": False, "error": "Product out of stock"}
+
     price = int(product.get("price") or 0)
     old_price = int(product.get("old_price") or int(price * 1.35))
-    real_stock = get_product_real_stock(product)
 
     raw_images = product.get("images") or []
     if isinstance(raw_images, str):
@@ -305,9 +370,17 @@ def process_and_publish_product(product, custom_script=None, is_test=False):
     # Instagramga joylash
     result = publish_to_instagram_reels(s3_url, caption)
 
-    # Tarixga yozish
+    # Supabase reels jadvaliga va lokal tarixga yozish
     pid = str(product.get("id", ""))
-    record_posted_history(pid, title, result.get("url", ""))
+    record_posted_history(
+        product_id=pid,
+        product_title=title,
+        instagram_url=result.get("url", ""),
+        video_url=s3_url,
+        reel_id=str(result.get("reel_id", "")),
+        price=price,
+        image=(raw_images[0] if raw_images else "")
+    )
 
     print("\n" + "=" * 60)
     print("🏆 TABRIKLAYMIZ! REELS MUVAFFAQIYATLI CHOP ETILDI!")
@@ -320,41 +393,58 @@ def process_and_publish_product(product, custom_script=None, is_test=False):
 
 def run(product_id=None, is_test=False):
     print("=" * 60)
-    print("🚀 VELARI AI REELS BOT ISHGA TUSHIRILDI")
+    mode_str = " [TEST REJIMI]" if is_test else ""
+    print(f"🚀 VELARI AI REELS BOT ISHGA TUSHIRILDI{mode_str}")
     print("=" * 60)
 
-    # 1. Sozlamalarni tekshirish
-    if not validate_credentials():
+    # 1. Sozlamalarni tekshirish (test rejimida faqat kerakli kalitlar tekshiriladi)
+    if not validate_credentials(is_test=is_test):
         return
 
     # 2. Tovarni aniqlash
     if product_id:
         product = fetch_single_product(product_id)
         if not is_product_in_stock(product):
-            log(f"Diqqat: Ushbu tovar omborda mavjud emas (qoldiq: 0).", "⚠️")
+            stock_qty = get_product_real_stock(product)
+            log(f"XATOLIK: Ushbu tovar omborda mavjud emas (qoldiq: {stock_qty}). Jarayon to'xtatildi!", "❌")
+            return
     else:
-        products = fetch_products(limit=50, only_unposted=True)
+        # Barcha mahsulotlar ichidan Top-Score bo'yicha eng yuqori baholanganni tanlash
+        products = fetch_products(only_unposted=True, sort_by_score=True)
         if not products:
             log("Sotuvda mavjud bo'lgan chiqarilmagan mahsulot topilmadi!", "❌")
             return
-        product = random.choice(products)
+
+        log("Top 3 ta yetakchi nomzod (Top-Score tahlili):", "📊")
+        for idx, cand in enumerate(products[:3], 1):
+            c_name = (cand.get("name_uz") or cand.get("name") or "")[:35]
+            c_score = cand.get("top_score", 0)
+            c_views = cand.get("total_views", 0)
+            c_sales = cand.get("sales", 0)
+            c_stock = cand.get("real_stock", 0)
+            log(f"   {idx}. {c_name:<35} | Score: {c_score:<5.2f} (Ko'rish: {c_views}, Sotuv: {c_sales}) | Qoldiq: {c_stock}")
+
+        product = products[0]
+        log(f"Top-Score g'olibi tanlandi: '{product.get('name_uz') or product.get('name')}' (Score: {product.get('top_score')})", "🏆")
 
     process_and_publish_product(product, is_test=is_test)
 
 
 def list_products():
-    print("\n📦 BAZADAGI SOTUVDA BOR MAHSULOTLAR (UNIFIED STOCK BO'YICHA):")
-    print("-" * 75)
-    products = fetch_products(limit=30, only_unposted=False)
+    print("\n📦 BAZADAGI BARCHA SOTUVDA BOR MAHSULOTLAR (TOP-SCORE BO'YICHA):")
+    print("=" * 88)
+    products = fetch_products(only_unposted=False, sort_by_score=True)
     posted_set = load_posted_history()
-    for i, p in enumerate(products, 1):
-        name = (p.get("name_uz") or p.get("name") or "")[:40]
+    for i, p in enumerate(products[:30], 1):
+        name = (p.get("name_uz") or p.get("name") or "")[:38]
         price = p.get("price") or 0
-        stock = get_product_real_stock(p)
+        stock = p.get("real_stock", 0)
+        score = p.get("top_score", 0)
         pid = str(p.get("id"))
         status = "✅ E'lon qilingan" if pid in posted_set else "⏳ Kutmoqda"
-        print(f"{i:2d}. [{pid[:8]}...] {name:<40} | {price:>8,} so'm | Qoldiq: {stock:3d} | {status}")
-    print("-" * 75)
+        print(f"{i:2d}. [{pid[:8]}...] {name:<38} | Score: {score:>5.2f} | {price:>8,} so'm | Qoldiq: {stock:3d} | {status}")
+    print("=" * 88)
+    print(f"Jami sotuvda bor mahsulotlar soni: {len(products)} ta")
     print("Muayyan tovar uchun video yasash: python velari_ai_audio/run_reels_bot.py --product-id <ID>\n")
 
 

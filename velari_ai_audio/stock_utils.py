@@ -48,3 +48,20 @@ def get_product_real_stock(product: dict) -> int:
 def is_product_in_stock(product: dict) -> bool:
     """Mahsulot sotuvda bor-yo'qligini tekshiradi."""
     return get_product_real_stock(product) > 0
+
+
+def calculate_product_score(product: dict) -> float:
+    """Barcha mahsulotlar uchun universal Top-Score reyting formulasi:
+    views (0.05) + sales (0.1) + rating (0.4) + discount_pct (0.02)
+    """
+    views = float(product.get("total_views") or 0)
+    sales = float(product.get("sales") or 0)
+    rating = float(product.get("avg_rating") or 0.0)
+
+    price = float(product.get("price") or 0)
+    old_price = float(product.get("old_price") or 0)
+    discount_pct = round(((old_price - price) / old_price) * 100, 1) if old_price > price else 0.0
+
+    score = (views * 0.05) + (sales * 0.1) + (rating * 0.4) + (discount_pct * 0.02)
+    return round(score, 3)
+
