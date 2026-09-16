@@ -1,123 +1,70 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+VELARI AUTO REELS SCHEDULER
+===========================
+Uch bosqichli professional Instagram Reels avtomatlashtirish tizimi:
+  1-Bosqich (Priority 1): ready_queue papkasida qo'lda tashlangan tayyor video bo'lsa -> S3 ga yuklaydi va Instagramga chiqaradi.
+  2-Bosqich (Priority 2): custom_scripts_queue.json da yozilgan maxsus insoniy ssenariy bo'lsa -> video yasab Instagramga chiqaradi.
+  3-Bosqich (Priority 3): Real Supabase bazasidan eng ko'p ko'rilgan va sotilgan (Top Score) tovar tanlanadi -> Groq AI ssenariy yozadi -> render qilinadi -> Instagramga chiqariladi.
+
+Foydalanish:
+    python velari_ai_audio/auto_reels_scheduler.py
+    python velari_ai_audio/auto_reels_scheduler.py --test
+    python velari_ai_audio/auto_reels_scheduler.py --interval 24
+"""
+
 import os
 import sys
 import glob
 import json
 import time
-import urllib.request
-import urllib.parse
-import subprocess
+import argparse
 
-sys.stdout.reconfigure(encoding='utf-8')
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, SCRIPT_DIR)
 
-OUTPUT_DIR = r"D:\Desktop\velari_ai_audio"
-READY_QUEUE_DIR = os.path.join(OUTPUT_DIR, "ready_queue")
-SCRIPT_QUEUE_FILE = os.path.join(OUTPUT_DIR, "custom_scripts_queue.json")
-LOG_FILE = os.path.join(OUTPUT_DIR, "auto_bot.log")
+from config import (
+    READY_QUEUE_DIR,
+    SCRIPT_QUEUE_FILE,
+    LOG_FILE,
+    BASE_URL,
+    validate_credentials,
+    record_posted_history,
+)
+from stock_utils import is_product_in_stock, get_product_real_stock
+from run_reels_bot import (
+    fetch_products,
+    fetch_single_product,
+    upload_video_to_s3,
+    publish_to_instagram_reels,
+    process_and_publish_product,
+)
 
-# Load credentials securely from .env.local
-ENV_PATH = os.path.join(os.path.dirname(OUTPUT_DIR), ".env.local")
-ENV_VARS = {}
-if os.path.exists(ENV_PATH):
-    with open(ENV_PATH, "r", encoding="utf-8") as ef:
-        for eline in ef:
-            eline = eline.strip()
-            if eline and not eline.startswith("#") and "=" in eline:
-                ek, ev = eline.split("=", 1)
-                ENV_VARS[ek.strip()] = ev.strip().strip('"').strip("'")
 
-PAGE_TOKEN = os.getenv("INSTAGRAM_PAGE_ACCESS_TOKEN") or ENV_VARS.get("INSTAGRAM_PAGE_ACCESS_TOKEN", "")
-IG_ID = os.getenv("INSTAGRAM_BUSINESS_ACCOUNT_ID") or ENV_VARS.get("INSTAGRAM_BUSINESS_ACCOUNT_ID", "17841446090191717")
-GROQ_API_KEY = os.getenv("GROQ_API_KEY_1") or os.getenv("GROQ_API_KEY") or ENV_VARS.get("GROQ_API_KEY_1", "")
-
-# SAMPLE DATABASE OF PRODUCTS WITH TELEMETRY METRICS
-DATABASE_PRODUCTS = [
-    {
-        "id": 101,
-        "title": "POLARIS OSHXONA MIKSERI",
-        "price": 550000,
-        "old_price": 1100000,
-        "total_views": 1420,
-        "sales": 185,
-        "avg_rating": 4.9,
-        "posted_to_ig": True, # Already posted -> Bot will skip this!
-        "image_urls": [
-            "https://storage.yandexcloud.net/savdomarketimag/images/10110/1775413342552_Gemini_Generated_Image_26dpnw26dpnw26dp.jpg",
-            "https://storage.yandexcloud.net/savdomarketimag/images/10110/1775413343988_Gemini_Generated_Image_ae52fbae52fbae52.jpg"
-        ]
-    },
-    {
-        "id": 102,
-        "title": "UAKEEN AVTOMATIK KOFEMASHINA",
-        "price": 1299000,
-        "old_price": 3897000,
-        "total_views": 3890,
-        "sales": 412,
-        "avg_rating": 5.0,
-        "posted_to_ig": False, # NOT POSTED -> HIGHEST TOP SCORE -> BOT WILL PICK THIS!
-        "image_urls": [
-            "https://storage.yandexcloud.net/savdomarketimag/images/10110/1775413345473_Gemini_Generated_Image_ufg35gufg35gufg3.jpg",
-            "https://storage.yandexcloud.net/savdomarketimag/images/10110/1775413343988_Gemini_Generated_Image_ae52fbae52fbae52.jpg",
-            "https://storage.yandexcloud.net/savdomarketimag/images/10110/1775413342552_Gemini_Generated_Image_26dpnw26dpnw26dp.jpg"
-        ]
-    },
-    {
-        "id": 103,
-        "title": "VGR PROFESSIONAL SOCH FENI",
-        "price": 320000,
-        "old_price": 640000,
-        "total_views": 2150,
-        "sales": 230,
-        "avg_rating": 4.8,
-        "posted_to_ig": False,
-        "image_urls": [
-            "https://storage.yandexcloud.net/savdomarketimag/images/10110/1775413342552_Gemini_Generated_Image_26dpnw26dpnw26dp.jpg"
-        ]
-    }
-]
-
-def log(msg):
+def log(msg, emoji="ℹ️"):
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-    entry = f"[{timestamp}] {msg}"
+    entry = f"[{timestamp}] {emoji} {msg}"
     print(entry, flush=True)
-    with open(LOG_FILE, "a", encoding="utf-8") as f:
-        f.write(entry + "\n")
+    try:
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(entry + "\n")
+    except Exception:
+        pass
 
-def calculate_top_score(product):
+
+def calculate_top_score(product: dict) -> float:
     """FORMULA: Top Score = (total_views * 0.05) + (sales * 0.1) + (avg_rating * 0.4)"""
-    views = product.get('total_views', 0)
-    sales = product.get('sales', 0)
-    rating = product.get('avg_rating', 0.0)
+    views = float(product.get("total_views") or 0)
+    sales = float(product.get("sales") or 0)
+    rating = float(product.get("avg_rating") or 0.0)
     score = (views * 0.05) + (sales * 0.1) + (rating * 0.4)
     return round(score, 2)
 
-def fetch_next_top_unposted_product():
-    """Dynamically ranks database products by Top Score and finds the highest unposted item!"""
-    log("🔍 Analyzing database products by TOP-SCORE formula...")
-    
-    ranked_products = []
-    for p in DATABASE_PRODUCTS:
-        score = calculate_top_score(p)
-        p_copy = dict(p)
-        p_copy['top_score'] = score
-        ranked_products.append(p_copy)
-
-    # Sort descending by top score!
-    ranked_products.sort(key=lambda x: x['top_score'], reverse=True)
-
-    for p in ranked_products:
-        status_str = "QILINGAN (SKIP)" if p['posted_to_ig'] else "QILINMAGAN (TANLANDI)"
-        log(f"   📊 ID {p['id']} - {p['title']} | Score: {p['top_score']} (Views:{p['total_views']}, Sales:{p['sales']}) -> {status_str}")
-
-    for p in ranked_products:
-        if not p['posted_to_ig']:
-            log(f"🎯 WINNER TOP PRODUCT SELECTED: '{p['title']}' (Score: {p['top_score']})")
-            return p
-
-    log("⚠️ All top products have already been posted!")
-    return None
 
 def check_priority_1_ready_video():
-    """1-Bosqich: Tayyor Video Bormi?"""
+    """1-Bosqich: ready_queue papkasida tayyor video bormi?"""
     if not os.path.exists(READY_QUEUE_DIR):
         return None
     videos = glob.glob(os.path.join(READY_QUEUE_DIR, "*.mp4"))
@@ -126,19 +73,20 @@ def check_priority_1_ready_video():
         return videos[0]
     return None
 
+
 def check_priority_2_custom_script():
-    """2-Bosqich: Biz Yozgan Insoniy SMM Matn Bormi?"""
+    """2-Bosqich: custom_scripts_queue.json da maxsus yozilgan ssenariy bormi?"""
     if not os.path.exists(SCRIPT_QUEUE_FILE):
         return None
     try:
         with open(SCRIPT_QUEUE_FILE, "r", encoding="utf-8") as f:
             queue = json.load(f)
         if queue and len(queue) > 0:
-            item = queue[0]
-            return item
+            return queue[0]
     except Exception as e:
-        log(f"Error reading script queue: {e}")
+        log(f"Ssenariylar navbatini o'qishda xatolik: {e}", "⚠️")
     return None
+
 
 def remove_first_custom_script():
     if os.path.exists(SCRIPT_QUEUE_FILE):
@@ -150,112 +98,137 @@ def remove_first_custom_script():
                 with open(SCRIPT_QUEUE_FILE, "w", encoding="utf-8") as f:
                     json.dump(queue, f, ensure_ascii=False, indent=2)
         except Exception as e:
-            log(f"Error updating script queue: {e}")
+            log(f"Ssenariylar navbatini yangilashda xato: {e}", "⚠️")
 
-def generate_groq_script(product_name, price, old_price):
-    """3-Bosqich: Groq AI Avto-Senariy Fallback"""
-    discount = round(((old_price - price) / old_price) * 100)
-    
-    prompt = f"""Siz professional Uzbek SMM copywriterisiz.
-Quyidagi mahsulot uchun Instagram Reels videosiga 3 qismli ravon, insoniy, e'tiborni tortuvchi O'ZBEKCHA SMM senariy yozib bering.
 
-Mahsulot: {product_name}
-Eski narxi: {old_price:,} so'm
-Yangi narxi: {price:,} so'm
-Chegirma: {discount}%
+def select_top_product_from_supabase():
+    """Supabase'dan faqat omborda bor va hali chiqarilmagan tovarlarni Top-Score bo'yicha saralaydi."""
+    log("Supabase'dan tovarlar olinmoqda va TOP-SCORE formulasi bo'yicha tahlil qilinmoqda...", "🔍")
+    products = fetch_products(limit=100, only_unposted=True)
 
-MUHIM QOIDALAR:
-1. Senariydan BARCHA RAQAMLAR, MODELLAR VA SIFRLARNI O'CHIRING! (Masalan: 1100W, ZL-1503, 20 Bar, 67% umuman bo'lmasin!).
-2. Narxi va chegirma foizini faqat SO'ZLAR BILAN YOZING (Masalan: 'bir million ikki yuz to'qson to'qqiz ming so'm', 'oltmish yetti foiz chegirmada').
-3. Matn davomiyligi 20-25 soniya atrofida o'qiladigan bo'lsin.
-4. Javobda faqat o'qiladigan matn berilsin, ortiqcha izohlar bo'lmasin.
-"""
+    if not products:
+        log("Sotuvda mavjud bo'lgan chiqarilmagan mahsulot qolmadi!", "⚠️")
+        return None
 
-    payload = {
-        "model": "llama-3.3-70b-versatile",
-        "messages": [
-            {"role": "system", "content": "Siz Uzbek SMM copywriterisiz."},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.7
-    }
+    ranked = []
+    for p in products:
+        score = calculate_top_score(p)
+        p_copy = dict(p)
+        p_copy["top_score"] = score
+        p_copy["real_stock"] = get_product_real_stock(p)
+        ranked.append(p_copy)
 
-    req = urllib.request.Request(
-        "https://api.groq.com/openai/v1/chat/completions",
-        data=json.dumps(payload).encode('utf-8'),
-        headers={
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-        },
-        method="POST"
-    )
+    # Top-Score bo'yicha kamayish tartibida saralash
+    ranked.sort(key=lambda x: x["top_score"], reverse=True)
 
-    with urllib.request.urlopen(req) as resp:
-        res = json.loads(resp.read().decode('utf-8'))
-        return res['choices'][0]['message']['content'].strip()
+    # Dastlabki 3 ta tovar haqida log yozish
+    log(f"Top 3 ta nomzod:", "📊")
+    for idx, p in enumerate(ranked[:3], 1):
+        name = (p.get("name_uz") or p.get("name") or "")[:35]
+        log(f"   {idx}. {name:<35} | Score: {p['top_score']} (Ko'rishlar:{p.get('total_views', 0)}, Sotuv:{p.get('sales', 0)}) | Qoldiq: {p['real_stock']}")
 
-def run_auto_daily_task():
-    log("==================================================")
-    log("🤖 AUTO REELS BOT: Daily Posting Task Started...")
+    winner = ranked[0]
+    log(f"G'olib tovar tanlandi: '{winner.get('name_uz') or winner.get('name')}' (Score: {winner['top_score']})", "🎯")
+    return winner
 
-    # Step 1: Check Priority 1 (Ready Video)
+
+def run_auto_daily_task(is_test=False):
+    log("=" * 60)
+    log("🤖 AUTO REELS BOT: Kunlik topshiriq boshlandi...", "🚀")
+    log("=" * 60)
+
+    if not validate_credentials():
+        return
+
+    # ----------------------------------------------------
+    # Step 1: Priority 1 (Tayyor video tekshiruvi)
+    # ----------------------------------------------------
     ready_video = check_priority_1_ready_video()
     if ready_video:
-        log(f"✅ PRIORITY 1 FOUND: Ready-made video in queue -> {os.path.basename(ready_video)}")
-        log(f"🚀 Video published to Instagram Reels successfully!")
-        
+        vid_name = os.path.basename(ready_video)
+        log(f"1-USTUVORLIK TOPILDI: Navbatda tayyor video mavjud -> {vid_name}", "✅")
+
+        if is_test:
+            log(f"TEST REJIMI: Tayyor video topildi ({ready_video}), lekin Instagramga yuklanmadi.", "🧪")
+            return
+
+        s3_url = upload_video_to_s3(ready_video, f"ready_{int(time.time())}_{vid_name}")
+        caption = f"🛍 Yangi mahsulot Velari do'konida!\n\nBuyurtma berish uchun bio-dagi saytimizga kiring:\n👉 {BASE_URL}\n\n#velari #reels #yangilik"
+        res = publish_to_instagram_reels(s3_url, caption)
+        log(f"Reels Instagramga chiqarildi: {res.get('url')}", "🎉")
+
         try:
             os.remove(ready_video)
-            log(f"🗑️ Deleted posted video from queue: {os.path.basename(ready_video)}")
+            log(f"Chiqarilgan video navbatdan o'chirildi: {vid_name}", "🗑️")
         except Exception as e:
-            log(f"Error deleting video file: {e}")
+            log(f"Faylni o'chirishda xato: {e}", "⚠️")
         return
 
-    # Step 2: Check Priority 2 (Custom Human Script)
+    # ----------------------------------------------------
+    # Step 2: Priority 2 (Maxsus yozilgan ssenariy)
+    # ----------------------------------------------------
     custom_item = check_priority_2_custom_script()
     if custom_item:
-        log(f"✅ PRIORITY 2 FOUND: Pre-written Custom Script for '{custom_item['title']}'")
-        
-        imgs = custom_item.get('image_urls', custom_item.get('image_url'))
-        
-        from render_product_reels import build_product_reels
-        rendered_mp4 = build_product_reels(
-            custom_item['title'],
-            custom_item['price'],
-            custom_item['old_price'],
-            imgs,
-            custom_item['script']
-        )
-        
-        log(f"🚀 Rendered & Published '{custom_item['title']}' Reels to Instagram!")
-        remove_first_custom_script()
-        log(f"🗑️ Custom script removed from queue.")
+        title = custom_item.get("title", "Maxsus tovar")
+        log(f"2-USTUVORLIK TOPILDI: '{title}' uchun maxsus yozilgan ssenariy topildi.", "✅")
+
+        # Agar tovar ID berilgan bo'lsa bazadan oladi
+        product = None
+        if custom_item.get("product_id"):
+            try:
+                product = fetch_single_product(custom_item["product_id"])
+            except Exception:
+                product = None
+
+        if not product:
+            product = {
+                "name_uz": title,
+                "price": custom_item.get("price", 250000),
+                "old_price": custom_item.get("old_price", 400000),
+                "images": custom_item.get("image_urls") or custom_item.get("image_url") or [],
+                "stock": 10,
+                "id": custom_item.get("product_id", f"custom_{int(time.time())}")
+            }
+
+        process_and_publish_product(product, custom_script=custom_item.get("script"), is_test=is_test)
+
+        if not is_test:
+            remove_first_custom_script()
+            log("Maxsus ssenariy navbatdan olib tashlandi.", "🗑️")
         return
 
-    # Step 3: Priority 3 Fallback (Database TOP PRODUCT Selection + Groq AI)
-    log("ℹ️ PRIORITY 3 FALLBACK: Fetching next TOP UNPOSTED Product from DB...")
-    
-    top_item = fetch_next_top_unposted_product()
-    if not top_item:
-        log("❌ No unposted top product found.")
+    # ----------------------------------------------------
+    # Step 3: Priority 3 Fallback (Real Supabase Top Score)
+    # ----------------------------------------------------
+    log("3-USTUVORLIK: Supabase bazasidan eng yuqori reytingli tovar tanlanmoqda...", "ℹ️")
+    top_product = select_top_product_from_supabase()
+    if not top_product:
+        log("Chiqarish uchun munosib tovar topilmadi.", "❌")
         return
-        
-    log(f"Generating AI SMM script for '{top_item['title']}'...")
-    ai_script = generate_groq_script(top_item['title'], top_item['price'], top_item['old_price'])
-    log(f"AI Script generated: '{ai_script[:60]}...'")
 
-    from render_product_reels import build_product_reels
-    rendered_mp4 = build_product_reels(
-        top_item['title'],
-        top_item['price'],
-        top_item['old_price'],
-        top_item['image_urls'],
-        ai_script
-    )
-    
-    log(f"🚀 Top Product Reels rendered & published successfully: {rendered_mp4}")
-    log(f"✅ Database updated: '{top_item['title']}' posted_to_ig set to TRUE.")
+    process_and_publish_product(top_product, is_test=is_test)
+
+
+def start_scheduler_loop(interval_hours=24, is_test=False):
+    log(f"Avtomatik rejalashtiruvchi ishga tushdi (Har {interval_hours} soatda bir marta).", "⏰")
+    try:
+        while True:
+            run_auto_daily_task(is_test=is_test)
+            sleep_sec = interval_hours * 3600
+            log(f"Keyingi nashrgacha kutilmoqda: {interval_hours} soat ({sleep_sec} soniya)...", "⏳")
+            time.sleep(sleep_sec)
+    except KeyboardInterrupt:
+        log("Rejalashtiruvchi foydalanuvchi tomonidan to'xtatildi.", "🛑")
+
 
 if __name__ == "__main__":
-    run_auto_daily_task()
+    parser = argparse.ArgumentParser(description="Velari Auto Reels Scheduler")
+    parser.add_argument("--test", action="store_true", help="Faqat video yasash, Instagramga yuklamaslik")
+    parser.add_argument("--interval", type=int, default=0, help="Takroriy davriy ishlash (soatda). 0 = bir marta ishlash")
+
+    args = parser.parse_args()
+
+    if args.interval > 0:
+        start_scheduler_loop(interval_hours=args.interval, is_test=args.test)
+    else:
+        run_auto_daily_task(is_test=args.test)

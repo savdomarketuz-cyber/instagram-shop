@@ -20,17 +20,6 @@ import json
 import time
 import random
 import argparse
-import urllib.request
-import urllib.parse
-import subprocess
-
-# UTF-8 stdout
-if sys.stdout.encoding != 'utf-8':
-    try:
-        sys.stdout.reconfigure(encoding='utf-8')
-    except Exception:
-        pass
-
 import requests
 import boto3
 
@@ -38,32 +27,25 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 if SCRIPT_DIR not in sys.path:
     sys.path.insert(0, SCRIPT_DIR)
 
+from config import (
+    SUPABASE_URL,
+    SUPABASE_KEY,
+    GROQ_API_KEY,
+    S3_ENDPOINT,
+    S3_ACCESS_KEY,
+    S3_SECRET_KEY,
+    S3_BUCKET,
+    S3_REGION,
+    IG_ID,
+    PAGE_TOKEN,
+    ADMIN_SECRET,
+    BASE_URL,
+    validate_credentials,
+    load_posted_history,
+    record_posted_history,
+)
+from stock_utils import is_product_in_stock, get_product_real_stock
 from render_product_reels import build_product_reels, OUTPUT_DIR
-
-# --- 1. CONFIG LOADER (.env.local) ---
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ENV_LOCAL_PATH = os.path.join(PROJECT_ROOT, ".env.local")
-
-CONFIG = {}
-if os.path.exists(ENV_LOCAL_PATH):
-    with open(ENV_LOCAL_PATH, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                k, v = line.split("=", 1)
-                CONFIG[k.strip()] = v.strip().strip('"').strip("'")
-
-SUPABASE_URL = CONFIG.get("NEXT_PUBLIC_SUPABASE_URL", "https://slmbethqqqugnktxwzdz.supabase.co")
-SUPABASE_KEY = CONFIG.get("SUPABASE_SERVICE_ROLE_KEY", "")
-GROQ_API_KEY = CONFIG.get("GROQ_API_KEY_1") or CONFIG.get("GROQ_API_KEY", "")
-S3_ACCESS_KEY = CONFIG.get("YANDEX_S3_ACCESS_KEY", "")
-S3_SECRET_KEY = CONFIG.get("YANDEX_S3_SECRET_KEY", "")
-S3_BUCKET = CONFIG.get("YANDEX_S3_BUCKET", "savdomarketimag")
-S3_REGION = CONFIG.get("YANDEX_S3_REGION", "ru-central1")
-IG_ID = CONFIG.get("INSTAGRAM_BUSINESS_ACCOUNT_ID", "17841446090191717")
-PAGE_TOKEN = CONFIG.get("INSTAGRAM_PAGE_ACCESS_TOKEN", "")
-ADMIN_SECRET = CONFIG.get("ADMIN_SECRET", "velari-admin-secret-2024")
-BASE_URL = "https://velari.uz"
 
 
 def log(msg, emoji="ℹ️"):
@@ -71,7 +53,7 @@ def log(msg, emoji="ℹ️"):
     print(f"[{now}] {emoji} {msg}", flush=True)
 
 
-# --- 2. SUPABASE HELPER ---
+# --- SUPABASE INTEGRATION ---
 def get_supabase_headers():
     return {
         "apikey": SUPABASE_KEY,
@@ -80,15 +62,32 @@ def get_supabase_headers():
     }
 
 
-def fetch_products(limit=50):
-    url = f"{SUPABASE_URL}/rest/v1/products?select=id,name_uz,name,price,old_price,images,image,stock,description_uz,description&stock=gt.0&is_deleted=eq.false&limit={limit}"
+def fetch_products(limit=100, only_unposted=True):
+    """Supabase'dan tovarlarni oladi va Unified Stock bo'yicha filtrlaydi."""
+    url = (
+        f"{SUPABASE_URL}/rest/v1/products"
+        f"?select=id,name_uz,name,price,old_price,images,image,stock,stock_details,description_uz,description,sales,total_views,avg_rating"
+        f"&is_deleted=eq.false&limit={limit}"
+    )
     res = requests.get(url, headers=get_supabase_headers(), timeout=15)
     if res.status_code != 200:
         raise Exception(f"Supabase xatosi ({res.status_code}): {res.text}")
-    return res.json()
+
+    items = res.json()
+    # 1. Unified Stock tekshiruvi (faqat omborda bor tovarlar)
+    in_stock_items = [p for p in items if is_product_in_stock(p)]
+
+    # 2. Instagramga allaqachon chiqarilgan tovarlarni chiqarib tashlash
+    if only_unposted:
+        posted_set = load_posted_history()
+        unposted = [p for p in in_stock_items if str(p.get("id")) not in posted_set]
+        return unposted if unposted else in_stock_items
+
+    return in_stock_items
 
 
 def fetch_single_product(product_id):
+    """Aniq bitta mahsulotni ID bo'yicha oladi."""
     url = f"{SUPABASE_URL}/rest/v1/products?id=eq.{product_id}&is_deleted=eq.false"
     res = requests.get(url, headers=get_supabase_headers(), timeout=15)
     if res.status_code != 200 or not res.json():
@@ -96,8 +95,9 @@ def fetch_single_product(product_id):
     return res.json()[0]
 
 
-# --- 3. GROQ AI MARKETING COPYWRITER ---
+# --- GROQ AI MARKETING COPYWRITER ---
 def generate_smm_script(product_name, price, old_price):
+    """Groq AI orqali 20-25 soniyalik o'zbekcha marketing matnini tuzadi."""
     log("Groq AI orqali o'zbekcha professional SMM senariy yozilmoqda...", "🧠")
     discount = round(((old_price - price) / old_price) * 100) if old_price > price else 25
 
@@ -111,7 +111,7 @@ Chegirma: {discount}%
 
 QAT'IY QOIDALAR:
 1. Matnda BIRORTA HAM RAQAM, MODEL NOMI YOKI BELGI BO'LMASIN! (Masalan: '1100W', 'V-099', '2026', '50%' aslo bo'lmasin).
-2. Narxi va chegirmalarni FAFAQAT O'ZBEKCHA SO'ZLAR BILAN YOZING! (Masalan: 'bir yuz to'qson to'qqiz ming so'm', 'o'ttiz foiz chegirmada').
+2. Narxi va chegirmalarni FAQAT O'ZBEKCHA SO'ZLAR BILAN YOZING! (Masalan: 'bir yuz to'qson to'qqiz ming so'm', 'o'ttiz foiz chegirmada').
 3. Matn oxirida 'Buyurtma berish uchun saytimizga kiring' degan chaqiriq bo'lsin.
 4. Javobda faqat diktor o'qiydigan sof matnni bering, boshqa hech qanday izoh yoki sarlavha yozmang.
 """
@@ -139,13 +139,14 @@ QAT'IY QOIDALAR:
     return content
 
 
-# --- 4. YANDEX S3 UPLOADER ---
+# --- YANDEX S3 UPLOADER ---
 def upload_video_to_s3(local_file_path, s3_filename):
+    """Videoni Yandex S3 bulutiga yuklab, ommaviy havola qaytaradi."""
     log(f"Video Yandex S3 bulutiga yuklanmoqda ({os.path.basename(local_file_path)})...", "☁️")
 
     s3 = boto3.client(
         "s3",
-        endpoint_url="https://storage.yandexcloud.net",
+        endpoint_url=S3_ENDPOINT,
         region_name=S3_REGION,
         aws_access_key_id=S3_ACCESS_KEY,
         aws_secret_access_key=S3_SECRET_KEY
@@ -162,16 +163,17 @@ def upload_video_to_s3(local_file_path, s3_filename):
         }
     )
 
-    public_url = f"https://storage.yandexcloud.net/{S3_BUCKET}/{key}"
+    public_url = f"{S3_ENDPOINT}/{S3_BUCKET}/{key}"
     log(f"Video Yandex S3 ga yuklandi: {public_url}", "✅")
     return public_url
 
 
-# --- 5. INSTAGRAM REELS PUBLISHER ---
+# --- INSTAGRAM REELS PUBLISHER ---
 def publish_to_instagram_reels(video_url, caption):
+    """Instagram Reels'ga video joylaydi (to'g'ridan-to'g'ri yoki velari.uz ko'prigi orqali)."""
     log("Instagram Reels ga joylash boshlanmoqda...", "📲")
 
-    # Usul 1: Direct Meta Graph API (agar VPN yoki to'g'ridan-to'g'ri internet ishlasa)
+    # Usul 1: Direct Meta Graph API
     try:
         log("1-urinish: To'g'ridan-to'g'ri Meta Graph API ga ulanish...", "🌐")
         container_res = requests.post(
@@ -190,7 +192,6 @@ def publish_to_instagram_reels(video_url, caption):
             creation_id = c_data["id"]
             log(f"Reels konteyner ochildi (ID: {creation_id}). Video ishlanishini kutamiz...", "⏳")
 
-            # Polling
             for _ in range(15):
                 time.sleep(3)
                 st_res = requests.get(
@@ -213,7 +214,7 @@ def publish_to_instagram_reels(video_url, caption):
     except Exception as e:
         log(f"To'g'ridan-to'g'ri ulanishda tarmoq xatosi: {e}", "⚠️")
 
-    # Usul 2: Server Bridge Fallback (velari.uz orqali — 100% ishonchli xorijiy server)
+    # Usul 2: Velari.uz xavfsiz server ko'prigi (xorijiy server orqali)
     log("2-urinish: Velari.uz xavfsiz server ko'prigi orqali yuborilmoqda...", "🌉")
     bridge_url = f"{BASE_URL}/api/admin/instagram/publish-reel"
     res = requests.post(
@@ -233,27 +234,14 @@ def publish_to_instagram_reels(video_url, caption):
         raise Exception(f"Instagramga joylashda xatolik: {res.text}")
 
 
-# --- 6. ASOSIY WORKFLOW ---
-def run(product_id=None, is_test=False):
-    print("=" * 60)
-    print("🚀 VELARI AI REELS BOT ISHGA TUSHIRILDI")
-    print("=" * 60)
-
-    # 1. Tovarni olish
-    if product_id:
-        product = fetch_single_product(product_id)
-    else:
-        products = fetch_products(limit=30)
-        if not products:
-            log("Sotuvda mavjud mahsulot topilmadi!", "❌")
-            return
-        product = random.choice(products)
-
+# --- TO'LIQ ISH OQIMI (WORKFLOW) ---
+def process_and_publish_product(product, custom_script=None, is_test=False):
+    """Har qanday mahsulot yoki maxsus ssenariy uchun to'liq Reels oqimini bajaradi."""
     title = product.get("name_uz") or product.get("name") or "Mahsulot"
     price = int(product.get("price") or 0)
     old_price = int(product.get("old_price") or int(price * 1.35))
+    real_stock = get_product_real_stock(product)
 
-    # Rasmlarni aniqlash
     raw_images = product.get("images") or []
     if isinstance(raw_images, str):
         try:
@@ -264,41 +252,43 @@ def run(product_id=None, is_test=False):
         raw_images = [product["image"]]
 
     if not raw_images:
-        log(f"'{title}' uchun rasm topilmadi. Boshqa tovar tanlang.", "❌")
-        return
+        raise Exception(f"'{title}' uchun rasm topilmadi.")
 
     log(f"Tanlangan tovar: '{title}'", "🎯")
-    log(f"Narxi: {price:,} so'm (Eski: {old_price:,} so'm)", "🏷️")
+    log(f"Narxi: {price:,} so'm (Eski: {old_price:,} so'm) | Qoldiq: {real_stock} dona", "🏷️")
     log(f"Rasmlar soni: {len(raw_images)} ta", "🖼️")
 
-    # 2. AI Marketing Ssenariy
-    script_text = generate_smm_script(title, price, old_price)
+    # Ssenariyni tayyorlash
+    if custom_script:
+        script_text = custom_script
+        log("Tayyor insoniy ssenariy ishlatilmoqda.", "✍️")
+    else:
+        script_text = generate_smm_script(title, price, old_price)
+
     print("\n" + "-" * 50)
-    print(f"📝 TAYYORLANGAN AI SSENARIY:\n{script_text}")
+    print(f"📝 TAYYORLANGAN SSENARIY:\n{script_text}")
     print("-" * 50 + "\n")
 
-    # 3. Video Render (FFmpeg + Pillow)
+    # Video render
     clean_slug = "".join(c if c.isalnum() else "_" for c in title[:20]).strip("_")
     output_filename = f"Reels_{clean_slug}_{int(time.time())}.mp4"
 
     log("Reels videoni render qilish boshlandi (25 FPS, 1080x1920)...", "🎬")
     mp4_path = build_product_reels(title, price, old_price, raw_images, script_text, output_filename)
-
     log(f"Lokal video tayyor: {mp4_path}", "🎉")
 
     if is_test:
         log("TEST REJIMI: Video yaratildi, ammo bulut va Instagramga yuklanmadi.", "🧪")
         print("\nVideoni tomosha qilish uchun ushbu faylni oching:")
         print(f"👉 {mp4_path}\n")
-        return
+        return {"success": True, "test": True, "mp4_path": mp4_path}
 
-    # 4. Yandex S3 ga yuklash
+    # S3 ga yuklash
     s3_url = upload_video_to_s3(mp4_path, output_filename)
 
-    # 5. Instagram Caption tayyorlash
-    product_slug = product.get("slug") or clean_slug.lower()
+    # Instagram Caption
+    product_slug = str(product.get("id"))
     product_url = f"{BASE_URL}/uz/products/{product_slug}"
-
     caption = f"""🛍 {title}
 
 ⚡️ Maxsus narx: {price:,} so'm
@@ -312,8 +302,12 @@ def run(product_id=None, is_test=False):
 
 #velari #velarimarket #reels #onlineshop #uzbekistan #toshkent #chegirma #foydali"""
 
-    # 6. Instagram Reels ga joylash
+    # Instagramga joylash
     result = publish_to_instagram_reels(s3_url, caption)
+
+    # Tarixga yozish
+    pid = str(product.get("id", ""))
+    record_posted_history(pid, title, result.get("url", ""))
 
     print("\n" + "=" * 60)
     print("🏆 TABRIKLAYMIZ! REELS MUVAFFAQIYATLI CHOP ETILDI!")
@@ -321,17 +315,46 @@ def run(product_id=None, is_test=False):
     print(f"🌐 S3 Video URL: {s3_url}")
     print("=" * 60 + "\n")
 
+    return result
+
+
+def run(product_id=None, is_test=False):
+    print("=" * 60)
+    print("🚀 VELARI AI REELS BOT ISHGA TUSHIRILDI")
+    print("=" * 60)
+
+    # 1. Sozlamalarni tekshirish
+    if not validate_credentials():
+        return
+
+    # 2. Tovarni aniqlash
+    if product_id:
+        product = fetch_single_product(product_id)
+        if not is_product_in_stock(product):
+            log(f"Diqqat: Ushbu tovar omborda mavjud emas (qoldiq: 0).", "⚠️")
+    else:
+        products = fetch_products(limit=50, only_unposted=True)
+        if not products:
+            log("Sotuvda mavjud bo'lgan chiqarilmagan mahsulot topilmadi!", "❌")
+            return
+        product = random.choice(products)
+
+    process_and_publish_product(product, is_test=is_test)
+
 
 def list_products():
-    print("\n📦 BAZADAGI SOTUVDA BOR MAHSULOTLAR (TOP 20):")
-    print("-" * 70)
-    products = fetch_products(limit=20)
+    print("\n📦 BAZADAGI SOTUVDA BOR MAHSULOTLAR (UNIFIED STOCK BO'YICHA):")
+    print("-" * 75)
+    products = fetch_products(limit=30, only_unposted=False)
+    posted_set = load_posted_history()
     for i, p in enumerate(products, 1):
-        name = (p.get("name_uz") or p.get("name") or "")[:45]
+        name = (p.get("name_uz") or p.get("name") or "")[:40]
         price = p.get("price") or 0
-        pid = p.get("id")
-        print(f"{i:2d}. [{pid}] {name:<45} | {price:>9,} so'm")
-    print("-" * 70)
+        stock = get_product_real_stock(p)
+        pid = str(p.get("id"))
+        status = "✅ E'lon qilingan" if pid in posted_set else "⏳ Kutmoqda"
+        print(f"{i:2d}. [{pid[:8]}...] {name:<40} | {price:>8,} so'm | Qoldiq: {stock:3d} | {status}")
+    print("-" * 75)
     print("Muayyan tovar uchun video yasash: python velari_ai_audio/run_reels_bot.py --product-id <ID>\n")
 
 

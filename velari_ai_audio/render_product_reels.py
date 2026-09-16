@@ -12,28 +12,14 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 sys.stdout.reconfigure(encoding='utf-8')
 
-DEFAULT_FFMPEG = r"D:\cdvfd\ffmpeg\bin\ffmpeg.exe"
-FFMPEG_PATH = DEFAULT_FFMPEG if os.path.exists(DEFAULT_FFMPEG) else (shutil.which("ffmpeg") or "ffmpeg")
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-OUTPUT_DIR = BASE_DIR
-READY_QUEUE_DIR = os.path.join(OUTPUT_DIR, "ready_queue")
-TEMP_DIR = os.path.join(OUTPUT_DIR, "temp_auto_render")
-
-# Load credentials securely from .env.local
-ENV_PATH = os.path.join(os.path.dirname(BASE_DIR), ".env.local")
-ENV_VARS = {}
-if os.path.exists(ENV_PATH):
-    with open(ENV_PATH, "r", encoding="utf-8") as ef:
-        for eline in ef:
-            eline = eline.strip()
-            if eline and not eline.startswith("#") and "=" in eline:
-                ek, ev = eline.split("=", 1)
-                ENV_VARS[ek.strip()] = ev.strip().strip('"').strip("'")
-
-UZBEKVOICE_API_KEY = os.getenv("UZBEKVOICE_API_KEY") or ENV_VARS.get("UZBEKVOICE_API_KEY", "")
-
-os.makedirs(READY_QUEUE_DIR, exist_ok=True)
-os.makedirs(TEMP_DIR, exist_ok=True)
+from config import (
+    FFMPEG_PATH,
+    OUTPUT_DIR,
+    READY_QUEUE_DIR,
+    TEMP_DIR,
+    UZBEKVOICE_API_KEY,
+    resolve_font_path
+)
 
 # ALL 3 OFFICIAL PHOTOS OF UAKEEN AUTOMATIC COFFEE MACHINE!
 UAKEEN_COFFEE_URLS = [
@@ -160,13 +146,14 @@ def create_bilateral_wave_mask(w, h, frame_idx, wave_amplitude=12):
 
 # PRE-LOADED FONTS (Bir marta xotiraga yuklanadi, har kadrda qayta ochilmaydi)
 try:
-    FONT_TITLE_MARQUEE = ImageFont.truetype("arialbd.ttf", 64)
-    FONT_DISCOUNT_NUM = ImageFont.truetype("arialbd.ttf", 68)
-    FONT_DISCOUNT_LBL = ImageFont.truetype("arialbd.ttf", 24)
-    FONT_OLD_PRICE = ImageFont.truetype("arialbd.ttf", 36)
-    FONT_NEW_PRICE_3D = ImageFont.truetype("arialbd.ttf", 68)
-    FONT_ACTIVE_WORD = ImageFont.truetype("arialbd.ttf", 54)
-    FONT_NORM_WORD = ImageFont.truetype("arialbd.ttf", 42)
+    _font_path = resolve_font_path(bold=True)
+    FONT_TITLE_MARQUEE = ImageFont.truetype(_font_path, 64)
+    FONT_DISCOUNT_NUM = ImageFont.truetype(_font_path, 68)
+    FONT_DISCOUNT_LBL = ImageFont.truetype(_font_path, 24)
+    FONT_OLD_PRICE = ImageFont.truetype(_font_path, 36)
+    FONT_NEW_PRICE_3D = ImageFont.truetype(_font_path, 68)
+    FONT_ACTIVE_WORD = ImageFont.truetype(_font_path, 54)
+    FONT_NORM_WORD = ImageFont.truetype(_font_path, 42)
 except Exception:
     FONT_TITLE_MARQUEE = FONT_DISCOUNT_NUM = FONT_DISCOUNT_LBL = FONT_OLD_PRICE = FONT_NEW_PRICE_3D = FONT_ACTIVE_WORD = FONT_NORM_WORD = ImageFont.load_default()
 
