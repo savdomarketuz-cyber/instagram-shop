@@ -332,6 +332,11 @@ function AccountContent() {
                             onClick={() => {
                                 videoPreWarmer.triggerHaptic("selection");
                                 setLanguage("uz"); 
+                                fetch("/api/user/language", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ language: "uz", phone: user?.phone || null })
+                                }).catch(() => {});
                                 router.push("/uz/account");
                                 setView("menu"); 
                             }}
@@ -344,6 +349,11 @@ function AccountContent() {
                             onClick={() => {
                                 videoPreWarmer.triggerHaptic("selection");
                                 setLanguage("ru"); 
+                                fetch("/api/user/language", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ language: "ru", phone: user?.phone || null })
+                                }).catch(() => {});
                                 router.push("/ru/account");
                                 setView("menu"); 
                             }}

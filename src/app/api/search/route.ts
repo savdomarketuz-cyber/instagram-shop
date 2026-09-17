@@ -6,6 +6,7 @@ import { checkRateLimit } from '@/lib/rate-limiter';
 import { normalizeQuery, transliterateLatin } from '@/lib/query-normalize';
 import { generateQueryEmbedding } from '@/lib/embeddings';
 import { getProductRealStock } from '@/lib/stock';
+import { verifyJwt } from '@/lib/jwt-utils';
 
 /**
  * Admin "Qidiruv Lug'ati" (search_synonyms) jadvalidagi sinonimlarni qo'llaydi.
@@ -120,9 +121,18 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true, results: [], count: 0 });
         }
 
-        // 1.5 User Identifikatsiya
+        // 1.5 User Identifikatsiya (Cookie yoki JWT orqali)
         const userPhoneCookie = req.cookies.get('user_phone')?.value;
-        const userIdentifier = userPhone || userPhoneCookie || null;
+        const token = req.cookies.get("user_token")?.value;
+        const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+        let tokenPhone: string | null = null;
+        if (token) {
+            try {
+                const payload = await verifyJwt(token, JWT_SECRET);
+                if (payload?.sub && payload.sub !== 'ADMIN') tokenPhone = String(payload.sub);
+            } catch {}
+        }
+        const userIdentifier = userPhone || tokenPhone || userPhoneCookie || null;
 
         // 2. Normalizatsiya & Sinonimlar
         const dbNormalized = await applyDbSynonyms(searchQuery);
@@ -169,18 +179,13 @@ export async function POST(req: NextRequest) {
         const currentLimit = Math.min(100, Math.max(1, Number(limit) || 24));
         const offset = (currentPage - 1) * currentLimit;
 
-        // Semantic Query Embedding yaratish (384-dim, cached)
-        let queryEmbedding: string | null = null;
-        if (normalizedQuery) {
-            queryEmbedding = await generateQueryEmbedding(normalizedQuery);
-        }
-
         let isFallback = false;
+        let queryEmbedding: string | null = null;
 
-        const runRpc = async (q: string, threshold: number) => {
+        const runRpc = async (q: string, threshold: number, emb: string | null = null) => {
             return supabase.rpc('advanced_smart_search', {
                 search_query: q,
-                query_embedding: queryEmbedding,
+                query_embedding: emb !== null ? emb : queryEmbedding,
                 match_threshold: threshold,
                 match_count: currentLimit + 1, // +1 to determine hasMore accurately
                 p_user_identifier: userIdentifier,
@@ -195,7 +200,25 @@ export async function POST(req: NextRequest) {
             });
         };
 
-        let { data: results, error } = await runRpc(normalizedQuery, 0.25);
+        // 1-qadam: Tezkor DB qidiruvi (Trigram + Exact + Prefix match).
+        // Supabase Postgres'da 10-15ms ichida ishlaydi, Vercel CPU sarflamaydi.
+        let { data: results, error } = await runRpc(normalizedQuery, 0.25, null);
+
+        // 2-qadam: Agar standart matn orqali natija chiqmasa (AI tavsifli qidiruv bo'lsa),
+        // faqat shundagina Semantik AI vektor embedding'dan foydalanamiz
+        if (!error && (!results || results.length === 0) && normalizedQuery) {
+            try {
+                queryEmbedding = await generateQueryEmbedding(normalizedQuery);
+                if (queryEmbedding) {
+                    const { data: semResults, error: semErr } = await runRpc(normalizedQuery, 0.25, queryEmbedding);
+                    if (!semErr && semResults && semResults.length > 0) {
+                        results = semResults;
+                    }
+                }
+            } catch (embErr) {
+                console.warn("AI Semantic Embedding fallback skipped:", embErr);
+            }
+        }
 
         if (error) {
             console.error("advanced_smart_search RPC error:", error);
@@ -295,14 +318,50 @@ export async function POST(req: NextRequest) {
             didYouMean = normalizedQuery;
         }
 
-        // 4. Record Search Analytics (Non-blocking)
+        // 4. Record Search Analytics & User Telemetry to Supabase (Non-blocking)
         if (searchQuery) {
-            supabase.from('search_analytics').insert({
+            // A. search_analytics jadvaliga qidiruv so'zi va xaridor telefon raqamini saqlash
+            supabaseAdmin.from('search_analytics').insert({
                 query: searchQuery,
-                results_count: mappedResults.length
+                results_count: mappedResults.length,
+                user_phone: userIdentifier || null
             }).then(({ error }) => {
                 if (error) console.error("Search analytics logging failed:", error);
             });
+
+            // B. Agar mijoz login qilgan bo'lsa - telemetriya va user_interests ga yozish
+            if (userIdentifier) {
+                // 1) Telemetriya logi: qidiruv amali
+                supabaseAdmin.from('user_telemetry_logs').insert([{
+                    user_identifier: userIdentifier,
+                    event_type: 'SEARCH',
+                    event_value: searchQuery,
+                    event_metadata: { 
+                        results_count: mappedResults.length,
+                        query: searchQuery,
+                        categories: Object.keys(facets.categories).slice(0, 3)
+                    }
+                }]).then(({ error }) => {
+                    if (error) console.error("Search telemetry logging failed:", error);
+                });
+
+                // 2) user_interests jadvalida qidiruv toifalariga ball qo'shish (AI tavsiya uchun)
+                const topCats = Object.keys(facets.categories).slice(0, 2);
+                if (topCats.length > 0) {
+                    supabaseAdmin.from('user_interests').select('categories').eq('id', userIdentifier).single().then(({ data }) => {
+                        const currentCats = (data?.categories as Record<string, number>) || {};
+                        topCats.forEach(c => {
+                            currentCats[c] = (currentCats[c] || 0) + 1;
+                        });
+                        supabaseAdmin.from('user_interests').upsert({
+                            id: userIdentifier,
+                            user_phone: userIdentifier,
+                            categories: currentCats,
+                            updated_at: new Date().toISOString()
+                        }).then(() => {});
+                    }).catch(() => {});
+                }
+            }
         }
 
         return NextResponse.json({

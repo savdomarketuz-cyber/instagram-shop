@@ -29,12 +29,19 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
 
     const pathname = usePathname();
 
-    // Sync language from URL to Store
+    // Sync language from URL to Store & Supabase
     useEffect(() => {
         if (lang && (lang === 'uz' || lang === 'ru')) {
             setLanguage(lang as Language);
+            if (user?.phone) {
+                fetch('/api/user/language', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ language: lang, phone: user.phone })
+                }).catch(() => {});
+            }
         }
-    }, [lang, setLanguage]);
+    }, [lang, setLanguage, user?.phone]);
 
     // 📱 Telegram WebApp & Mini App Header Color Support
     useEffect(() => {
