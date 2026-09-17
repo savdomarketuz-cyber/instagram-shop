@@ -366,21 +366,32 @@ export async function getUserOrdersForBot(telegramId: string) {
     }
 }
 
+function escapeHtml(str: string): string {
+    return (str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
+
 export async function forwardCustomerSupportMessage(customerChatId: string, customerPhone: string | null, customerName: string | null, messageText: string) {
     try {
         const adminId = process.env.TELEGRAM_ADMIN_ID || "5572037414";
         const adminBotToken = process.env.TELEGRAM_ADMIN_BOT_TOKEN || "7895692869:AAEypl6y4Y6XpIsNonPJPscCDHCCxvK060E";
         const customerBotToken = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN || "8679198732:AAFnTD1-pKA-UYTaG_Hnapd2NIjICPMNMOE";
 
+        const safeName = escapeHtml(customerName || 'Noma\'lum');
+        const safePhone = escapeHtml(customerPhone || 'Kiritilmagan');
+        const safeText = escapeHtml(messageText || '');
+
         let text = `💬 <b>MIJOZ KUTISH / SUPPORT XABARI</b>\n\n`;
-        text += `👤 <b>Mijoz:</b> ${customerName || 'Noma\'lum'}\n`;
-        text += `📞 <b>Raqam:</b> <code>${customerPhone || 'Kiritilmagan'}</code>\n`;
+        text += `👤 <b>Mijoz:</b> ${safeName}\n`;
+        text += `📞 <b>Raqam:</b> <code>${safePhone}</code>\n`;
         text += `🆔 <b>Telegram ID:</b> <code>${customerChatId}</code>\n\n`;
-        text += `📝 <b>Xabar:</b>\n<i>"${messageText}"</i>\n\n`;
+        text += `📝 <b>Xabar:</b>\n<i>"${safeText}"</i>\n\n`;
         text += `───────────────\n`;
         text += `↩️ <b>Javob berish uchun:</b>\n`;
         text += `Ushbu xabarga <b>Reply</b> qiling yoki quyidagi komandadan foydalaning:\n`;
-        text += `<code>/reply ${customerChatId} <javobingiz></code>`;
+        text += `<code>/reply ${customerChatId} [javobingiz]</code>`;
 
         // 1-urinish: Admin Bot orqali yuborish
         let res = await fetch(`https://api.telegram.org/bot${adminBotToken}/sendMessage`, {

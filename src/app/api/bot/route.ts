@@ -329,6 +329,29 @@ export async function POST(req: Request) {
                 text
             );
 
+            // Supabase support_messages va support_chats jadvaliga ham saqlash
+            const chatPhone = user?.phone || session?.phone || `tg_${chatId}`;
+            try {
+                await supabaseAdmin.from("support_messages").insert([{
+                    chat_id: chatPhone,
+                    text,
+                    sender_id: chatPhone,
+                    sender_type: "user",
+                    is_admin: false,
+                    created_at: new Date().toISOString()
+                }]);
+                await supabaseAdmin.from("support_chats").upsert({
+                    id: chatPhone,
+                    username: chat.username ? `@${chat.username}` : (chat.first_name || null),
+                    last_message: text,
+                    last_timestamp: new Date().toISOString(),
+                    status: 'active',
+                    unread_by_admin: 1
+                });
+            } catch (logErr) {
+                console.error("Support message DB log error:", logErr);
+            }
+
             if (sent) {
                 await sendTelegramMessage(chatId,
                     "📩 <b>Xabaringiz operatorga yetkazildi!</b>\n\nTez orada operatorimiz sizga ushbu bot orqali javob beradi.",
