@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { sendSupportReplyToCustomer } from "@/lib/telegram";
+import { sendSupportReplyToCustomer, sendOrderStatusNotification } from "@/lib/telegram";
 import {
     sendTelegramRaw,
     answerCallback,
@@ -12,6 +12,67 @@ import {
 
 const ADMIN_BOT_TOKEN = process.env.TELEGRAM_ADMIN_BOT_TOKEN;
 const TELEGRAM_API = `https://api.telegram.org/bot${ADMIN_BOT_TOKEN}`;
+const ADMIN_ID = process.env.TELEGRAM_ADMIN_ID || "5572037414";
+
+// Bosh boshqaruv menyusi (Reply Keyboard)
+const ADMIN_MAIN_KEYBOARD = {
+    keyboard: [
+        [{ text: "📦 Oxirgi buyurtmalar" }, { text: "📊 Bugungi statistika" }],
+        [{ text: "💬 Kutayotgan chatlar" }, { text: "⚠️ Kam qolgan tovarlar" }],
+        [{ text: "🔍 Buyurtma qidirish" }, { text: "⚙️ Mahsulot moderatsiyasi" }]
+    ],
+    resize_keyboard: true
+};
+
+const CANCEL_KEYBOARD = {
+    keyboard: [[{ text: "❌ Bekor qilish / Orqaga" }]],
+    resize_keyboard: true
+};
+
+function escapeHtml(str: string): string {
+    return (str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
+
+function renderOrderCard(order: any) {
+    const itemsText = (order.items || []).map((i: any) => `• <b>${escapeHtml(i.name)}</b> (x${i.quantity || 1}) — <i>${Number(i.price || 0).toLocaleString()} so'm</i>`).join('\n');
+    
+    let stEmoji = "⏳";
+    const st = (order.status || "").toLowerCase();
+    if (st.includes("yolda") || st.includes("yo'lda") || st.includes("yetkazil")) stEmoji = "🚚";
+    else if (st.includes("yetkazildi")) stEmoji = "✅";
+    else if (st.includes("bekor")) stEmoji = "❌";
+
+    let timeStr = "";
+    try {
+        timeStr = new Date(order.created_at).toLocaleString("uz-UZ", { timeZone: "Asia/Tashkent" });
+    } catch {
+        timeStr = order.created_at || "";
+    }
+
+    let text = `📦 <b>Buyurtma #${order.id}</b>\n\n`;
+    text += `⏰ <b>Vaqti:</b> ${timeStr}\n`;
+    text += `📞 <b>Mijoz:</b> <code>${escapeHtml(order.user_phone || "Kiritilmagan")}</code>\n`;
+    text += `📍 <b>Manzil:</b> ${escapeHtml(order.address || "Ko'rsatilmagan")}\n`;
+    text += `💳 <b>To'lov:</b> ${order.payment_method === 'click' ? "Click (Onlayn)" : "Naqd pul"}\n`;
+    text += `📊 <b>Holat:</b> ${stEmoji} <b>${escapeHtml(order.status || "Kutilmoqda")}</b>\n\n`;
+    text += `🛍 <b>Mahsulotlar:</b>\n${itemsText || "Mavjud emas"}\n\n`;
+    text += `💰 <b>Jami summa:</b> <b>${Number(order.total || 0).toLocaleString()} so'm</b>`;
+
+    const inline_keyboard: any[][] = [
+        [
+            { text: "🚚 Yetkazilmoqda", callback_data: `st:${order.id}:yolda` },
+            { text: "✅ Yetkazildi", callback_data: `st:${order.id}:yetkazildi` }
+        ],
+        [
+            { text: "❌ Bekor qilish", callback_data: `st:${order.id}:bekor_qilindi` }
+        ]
+    ];
+
+    return { text, reply_markup: { inline_keyboard } };
+}
 
 async function sendAdminMessage(chatId: number | string, text: string, replyMarkup?: any) {
     await fetch(`${TELEGRAM_API}/sendMessage`, {
@@ -20,7 +81,7 @@ async function sendAdminMessage(chatId: number | string, text: string, replyMark
         body: JSON.stringify({
             chat_id: chatId,
             text,
-            reply_markup: replyMarkup,
+            reply_markup: replyMarkup !== undefined ? replyMarkup : ADMIN_MAIN_KEYBOARD,
             parse_mode: "HTML"
         }),
     });
@@ -261,7 +322,33 @@ export async function POST(req: Request) {
             if (data.startsWith("cancel_action")) {
                 await supabaseAdmin.from("bot_sessions").delete().eq("chat_id", chatId.toString());
                 await answerCallback(cb.id, "Amal bekor qilindi");
-                await sendAdminMessage(chatId, "❌ <i>Amal bekor qilindi.</i>");
+                await sendAdminMessage(chatId, "❌ <i>Amal bekor qilindi.</i>", ADMIN_MAIN_KEYBOARD);
+                return NextResponse.json({ ok: true });
+            }
+
+            // K) 📦 BUYURTMA HOLATINI O'ZGARTIRISH (st:<orderId>:<status>)
+            if (data.startsWith("st:")) {
+                const [, orderId, newStatus] = data.split(":");
+
+                let dbStatus = newStatus;
+                if (newStatus === "yolda") dbStatus = "Yetkazilmoqda";
+                else if (newStatus === "yetkazildi") dbStatus = "Yetkazildi";
+                else if (newStatus === "bekor_qilindi") dbStatus = "Bekor qilingan";
+
+                await supabaseAdmin
+                    .from("orders")
+                    .update({ status: dbStatus, updated_at: new Date().toISOString() })
+                    .eq("id", orderId);
+
+                // Mijozga ham avtomatik Telegram bildirishnoma yuborish
+                await sendOrderStatusNotification(orderId, newStatus);
+
+                await answerCallback(cb.id, `✅ Holat yangilandi: ${dbStatus}!`, false);
+                await sendAdminMessage(
+                    chatId,
+                    `✅ <b>Buyurtma #${orderId}</b> holati <b>${dbStatus}</b> ga o'zgartirildi va mijozga bildirishnoma yuborildi!`,
+                    ADMIN_MAIN_KEYBOARD
+                );
                 return NextResponse.json({ ok: true });
             }
         }
@@ -274,6 +361,11 @@ export async function POST(req: Request) {
             const adminChatId = chat.id;
             if (!text) return NextResponse.json({ ok: true });
 
+            // Faqat ruxsat etilgan adminga javob berish
+            if (adminChatId.toString() !== ADMIN_ID.toString()) {
+                return NextResponse.json({ ok: true });
+            }
+
             const trimmed = text.trim();
 
             // Check active session step
@@ -283,6 +375,13 @@ export async function POST(req: Request) {
                 .eq("chat_id", adminChatId.toString())
                 .single();
 
+            // Bekor qilish komandasi
+            if (trimmed === "❌ Bekor qilish / Orqaga" || trimmed === "/cancel") {
+                await supabaseAdmin.from("bot_sessions").delete().eq("chat_id", adminChatId.toString());
+                await sendAdminMessage(adminChatId, "❌ Amal bekor qilindi. Boshqaruv menyusi:", ADMIN_MAIN_KEYBOARD);
+                return NextResponse.json({ ok: true });
+            }
+
             if (session && session.step) {
                 // 1. NARX KIRITISH
                 if (session.step.startsWith("edit_price:")) {
@@ -290,7 +389,7 @@ export async function POST(req: Request) {
                     const nums = trimmed.replace(/[^0-9 ]/g, "").trim().split(/\s+/).map(Number).filter((n: number) => n > 0);
 
                     if (nums.length === 0) {
-                        await sendAdminMessage(adminChatId, "❌ Noto'g'ri narx! Iltimos faqat son kiriting (masalan: <code>250000</code>):");
+                        await sendAdminMessage(adminChatId, "❌ Noto'g'ri narx! Iltimos faqat son kiriting (masalan: <code>250000</code>):", CANCEL_KEYBOARD);
                         return NextResponse.json({ ok: true });
                     }
 
@@ -307,7 +406,8 @@ export async function POST(req: Request) {
                         adminChatId,
                         `✅ <b>Narx muvaffaqiyatli yangilandi!</b>\n` +
                         `💰 Sotuv narxi: <b>${newPrice.toLocaleString()} so'm</b>` +
-                        (newOldPrice ? `\n<s>Eski narx: ${newOldPrice.toLocaleString()} so'm</s>` : "")
+                        (newOldPrice ? `\n<s>Eski narx: ${newOldPrice.toLocaleString()} so'm</s>` : ""),
+                        ADMIN_MAIN_KEYBOARD
                     );
 
                     const { data: updatedProd } = await supabaseAdmin.from("products").select("*").eq("id", productId).single();
@@ -328,7 +428,7 @@ export async function POST(req: Request) {
                     }).eq("id", productId);
 
                     await supabaseAdmin.from("bot_sessions").delete().eq("chat_id", adminChatId.toString());
-                    await sendAdminMessage(adminChatId, `✅ <b>Model yangilandi:</b> <code>${newModel}</code>`);
+                    await sendAdminMessage(adminChatId, `✅ <b>Model yangilandi:</b> <code>${newModel}</code>`, ADMIN_MAIN_KEYBOARD);
 
                     const { data: updatedProd } = await supabaseAdmin.from("products").select("*").eq("id", productId).single();
                     if (updatedProd) {
@@ -349,7 +449,7 @@ export async function POST(req: Request) {
                     }).eq("id", productId);
 
                     await supabaseAdmin.from("bot_sessions").delete().eq("chat_id", adminChatId.toString());
-                    await sendAdminMessage(adminChatId, `✅ <b>Nom yangilandi:</b>\n${newName}`);
+                    await sendAdminMessage(adminChatId, `✅ <b>Nom yangilandi:</b>\n${newName}`, ADMIN_MAIN_KEYBOARD);
 
                     const { data: updatedProd } = await supabaseAdmin.from("products").select("*").eq("id", productId).single();
                     if (updatedProd) {
@@ -377,7 +477,7 @@ export async function POST(req: Request) {
                     }
 
                     await supabaseAdmin.from("bot_sessions").delete().eq("chat_id", adminChatId.toString());
-                    await sendAdminMessage(adminChatId, `✅ <b>Brend yangilandi:</b> 🏷 ${brandName}`);
+                    await sendAdminMessage(adminChatId, `✅ <b>Brend yangilandi:</b> 🏷 ${brandName}`, ADMIN_MAIN_KEYBOARD);
 
                     const { data: updatedProd } = await supabaseAdmin.from("products").select("*").eq("id", productId).single();
                     if (updatedProd) {
@@ -385,20 +485,211 @@ export async function POST(req: Request) {
                     }
                     return NextResponse.json({ ok: true });
                 }
+
+                // 5. BUYURTMA QIDIRISH (step: "search_order")
+                if (session.step === "search_order") {
+                    await supabaseAdmin.from("bot_sessions").delete().eq("chat_id", adminChatId.toString());
+
+                    const query = trimmed.replace(/#/g, "").trim();
+                    const { data: foundOrders } = await supabaseAdmin
+                        .from("orders")
+                        .select("*")
+                        .or(`id.eq.${query},user_phone.ilike.%${query}%`)
+                        .order("created_at", { ascending: false })
+                        .limit(5);
+
+                    if (!foundOrders || foundOrders.length === 0) {
+                        await sendAdminMessage(
+                            adminChatId,
+                            `❌ "<code>${escapeHtml(query)}</code>" bo'yicha hech qanday buyurtma topilmadi.`,
+                            ADMIN_MAIN_KEYBOARD
+                        );
+                        return NextResponse.json({ ok: true });
+                    }
+
+                    await sendAdminMessage(adminChatId, `🔍 <b>Topilgan buyurtmalar (${foundOrders.length} ta):</b>`);
+                    for (const ord of foundOrders) {
+                        const card = renderOrderCard(ord);
+                        await sendAdminMessage(adminChatId, card.text, card.reply_markup);
+                    }
+                    return NextResponse.json({ ok: true });
+                }
             }
 
-            // COMMANDS: /start, /review, /moderatsiya, /next
-            if (trimmed === "/start" || trimmed === "/review" || trimmed === "/moderatsiya") {
+            // BOSH MENYU TUGMALARI
+
+            // 1. /start
+            if (trimmed === "/start") {
                 await sendAdminMessage(
                     adminChatId,
-                    `👋 <b>Velari Mahsulotlar Moderatsiya Boti</b>\n\n` +
-                    `🔍 Yangi qo'shilgan mahsulotlarni ko'rib chiqish boshlanmoqda...`
+                    `👑 <b>Velari Admin Boshqaruv Paneliga xush kelibsiz!</b>\n\n` +
+                    `Quyidagi menyu tugmalari orqali do'konni qulay boshqarishingiz mumkin:\n\n` +
+                    `• 📦 <b>Oxirgi buyurtmalar:</b> So'nggi buyurtmalar ro'yxati va holatini o'zgartirish\n` +
+                    `• 📊 <b>Bugungi statistika:</b> Bugungi tushum va buyurtmalar ko'rsatkichlari\n` +
+                    `• 💬 <b>Kutayotgan chatlar:</b> Mijozlardan kelgan javob berilmagan xabarlar\n` +
+                    `• ⚠️ <b>Kam qolgan tovarlar:</b> Omborda 5 tadan kam qolgan mahsulotlar\n` +
+                    `• 🔍 <b>Buyurtma qidirish:</b> ID yoki telefon raqami bo'yicha qidiruv\n` +
+                    `• ⚙️ <b>Mahsulot moderatsiyasi:</b> Mahsulot ma'lumotlarini tahrirlash\n\n` +
+                    `<i>💡 Mijozga javob yozish uchun uning xabariga Reply qiling yoki <code>/reply &lt;chat_id&gt; &lt;javob&gt;</code> deb yozing.</i>`,
+                    ADMIN_MAIN_KEYBOARD
+                );
+                return NextResponse.json({ ok: true });
+            }
+
+            // 2. 📦 Oxirgi buyurtmalar
+            if (trimmed === "📦 Oxirgi buyurtmalar") {
+                const { data: orders } = await supabaseAdmin
+                    .from("orders")
+                    .select("*")
+                    .order("created_at", { ascending: false })
+                    .limit(5);
+
+                if (!orders || orders.length === 0) {
+                    await sendAdminMessage(adminChatId, "📦 Hozircha birorta ham buyurtma mavjud emas.", ADMIN_MAIN_KEYBOARD);
+                    return NextResponse.json({ ok: true });
+                }
+
+                await sendAdminMessage(adminChatId, `📦 <b>Oxirgi ${orders.length} ta buyurtma:</b>`);
+                for (const ord of orders) {
+                    const card = renderOrderCard(ord);
+                    await sendAdminMessage(adminChatId, card.text, card.reply_markup);
+                }
+                return NextResponse.json({ ok: true });
+            }
+
+            // 3. 📊 Bugungi statistika
+            if (trimmed === "📊 Bugungi statistika") {
+                const now = new Date();
+                const startOfDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
+
+                const { data: todayOrders } = await supabaseAdmin
+                    .from("orders")
+                    .select("total, status")
+                    .gte("created_at", startOfDay);
+
+                const count = todayOrders?.length || 0;
+                let totalRevenue = 0;
+                let deliveredCount = 0;
+                let onWayCount = 0;
+                let cancelledCount = 0;
+
+                (todayOrders || []).forEach(o => {
+                    const st = (o.status || "").toLowerCase();
+                    if (!st.includes("bekor")) {
+                        totalRevenue += Number(o.total || 0);
+                    }
+                    if (st.includes("yetkazildi")) deliveredCount++;
+                    else if (st.includes("yolda") || st.includes("yo'lda") || st.includes("yetkazil")) onWayCount++;
+                    else if (st.includes("bekor")) cancelledCount++;
+                });
+
+                const { count: newUsersCount } = await supabaseAdmin
+                    .from("users")
+                    .select("*", { count: "exact", head: true })
+                    .gte("created_at", startOfDay);
+
+                const { count: unreadChatsCount } = await supabaseAdmin
+                    .from("support_chats")
+                    .select("*", { count: "exact", head: true })
+                    .gt("unread_by_admin", 0);
+
+                let text = `📊 <b>Bugungi Savdo va Statistika</b>\n`;
+                text += `📅 <i>${new Date().toLocaleDateString("uz-UZ", { timeZone: "Asia/Tashkent" })}</i>\n\n`;
+                text += `💰 <b>Bugungi tushum:</b> <b>${totalRevenue.toLocaleString()} so'm</b>\n`;
+                text += `📦 <b>Jami buyurtmalar:</b> <b>${count} ta</b>\n`;
+                text += `   • 🚚 Yetkazilmoqda: <b>${onWayCount} ta</b>\n`;
+                text += `   • ✅ Yetkazildi: <b>${deliveredCount} ta</b>\n`;
+                text += `   • ❌ Bekor qilingan: <b>${cancelledCount} ta</b>\n\n`;
+                text += `👥 <b>Bugungi yangi mijozlar:</b> <b>${newUsersCount || 0} ta</b>\n`;
+                text += `💬 <b>Javobsiz chatlar:</b> <b>${unreadChatsCount || 0} ta</b>`;
+
+                await sendAdminMessage(adminChatId, text, ADMIN_MAIN_KEYBOARD);
+                return NextResponse.json({ ok: true });
+            }
+
+            // 4. 💬 Kutayotgan chatlar
+            if (trimmed === "💬 Kutayotgan chatlar") {
+                const { data: unreadChats } = await supabaseAdmin
+                    .from("support_chats")
+                    .select("*")
+                    .gt("unread_by_admin", 0)
+                    .order("last_timestamp", { ascending: false })
+                    .limit(10);
+
+                if (!unreadChats || unreadChats.length === 0) {
+                    await sendAdminMessage(
+                        adminChatId,
+                        "🎉 <b>Ajoyib! Hozircha barcha mijozlarga javob berilgan.</b>\n\nYangi kutayotgan murojaatlar yo'q.",
+                        ADMIN_MAIN_KEYBOARD
+                    );
+                    return NextResponse.json({ ok: true });
+                }
+
+                let text = `💬 <b>Javob kutayotgan chatlar (${unreadChats.length} ta):</b>\n\n`;
+                unreadChats.forEach((ch, idx) => {
+                    const senderLabel = ch.username || ch.id;
+                    text += `${idx + 1}. <b>${escapeHtml(senderLabel)}</b>\n`;
+                    text += `   📝 <i>"${escapeHtml(ch.last_message || 'Xabar')}"</i>\n`;
+                    text += `   ↩️ Javob: <code>/reply ${ch.id} [javobingiz]</code>\n\n`;
+                });
+
+                await sendAdminMessage(adminChatId, text, ADMIN_MAIN_KEYBOARD);
+                return NextResponse.json({ ok: true });
+            }
+
+            // 5. ⚠️ Kam qolgan tovarlar
+            if (trimmed === "⚠️ Kam qolgan tovarlar") {
+                const { data: lowStock } = await supabaseAdmin
+                    .from("products")
+                    .select("id, name, stock, price")
+                    .eq("is_deleted", false)
+                    .lte("stock", 5)
+                    .order("stock", { ascending: true })
+                    .limit(10);
+
+                if (!lowStock || lowStock.length === 0) {
+                    await sendAdminMessage(adminChatId, "✅ <b>Omborda barcha mahsulotlar yetarli miqdorda mavjud!</b>", ADMIN_MAIN_KEYBOARD);
+                    return NextResponse.json({ ok: true });
+                }
+
+                let text = `⚠️ <b>Omborda kam qolgan tovarlar (<= 5 ta):</b>\n\n`;
+                lowStock.forEach((p, idx) => {
+                    const stColor = (p.stock || 0) === 0 ? "🔴 TUGAGAN" : `🟡 ${p.stock} ta qoldi`;
+                    text += `${idx + 1}. <b>${escapeHtml(p.name)}</b>\n`;
+                    text += `   📦 Qoldiq: <b>${stColor}</b> | Narx: ${Number(p.price || 0).toLocaleString()} so'm\n\n`;
+                });
+
+                await sendAdminMessage(adminChatId, text, ADMIN_MAIN_KEYBOARD);
+                return NextResponse.json({ ok: true });
+            }
+
+            // 6. 🔍 Buyurtma qidirish
+            if (trimmed === "🔍 Buyurtma qidirish") {
+                await supabaseAdmin.from("bot_sessions").upsert({
+                    chat_id: adminChatId.toString(),
+                    step: "search_order",
+                    updated_at: new Date().toISOString()
+                });
+                await sendAdminMessage(
+                    adminChatId,
+                    "🔍 <b>Buyurtma qidirish:</b>\n\nBuyurtma raqamini (masalan: <code>100000000000085</code>) yoki mijoz telefon raqamini (masalan: <code>+998959820626</code>) yuboring:",
+                    CANCEL_KEYBOARD
+                );
+                return NextResponse.json({ ok: true });
+            }
+
+            // 7. ⚙️ Mahsulot moderatsiyasi
+            if (trimmed === "⚙️ Mahsulot moderatsiyasi" || trimmed === "/review" || trimmed === "/moderatsiya") {
+                await sendAdminMessage(
+                    adminChatId,
+                    `👋 <b>Mahsulotlar moderatsiyasi</b>\n\nYangi qo'shilgan mahsulotlarni ko'rib chiqish boshlanmoqda...`,
+                    ADMIN_MAIN_KEYBOARD
                 );
                 const first = await getNextProductToReview();
                 if (first) {
                     await sendProductForModeration(adminChatId, first, true);
                 } else {
-                    await sendAdminMessage(adminChatId, "Bazada yangi ko'rib chiqilmagan mahsulotlar yo'q.");
+                    await sendAdminMessage(adminChatId, "Bazada yangi ko'rib chiqilmagan mahsulotlar yo'q.", ADMIN_MAIN_KEYBOARD);
                 }
                 return NextResponse.json({ ok: true });
             }
@@ -411,7 +702,7 @@ export async function POST(req: Request) {
                 return NextResponse.json({ ok: true });
             }
 
-            // CUSTOMER SUPPORT REPLY SUPPORT: /reply <chat_id> <text>
+            // 8. CUSTOMER SUPPORT REPLY: /reply <chat_id> <text> yoki xabarga reply
             let targetCustomerChatId: string | null = null;
             let replyText = "";
 
@@ -432,11 +723,23 @@ export async function POST(req: Request) {
             if (targetCustomerChatId && replyText) {
                 const success = await sendSupportReplyToCustomer(targetCustomerChatId, replyText);
                 if (success) {
-                    await sendAdminMessage(adminChatId, `✅ <b>Javob mijozga yuborildi!</b>\n\n🆔 Chat ID: <code>${targetCustomerChatId}</code>`);
+                    await sendAdminMessage(
+                        adminChatId,
+                        `✅ <b>Javob mijozga yuborildi!</b>\n\n🆔 Chat ID: <code>${targetCustomerChatId}</code>\n💬 Matn: <i>"${escapeHtml(replyText)}"</i>`,
+                        ADMIN_MAIN_KEYBOARD
+                    );
                 } else {
-                    await sendAdminMessage(adminChatId, `❌ <b>Xatolik!</b> Javobni mijozga yuborib bo'lmadi.`);
+                    await sendAdminMessage(adminChatId, `❌ <b>Xatolik!</b> Javobni mijozga yuborib bo'lmadi.`, ADMIN_MAIN_KEYBOARD);
                 }
+                return NextResponse.json({ ok: true });
             }
+
+            // Noma'lum xabar bo'lsa, asosiy menyuni chiqarish
+            await sendAdminMessage(
+                adminChatId,
+                "Kerakli bo'limni tanlash uchun quyidagi menyu tugmalaridan foydalaning:",
+                ADMIN_MAIN_KEYBOARD
+            );
         }
 
         return NextResponse.json({ ok: true });
