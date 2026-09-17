@@ -420,8 +420,9 @@ export async function sendSupportReplyToCustomer(customerChatId: string, replyTe
     try {
         const customerBotToken = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN || "8679198732:AAFnTD1-pKA-UYTaG_Hnapd2NIjICPMNMOE";
 
+        const safeReply = escapeHtml(replyText || "");
         let text = `🎧 <b>Operator javobi:</b>\n\n`;
-        text += `${replyText}\n\n`;
+        text += `${safeReply}\n\n`;
         text += `<i>Yana savollaringiz bo'lsa, bemalol yozishingiz mumkin!</i>`;
 
         const res = await fetch(`https://api.telegram.org/bot${customerBotToken}/sendMessage`, {

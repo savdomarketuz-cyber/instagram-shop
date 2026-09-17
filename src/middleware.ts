@@ -83,7 +83,8 @@ export async function middleware(request: NextRequest) {
     };
 
     // 3. Admin Protection (Pages & API)
-    if (pathWithoutLocale.startsWith('/admin') || pathname.startsWith('/api/admin')) {
+    // /api/admin/bot Telegram Webhook orqali chaqiriladi va o'zining chatId tekshiruviga ega
+    if ((pathWithoutLocale.startsWith('/admin') || pathname.startsWith('/api/admin')) && pathname !== '/api/admin/bot') {
         const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim();
         const headerSecret = request.headers.get('x-admin-secret') || request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
 
