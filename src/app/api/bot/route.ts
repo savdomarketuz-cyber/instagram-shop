@@ -11,11 +11,29 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https:
 // Bosh menyu (Reply Keyboard)
 const MAIN_KEYBOARD = {
     keyboard: [
+        [{ text: "🛍 Do'konni ochish", web_app: { url: SITE_URL } }],
         [{ text: "📱 Ro'yxatdan o'tish / Saytga kirish" }, { text: "🛍 Mening buyurtmalarim" }],
         [{ text: "💬 Operatorga yozish" }, { text: "❓ Savol-javob (FAQ)" }]
     ],
     resize_keyboard: true
 };
+
+async function ensureChatMenuButton(chatId: number | string) {
+    try {
+        await fetch(`${TELEGRAM_API}/setChatMenuButton`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                chat_id: chatId,
+                menu_button: {
+                    type: "web_app",
+                    text: "🛍 Do'kon",
+                    web_app: { url: SITE_URL }
+                }
+            })
+        });
+    } catch { /* ignore error */ }
+}
 
 // Jarayonlarni bekor qilish tugmasi
 const CANCEL_KEYBOARD = {
@@ -178,11 +196,12 @@ export async function POST(req: Request) {
             const nextPath = decodeNextPath(payload);
 
             await supabaseAdmin.from("bot_sessions").delete().eq("chat_id", chatId.toString());
+            ensureChatMenuButton(chatId);
 
             await sendTelegramMessage(chatId,
                 `Assalomu alaykum, <b>${chat.first_name || 'Mijoz'}</b>!\n\n` +
-                `<b>Velari</b> rasmiy yordamchi botiga xush kelibsiz! ✨\n\n` +
-                `Quyidagi menyu orqali ro'yxatdan o'tishingiz, buyurtmalaringiz holatini ko'rishingiz yoki operatorimiz bilan bog'lanishingiz mumkin:`,
+                `<b>Velari</b> rasmiy internet do'koniga xush kelibsiz! ✨\n\n` +
+                `🛍 Pastdagi <b>«🛍 Do'konni ochish»</b> tugmasi orqali katalogimizni to'g'ridan-to'g'ri Telegram ichida ochishingiz va buyurtma berishingiz mumkin:`,
                 MAIN_KEYBOARD
             );
             return NextResponse.json({ ok: true });
@@ -309,7 +328,10 @@ export async function POST(req: Request) {
                     `Telefon: <code>${session.phone}</code>\n\n` +
                     `Quyidagi tugma orqali saytga <b>avtomatik kirgan holda</b> o'tishingiz mumkin:`,
                     {
-                        inline_keyboard: [[{ text: "🌐 Saytga kirish", url: returnUrl }]]
+                        inline_keyboard: [
+                            [{ text: "🛍 Do'konga kirish (Web App)", web_app: { url: returnUrl } }],
+                            [{ text: "🌐 Saytga kirish (Brauzer)", url: returnUrl }]
+                        ]
                     }
                 );
 
