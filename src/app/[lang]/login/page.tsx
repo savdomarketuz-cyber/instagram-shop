@@ -41,6 +41,94 @@ function LoginContent() {
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState<"password" | "2fa">("password");
 
+    // Telegram WebApp orqali to'g'ridan-to'g'ri kirish va ro'yxatdan o'tish
+    const [tgPromptPhone, setTgPromptPhone] = useState(false);
+    const [tgPhone, setTgPhone] = useState("");
+    const [tgUserInfo, setTgUserInfo] = useState<any>(null);
+    const [tgAuthLoading, setTgAuthLoading] = useState(false);
+
+    const handleTelegramAuth = async () => {
+        const tg = typeof window !== "undefined" ? (window as any).Telegram?.WebApp : null;
+        const initData = tg?.initData;
+
+        // 1. Agar Telegram Web App ichida ochilgan bo'lsa -> To'g'ridan-to'g'ri avtorizatsiya
+        if (initData) {
+            setTgAuthLoading(true);
+            setError("");
+            setErrorType("none");
+            try {
+                const res = await fetch("/api/auth/telegram-webapp", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ initData })
+                });
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    if (data.registered && data.user) {
+                        setUser(data.user);
+                        if (data.cart && data.cart.length > 0) {
+                            useStore.getState().setCart(data.cart);
+                        }
+                        ymGoal('login', { method: 'telegram_webapp' });
+                        showToast(language === 'uz' ? "Xush kelibsiz!" : "Добро пожаловать!");
+                        router.replace(redirect || `/${language}`);
+                        return;
+                    } else if (!data.registered) {
+                        setTgUserInfo(data.telegramUser);
+                        setTgPromptPhone(true);
+                        setTgAuthLoading(false);
+                        return;
+                    }
+                } else {
+                    setError(data.error || (language === 'uz' ? "Telegram orqali kirishda xatolik" : "Ошибка входа"));
+                }
+            } catch {
+                setError(language === 'uz' ? "Tarmoq xatosi" : "Ошибка сети");
+            } finally {
+                setTgAuthLoading(false);
+            }
+            return;
+        }
+
+        // 2. Oddiy tashqi brauzerda bo'lsa -> Telegram botga yo'naltirish
+        window.location.href = BOT_URL;
+    };
+
+    const handleTelegramRegisterSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const tg = typeof window !== "undefined" ? (window as any).Telegram?.WebApp : null;
+        const initData = tg?.initData;
+        if (!initData || !tgPhone.trim()) return;
+
+        setTgAuthLoading(true);
+        setError("");
+        try {
+            const cleanPhone = tgPhone.replace(/[\s\-\(\)]/g, "");
+            const res = await fetch("/api/auth/telegram-webapp", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    initData,
+                    phone: cleanPhone.startsWith("+") ? cleanPhone : `+998${cleanPhone}`
+                })
+            });
+            const data = await res.json();
+            if (res.ok && data.success && data.user) {
+                setUser(data.user);
+                ymGoal('register', { method: 'telegram_webapp' });
+                showToast(language === 'uz' ? "Muvaffaqiyatli ro'yxatdan o'tdingiz!" : "Регистрация успешна!");
+                router.replace(redirect || `/${language}`);
+            } else {
+                setError(data.error || (language === 'uz' ? "Xatolik yuz berdi" : "Произошла ошибка"));
+                setTgAuthLoading(false);
+            }
+        } catch {
+            setError(language === 'uz' ? "Tarmoq xatosi" : "Ошибка сети");
+            setTgAuthLoading(false);
+        }
+    };
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -208,14 +296,29 @@ function LoginContent() {
                                 }}>
                                     {error}
                                     {errorType === "wrong_password" && (
-                                        <a href={BOT_URL} target="_blank" style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, color: "#0A7CFF", fontSize: 13, textDecoration: "none" }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const tg = typeof window !== "undefined" ? (window as any).Telegram?.WebApp : null;
+                                                if (tg?.openTelegramLink) {
+                                                    tg.openTelegramLink(BOT_URL);
+                                                } else {
+                                                    window.location.href = BOT_URL;
+                                                }
+                                            }}
+                                            style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, color: "#0A7CFF", fontSize: 13, background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                                        >
                                             <Key size={13} /> {language === 'uz' ? "Parolni tiklash" : "Сбросить пароль"}
-                                        </a>
+                                        </button>
                                     )}
                                     {errorType === "not_found" && (
-                                        <a href={BOT_URL} target="_blank" style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, color: "#0A7CFF", fontSize: 13, textDecoration: "none" }}>
+                                        <button
+                                            type="button"
+                                            onClick={handleTelegramAuth}
+                                            style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, color: "#0A7CFF", fontSize: 13, background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                                        >
                                             <Send size={13} /> {language === 'uz' ? "Telegram orqali ro'yxatdan o'tish" : "Регистрация через Telegram"}
-                                        </a>
+                                        </button>
                                     )}
                                 </div>
                             )}
@@ -255,28 +358,115 @@ function LoginContent() {
                                 <div style={{ flex: 1, height: 1, background: "rgba(15,20,16,0.06)" }} />
                             </div>
 
-                            <a href={BOT_URL} target="_blank" style={{
-                                display: "block", textDecoration: "none",
-                                background: "linear-gradient(135deg, #2299d9 0%, #1d88c2 100%)",
-                                borderRadius: 22, padding: "20px 20px",
-                                boxShadow: "0 8px 24px rgba(34,153,217,0.25)",
-                                position: "relative", overflow: "hidden",
-                            }}>
-                                <div style={{ position: "absolute", top: -20, right: -20, width: 100, height: 100, borderRadius: 50, background: "rgba(255,255,255,0.1)" }} />
-                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, position: "relative" }}>
-                                    <div>
-                                        <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", letterSpacing: -0.3 }}>
-                                            {language === 'uz' ? "Telegram orqali" : "Через Telegram"}
+                            {tgPromptPhone ? (
+                                <div style={{
+                                    background: "#F4FBF6", border: `1.5px solid ${GREEN}`,
+                                    borderRadius: 22, padding: "20px 18px", boxShadow: "0 8px 24px rgba(45,110,62,0.12)"
+                                }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                                        <div style={{
+                                            width: 42, height: 42, borderRadius: 14, background: GREEN,
+                                            display: "flex", alignItems: "center", justifyContent: "center"
+                                        }}>
+                                            <User size={20} color="#fff" />
                                         </div>
-                                        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", marginTop: 3 }}>
-                                            {language === 'uz' ? "Tezkor ro'yxatdan o'tish" : "Мгновенная регистрация"}
+                                        <div>
+                                            <div style={{ fontSize: 16, fontWeight: 700, color: "#0F1410" }}>
+                                                {tgUserInfo?.displayName || "Telegram foydalanuvchisi"}
+                                            </div>
+                                            <div style={{ fontSize: 12, color: GREEN, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                                                <ShieldCheck size={13} /> {language === 'uz' ? "Telegram orqali tasdiqlandi" : "Подтверждено через Telegram"}
+                                            </div>
                                         </div>
                                     </div>
-                                    <div style={{ width: 44, height: 44, borderRadius: 14, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                        <Send size={22} color="#fff" style={{ transform: "rotate(-10deg)" }} />
-                                    </div>
+
+                                    <p style={{ fontSize: 13, color: "#5A625C", lineHeight: 1.5, marginBottom: 14 }}>
+                                        {language === 'uz'
+                                            ? "Buyurtmalarni yetkazib berish va hisobingiz uchun telefon raqamingizni kiriting:"
+                                            : "Введите номер телефона для доставки заказов и привязки аккаунта:"}
+                                    </p>
+
+                                    <form onSubmit={handleTelegramRegisterSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                                        <div style={{
+                                            background: "#fff", borderRadius: 16, border: "1.5px solid rgba(15,20,16,0.1)",
+                                            padding: "12px 14px", display: "flex", alignItems: "center", gap: 8
+                                        }}>
+                                            <span style={{ fontSize: 16, fontWeight: 600, color: "#0F1410" }}>🇺🇿 +998</span>
+                                            <input
+                                                type="tel"
+                                                inputMode="numeric"
+                                                value={tgPhone}
+                                                onChange={(e) => setTgPhone(e.target.value)}
+                                                placeholder="90 123 45 67"
+                                                autoFocus
+                                                required
+                                                style={{
+                                                    flex: 1, border: "none", outline: "none", background: "transparent",
+                                                    fontSize: 16, fontWeight: 600, color: "#0F1410", fontFamily: "inherit"
+                                                }}
+                                            />
+                                        </div>
+
+                                        <button
+                                            type="submit"
+                                            disabled={tgAuthLoading || !tgPhone.trim()}
+                                            style={{
+                                                width: "100%", padding: "15px 0", borderRadius: 16, border: "none",
+                                                background: `linear-gradient(135deg, ${GREEN} 0%, ${GREEN_DEEP} 100%)`,
+                                                color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer",
+                                                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                                                boxShadow: "0 8px 20px rgba(45,110,62,0.28)",
+                                                opacity: tgAuthLoading || !tgPhone.trim() ? 0.6 : 1
+                                            }}
+                                        >
+                                            {tgAuthLoading ? <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} /> : (language === 'uz' ? "Ro'yxatdan o'tish" : "Зарегистрироваться")}
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setTgPromptPhone(false)}
+                                            style={{
+                                                background: "transparent", border: "none", color: "#8E8E93",
+                                                fontSize: 13, cursor: "pointer", padding: "4px 0", textAlign: "center"
+                                            }}
+                                        >
+                                            {language === 'uz' ? "Bekor qilish" : "Отмена"}
+                                        </button>
+                                    </form>
                                 </div>
-                            </a>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={handleTelegramAuth}
+                                    disabled={tgAuthLoading}
+                                    style={{
+                                        width: "100%", textAlign: "left", border: "none", cursor: "pointer",
+                                        display: "block",
+                                        background: "linear-gradient(135deg, #2299d9 0%, #1d88c2 100%)",
+                                        borderRadius: 22, padding: "20px 20px",
+                                        boxShadow: "0 8px 24px rgba(34,153,217,0.25)",
+                                        position: "relative", overflow: "hidden",
+                                        opacity: tgAuthLoading ? 0.7 : 1
+                                    }}
+                                >
+                                    <div style={{ position: "absolute", top: -20, right: -20, width: 100, height: 100, borderRadius: 50, background: "rgba(255,255,255,0.1)" }} />
+                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, position: "relative" }}>
+                                        <div>
+                                            <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", letterSpacing: -0.3 }}>
+                                                {language === 'uz' ? "Telegram orqali" : "Через Telegram"}
+                                            </div>
+                                            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", marginTop: 3 }}>
+                                                {tgAuthLoading
+                                                    ? (language === 'uz' ? "Tekshirilmoqda..." : "Проверка...")
+                                                    : (language === 'uz' ? "Tezkor ro'yxatdan o'tish / Kirish" : "Мгновенная регистрация / Вход")}
+                                            </div>
+                                        </div>
+                                        <div style={{ width: 44, height: 44, borderRadius: 14, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                            {tgAuthLoading ? <Loader2 size={20} color="#fff" style={{ animation: "spin 1s linear infinite" }} /> : <Send size={22} color="#fff" style={{ transform: "rotate(-10deg)" }} />}
+                                        </div>
+                                    </div>
+                                </button>
+                            )}
                         </div>
                     </>
                 ) : (

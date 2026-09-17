@@ -198,6 +198,62 @@ export async function POST(req: Request) {
             await supabaseAdmin.from("bot_sessions").delete().eq("chat_id", chatId.toString());
             ensureChatMenuButton(chatId);
 
+            // Agar foydalanuvchi saytdan "Telegram orqali ro'yxatdan o'tish" tugmasini bosib kelgan bo'lsa
+            if (payload) {
+                const { data: existingUser } = await supabaseAdmin
+                    .from("users")
+                    .select("phone, name")
+                    .eq("telegram_id", chatId.toString())
+                    .single();
+
+                if (existingUser) {
+                    // Allaqachon ro'yxatdan o'tgan -> Bitta bosishda saytga kirish havolasi
+                    const loginToken = crypto.randomBytes(24).toString("hex");
+                    await supabaseAdmin.from("login_tokens").insert({
+                        token: loginToken,
+                        phone: existingUser.phone,
+                        next_path: nextPath || null,
+                        expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+                    });
+                    const returnUrl = `${SITE_URL}/uz/auth?lt=${loginToken}`;
+
+                    await sendTelegramMessage(chatId,
+                        `Assalomu alaykum, <b>${chat.first_name || existingUser.name || 'Mijoz'}</b>!\n\n` +
+                        `Siz allaqachon ro'yxatdan o'tgansiz (Tel: <code>${existingUser.phone}</code>).\n\n` +
+                        `Saytga profilingiz orqali <b>avtomatik kirish</b> uchun pastdagi tugmani bosing:`,
+                        {
+                            inline_keyboard: [
+                                [{ text: "🛍 Do'konga kirish (Web App)", web_app: { url: returnUrl } }],
+                                [{ text: "🌐 Saytga kirish (Brauzer)", url: returnUrl }]
+                            ]
+                        }
+                    );
+                    return NextResponse.json({ ok: true });
+                }
+
+                // Yangi foydalanuvchi -> Darhol kontakt so'raymiz
+                await supabaseAdmin.from("bot_sessions").upsert({
+                    chat_id: chatId.toString(),
+                    step: "await_contact",
+                    next_path: nextPath,
+                    updated_at: new Date().toISOString(),
+                });
+
+                await sendTelegramMessage(chatId,
+                    `Assalomu alaykum, <b>${chat.first_name || 'Mijoz'}</b>!\n\n` +
+                    `Velari do'konida ro'yxatdan o'tish uchun quyidagi <b>«📱 Kontaktni yuborish»</b> tugmasini bosing:`,
+                    {
+                        keyboard: [
+                            [{ text: "📱 Kontaktni yuborish", request_contact: true }],
+                            [{ text: "❌ Bekor qilish / Orqaga" }]
+                        ],
+                        resize_keyboard: true
+                    }
+                );
+                return NextResponse.json({ ok: true });
+            }
+
+            // Oddiy /start (to'g'ridan-to'g'ri botga kirganda)
             await sendTelegramMessage(chatId,
                 `Assalomu alaykum, <b>${chat.first_name || 'Mijoz'}</b>!\n\n` +
                 `<b>Velari</b> rasmiy internet do'koniga xush kelibsiz! ✨\n\n` +
