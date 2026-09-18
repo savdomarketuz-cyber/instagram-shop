@@ -385,6 +385,35 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
         reader.readAsDataURL(file);
     };
 
+    const handleCropSearch = async (croppedBase64: string) => {
+        setIsLensAnalyzing(true);
+        try {
+            const res = await fetch("/api/search", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ image: croppedBase64, limit: 50 })
+            });
+            const data = await res.json();
+            if (data.visualAnalysis) {
+                setLensAnalysis(data.visualAnalysis);
+            }
+            if (data.results && data.results.length > 0) {
+                setLensResults(data.results);
+                isVisualActiveRef.current = true;
+                setSearchResults(data.results);
+                setHasMoreSearch(!!data.hasMore);
+                const label = data.detectedVisionQuery || data.visualAnalysis?.subject || (data.results[0]?.name ? `${data.results[0].name.slice(0, 25)}...` : "Rasm qidiruvi");
+                setSearchQuery(label);
+            } else {
+                setLensResults([]);
+            }
+        } catch (err) {
+            console.error("Visual crop search error:", err);
+        } finally {
+            setIsLensAnalyzing(false);
+        }
+    };
+
     const brandName = (id?: string) => {
         const b = brands.find(x => x.id === id);
         return b ? ((language === "uz" ? b.name_uz : b.name_ru) || b.name) : "";
@@ -780,6 +809,8 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                 results={lensResults}
                 language={language}
                 onChangePhoto={() => fileInputRef.current?.click()}
+                onCropSearch={handleCropSearch}
+                onSelectTag={(tag) => setSearchQuery(tag)}
             />
         </div>
     );

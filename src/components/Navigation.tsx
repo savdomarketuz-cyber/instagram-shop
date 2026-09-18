@@ -161,6 +161,36 @@ export default function Navigation() {
         reader.readAsDataURL(file);
     };
 
+    const handleCropSearch = async (croppedBase64: string) => {
+        setIsLensAnalyzing(true);
+        useStore.setState({ isSearchLoading: true });
+        try {
+            const res = await fetch("/api/search", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ image: croppedBase64, limit: 50, userPhone: user?.phone })
+            });
+            const data = await res.json();
+            if (data.visualAnalysis) {
+                setLensAnalysis(data.visualAnalysis);
+            }
+            if (data.results && data.results.length > 0) {
+                setLensResults(data.results);
+                setSearchResults(data.results, data.facets || null, data.didYouMean || null, !!data.isFallback);
+                const label = data.detectedVisionQuery || data.visualAnalysis?.subject || "Rasm qidiruvi";
+                setStoreGlobalQuery(label);
+                setSearch(label);
+            } else {
+                setLensResults([]);
+            }
+        } catch (err) {
+            console.error("Visual crop search error:", err);
+        } finally {
+            setIsLensAnalyzing(false);
+            useStore.setState({ isSearchLoading: false });
+        }
+    };
+
     const handleSearch = async (e?: React.FormEvent, forceQuery?: string) => {
         if (e) e.preventDefault();
         const activeQuery = forceQuery || search;
@@ -587,6 +617,11 @@ export default function Navigation() {
                 results={lensResults}
                 language={language as "uz" | "ru"}
                 onChangePhoto={() => fileInputRef.current?.click()}
+                onCropSearch={handleCropSearch}
+                onSelectTag={(tag) => {
+                    setSearch(tag);
+                    handleSearch(undefined, tag);
+                }}
             />
         </>
     );

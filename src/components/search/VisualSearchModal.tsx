@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { X, Camera, Sparkles, RefreshCw, ChevronRight, Check, Tag } from "lucide-react";
+import { X, Camera, Sparkles, RefreshCw, ChevronRight, Check, Tag, Focus } from "lucide-react";
 import { Product } from "@/types";
 import { getProductSlug } from "@/lib/slugify";
 import { VisualAnalysis } from "@/app/api/search/route";
@@ -18,9 +18,8 @@ interface VisualSearchModalProps {
     language: "uz" | "ru";
     onChangePhoto: () => void;
     onSelectTag?: (tag: string) => void;
+    onCropSearch?: (croppedBase64: string) => void;
 }
-
-const GREEN = "#2D6E3E";
 
 export default function VisualSearchModal({
     isOpen,
@@ -31,10 +30,36 @@ export default function VisualSearchModal({
     results,
     language,
     onChangePhoto,
-    onSelectTag
+    onSelectTag,
+    onCropSearch
 }: VisualSearchModalProps) {
     const [activeFilter, setActiveFilter] = useState<string>("all");
     const modalRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    // Google Lens Crop Box (foizlarda: 0 - 100)
+    const [cropBox, setCropBox] = useState<{ x: number; y: number; width: number; height: number }>({
+        x: 4,
+        y: 4,
+        width: 92,
+        height: 92
+    });
+    const [aspectRatio, setAspectRatio] = useState<number>(1);
+    const [isDraggingBox, setIsDraggingBox] = useState<boolean>(false);
+
+    const dragInfo = useRef<{
+        handle: 'move' | 'nw' | 'ne' | 'se' | 'sw' | null;
+        startX: number;
+        startY: number;
+        initialBox: { x: number; y: number; width: number; height: number };
+        hasMoved: boolean;
+    }>({
+        handle: null,
+        startX: 0,
+        startY: 0,
+        initialBox: { x: 4, y: 4, width: 92, height: 92 },
+        hasMoved: false
+    });
 
     // Escape tugmasi bilan yopish
     useEffect(() => {
@@ -51,10 +76,184 @@ export default function VisualSearchModal({
         };
     }, [isOpen, onClose]);
 
-    // Rasm o'zgarganda filtrni qayta tiklash
+    // Rasm o'zgarganda tabiiy proporsiyani aniqlash va qutini tiklash
     useEffect(() => {
+        if (!imagePreview) return;
         setActiveFilter("all");
+        setCropBox({ x: 4, y: 4, width: 92, height: 92 });
+
+        const img = new window.Image();
+        img.onload = () => {
+            if (img.naturalWidth && img.naturalHeight) {
+                setAspectRatio(img.naturalWidth / img.naturalHeight);
+            }
+        };
+        img.src = imagePreview;
     }, [imagePreview]);
+
+    // Tanlangan qutini kesib (crop) qidiruvga yuborish
+    const triggerCropSearch = useCallback((box: { x: number; y: number; width: number; height: number }) => {
+        if (!imagePreview || !onCropSearch) return;
+
+        // Agar butun rasmni qamragan bo'lsa (>90%), asl rasmni yuborish
+        if (box.width >= 90 && box.height >= 90 && box.x <= 5 && box.y <= 5) {
+            onCropSearch(imagePreview);
+            return;
+        }
+
+        const img = new window.Image();
+        img.onload = () => {
+            try {
+                const canvas = document.createElement("canvas");
+                const cropX = Math.round((box.x / 100) * img.naturalWidth);
+                const cropY = Math.round((box.y / 100) * img.naturalHeight);
+                const cropW = Math.round((box.width / 100) * img.naturalWidth);
+                const cropH = Math.round((box.height / 100) * img.naturalHeight);
+
+                if (cropW < 10 || cropH < 10) return;
+
+                const maxDim = 1024;
+                let targetW = cropW;
+                let targetH = cropH;
+                if (targetW > maxDim || targetH > maxDim) {
+                    if (targetW > targetH) {
+                        targetH = Math.round((targetH * maxDim) / targetW);
+                        targetW = maxDim;
+                    } else {
+                        targetW = Math.round((targetW * maxDim) / targetH);
+                        targetH = maxDim;
+                    }
+                }
+
+                canvas.width = targetW;
+                canvas.height = targetH;
+                const ctx = canvas.getContext("2d");
+                if (!ctx) return;
+                ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, targetW, targetH);
+                const croppedBase64 = canvas.toDataURL("image/jpeg", 0.85);
+                onCropSearch(croppedBase64);
+            } catch (err) {
+                console.error("Visual crop canvas error:", err);
+            }
+        };
+        img.src = imagePreview;
+    }, [imagePreview, onCropSearch]);
+
+    // Pointer (Touch / Mouse) surish boshlanishi
+    const handlePointerDown = (handle: 'move' | 'nw' | 'ne' | 'se' | 'sw', e: React.PointerEvent) => {
+        e.stopPropagation();
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        dragInfo.current = {
+            handle,
+            startX: e.clientX,
+            startY: e.clientY,
+            initialBox: { ...cropBox },
+            hasMoved: false
+        };
+        setIsDraggingBox(true);
+    };
+
+    // Pointer surilishi (Crop box yoki burchaklarni o'zgartirish)
+    const handlePointerMove = (e: React.PointerEvent) => {
+        const { handle, startX, startY, initialBox } = dragInfo.current;
+        if (!handle || !containerRef.current) return;
+
+        const rect = containerRef.current.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
+
+        const deltaX = ((e.clientX - startX) / rect.width) * 100;
+        const deltaY = ((e.clientY - startY) / rect.height) * 100;
+
+        if (Math.abs(deltaX) > 1 || Math.abs(deltaY) > 1) {
+            dragInfo.current.hasMoved = true;
+        }
+
+        const minSize = 16; // minimal 16% o'lcham
+
+        if (handle === 'move') {
+            const maxX = 100 - initialBox.width;
+            const maxY = 100 - initialBox.height;
+            const newX = Math.max(0, Math.min(maxX, initialBox.x + deltaX));
+            const newY = Math.max(0, Math.min(maxY, initialBox.y + deltaY));
+            setCropBox(prev => ({ ...prev, x: newX, y: newY }));
+        } else if (handle === 'se') {
+            const maxW = 100 - initialBox.x;
+            const maxH = 100 - initialBox.y;
+            const newW = Math.max(minSize, Math.min(maxW, initialBox.width + deltaX));
+            const newH = Math.max(minSize, Math.min(maxH, initialBox.height + deltaY));
+            setCropBox(prev => ({ ...prev, width: newW, height: newH }));
+        } else if (handle === 'nw') {
+            const maxDeltaX = initialBox.width - minSize;
+            const maxDeltaY = initialBox.height - minSize;
+            const clampedDeltaX = Math.max(-initialBox.x, Math.min(maxDeltaX, deltaX));
+            const clampedDeltaY = Math.max(-initialBox.y, Math.min(maxDeltaY, deltaY));
+            setCropBox({
+                x: initialBox.x + clampedDeltaX,
+                y: initialBox.y + clampedDeltaY,
+                width: initialBox.width - clampedDeltaX,
+                height: initialBox.height - clampedDeltaY
+            });
+        } else if (handle === 'ne') {
+            const maxDeltaY = initialBox.height - minSize;
+            const clampedDeltaY = Math.max(-initialBox.y, Math.min(maxDeltaY, deltaY));
+            const maxW = 100 - initialBox.x;
+            const newW = Math.max(minSize, Math.min(maxW, initialBox.width + deltaX));
+            setCropBox({
+                x: initialBox.x,
+                y: initialBox.y + clampedDeltaY,
+                width: newW,
+                height: initialBox.height - clampedDeltaY
+            });
+        } else if (handle === 'sw') {
+            const maxDeltaX = initialBox.width - minSize;
+            const clampedDeltaX = Math.max(-initialBox.x, Math.min(maxDeltaX, deltaX));
+            const maxH = 100 - initialBox.y;
+            const newH = Math.max(minSize, Math.min(maxH, initialBox.height + deltaY));
+            setCropBox({
+                x: initialBox.x + clampedDeltaX,
+                y: initialBox.y,
+                width: initialBox.width - clampedDeltaX,
+                height: newH
+            });
+        }
+    };
+
+    // Qo'l / Sichqoncha ko'tarilganda qidiruvni ishga tushirish
+    const handlePointerUp = (e: React.PointerEvent) => {
+        try {
+            (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+        } catch {}
+        const hadMovement = dragInfo.current.hasMoved;
+        dragInfo.current.handle = null;
+        setIsDraggingBox(false);
+
+        if (hadMovement) {
+            triggerCropSearch(cropBox);
+        }
+    };
+
+    // Rasm ustiga bosilganda o'sha ob'yektga avtomatik fokus qilish (Tap to focus)
+    const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!containerRef.current || isDraggingBox || dragInfo.current.hasMoved) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        const clickX = ((e.clientX - rect.left) / rect.width) * 100;
+        const clickY = ((e.clientY - rect.top) / rect.height) * 100;
+
+        // Bosilgan nuqta atrofida 48%x48% quti hosil qilish
+        const boxSize = 48;
+        const newX = Math.max(0, Math.min(100 - boxSize, clickX - boxSize / 2));
+        const newY = Math.max(0, Math.min(100 - boxSize, clickY - boxSize / 2));
+        const newBox = { x: newX, y: newY, width: boxSize, height: boxSize };
+        setCropBox(newBox);
+        triggerCropSearch(newBox);
+    };
+
+    // Butun rasmga qaytarish
+    const handleResetToFull = () => {
+        const fullBox = { x: 4, y: 4, width: 92, height: 92 };
+        setCropBox(fullBox);
+        triggerCropSearch(fullBox);
+    };
 
     if (!isOpen) return null;
 
@@ -139,50 +338,126 @@ export default function VisualSearchModal({
 
                 {/* 2. Asosiy mazmun (Ikki ustunli / Responsive) */}
                 <div className="flex-1 overflow-y-auto overscroll-contain p-4 md:p-8 space-y-6">
-                    {/* Yuqori qism: Foydalanuvchi rasmi + AI skaneri + Aniqlangan teglar */}
+                    {/* Yuqori qism: Foydalanuvchi rasmi + Ob'yekt tanlash ramkasi + AI skaneri */}
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-                        {/* Chap: Google Lens skaneri oynasi */}
+                        {/* Chap: Google Lens interaktiv skaner oynasi */}
                         <div className="md:col-span-4 flex flex-col items-center">
-                            <div className="relative w-full max-w-[280px] aspect-square rounded-2xl overflow-hidden bg-black/5 border border-gray-200 shadow-inner flex items-center justify-center group">
+                            <div 
+                                ref={containerRef}
+                                onClick={handleContainerClick}
+                                className="relative inline-flex max-w-full rounded-2xl overflow-hidden bg-black/5 border border-gray-200 shadow-inner select-none cursor-crosshair touch-none mx-auto"
+                            >
                                 {imagePreview ? (
                                     // eslint-disable-next-line @next/next/no-img-element
                                     <img
                                         src={imagePreview}
                                         alt="Yuklangan rasm"
-                                        className="w-full h-full object-cover"
+                                        className="block max-h-[300px] sm:max-h-[340px] max-w-full w-auto h-auto pointer-events-none select-none"
                                     />
                                 ) : (
-                                    <div className="flex flex-col items-center justify-center text-gray-400 gap-2">
+                                    <div className="flex flex-col items-center justify-center text-gray-400 gap-2 p-12">
                                         <Camera size={32} />
                                         <span className="text-xs">{isUz ? "Rasm yo'q" : "Нет фото"}</span>
                                     </div>
                                 )}
 
-                                {/* Google Lens burchakli nishonlari (Viewfinder reticle) */}
-                                <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-white rounded-tl-lg pointer-events-none drop-shadow" />
-                                <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-white rounded-tr-lg pointer-events-none drop-shadow" />
-                                <div className="absolute bottom-2 left-2 w-6 h-6 border-b-2 border-l-2 border-white rounded-bl-lg pointer-events-none drop-shadow" />
-                                <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-white rounded-br-lg pointer-events-none drop-shadow" />
+                                {/* Google Lens interaktiv ob'yekt tanlash ramkasi (Crop Box) */}
+                                {imagePreview && (
+                                    <div
+                                        style={{
+                                            left: `${cropBox.x}%`,
+                                            top: `${cropBox.y}%`,
+                                            width: `${cropBox.width}%`,
+                                            height: `${cropBox.height}%`,
+                                            boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.42)"
+                                        }}
+                                        className="absolute border border-white/90 rounded-xl transition-[box-shadow] duration-75 cursor-move"
+                                        onPointerDown={(e) => handlePointerDown('move', e)}
+                                        onPointerMove={handlePointerMove}
+                                        onPointerUp={handlePointerUp}
+                                    >
+                                        {/* Lazer skaner chizig'i (faqat tanlangan ramka ichida skan qiladi) */}
+                                        {isAnalyzing && (
+                                            <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#10B981] to-transparent shadow-[0_0_15px_#10B981] pointer-events-none animate-lens-scan" />
+                                        )}
 
-                                {/* Lazer skaner chizig'i (Skan qilish animatsiyasi) */}
-                                {isAnalyzing && (
-                                    <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#10B981] to-transparent shadow-[0_0_15px_#10B981] pointer-events-none animate-lens-scan" />
+                                        {/* 4 ta Google Lens burchakli nishoni (Tegib surish nuqtalari) */}
+                                        {/* Yuqori-Chap */}
+                                        <div
+                                            onPointerDown={(e) => handlePointerDown('nw', e)}
+                                            onPointerMove={handlePointerMove}
+                                            onPointerUp={handlePointerUp}
+                                            className="absolute -top-3 -left-3 w-8 h-8 flex items-center justify-center cursor-nwse-resize touch-none z-20 group"
+                                            title="Burchakni surish"
+                                        >
+                                            <div className="w-4 h-4 border-t-[3px] border-l-[3px] border-white rounded-tl-[4px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] transition-transform group-active:scale-125" />
+                                        </div>
+
+                                        {/* Yuqori-O'ng */}
+                                        <div
+                                            onPointerDown={(e) => handlePointerDown('ne', e)}
+                                            onPointerMove={handlePointerMove}
+                                            onPointerUp={handlePointerUp}
+                                            className="absolute -top-3 -right-3 w-8 h-8 flex items-center justify-center cursor-nesw-resize touch-none z-20 group"
+                                            title="Burchakni surish"
+                                        >
+                                            <div className="w-4 h-4 border-t-[3px] border-r-[3px] border-white rounded-tr-[4px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] transition-transform group-active:scale-125" />
+                                        </div>
+
+                                        {/* Quyi-Chap */}
+                                        <div
+                                            onPointerDown={(e) => handlePointerDown('sw', e)}
+                                            onPointerMove={handlePointerMove}
+                                            onPointerUp={handlePointerUp}
+                                            className="absolute -bottom-3 -left-3 w-8 h-8 flex items-center justify-center cursor-nesw-resize touch-none z-20 group"
+                                            title="Burchakni surish"
+                                        >
+                                            <div className="w-4 h-4 border-b-[3px] border-l-[3px] border-white rounded-bl-[4px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] transition-transform group-active:scale-125" />
+                                        </div>
+
+                                        {/* Quyi-O'ng */}
+                                        <div
+                                            onPointerDown={(e) => handlePointerDown('se', e)}
+                                            onPointerMove={handlePointerMove}
+                                            onPointerUp={handlePointerUp}
+                                            className="absolute -bottom-3 -right-3 w-8 h-8 flex items-center justify-center cursor-nwse-resize touch-none z-20 group"
+                                            title="Burchakni surish"
+                                        >
+                                            <div className="w-4 h-4 border-b-[3px] border-r-[3px] border-white rounded-br-[4px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] transition-transform group-active:scale-125" />
+                                        </div>
+                                    </div>
                                 )}
                             </div>
 
-                            {/* Holat yozuvi */}
-                            <div className="mt-2.5 text-center">
+                            {/* Holat yozuvi va Ob'yekt tanlash yordamchisi */}
+                            <div className="mt-2.5 flex flex-col items-center gap-1.5 w-full text-center">
                                 {isAnalyzing ? (
                                     <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2D6E3E] animate-pulse">
                                         <RefreshCw size={13} className="animate-spin" />
-                                        {isUz ? "Rasm AI orqali tahlil qilinmoqda..." : "AI анализирует фото..."}
+                                        {isUz ? "Tanlangan ob'yekt tahlil qilinmoqda..." : "AI анализирует объект..."}
                                     </span>
                                 ) : (
-                                    <span className="inline-flex items-center gap-1 text-xs text-gray-500 font-medium">
+                                    <span className="inline-flex items-center gap-1 text-xs text-gray-600 font-medium">
                                         <Check size={13} className="text-[#2D6E3E]" />
                                         {isUz ? "Vizual tahlil yakunlandi" : "Визуальный анализ завершен"}
                                     </span>
                                 )}
+
+                                {/* Ob'yekt boshqaruvi (Butun rasm / Ramka maslahati) */}
+                                <div className="flex items-center justify-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={handleResetToFull}
+                                        className="text-[11px] font-semibold text-gray-700 hover:text-[#2D6E3E] bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded-full transition active:scale-95 flex items-center gap-1 shadow-sm"
+                                        title={isUz ? "Butun rasmni qidirish" : "Искать по всему фото"}
+                                    >
+                                        <Focus size={11} />
+                                        <span>{isUz ? "Butun rasm" : "Всё фото"}</span>
+                                    </button>
+                                    <span className="text-[11px] text-gray-400">
+                                        {isUz ? "Ob'yektni bosib yoki ramkani suring" : "Нажмите или переместите рамку"}
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
