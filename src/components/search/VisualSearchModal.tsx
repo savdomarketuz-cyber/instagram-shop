@@ -378,22 +378,42 @@ export default function VisualSearchModal({
                                 <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-400 mb-3">
                                     <Camera size={26} />
                                 </div>
-                                <h5 className="font-bold text-gray-800 text-base mb-1">
-                                    {isUz ? "Aynan shu rasm bo'yicha mahsulot topilmadi" : "По этому фото точных товаров не найдено"}
-                                </h5>
-                                <p className="text-xs text-gray-500 max-w-sm mb-4">
-                                    {isUz 
-                                        ? "Tovar rasmini yorug'roq joyda yoki boshqa burchakdan qayta olib yuklab ko'ring"
-                                        : "Попробуйте сделать фото товара под другим углом или при лучшем освещении"}
-                                </p>
-                                <button
-                                    type="button"
-                                    onClick={onChangePhoto}
-                                    className="px-5 py-2.5 rounded-xl bg-[#2D6E3E] text-white text-xs font-bold hover:bg-[#235832] transition active:scale-95 shadow-sm flex items-center gap-2"
-                                >
-                                    <Camera size={15} />
-                                    <span>{isUz ? "Boshqa rasm yuklash" : "Загрузить другое фото"}</span>
-                                </button>
+                                {results.length > 0 && activeFilter !== "all" ? (
+                                    <>
+                                        <h5 className="font-bold text-gray-800 text-base mb-1">
+                                            {isUz ? `"${activeFilter}" bo'yicha tovar topilmadi` : `По фильтру "${activeFilter}" ничего не найдено`}
+                                        </h5>
+                                        <p className="text-xs text-gray-500 max-w-sm mb-4">
+                                            {isUz ? "Ushbu parametr bo'yicha mos keladigan mahsulot yo'q, boshqa tegni tanlang yoki barchasini ko'ring" : "Попробуйте выбрать другой тег или сбросить фильтр"}
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={() => setActiveFilter("all")}
+                                            className="px-5 py-2.5 rounded-xl bg-[#2D6E3E] text-white text-xs font-bold hover:bg-[#235832] transition active:scale-95 shadow-sm flex items-center gap-2"
+                                        >
+                                            <span>{isUz ? "Barcha tovarlarni ko'rish" : "Показать все товары"}</span>
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <h5 className="font-bold text-gray-800 text-base mb-1">
+                                            {isUz ? "Aynan shu rasm bo'yicha mahsulot topilmadi" : "По этому фото точных товаров не найдено"}
+                                        </h5>
+                                        <p className="text-xs text-gray-500 max-w-sm mb-4">
+                                            {isUz 
+                                                ? "Tovar rasmini yorug'roq joyda yoki boshqa burchakdan qayta olib yuklab ko'ring"
+                                                : "Попробуйте сделать фото товара под другим углом или при лучшем освещении"}
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={onChangePhoto}
+                                            className="px-5 py-2.5 rounded-xl bg-[#2D6E3E] text-white text-xs font-bold hover:bg-[#235832] transition active:scale-95 shadow-sm flex items-center gap-2"
+                                        >
+                                            <Camera size={15} />
+                                            <span>{isUz ? "Boshqa rasm yuklash" : "Загрузить другое фото"}</span>
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>
