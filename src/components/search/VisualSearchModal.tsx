@@ -40,7 +40,6 @@ export default function VisualSearchModal({
         width: 92,
         height: 92
     });
-    const [aspectRatio, setAspectRatio] = useState<number>(1);
     const [isDraggingBox, setIsDraggingBox] = useState<boolean>(false);
 
     const dragInfo = useRef<{
@@ -72,19 +71,10 @@ export default function VisualSearchModal({
         };
     }, [isOpen, onClose]);
 
-    // Rasm o'zgarganda tabiiy proporsiyani aniqlash va qutini tiklash
+    // Rasm o'zgarganda qutini boshlang'ich holatga qaytarish
     useEffect(() => {
         if (!imagePreview) return;
-        setActiveFilter("all");
         setCropBox({ x: 4, y: 4, width: 92, height: 92 });
-
-        const img = new window.Image();
-        img.onload = () => {
-            if (img.naturalWidth && img.naturalHeight) {
-                setAspectRatio(img.naturalWidth / img.naturalHeight);
-            }
-        };
-        img.src = imagePreview;
     }, [imagePreview]);
 
     // Tanlangan qutini kesib (crop) qidiruvga yuborish
