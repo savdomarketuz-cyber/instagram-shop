@@ -42,36 +42,74 @@ async function applyDbSynonyms(raw: string): Promise<string> {
     return lower.split(/\s+/).map(w => map[w] || w).join(' ');
 }
 
-// Rasmdan qidiruv kalit so'zlarini chiqarish (Groq vision)
+// Rasmdan qidiruv kalit so'zlarini chiqarish (Groq vision model)
 async function extractKeywordsFromImage(imageDataUrl: string): Promise<string | null> {
-    const apiKey = process.env.GROQ_API_KEY_1 || process.env.GROQ_API_KEY_2;
-    if (!apiKey) return null;
-    if (imageDataUrl.length > 6_000_000) return null;
-
-    try {
-        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-                messages: [{
-                    role: 'user',
-                    content: [
-                        { type: 'text', text: "Rasmдagi asosiy mahsulotni aniqlang. FAQAT qidiruv uchun 2-4 ta kalit so'z qaytaring (brend, mahsulot turi, rang). Boshqa matn yo'q. Masalan: 'VGR soch olish mashinkasi' yoki 'simsiz quloqchin oq'." },
-                        { type: 'image_url', image_url: { url: imageDataUrl } }
-                    ]
-                }],
-                temperature: 0.1,
-                max_tokens: 50,
-            }),
-        });
-        if (!res.ok) return null;
-        const data = await res.json();
-        const kw = (data.choices?.[0]?.message?.content || "").trim().replace(/['"]/g, '').slice(0, 80);
-        return kw || null;
-    } catch {
+    const apiKeys = [process.env.GROQ_API_KEY_1, process.env.GROQ_API_KEY_2].filter(Boolean) as string[];
+    if (apiKeys.length === 0) {
+        console.warn("[VisualSearch] No Groq API keys configured");
         return null;
     }
+    if (imageDataUrl.length > 8_000_000) {
+        console.warn("[VisualSearch] Image too large for processing:", imageDataUrl.length);
+        return null;
+    }
+
+    const models = ['qwen/qwen3.8-27b', 'qwen/qwen3.6-27b'];
+
+    for (const key of apiKeys) {
+        for (const model of models) {
+            try {
+                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': `Bearer ${key}`, 
+                        'Content-Type': 'application/json' 
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: [
+                            {
+                                role: 'system',
+                                content: "Siz e-tijorat do'koni uchun vizual qidiruv AI tizimisiz. Rasmda ko'rsatilgan mahsulot yoki tovar nomini aniqlang. FAQAT mahsulot nomi, brendi va modelini 2-4 ta kalit so'z bilan probel orqali qaytaring. Masalan: 'VGR soch olish mashinkasi' yoki 'iPhone 15 pro' yoki 'AirPods quloqchin'. Ortiqcha gap, belgi yoki tushuntirish yozmang."
+                            },
+                            {
+                                role: 'user',
+                                content: [
+                                    { type: 'text', text: "Rasmda qanday mahsulot tasvirlangan? Faqat mahsulot nomini qaytaring." },
+                                    { type: 'image_url', image_url: { url: imageDataUrl } }
+                                ]
+                            }
+                        ],
+                        temperature: 0.1,
+                        max_tokens: 60,
+                    }),
+                });
+
+                if (!res.ok) {
+                    const errText = await res.text().catch(() => '');
+                    console.warn(`[VisualSearch] Groq error (${model}): ${res.status} ${errText}`);
+                    continue;
+                }
+
+                const data = await res.json();
+                const raw = data.choices?.[0]?.message?.content || "";
+                // Reasoning teglarini (<think>...</think>) va ortiqcha belgilarni tozalash
+                const cleaned = raw
+                    .replace(/<think>[\s\S]*?<\/think>/g, '')
+                    .replace(/[*#_`"':\n]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim()
+                    .slice(0, 80);
+
+                if (cleaned) {
+                    return cleaned;
+                }
+            } catch (err: any) {
+                console.warn(`[VisualSearch] Groq fetch error (${model}):`, err.message);
+            }
+        }
+    }
+    return null;
 }
 
 export async function POST(req: NextRequest) {
@@ -106,6 +144,7 @@ export async function POST(req: NextRequest) {
         }
 
         let searchQuery = (query || "").trim();
+        let detectedVisionQuery: string | null = null;
 
         // 1. Visual Search — rasm orqali qidiruv
         if (image && !searchQuery) {
@@ -114,6 +153,7 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, results: [], count: 0, message: "Rasmdan mahsulot aniqlanmadi" });
             }
             searchQuery = visionKeywords;
+            detectedVisionQuery = visionKeywords;
         }
 
         // Typeahead uchun kamida 2 ta belgi bo'lsin
@@ -370,6 +410,8 @@ export async function POST(req: NextRequest) {
             facets,
             didYouMean,
             isFallback,
+            detectedVisionQuery,
+            query: searchQuery,
             page: currentPage,
             limit: currentLimit,
             hasMore,

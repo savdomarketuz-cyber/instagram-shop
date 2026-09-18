@@ -59,8 +59,8 @@ export default function Navigation() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const { setSearchResults, isSearchLoading, setHomeSearchQuery: setStoreGlobalQuery } = useStore(useShallow(s => ({
-        setSearchResults: s.setSearchResults, isSearchLoading: s.isSearchLoading, setHomeSearchQuery: s.setHomeSearchQuery
+    const { setSearchResults, isSearchLoading, setHomeSearchQuery: setStoreGlobalQuery, showToast } = useStore(useShallow(s => ({
+        setSearchResults: s.setSearchResults, isSearchLoading: s.isSearchLoading, setHomeSearchQuery: s.setHomeSearchQuery, showToast: s.showToast
     })));
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isVisualSearching, setIsVisualSearching] = useState(false);
@@ -68,28 +68,74 @@ export default function Navigation() {
     const handleVisualSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+        // Fayl inputini tozalash (keyingi safar xuddi shu faylni tanlasa ham trigger bo'lishi uchun)
+        e.target.value = "";
         setIsVisualSearching(true);
+        useStore.setState({ isSearchLoading: true });
+
         const reader = new FileReader();
-        reader.onload = async () => {
-            const base64 = reader.result as string;
-            try {
-                useStore.setState({ isSearchLoading: true });
-                const res = await fetch("/api/search", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ image: base64, limit: 50 })
-                });
-                const data = await res.json();
-                setSearchResults(data.results || [], data.facets || null, data.didYouMean || null, !!data.isFallback);
-                setStoreGlobalQuery("Rasm qidiruvi");
-                setSearch("Rasm qidiruvi");
-                if (!isHomePage) router.push(`/${language}`);
-            } catch (err) {
-                console.error("Visual search error:", err);
-            } finally {
+        reader.onload = () => {
+            const img = new window.Image();
+            img.onload = async () => {
+                try {
+                    // Rasmni client tomonda 1024px gacha siqish (Vercel 4.5MB limitidan toshmasligi va tezkor bo'lishi uchun)
+                    const canvas = document.createElement("canvas");
+                    let width = img.width;
+                    let height = img.height;
+                    const maxDim = 1024;
+                    if (width > maxDim || height > maxDim) {
+                        if (width > height) {
+                            height = Math.round((height * maxDim) / width);
+                            width = maxDim;
+                        } else {
+                            width = Math.round((width * maxDim) / height);
+                            height = maxDim;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext("2d");
+                    if (ctx) {
+                        ctx.drawImage(img, 0, 0, width, height);
+                    }
+                    const compressedBase64 = canvas.toDataURL("image/jpeg", 0.8);
+
+                    const res = await fetch("/api/search", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ image: compressedBase64, limit: 50, userPhone: user?.phone })
+                    });
+                    const data = await res.json();
+                    
+                    if (data.results && data.results.length > 0) {
+                        setSearchResults(data.results, data.facets || null, data.didYouMean || null, !!data.isFallback);
+                        const label = data.detectedVisionQuery ? `Rasm: ${data.detectedVisionQuery}` : "Rasm qidiruvi";
+                        setStoreGlobalQuery(label);
+                        setSearch(label);
+                        if (!isHomePage) router.push(`/${language}`);
+                    } else {
+                        setSearchResults([], data.facets || null, null, false);
+                        const msg = data.message || (language === "uz" ? "Rasm bo'yicha mahsulot aniqlanmadi" : "По фото товар не распознан");
+                        showToast(msg, "error");
+                    }
+                } catch (err) {
+                    console.error("Visual search error:", err);
+                    showToast(language === "uz" ? "Rasm qidiruvida xatolik yuz berdi" : "Ошибка при поиске по фото", "error");
+                } finally {
+                    setIsVisualSearching(false);
+                    useStore.setState({ isSearchLoading: false });
+                }
+            };
+            img.onerror = () => {
                 setIsVisualSearching(false);
                 useStore.setState({ isSearchLoading: false });
-            }
+                showToast(language === "uz" ? "Rasmni o'qib bo'lmadi" : "Не удалось прочитать фото", "error");
+            };
+            img.src = reader.result as string;
+        };
+        reader.onerror = () => {
+            setIsVisualSearching(false);
+            useStore.setState({ isSearchLoading: false });
         };
         reader.readAsDataURL(file);
     };
