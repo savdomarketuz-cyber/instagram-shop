@@ -136,6 +136,57 @@ async function extractVisualAnalysisFromImage(imageDataUrl: string): Promise<Vis
     return null;
 }
 
+// Google Gemini Embedding 2 orqali rasmdan 768-d multimodal vektor olish
+async function generateGeminiImageEmbedding(imageDataUrl: string): Promise<number[] | null> {
+    const rawKeys = [
+        process.env.GEMINI_API_KEY_1,
+        process.env.GEMINI_API_KEY_2,
+        process.env.GEMINI_API_KEY,
+    ].filter(Boolean) as string[];
+    const keys = [...new Set(rawKeys)];
+
+    if (keys.length === 0) return null;
+
+    let mimeType = 'image/jpeg';
+    let base64Data = imageDataUrl;
+    if (imageDataUrl.startsWith('data:')) {
+        const commaIdx = imageDataUrl.indexOf(',');
+        const meta = imageDataUrl.slice(0, commaIdx);
+        base64Data = imageDataUrl.slice(commaIdx + 1);
+        const mimeMatch = meta.match(/data:([^;]+)/);
+        if (mimeMatch) mimeType = mimeMatch[1];
+    }
+
+    for (const key of keys) {
+        try {
+            const res = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2:embedContent?key=${key}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'models/gemini-embedding-2',
+                        content: {
+                            parts: [{ inline_data: { mime_type: mimeType, data: base64Data } }]
+                        },
+                        outputDimensionality: 768
+                    }),
+                    signal: AbortSignal.timeout(7000)
+                }
+            );
+
+            if (!res.ok) continue;
+            const data = await res.json();
+            if (data.embedding?.values && Array.isArray(data.embedding.values)) {
+                return data.embedding.values;
+            }
+        } catch (err: any) {
+            console.warn('[GeminiEmbedding] API error:', err.message);
+        }
+    }
+    return null;
+}
+
 export async function POST(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
 
@@ -170,15 +221,40 @@ export async function POST(req: NextRequest) {
         let searchQuery = (query || "").trim();
         let detectedVisionQuery: string | null = null;
 
-        // 1. Visual Search — rasm orqali qidiruv
+        // 1. Visual Search — rasm orqali qidiruv (Gemini Image Vector + Groq Vision)
         let visualAnalysis: VisualAnalysis | null = null;
+        let imageDirectMatches: any[] = [];
         if (image && !searchQuery) {
-            visualAnalysis = await extractVisualAnalysisFromImage(image);
-            if (!visualAnalysis || !visualAnalysis.searchQuery) {
+            const [vectorRes, analysisRes] = await Promise.allSettled([
+                generateGeminiImageEmbedding(image),
+                extractVisualAnalysisFromImage(image)
+            ]);
+
+            if (vectorRes.status === 'fulfilled' && vectorRes.value) {
+                const vectorLiteral = `[${vectorRes.value.join(',')}]`;
+                const { data: imgRows, error: imgErr } = await supabase.rpc('match_products_by_image', {
+                    query_embedding: vectorLiteral,
+                    match_threshold: 0.35,
+                    match_count: limit || 24
+                });
+
+                if (!imgErr && imgRows && imgRows.length > 0) {
+                    imageDirectMatches = imgRows;
+                }
+            }
+
+            if (analysisRes.status === 'fulfilled' && analysisRes.value) {
+                visualAnalysis = analysisRes.value;
+                searchQuery = visualAnalysis.searchQuery;
+                detectedVisionQuery = visualAnalysis.subject || visualAnalysis.searchQuery;
+            } else if (imageDirectMatches.length > 0) {
+                detectedVisionQuery = imageDirectMatches[0].name || "Rasm qidiruvi";
+                searchQuery = detectedVisionQuery;
+            }
+
+            if (!searchQuery && imageDirectMatches.length === 0) {
                 return NextResponse.json({ success: true, results: [], count: 0, message: "Rasmdan mahsulot aniqlanmadi" });
             }
-            searchQuery = visualAnalysis.searchQuery;
-            detectedVisionQuery = visualAnalysis.subject || visualAnalysis.searchQuery;
         }
 
         // Typeahead uchun kamida 2 ta belgi bo'lsin
@@ -311,6 +387,12 @@ export async function POST(req: NextRequest) {
         }
 
         let rawResults = results || [];
+
+        // Agar haqiqiy rasm vektor mosliklari (image_embedding) bo'lsa, ularni eng yuqoriga qo'yish
+        if (imageDirectMatches.length > 0) {
+            const seen = new Set(imageDirectMatches.map((p: any) => String(p.id)));
+            rawResults = [...imageDirectMatches, ...rawResults.filter((p: any) => !seen.has(String(p.id)))];
+        }
 
         // 3.1 Fallback — Kirill translit yoki threshold yumshatish
         if (!error && rawResults.length === 0 && searchQuery) {
