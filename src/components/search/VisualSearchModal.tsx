@@ -1,19 +1,17 @@
 "use client";
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { X, Camera, Sparkles, RefreshCw, Focus, ArrowRight, CheckCircle2 } from "lucide-react";
+import { X, Camera, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { Product } from "@/types";
-import { VisualAnalysis } from "@/app/api/search/route";
 
 interface VisualSearchModalProps {
     isOpen: boolean;
     onClose: () => void;
     imagePreview: string | null;
     isAnalyzing: boolean;
-    visualAnalysis?: VisualAnalysis | null;
     results?: Product[];
     language: "uz" | "ru";
-    onChangePhoto: () => void;
+    onChangePhoto?: () => void;
     onSelectTag?: (tag: string) => void;
     onCropSearch?: (croppedBase64: string) => void;
     onViewResults?: () => void;
@@ -32,6 +30,11 @@ export default function VisualSearchModal({
 }: VisualSearchModalProps) {
     const modalRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+
+    // Modal yuqoriga yig'ilgan (collapsed) yoki to'liq ochiq (expanded) holati
+    const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+    const prevAnalyzingRef = useRef<boolean>(isAnalyzing);
+    const initialCollapseDone = useRef<boolean>(false);
 
     // Google Lens Crop Box (foizlarda: 0 - 100)
     const [cropBox, setCropBox] = useState<{ x: number; y: number; width: number; height: number }>({
@@ -56,32 +59,79 @@ export default function VisualSearchModal({
         hasMoved: false
     });
 
-    // Escape tugmasi bilan yopish
+    const touchStartY = useRef<number>(0);
+
+    // Escape tugmasi bilan butunlay yopish
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape") onClose();
         };
         if (isOpen) {
             window.addEventListener("keydown", handleKeyDown);
-            document.body.style.overflow = "hidden";
         }
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
-            document.body.style.overflow = "";
         };
     }, [isOpen, onClose]);
 
-    // Rasm o'zgarganda qutini boshlang'ich holatga qaytarish
+    // Oyna ochiq bo'lganda scrollni boshqarish:
+    // Faqat to'liq ochiq (expanded) bo'lganda scroll bloklanadi;
+    // Tepaga yig'ilganda (collapsed) foydalanuvchi pastdagi mahsulotlarni bemalol ko'ra oladi.
+    useEffect(() => {
+        if (isOpen && !isCollapsed) {
+            document.body.style.overflow = "hidden";
+        } else {
+            document.body.style.overflow = "";
+        }
+        return () => {
+            document.body.style.overflow = "";
+        };
+    }, [isOpen, isCollapsed]);
+
+    // Yangi rasm kelganda holatlarni reset qilish
     useEffect(() => {
         if (!imagePreview) return;
         setCropBox({ x: 4, y: 4, width: 92, height: 92 });
+        setIsCollapsed(false);
+        initialCollapseDone.current = false;
     }, [imagePreview]);
+
+    // Modal yopilganda qayta ochilish uchun reset
+    useEffect(() => {
+        if (!isOpen) {
+            setIsCollapsed(false);
+            initialCollapseDone.current = false;
+        }
+    }, [isOpen]);
+
+    // NATIJA BO'LISHI BILAN AVTOMATIK TEPAGA SURILISH:
+    // Qidiruv tahlili yakunlanib natijalar topilganda modal avtomatik tepaga yig'iladi
+    useEffect(() => {
+        if (prevAnalyzingRef.current && !isAnalyzing && results && results.length > 0) {
+            const timer = setTimeout(() => {
+                setIsCollapsed(true);
+            }, 350);
+            return () => clearTimeout(timer);
+        }
+        prevAnalyzingRef.current = isAnalyzing;
+    }, [isAnalyzing, results]);
+
+    // Boshlang'ich yuklanganda allaqachon natijalar mavjud bo'lsa
+    useEffect(() => {
+        if (isOpen && !isAnalyzing && results && results.length > 0 && !initialCollapseDone.current) {
+            initialCollapseDone.current = true;
+            const timer = setTimeout(() => {
+                setIsCollapsed(true);
+            }, 350);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen, isAnalyzing, results]);
 
     // Tanlangan qutini kesib (crop) qidiruvga yuborish
     const triggerCropSearch = useCallback((box: { x: number; y: number; width: number; height: number }) => {
         if (!imagePreview || !onCropSearch) return;
 
-        // Agar butun rasmni qamragan bo'lsa (>90%), asl rasmni yuborish
+        // Agar butun rasmni qamragan bo'lsa (>90%), to'g'ridan-to'g'ri yuborish
         if (box.width >= 90 && box.height >= 90 && box.x <= 5 && box.y <= 5) {
             onCropSearch(imagePreview);
             return;
@@ -225,7 +275,6 @@ export default function VisualSearchModal({
         const clickX = ((e.clientX - rect.left) / rect.width) * 100;
         const clickY = ((e.clientY - rect.top) / rect.height) * 100;
 
-        // Bosilgan nuqta atrofida 48%x48% quti hosil qilish
         const boxSize = 48;
         const newX = Math.max(0, Math.min(100 - boxSize, clickX - boxSize / 2));
         const newY = Math.max(0, Math.min(100 - boxSize, clickY - boxSize / 2));
@@ -234,90 +283,45 @@ export default function VisualSearchModal({
         triggerCropSearch(newBox);
     };
 
-    // Butun rasmga qaytarish
-    const handleResetToFull = () => {
-        const fullBox = { x: 4, y: 4, width: 92, height: 92 };
-        setCropBox(fullBox);
-        triggerCropSearch(fullBox);
+    // Pastki tasmada surish (Touch swipe up/down)
+    const onHandleTouchStart = (e: React.TouchEvent) => {
+        touchStartY.current = e.touches[0].clientY;
     };
 
-    // Natijalarni ko'rish tugmasi bosilganda
-    const handleViewResultsClick = () => {
-        if (onViewResults) {
-            onViewResults();
-        } else {
-            onClose();
-            setTimeout(() => {
-                const el = document.getElementById("search-results");
-                if (el) {
-                    el.scrollIntoView({ behavior: "smooth", block: "start" });
-                }
-            }, 120);
+    const onHandleTouchEnd = (e: React.TouchEvent) => {
+        const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+        if (isCollapsed && deltaY > 20) {
+            setIsCollapsed(false);
+        } else if (!isCollapsed && deltaY < -20) {
+            setIsCollapsed(true);
         }
     };
 
     if (!isOpen) return null;
 
     const isUz = language === "uz";
-    const resultsCount = results.length;
 
     return (
-        <div className="fixed inset-0 z-[150] flex flex-col justify-start">
-            {/* Orqa qorong'i backdrop */}
+        <div className="fixed top-0 left-0 right-0 z-[140] pointer-events-none flex flex-col items-center">
+            {/* Orqa qorong'i backdrop (faqat oyna to'liq ochiq bo'lganda ko'rinadi) */}
             <div 
-                className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity duration-300 animate-in fade-in"
-                onClick={onClose}
+                className={`fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 z-[139] ${
+                    !isCollapsed ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+                }`}
+                onClick={() => setIsCollapsed(true)}
             />
 
-            {/* Tepadan pastga tushuvchi ixcham Google Lens skaner oynasi */}
+            {/* Tepadan pastga tushuvchi ixcham Google Lens oynasi */}
             <div 
                 ref={modalRef}
-                className="relative w-full max-w-lg mx-auto bg-white text-[#111612] rounded-b-[32px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] z-[160] flex flex-col overflow-hidden border-b border-black/5 animate-in slide-in-from-top-6 duration-300"
+                style={{
+                    transform: isCollapsed ? 'translateY(calc(-100% + 46px))' : 'translateY(0)',
+                    transition: 'transform 320ms cubic-bezier(0.22, 1, 0.36, 1)'
+                }}
+                className="pointer-events-auto relative w-full max-w-md mx-auto bg-white text-[#111612] rounded-b-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.25)] flex flex-col overflow-hidden border-b border-black/10 z-[140] will-change-transform"
             >
-                {/* 1. Sarlavha paneli */}
-                <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 bg-white border-b border-gray-100 flex-shrink-0">
-                    <div className="flex items-center gap-2.5">
-                        <div className="relative w-8 h-8 rounded-xl bg-gradient-to-tr from-[#2D6E3E] via-[#10B981] to-[#F59E0B] p-[2px] shadow-sm flex items-center justify-center">
-                            <div className="w-full h-full bg-white rounded-[9px] flex items-center justify-center">
-                                <Sparkles size={16} className="text-[#2D6E3E]" />
-                            </div>
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="font-bold text-base tracking-tight text-gray-900">Velari Lens</span>
-                                <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-[#2D6E3E]/10 text-[#2D6E3E]">
-                                    AI Vision
-                                </span>
-                            </div>
-                            <p className="text-[11px] text-gray-500">
-                                {isUz ? "Ob'yektni ramkaga oling" : "Выделите объект рамкой"}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <button
-                            type="button"
-                            onClick={onChangePhoto}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 transition active:scale-95"
-                            title={isUz ? "Boshqa rasm yuklash" : "Загрузить другое фото"}
-                        >
-                            <Camera size={13} />
-                            <span>{isUz ? "O'zgartirish" : "Изменить"}</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-900 flex items-center justify-center transition active:scale-95"
-                            aria-label="Yopish"
-                        >
-                            <X size={17} />
-                        </button>
-                    </div>
-                </div>
-
-                {/* 2. Rasm va Google Lens Ob'yekt tanlash ramkasi */}
-                <div className="p-4 sm:p-6 flex flex-col items-center gap-4 bg-[#FBFBFB]">
+                {/* 1. Rasm va Google Lens Ob'yekt tanlash ramkasi */}
+                <div className="p-3 sm:p-4 flex flex-col items-center bg-[#FBFBFB] select-none">
                     <div 
                         ref={containerRef}
                         onClick={handleContainerClick}
@@ -327,15 +331,29 @@ export default function VisualSearchModal({
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
                                 src={imagePreview}
-                                alt="Yuklangan rasm"
-                                className="block max-h-[300px] sm:max-h-[340px] max-w-full w-auto h-auto pointer-events-none select-none"
+                                alt="Lens"
+                                className="block max-h-[280px] sm:max-h-[320px] max-w-full w-auto h-auto pointer-events-none select-none"
                             />
                         ) : (
                             <div className="flex flex-col items-center justify-center text-gray-400 gap-2 p-12">
-                                <Camera size={32} />
+                                <Camera size={28} />
                                 <span className="text-xs">{isUz ? "Rasm yo'q" : "Нет фото"}</span>
                             </div>
                         )}
+
+                        {/* X tugmasi - rasmni o'ng burchagida */}
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onClose();
+                            }}
+                            className="absolute top-2.5 right-2.5 z-40 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center shadow-lg backdrop-blur-md transition-transform active:scale-90"
+                            aria-label="Yopish"
+                            title={isUz ? "Yopish" : "Закрыть"}
+                        >
+                            <X size={17} />
+                        </button>
 
                         {/* Google Lens interaktiv ob'yekt tanlash ramkasi (Crop Box) */}
                         {imagePreview && (
@@ -352,12 +370,12 @@ export default function VisualSearchModal({
                                 onPointerMove={handlePointerMove}
                                 onPointerUp={handlePointerUp}
                             >
-                                {/* Lazer skaner chizig'i (faqat tanlangan ramka ichida skan qiladi) */}
+                                {/* Lazer skaner chizig'i (faqat qidiruv ketayotganda) */}
                                 {isAnalyzing && (
                                     <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#10B981] to-transparent shadow-[0_0_15px_#10B981] pointer-events-none animate-lens-scan" />
                                 )}
 
-                                {/* 4 ta Google Lens burchakli nishoni (Tegib surish nuqtalari) */}
+                                {/* 4 ta Google Lens burchakli nishoni */}
                                 <div
                                     onPointerDown={(e) => handlePointerDown('nw', e)}
                                     onPointerMove={handlePointerMove}
@@ -400,77 +418,56 @@ export default function VisualSearchModal({
                             </div>
                         )}
                     </div>
-
-                    {/* Holat yozuvi va boshqaruv tugmalari */}
-                    <div className="flex flex-col items-center gap-2 w-full text-center">
-                        <div className="flex items-center justify-center gap-2">
-                            <button
-                                type="button"
-                                onClick={handleResetToFull}
-                                className="text-[11px] font-semibold text-gray-700 hover:text-[#2D6E3E] bg-white hover:bg-gray-100 border border-gray-200 px-3 py-1 rounded-full transition active:scale-95 flex items-center gap-1.5 shadow-sm"
-                                title={isUz ? "Butun rasmni qidirish" : "Искать по всему фото"}
-                            >
-                                <Focus size={12} />
-                                <span>{isUz ? "Butun rasm" : "Всё фото"}</span>
-                            </button>
-                            <span className="text-[11px] text-gray-400">
-                                {isUz ? "Ob'yektni bosing yoki ramkani suring" : "Нажмите или переместите рамку"}
-                            </span>
-                        </div>
-
-                        {/* AI Holati */}
-                        {isAnalyzing ? (
-                            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#2D6E3E]/10 text-[#2D6E3E] text-xs font-semibold animate-pulse">
-                                <RefreshCw size={13} className="animate-spin" />
-                                <span>{isUz ? "O'xshash tovarlar qidirilmoqda..." : "Поиск похожих товаров..."}</span>
-                            </div>
-                        ) : resultsCount > 0 ? (
-                            <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2D6E3E]">
-                                <CheckCircle2 size={14} className="text-[#2D6E3E]" />
-                                <span>
-                                    {isUz 
-                                        ? `${resultsCount} ta mos mahsulot topildi` 
-                                        : `Найдено ${resultsCount} товаров`}
-                                </span>
-                            </div>
-                        ) : (
-                            <span className="text-xs text-gray-500 font-medium">
-                                {isUz ? "Bu sohada mos mahsulot topilmadi" : "В этой области товары не найдены"}
-                            </span>
-                        )}
-                    </div>
                 </div>
 
-                {/* 3. Pastki harakat paneli: Asosiy sahifadagi natijalarni ko'rish */}
-                <div className="p-4 bg-white border-t border-gray-100 flex items-center gap-3">
-                    <button
-                        type="button"
-                        onClick={handleViewResultsClick}
-                        disabled={isAnalyzing}
-                        className={`w-full py-3 px-5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.98] ${
-                            resultsCount > 0
-                                ? "bg-[#2D6E3E] hover:bg-[#235832] text-white shadow-[#2D6E3E]/20 cursor-pointer"
-                                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                        }`}
-                    >
-                        {isAnalyzing ? (
-                            <>
-                                <RefreshCw size={15} className="animate-spin" />
-                                <span>{isUz ? "Qidirilmoqda..." : "Поиск..."}</span>
-                            </>
-                        ) : resultsCount > 0 ? (
-                            <>
-                                <span>
-                                    {isUz
-                                        ? `Natijalarni ko'rish (${resultsCount} ta tovar)`
-                                        : `Посмотреть результаты (${resultsCount})`}
+                {/* 2. Pastki tutqich / boshqaruv tasmasi (46px balandlikda):
+                       Modal yuqoriga surilganda faqat shu tasma ekranning yuqori qismida ko'rinib turadi */}
+                <div 
+                    onTouchStart={onHandleTouchStart}
+                    onTouchEnd={onHandleTouchEnd}
+                    onClick={() => setIsCollapsed(prev => !prev)}
+                    className="w-full h-[46px] px-4 bg-white/95 backdrop-blur-md border-t border-gray-100 flex items-center justify-between cursor-pointer select-none"
+                >
+                    {isCollapsed ? (
+                        <>
+                            <div className="flex items-center gap-2">
+                                {imagePreview ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img 
+                                        src={imagePreview} 
+                                        alt="Lens" 
+                                        className="w-6 h-6 rounded-md object-cover border border-gray-200 shadow-xs" 
+                                    />
+                                ) : (
+                                    <Sparkles size={14} className="text-[#2D6E3E]" />
+                                )}
+                                <span className="text-xs font-semibold text-gray-800">
+                                    {isUz ? "Rasm ob'yektini o'zgartirish" : "Изменить область фото"}
                                 </span>
-                                <ArrowRight size={16} />
-                            </>
-                        ) : (
-                            <span>{isUz ? "Oynani yopish" : "Закрыть"}</span>
-                        )}
-                    </button>
+                                <ChevronDown size={14} className="text-[#2D6E3E] animate-bounce" />
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onClose();
+                                }}
+                                className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-900 flex items-center justify-center transition active:scale-90"
+                                aria-label="Yopish"
+                            >
+                                <X size={14} />
+                            </button>
+                        </>
+                    ) : (
+                        <div className="w-full flex flex-col items-center justify-center">
+                            <div className="w-10 h-1 bg-gray-300 rounded-full mb-1" />
+                            <div className="flex items-center gap-1 text-[11px] font-semibold text-gray-500">
+                                <ChevronUp size={13} />
+                                <span>{isUz ? "Natijalarni ko'rish uchun tepaga suring" : "Свернуть к результатам"}</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

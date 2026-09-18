@@ -131,6 +131,13 @@ export default function Navigation() {
                         // Qidiruv satrini matn bilan to'ldirmaymiz, toza saqlaymiz
                         setStoreGlobalQuery("");
                         setSearch("");
+                        if (!isHomePage && !pathname?.includes('/catalog')) {
+                            router.push(`/${language}`);
+                        }
+                        setTimeout(() => {
+                            const el = document.getElementById("search-results");
+                            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }, 400);
                     } else {
                         setLensResults([]);
                         setSearchResults([], data.facets || null, null, false);
@@ -177,6 +184,10 @@ export default function Navigation() {
                 setSearchResults(data.results, data.facets || null, null, false);
                 setStoreGlobalQuery("");
                 setSearch("");
+                setTimeout(() => {
+                    const el = document.getElementById("search-results");
+                    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                }, 400);
             } else {
                 setLensResults([]);
             }
