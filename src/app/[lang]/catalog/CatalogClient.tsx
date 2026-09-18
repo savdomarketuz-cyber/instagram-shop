@@ -13,6 +13,8 @@ import { ProductSkeleton } from "@/components/home/ProductSkeleton";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
 import { getProductRealStock } from "@/lib/stock";
 import type { Product } from "@/types";
+import VisualSearchModal from "@/components/search/VisualSearchModal";
+import type { VisualAnalysis } from "@/app/api/search/route";
 
 const GREEN = "#2D6E3E";
 
@@ -69,6 +71,11 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
     const [searchResults, setSearchResults] = useState<Product[] | null>(null);
     const [isSearching, setIsSearching] = useState(false);
     const [isVisualUploading, setIsVisualUploading] = useState(false);
+    const [isLensModalOpen, setIsLensModalOpen] = useState(false);
+    const [lensImagePreview, setLensImagePreview] = useState<string | null>(null);
+    const [isLensAnalyzing, setIsLensAnalyzing] = useState(false);
+    const [lensAnalysis, setLensAnalysis] = useState<VisualAnalysis | null>(null);
+    const [lensResults, setLensResults] = useState<Product[]>([]);
     const [searchPage, setSearchPage] = useState(1);
     const [hasMoreSearch, setHasMoreSearch] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -304,28 +311,76 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
     const handleVisualUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+        e.target.value = "";
         setIsVisualUploading(true);
+        setIsLensModalOpen(true);
+        setIsLensAnalyzing(true);
+        setLensAnalysis(null);
+        setLensResults([]);
+
         const reader = new FileReader();
-        reader.onload = async () => {
-            const base64 = reader.result as string;
-            try {
-                const res = await fetch("/api/search", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ image: base64, limit: 50 })
-                });
-                const data = await res.json();
-                if (data.results) {
-                    isVisualActiveRef.current = true;
-                    setSearchResults(data.results);
-                    setHasMoreSearch(!!data.hasMore);
-                    setSearchQuery(data.results[0]?.name ? `${data.results[0].name.slice(0, 25)}...` : "Rasm qidiruvi");
+        reader.onload = () => {
+            const dataUrl = reader.result as string;
+            setLensImagePreview(dataUrl);
+
+            const img = new window.Image();
+            img.onload = async () => {
+                try {
+                    // Rasmni client tomonda 1024px gacha siqish (Vercel 4.5MB limitidan toshmasligi va tezkor bo'lishi uchun)
+                    const canvas = document.createElement("canvas");
+                    let width = img.width;
+                    let height = img.height;
+                    const maxDim = 1024;
+                    if (width > maxDim || height > maxDim) {
+                        if (width > height) {
+                            height = Math.round((height * maxDim) / width);
+                            width = maxDim;
+                        } else {
+                            width = Math.round((width * maxDim) / height);
+                            height = maxDim;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext("2d");
+                    if (ctx) ctx.drawImage(img, 0, 0, width, height);
+                    const compressedBase64 = canvas.toDataURL("image/jpeg", 0.8);
+
+                    const res = await fetch("/api/search", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ image: compressedBase64, limit: 50 })
+                    });
+                    const data = await res.json();
+                    if (data.visualAnalysis) {
+                        setLensAnalysis(data.visualAnalysis);
+                    }
+                    if (data.results && data.results.length > 0) {
+                        setLensResults(data.results);
+                        isVisualActiveRef.current = true;
+                        setSearchResults(data.results);
+                        setHasMoreSearch(!!data.hasMore);
+                        const label = data.detectedVisionQuery || data.visualAnalysis?.subject || (data.results[0]?.name ? `${data.results[0].name.slice(0, 25)}...` : "Rasm qidiruvi");
+                        setSearchQuery(label);
+                    } else {
+                        setLensResults([]);
+                    }
+                } catch (err) {
+                    console.error("Visual search error:", err);
+                } finally {
+                    setIsVisualUploading(false);
+                    setIsLensAnalyzing(false);
                 }
-            } catch (err) {
-                console.error("Visual search error:", err);
-            } finally {
+            };
+            img.onerror = () => {
                 setIsVisualUploading(false);
-            }
+                setIsLensAnalyzing(false);
+            };
+            img.src = dataUrl;
+        };
+        reader.onerror = () => {
+            setIsVisualUploading(false);
+            setIsLensAnalyzing(false);
         };
         reader.readAsDataURL(file);
     };
@@ -714,6 +769,18 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                     </button>
                 ))}
             </BottomSheet>
+
+            {/* Google Lens uslubidagi vizual qidiruv modal oynasi */}
+            <VisualSearchModal
+                isOpen={isLensModalOpen}
+                onClose={() => setIsLensModalOpen(false)}
+                imagePreview={lensImagePreview}
+                isAnalyzing={isLensAnalyzing}
+                visualAnalysis={lensAnalysis}
+                results={lensResults}
+                language={language}
+                onChangePhoto={() => fileInputRef.current?.click()}
+            />
         </div>
     );
 }

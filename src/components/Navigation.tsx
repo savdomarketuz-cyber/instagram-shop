@@ -11,8 +11,10 @@ import { useShallow } from "zustand/react/shallow";
 import { usePathname, useRouter } from "next/navigation";
 import { translations } from "@/lib/translations";
 import { useState, useMemo, useRef, useEffect } from "react";
-import { SearchResult } from "@/types";
+import { SearchResult, Product } from "@/types";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
+import VisualSearchModal from "@/components/search/VisualSearchModal";
+import { VisualAnalysis } from "@/app/api/search/route";
 
 export default function Navigation() {
     const user = useStore(state => state.user);
@@ -64,6 +66,11 @@ export default function Navigation() {
     })));
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isVisualSearching, setIsVisualSearching] = useState(false);
+    const [isLensModalOpen, setIsLensModalOpen] = useState(false);
+    const [lensImagePreview, setLensImagePreview] = useState<string | null>(null);
+    const [isLensAnalyzing, setIsLensAnalyzing] = useState(false);
+    const [lensAnalysis, setLensAnalysis] = useState<VisualAnalysis | null>(null);
+    const [lensResults, setLensResults] = useState<Product[]>([]);
 
     const handleVisualSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -71,10 +78,17 @@ export default function Navigation() {
         // Fayl inputini tozalash (keyingi safar xuddi shu faylni tanlasa ham trigger bo'lishi uchun)
         e.target.value = "";
         setIsVisualSearching(true);
+        setIsLensModalOpen(true);
+        setIsLensAnalyzing(true);
+        setLensAnalysis(null);
+        setLensResults([]);
         useStore.setState({ isSearchLoading: true });
 
         const reader = new FileReader();
         reader.onload = () => {
+            const dataUrl = reader.result as string;
+            setLensImagePreview(dataUrl);
+
             const img = new window.Image();
             img.onload = async () => {
                 try {
@@ -107,13 +121,17 @@ export default function Navigation() {
                     });
                     const data = await res.json();
                     
+                    if (data.visualAnalysis) {
+                        setLensAnalysis(data.visualAnalysis);
+                    }
                     if (data.results && data.results.length > 0) {
+                        setLensResults(data.results);
                         setSearchResults(data.results, data.facets || null, data.didYouMean || null, !!data.isFallback);
-                        const label = data.detectedVisionQuery ? `Rasm: ${data.detectedVisionQuery}` : "Rasm qidiruvi";
+                        const label = data.detectedVisionQuery || data.visualAnalysis?.subject || "Rasm qidiruvi";
                         setStoreGlobalQuery(label);
                         setSearch(label);
-                        if (!isHomePage) router.push(`/${language}`);
                     } else {
+                        setLensResults([]);
                         setSearchResults([], data.facets || null, null, false);
                         const msg = data.message || (language === "uz" ? "Rasm bo'yicha mahsulot aniqlanmadi" : "По фото товар не распознан");
                         showToast(msg, "error");
@@ -123,18 +141,21 @@ export default function Navigation() {
                     showToast(language === "uz" ? "Rasm qidiruvida xatolik yuz berdi" : "Ошибка при поиске по фото", "error");
                 } finally {
                     setIsVisualSearching(false);
+                    setIsLensAnalyzing(false);
                     useStore.setState({ isSearchLoading: false });
                 }
             };
             img.onerror = () => {
                 setIsVisualSearching(false);
+                setIsLensAnalyzing(false);
                 useStore.setState({ isSearchLoading: false });
                 showToast(language === "uz" ? "Rasmni o'qib bo'lmadi" : "Не удалось прочитать фото", "error");
             };
-            img.src = reader.result as string;
+            img.src = dataUrl;
         };
         reader.onerror = () => {
             setIsVisualSearching(false);
+            setIsLensAnalyzing(false);
             useStore.setState({ isSearchLoading: false });
         };
         reader.readAsDataURL(file);
@@ -555,6 +576,18 @@ export default function Navigation() {
                     </nav>
                 );
             })()}
+
+            {/* Google Lens uslubidagi vizual qidiruv modal oynasi */}
+            <VisualSearchModal
+                isOpen={isLensModalOpen}
+                onClose={() => setIsLensModalOpen(false)}
+                imagePreview={lensImagePreview}
+                isAnalyzing={isLensAnalyzing}
+                visualAnalysis={lensAnalysis}
+                results={lensResults}
+                language={language as "uz" | "ru"}
+                onChangePhoto={() => fileInputRef.current?.click()}
+            />
         </>
     );
 }

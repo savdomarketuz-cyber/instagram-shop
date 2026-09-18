@@ -51,6 +51,14 @@ const config: Config = {
                 'velari-ring-out': 'velari-ring-out 1.5s ease-out infinite',
                 'velari-pop-in': 'velari-pop-in 400ms cubic-bezier(0.34,1.56,0.64,1) forwards',
                 'velari-shake': 'velari-shake 400ms cubic-bezier(0.22,1,0.36,1)',
+                'lens-scan': 'lensScan 2s ease-in-out infinite alternate',
+            },
+            keyframes: {
+                lensScan: {
+                    '0%': { top: '4%', opacity: '0.3' },
+                    '50%': { opacity: '1' },
+                    '100%': { top: '94%', opacity: '0.3' },
+                },
             },
         },
     },

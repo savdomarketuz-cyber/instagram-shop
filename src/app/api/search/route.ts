@@ -42,8 +42,16 @@ async function applyDbSynonyms(raw: string): Promise<string> {
     return lower.split(/\s+/).map(w => map[w] || w).join(' ');
 }
 
+export interface VisualAnalysis {
+    subject: string;
+    brand?: string | null;
+    color?: string | null;
+    tags: string[];
+    searchQuery: string;
+}
+
 // Rasmdan qidiruv kalit so'zlarini chiqarish (Groq vision model)
-async function extractKeywordsFromImage(imageDataUrl: string): Promise<string | null> {
+async function extractVisualAnalysisFromImage(imageDataUrl: string): Promise<VisualAnalysis | null> {
     const apiKeys = [process.env.GROQ_API_KEY_1, process.env.GROQ_API_KEY_2].filter(Boolean) as string[];
     if (apiKeys.length === 0) {
         console.warn("[VisualSearch] No Groq API keys configured");
@@ -70,18 +78,18 @@ async function extractKeywordsFromImage(imageDataUrl: string): Promise<string | 
                         messages: [
                             {
                                 role: 'system',
-                                content: "Siz e-tijorat do'koni uchun vizual qidiruv AI tizimisiz. Rasmda ko'rsatilgan mahsulot yoki tovar nomini aniqlang. FAQAT mahsulot nomi, brendi va modelini 2-4 ta kalit so'z bilan probel orqali qaytaring. Masalan: 'VGR soch olish mashinkasi' yoki 'iPhone 15 pro' yoki 'AirPods quloqchin'. Ortiqcha gap, belgi yoki tushuntirish yozmang."
+                                content: "Siz elektronika va gadjetlar do'koni uchun Google Lens kabi vizual qidiruv AI tizimisiz. Rasmda tasvirlangan tovar yoki buyumni vizual tahlil qiling. Faqat quyidagi JSON formatida javob bering, boshqa hech qanday so'z yoki belgisiz:\n{\"subject\": \"aniqlangan buyum nomi\", \"brand\": \"brend nomi yoki null\", \"color\": \"asosiy rangi yoki null\", \"tags\": [\"teg1\", \"teg2\"], \"searchQuery\": \"do'kondan qidirish uchun eng optimal 2-4 ta kalit so'z\"}"
                             },
                             {
                                 role: 'user',
                                 content: [
-                                    { type: 'text', text: "Rasmda qanday mahsulot tasvirlangan? Faqat mahsulot nomini qaytaring." },
+                                    { type: 'text', text: "Rasmni vizual tahlil qiling va FAQAT JSON qaytaring." },
                                     { type: 'image_url', image_url: { url: imageDataUrl } }
                                 ]
                             }
                         ],
                         temperature: 0.1,
-                        max_tokens: 60,
+                        max_tokens: 180,
                     }),
                 });
 
@@ -93,16 +101,32 @@ async function extractKeywordsFromImage(imageDataUrl: string): Promise<string | 
 
                 const data = await res.json();
                 const raw = data.choices?.[0]?.message?.content || "";
-                // Reasoning teglarini (<think>...</think>) va ortiqcha belgilarni tozalash
-                const cleaned = raw
-                    .replace(/<think>[\s\S]*?<\/think>/g, '')
-                    .replace(/[*#_`"':\n]/g, ' ')
-                    .replace(/\s+/g, ' ')
-                    .trim()
-                    .slice(0, 80);
+                // Reasoning teglarini (<think>...</think>) tozalash
+                const cleaned = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+                const jsonMatch = cleaned.match(/\{[\s\S]*?\}/);
+                if (jsonMatch) {
+                    try {
+                        const parsed = JSON.parse(jsonMatch[0]);
+                        return {
+                            subject: parsed.subject || parsed.searchQuery || "Mahsulot",
+                            brand: parsed.brand || null,
+                            color: parsed.color || null,
+                            tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
+                            searchQuery: parsed.searchQuery || parsed.subject || "elektronika"
+                        };
+                    } catch {}
+                }
 
-                if (cleaned) {
-                    return cleaned;
+                // Fallback: oddiy matn bo'lsa
+                const textClean = cleaned.replace(/[*#_`"':\n]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+                if (textClean) {
+                    return {
+                        subject: textClean,
+                        brand: null,
+                        color: null,
+                        tags: [],
+                        searchQuery: textClean
+                    };
                 }
             } catch (err: any) {
                 console.warn(`[VisualSearch] Groq fetch error (${model}):`, err.message);
@@ -147,13 +171,14 @@ export async function POST(req: NextRequest) {
         let detectedVisionQuery: string | null = null;
 
         // 1. Visual Search — rasm orqali qidiruv
+        let visualAnalysis: VisualAnalysis | null = null;
         if (image && !searchQuery) {
-            const visionKeywords = await extractKeywordsFromImage(image);
-            if (!visionKeywords) {
+            visualAnalysis = await extractVisualAnalysisFromImage(image);
+            if (!visualAnalysis || !visualAnalysis.searchQuery) {
                 return NextResponse.json({ success: true, results: [], count: 0, message: "Rasmdan mahsulot aniqlanmadi" });
             }
-            searchQuery = visionKeywords;
-            detectedVisionQuery = visionKeywords;
+            searchQuery = visualAnalysis.searchQuery;
+            detectedVisionQuery = visualAnalysis.subject || visualAnalysis.searchQuery;
         }
 
         // Typeahead uchun kamida 2 ta belgi bo'lsin
@@ -410,6 +435,7 @@ export async function POST(req: NextRequest) {
             facets,
             didYouMean,
             isFallback,
+            visualAnalysis,
             detectedVisionQuery,
             query: searchQuery,
             page: currentPage,
