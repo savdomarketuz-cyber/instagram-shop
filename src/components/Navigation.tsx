@@ -84,6 +84,10 @@ export default function Navigation() {
         setLensResults([]);
         useStore.setState({ isSearchLoading: true });
 
+        if (!isHomePage && !pathname?.includes('/catalog')) {
+            router.push(`/${language}`);
+        }
+
         const reader = new FileReader();
         reader.onload = () => {
             const dataUrl = reader.result as string;
@@ -92,7 +96,7 @@ export default function Navigation() {
             const img = new window.Image();
             img.onload = async () => {
                 try {
-                    // Rasmni client tomonda 1024px gacha siqish (Vercel 4.5MB limitidan toshmasligi va tezkor bo'lishi uchun)
+                    // Rasmni client tomonda 1024px gacha siqish
                     const canvas = document.createElement("canvas");
                     let width = img.width;
                     let height = img.height;
@@ -121,15 +125,12 @@ export default function Navigation() {
                     });
                     const data = await res.json();
                     
-                    if (data.visualAnalysis) {
-                        setLensAnalysis(data.visualAnalysis);
-                    }
                     if (data.results && data.results.length > 0) {
                         setLensResults(data.results);
-                        setSearchResults(data.results, data.facets || null, data.didYouMean || null, !!data.isFallback);
-                        const label = data.detectedVisionQuery || data.visualAnalysis?.subject || "Rasm qidiruvi";
-                        setStoreGlobalQuery(label);
-                        setSearch(label);
+                        setSearchResults(data.results, data.facets || null, null, false);
+                        // Qidiruv satrini matn bilan to'ldirmaymiz, toza saqlaymiz
+                        setStoreGlobalQuery("");
+                        setSearch("");
                     } else {
                         setLensResults([]);
                         setSearchResults([], data.facets || null, null, false);
@@ -171,15 +172,11 @@ export default function Navigation() {
                 body: JSON.stringify({ image: croppedBase64, limit: 50, userPhone: user?.phone })
             });
             const data = await res.json();
-            if (data.visualAnalysis) {
-                setLensAnalysis(data.visualAnalysis);
-            }
             if (data.results && data.results.length > 0) {
                 setLensResults(data.results);
-                setSearchResults(data.results, data.facets || null, data.didYouMean || null, !!data.isFallback);
-                const label = data.detectedVisionQuery || data.visualAnalysis?.subject || "Rasm qidiruvi";
-                setStoreGlobalQuery(label);
-                setSearch(label);
+                setSearchResults(data.results, data.facets || null, null, false);
+                setStoreGlobalQuery("");
+                setSearch("");
             } else {
                 setLensResults([]);
             }
@@ -613,14 +610,19 @@ export default function Navigation() {
                 onClose={() => setIsLensModalOpen(false)}
                 imagePreview={lensImagePreview}
                 isAnalyzing={isLensAnalyzing}
-                visualAnalysis={lensAnalysis}
                 results={lensResults}
                 language={language as "uz" | "ru"}
                 onChangePhoto={() => fileInputRef.current?.click()}
                 onCropSearch={handleCropSearch}
-                onSelectTag={(tag) => {
-                    setSearch(tag);
-                    handleSearch(undefined, tag);
+                onViewResults={() => {
+                    setIsLensModalOpen(false);
+                    if (!isHomePage && !pathname?.includes('/catalog')) {
+                        router.push(`/${language}`);
+                    }
+                    setTimeout(() => {
+                        const el = document.getElementById("search-results");
+                        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }, 150);
                 }}
             />
         </>

@@ -221,40 +221,78 @@ export async function POST(req: NextRequest) {
         let searchQuery = (query || "").trim();
         let detectedVisionQuery: string | null = null;
 
-        // 1. Visual Search — rasm orqali qidiruv (Gemini Image Vector + Groq Vision)
-        let visualAnalysis: VisualAnalysis | null = null;
-        let imageDirectMatches: any[] = [];
+        // 1. Visual Search — faqat Gemini Multimodal Vector (Variant 2: 1x tejamkor, 0 Groq xarajat, o'ta tezkor)
         if (image && !searchQuery) {
-            const [vectorRes, analysisRes] = await Promise.allSettled([
-                generateGeminiImageEmbedding(image),
-                extractVisualAnalysisFromImage(image)
-            ]);
-
-            if (vectorRes.status === 'fulfilled' && vectorRes.value) {
-                const vectorLiteral = `[${vectorRes.value.join(',')}]`;
-                const { data: imgRows, error: imgErr } = await supabase.rpc('match_products_by_image', {
-                    query_embedding: vectorLiteral,
-                    match_threshold: 0.35,
-                    match_count: limit || 24
+            const vector = await generateGeminiImageEmbedding(image);
+            if (!vector) {
+                return NextResponse.json({ 
+                    success: true, 
+                    results: [], 
+                    count: 0, 
+                    message: "Rasmni tahlil qilishda xatolik yuz berdi" 
                 });
+            }
 
-                if (!imgErr && imgRows && imgRows.length > 0) {
-                    imageDirectMatches = imgRows;
+            const vectorLiteral = `[${vector.join(',')}]`;
+            const { data: imgRows, error: imgErr } = await supabase.rpc('match_products_by_image', {
+                query_embedding: vectorLiteral,
+                match_threshold: 0.32,
+                match_count: limit || 50
+            });
+
+            if (imgErr || !imgRows || imgRows.length === 0) {
+                return NextResponse.json({ 
+                    success: true, 
+                    results: [], 
+                    count: 0, 
+                    message: "Rasmga o'xshash mahsulot topilmadi" 
+                });
+            }
+
+            const mappedResults = imgRows.map(mapProduct).filter((p: any) => getProductRealStock(p) > 0);
+
+            // Kategoriya ID -> NOM boyitish
+            const categoryNames: Record<string, { uz: string; ru: string }> = {};
+            const catIds = Array.from(new Set(
+                mappedResults
+                    .map((p: any) => p.category ?? p.category_id)
+                    .filter((v: any) => v !== null && v !== undefined && v !== '')
+            ));
+
+            if (catIds.length > 0) {
+                const { data: catRows } = await supabase
+                    .from('categories')
+                    .select('id, name, name_uz, name_ru')
+                    .in('id', catIds);
+                if (catRows) {
+                    for (const c of catRows) {
+                        categoryNames[String(c.id)] = {
+                            uz: c.name_uz || c.name,
+                            ru: c.name_ru || c.name
+                        };
+                    }
                 }
             }
 
-            if (analysisRes.status === 'fulfilled' && analysisRes.value) {
-                visualAnalysis = analysisRes.value;
-                searchQuery = visualAnalysis.searchQuery;
-                detectedVisionQuery = visualAnalysis.subject || visualAnalysis.searchQuery;
-            } else if (imageDirectMatches.length > 0) {
-                detectedVisionQuery = imageDirectMatches[0].name || "Rasm qidiruvi";
-                searchQuery = detectedVisionQuery;
+            const categoryFacets: Record<string, number> = {};
+            for (const item of mappedResults) {
+                const cat = item.category || item.category_id;
+                if (cat) {
+                    categoryFacets[cat] = (categoryFacets[cat] || 0) + 1;
+                }
             }
 
-            if (!searchQuery && imageDirectMatches.length === 0) {
-                return NextResponse.json({ success: true, results: [], count: 0, message: "Rasmdan mahsulot aniqlanmadi" });
-            }
+            return NextResponse.json({
+                success: true,
+                results: mappedResults,
+                count: mappedResults.length,
+                isVisual: true,
+                detectedVisionQuery: null,
+                facets: {
+                    categories: categoryFacets,
+                    categoryNames
+                }
+            });
         }
 
         // Typeahead uchun kamida 2 ta belgi bo'lsin

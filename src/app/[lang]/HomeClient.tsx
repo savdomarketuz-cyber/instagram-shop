@@ -720,13 +720,15 @@ export default function HomeClient({
 
             <div className="px-2 md:px-10 mt-4">
                 {searchResults && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 24, padding: "0 8px", animation: "velari-slide-in 300ms cubic-bezier(0.22,1,0.36,1)" }}>
+                    <div id="search-results" style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 24, padding: "0 8px", animation: "velari-slide-in 300ms cubic-bezier(0.22,1,0.36,1)" }}>
                         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
                             <div>
                                 <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.5, color: "#0F1410", margin: 0 }}>
                                     {isFallback && searchResults.length > 0
                                         ? (language === "uz" ? "Aniq moslik topilmadi" : "Точных совпадений нет")
-                                        : (language === "uz" ? "Qidiruv natijalari" : "Результаты поиска")}
+                                        : (!search
+                                            ? (language === "uz" ? "Rasm bo'yicha qidiruv natijalari" : "Результаты поиска по фото")
+                                            : (language === "uz" ? "Qidiruv natijalari" : "Результаты поиска"))}
                                 </h2>
                                 <p style={{ fontSize: 13, color: "#9AA29C", marginTop: 4, fontWeight: 500 }}>
                                     {isFallback && searchResults.length > 0

@@ -352,16 +352,12 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                         body: JSON.stringify({ image: compressedBase64, limit: 50 })
                     });
                     const data = await res.json();
-                    if (data.visualAnalysis) {
-                        setLensAnalysis(data.visualAnalysis);
-                    }
                     if (data.results && data.results.length > 0) {
                         setLensResults(data.results);
                         isVisualActiveRef.current = true;
                         setSearchResults(data.results);
-                        setHasMoreSearch(!!data.hasMore);
-                        const label = data.detectedVisionQuery || data.visualAnalysis?.subject || (data.results[0]?.name ? `${data.results[0].name.slice(0, 25)}...` : "Rasm qidiruvi");
-                        setSearchQuery(label);
+                        setHasMoreSearch(false);
+                        setSearchQuery("");
                     } else {
                         setLensResults([]);
                     }
@@ -394,16 +390,12 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                 body: JSON.stringify({ image: croppedBase64, limit: 50 })
             });
             const data = await res.json();
-            if (data.visualAnalysis) {
-                setLensAnalysis(data.visualAnalysis);
-            }
             if (data.results && data.results.length > 0) {
                 setLensResults(data.results);
                 isVisualActiveRef.current = true;
                 setSearchResults(data.results);
-                setHasMoreSearch(!!data.hasMore);
-                const label = data.detectedVisionQuery || data.visualAnalysis?.subject || (data.results[0]?.name ? `${data.results[0].name.slice(0, 25)}...` : "Rasm qidiruvi");
-                setSearchQuery(label);
+                setHasMoreSearch(false);
+                setSearchQuery("");
             } else {
                 setLensResults([]);
             }
@@ -805,12 +797,16 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                 onClose={() => setIsLensModalOpen(false)}
                 imagePreview={lensImagePreview}
                 isAnalyzing={isLensAnalyzing}
-                visualAnalysis={lensAnalysis}
                 results={lensResults}
                 language={language}
                 onChangePhoto={() => fileInputRef.current?.click()}
                 onCropSearch={handleCropSearch}
-                onSelectTag={(tag) => setSearchQuery(tag)}
+                onViewResults={() => {
+                    setIsLensModalOpen(false);
+                    setTimeout(() => {
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                    }, 120);
+                }}
             />
         </div>
     );
