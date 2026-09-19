@@ -31,19 +31,25 @@ const getProductData = cache(async (identifier: string) => {
         const { data } = await query.single();
         if (!data) return null;
 
-        let brandName: string | undefined = undefined;
-        if (data.brand_id) {
-            const { data: brand } = await supabaseAdmin
-                .from("brands")
-                .select("name")
-                .eq("id", data.brand_id)
-                .single();
-            if (brand?.name) {
-                brandName = brand.name;
-            }
-        }
+        const [brandRes, groupRes] = await Promise.all([
+            data.brand_id
+                ? supabaseAdmin.from("brands").select("name").eq("id", data.brand_id).maybeSingle()
+                : Promise.resolve({ data: null }),
+            data.group_id
+                ? supabaseAdmin.from("products").select("*").eq("group_id", data.group_id).eq("is_deleted", false).order("created_at", { ascending: true })
+                : Promise.resolve({ data: null })
+        ]);
 
-        return { ...mapProduct(data), brand_name: brandName };
+        const brandName = brandRes.data?.name || undefined;
+        const initialGroupProducts = (groupRes.data && groupRes.data.length > 0)
+            ? groupRes.data.map(mapProduct)
+            : [];
+
+        return { 
+            ...mapProduct(data), 
+            brand_name: brandName, 
+            initialGroupProducts 
+        };
     } catch (err) {
         console.error("getProductData error:", err);
         return null;
@@ -334,7 +340,12 @@ function ProductDataWrapper({ params, product, canonicalSlug }: { params: { lang
                     {descriptionText}
                 </div>
             </article>
-            <ProductClient params={params} initialProduct={product} />
+            <ProductClient 
+                key={product.id}
+                params={params} 
+                initialProduct={product} 
+                initialGroupProducts={product.initialGroupProducts || []}
+            />
         </>
     );
 }

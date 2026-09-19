@@ -50,6 +50,7 @@ export interface Product {
         one_liner_uz?: string;
         one_liner_ru?: string;
     } | string | null;
+    initialGroupProducts?: Product[];
 }
 
 export interface CartItem extends Product {

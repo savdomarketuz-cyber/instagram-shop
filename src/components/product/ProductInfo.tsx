@@ -119,9 +119,17 @@ export const ProductInfo = ({
                             <Link replace key={v.id} href={`/${language}/products/${getProductSlug(v, language)}`}
                                 onClick={() => videoPreWarmer.triggerHaptic("light")}
                                 className="ios-tap-feedback active:scale-95 transition-transform duration-150 ease-out will-change-transform"
-                                style={{ flexShrink: 0, width: 56, height: 72, borderRadius: 16, overflow: "hidden", border: v.id === product.id ? `2.5px solid ${GREEN}` : "2px solid rgba(15,20,16,0.08)", textDecoration: "none", display: "block", transform: v.id === product.id ? "scale(1.06)" : undefined, boxShadow: v.id === product.id ? "0 4px 12px rgba(45,110,62,0.18)" : "none" }}
+                                style={{ flexShrink: 0, width: 56, height: 72, borderRadius: 16, overflow: "hidden", backgroundColor: "#F3F4F6", border: v.id === product.id ? `2.5px solid ${GREEN}` : "2px solid rgba(15,20,16,0.08)", textDecoration: "none", display: "block", transform: v.id === product.id ? "scale(1.06)" : undefined, boxShadow: v.id === product.id ? "0 4px 12px rgba(45,110,62,0.18)" : "none" }}
                             >
-                                <img src={getOptimizedImageUrl(v.image_metadata, v.image, 'xs')} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={v.colorName} />
+                                <img 
+                                    src={getOptimizedImageUrl(v.image_metadata, v.image, 'xs')} 
+                                    width={56}
+                                    height={72}
+                                    loading="eager"
+                                    decoding="async"
+                                    style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                                    alt={v.colorName || (language === "uz" ? "Variant" : "Вариант")} 
+                                />
                             </Link>
                         ))}
                     </div>

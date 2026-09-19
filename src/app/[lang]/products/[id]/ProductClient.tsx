@@ -69,7 +69,15 @@ function StoreCard({ store, language }: { store: { id: string; name: string; log
     );
 }
 
-export default function ProductClient({ params, initialProduct }: { params: { id: string }, initialProduct?: Product | null }) {
+export default function ProductClient({ 
+    params, 
+    initialProduct,
+    initialGroupProducts = []
+}: { 
+    params: { id: string }, 
+    initialProduct?: Product | null,
+    initialGroupProducts?: Product[]
+}) {
     const router = useRouter();
     const productIdentifier = getProductIdFromSlug(params.id);
     const { 
@@ -93,7 +101,11 @@ export default function ProductClient({ params, initialProduct }: { params: { id
     const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
     const [boughtTogether, setBoughtTogether] = useState<Product[]>([]);
     const [popularProducts, setPopularProducts] = useState<Product[]>([]);
-    const [groupProducts, setGroupProducts] = useState<Product[]>([]);
+    const [groupProducts, setGroupProducts] = useState<Product[]>(
+        (initialGroupProducts && initialGroupProducts.length > 0)
+            ? initialGroupProducts
+            : ((initialProduct as any)?.initialGroupProducts || [])
+    );
     const [comments, setComments] = useState<any[]>([]);
     const [categoryData, setCategoryData] = useState<any | null>(null);
     
@@ -209,7 +221,12 @@ export default function ProductClient({ params, initialProduct }: { params: { id
         } else {
             // High priority: Delivery, Group & Internal logic
             fetchDeliverySettings(initialProduct);
-            if (initialProduct.groupId) fetchGroup(initialProduct.groupId);
+            const serverGroup = (initialGroupProducts && initialGroupProducts.length > 0) 
+                ? initialGroupProducts 
+                : (initialProduct as any)?.initialGroupProducts;
+            if (initialProduct.groupId && (!serverGroup || serverGroup.length === 0)) {
+                fetchGroup(initialProduct.groupId);
+            }
 
             // Kategoriya ma'lumotini yuklash (breadcrumb to'g'ri nom ko'rsatishi uchun)
             if (initialProduct.category) {
@@ -948,7 +965,7 @@ export default function ProductClient({ params, initialProduct }: { params: { id
                                             <Link 
                                                 replace 
                                                 key={v.id} 
-                                                href={`/products/${getProductSlug(v, language)}`}
+                                                href={`/${language}/products/${getProductSlug(v, language)}`}
                                                 onClick={() => videoPreWarmer.triggerHaptic("selection")}
                                                 className={`ios-tap-feedback aspect-[3/4] rounded-3xl overflow-hidden border-2 transition-transform duration-150 flex-shrink-0 shadow-sm relative group/v active:scale-95 ${v.id === product.id ? "border-black scale-105 shadow-xl z-10" : "border-white opacity-60 hover:opacity-100 hover:border-gray-200"}`}
                                             >
