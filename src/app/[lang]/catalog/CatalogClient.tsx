@@ -551,10 +551,10 @@ export default function CatalogClient({
 
     return (
         <div className="min-h-screen text-black font-sans pb-24" style={{ background: "#FAFAF6" }}>
-            <div className="max-w-[1600px] mx-auto px-4 md:px-10 py-5 md:py-10">
+            <div className="max-w-[1600px] mx-auto px-4 md:px-10 pt-3 md:pt-6 pb-6 md:pb-10">
 
                 {/* Title */}
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#111612] mb-4">
+                <h1 className="sr-only">
                     {language === "uz" ? "Katalog" : "Каталог"}
                 </h1>
 
