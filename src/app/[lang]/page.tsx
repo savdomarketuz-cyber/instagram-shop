@@ -40,7 +40,8 @@ async function getInitialData() {
             { data: settingsData },
             { data: promoData },
             { data: prodCatRows },
-            { data: featuredSettingRow }
+            { data: featuredSettingRow },
+            { data: storiesData }
         ] = await Promise.all([
             supabaseAdmin.from("products").select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,avg_rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,express_delivery,created_at").eq("is_deleted", false).or("stock.gt.0,stock_details.neq.{}").order("sales", { ascending: false }).order("avg_rating", { ascending: false }).limit(30),
             supabaseAdmin.from("categories").select("id,name,name_uz,name_ru,parent_id,image,image_meta,icon,color,is_deleted").eq("is_deleted", false).order("name", { ascending: true }),
@@ -51,6 +52,8 @@ async function getInitialData() {
             supabaseAdmin.from("products").select("category_id, stock, stock_details").eq("is_deleted", false).or("stock.gt.0,stock_details.neq.{}"),
             // Kategoriya vitrinasi sozlamasi (settings anon o'qishdan yopiq -> server orqali)
             supabaseAdmin.from("settings").select("data").eq("id", "featured_categories").maybeSingle(),
+            // Bosh sahifa storylari (serverda keshlanadi, qayta yuklanganda sakrab chiqmasligi uchun)
+            supabaseAdmin.from("stories").select("*").eq("is_active", true).order("sort_order", { ascending: true })
         ]);
 
         // Mahsuloti bor (bo'sh bo'lmagan) kategoriyalar to'plamini hisoblash.
@@ -96,15 +99,42 @@ async function getInitialData() {
                 color: c.color || null,
             }));
 
-        return { products, categories, banners, bannerSettings, promoSettings, featuredCategories };
+        // Stories guruhlash
+        const buildStoryGroups = (data: any[]) => {
+            if (!data || data.length === 0) return [];
+            const order: string[] = [];
+            const map = new Map<string, any[]>();
+            data.forEach((s: any) => {
+                const key = s.group_key && s.group_key.trim() ? s.group_key.trim() : `__solo_${s.id}`;
+                if (!map.has(key)) { map.set(key, []); order.push(key); }
+                map.get(key)!.push(s);
+            });
+            return order.map(key => {
+                const slides = map.get(key)!;
+                const first = slides[0];
+                const cover = slides.find((x: any) => x.image)?.image || "";
+                return {
+                    key,
+                    coverImage: cover,
+                    coverIsVideo: !cover && !!first.video,
+                    title_uz: first.group_title_uz?.trim() || first.title_uz,
+                    title_ru: first.group_title_ru?.trim() || first.title_ru,
+                    slides,
+                };
+            });
+        };
+
+        const storyGroups = buildStoryGroups(storiesData || []);
+
+        return { products, categories, banners, bannerSettings, promoSettings, featuredCategories, storyGroups };
     } catch (error) {
         console.error("Server-side fetch failed:", error);
-        return { products: [], categories: [], banners: [], bannerSettings: { desktopHeight: 210, borderRadius: 32 }, promoSettings: null, featuredCategories: [] };
+        return { products: [], categories: [], banners: [], bannerSettings: { desktopHeight: 210, borderRadius: 32 }, promoSettings: null, featuredCategories: [], storyGroups: [] };
     }
 }
 
 async function HomeDataWrapper() {
-    const { products, categories, banners, bannerSettings, promoSettings, featuredCategories } = await getInitialData();
+    const { products, categories, banners, bannerSettings, promoSettings, featuredCategories, storyGroups } = await getInitialData();
 
     return (
         <HomeClient
@@ -114,6 +144,7 @@ async function HomeDataWrapper() {
             initialBannerSettings={bannerSettings}
             initialPromo={promoSettings}
             initialFeaturedCategories={featuredCategories}
+            initialStoryGroups={storyGroups}
         />
     );
 }

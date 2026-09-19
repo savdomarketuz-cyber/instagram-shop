@@ -66,8 +66,16 @@ function ctaHref(lang: string, s: Story): string | null {
     return null;
 }
 
-export default function StoriesRow({ language, device = "both" }: { language: "uz" | "ru"; device?: "mobile" | "desktop" | "both" }) {
-    const [groups, setGroups] = useState<StoryGroup[]>([]);
+export default function StoriesRow({
+    language,
+    device = "both",
+    initialGroups
+}: {
+    language: "uz" | "ru";
+    device?: "mobile" | "desktop" | "both";
+    initialGroups?: StoryGroup[];
+}) {
+    const [groups, setGroups] = useState<StoryGroup[]>(initialGroups || []);
     const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
 
     // Viewer holati
@@ -124,6 +132,7 @@ export default function StoriesRow({ language, device = "both" }: { language: "u
     // — Data fetch + guruhlash —
     useEffect(() => {
         setSeenIds(getSeenIds());
+        if (initialGroups && initialGroups.length > 0) return;
         supabase
             .from("stories")
             .select("*")
@@ -153,7 +162,7 @@ export default function StoriesRow({ language, device = "both" }: { language: "u
                 });
                 setGroups(built);
             });
-    }, []);
+    }, [initialGroups]);
 
     const curGroup = groups[groupIdx];
     const curSlide = curGroup?.slides[slideIdx];
@@ -400,7 +409,7 @@ export default function StoriesRow({ language, device = "both" }: { language: "u
     return (
         <>
             {/* — Story pufaklari qatori (MOBIL) — */}
-            {device !== "desktop" && <div className="md:hidden mt-4 mb-0">
+            {device !== "desktop" && <div className="md:hidden mt-4 mb-0 min-h-[106px]">
                 <div
                     style={{ display: "flex", gap: 14, overflowX: "auto", padding: "4px 20px 8px", scrollbarWidth: "none" }}
                     className="no-scrollbar"
@@ -417,7 +426,6 @@ export default function StoriesRow({ language, device = "both" }: { language: "u
                                     flexShrink: 0, display: "flex", flexDirection: "column",
                                     alignItems: "center", gap: 6, background: "none", border: "none",
                                     padding: 0, cursor: "pointer", WebkitTapHighlightColor: "transparent",
-                                    animation: `velari-cart-in ${200 + idx * 50}ms ${EASE} both`,
                                 }}
                             >
                                 <div style={{
@@ -460,7 +468,7 @@ export default function StoriesRow({ language, device = "both" }: { language: "u
             </div>}
 
             {/* — Story pufaklari (DESKTOP, kattaroq) — */}
-            {device !== "mobile" && <div className="hidden md:block px-10 mt-10">
+            {device !== "mobile" && <div className="hidden md:block px-10 mt-10 min-h-[140px]">
                 <div style={{ display: "flex", gap: 22, overflowX: "auto", paddingBottom: 6 }} className="no-scrollbar">
                     {groups.map((g, idx) => {
                         const seen = g.slides.every(s => seenIds.has(s.id));
@@ -474,7 +482,6 @@ export default function StoriesRow({ language, device = "both" }: { language: "u
                                     flexShrink: 0, display: "flex", flexDirection: "column",
                                     alignItems: "center", gap: 10, background: "none", border: "none",
                                     padding: 0, cursor: "pointer",
-                                    animation: `velari-cart-in ${200 + idx * 50}ms ${EASE} both`,
                                 }}
                             >
                                 <div style={{

@@ -31,6 +31,7 @@ interface HomeClientProps {
     initialBannerSettings: { desktopHeight: number; borderRadius: number };
     initialPromo?: any;
     initialFeaturedCategories?: any[];
+    initialStoryGroups?: any[];
 }
 
 export default function HomeClient({
@@ -40,6 +41,7 @@ export default function HomeClient({
     initialBannerSettings,
     initialPromo,
     initialFeaturedCategories,
+    initialStoryGroups,
 }: HomeClientProps) {
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -623,7 +625,7 @@ export default function HomeClient({
             )}
 
             {/* Stories: mobilda yuqorida; desktopda pastda (kategoriyalardan keyin) ko'rsatiladi */}
-            {!searchResults && !urlCategory && <StoriesRow language={language} device="mobile" />}
+            {!searchResults && !urlCategory && <StoriesRow language={language} device="mobile" initialGroups={initialStoryGroups} />}
             {!searchResults && !urlCategory && <PromoCountdown language={language} initialSettings={initialPromo} />}
 
             {/* ── DESKTOP HERO: chapda asosiy banner, o'ngda promo + bonus ── */}
@@ -722,7 +724,7 @@ export default function HomeClient({
             {!searchResults && !urlCategory && <FeaturedCategories language={language} initial={initialFeaturedCategories} />}
 
             {/* Stories — desktopda kategoriyalardan keyin (kattaroq) */}
-            {!searchResults && !urlCategory && <StoriesRow language={language} device="desktop" />}
+            {!searchResults && !urlCategory && <StoriesRow language={language} device="desktop" initialGroups={initialStoryGroups} />}
 
             {/* CategoryFilter faqat desktopda — mobilda o'rnini kategoriya vitrinasi bosadi */}
             {!searchResults && (
