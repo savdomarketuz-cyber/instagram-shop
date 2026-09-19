@@ -39,6 +39,12 @@ export default function Navigation() {
     const isHomePage = pathname === `/${language}` || pathname === `/`;
     const isProductPage = !!pathname?.includes('/products/');
 
+    // Optimistic index for instantaneous 0ms bottom nav indicator sliding
+    const [navOptimisticIndex, setNavOptimisticIndex] = useState<number | null>(null);
+    useEffect(() => {
+        setNavOptimisticIndex(null);
+    }, [pathname]);
+
     // Handle Search Focus from other pages
     useEffect(() => {
         if (isHomePage && typeof window !== 'undefined') {
@@ -559,10 +565,12 @@ export default function Navigation() {
                         icon: (on: boolean) => <User size={22} strokeWidth={on ? 2.4 : 1.8} /> 
                     },
                 ];
+                const currentPathIndex = tabs.findIndex(tab => tab.active);
+                const activeIndex = navOptimisticIndex !== null ? navOptimisticIndex : currentPathIndex;
 
                 return (
                     <nav
-                        className="flex md:hidden fixed bottom-2 left-3 right-3 max-w-lg mx-auto z-[110] rounded-[26px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] border select-none"
+                        className="flex md:hidden fixed bottom-2 left-3 right-3 max-w-lg mx-auto z-[110] rounded-[26px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] border select-none relative overflow-hidden"
                         style={{
                             background: isReels ? "rgba(18, 18, 18, 0.88)" : "rgba(255, 255, 255, 0.82)",
                             backdropFilter: "blur(24px) saturate(180%)",
@@ -576,12 +584,42 @@ export default function Navigation() {
                             alignItems: "center",
                         }}
                     >
-                        {tabs.map((tab) => {
+                        {/* Velari — Hardware-Accelerated Sliding Pill Active Indicator */}
+                        {activeIndex >= 0 && (
+                            <div
+                                aria-hidden="true"
+                                className="absolute pointer-events-none transition-transform duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] will-change-transform z-0"
+                                style={{
+                                    top: 6,
+                                    bottom: "max(env(safe-area-inset-bottom, 6px), 6px)",
+                                    left: 4,
+                                    width: "calc((100% - 8px) / 5)",
+                                    transform: `translateX(${activeIndex * 100}%)`,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                <div
+                                    className={`w-[60px] h-[44px] rounded-full transition-colors duration-200 ${
+                                        isReels 
+                                            ? "bg-white/20 shadow-sm" 
+                                            : "bg-[#EAF3EC] shadow-[0_2px_8px_rgba(45,110,62,0.12)]"
+                                    }`}
+                                />
+                            </div>
+                        )}
+
+                        {tabs.map((tab, idx) => {
+                            const isActive = activeIndex === idx;
                             return (
                                 <Link
                                     key={tab.href}
                                     href={tab.href}
-                                    onClick={() => videoPreWarmer.triggerHaptic("selection")}
+                                    onClick={() => {
+                                        setNavOptimisticIndex(idx);
+                                        videoPreWarmer.triggerHaptic("selection");
+                                    }}
                                     className="ios-icon-tap active:scale-90 transition-transform duration-150 ease-out will-change-transform"
                                     style={{
                                         flex: 1,
@@ -590,17 +628,19 @@ export default function Navigation() {
                                         alignItems: "center",
                                         textDecoration: "none",
                                         WebkitTapHighlightColor: "transparent",
+                                        position: "relative",
+                                        zIndex: 1,
                                     }}
                                 >
                                     <div
                                         className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-full transition-colors duration-200 ${
-                                            tab.active 
-                                                ? (isReels ? "bg-white/20 text-white" : "bg-[#EAF3EC] text-[#2D6E3E]")
+                                            isActive 
+                                                ? (isReels ? "text-white" : "text-[#2D6E3E]")
                                                 : (isReels ? "text-white/60" : "text-[#737D75]")
                                         }`}
                                     >
                                         <div className="relative">
-                                            {tab.icon(tab.active)}
+                                            {tab.icon(isActive)}
                                             {(tab.badge ?? 0) > 0 && (
                                                 <div 
                                                     className="absolute -top-1 -right-2.5 min-w-[17px] h-[17px] px-1 rounded-full bg-[#FF3B30] text-white text-[10px] font-bold flex items-center justify-center border-2 border-white shadow-sm"
@@ -611,8 +651,8 @@ export default function Navigation() {
                                             )}
                                         </div>
                                         <span 
-                                            className="text-[10px] font-semibold tracking-tight"
-                                            style={{ lineHeight: 1.1 }}
+                                            className="text-[10px] tracking-tight transition-all duration-200"
+                                            style={{ lineHeight: 1.1, fontWeight: isActive ? 700 : 500 }}
                                         >
                                             {tab.label}
                                         </span>
