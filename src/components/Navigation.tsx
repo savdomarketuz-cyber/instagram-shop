@@ -38,6 +38,7 @@ export default function Navigation() {
 
     const isHomePage = pathname === `/${language}` || pathname === `/`;
     const isProductPage = !!pathname?.includes('/products/');
+    const isCatalogPage = pathname === `/${language}/catalog` || pathname?.startsWith(`/${language}/catalog/`) || pathname?.includes('/catalog');
 
     // Optimistic index for instantaneous 0ms bottom nav indicator sliding
     const [navOptimisticIndex, setNavOptimisticIndex] = useState<number | null>(null);
@@ -240,7 +241,7 @@ export default function Navigation() {
             const data = res.ok ? await res.json() : { results: [], facets: null, didYouMean: null, isFallback: false };
             setSearchResults(data.results || [], data.facets || null, data.didYouMean || null, !!data.isFallback);
             setStoreGlobalQuery(activeQuery);
-            if (!isHomePage) router.push(`/${language}`);
+            if (!isHomePage && !isCatalogPage) router.push(`/${language}`);
         } catch (err) {
             console.error("Semantic search failed", err);
         } finally {
@@ -255,6 +256,8 @@ export default function Navigation() {
         if (!val.trim()) {
             setSuggestions([]);
             setShowSuggestions(false);
+            setStoreGlobalQuery("");
+            if (isCatalogPage) setSearchResults(null);
             if (debounceTimer.current) clearTimeout(debounceTimer.current);
             if (suggestAbortRef.current) { suggestAbortRef.current.abort(); suggestAbortRef.current = null; }
             return;
@@ -264,6 +267,7 @@ export default function Navigation() {
         if (debounceTimer.current) clearTimeout(debounceTimer.current);
 
         debounceTimer.current = setTimeout(async () => {
+            setStoreGlobalQuery(val);
             // Oldingi uchayotgan suggest so'rovini bekor qilamiz — aks holda eskirgan
             // (sekin) javob keyin kelib yangi natijani ustiga yozadi (dropdown miltillashi).
             if (suggestAbortRef.current) suggestAbortRef.current.abort();
@@ -301,16 +305,18 @@ export default function Navigation() {
             <header className={`fixed top-0 left-0 right-0 glass-surface z-[100] border-b border-[var(--glass-divider)] h-16 md:h-20 ${pathname?.includes('/admin') || pathname?.includes('/reels') ? 'hidden' : (isHomePage || isProductPage) ? 'hidden md:block' : 'block'}`}>
                 <div className="max-w-[1600px] mx-auto h-full px-4 md:px-10 flex items-center gap-3 md:gap-10">
                     
-                    <div className="shrink-0 group">
+                    <div className={`shrink-0 group ${isCatalogPage ? 'hidden md:block' : ''}`}>
                         <div className="md:hidden">
-                            <Link
-                                href={l("/catalog")}
-                                onClick={() => videoPreWarmer.triggerHaptic("light")}
-                                className="ios-tap-feedback active:scale-95 transition-transform duration-150 flex items-center gap-2 bg-[#EAF3EC] px-4 py-2.5 rounded-xl outline-none will-change-transform"
-                            >
-                                <LayoutGrid size={19} strokeWidth={2.2} className="text-[#2D6E3E]" />
-                                <span className="text-xs font-semibold text-[#2D6E3E]">Katalog</span>
-                            </Link>
+                            {!isCatalogPage && (
+                                <Link
+                                    href={l("/catalog")}
+                                    onClick={() => videoPreWarmer.triggerHaptic("light")}
+                                    className="ios-tap-feedback active:scale-95 transition-transform duration-150 flex items-center gap-2 bg-[#EAF3EC] px-4 py-2.5 rounded-xl outline-none will-change-transform"
+                                >
+                                    <LayoutGrid size={19} strokeWidth={2.2} className="text-[#2D6E3E]" />
+                                    <span className="text-xs font-semibold text-[#2D6E3E]">Katalog</span>
+                                </Link>
+                            )}
                         </div>
                         <div className="hidden md:block">
                             <Link
@@ -323,18 +329,20 @@ export default function Navigation() {
                         </div>
                     </div>
 
-                    <Link
-                        href={l("/catalog")}
-                        onClick={() => videoPreWarmer.triggerHaptic("light")}
-                        className="hidden lg:flex items-center gap-2.5 bg-[#2D6E3E] hover:bg-[#1F5A30] text-white px-5 py-2.5 rounded-[var(--radius-control)] active:scale-95 transition-transform duration-150 group shadow-md shadow-[#2D6E3E]/20 will-change-transform font-semibold text-xs uppercase tracking-wider"
-                    >
-                        <LayoutGrid size={18} strokeWidth={2.2} className="group-hover:rotate-90 transition-transform duration-300" />
-                        <span>{language === 'uz' ? 'Katalog' : 'Каталог'}</span>
-                    </Link>
+                    {!isCatalogPage && (
+                        <Link
+                            href={l("/catalog")}
+                            onClick={() => videoPreWarmer.triggerHaptic("light")}
+                            className="hidden lg:flex items-center gap-2.5 bg-[#2D6E3E] hover:bg-[#1F5A30] text-white px-5 py-2.5 rounded-[var(--radius-control)] active:scale-95 transition-transform duration-150 group shadow-md shadow-[#2D6E3E]/20 will-change-transform font-semibold text-xs uppercase tracking-wider"
+                        >
+                            <LayoutGrid size={18} strokeWidth={2.2} className="group-hover:rotate-90 transition-transform duration-300" />
+                            <span>{language === 'uz' ? 'Katalog' : 'Каталог'}</span>
+                        </Link>
+                    )}
 
-                    <form onSubmit={handleSearch} className="flex-1 relative group max-w-2xl">
+                    <form onSubmit={handleSearch} className={`flex-1 relative group ${isCatalogPage ? 'w-full' : 'max-w-2xl'}`}>
                         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                            <Search className="text-gray-400 group-focus-within:text-black transition-colors duration-150" size={16} />
+                            <Search className="text-gray-400 group-focus-within:text-black transition-colors duration-150" size={17} />
                         </div>
                         <input
                             ref={inputRef}
@@ -343,7 +351,7 @@ export default function Navigation() {
                             value={search}
                             onChange={handleSearchChange}
                             onFocus={() => { if (search.trim()) setShowSuggestions(true); }}
-                            className="w-full bg-[#F5F9F6] border-2 border-transparent rounded-xl md:rounded-2xl py-2 md:py-4 pl-10 md:pl-14 pr-12 md:pr-16 text-xs md:text-base font-bold placeholder:text-gray-400 focus:bg-white focus:border-[#2d6e3e]/30 focus:ring-4 focus:ring-[#2d6e3e]/5 outline-none transition-[background-color,border-color,box-shadow] duration-200 shadow-sm"
+                            className="w-full bg-[#F5F9F6] border-2 border-transparent rounded-xl md:rounded-2xl py-2.5 md:py-3.5 pl-10 md:pl-14 pr-20 md:pr-24 text-[13.5px] md:text-base font-bold placeholder:text-gray-400 focus:bg-white focus:border-[#2d6e3e]/30 focus:ring-4 focus:ring-[#2d6e3e]/5 outline-none transition-[background-color,border-color,box-shadow] duration-200 shadow-sm"
                         />
                         <div className="absolute inset-y-0 right-2 flex items-center gap-1 md:gap-2">
                             {search && (

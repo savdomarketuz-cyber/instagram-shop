@@ -55,6 +55,7 @@ export default function CatalogClient({
     const {
         language, cachedCategories, setCachedCategories,
         cart, wishlist, addToCart, updateQuantity, removeFromCart, toggleWishlist,
+        storeGlobalQuery, storeSearchResults
     } = useStore(useShallow(state => ({
         language: state.language,
         cachedCategories: state.cachedCategories,
@@ -65,6 +66,8 @@ export default function CatalogClient({
         updateQuantity: state.updateQuantity,
         removeFromCart: state.removeFromCart,
         toggleWishlist: state.toggleWishlist,
+        storeGlobalQuery: state.homeSearchQuery,
+        storeSearchResults: state.searchResults,
     })));
     const t = translations[language];
     const catName = (c: { name: string; name_uz?: string; name_ru?: string }) =>
@@ -105,6 +108,24 @@ export default function CatalogClient({
     const isVisualActiveRef = useRef(false);
     const searchAbortRef = useRef<AbortController | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Tepada joylashgan asosiy qidiruv paneli (Navigation) bilan sinxronizatsiya
+    useEffect(() => {
+        if (storeGlobalQuery !== undefined && storeGlobalQuery !== searchQuery) {
+            setSearchQuery(storeGlobalQuery);
+            if (!storeGlobalQuery.trim()) {
+                setSearchResults(null);
+            }
+        }
+    }, [storeGlobalQuery]);
+
+    useEffect(() => {
+        if (storeSearchResults === null && !storeGlobalQuery?.trim()) {
+            setSearchResults(null);
+        } else if (storeSearchResults !== null) {
+            setSearchResults(storeSearchResults);
+        }
+    }, [storeSearchResults, storeGlobalQuery]);
     // Toza URL (/catalog/[slug]) orqali kelgan kategoriyani oldindan tanlaymiz.
     // Subkategoriya bo'lsa: asosiy = ota, sub = o'zi; aks holda asosiy = o'zi.
     const [mainCat, setMainCat] = useState<string>(() => {
@@ -537,52 +558,14 @@ export default function CatalogClient({
                     {language === "uz" ? "Katalog" : "Каталог"}
                 </h1>
 
-                {/* Search */}
-                <div className="relative mb-5 active:scale-[0.99] transition-transform duration-150 will-change-transform">
-                    <div className="w-full bg-white/85 backdrop-blur-md rounded-[22px] flex items-center gap-3 px-4 py-3 border border-black/5 shadow-sm">
-                        <Search size={18} className="text-[#9AA29C] shrink-0" />
-                        <input
-                            type="text"
-                            placeholder={language === "uz" ? "Mahsulot, brend, kategoriya..." : "Товар, бренд, категория..."}
-                            value={searchQuery}
-                            onChange={e => setSearchQuery(e.target.value)}
-                            className="w-full bg-transparent text-[14px] font-medium text-[#111612] outline-none placeholder:text-[#9AA29C]"
-                        />
-                        {isSearching && (
-                            <Loader2 size={16} className="animate-spin text-[#2D6E3E] shrink-0" />
-                        )}
-                        {searchQuery && (
-                            <button
-                                type="button"
-                                aria-label="Tozalash"
-                                onClick={() => {
-                                    videoPreWarmer.triggerHaptic("light");
-                                    setSearchQuery("");
-                                    setSearchResults(null);
-                                }}
-                                className="ios-icon-tap active:scale-85 transition-transform duration-150 p-1 text-[#9AA29C] hover:text-[#111612]"
-                            >
-                                <X size={16} />
-                            </button>
-                        )}
-                        <button
-                            type="button"
-                            aria-label="Rasm orqali qidirish"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="ios-icon-tap active:scale-85 transition-transform duration-150 p-1 text-[#2D6E3E] hover:bg-[#EAF3EC] rounded-xl shrink-0"
-                            title={language === "uz" ? "Rasm orqali qidirish" : "Поиск по фото"}
-                        >
-                            {isVisualUploading ? <Loader2 size={16} className="animate-spin text-[#2D6E3E]" /> : <Camera size={18} />}
-                        </button>
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handleVisualUpload}
-                        />
-                    </div>
-                </div>
+                {/* Hidden visual search file input for modal fallback */}
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleVisualUpload}
+                />
 
                 {/* Main category pills */}
                 <div
