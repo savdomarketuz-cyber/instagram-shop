@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { mapProduct } from '@/lib/mappers';
 import { checkRateLimit } from '@/lib/rate-limiter';
@@ -41,7 +42,6 @@ async function applyDbSynonyms(raw: string): Promise<string> {
     return lower.split(/\s+/).map(w => map[w] || w).join(' ');
 }
 
-export type { VisualAnalysis } from '@/types';
 
 
 // Google Gemini Embedding 2 orqali rasmdan 768-d multimodal vektor olish
@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
             }
 
             const vectorLiteral = `[${vector.join(',')}]`;
-            const { data: imgRows, error: imgErr } = await supabaseAdmin.rpc('match_products_by_image', {
+            const { data: imgRows, error: imgErr } = await supabase.rpc('match_products_by_image', {
                 query_embedding: vectorLiteral,
                 match_threshold: 0.32,
                 match_count: limit || 50
@@ -168,7 +168,7 @@ export async function POST(req: NextRequest) {
             ));
 
             if (catIds.length > 0) {
-                const { data: catRows } = await supabaseAdmin
+                const { data: catRows } = await supabase
                     .from('categories')
                     .select('id, name, name_uz, name_ru')
                     .in('id', catIds);
@@ -229,7 +229,7 @@ export async function POST(req: NextRequest) {
         // TYPEAHEAD MODE: FAST LIGHTWEIGHT RPC
         // ==========================================
         if (suggest) {
-            const { data: suggestRows, error: suggestErr } = await supabaseAdmin.rpc('suggest_products', {
+            const { data: suggestRows, error: suggestErr } = await supabase.rpc('suggest_products', {
                 search_query: normalizedQuery,
                 match_count: limit || 6
             });
@@ -244,7 +244,7 @@ export async function POST(req: NextRequest) {
             }
 
             // Fallback for suggest
-            const { data: fallbackRows } = await supabaseAdmin
+            const { data: fallbackRows } = await supabase
                 .from('products')
                 .select('id, name, name_uz, name_ru, price, old_price, image, images, image_metadata, category_id, model, article, stock, stock_details')
                 .or(`name.ilike.%${normalizedQuery}%,name_uz.ilike.%${normalizedQuery}%,name_ru.ilike.%${normalizedQuery}%,model.ilike.%${normalizedQuery}%,article.ilike.%${normalizedQuery}%`)
@@ -270,7 +270,7 @@ export async function POST(req: NextRequest) {
         let queryEmbedding: string | null = null;
 
         const runRpc = async (q: string, threshold: number, emb: string | null = null) => {
-            return supabaseAdmin.rpc('advanced_smart_search', {
+            return supabase.rpc('advanced_smart_search', {
                 search_query: q,
                 query_embedding: emb !== null ? emb : queryEmbedding,
                 match_threshold: threshold,
@@ -310,14 +310,14 @@ export async function POST(req: NextRequest) {
         if (error) {
             console.error("advanced_smart_search RPC error:", error);
             const sanitizedQuery = normalizedQuery.replace(/[,"'\\]/g, ' ').trim();
-            let fallbackQuery = supabaseAdmin
+            let fallbackQuery = supabase
                 .from('products')
                 .select('id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,avg_rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,express_delivery,created_at')
                 .eq('is_deleted', false)
                 .or('stock.gt.0,stock_details.neq.{}');
 
             if (sanitizedQuery) {
-                fallbackQuery = fallbackQuery.or(`name.ilike.%${sanitizedQuery}%,name_uz.ilike.%${sanitizedQuery}%,name_ru.ilike.%${sanitizedQuery}%,article.ilike.%${sanitizedQuery}%,model.ilike.%${sanitizedQuery}%`);
+                fallbackQuery = fallbackQuery.or(`name.ilike.%${sanitizedQuery}%,name_uz.ilike.%${sanitizedQuery}%,name_ru.ilike.%${sanitizedQuery}%,article.ilike.%${sanitizedQuery}%`);
             }
             if (category) fallbackQuery = fallbackQuery.eq('category_id', category);
             if (brandIdsList.length > 0) {
@@ -366,7 +366,7 @@ export async function POST(req: NextRequest) {
         ));
 
         if (catIds.length > 0) {
-            const { data: cats } = await supabaseAdmin
+            const { data: cats } = await supabase
                 .from('categories')
                 .select('id, name, name_uz, name_ru')
                 .in('id', catIds);

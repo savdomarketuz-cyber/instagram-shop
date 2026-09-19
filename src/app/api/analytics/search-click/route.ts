@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import { supabase } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
     try {
@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Invalid data" }, { status: 400 });
         }
 
-        const { error } = await supabaseAdmin.rpc('log_search_click', {
+        const { error } = await supabase.rpc('log_search_click', {
             p_product_id: productId,
             p_query: query.trim()
         });
