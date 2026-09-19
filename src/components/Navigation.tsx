@@ -61,6 +61,14 @@ export default function Navigation() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    useEffect(() => {
+        const handleTrigger = () => {
+            fileInputRef.current?.click();
+        };
+        window.addEventListener("velari-trigger-visual-search", handleTrigger);
+        return () => window.removeEventListener("velari-trigger-visual-search", handleTrigger);
+    }, []);
+
     const { setSearchResults, isSearchLoading, setHomeSearchQuery: setStoreGlobalQuery, showToast } = useStore(useShallow(s => ({
         setSearchResults: s.setSearchResults, isSearchLoading: s.isSearchLoading, setHomeSearchQuery: s.setHomeSearchQuery, showToast: s.showToast
     })));
@@ -360,6 +368,7 @@ export default function Navigation() {
                             </button>
                             <input
                                 ref={fileInputRef}
+                                id="nav-visual-search-input"
                                 type="file"
                                 accept="image/*"
                                 className="hidden"

@@ -3,6 +3,9 @@ import { redirect } from 'next/navigation';
 import CatalogClient from './CatalogClient';
 import { getCatalogCategories } from '@/lib/categories';
 import { getCategorySlug } from '@/lib/slugify';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+import { mapProduct } from '@/lib/mappers';
+import { getProductRealStock } from '@/lib/stock';
 
 export async function generateMetadata({ params }: { params: { lang: string } }): Promise<Metadata> {
     const lang = params.lang || 'uz';
@@ -46,7 +49,32 @@ export default async function CatalogPage({ params, searchParams }: {
     params: { lang: string };
     searchParams?: { category?: string };
 }) {
-    const categories = await getCatalogCategories();
+    // Serverda kategoriyalar, boshlang'ich mahsulotlar va brendlarni parallel yuklaymiz (ISR orqali tezkor CDN keshi)
+    const [
+        categories,
+        { data: productsData },
+        { data: brandsData },
+        { data: pcData }
+    ] = await Promise.all([
+        getCatalogCategories(),
+        supabaseAdmin
+            .from("products")
+            .select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,avg_rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,express_delivery,created_at")
+            .eq("is_deleted", false)
+            .or("stock.gt.0,stock_details.neq.{}")
+            .order("sales", { ascending: false })
+            .limit(100),
+        supabaseAdmin
+            .from("brands")
+            .select("id, name, name_uz, name_ru")
+            .eq("is_deleted", false)
+            .order("name"),
+        supabaseAdmin
+            .from("products")
+            .select("category_id, stock, stock_details")
+            .eq("is_deleted", false)
+            .or("stock.gt.0,stock_details.neq.{}")
+    ]);
 
     // Eski `?category=ID` havolalarni toza URL'ga 301-redirect (SEO + indekslangan URL'lar)
     const catId = searchParams?.category;
@@ -58,6 +86,18 @@ export default async function CatalogPage({ params, searchParams }: {
         }
     }
 
-    return <CatalogClient initialCategories={categories} />;
-}
+    const mappedProducts = (productsData || []).map(mapProduct).filter((p: any) => getProductRealStock(p) > 0);
+    const validCatIds = (pcData || [])
+        .filter((r: any) => getProductRealStock(r) > 0)
+        .map((r: any) => r.category_id)
+        .filter(Boolean);
 
+    return (
+        <CatalogClient 
+            initialCategories={categories}
+            initialProducts={mappedProducts}
+            initialBrands={(brandsData || []) as any}
+            initialProductCatIds={validCatIds}
+        />
+    );
+}

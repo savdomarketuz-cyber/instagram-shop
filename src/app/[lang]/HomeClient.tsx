@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { Search, Sparkles, MapPin, ChevronRight, ChevronLeft, User, X, Loader2, LayoutGrid } from "lucide-react";
+import { Search, Sparkles, MapPin, ChevronRight, ChevronLeft, User, X, Loader2, LayoutGrid, Camera } from "lucide-react";
 import { useStore } from "@/store/store";
 import { useShallow } from "zustand/react/shallow";
 import { supabase } from "@/lib/supabase";
@@ -144,6 +144,13 @@ export default function HomeClient({
     useEffect(() => {
         setSearch(homeSearchQuery);
     }, [homeSearchQuery]);
+
+    // Bosh sahifadagi mahsulotlarni global keshga joylash (katalog sahifasiga o'tganda tez yuklanishi uchun)
+    useEffect(() => {
+        if (initialProducts && initialProducts.length > 0) {
+            useStore.getState().setCachedProducts(initialProducts);
+        }
+    }, [initialProducts]);
 
     // GPS asosida yetkazib berish manzilini aniqlash (keshlangan, sahifa ochilganda avto)
     useEffect(() => {
@@ -555,6 +562,23 @@ export default function HomeClient({
                                 <X size={16} color="#9AA29C" />
                             </button>
                         )}
+                        <button
+                            type="button"
+                            aria-label={language === "uz" ? "Rasm orqali qidirish" : "Поиск по фото"}
+                            onClick={() => {
+                                videoPreWarmer.triggerHaptic("light");
+                                const navInput = document.getElementById("nav-visual-search-input") as HTMLInputElement;
+                                if (navInput) {
+                                    navInput.click();
+                                } else {
+                                    window.dispatchEvent(new CustomEvent("velari-trigger-visual-search"));
+                                }
+                            }}
+                            className="ios-icon-tap active:scale-85 transition-transform duration-150 p-1 text-[#2D6E3E] hover:bg-[#EAF3EC] rounded-xl shrink-0 flex items-center justify-center will-change-transform"
+                            title={language === "uz" ? "Rasm orqali qidirish" : "Поиск по фото"}
+                        >
+                            <Camera size={18} color="#2D6E3E" />
+                        </button>
                     </div>
                 </form>
             </div>

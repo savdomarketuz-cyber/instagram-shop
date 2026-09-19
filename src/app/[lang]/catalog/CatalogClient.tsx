@@ -37,11 +37,20 @@ interface Brand {
 interface CatalogClientProps {
     initialCategories?: Category[];
     initialCategory?: string; // toza URL (/catalog/[slug]) orqali oldindan tanlangan kategoriya id
+    initialProducts?: Product[];
+    initialBrands?: Brand[];
+    initialProductCatIds?: string[];
 }
 
 type SortKey = "popular" | "new" | "price_asc" | "price_desc" | "rating";
 
-export default function CatalogClient({ initialCategories, initialCategory }: CatalogClientProps) {
+export default function CatalogClient({
+    initialCategories,
+    initialCategory,
+    initialProducts,
+    initialBrands,
+    initialProductCatIds
+}: CatalogClientProps) {
     const router = useRouter();
     const {
         language, cachedCategories, setCachedCategories,
@@ -62,10 +71,23 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
         (language === "uz" ? c.name_uz : c.name_ru) || c.name;
 
     const [allCategories, setAllCategories] = useState<Category[]>(initialCategories || cachedCategories || []);
-    const [brands, setBrands] = useState<Brand[]>([]);
-    const [products, setProducts] = useState<Product[]>([]);
-    const [loadingProducts, setLoadingProducts] = useState(true);
-    const [productCatIds, setProductCatIds] = useState<Set<string>>(new Set());
+    const [brands, setBrands] = useState<Brand[]>(initialBrands || []);
+    const [products, setProducts] = useState<Product[]>(() => {
+        if (initialProducts && initialProducts.length > 0) return initialProducts;
+        const cached = useStore.getState().cachedProducts;
+        if (cached && cached.length > 0 && !initialCategory) return cached;
+        return [];
+    });
+    const [loadingProducts, setLoadingProducts] = useState<boolean>(() => {
+        if (initialProducts && initialProducts.length > 0) return false;
+        const cached = useStore.getState().cachedProducts;
+        if (cached && cached.length > 0 && !initialCategory) return false;
+        return true;
+    });
+    const [productCatIds, setProductCatIds] = useState<Set<string>>(() => {
+        if (initialProductCatIds && initialProductCatIds.length > 0) return new Set(initialProductCatIds);
+        return new Set();
+    });
 
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState<Product[] | null>(null);
@@ -152,27 +174,49 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
                 setCachedCategories(initialCategories);
             }
 
-            const { data: bData } = await supabase.from("brands").select("id, name, name_uz, name_ru").eq("is_deleted", false).order("name");
-            if (bData) setBrands(bData as Brand[]);
+            if (!initialBrands || initialBrands.length === 0) {
+                const { data: bData } = await supabase.from("brands").select("id, name, name_uz, name_ru").eq("is_deleted", false).order("name");
+                if (bData) setBrands(bData as Brand[]);
+            }
 
-            // Which categories actually have products — to hide empty ones
-            const { data: pcData } = await supabase
-                .from("products").select("category_id, stock, stock_details").eq("is_deleted", false)
-                .or("stock.gt.0,stock_details.neq.{}");
-            if (pcData) {
-                const validIds = pcData
-                    .filter((r: any) => getProductRealStock(r) > 0)
-                    .map((r: any) => r.category_id)
-                    .filter(Boolean);
-                setProductCatIds(new Set(validIds));
+            // Which categories actually have products — to hide empty ones (faqat propda berilmagan bo'lsa)
+            if (!initialProductCatIds || initialProductCatIds.length === 0) {
+                const { data: pcData } = await supabase
+                    .from("products").select("category_id, stock, stock_details").eq("is_deleted", false)
+                    .or("stock.gt.0,stock_details.neq.{}");
+                if (pcData) {
+                    const validIds = pcData
+                        .filter((r: any) => getProductRealStock(r) > 0)
+                        .map((r: any) => r.category_id)
+                        .filter(Boolean);
+                    setProductCatIds(new Set(validIds));
+                }
             }
         };
         load();
     }, []);
 
+    // Serverdan kelgan boshlang'ich mahsulotlarni global keshga saqlash
+    useEffect(() => {
+        if (initialProducts && initialProducts.length > 0 && !initialCategory) {
+            useStore.getState().setCachedProducts(initialProducts);
+        }
+    }, [initialProducts, initialCategory]);
+
+    const isFirstMountRef = useRef(true);
+
     // Fetch products when category/subcategory changes (when not searching)
     useEffect(() => {
         if (searchQuery.trim()) return;
+
+        // Boshlang'ich yuklanishda mahsulotlar allaqachon mavjud bo'lsa, qayta fetch qilib qotirmaymiz
+        if (isFirstMountRef.current) {
+            isFirstMountRef.current = false;
+            if (products.length > 0) {
+                return;
+            }
+        }
+
         const fetchProducts = async () => {
             setLoadingProducts(true);
             try {
@@ -201,7 +245,7 @@ export default function CatalogClient({ initialCategories, initialCategory }: Ca
             }
         };
         fetchProducts();
-    }, [mainCat, subCat, allCategories.length, searchQuery]);
+    }, [mainCat, subCat, searchQuery]);
 
     // Live search via /api/search backend with filters & semantic ranking
     useEffect(() => {
