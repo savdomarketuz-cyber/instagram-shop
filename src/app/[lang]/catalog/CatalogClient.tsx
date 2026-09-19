@@ -3,13 +3,12 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useStore } from "@/store/store";
 import { useShallow } from "zustand/react/shallow";
-import { Search, SlidersHorizontal, ArrowUpDown, X, Check, Loader2, PackageSearch, Camera, Sparkles } from "lucide-react";
+import { Search, SlidersHorizontal, ArrowUpDown, X, Check, Loader2, Camera, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { translations } from "@/lib/translations";
 import { supabase } from "@/lib/supabase";
 import { mapProduct } from "@/lib/mappers";
-import { ProductCard } from "@/components/home/ProductCard";
-import { ProductSkeleton } from "@/components/home/ProductSkeleton";
+import { ProductGrid } from "@/components/home/ProductGrid";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
 import { getProductRealStock } from "@/lib/stock";
 import type { Product } from "@/types";
@@ -54,7 +53,7 @@ export default function CatalogClient({
     const router = useRouter();
     const {
         language, cachedCategories, setCachedCategories,
-        cart, wishlist, addToCart, updateQuantity, removeFromCart, toggleWishlist,
+        cart, wishlist, user, addToCart, updateQuantity, removeFromCart, toggleWishlist,
         storeGlobalQuery, storeSearchResults
     } = useStore(useShallow(state => ({
         language: state.language,
@@ -62,6 +61,7 @@ export default function CatalogClient({
         setCachedCategories: state.setCachedCategories,
         cart: state.cart,
         wishlist: state.wishlist,
+        user: state.user,
         addToCart: state.addToCart,
         updateQuantity: state.updateQuantity,
         removeFromCart: state.removeFromCart,
@@ -471,10 +471,6 @@ export default function CatalogClient({
         }
     };
 
-    const brandName = (id?: string) => {
-        const b = brands.find(x => x.id === id);
-        return b ? ((language === "uz" ? b.name_uz : b.name_ru) || b.name) : "";
-    };
 
     // Max price across current product set (for the slider bound)
     const maxProductPrice = useMemo(() => {
@@ -551,7 +547,7 @@ export default function CatalogClient({
 
     return (
         <div className="min-h-screen text-black font-sans pb-24" style={{ background: "#FAFAF6" }}>
-            <div className="max-w-[1600px] mx-auto px-4 md:px-10 pt-3 md:pt-6 pb-6 md:pb-10">
+            <div className="max-w-[1600px] mx-auto px-2 md:px-10 pt-3 md:pt-6 pb-6 md:pb-10">
 
                 {/* Title */}
                 <h1 className="sr-only">
@@ -569,7 +565,7 @@ export default function CatalogClient({
 
                 {/* Main category pills */}
                 <div
-                    className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 mb-3 -mx-1 px-1 overscroll-x-contain touch-pan-x"
+                    className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 mb-3 px-1 overscroll-x-contain touch-pan-x"
                     style={{ WebkitOverflowScrolling: "touch" }}
                 >
                     <Pill active={mainCat === "all"} onClick={() => { setMainCat("all"); setSubCat("all"); }}>
@@ -585,7 +581,7 @@ export default function CatalogClient({
                 {/* Sub category pills */}
                 {subCategories.length > 0 && (
                     <div
-                        className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 mb-3 -mx-1 px-1 overscroll-x-contain touch-pan-x"
+                        className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 mb-3 px-1 overscroll-x-contain touch-pan-x"
                         style={{ WebkitOverflowScrolling: "touch" }}
                     >
                         <Pill small active={subCat === "all"} onClick={() => setSubCat("all")}>
@@ -600,7 +596,7 @@ export default function CatalogClient({
                 )}
 
                 {/* Filter / Sort buttons */}
-                <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="grid grid-cols-2 gap-3 mb-6 px-1">
                     <button
                         onClick={() => {
                             videoPreWarmer.triggerHaptic("light");
@@ -630,7 +626,7 @@ export default function CatalogClient({
 
                 {/* DID YOU MEAN BANNER */}
                 {didYouMean && searchQuery.trim() && (
-                    <div className="mb-4 p-3.5 rounded-2xl glass-surface flex items-center gap-2 text-sm border border-emerald-500/20 bg-emerald-50/40">
+                    <div className="mb-4 mx-1 p-3.5 rounded-2xl glass-surface flex items-center gap-2 text-sm border border-emerald-500/20 bg-emerald-50/40">
                         <Sparkles size={16} className="text-[#2D6E3E] shrink-0" />
                         <span className="text-[#737D75]">
                             {language === "uz" ? "Balki shuni nazarda tutdingizmi:" : "Возможно, вы имели в виду:"}
@@ -644,43 +640,20 @@ export default function CatalogClient({
                     </div>
                 )}
 
-                {/* Product grid with 1:1 skeleton layout */}
-                {loadingProducts ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-5">
-                        {[...Array(12)].map((_, i) => (
-                            <ProductSkeleton key={i} />
-                        ))}
-                    </div>
-                ) : filteredProducts.length === 0 ? (
-                    <div className="py-20 text-center flex flex-col items-center justify-center glass-surface rounded-[28px] p-8 max-w-md mx-auto my-8">
-                        <PackageSearch size={52} className="text-[#9AA29C] mb-3" strokeWidth={1.5} />
-                        <h3 className="text-base font-semibold text-[#111612]">
-                            {language === "uz" ? "Mahsulot topilmadi" : "Товары не найдены"}
-                        </h3>
-                        <p className="text-xs text-[#737D75] mt-1 max-w-[260px]">
-                            {language === "uz" ? "Qidiruv yoki filtr parametrlarini o'zgartirib ko'ring" : "Попробуйте изменить параметры поиска или фильтров"}
-                        </p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5">
-                        {filteredProducts.map((p, i) => (
-                            <ProductCard
-                                key={p.id}
-                                item={p}
-                                language={language}
-                                t={t}
-                                cart={cart}
-                                wishlist={wishlist}
-                                toggleWishlist={toggleWishlist}
-                                addToCart={addToCart}
-                                updateQuantity={updateQuantity}
-                                removeFromCart={removeFromCart}
-                                priority={i < 4}
-                                brandLabel={brandName((p as any).brand || p.brand_id)}
-                            />
-                        ))}
-                    </div>
-                )}
+                {/* Mahsulotlar ro'yxati (Bosh sahifa bilan 1:1 bir xil ProductGrid) */}
+                <ProductGrid
+                    products={filteredProducts}
+                    loading={loadingProducts}
+                    language={language}
+                    t={t}
+                    cart={cart}
+                    wishlist={wishlist}
+                    user={user}
+                    toggleWishlist={toggleWishlist}
+                    addToCart={addToCart}
+                    updateQuantity={updateQuantity}
+                    removeFromCart={removeFromCart}
+                />
 
                 {/* SEARCH LOAD MORE PAGINATION */}
                 {searchResults !== null && hasMoreSearch && (
