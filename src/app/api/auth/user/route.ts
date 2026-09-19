@@ -25,17 +25,37 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Telefon va parol zarur" }, { status: 400 });
         }
 
+        const rawPhone = String(phone).trim();
+        const digits = rawPhone.replace(/\D/g, "");
+        let cleanPhone = rawPhone;
+        if (digits.length === 9) {
+            cleanPhone = `+998${digits}`;
+        } else if (digits.startsWith("998") && digits.length === 12) {
+            cleanPhone = `+${digits}`;
+        } else if (!rawPhone.startsWith("+")) {
+            cleanPhone = `+${digits}`;
+        }
+
         // 1. Foydalanuvchini topish (Supabase orqali)
+        // Ham +998... ham 998... variantlarini qidiramiz
+        const phoneVariants = Array.from(new Set([cleanPhone, digits, rawPhone, cleanPhone.replace("+", "")]));
+        const orFilter = phoneVariants.map(p => `phone.eq.${p}`).join(",");
+
         const { data: user, error: findError } = await supabaseAdmin
             .from("users")
             .select("*")
-            .eq("phone", phone)
-            .single();
+            .or(orFilter)
+            .limit(1)
+            .maybeSingle();
 
         if (findError || !user) {
-            // Secure delay to prevent timing attacks
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            return NextResponse.json({ error: "Telefon raqami yoki parol noto'g'ri" }, { status: 401 });
+            await new Promise(resolve => setTimeout(resolve, 500));
+            return NextResponse.json({
+                success: false,
+                error: "User not found",
+                code: "not_found",
+                message: "Bu telefon raqam ro'yxatdan o'tmagan"
+            }, { status: 404 });
         }
 
         const storedPassword = user.password;
@@ -53,8 +73,13 @@ export async function POST(req: NextRequest) {
         }
 
         if (!isAuthenticated) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            return NextResponse.json({ error: "Telefon raqami yoki parol noto'g'ri" }, { status: 401 });
+            await new Promise(resolve => setTimeout(resolve, 500));
+            return NextResponse.json({
+                success: false,
+                error: "Invalid password",
+                code: "wrong_password",
+                message: "Parol noto'g'ri"
+            }, { status: 401 });
         }
 
         // 3. Auto-migration

@@ -136,45 +136,96 @@ function LoginContent() {
         setErrorType("none");
 
         try {
-            const authRes = await fetch("/api/auth", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    id,
-                    password,
-                    code: step === "2fa" ? otp : undefined,
-                    step
-                })
-            });
-            const authData = await authRes.json();
-
-            if (authRes.ok) {
-                if (authData.step === "2fa") { setStep("2fa"); setLoading(false); return; }
-                if (authData.success) {
+            // 1. Admin 2FA tasdiqlash bosqichi
+            if (step === "2fa") {
+                const authRes = await fetch("/api/auth", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        id: id.trim(),
+                        password,
+                        code: otp,
+                        step: "2fa"
+                    })
+                });
+                const authData = await authRes.json();
+                if (authRes.ok && authData.success) {
                     setUser(authData.user);
                     const params = new URLSearchParams(window.location.search);
                     const target = params.get('redirect') || `/${language}/admin`;
                     const vaultRedirect = target.includes("?") ? `${target}&vault=Abdulaziz2244` : `${target}?vault=Abdulaziz2244`;
                     window.location.href = vaultRedirect;
                     return;
+                } else {
+                    setError(authData.error || (language === 'uz' ? "Tasdiqlash kodi noto'g'ri" : "Неверный код"));
+                    setLoading(false);
+                    return;
                 }
-            } else if (id.toLowerCase().includes("admin") || id.toLowerCase() === process.env.NEXT_PUBLIC_ADMIN_LOGIN) {
-                setError(authData.error);
+            }
+
+            const trimmedId = id.trim();
+            // Harflar yoki maxsus belgilar bo'lsa (masalan: admin, vault, etc.) -> Faqat shunda Admin tekshiriladi!
+            const hasLettersOrSymbols = /[a-zA-Z_@#$%^&*!]/.test(trimmedId);
+            const digitsOnly = trimmedId.replace(/\D/g, "");
+
+            // 2. ADMIN PANELGA KIRISH (Faqat harflar yoki maxsus login kiritilganda)
+            if (hasLettersOrSymbols) {
+                const authRes = await fetch("/api/auth", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        id: trimmedId,
+                        password,
+                        step: "password"
+                    })
+                });
+                const authData = await authRes.json();
+
+                if (authRes.ok) {
+                    if (authData.step === "2fa") {
+                        setStep("2fa");
+                        setLoading(false);
+                        return;
+                    }
+                    if (authData.success) {
+                        setUser(authData.user);
+                        const params = new URLSearchParams(window.location.search);
+                        const target = params.get('redirect') || `/${language}/admin`;
+                        const vaultRedirect = target.includes("?") ? `${target}&vault=Abdulaziz2244` : `${target}?vault=Abdulaziz2244`;
+                        window.location.href = vaultRedirect;
+                        return;
+                    }
+                } else {
+                    // Admin login xatoligi (Faqat haqiqiy admin login urinishlari audit logga tushadi)
+                    setError(authData.error || (language === 'uz' ? "Login yoki parol noto'g'ri" : "Неверный логин или пароль"));
+                    setLoading(false);
+                    return;
+                }
+            }
+
+            // 3. ODDIY FOYDALANUVCHI (TELEFON RAQAM)
+            // Raqam bo'lsa to'g'ridan-to'g'ri foydalanuvchilar tekshiriladi (Admin audit loglariga aslo ta'sir qilmaydi)
+            if (digitsOnly.length < 9) {
+                setError(language === 'uz' 
+                    ? "Telefon raqamingizni to'liq kiriting (kamida 9 ta raqam)" 
+                    : "Введите полный номер телефона (не менее 9 цифр)");
                 setLoading(false);
                 return;
             }
 
-            // Normal user login
-            const isPhoneNumber = /^\d+$/.test(id.replace(/\s+/g, "").replace("+", ""));
-            let queryId = id;
-            if (isPhoneNumber) {
-                queryId = id.startsWith("+998") ? id : `+998${id.replace(/\s+/g, "")}`;
+            let queryPhone = trimmedId;
+            if (digitsOnly.length === 9) {
+                queryPhone = `+998${digitsOnly}`;
+            } else if (digitsOnly.startsWith("998") && digitsOnly.length === 12) {
+                queryPhone = `+${digitsOnly}`;
+            } else if (!queryPhone.startsWith("+")) {
+                queryPhone = `+${digitsOnly}`;
             }
 
             const userAuthRes = await fetch("/api/auth/user", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ phone: queryId, password })
+                body: JSON.stringify({ phone: queryPhone, password })
             });
             const userAuthData = await userAuthRes.json();
 
@@ -184,15 +235,17 @@ function LoginContent() {
                 showToast(language === 'uz' ? "Xush kelibsiz!" : "Добро пожаловать!");
                 router.push(redirect || "/");
             } else {
+                const code = userAuthData.code;
                 const errorMsg = userAuthData.error;
-                if (errorMsg === "User not found") {
+
+                if (code === "not_found" || errorMsg === "User not found") {
                     setErrorType("not_found");
                     setError(language === 'uz'
-                        ? "Bunday raqam ro'yxatdan o'tmagan. Iltimos bot orqali ro'yxatdan o'ting."
-                        : "Этот номер не зарегистрирован. Пожалуйста, зарегистрируйтесь через бота.");
-                } else if (errorMsg === "Invalid password") {
+                        ? "Bu telefon raqam ro'yxatdan o'tmagan."
+                        : "Этот номер не зарегистрирован.");
+                } else if (code === "wrong_password" || errorMsg === "Invalid password") {
                     setErrorType("wrong_password");
-                    setError(language === 'uz' ? "Parol noto'g'ri" : "Неверный пароль");
+                    setError(language === 'uz' ? "Parol noto'g'ri." : "Неверный пароль.");
                 } else {
                     setError(userAuthData.error || (language === 'uz' ? "Xatolik yuz berdi" : "Произошла ошибка"));
                 }
@@ -290,35 +343,121 @@ function LoginContent() {
 
                             {/* Error */}
                             {error && (
-                                <div style={{
-                                    background: "#FFF0F0", border: "1px solid #FFD0D0", borderRadius: 14,
-                                    padding: "12px 16px", fontSize: 13, color: "#FF3B30", lineHeight: 1.4,
-                                }}>
-                                    {error}
-                                    {errorType === "wrong_password" && (
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                const tg = typeof window !== "undefined" ? (window as any).Telegram?.WebApp : null;
-                                                if (tg?.openTelegramLink) {
-                                                    tg.openTelegramLink(BOT_URL);
-                                                } else {
-                                                    window.location.href = BOT_URL;
-                                                }
-                                            }}
-                                            style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, color: "#0A7CFF", fontSize: 13, background: "none", border: "none", cursor: "pointer", padding: 0 }}
-                                        >
-                                            <Key size={13} /> {language === 'uz' ? "Parolni tiklash" : "Сбросить пароль"}
-                                        </button>
-                                    )}
-                                    {errorType === "not_found" && (
-                                        <button
-                                            type="button"
-                                            onClick={handleTelegramAuth}
-                                            style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, color: "#0A7CFF", fontSize: 13, background: "none", border: "none", cursor: "pointer", padding: 0 }}
-                                        >
-                                            <Send size={13} /> {language === 'uz' ? "Telegram orqali ro'yxatdan o'tish" : "Регистрация через Telegram"}
-                                        </button>
+                                <div>
+                                    {errorType === "not_found" ? (
+                                        <div style={{
+                                            background: "#FFF8F0",
+                                            border: "1.5px solid #FED7AA",
+                                            borderRadius: 16,
+                                            padding: "16px",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: 12,
+                                        }}>
+                                            <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                                                <span style={{ fontSize: 20, lineHeight: 1 }}>⚠️</span>
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ fontSize: 14.5, fontWeight: 700, color: "#C2410C" }}>
+                                                        {language === 'uz' ? "Bu raqam ro'yxatdan o'tmagan" : "Номер не зарегистрирован"}
+                                                    </div>
+                                                    <div style={{ fontSize: 13, color: "#9A3412", marginTop: 3, lineHeight: 1.45 }}>
+                                                        {language === 'uz'
+                                                            ? "Kiritilgan telefon raqami bo'yicha profil topilmadi. Telegram botimiz orqali bir necha soniyada bepul ro'yxatdan o'tishingiz mumkin:"
+                                                            : "Профиль с таким номером не найден. Вы можете бесплатно зарегистрироваться через наш Telegram бот за пару секунд:"}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={handleTelegramAuth}
+                                                disabled={tgAuthLoading}
+                                                style={{
+                                                    width: "100%",
+                                                    padding: "12px 16px",
+                                                    borderRadius: 14,
+                                                    background: "#0088cc",
+                                                    color: "#fff",
+                                                    border: "none",
+                                                    fontSize: 14,
+                                                    fontWeight: 700,
+                                                    cursor: "pointer",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    gap: 8,
+                                                    boxShadow: "0 4px 12px rgba(0,136,204,0.28)",
+                                                }}
+                                            >
+                                                <Send size={16} />
+                                                {language === 'uz' ? "Telegram orqali ro'yxatdan o'tish" : "Зарегистрироваться через Telegram"}
+                                            </button>
+                                        </div>
+                                    ) : errorType === "wrong_password" ? (
+                                        <div style={{
+                                            background: "#FEF2F2",
+                                            border: "1.5px solid #FECACA",
+                                            borderRadius: 16,
+                                            padding: "16px",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: 12,
+                                        }}>
+                                            <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                                                <span style={{ fontSize: 20, lineHeight: 1 }}>🔒</span>
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ fontSize: 14.5, fontWeight: 700, color: "#DC2626" }}>
+                                                        {language === 'uz' ? "Parol noto'g'ri" : "Неверный пароль"}
+                                                    </div>
+                                                    <div style={{ fontSize: 13, color: "#991B1B", marginTop: 3, lineHeight: 1.45 }}>
+                                                        {language === 'uz'
+                                                            ? "Kiritilgan parol ushbu raqamga mos kelmadi. Parolni unutgan bo'lsangiz, Telegram orqali parolsiz bir zumda kiring yoki tiklang:"
+                                                            : "Введённый пароль не подходит к этому номеру. Если забыли пароль, войдите без пароля или восстановите доступ через Telegram:"}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const tg = typeof window !== "undefined" ? (window as any).Telegram?.WebApp : null;
+                                                    if (tg?.openTelegramLink) {
+                                                        tg.openTelegramLink(BOT_URL);
+                                                    } else {
+                                                        window.location.href = BOT_URL;
+                                                    }
+                                                }}
+                                                style={{
+                                                    width: "100%",
+                                                    padding: "12px 16px",
+                                                    borderRadius: 14,
+                                                    background: "#0088cc",
+                                                    color: "#fff",
+                                                    border: "none",
+                                                    fontSize: 14,
+                                                    fontWeight: 700,
+                                                    cursor: "pointer",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    gap: 8,
+                                                    boxShadow: "0 4px 12px rgba(0,136,204,0.28)",
+                                                }}
+                                            >
+                                                <Key size={16} />
+                                                {language === 'uz' ? "Telegram orqali tezkor kirish / tiklash" : "Быстрый вход / сброс через Telegram"}
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div style={{
+                                            background: "#FFF0F0",
+                                            border: "1px solid #FFD0D0",
+                                            borderRadius: 14,
+                                            padding: "12px 16px",
+                                            fontSize: 13,
+                                            color: "#FF3B30",
+                                            lineHeight: 1.4,
+                                        }}>
+                                            {error}
+                                        </div>
                                     )}
                                 </div>
                             )}
