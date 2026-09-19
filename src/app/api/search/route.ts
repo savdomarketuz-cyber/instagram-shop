@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { mapProduct } from '@/lib/mappers';
 import { checkRateLimit } from '@/lib/rate-limiter';
@@ -213,7 +212,7 @@ export async function POST(req: NextRequest) {
             : (brand ? [brand] : []);
 
         // 0. RATE LIMITING
-        const rlMax = suggest ? 50 : 15;
+        const rlMax = suggest ? 100 : 60;
         if (!await checkRateLimit(suggest ? `${ip}:s` : ip, rlMax, 60)) {
             return NextResponse.json({ success: false, message: "Juda ko'p urinish.", results: [] }, { status: 429 });
         }
@@ -234,7 +233,7 @@ export async function POST(req: NextRequest) {
             }
 
             const vectorLiteral = `[${vector.join(',')}]`;
-            const { data: imgRows, error: imgErr } = await supabase.rpc('match_products_by_image', {
+            const { data: imgRows, error: imgErr } = await supabaseAdmin.rpc('match_products_by_image', {
                 query_embedding: vectorLiteral,
                 match_threshold: 0.32,
                 match_count: limit || 50
@@ -260,7 +259,7 @@ export async function POST(req: NextRequest) {
             ));
 
             if (catIds.length > 0) {
-                const { data: catRows } = await supabase
+                const { data: catRows } = await supabaseAdmin
                     .from('categories')
                     .select('id, name, name_uz, name_ru')
                     .in('id', catIds);
@@ -321,7 +320,7 @@ export async function POST(req: NextRequest) {
         // TYPEAHEAD MODE: FAST LIGHTWEIGHT RPC
         // ==========================================
         if (suggest) {
-            const { data: suggestRows, error: suggestErr } = await supabase.rpc('suggest_products', {
+            const { data: suggestRows, error: suggestErr } = await supabaseAdmin.rpc('suggest_products', {
                 search_query: normalizedQuery,
                 match_count: limit || 6
             });
@@ -336,7 +335,7 @@ export async function POST(req: NextRequest) {
             }
 
             // Fallback for suggest
-            const { data: fallbackRows } = await supabase
+            const { data: fallbackRows } = await supabaseAdmin
                 .from('products')
                 .select('id, name, name_uz, name_ru, price, old_price, image, images, image_metadata, category_id, model, article, stock, stock_details')
                 .or(`name.ilike.%${normalizedQuery}%,name_uz.ilike.%${normalizedQuery}%,name_ru.ilike.%${normalizedQuery}%,model.ilike.%${normalizedQuery}%,article.ilike.%${normalizedQuery}%`)
@@ -362,7 +361,7 @@ export async function POST(req: NextRequest) {
         let queryEmbedding: string | null = null;
 
         const runRpc = async (q: string, threshold: number, emb: string | null = null) => {
-            return supabase.rpc('advanced_smart_search', {
+            return supabaseAdmin.rpc('advanced_smart_search', {
                 search_query: q,
                 query_embedding: emb !== null ? emb : queryEmbedding,
                 match_threshold: threshold,
@@ -402,7 +401,7 @@ export async function POST(req: NextRequest) {
         if (error) {
             console.error("advanced_smart_search RPC error:", error);
             const sanitizedQuery = normalizedQuery.replace(/[,"'\\]/g, ' ').trim();
-            let fallbackQuery = supabase
+            let fallbackQuery = supabaseAdmin
                 .from('products')
                 .select('id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,avg_rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,express_delivery,created_at')
                 .eq('is_deleted', false)
@@ -425,12 +424,6 @@ export async function POST(req: NextRequest) {
         }
 
         let rawResults = results || [];
-
-        // Agar haqiqiy rasm vektor mosliklari (image_embedding) bo'lsa, ularni eng yuqoriga qo'yish
-        if (imageDirectMatches.length > 0) {
-            const seen = new Set(imageDirectMatches.map((p: any) => String(p.id)));
-            rawResults = [...imageDirectMatches, ...rawResults.filter((p: any) => !seen.has(String(p.id)))];
-        }
 
         // 3.1 Fallback — Kirill translit yoki threshold yumshatish
         if (!error && rawResults.length === 0 && searchQuery) {
@@ -464,7 +457,7 @@ export async function POST(req: NextRequest) {
         ));
 
         if (catIds.length > 0) {
-            const { data: cats } = await supabase
+            const { data: cats } = await supabaseAdmin
                 .from('categories')
                 .select('id, name, name_uz, name_ru')
                 .in('id', catIds);
@@ -555,7 +548,7 @@ export async function POST(req: NextRequest) {
             facets,
             didYouMean,
             isFallback,
-            visualAnalysis,
+            visualAnalysis: null,
             detectedVisionQuery,
             query: searchQuery,
             page: currentPage,
