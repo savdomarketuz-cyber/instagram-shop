@@ -570,7 +570,7 @@ export default function Navigation() {
 
                 return (
                     <nav
-                        className="flex md:hidden fixed bottom-2 left-3 right-3 max-w-lg mx-auto z-[110] rounded-[26px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] border select-none relative overflow-hidden"
+                        className="flex md:hidden fixed bottom-2 left-3 right-3 max-w-lg mx-auto z-[110] rounded-[26px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] border select-none"
                         style={{
                             background: isReels ? "rgba(18, 18, 18, 0.88)" : "rgba(255, 255, 255, 0.82)",
                             backdropFilter: "blur(24px) saturate(180%)",
