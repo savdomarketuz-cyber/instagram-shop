@@ -42,7 +42,99 @@ async function applyDbSynonyms(raw: string): Promise<string> {
     return lower.split(/\s+/).map(w => map[w] || w).join(' ');
 }
 
+export interface VisualAnalysis {
+    subject: string;
+    brand?: string | null;
+    color?: string | null;
+    tags: string[];
+    searchQuery: string;
+}
 
+// Rasmdan qidiruv kalit so'zlarini chiqarish (Groq vision model)
+async function extractVisualAnalysisFromImage(imageDataUrl: string): Promise<VisualAnalysis | null> {
+    const apiKeys = [process.env.GROQ_API_KEY_1, process.env.GROQ_API_KEY_2].filter(Boolean) as string[];
+    if (apiKeys.length === 0) {
+        console.warn("[VisualSearch] No Groq API keys configured");
+        return null;
+    }
+    if (imageDataUrl.length > 8_000_000) {
+        console.warn("[VisualSearch] Image too large for processing:", imageDataUrl.length);
+        return null;
+    }
+
+    const models = ['qwen/qwen3.8-27b', 'qwen/qwen3.6-27b'];
+
+    for (const key of apiKeys) {
+        for (const model of models) {
+            try {
+                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': `Bearer ${key}`, 
+                        'Content-Type': 'application/json' 
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: [
+                            {
+                                role: 'system',
+                                content: "Siz elektronika va gadjetlar do'koni uchun Google Lens kabi vizual qidiruv AI tizimisiz. Rasmda tasvirlangan tovar yoki buyumni vizual tahlil qiling. Faqat quyidagi JSON formatida javob bering, boshqa hech qanday so'z yoki belgisiz:\n{\"subject\": \"aniqlangan buyum nomi\", \"brand\": \"brend nomi yoki null\", \"color\": \"asosiy rangi yoki null\", \"tags\": [\"teg1\", \"teg2\"], \"searchQuery\": \"do'kondan qidirish uchun eng optimal 2-4 ta kalit so'z\"}"
+                            },
+                            {
+                                role: 'user',
+                                content: [
+                                    { type: 'text', text: "Rasmni vizual tahlil qiling va FAQAT JSON qaytaring." },
+                                    { type: 'image_url', image_url: { url: imageDataUrl } }
+                                ]
+                            }
+                        ],
+                        temperature: 0.1,
+                        max_tokens: 180,
+                    }),
+                });
+
+                if (!res.ok) {
+                    const errText = await res.text().catch(() => '');
+                    console.warn(`[VisualSearch] Groq error (${model}): ${res.status} ${errText}`);
+                    continue;
+                }
+
+                const data = await res.json();
+                const raw = data.choices?.[0]?.message?.content || "";
+                // Reasoning teglarini (<think>...</think>) tozalash
+                const cleaned = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+                const jsonMatch = cleaned.match(/\{[\s\S]*?\}/);
+                if (jsonMatch) {
+                    try {
+                        const parsed = JSON.parse(jsonMatch[0]);
+                        return {
+                            subject: parsed.subject || parsed.searchQuery || "Mahsulot",
+                            brand: parsed.brand || null,
+                            color: parsed.color || null,
+                            tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
+                            searchQuery: parsed.searchQuery || parsed.subject || "elektronika"
+                        };
+                    } catch {}
+                }
+
+                // Fallback: oddiy matn bo'lsa
+                const textClean = cleaned.replace(/[*#_`"':\n]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+                if (textClean) {
+                    return {
+                        subject: textClean,
+                        brand: null,
+                        color: null,
+                        tags: [],
+                        searchQuery: textClean
+                    };
+                }
+            } catch (err: any) {
+                console.warn(`[VisualSearch] Groq fetch error (${model}):`, err.message);
+            }
+        }
+    }
+    return null;
+}
 
 // Google Gemini Embedding 2 orqali rasmdan 768-d multimodal vektor olish
 async function generateGeminiImageEmbedding(imageDataUrl: string): Promise<number[] | null> {
@@ -128,6 +220,8 @@ export async function POST(req: NextRequest) {
 
         let searchQuery = (query || "").trim();
         let detectedVisionQuery: string | null = null;
+        const imageDirectMatches: any[] = [];
+        const visualAnalysis = null;
 
         // 1. Visual Search — faqat Gemini Multimodal Vector (Variant 2: 1x tejamkor, 0 Groq xarajat, o'ta tezkor)
         if (image && !searchQuery) {
@@ -317,7 +411,7 @@ export async function POST(req: NextRequest) {
                 .or('stock.gt.0,stock_details.neq.{}');
 
             if (sanitizedQuery) {
-                fallbackQuery = fallbackQuery.or(`name.ilike.%${sanitizedQuery}%,name_uz.ilike.%${sanitizedQuery}%,name_ru.ilike.%${sanitizedQuery}%,article.ilike.%${sanitizedQuery}%`);
+                fallbackQuery = fallbackQuery.or(`name.ilike.%${sanitizedQuery}%,name_uz.ilike.%${sanitizedQuery}%,name_ru.ilike.%${sanitizedQuery}%,article.ilike.%${sanitizedQuery}%,model.ilike.%${sanitizedQuery}%`);
             }
             if (category) fallbackQuery = fallbackQuery.eq('category_id', category);
             if (brandIdsList.length > 0) {
@@ -333,6 +427,12 @@ export async function POST(req: NextRequest) {
         }
 
         let rawResults = results || [];
+
+        // Agar haqiqiy rasm vektor mosliklari (image_embedding) bo'lsa, ularni eng yuqoriga qo'yish
+        if (imageDirectMatches.length > 0) {
+            const seen = new Set(imageDirectMatches.map((p: any) => String(p.id)));
+            rawResults = [...imageDirectMatches, ...rawResults.filter((p: any) => !seen.has(String(p.id)))];
+        }
 
         // 3.1 Fallback — Kirill translit yoki threshold yumshatish
         if (!error && rawResults.length === 0 && searchQuery) {
@@ -457,7 +557,7 @@ export async function POST(req: NextRequest) {
             facets,
             didYouMean,
             isFallback,
-            visualAnalysis: null,
+            visualAnalysis,
             detectedVisionQuery,
             query: searchQuery,
             page: currentPage,

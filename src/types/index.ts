@@ -53,14 +53,6 @@ export interface Product {
     initialGroupProducts?: Product[];
 }
 
-export interface VisualAnalysis {
-    subject: string;
-    brand?: string | null;
-    color?: string | null;
-    tags: string[];
-    searchQuery: string;
-}
-
 export interface CartItem extends Product {
     quantity: number;
     selectedColor?: string;
