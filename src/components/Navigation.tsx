@@ -11,10 +11,9 @@ import { useShallow } from "zustand/react/shallow";
 import { usePathname, useRouter } from "next/navigation";
 import { translations } from "@/lib/translations";
 import { useState, useMemo, useRef, useEffect } from "react";
-import { SearchResult, Product } from "@/types";
+import { SearchResult, Product, type VisualAnalysis } from "@/types";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
 import VisualSearchModal from "@/components/search/VisualSearchModal";
-import { VisualAnalysis } from "@/app/api/search/route";
 
 export default function Navigation() {
     const user = useStore(state => state.user);

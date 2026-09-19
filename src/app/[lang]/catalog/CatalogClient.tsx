@@ -11,9 +11,8 @@ import { mapProduct } from "@/lib/mappers";
 import { ProductGrid } from "@/components/home/ProductGrid";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
 import { getProductRealStock } from "@/lib/stock";
-import type { Product } from "@/types";
+import type { Product, VisualAnalysis } from "@/types";
 import VisualSearchModal from "@/components/search/VisualSearchModal";
-import type { VisualAnalysis } from "@/app/api/search/route";
 
 const GREEN = "#2D6E3E";
 
