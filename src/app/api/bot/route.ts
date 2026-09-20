@@ -4,7 +4,7 @@ import { hashPassword } from "@/lib/auth-utils";
 import crypto from "crypto";
 import { getUserOrdersForBot, forwardCustomerSupportMessage } from "@/lib/telegram";
 
-const BOT_TOKEN = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN || "8679198732:AAFnTD1-pKA-UYTaG_Hnapd2NIjICPMNMOE";
+const BOT_TOKEN = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN || "";
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://velari.uz";
 

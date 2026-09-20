@@ -376,8 +376,13 @@ function escapeHtml(str: string): string {
 export async function forwardCustomerSupportMessage(customerChatId: string, customerPhone: string | null, customerName: string | null, messageText: string) {
     try {
         const adminId = process.env.TELEGRAM_ADMIN_ID || "5572037414";
-        const adminBotToken = process.env.TELEGRAM_ADMIN_BOT_TOKEN || "7895692869:AAEypl6y4Y6XpIsNonPJPscCDHCCxvK060E";
-        const customerBotToken = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN || "8679198732:AAFnTD1-pKA-UYTaG_Hnapd2NIjICPMNMOE";
+        const adminBotToken = process.env.TELEGRAM_ADMIN_BOT_TOKEN;
+        const customerBotToken = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN;
+
+        if (!adminBotToken && !customerBotToken) {
+            console.error("No telegram bot token configured");
+            return false;
+        }
 
         const safeName = escapeHtml(customerName || 'Noma\'lum');
         const safePhone = escapeHtml(customerPhone || 'Kiritilmagan');
@@ -394,22 +399,27 @@ export async function forwardCustomerSupportMessage(customerChatId: string, cust
         text += `<code>/reply ${customerChatId} [javobingiz]</code>`;
 
         // 1-urinish: Admin Bot orqali yuborish
-        let res = await fetch(`https://api.telegram.org/bot${adminBotToken}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: adminId, text, parse_mode: 'HTML' })
-        });
-        let data = await res.json();
-        if (data.ok) return true;
+        if (adminBotToken) {
+            const res = await fetch(`https://api.telegram.org/bot${adminBotToken}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: adminId, text, parse_mode: 'HTML' })
+            });
+            const data = await res.json();
+            if (data.ok) return true;
+        }
 
         // 2-urinish (Zaxira): Customer Bot orqali Admin ID ga yuborish
-        res = await fetch(`https://api.telegram.org/bot${customerBotToken}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: adminId, text, parse_mode: 'HTML' })
-        });
-        data = await res.json();
-        return data.ok;
+        if (customerBotToken) {
+            const res = await fetch(`https://api.telegram.org/bot${customerBotToken}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: adminId, text, parse_mode: 'HTML' })
+            });
+            const data = await res.json();
+            return data.ok;
+        }
+        return false;
     } catch (e) {
         console.error("forwardCustomerSupportMessage error:", e);
         return false;
@@ -418,7 +428,11 @@ export async function forwardCustomerSupportMessage(customerChatId: string, cust
 
 export async function sendSupportReplyToCustomer(customerChatId: string, replyText: string) {
     try {
-        const customerBotToken = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN || "8679198732:AAFnTD1-pKA-UYTaG_Hnapd2NIjICPMNMOE";
+        const customerBotToken = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN;
+        if (!customerBotToken) {
+            console.error("TELEGRAM_CUSTOMER_BOT_TOKEN is missing");
+            return false;
+        }
 
         const safeReply = escapeHtml(replyText || "");
         let text = `🎧 <b>Operator javobi:</b>\n\n`;

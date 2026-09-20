@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { createJwt } from "@/lib/jwt-utils";
 import { hashPassword } from "@/lib/auth-utils";
 
-const BOT_TOKEN = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN || "8679198732:AAFnTD1-pKA-UYTaG_Hnapd2NIjICPMNMOE";
+const BOT_TOKEN = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN || "";
 
 interface TelegramUser {
     id: number;
