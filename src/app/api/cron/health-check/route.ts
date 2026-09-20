@@ -36,11 +36,11 @@ export async function GET(req: Request) {
         return NextResponse.json({
             success: true,
             healthScore: report.healthScore,
-            totalTests: report.totalTests,
+            totalTests: report.total,
             passed: report.passed,
             warnings: report.warnings,
             failed: report.failed,
-            totalDurationMs: report.totalDurationMs,
+            totalDurationMs: report.durationMs,
             telegramSent: tgSent,
             timestamp: report.timestamp,
             results: report.results

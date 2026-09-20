@@ -709,13 +709,15 @@ export async function POST(req: Request) {
             if (trimmed === "🩺 Tizim diagnostikasi" || trimmed === "/health" || trimmed === "/test") {
                 await sendAdminMessage(
                     adminChatId,
-                    "⏳ <b>Tizim to'liq diagnostikasi boshlandi...</b>\n\nBarcha 12 ta modul (qidiruv RPC, katalog, narxlar, savat, buyurtmalar, autentifikatsiya, Supabase storage, Telegram bot API) tekshirilmoqda. Iltimos, bir oz kuting...",
+                    "⏳ <b>Tizim to'liq diagnostikasi boshlandi...</b>\n\nBarcha <b>83 ta API va tizim funksiyalari</b> (qidiruv, savat, buyurtmalar, to'lovlar, auth, hamyon, AI, affiliate va admin API lar) to'liq tekshirilmoqda. Iltimos, bir oz kuting...",
                     ADMIN_MAIN_KEYBOARD
                 );
 
                 try {
                     const diagnostic = await runFullSystemDiagnostic();
-                    await sendAdminMessage(adminChatId, diagnostic.telegramMessage, ADMIN_MAIN_KEYBOARD);
+                    for (const msg of diagnostic.telegramMessages) {
+                        await sendAdminMessage(adminChatId, msg, ADMIN_MAIN_KEYBOARD);
+                    }
                 } catch (diagErr: any) {
                     await sendAdminMessage(
                         adminChatId,
