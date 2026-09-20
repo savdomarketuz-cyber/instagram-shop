@@ -6,6 +6,7 @@ import { Send, ChevronLeft, Loader2, Paperclip, MoreVertical } from "lucide-reac
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
+import { uploadToYandexS3 } from "@/lib/yandex-s3";
 
 const GREEN = "#2D6E3E";
 const GREEN_DEEP = "#1F5A30";
@@ -115,7 +116,6 @@ export default function P2PChatPage() {
     const handleSendMessage = async () => {
         if (!user || !roomId || (!inputText.trim() && !selectedFile)) return;
 
-        const { uploadToYandexS3 } = require("@/lib/yandex-s3");
         setIsSending(true);
         const tempId = crypto.randomUUID();
         const msgText = inputText;

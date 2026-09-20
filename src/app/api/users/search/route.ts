@@ -10,9 +10,12 @@ import { verifyJwt } from "@/lib/jwt-utils";
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("q")?.trim().toLowerCase();
+    const isSuggested = searchParams.get("suggested") === "true";
     const ip = req.headers.get("x-forwarded-for") || "unknown";
 
-    if (!query || query.length < 2) return NextResponse.json({ users: [] });
+    if (!isSuggested && (!query || query.length < 2)) {
+        return NextResponse.json({ success: true, users: [] });
+    }
 
     // 🛡 1. Require Authenticated User Session (Blocks anonymous scrapers)
     const token = req.cookies.get("user_token")?.value;
@@ -26,16 +29,33 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        if (!await checkRateLimit(ip, 10, 60)) return NextResponse.json({ error: "Rate limit" }, { status: 429 });
+        if (!await checkRateLimit(ip, 20, 60)) return NextResponse.json({ error: "Rate limit" }, { status: 429 });
 
-        // 🔍 Search users by username or name only (no raw phone search)
-        const { data, error } = await supabaseAdmin
-            .from("users")
-            .select("name, username, phone")
-            .or(`username.ilike.%${query}%,name.ilike.%${query}%`)
-            .limit(10);
+        let data: any[] = [];
+        if (isSuggested) {
+            // 👥 Return active users for discovery (Meta/Instagram Direct style)
+            const { data: usersData, error } = await supabaseAdmin
+                .from("users")
+                .select("name, username, phone, created_at")
+                .neq("phone", payload.sub)
+                .not("name", "is", null)
+                .order("created_at", { ascending: false })
+                .limit(15);
 
-        if (error) throw error;
+            if (error) throw error;
+            data = usersData || [];
+        } else {
+            // 🔍 Search users by username or name only (no raw phone search)
+            const { data: usersData, error } = await supabaseAdmin
+                .from("users")
+                .select("name, username, phone")
+                .neq("phone", payload.sub)
+                .or(`username.ilike.%${query}%,name.ilike.%${query}%`)
+                .limit(10);
+
+            if (error) throw error;
+            data = usersData || [];
+        }
 
         // 🛡 Mask phone numbers and phone-like usernames before sending to client
         const maskedUsers = (data || []).map(u => {

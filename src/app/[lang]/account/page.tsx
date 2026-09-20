@@ -484,7 +484,7 @@ function AccountContent() {
                     <div className="bg-white/90 backdrop-blur-md rounded-[24px] border border-[rgba(15,20,16,0.06)] shadow-sm overflow-hidden">
                         <MenuItem onClick={() => setView("affiliate")} icon={<Sparkles size={20} color={GREEN} />} label={language === 'uz' ? 'Hamkorlik (Pul ishlash)' : 'Партнерство (Заработок)'} language={language} />
                         <VDivider />
-                        <MenuItem href="/messages" icon={<MessageSquare size={20} color={GREEN} />} label={language === 'uz' ? 'Suhbatlar' : 'Беседы'} language={language} />
+                        <MenuItem href="/messages" icon={<MessageSquare size={20} color={GREEN} />} label={language === 'uz' ? 'Xabarlar (Chat)' : 'Сообщения'} language={language} />
                     </div>
                 </div>
 

@@ -7,6 +7,7 @@ import { Send, ChevronLeft, Loader2, User, Headset, Image as ImageIcon, Papercli
 import { useRouter } from "next/navigation";
 import { mapMessage } from "@/lib/mappers";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
+import { uploadToYandexS3 } from "@/lib/yandex-s3";
 
 interface Message {
     id: string;
@@ -36,8 +37,6 @@ export default function ChatPage() {
     useEffect(() => {
         setMounted(true);
     }, []);
-
-    const { uploadToYandexS3 } = require("@/lib/yandex-s3");
 
     useEffect(() => {
         if (!mounted) return;
