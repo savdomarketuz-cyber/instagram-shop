@@ -19,10 +19,10 @@ export async function GET(req: Request) {
         const isCronAuthorized = cronSecret ? authHeader === `Bearer ${cronSecret}` : true;
         const isAdminAuthorized = adminSecret ? secretParam === adminSecret : false;
 
-        // Vercel ichki cron chaqiruvi yoki ruxsat berilgan so'rov
-        const isVercelCron = req.headers.get("x-vercel-cron") === "1";
+        // Agar Vercel ichki cron chaqiruvi bo'lsa yoki admin/cron secret to'g'ri bo'lsa ruxsat beramiz
+        const isAuthorized = isVercelCron || isAdminAuthorized || (cronSecret && isCronAuthorized);
 
-        if (cronSecret && !isCronAuthorized && !isAdminAuthorized && !isVercelCron) {
+        if (!isAuthorized) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 

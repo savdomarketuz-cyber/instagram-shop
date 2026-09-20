@@ -115,6 +115,13 @@ function decodeNextPath(payload?: string): string | null {
 
 export async function POST(req: Request) {
     try {
+        // 🛡 0. SECURE TELEGRAM WEBHOOK AUTHENTICATION
+        const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
+        const incomingSecret = req.headers.get("x-telegram-bot-api-secret-token");
+        if (webhookSecret && incomingSecret !== webhookSecret) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
         const body = await req.json();
 
         // 1. Callback Query handling (Inline tugmalar uchun)

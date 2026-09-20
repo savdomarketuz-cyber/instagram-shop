@@ -91,6 +91,13 @@ async function sendAdminMessage(chatId: number | string, text: string, replyMark
 
 export async function POST(req: Request) {
     try {
+        // 🛡 0. SECURE TELEGRAM WEBHOOK AUTHENTICATION
+        const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
+        const incomingSecret = req.headers.get("x-telegram-bot-api-secret-token");
+        if (webhookSecret && incomingSecret !== webhookSecret) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
         const body = await req.json();
 
         // ==========================================
@@ -98,6 +105,14 @@ export async function POST(req: Request) {
         // ==========================================
         if (body.callback_query) {
             const cb = body.callback_query;
+            const fromId = cb.from?.id?.toString() || cb.message?.chat?.id?.toString();
+
+            // Faqat ruxsat etilgan adminga ruxsat berish
+            if (fromId !== ADMIN_ID.toString()) {
+                await answerCallback(cb.id, "❌ Ruxsat etilmadi!", true);
+                return NextResponse.json({ ok: true });
+            }
+
             const chatId = cb.message.chat.id;
             const messageId = cb.message.message_id;
             const data: string = cb.data || "";
