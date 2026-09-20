@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useStore } from "@/store/store";
-import { MessageSquare, Search, Loader2, Headset, ChevronLeft, X, Sparkles, UserPlus, Send } from "lucide-react";
+import { MessageSquare, Search, Loader2, Headset, X, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -19,13 +19,55 @@ export default function MessagesPage() {
     const [suggestedUsers, setSuggestedUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingSuggested, setLoadingSuggested] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [hasMoreUsers, setHasMoreUsers] = useState(true);
+    const [usersOffset, setUsersOffset] = useState(0);
     const [isSearching, setIsSearching] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [mounted, setMounted] = useState(false);
 
+    // To prevent duplicate fetches
+    const isFetchingRef = useRef(false);
+
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    const loadUsers = async (initial = false) => {
+        if (isFetchingRef.current) return;
+        isFetchingRef.current = true;
+
+        if (initial) {
+            setLoadingSuggested(true);
+            setUsersOffset(0);
+            setHasMoreUsers(true);
+        } else {
+            setLoadingMore(true);
+        }
+
+        const currentOffset = initial ? 0 : usersOffset;
+
+        try {
+            const res = await fetch(`/api/users/search?suggested=true&limit=20&offset=${currentOffset}`);
+            const data = await res.json();
+            if (data.success && Array.isArray(data.users)) {
+                setSuggestedUsers(prev => {
+                    if (initial) return data.users;
+                    const existingIds = new Set(prev.map(u => u.id));
+                    const nextBatch = data.users.filter((u: any) => !existingIds.has(u.id));
+                    return [...prev, ...nextBatch];
+                });
+                setHasMoreUsers(Boolean(data.hasMore));
+                setUsersOffset(data.nextOffset || (currentOffset + data.users.length));
+            }
+        } catch (e) {
+            console.error("Users fetch error:", e);
+        } finally {
+            isFetchingRef.current = false;
+            if (initial) setLoadingSuggested(false);
+            else setLoadingMore(false);
+        }
+    };
 
     useEffect(() => {
         if (!mounted) return;
@@ -63,23 +105,8 @@ export default function MessagesPage() {
             }
         };
 
-        const fetchSuggestedUsers = async () => {
-            setLoadingSuggested(true);
-            try {
-                const res = await fetch("/api/users/search?suggested=true");
-                const data = await res.json();
-                if (data.success && Array.isArray(data.users)) {
-                    setSuggestedUsers(data.users);
-                }
-            } catch (e) {
-                console.error("Suggested users fetch error:", e);
-            } finally {
-                setLoadingSuggested(false);
-            }
-        };
-
         fetchChats();
-        fetchSuggestedUsers();
+        loadUsers(true);
 
         // Real-time subscriptions
         const privateChannel = supabase
@@ -135,6 +162,16 @@ export default function MessagesPage() {
         return () => clearTimeout(delayDebounceFn);
     }, [searchQuery]);
 
+    // Infinite scroll handler on content container
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+        if (scrollHeight - scrollTop - clientHeight < 250) {
+            if (hasMoreUsers && !loadingMore && !loadingSuggested && !searchQuery.trim()) {
+                loadUsers(false);
+            }
+        }
+    };
+
     // Filter existing chats matching search query
     const filteredChats = chats.filter((chat: any) => {
         const otherParticipantPhone = chat.participants?.find((p: string) => p !== user?.phone?.replace(/\D/g, ''));
@@ -155,25 +192,8 @@ export default function MessagesPage() {
 
     return (
         <div className="flex flex-col h-[100svh] bg-[#FAFAF6] max-w-[480px] mx-auto relative overflow-hidden">
-            {/* Top Bar: Clean header without profile info, only navigation and search */}
-            <div className="bg-[#FAFAF6]/90 backdrop-blur-2xl px-4 pt-10 pb-3 border-b border-[rgba(15,20,16,0.06)] shrink-0 sticky top-0 z-40">
-                <div className="flex items-center gap-3 mb-2.5">
-                    <button
-                        onClick={() => {
-                            videoPreWarmer.triggerHaptic("light");
-                            router.back();
-                        }}
-                        className="w-10 h-10 rounded-2xl bg-white/90 border border-[rgba(15,20,16,0.08)] flex items-center justify-center text-[#111612] active:scale-95 transition-transform shadow-xs shrink-0"
-                        aria-label="Orqaga"
-                    >
-                        <ChevronLeft size={20} />
-                    </button>
-                    <h1 className="text-xl font-bold tracking-tight text-[#111612]">
-                        {language === 'uz' ? "Xabarlar" : "Сообщения"}
-                    </h1>
-                </div>
-
-                {/* Search Bar */}
+            {/* Top Search Bar (No back button, no Xabarlar title - clean & direct) */}
+            <div className="bg-[#FAFAF6]/90 backdrop-blur-2xl px-4 pt-4 pb-3 border-b border-[rgba(15,20,16,0.06)] shrink-0 sticky top-0 z-40">
                 <div className="relative flex items-center">
                     <Search className="absolute left-3.5 text-[#9AA29C] pointer-events-none" size={17} />
                     <input
@@ -194,8 +214,11 @@ export default function MessagesPage() {
                 </div>
             </div>
 
-            {/* Content Body */}
-            <div className="flex-1 overflow-y-auto px-4 py-3 pb-24 no-scrollbar space-y-4">
+            {/* Content Body with 20-by-20 Infinite Scroll */}
+            <div 
+                onScroll={handleScroll}
+                className="flex-1 overflow-y-auto px-4 py-3 pb-24 no-scrollbar space-y-4"
+            >
 
                 {/* ========================================================= */}
                 {/* 1. SEARCH ACTIVE (TELEGRAM STYLE: USERS THEN CHATS)       */}
@@ -224,7 +247,7 @@ export default function MessagesPage() {
                                     {userResults.map((u) => (
                                         <Link
                                             key={u.id || u.phone}
-                                            href={`/messages/${encodeURIComponent(u.id || u.phone)}`}
+                                            href={`/${language}/messages/${encodeURIComponent(u.id || u.phone)}`}
                                             onClick={() => videoPreWarmer.triggerHaptic("light")}
                                             className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 flex items-center justify-between p-3 rounded-2xl bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.06)] hover:border-[#2D6E3E]/30 shadow-xs"
                                         >
@@ -272,7 +295,7 @@ export default function MessagesPage() {
                                         return (
                                             <Link
                                                 key={chat.id}
-                                                href={`/messages/${encodeURIComponent(otherPhone)}`}
+                                                href={`/${language}/messages/${encodeURIComponent(otherPhone)}`}
                                                 onClick={() => videoPreWarmer.triggerHaptic("light")}
                                                 className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 flex items-center gap-3.5 p-3 rounded-2xl bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.06)] shadow-xs hover:border-[#2D6E3E]/30"
                                             >
@@ -295,12 +318,12 @@ export default function MessagesPage() {
                     </div>
                 ) : (
                     /* ========================================================= */
-                    /* 2. DEFAULT VIEW (PINNED SUPPORT CHAT + CHATS / SUGGESTED) */
+                    /* 2. DEFAULT VIEW (PINNED SUPPORT CHAT + CHATS + ALL USERS) */
                     /* ========================================================= */
                     <div className="space-y-3">
                         {/* 📌 PINNED: Velari Admin / Support Service (Always at top) */}
                         <Link
-                            href="/chat"
+                            href={`/${language}/chat`}
                             onClick={() => videoPreWarmer.triggerHaptic("light")}
                             className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform flex items-center gap-3.5 p-3.5 rounded-[22px] text-white relative overflow-hidden shadow-md shadow-[#2D6E3E]/20 border border-white/20"
                             style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" }}
@@ -354,7 +377,7 @@ export default function MessagesPage() {
                                     return (
                                         <Link
                                             key={chat.id}
-                                            href={`/messages/${encodeURIComponent(otherPhone)}`}
+                                            href={`/${language}/messages/${encodeURIComponent(otherPhone)}`}
                                             onClick={() => videoPreWarmer.triggerHaptic("light")}
                                             className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 flex items-center gap-3.5 p-3.5 rounded-[22px] bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.06)] shadow-xs hover:border-[#2D6E3E]/30"
                                         >
@@ -384,8 +407,7 @@ export default function MessagesPage() {
                         )}
 
                         {/* ========================================================= */}
-                        {/* 3. META / INSTAGRAM DIRECT STYLE: SUGGESTED USERS         */}
-                        {/* Shown when chats.length === 0 OR as discovery below chats */}
+                        {/* 3. ALL USERS DIRECTORY WITH 20-BY-20 INFINITE SCROLL      */}
                         {/* ========================================================= */}
                         <div className="pt-2">
                             {chats.length === 0 && (
@@ -398,29 +420,29 @@ export default function MessagesPage() {
                                     </h3>
                                     <p className="text-xs text-[#737D75] mt-1 max-w-xs mx-auto leading-relaxed">
                                         {language === 'uz' 
-                                            ? "Xaridlar haqida maslahat olish, tajriba almashish yoki istalgan xaridor bilan bog'lanish uchun suhbat boshlang." 
-                                            : "Общайтесь с другими покупателями, делитесь опытом и советами по товарам."}
+                                            ? "Istalgan foydalanuvchi bilan xaridlar va tajriba almashish uchun xabar yozing." 
+                                            : "Общайтесь с другими покупателями и делитесь отзывами о товарах."}
                                     </p>
                                 </div>
                             )}
 
                             <div className="flex items-center justify-between px-1 mb-2.5">
                                 <span className="text-xs font-bold text-[#737D75] uppercase tracking-wider">
-                                    {language === 'uz' ? "✨ Tavsiya etilgan foydalanuvchilar" : "✨ Рекомендованные пользователи"}
+                                    {language === 'uz' ? "👥 Barcha foydalanuvchilar" : "👥 Все пользователи"}
                                 </span>
                                 {loadingSuggested && <Loader2 className="animate-spin text-[#2D6E3E]" size={14} />}
                             </div>
 
                             {suggestedUsers.length === 0 && !loadingSuggested ? (
                                 <div className="p-4 text-center text-xs text-[#9AA29C] bg-white/50 rounded-2xl">
-                                    {language === 'uz' ? "Foydalanuvchilarni qidiruv oynasi orqali toping" : "Используйте поиск для поиска пользователей"}
+                                    {language === 'uz' ? "Foydalanuvchilar topilmadi" : "Пользователи не найдены"}
                                 </div>
                             ) : (
                                 <div className="space-y-2">
                                     {suggestedUsers.map((su) => (
                                         <Link
                                             key={su.id || su.phone}
-                                            href={`/messages/${encodeURIComponent(su.id || su.phone)}`}
+                                            href={`/${language}/messages/${encodeURIComponent(su.id || su.phone)}`}
                                             onClick={() => videoPreWarmer.triggerHaptic("light")}
                                             className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 flex items-center justify-between p-3.5 rounded-[22px] bg-white/90 backdrop-blur-md border border-[rgba(15,20,16,0.06)] hover:border-[#2D6E3E]/30 shadow-xs group"
                                         >
@@ -431,7 +453,7 @@ export default function MessagesPage() {
                                                 <div className="min-w-0">
                                                     <h4 className="font-semibold text-sm text-[#111612] truncate">{su.name}</h4>
                                                     <p className="text-xs text-[#737D75] truncate">
-                                                        {su.username ? `@${su.username}` : (su.phone || (language === 'uz' ? "Faol xaridor" : "Покупатель"))}
+                                                        {su.username ? `@${su.username}` : (su.phone || (language === 'uz' ? "Xaridor" : "Покупатель"))}
                                                     </p>
                                                 </div>
                                             </div>
@@ -442,6 +464,20 @@ export default function MessagesPage() {
                                             </div>
                                         </Link>
                                     ))}
+
+                                    {/* Infinite Scroll Loader */}
+                                    {loadingMore && (
+                                        <div className="py-4 flex items-center justify-center gap-2 text-xs text-[#737D75]">
+                                            <Loader2 className="animate-spin text-[#2D6E3E]" size={16} />
+                                            <span>{language === 'uz' ? "Yana yuklanmoqda..." : "Загрузка..."}</span>
+                                        </div>
+                                    )}
+
+                                    {!hasMoreUsers && suggestedUsers.length >= 20 && (
+                                        <div className="py-3 text-center text-[11px] text-[#9AA29C]">
+                                            {language === 'uz' ? "Barcha foydalanuvchilar ko'rsatildi" : "Все пользователи показаны"}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -451,4 +487,5 @@ export default function MessagesPage() {
         </div>
     );
 }
+
 

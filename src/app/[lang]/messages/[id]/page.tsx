@@ -212,7 +212,7 @@ export default function P2PChatPage() {
         try {
             await supabase.from("private_messages").delete().eq("chat_id", roomId);
             await supabase.from("private_chats").delete().eq("id", roomId);
-            router.push("/messages");
+            router.push(`/${language}/messages`);
         } catch (error) {
             console.error("Error deleting chat:", error);
         }
