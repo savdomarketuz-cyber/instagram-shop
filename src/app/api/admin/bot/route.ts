@@ -9,6 +9,7 @@ import {
     sendProductForModeration,
     getNextProductToReview
 } from "@/lib/telegram-moderation";
+import { runFullSystemDiagnostic } from "@/lib/health-checker";
 
 const ADMIN_BOT_TOKEN = process.env.TELEGRAM_ADMIN_BOT_TOKEN;
 const TELEGRAM_API = `https://api.telegram.org/bot${ADMIN_BOT_TOKEN}`;
@@ -19,7 +20,8 @@ const ADMIN_MAIN_KEYBOARD = {
     keyboard: [
         [{ text: "📦 Oxirgi buyurtmalar" }, { text: "📊 Bugungi statistika" }],
         [{ text: "💬 Kutayotgan chatlar" }, { text: "⚠️ Kam qolgan tovarlar" }],
-        [{ text: "🔍 Buyurtma qidirish" }, { text: "⚙️ Mahsulot moderatsiyasi" }]
+        [{ text: "🔍 Buyurtma qidirish" }, { text: "⚙️ Mahsulot moderatsiyasi" }],
+        [{ text: "🩺 Tizim diagnostikasi" }]
     ],
     resize_keyboard: true
 };
@@ -529,7 +531,8 @@ export async function POST(req: Request) {
                     `• 💬 <b>Kutayotgan chatlar:</b> Mijozlardan kelgan javob berilmagan xabarlar\n` +
                     `• ⚠️ <b>Kam qolgan tovarlar:</b> Omborda 5 tadan kam qolgan mahsulotlar\n` +
                     `• 🔍 <b>Buyurtma qidirish:</b> ID yoki telefon raqami bo'yicha qidiruv\n` +
-                    `• ⚙️ <b>Mahsulot moderatsiyasi:</b> Mahsulot ma'lumotlarini tahrirlash\n\n` +
+                    `• ⚙️ <b>Mahsulot moderatsiyasi:</b> Mahsulot ma'lumotlarini tahrirlash\n` +
+                    `• 🩺 <b>Tizim diagnostikasi:</b> Qidiruv, to'lovlar, bazalar va API lar holatini to'liq tekshirish\n\n` +
                     `<i>💡 Mijozga javob yozish uchun uning xabariga Reply qiling yoki <code>/reply &lt;chat_id&gt; &lt;javob&gt;</code> deb yozing.</i>`,
                     ADMIN_MAIN_KEYBOARD
                 );
@@ -702,7 +705,28 @@ export async function POST(req: Request) {
                 return NextResponse.json({ ok: true });
             }
 
-            // 8. CUSTOMER SUPPORT REPLY: /reply <chat_id> <text> yoki xabarga reply
+            // 8. 🩺 TIZIM DIAGNOSTIKASI (HEALTH CHECK)
+            if (trimmed === "🩺 Tizim diagnostikasi" || trimmed === "/health" || trimmed === "/test") {
+                await sendAdminMessage(
+                    adminChatId,
+                    "⏳ <b>Tizim to'liq diagnostikasi boshlandi...</b>\n\nBarcha 12 ta modul (qidiruv RPC, katalog, narxlar, savat, buyurtmalar, autentifikatsiya, Supabase storage, Telegram bot API) tekshirilmoqda. Iltimos, bir oz kuting...",
+                    ADMIN_MAIN_KEYBOARD
+                );
+
+                try {
+                    const diagnostic = await runFullSystemDiagnostic();
+                    await sendAdminMessage(adminChatId, diagnostic.telegramMessage, ADMIN_MAIN_KEYBOARD);
+                } catch (diagErr: any) {
+                    await sendAdminMessage(
+                        adminChatId,
+                        `❌ <b>Diagnostikada kutilmagan xatolik:</b>\n<code>${escapeHtml(diagErr?.message || String(diagErr))}</code>`,
+                        ADMIN_MAIN_KEYBOARD
+                    );
+                }
+                return NextResponse.json({ ok: true });
+            }
+
+            // 9. CUSTOMER SUPPORT REPLY: /reply <chat_id> <text> yoki xabarga reply
             let targetCustomerChatId: string | null = null;
             let replyText = "";
 
