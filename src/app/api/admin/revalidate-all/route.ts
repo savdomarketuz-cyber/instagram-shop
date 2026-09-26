@@ -11,6 +11,7 @@ export async function POST() {
         revalidatePath("/uz/blog");
         revalidatePath("/ru/blog");
         revalidatePath("/sitemap.xml");
+        revalidatePath("/sitemap/[id]", "page");
         revalidatePath("/image-sitemap.xml");
 
         return NextResponse.json({ success: true, message: "Sayt keshi xavfsiz yangilandi" });

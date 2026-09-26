@@ -41,6 +41,7 @@ function revalidateProductCache(products: any[]) {
     revalidatePath("/uz");
     revalidatePath("/ru");
     revalidatePath("/sitemap.xml");
+    revalidatePath("/sitemap/[id]", "page");
     revalidatePath("/image-sitemap.xml");
     revalidatePath("/api/google-feed");
 }

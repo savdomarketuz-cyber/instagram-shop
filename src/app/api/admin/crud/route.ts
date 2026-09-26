@@ -52,6 +52,7 @@ function performSmartRevalidation(table: string, products: any[] = []) {
             revalidatePath("/uz");
             revalidatePath("/ru");
             revalidatePath("/sitemap.xml");
+            revalidatePath("/sitemap/[id]", "page");
             revalidatePath("/image-sitemap.xml");
             revalidatePath("/api/google-feed");
         } else if (table === "categories") {
@@ -60,6 +61,7 @@ function performSmartRevalidation(table: string, products: any[] = []) {
             revalidatePath("/uz");
             revalidatePath("/ru");
             revalidatePath("/sitemap.xml");
+            revalidatePath("/sitemap/[id]", "page");
         } else if (table === "banners" || table === "site_settings" || table === "settings") {
             revalidatePath("/uz");
             revalidatePath("/ru");
