@@ -10,6 +10,7 @@ export async function POST() {
         revalidatePath("/ru/catalog");
         revalidatePath("/uz/blog");
         revalidatePath("/ru/blog");
+        revalidatePath("/[lang]/products/[id]", "page");
         revalidatePath("/sitemap.xml");
         revalidatePath("/sitemap/[id]", "page");
         revalidatePath("/image-sitemap.xml");
