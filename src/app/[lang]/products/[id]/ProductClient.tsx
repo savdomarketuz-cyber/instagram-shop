@@ -22,6 +22,7 @@ import { ProductInfo } from "@/components/product/ProductInfo";
 import { ProductCard } from "@/components/home/ProductCard";
 import dynamic from "next/dynamic";
 import { applyGlobalPromo } from "@/lib/promo-utils";
+import { getProductRealStock } from "@/lib/stock";
 const ReviewsSection = dynamic(() => import("@/components/product/ReviewsSection").then(mod => ({ default: mod.ReviewsSection })), {
     loading: () => <div className="h-40 animate-pulse bg-gray-50 rounded-3xl mx-4 my-8" />,
     ssr: false,
@@ -436,8 +437,8 @@ export default function ProductClient({
         if (data) setComments(data.map(mapComment));
     };
 
-    const totalStock = useMemo(() => 
-        product ? (product.stockDetails ? Object.values(product.stockDetails).reduce((a: any, b: any) => Number(a || 0) + Number(b || 0), 0) : (product.stock || 0)) : 0
+    const totalStock = useMemo(() =>
+        product ? getProductRealStock(product as any) : 0
     , [product]);
 
     const handleFastBuy = () => {

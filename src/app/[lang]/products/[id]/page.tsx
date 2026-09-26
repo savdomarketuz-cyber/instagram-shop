@@ -7,6 +7,7 @@ import { getProductIdFromSlug, getProductSlug } from "@/lib/slugify";
 import { getProductImageUrls, isIndexableProduct } from "@/lib/sitemap-data";
 import { getProductRealStock } from "@/lib/stock";
 import { RETURN_WINDOW_DAYS } from "@/lib/delivery";
+import { cleanText, getProductDescription, getProductIdentifiers, truncateAtWord } from "@/lib/seo-text";
 import { notFound, permanentRedirect } from 'next/navigation';
 
 import { cache } from 'react';
@@ -62,67 +63,6 @@ const getProductData = cache(async (identifier: string) => {
 });
 
 const OG_FALLBACK_IMAGE = "https://velari.uz/og-image.png";
-
-const NAMED_ENTITIES: Record<string, string> = {
-    amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', laquo: '«', raquo: '»',
-    ndash: '–', mdash: '—', hellip: '…', rsquo: '’', lsquo: '‘', rdquo: '”', ldquo: '“',
-};
-
-// Emoji va dekorativ belgilar (+ variation selector, ZWJ, keycap). RegExp konstruktori orqali:
-// tsconfig target es5, \p{...} literal esa ES2018 talab qiladi — runtime (Node) uni qo'llaydi.
-const EMOJI_RE = new RegExp('[\\p{Extended_Pictographic}\\uFE0F\\u200D\\u20E3]', 'gu');
-
-/** Markdown belgilarini olib tashlaydi, matn qoladi. Qatorlar hali bo'linmagan holda chaqiriladi. */
-function stripMarkdown(text: string): string {
-    return text
-        .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')            // [matn](url) → matn
-        .replace(/`([^`]*)`/g, '$1')                          // `kod` → kod
-        .replace(/\*\*([\s\S]+?)\*\*/g, '$1')                 // **qalin**
-        .replace(/__([\s\S]+?)__/g, '$1')                     // __qalin__
-        .replace(/(^|[^\w*])\*(?!\s)([^*\n]+?)\*(?!\w)/g, '$1$2') // *kursiv*
-        .replace(/(^|[^\w])_(?!\s)([^_\n]+?)_(?!\w)/g, '$1$2')    // _kursiv_ (snake_case'ga tegmaydi)
-        .replace(/^[ \t]*#{1,6}[ \t]*/gm, '')                 // # sarlavha
-        .replace(/^[ \t]*[-*•][ \t]+/gm, '')                  // "- ", "* ", "• " ro'yxat
-        .replace(/\*\*|__/g, '');                             // juftsiz qolgan belgilar
-}
-
-/**
- * Chiqish uchun matn tozalash (DB'dagi matnga tegmaydi): HTML teglari olib tashlanadi,
- * entity'lar ochiladi, emoji va Markdown belgilari olib tashlanadi, bo'shliqlar bitta probelga, trim().
- */
-function cleanText(value: unknown): string {
-    if (typeof value !== 'string') return '';
-    const decoded = value
-        .replace(/<br\s*\/?>|<\/(p|div|li|h[1-6])>/gi, '\n')
-        .replace(/<[^>]*>/g, ' ')
-        .replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (entity, code: string) => {
-            if (code[0] === '#') {
-                const n = code[1].toLowerCase() === 'x' ? parseInt(code.slice(2), 16) : parseInt(code.slice(1), 10);
-                return Number.isFinite(n) && n > 0 && n <= 0x10ffff ? String.fromCodePoint(n) : entity;
-            }
-            return NAMED_ENTITIES[code.toLowerCase()] ?? entity;
-        });
-    return stripMarkdown(decoded.replace(EMOJI_RE, ''))
-        .replace(/\s+/g, ' ')
-        .trim();
-}
-
-/** So'z chegarasida qisqartiradi; kesilgan bo'lsa oxiriga "…" (natija ≤ max). */
-function truncateAtWord(text: string, max: number): string {
-    if (text.length <= max) return text;
-    const cut = text.slice(0, max - 1);
-    const lastSpace = cut.lastIndexOf(' ');
-    const base = lastSpace > 0 ? cut.slice(0, lastSpace) : cut;
-    return base.replace(/[\s,.;:!?—–-]+$/, '') + '…';
-}
-
-/** Tilga mos tozalangan tavsif — JSON-LD, meta description va yashirin blok uchun bir xil manba. */
-function getProductDescription(product: any, lang: string): string {
-    const raw = lang === 'ru'
-        ? (product.description_ru || product.description)
-        : (product.description_uz || product.description);
-    return cleanText(raw);
-}
 
 function decodeSlug(slug: string): string {
     try {
@@ -199,8 +139,8 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
         ? `${productName} - Цена, Рассрочка и Гарантия`
         : `${productName} - Narxi, Muddatli to'lov va Kafolat`;
     const descriptionIntro = isRu
-        ? `${productName} по самым выгодным ценам в Узбекистане. Рассрочка, официальная гарантия и бесплатная доставка.`
-        : `${productName} O'zbekistonda eng hamyonbop narxlarda. Muddatli to'lov, rasmiy kafolat va tekin yetkazib berish.`;
+        ? `${productName} по самым выгодным ценам в Узбекистане. Рассрочка, официальная гарантия и доставка по всему Узбекистану.`
+        : `${productName} O'zbekistonda eng hamyonbop narxlarda. Muddatli to'lov, rasmiy kafolat va O'zbekiston bo'ylab yetkazib berish.`;
     const description = truncateAtWord(
         cleanText(`${descriptionIntro} ${getProductDescription(product, params.lang)}`),
         160,
@@ -329,7 +269,6 @@ function ProductDataWrapper({ params, product, canonicalSlug }: { params: { lang
         "name": productName,
         "description": truncateAtWord(descriptionText || productName, 500),
         "sku": product.sku || product.article || product.id,
-        "mpn": product.model || product.article || product.id,
         "offers": offerBase
     };
     // Rasm bo'lmasa, image umuman yozilmaydi (faqat domen yoki "undefined" chiqmasin)
@@ -337,12 +276,19 @@ function ProductDataWrapper({ params, product, canonicalSlug }: { params: { lang
         jsonLd.image = productImages;
     }
 
-    // Real DB'dagi brand nomi bo'lsa — schema'ga kiritamiz
-    const realBrandName = product.brand_name || product.brand;
-    if (realBrandName) {
+    // Identifikatorlar faqat haqiqiy bo'lsa: GTIN (barcode), MPN (model), brend (brands jadvalidan).
+    // Ichki artikul/id MPN emas; brand_id (UUID) yoki "Velari" brend emas.
+    const identifiers = getProductIdentifiers(product);
+    if (identifiers.gtin) {
+        jsonLd[identifiers.gtin.length === 13 ? "gtin13" : "gtin"] = identifiers.gtin;
+    }
+    if (identifiers.mpn) {
+        jsonLd.mpn = identifiers.mpn;
+    }
+    if (identifiers.brand) {
         jsonLd.brand = {
             "@type": "Brand",
-            "name": realBrandName
+            "name": identifiers.brand
         };
     }
 
