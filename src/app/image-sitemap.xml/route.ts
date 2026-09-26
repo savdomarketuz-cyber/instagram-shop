@@ -90,10 +90,11 @@ export async function GET() {
         urlEntries +
         `</urlset>\n`;
 
+    // Cache-Control qo'yilmaydi: keshni Next ISR boshqaradi (revalidate = 86400). Qo'lda
+    // s-maxage berilsa, Vercel CDN javobni 24 soat ushlab turadi va revalidatePath uni tozalamaydi.
     return new NextResponse(xml, {
         headers: {
             'Content-Type': 'application/xml; charset=utf-8',
-            'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800',
         },
     });
 }
