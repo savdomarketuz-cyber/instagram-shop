@@ -126,13 +126,37 @@ async function getNonEmptyCategoryIds(categories: { id: string; parent_id?: stri
 
 // ───────────────────────── 2.2-B — Umumiy ro'yxat va bo'lish ─────────────────────────
 
+/**
+ * sitemap.xml va image-sitemap.xml uchun yagona mahsulot manbasi: bir xil DB filtri,
+ * id bo'yicha tartib, har qator baribir isIndexableProduct'dan o'tkaziladi.
+ */
+async function fetchIndexableProducts(columns: string): Promise<any[]> {
+    const products = await fetchAllRows('products', columns, (q) =>
+        q.eq('is_deleted', false).gt('price', 0).not('image', 'is', null).neq('image', ''),
+    );
+    return products.filter(isIndexableProduct);
+}
+
+/** Guruhlarni (uz+ru juftliklari) fayllarga bo'ladi; guruh hech qachon ikki faylga bo'linmaydi. */
+function chunkGroups<T>(groups: T[][], maxPerChunk: number): T[][] {
+    const chunks: T[][] = [];
+    let current: T[] = [];
+    for (const group of groups) {
+        if (current.length + group.length > maxPerChunk) {
+            chunks.push(current);
+            current = [];
+        }
+        current.push(...group);
+    }
+    if (current.length > 0 || chunks.length === 0) chunks.push(current);
+    return chunks;
+}
+
 async function getSitemapGroups(): Promise<SitemapGroup[]> {
     const baseUrl = SITEMAP_BASE_URL;
 
-    const [products, categories] = await Promise.all([
-        fetchAllRows('products', 'id, name, name_uz, name_ru, article, updated_at, price, image, is_deleted', (q) =>
-            q.eq('is_deleted', false).gt('price', 0).not('image', 'is', null).neq('image', ''),
-        ),
+    const [indexableProducts, categories] = await Promise.all([
+        fetchIndexableProducts('id, name, name_uz, name_ru, article, updated_at, price, image, is_deleted'),
         fetchAllRows('categories', 'id, name, name_uz, name_ru, parent_id, updated_at', (q) => q.eq('is_deleted', false)),
     ]);
 
@@ -143,8 +167,6 @@ async function getSitemapGroups(): Promise<SitemapGroup[]> {
     } catch (blogError) {
         console.warn('Sitemap: Blogs table not available:', blogError);
     }
-
-    const indexableProducts = products.filter(isIndexableProduct);
 
     let latestProductUpdate: Date | undefined;
     for (const product of indexableProducts) {
@@ -203,20 +225,88 @@ async function getSitemapGroups(): Promise<SitemapGroup[]> {
  * Bitta elementning uz va ru yozuvlari hech qachon ikki faylga bo'linib ketmaydi.
  */
 export async function getSitemapChunks(): Promise<SitemapUrl[][]> {
-    const groups = await getSitemapGroups();
+    return chunkGroups(await getSitemapGroups(), MAX_URLS_PER_SITEMAP);
+}
 
-    const chunks: SitemapUrl[][] = [];
-    let current: SitemapUrl[] = [];
-    for (const group of groups) {
-        if (current.length + group.length > MAX_URLS_PER_SITEMAP) {
-            chunks.push(current);
-            current = [];
-        }
-        current.push(...group);
+// ───────────────────────── image-sitemap ─────────────────────────
+
+/** Bitta image-sitemap faylidagi <url> chegarasi (50 MB hajm limitidan uzoq turish uchun). */
+export const MAX_URLS_PER_IMAGE_SITEMAP = 2_000;
+
+/** Google: bitta <url> ichida 1000 tagacha rasm; biz 50 bilan cheklaymiz. */
+const MAX_IMAGES_PER_URL = 50;
+
+// AVIF ni Yandex Images yaxshi indekslamaydi. Upload pipeline har avif uchun
+// webp `lg` (1080px) variantini saqlaydi (image_metadata) — o'sha beriladi.
+function preferIndexableUrl(img: string, meta: any): string {
+    if (img.toLowerCase().endsWith('.avif')) {
+        const lg = meta?.[img]?.lg;
+        if (typeof lg === 'string' && lg.trim().length > 0) return lg;
     }
-    if (current.length > 0 || chunks.length === 0) chunks.push(current);
+    return img;
+}
 
-    return chunks;
+function toAbsoluteImageUrl(img: string): string {
+    const abs = /^https?:\/\//i.test(img) ? img : `${SITEMAP_BASE_URL}${img.startsWith('/') ? '' : '/'}${img}`;
+    // Probel yoki ASCII bo'lmagan belgi bo'lsa kodlanadi; allaqachon %XX bo'lsa — qayta kodlanmaydi
+    if (/%[0-9A-Fa-f]{2}/.test(abs) || !/[^\x21-\x7E]/.test(abs)) return abs;
+    return encodeURI(abs);
+}
+
+/**
+ * Mahsulotning image-sitemap uchun rasmlari: image birinchi, keyin images;
+ * AVIF -> webp lg; absolyut va kodlangan URL; dublikatsiz; 50 tagacha.
+ */
+export function getProductImageUrls(p: any): string[] {
+    const meta = p?.image_metadata || {};
+    const raw = [p?.image, ...(Array.isArray(p?.images) ? p.images : [])];
+    const urls: string[] = [];
+    for (const img of raw) {
+        if (typeof img !== 'string' || img.trim() === '') continue;
+        const url = toAbsoluteImageUrl(preferIndexableUrl(img.trim(), meta).trim());
+        if (!urls.includes(url)) urls.push(url);
+        if (urls.length >= MAX_IMAGES_PER_URL) break;
+    }
+    return urls;
+}
+
+export interface ImageSitemapUrl {
+    loc: string;
+    lastModified?: Date;
+    title: string;
+    images: string[];
+}
+
+/**
+ * image-sitemap: sitemap.xml bilan AYNAN bir xil mahsulotlar (rasmi bor bo'lganlari),
+ * har biri uchun uz va ru <url>, MAX_URLS_PER_IMAGE_SITEMAP talik fayllarga bo'lingan.
+ */
+export async function getImageSitemapChunks(): Promise<ImageSitemapUrl[][]> {
+    const products = await fetchIndexableProducts(
+        'id, name, name_uz, name_ru, article, price, image, images, image_metadata, updated_at, is_deleted',
+    );
+
+    const groups: ImageSitemapUrl[][] = [];
+    for (const product of products) {
+        const images = getProductImageUrls(product);
+        if (images.length === 0) continue;
+        const lastModified = toDate(product.updated_at);
+        const base = lastModified ? { lastModified, images } : { images };
+        groups.push([
+            {
+                loc: `${SITEMAP_BASE_URL}/uz/products/${getProductSlug(product, 'uz')}`,
+                title: String(product.name_uz || product.name || '').trim(),
+                ...base,
+            },
+            {
+                loc: `${SITEMAP_BASE_URL}/ru/products/${getProductSlug(product, 'ru')}`,
+                title: String(product.name_ru || product.name_uz || product.name || '').trim(),
+                ...base,
+            },
+        ]);
+    }
+
+    return chunkGroups(groups, MAX_URLS_PER_IMAGE_SITEMAP);
 }
 
 // ───────────────────────── XML ─────────────────────────
@@ -253,10 +343,29 @@ export function renderUrlset(urls: SitemapUrl[]): string {
     );
 }
 
-export function renderSitemapIndex(count: number): string {
+export function renderImageUrlset(urls: ImageSitemapUrl[]): string {
+    const entries = urls.map((url) => {
+        const lastmod = url.lastModified ? `\n    <lastmod>${url.lastModified.toISOString()}</lastmod>` : '';
+        // image:title — Yandex Images ishlatadi (Google e'tiborsiz qoldiradi, zararsiz)
+        const titleTag = url.title ? `<image:title>${xmlEscape(url.title)}</image:title>` : '';
+        const imageTags = url.images
+            .map((img) => `    <image:image><image:loc>${xmlEscape(img)}</image:loc>${titleTag}</image:image>\n`)
+            .join('');
+        return `  <url>\n    <loc>${xmlEscape(url.loc)}</loc>${lastmod}\n${imageTags}  </url>\n`;
+    });
+
+    return (
+        `<?xml version="1.0" encoding="UTF-8"?>\n` +
+        `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n` +
+        entries.join('') +
+        `</urlset>\n`
+    );
+}
+
+export function renderSitemapIndex(count: number, basePath = '/sitemap'): string {
     let entries = '';
     for (let i = 0; i < count; i++) {
-        entries += `  <sitemap>\n    <loc>${SITEMAP_BASE_URL}/sitemap/${i}.xml</loc>\n  </sitemap>\n`;
+        entries += `  <sitemap>\n    <loc>${SITEMAP_BASE_URL}${basePath}/${i}.xml</loc>\n  </sitemap>\n`;
     }
     return (
         `<?xml version="1.0" encoding="UTF-8"?>\n` +

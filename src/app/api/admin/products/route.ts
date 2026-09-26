@@ -43,6 +43,7 @@ function revalidateProductCache(products: any[]) {
     revalidatePath("/sitemap.xml");
     revalidatePath("/sitemap/[id]", "page");
     revalidatePath("/image-sitemap.xml");
+    revalidatePath("/image-sitemap/[id]", "page");
     revalidatePath("/api/google-feed");
 }
 
