@@ -69,49 +69,20 @@ export function getProductDescription(product: any, lang: string): string {
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const GTIN_LENGTHS = new Set([8, 12, 13, 14]);
-
-/** GS1 mod-10: o'ngdan ikkinchi raqamdan boshlab navbat bilan 3 va 1 ga ko'paytirib yig'iladi. */
-function hasValidGs1CheckDigit(code: string): boolean {
-    let sum = 0;
-    for (let i = code.length - 2, weight = 3; i >= 0; i--, weight = weight === 3 ? 1 : 3) {
-        sum += Number(code[i]) * weight;
-    }
-    return (10 - (sum % 10)) % 10 === Number(code[code.length - 1]);
-}
-
-/** GS1 20–29 — do'kon ichki/cheklangan diapazoni (Google qabul qilmaydi). */
-function isRestrictedCirculation(code: string): boolean {
-    if (code.length === 13 || code.length === 12) return code.startsWith('2');
-    if (code.length === 14) return code.startsWith('02');
-    return false;
-}
-
-function isValidGtin(code: string): boolean {
-    return /^\d+$/.test(code)
-        && GTIN_LENGTHS.has(code.length)
-        && hasValidGs1CheckDigit(code)
-        && !isRestrictedCirculation(code);
-}
 
 export interface ProductIdentifiers {
-    gtin?: string;
     mpn?: string;
     brand?: string;
 }
 
 /**
- * Google uchun mahsulot identifikatorlari — faqat haqiqiy qiymatlar:
- *  gtin  — barcode faqat raqamlardan iborat, uzunligi 8/12/13/14, GS1 nazorat raqami
- *          to'g'ri va do'kon ichki diapazonida (GS1 20–29) emas bo'lsa
+ * Google uchun mahsulot identifikatorlari — faqat haqiqiy qiymatlar.
+ * Do'kon ichki shtrix-kodi Google'ga berilmaydi (GTIN yo'q).
  *  mpn   — ishlab chiqaruvchi modeli (p.model); ichki artikul yoki id MPN emas
  *  brand — brands jadvalidagi haqiqiy nom (p.brand_name); UUID yoki "Velari" emas
  */
 export function getProductIdentifiers(p: any): ProductIdentifiers {
     const ids: ProductIdentifiers = {};
-
-    const barcode = typeof p?.barcode === 'string' ? p.barcode.trim() : String(p?.barcode ?? '').trim();
-    if (isValidGtin(barcode)) ids.gtin = barcode;
 
     const model = typeof p?.model === 'string' ? p.model.trim() : '';
     if (model) ids.mpn = model;

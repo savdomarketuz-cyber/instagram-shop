@@ -29,7 +29,7 @@ export async function GET() {
         // Mahsulotlar — sitemap bilan AYNAN bir xil to'plam (fetchAllRows + isIndexableProduct)
         const [products, categories, brands] = await Promise.all([
             fetchIndexableProducts(
-                "id, name, name_uz, name_ru, price, old_price, image, images, image_metadata, description, description_uz, description_ru, stock, stock_details, article, model, barcode, category_id, brand_id, is_deleted, updated_at",
+                "id, name, name_uz, name_ru, price, old_price, image, images, image_metadata, description, description_uz, description_ru, stock, stock_details, article, model, category_id, brand_id, is_deleted, updated_at",
             ),
             fetchAllRows("categories", "id, name, name_ru, name_uz, parent_id", (q) => q.eq("is_deleted", false)),
             fetchAllRows("brands", "id, name", (q) => q.eq("is_deleted", false)),
@@ -70,10 +70,9 @@ export async function GET() {
             // Identifikatorlar faqat haqiqiy bo'lsa; "Velari" brend sifatida berilmaydi
             const ids = getProductIdentifiers({ ...p, brand_name: p.brand_id ? brandMap.get(p.brand_id) : undefined });
             const identifierLines = [
-                ids.gtin ? `      <g:gtin>${esc(ids.gtin)}</g:gtin>` : "",
                 ids.mpn ? `      <g:mpn>${esc(ids.mpn)}</g:mpn>` : "",
                 ids.brand ? `      <g:brand>${esc(ids.brand)}</g:brand>` : "",
-                !ids.gtin && !ids.mpn ? `      <g:identifier_exists>no</g:identifier_exists>` : "",
+                !ids.mpn ? `      <g:identifier_exists>no</g:identifier_exists>` : "",
             ].filter(Boolean).join("\n");
 
             const catPath = esc(getCategoryPath(p.category_id));

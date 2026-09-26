@@ -276,12 +276,9 @@ function ProductDataWrapper({ params, product, canonicalSlug }: { params: { lang
         jsonLd.image = productImages;
     }
 
-    // Identifikatorlar faqat haqiqiy bo'lsa: GTIN (barcode), MPN (model), brend (brands jadvalidan).
+    // Identifikatorlar faqat haqiqiy bo'lsa: MPN (model), brend (brands jadvalidan).
     // Ichki artikul/id MPN emas; brand_id (UUID) yoki "Velari" brend emas.
     const identifiers = getProductIdentifiers(product);
-    if (identifiers.gtin) {
-        jsonLd[identifiers.gtin.length === 13 ? "gtin13" : "gtin"] = identifiers.gtin;
-    }
     if (identifiers.mpn) {
         jsonLd.mpn = identifiers.mpn;
     }
