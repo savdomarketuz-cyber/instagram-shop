@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase-admin";
 import { getProductSlug } from "@/lib/slugify";
 import { computeStandardDelivery } from "@/lib/delivery";
+import { fetchAllRows, fetchIndexableProducts, getProductImageUrls } from "@/lib/sitemap-data";
+import { getProductRealStock } from "@/lib/stock";
+import { getProductDescription, getProductIdentifiers, truncateAtWord } from "@/lib/seo-text";
 
+// Keshni Next ISR boshqaradi (sitemap kabi) — Cache-Control qo'lda qo'yilmaydi
 export const revalidate = 86400;
 
 const BASE_URL = "https://velari.uz";
+const MAX_ADDITIONAL_IMAGES = 10;
 
 function esc(str: string): string {
     return (str || "")
@@ -22,35 +26,25 @@ function gPrice(val: number): string {
 
 export async function GET() {
     try {
-        const [{ data: products }, { data: categories }, { data: brands }] = await Promise.all([
-            supabaseAdmin
-                .from("products")
-                .select("id, name, name_uz, name_ru, price, old_price, image, images, description, description_ru, stock, article, model, category_id, brand_id, is_deleted, updated_at")
-                .eq("is_deleted", false)
-                .order("sales", { ascending: false }),
-            supabaseAdmin
-                .from("categories")
-                .select("id, name, name_ru, name_uz, parent_id")
-                .eq("is_deleted", false),
-            supabaseAdmin
-                .from("brands")
-                .select("id, name")
-                .eq("is_deleted", false),
+        // Mahsulotlar — sitemap bilan AYNAN bir xil to'plam (fetchAllRows + isIndexableProduct)
+        const [products, categories, brands] = await Promise.all([
+            fetchIndexableProducts(
+                "id, name, name_uz, name_ru, price, old_price, image, images, image_metadata, description, description_uz, description_ru, stock, stock_details, article, model, barcode, category_id, brand_id, is_deleted, updated_at",
+            ),
+            fetchAllRows("categories", "id, name, name_ru, name_uz, parent_id", (q) => q.eq("is_deleted", false)),
+            fetchAllRows("brands", "id, name", (q) => q.eq("is_deleted", false)),
         ]);
 
-        if (!products?.length) {
-            return NextResponse.json({ error: "No products" }, { status: 500 });
+        if (!products.length) {
+            throw new Error("No products");
         }
 
-        // Narxsiz mahsulotlarni chiqarib tashlaymiz — Google "price not specified" xatosi beradi
-        const validProducts = products.filter(p => p.price && p.price > 0 && p.image);
-
-        const catMap = new Map((categories || []).map((c) => [c.id, c]));
-        const brandMap = new Map((brands || []).map((b) => [b.id, b.name]));
+        const catMap = new Map(categories.map((c: any) => [c.id, c]));
+        const brandMap = new Map(brands.map((b: any) => [b.id, b.name]));
 
         const getCategoryPath = (catId: string): string => {
             const parts: string[] = [];
-            let cur = catMap.get(catId);
+            let cur: any = catMap.get(catId);
             while (cur) {
                 parts.unshift(cur.name_ru || cur.name_uz || cur.name || "");
                 cur = cur.parent_id ? catMap.get(cur.parent_id) : undefined;
@@ -60,27 +54,33 @@ export async function GET() {
 
         const now = new Date().toUTCString();
 
-        const items = validProducts.map((p) => {
+        const items = products.map((p) => {
+            // Rasmlar — sahifa JSON-LD va image-sitemap bilan bir xil manba (xom yoki AVIF emas)
+            const images = getProductImageUrls(p);
+            if (images.length === 0) return null;
+            const [mainImage, ...extraImages] = images;
+
             const ruSlug = getProductSlug(p, "ru");
             const link = `${BASE_URL}/ru/products/${ruSlug}`;
 
-            const title = esc(p.name_ru || p.name_uz || p.name || "");
-            const desc = esc((p.description_ru || p.description || title).substring(0, 5000));
-            
-            // Brand: real brand nomidan olamiz, topilmasa "Velari"
-            const brandName = (p.brand_id ? brandMap.get(p.brand_id) : null) || "Velari";
-            const brand = esc(brandName);
+            const titleText = p.name_ru || p.name_uz || p.name || "";
+            const title = esc(titleText);
+            const desc = esc(truncateAtWord(getProductDescription(p, "ru"), 5000) || titleText);
+
+            // Identifikatorlar faqat haqiqiy bo'lsa; "Velari" brend sifatida berilmaydi
+            const ids = getProductIdentifiers({ ...p, brand_name: p.brand_id ? brandMap.get(p.brand_id) : undefined });
+            const identifierLines = [
+                ids.gtin ? `      <g:gtin>${esc(ids.gtin)}</g:gtin>` : "",
+                ids.mpn ? `      <g:mpn>${esc(ids.mpn)}</g:mpn>` : "",
+                ids.brand ? `      <g:brand>${esc(ids.brand)}</g:brand>` : "",
+                !ids.gtin && !ids.mpn ? `      <g:identifier_exists>no</g:identifier_exists>` : "",
+            ].filter(Boolean).join("\n");
 
             const catPath = esc(getCategoryPath(p.category_id));
-            const mpn = esc(p.model || p.article || p.id);
-            const availability = (p.stock ?? 1) > 0 ? "in stock" : "out of stock";
-
-            // Rasmlar: takrorlanmas noyob rasmlar ro'yxati (asosiy + qo'shimcha, max 10)
-            const rawImages = [p.image, ...(p.images || [])].filter(Boolean) as string[];
-            const uniqueImages = Array.from(new Set(rawImages)).slice(0, 10);
-            const [mainImage, ...extraImages] = uniqueImages;
+            const availability = getProductRealStock(p) > 0 ? "in stock" : "out of stock";
 
             const additionalImages = extraImages
+                .slice(0, MAX_ADDITIONAL_IMAGES)
                 .map((img) => `      <g:additional_image_link>${esc(img)}</g:additional_image_link>`)
                 .join("\n");
 
@@ -108,15 +108,14 @@ ${additionalImages ? additionalImages + "\n" : ""}\
       <g:price>${displayPrice}</g:price>
 ${salePriceLine ? salePriceLine + "\n" : ""}\
       <g:condition>new</g:condition>
-      <g:brand>${brand}</g:brand>
-      <g:mpn>${mpn}</g:mpn>
+${identifierLines}
       <g:product_type>${catPath}</g:product_type>
       <g:shipping>
         <g:country>UZ</g:country>
         <g:price>${shippingPrice}</g:price>
       </g:shipping>
     </item>`;
-        }).join("\n");
+        }).filter(Boolean).join("\n");
 
         const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
@@ -133,7 +132,6 @@ ${items}
             status: 200,
             headers: {
                 "Content-Type": "application/xml; charset=utf-8",
-                "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800",
             },
         });
     } catch (err) {

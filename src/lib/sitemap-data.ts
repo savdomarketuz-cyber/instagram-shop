@@ -128,10 +128,10 @@ async function getNonEmptyCategoryIds(categories: { id: string; parent_id?: stri
 // ───────────────────────── 2.2-B — Umumiy ro'yxat va bo'lish ─────────────────────────
 
 /**
- * sitemap.xml va image-sitemap.xml uchun yagona mahsulot manbasi: bir xil DB filtri,
+ * sitemap.xml, image-sitemap.xml va Merchant feed uchun yagona mahsulot manbasi: bir xil DB filtri,
  * id bo'yicha tartib, har qator baribir isIndexableProduct'dan o'tkaziladi.
  */
-async function fetchIndexableProducts(columns: string): Promise<any[]> {
+export async function fetchIndexableProducts(columns: string): Promise<any[]> {
     const products = await fetchAllRows('products', columns, (q) =>
         q.eq('is_deleted', false).gt('price', 0).not('image', 'is', null).neq('image', ''),
     );
