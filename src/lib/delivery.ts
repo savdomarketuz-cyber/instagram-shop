@@ -15,6 +15,7 @@
 export const FREE_DELIVERY_THRESHOLD = 150000;      // standart yetkazish bepul bo'ladigan chegara
 export const STANDARD_DELIVERY_FEE = 25000;          // standart yetkazish narxi (Toshkent)
 export const EXPRESS_FREE_THRESHOLD = 600000;        // tezkor yetkazish bepul bo'ladigan chegara
+export const RETURN_WINDOW_DAYS = 14;                // sifatli tovarni qaytarish muddati (return-policy sahifasi)
 
 // Do'kon (jo'natuvchi) koordinatasi — express masofa shu nuqtadan hisoblanadi
 export const STORE_COORDS: [number, number] = [41.239674, 69.248763];

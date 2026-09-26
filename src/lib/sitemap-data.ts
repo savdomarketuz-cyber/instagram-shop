@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getProductSlug, getCategorySlug } from '@/lib/slugify';
 import { getProductRealStock } from '@/lib/stock';
+import { getOptimizedImageUrl } from '@/lib/imageVariants';
 
 /**
  * Sitemap uchun umumiy ma'lumot qatlami.
@@ -236,15 +237,8 @@ export const MAX_URLS_PER_IMAGE_SITEMAP = 2_000;
 /** Google: bitta <url> ichida 1000 tagacha rasm; biz 50 bilan cheklaymiz. */
 const MAX_IMAGES_PER_URL = 50;
 
-// AVIF ni Yandex Images yaxshi indekslamaydi. Upload pipeline har avif uchun
-// webp `lg` (1080px) variantini saqlaydi (image_metadata) — o'sha beriladi.
-function preferIndexableUrl(img: string, meta: any): string {
-    if (img.toLowerCase().endsWith('.avif')) {
-        const lg = meta?.[img]?.lg;
-        if (typeof lg === 'string' && lg.trim().length > 0) return lg;
-    }
-    return img;
-}
+const VIDEO_RE = /\.(mp4|webm|mov)(\?|#|$)/i;
+const PLACEHOLDER = '/placeholder.png';
 
 function toAbsoluteImageUrl(img: string): string {
     const abs = /^https?:\/\//i.test(img) ? img : `${SITEMAP_BASE_URL}${img.startsWith('/') ? '' : '/'}${img}`;
@@ -254,16 +248,21 @@ function toAbsoluteImageUrl(img: string): string {
 }
 
 /**
- * Mahsulotning image-sitemap uchun rasmlari: image birinchi, keyin images;
- * AVIF -> webp lg; absolyut va kodlangan URL; dublikatsiz; 50 tagacha.
+ * Mahsulot rasmlari uchun YAGONA manba (image-sitemap, JSON-LD, og:image): image birinchi,
+ * keyin images; sahifada ko'rinadigan variant (getOptimizedImageUrl 'lg'); video va
+ * placeholder'siz; absolyut va kodlangan URL; dublikatsiz; 50 tagacha.
  */
 export function getProductImageUrls(p: any): string[] {
-    const meta = p?.image_metadata || {};
+    const meta = p?.image_metadata || undefined;
     const raw = [p?.image, ...(Array.isArray(p?.images) ? p.images : [])];
     const urls: string[] = [];
     for (const img of raw) {
         if (typeof img !== 'string' || img.trim() === '') continue;
-        const url = toAbsoluteImageUrl(preferIndexableUrl(img.trim(), meta).trim());
+        const source = img.trim();
+        if (VIDEO_RE.test(source) || source === PLACEHOLDER) continue;
+        const variant = getOptimizedImageUrl(meta, source, 'lg').trim();
+        if (!variant || VIDEO_RE.test(variant) || variant === PLACEHOLDER) continue;
+        const url = toAbsoluteImageUrl(variant);
         if (!urls.includes(url)) urls.push(url);
         if (urls.length >= MAX_IMAGES_PER_URL) break;
     }

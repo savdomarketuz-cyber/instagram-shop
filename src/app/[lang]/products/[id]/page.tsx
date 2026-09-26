@@ -4,6 +4,9 @@ import ProductClient from './ProductClient';
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { mapProduct } from "@/lib/mappers";
 import { getProductIdFromSlug, getProductSlug } from "@/lib/slugify";
+import { getProductImageUrls, isIndexableProduct } from "@/lib/sitemap-data";
+import { getProductRealStock } from "@/lib/stock";
+import { RETURN_WINDOW_DAYS } from "@/lib/delivery";
 import { notFound, permanentRedirect } from 'next/navigation';
 
 import { cache } from 'react';
@@ -45,16 +48,66 @@ const getProductData = cache(async (identifier: string) => {
             ? groupRes.data.map(mapProduct)
             : [];
 
-        return { 
-            ...mapProduct(data), 
-            brand_name: brandName, 
-            initialGroupProducts 
+        return {
+            ...mapProduct(data),
+            brand_name: brandName,
+            initialGroupProducts,
+            // isIndexableProduct snake_case maydonlarni tekshiradi — XOM DB qatoriga qo'llanadi
+            isIndexable: isIndexableProduct(data),
         };
     } catch (err) {
         console.error("getProductData error:", err);
         return null;
     }
 });
+
+const OG_FALLBACK_IMAGE = "https://velari.uz/og-image.png";
+
+const NAMED_ENTITIES: Record<string, string> = {
+    amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', laquo: '«', raquo: '»',
+    ndash: '–', mdash: '—', hellip: '…', rsquo: '’', lsquo: '‘', rdquo: '”', ldquo: '“',
+};
+
+/** HTML teglari olib tashlanadi, entity'lar ochiladi, barcha bo'shliqlar bitta probelga, trim(). */
+function cleanText(value: unknown): string {
+    if (typeof value !== 'string') return '';
+    return value
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (entity, code: string) => {
+            if (code[0] === '#') {
+                const n = code[1].toLowerCase() === 'x' ? parseInt(code.slice(2), 16) : parseInt(code.slice(1), 10);
+                return Number.isFinite(n) && n > 0 && n <= 0x10ffff ? String.fromCodePoint(n) : entity;
+            }
+            return NAMED_ENTITIES[code.toLowerCase()] ?? entity;
+        })
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+/** So'z chegarasida qisqartiradi; kesilgan bo'lsa oxiriga "…" (natija ≤ max). */
+function truncateAtWord(text: string, max: number): string {
+    if (text.length <= max) return text;
+    const cut = text.slice(0, max - 1);
+    const lastSpace = cut.lastIndexOf(' ');
+    const base = lastSpace > 0 ? cut.slice(0, lastSpace) : cut;
+    return base.replace(/[\s,.;:!?—–-]+$/, '') + '…';
+}
+
+/** Tilga mos tozalangan tavsif — JSON-LD, meta description va yashirin blok uchun bir xil manba. */
+function getProductDescription(product: any, lang: string): string {
+    const raw = lang === 'ru'
+        ? (product.description_ru || product.description)
+        : (product.description_uz || product.description);
+    return cleanText(raw);
+}
+
+function decodeSlug(slug: string): string {
+    try {
+        return decodeURIComponent(slug);
+    } catch {
+        return slug;
+    }
+}
 
 // ⚡ Eng mashhur 200 mahsulotni SEO slug shaklida pre-render (CDN'dan 0ms).
 // Har mahsulot uchun uz va ru slug — sitemap/canonical bilan AYNAN mos bo'ladi.
@@ -109,27 +162,31 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
         ? (product.name_ru || product.name_uz || product.name)
         : (product.name_uz || product.name);
 
-    // Ensure raw direct product image URL is absolute for Google Search Thumbnail Indexing
-    const rawProductImage = product.image?.startsWith('http') 
-        ? product.image 
-        : `${baseUrl}${product.image || ''}`;
-        
-    const productImages = (product.images && product.images.length > 0) 
-        ? product.images.map((img: string) => img.startsWith('http') ? img : `${baseUrl}${img}`)
-        : [rawProductImage];
+    // Rasmlar — yagona manba (image-sitemap va JSON-LD bilan AYNAN bir xil)
+    const productImages = getProductImageUrls(product);
+    const primaryImage = productImages[0] || OG_FALLBACK_IMAGE;
 
     const ogUrl = new URL(`${baseUrl}/api/og`);
     ogUrl.searchParams.set('name', productName);
-    ogUrl.searchParams.set('price', product.price.toString());
-    ogUrl.searchParams.set('image', rawProductImage);
+    ogUrl.searchParams.set('price', String(product.price ?? ''));
+    ogUrl.searchParams.set('image', primaryImage);
 
     // Title template in layout.tsx already adds "| Velari", so don't add it here
     const title = isRu
         ? `${productName} - Цена, Рассрочка и Гарантия`
         : `${productName} - Narxi, Muddatli to'lov va Kafolat`;
-    const description = isRu
-        ? `${productName} по самым выгодным ценам в Узбекистане. Рассрочка, официальная гарантия и бесплатная доставка. ${product.description_ru || product.description || ""}`.substring(0, 160)
-        : `${productName} O'zbekistonda eng hamyonbop narxlarda. Muddatli to'lov, rasmiy kafolat va tekin yetkazib berish. ${product.description_uz || product.description || ""}`.substring(0, 160);
+    const descriptionIntro = isRu
+        ? `${productName} по самым выгодным ценам в Узбекистане. Рассрочка, официальная гарантия и бесплатная доставка.`
+        : `${productName} O'zbekistonda eng hamyonbop narxlarda. Muddatli to'lov, rasmiy kafolat va tekin yetkazib berish.`;
+    const description = truncateAtWord(
+        cleanText(`${descriptionIntro} ${getProductDescription(product, params.lang)}`),
+        160,
+    );
+
+    // Rasm bo'lmasa — umumiy OG rasm (faqat og/twitter uchun)
+    const ogImages = productImages.length > 0
+        ? productImages.map((url) => ({ url, alt: productName }))
+        : [{ url: OG_FALLBACK_IMAGE, width: 1200, height: 630, alt: productName }];
 
     return {
         title: title,
@@ -140,9 +197,8 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
             url: canonicalUrl,
             siteName: 'Velari',
             images: [
-                // ⚡ Birinchi o'rinda mahsulotning HAQIQIY rasmi — Google shu rasmni oladi
-                { url: rawProductImage, width: 800, height: 800, alt: productName },
-                ...productImages.slice(1, 3).map(img => ({ url: img, width: 800, height: 800, alt: productName })),
+                // ⚡ Avval mahsulotning haqiqiy rasmlari (JSON-LD/image-sitemap bilan bir xil tartibda)
+                ...ogImages,
                 // OG brend rasmi oxirida (Facebook/WhatsApp uchun)
                 { url: ogUrl.toString(), width: 1200, height: 630, alt: productName },
             ],
@@ -153,7 +209,7 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
             card: 'summary_large_image',
             title: title,
             description: description,
-            images: [rawProductImage, ogUrl.toString()],
+            images: [primaryImage, ogUrl.toString()],
         },
         alternates: {
             canonical: canonicalUrl,
@@ -176,7 +232,8 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
             "Uzbekistan",
             product.category as string
         ].filter(Boolean) as string[],
-        robots: { index: true, follow: true },
+        // Narxsiz/rasmsiz/nomsiz mahsulot ochilaveradi, lekin indeksga kirmaydi (sitemap'da ham yo'q)
+        robots: product.isIndexable ? { index: true, follow: true } : { index: false, follow: true },
     };
 }
 
@@ -189,16 +246,15 @@ function ProductDataWrapper({ params, product, canonicalSlug }: { params: { lang
         ? (product.name_ru || product.name_uz || product.name)
         : (product.name_uz || product.name);
     
-    // Ensure images are absolute URLs
-    const productImages = (product.images && product.images.length > 0) 
-        ? product.images.map((img: string) => img.startsWith('http') ? img : `https://velari.uz${img}`)
-        : [product.image?.startsWith('http') ? product.image : `https://velari.uz${product.image}`];
+    // Rasmlar — yagona manba (image-sitemap va og:image bilan AYNAN bir xil)
+    const productImages = getProductImageUrls(product);
 
     const ratingValue = Number(product.rating || product.avg_rating || 0);
     const reviewCount = Number(product.reviewCount || product.review_count || 0);
 
     const oldPrice = product.oldPrice || product.old_price || null;
-    const inStock = (product.stock ?? (product.stockDetails ? Object.values(product.stockDetails as Record<string,number>).reduce((a,b)=>a+b,0) : 1)) > 0;
+    // Stok — src/lib/stock.ts (katalog, savat, checkout bilan bir xil qoida)
+    const inStock = getProductRealStock(product) > 0;
 
     const offerBase: any = {
         "@type": "Offer",
@@ -208,6 +264,15 @@ function ProductDataWrapper({ params, product, canonicalSlug }: { params: { lang
         "itemCondition": "https://schema.org/NewCondition",
         "availability": inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
         "seller": { "@type": "Organization", "name": "Velari" },
+        "hasMerchantReturnPolicy": {
+            "@type": "MerchantReturnPolicy",
+            "applicableCountry": "UZ",
+            "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+            "merchantReturnDays": RETURN_WINDOW_DAYS,
+            "returnFees": "https://schema.org/ReturnFeesCustomerResponsibility",
+            "refundType": "https://schema.org/FullRefund",
+            "merchantReturnLink": `https://velari.uz/${params.lang}/return-policy`,
+        },
     };
 
     // Chegirma bo'lsa — Google eski narxni ham ko'rsatadi (crossed-out price)
@@ -228,16 +293,22 @@ function ProductDataWrapper({ params, product, canonicalSlug }: { params: { lang
         ];
     }
 
+    // Tilga mos tozalangan tavsif — meta description va yashirin blok bilan bir xil manba
+    const descriptionText = getProductDescription(product, params.lang);
+
     const jsonLd: any = {
         "@context": "https://schema.org",
         "@type": "Product",
         "name": productName,
-        "image": productImages,
-        "description": (product.description_uz || product.description || '').substring(0, 500),
+        "description": truncateAtWord(descriptionText || productName, 500),
         "sku": product.sku || product.article || product.id,
         "mpn": product.model || product.article || product.id,
         "offers": offerBase
     };
+    // Rasm bo'lmasa, image umuman yozilmaydi (faqat domen yoki "undefined" chiqmasin)
+    if (productImages.length > 0) {
+        jsonLd.image = productImages;
+    }
 
     // Real DB'dagi brand nomi bo'lsa — schema'ga kiritamiz
     const realBrandName = product.brand_name || product.brand;
@@ -286,14 +357,8 @@ function ProductDataWrapper({ params, product, canonicalSlug }: { params: { lang
         ]
     };
 
-    // Get description for server-side rendering (critical for SEO)
-    const description = product[language === 'uz' ? 'description_uz' : 'description_ru'] || product.description || '';
-    const descriptionText = typeof description === 'string' ? description : '';
-
     return (
         <>
-            <link rel="image_src" href={productImages[0]} />
-            <meta property="og:image:secure_url" content={productImages[0]} />
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -303,13 +368,11 @@ function ProductDataWrapper({ params, product, canonicalSlug }: { params: { lang
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
             />
             {/* SEO: Server-side rendered content for search engine crawlers */}
-            {/* This hidden article ensures Googlebot can read the full product description */}
-            <article
-                className="sr-only"
-                itemScope
-                itemType="https://schema.org/Product"
-            >
-                <h1 itemProp="name">{productName}</h1>
+            {/* This hidden article ensures Googlebot can read the full product description.
+                Microdata yo'q: yagona structured data manbasi — yuqoridagi JSON-LD.
+                <p>, <h1> emas: sahifada yagona <h1> — mobil ProductInfo'da. */}
+            <article className="sr-only">
+                <p>{productName}</p>
                 <nav aria-label="Breadcrumb">
                     <ol>
                         <li><a href={`https://velari.uz/${language}`}>{language === 'uz' ? 'Bosh sahifa' : 'Главная'}</a></li>
@@ -317,12 +380,11 @@ function ProductDataWrapper({ params, product, canonicalSlug }: { params: { lang
                         <li>{productName}</li>
                     </ol>
                 </nav>
-                {/* Barcha xom rasm URL'lari SSR HTML'da — image-sitemap bilan mos, Yandex/Google
+                {/* Barcha rasm URL'lari SSR HTML'da — image-sitemap bilan AYNAN bir xil, Yandex/Google
                     JS render qilmasa ham real rasm manzillarini va alt matnini ko'radi. */}
                 {productImages.map((img: string, i: number) => (
                     <img
                         key={i}
-                        itemProp="image"
                         src={img}
                         alt={i === 0 ? productName : `${productName} - ${i + 1}`}
                         width={1080}
@@ -331,12 +393,10 @@ function ProductDataWrapper({ params, product, canonicalSlug }: { params: { lang
                         {...(i === 0 ? { fetchPriority: "high" } : {})}
                     />
                 ))}
-                <div itemProp="offers" itemScope itemType="https://schema.org/Offer">
-                    <span itemProp="price" content={String(product.price)}>{product.price?.toLocaleString()} so'm</span>
-                    <span itemProp="priceCurrency" content="UZS">UZS</span>
-                    <link itemProp="availability" href={product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'} />
+                <div>
+                    <span>{product.price?.toLocaleString()} so'm</span>
                 </div>
-                <div itemProp="description">
+                <div>
                     {descriptionText}
                 </div>
             </article>
@@ -357,7 +417,8 @@ export default async function Page({ params }: { params: { lang: string, id: str
     if (!product) notFound();
 
     const canonicalSlug = getProductSlug(product, params.lang);
-    if (params.id !== canonicalSlug) {
+    // Dekodlangan slug bilan taqqoslanadi — kodlangan belgilar tufayli redirect sikli bo'lmasin
+    if (decodeSlug(params.id) !== canonicalSlug) {
         permanentRedirect(`/${params.lang}/products/${canonicalSlug}`);
     }
 

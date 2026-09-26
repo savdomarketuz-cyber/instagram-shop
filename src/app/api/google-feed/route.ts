@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { getProductSlug } from "@/lib/slugify";
+import { computeStandardDelivery } from "@/lib/delivery";
 
 export const revalidate = 86400;
 
@@ -93,8 +94,8 @@ export async function GET() {
                 ? gPrice(p.old_price)
                 : gPrice(p.price);
 
-            // 150 000 so'm va undan yuqori — bepul yetkazish (Toshkent)
-            const shippingPrice = actualPrice >= 150000 ? "0 UZS" : "25000 UZS";
+            // Standart yetkazish narxi — chegara va narx faqat src/lib/delivery.ts da
+            const shippingPrice = `${computeStandardDelivery(actualPrice)} UZS`;
 
             return `    <item>
       <g:id>${esc(p.id)}</g:id>

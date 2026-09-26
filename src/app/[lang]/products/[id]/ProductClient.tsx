@@ -885,14 +885,18 @@ export default function ProductClient({
                     <div className="col-span-12 lg:col-span-5 space-y-10">
                         {/* 1. Header & Price */}
                         <div className="bg-white p-8 lg:p-10 rounded-[32px] border border-gray-100 shadow-sm">
-                            <h1 className="text-2xl lg:text-3xl font-semibold tracking-tight text-[#111612] mb-3 leading-snug">
+                            {/* <p>: sahifada yagona <h1> — mobil ProductInfo'da */}
+                            <p className="text-2xl lg:text-3xl font-semibold tracking-tight text-[#111612] mb-3 leading-snug">
                                 {product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name}
-                            </h1>
-                            <div className="flex items-center gap-2 mb-6 bg-gray-50/70 w-fit px-3.5 py-1.5 rounded-xl">
-                                <Star size={15} className="text-yellow-400 fill-yellow-400" />
-                                <span className="font-semibold text-xs text-[#111612]">{product.rating || 4.9}</span>
-                                <span className="text-xs text-gray-400 font-medium ml-1.5">({product.reviewCount || 0} {language === 'uz' ? 'sharh' : 'отзыв'})</span>
-                            </div>
+                            </p>
+                            {/* Reyting faqat haqiqiy sharhlar bo'lsa */}
+                            {(product.reviewCount || 0) > 0 && (
+                                <div className="flex items-center gap-2 mb-6 bg-gray-50/70 w-fit px-3.5 py-1.5 rounded-xl">
+                                    <Star size={15} className="text-yellow-400 fill-yellow-400" />
+                                    <span className="font-semibold text-xs text-[#111612]">{product.rating}</span>
+                                    <span className="text-xs text-gray-400 font-medium ml-1.5">({product.reviewCount} {language === 'uz' ? 'sharh' : 'отзыв'})</span>
+                                </div>
+                            )}
 
                              <div className="flex flex-col gap-1 mb-6">
                                 <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{t.common.price}</p>

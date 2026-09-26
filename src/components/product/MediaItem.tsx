@@ -124,7 +124,6 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority 
                 placeholder={media.blurDataURL ? "blur" : "empty"}
                 blurDataURL={media.blurDataURL}
                 onLoad={() => onLoadComplete?.()}
-                itemProp="image"
                 referrerPolicy="no-referrer"
             />
         </div>
