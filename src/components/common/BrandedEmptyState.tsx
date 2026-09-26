@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, Home, ShoppingBag, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { PUBLIC_PRODUCT_COLUMNS } from "@/lib/public-product";
 import { mapProduct } from "@/lib/mappers";
 import { useStore } from "@/store/store";
 import { translations } from "@/lib/translations";
@@ -40,7 +41,7 @@ export default function BrandedEmptyState({
             // Fetch popular products as baseline
             const { data: popData } = await supabase
                 .from("products")
-                .select("*")
+                .select(PUBLIC_PRODUCT_COLUMNS)
                 .eq("is_deleted", false)
                 .order("sales", { ascending: false })
                 .limit(18);

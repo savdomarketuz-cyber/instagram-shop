@@ -6,6 +6,7 @@ import { Search, Sparkles, MapPin, ChevronRight, ChevronLeft, User, X, Loader2, 
 import { useStore } from "@/store/store";
 import { useShallow } from "zustand/react/shallow";
 import { supabase } from "@/lib/supabase";
+import { PUBLIC_PRODUCT_COLUMNS } from "@/lib/public-product";
 import { mapProduct, mapBanner } from "@/lib/mappers";
 import { getProductRealStock } from "@/lib/stock";
 import { translations } from "@/lib/translations";
@@ -348,7 +349,7 @@ export default function HomeClient({
 
             let query = supabase
                 .from("products")
-                .select("*")
+                .select(PUBLIC_PRODUCT_COLUMNS)
                 .eq("is_deleted", false)
                 .or("stock.gt.0,stock_details.neq.{}");
 

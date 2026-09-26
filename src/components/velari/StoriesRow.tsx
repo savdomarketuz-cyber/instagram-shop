@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import { ShoppingBag, Send, X, Zap } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { PUBLIC_PRODUCT_COLUMNS } from "@/lib/public-product";
 import { QuickBuySheet } from "@/components/reels/QuickBuySheet";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
@@ -96,7 +97,7 @@ export default function StoriesRow({
         const productId = s.cta_ids?.[0];
         if (productId) {
             try {
-                const { data } = await supabase.from("products").select("*").eq("id", productId).single();
+                const { data } = await supabase.from("products").select(PUBLIC_PRODUCT_COLUMNS).eq("id", productId).single();
                 if (data) {
                     setQuickBuyProduct(data);
                     return;

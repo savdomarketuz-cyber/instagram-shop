@@ -17,7 +17,8 @@ export function ProductSpecifications({ productId, language }: { productId: stri
     useEffect(() => {
         if (!productId) return;
         setLoading(true);
-        fetch(`/api/admin/product-params?product_id=${productId}`)
+        // Ommaviy o'qish endpointi (admin API mijozlar uchun yopiq — 401)
+        fetch(`/api/products/${encodeURIComponent(productId)}/params`)
             .then(res => res.json())
             .then(data => {
                 if (data.data && data.data.length > 0) {

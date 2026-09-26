@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { createJwt } from "@/lib/jwt-utils";
 import { hashPassword } from "@/lib/auth-utils";
+import { PUBLIC_PRODUCT_COLUMNS } from "@/lib/public-product";
 
 const BOT_TOKEN = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN || "";
 
@@ -159,7 +160,7 @@ export async function POST(req: NextRequest) {
                 if (productIds.length > 0) {
                     const { data: products } = await supabaseAdmin
                         .from("products")
-                        .select("*")
+                        .select(PUBLIC_PRODUCT_COLUMNS)
                         .in("id", productIds)
                         .eq("is_deleted", false);
 

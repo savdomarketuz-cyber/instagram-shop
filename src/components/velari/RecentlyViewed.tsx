@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
+import { PUBLIC_PRODUCT_COLUMNS } from "@/lib/public-product";
 import { mapProduct } from "@/lib/mappers";
 import { getProductSlug } from "@/lib/slugify";
 import { Product } from "@/types";
@@ -53,7 +54,7 @@ export default function RecentlyViewed({ language, currentProductId }: RecentlyV
 
         supabase
             .from("products")
-            .select("*")
+            .select(PUBLIC_PRODUCT_COLUMNS)
             .in("id", ids.slice(0, 8))
             .eq("is_deleted", false)
             .then(({ data }) => {

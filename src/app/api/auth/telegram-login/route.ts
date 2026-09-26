@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { createJwt } from "@/lib/jwt-utils";
+import { PUBLIC_PRODUCT_COLUMNS } from "@/lib/public-product";
 
 /**
  * Telegram bot bergan bir martalik token orqali saytga avtomatik kirish.
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
                 if (productIds.length > 0) {
                     const { data: products } = await supabaseAdmin
                         .from("products")
-                        .select("*")
+                        .select(PUBLIC_PRODUCT_COLUMNS)
                         .in("id", productIds)
                         .eq("is_deleted", false);
 

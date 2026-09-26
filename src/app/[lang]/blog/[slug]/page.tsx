@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ChevronLeft, Calendar, Clock, Eye, Share2 } from "lucide-react";
 import { notFound } from "next/navigation";
 import LinkedProducts from "./LinkedProducts";
+import { PUBLIC_PRODUCT_COLUMNS } from "@/lib/public-product";
 
 const getBlogData = cache(async (slug: string) => {
     const { data } = await supabaseAdmin
@@ -88,7 +89,7 @@ export default async function BlogPostPage({ params: { lang, slug } }: { params:
     if (blog.linkedProductIds && blog.linkedProductIds.length > 0) {
         const { data: pData } = await supabaseAdmin
             .from("products")
-            .select("*")
+            .select(PUBLIC_PRODUCT_COLUMNS)
             .in("id", blog.linkedProductIds)
             .eq("is_deleted", false);
         

@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { mapProduct } from '@/lib/mappers';
+import { toPublicProduct } from '@/lib/public-product';
+
+// RPC'larning o'z hisoblangan maydonlari + facet uchun tag (ichki ustun emas)
+const SEARCH_EXTRA_KEYS = ['tag', 'similarity', 'category_name', 'rating', 'reviews_count'];
 import { checkRateLimit } from '@/lib/rate-limiter';
 import { normalizeQuery, transliterateLatin } from '@/lib/query-normalize';
 import { generateQueryEmbedding } from '@/lib/embeddings';
@@ -251,7 +255,7 @@ export async function POST(req: NextRequest) {
                 });
             }
 
-            const mappedResults = imgRows.map(mapProduct).filter((p: any) => getProductRealStock(p) > 0);
+            const mappedResults = imgRows.map((r: any) => mapProduct(toPublicProduct(r, SEARCH_EXTRA_KEYS))).filter((p: any) => getProductRealStock(p) > 0);
 
             // Kategoriya ID -> NOM boyitish
             const categoryNames: Record<string, { uz: string; ru: string }> = {};
@@ -406,7 +410,7 @@ export async function POST(req: NextRequest) {
             const sanitizedQuery = normalizedQuery.replace(/[,"'\\]/g, ' ').trim();
             let fallbackQuery = supabase
                 .from('products')
-                .select('id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,avg_rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,express_delivery,created_at')
+                .select('id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,avg_rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,express_delivery,created_at')
                 .eq('is_deleted', false)
                 .or('stock.gt.0,stock_details.neq.{}');
 
@@ -454,8 +458,9 @@ export async function POST(req: NextRequest) {
         const hasMore = rawResults.length > currentLimit;
         const pageItems = hasMore ? rawResults.slice(0, currentLimit) : rawResults;
 
-        // Map results consistently
-        let mappedResults = pageItems.map(mapProduct).filter((p: any) => getProductRealStock(p) > 0);
+        // Map results consistently. advanced_smart_search SETOF products (to'liq qator) qaytaradi —
+        // brauzerga faqat ommaviy ustunlar ketadi (tannarx, komissiya, embedding va h.k. emas)
+        let mappedResults = pageItems.map((r: any) => mapProduct(toPublicProduct(r, SEARCH_EXTRA_KEYS))).filter((p: any) => getProductRealStock(p) > 0);
 
         // Kategoriya ID -> NOM boyitish
         const categoryNames: Record<string, { uz: string; ru: string }> = {};

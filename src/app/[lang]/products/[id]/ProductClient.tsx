@@ -23,6 +23,7 @@ import { ProductCard } from "@/components/home/ProductCard";
 import dynamic from "next/dynamic";
 import { applyGlobalPromo } from "@/lib/promo-utils";
 import { getProductRealStock } from "@/lib/stock";
+import { PUBLIC_PRODUCT_COLUMNS } from "@/lib/public-product";
 const ReviewsSection = dynamic(() => import("@/components/product/ReviewsSection").then(mod => ({ default: mod.ReviewsSection })), {
     loading: () => <div className="h-40 animate-pulse bg-gray-50 rounded-3xl mx-4 my-8" />,
     ssr: false,
@@ -254,7 +255,7 @@ export default function ProductClient({
         try {
             const { data: productData, error } = await supabase
                 .from("products")
-                .select("*")
+                .select(PUBLIC_PRODUCT_COLUMNS)
                 .eq("is_deleted", false)
                 .or(`id.eq.${productIdentifier},article.eq.${productIdentifier}`)
                 .single();
@@ -333,7 +334,7 @@ export default function ProductClient({
         // Fallback: kategoriya bo'yicha (embedding hali yo'q bo'lsa)
         const { data } = await supabase
             .from("products")
-            .select("*")
+            .select(PUBLIC_PRODUCT_COLUMNS)
             .eq("category_id", category)
             .eq("is_deleted", false)
             .neq("id", currentId)
@@ -345,7 +346,7 @@ export default function ProductClient({
     const fetchBoughtTogether = async () => {
         const { data } = await supabase
             .from("products")
-            .select("*")
+            .select(PUBLIC_PRODUCT_COLUMNS)
             .eq("is_deleted", false)
             .neq("id", initialProduct?.id || productIdentifier)
             .limit(10);
@@ -363,7 +364,7 @@ export default function ProductClient({
         setPopularLoading(true);
         const { data } = await supabase
             .from("products")
-            .select("*")
+            .select(PUBLIC_PRODUCT_COLUMNS)
             .eq("is_deleted", false)
             .order("sales", { ascending: false })
             .limit(20);
@@ -390,7 +391,7 @@ export default function ProductClient({
             const PAGE_SIZE = 12;
             const from = infinitePage * PAGE_SIZE;
             let q = supabase.from("products")
-                .select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,avg_rating,review_count,stock,category_id,brand_id,model,color_name,group_id,article")
+                .select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,avg_rating,review_count,stock,category_id,brand_id,model,color_name,group_id,article")
                 .eq("is_deleted", false)
                 .order("sales", { ascending: false })
                 .range(from, from + PAGE_SIZE - 1);
@@ -421,7 +422,7 @@ export default function ProductClient({
     }, [loadMoreInfinite]);
 
     const fetchGroup = async (groupId: string) => {
-        const { data } = await supabase.from("products").select("*").eq("group_id", groupId).eq("is_deleted", false);
+        const { data } = await supabase.from("products").select(PUBLIC_PRODUCT_COLUMNS).eq("group_id", groupId).eq("is_deleted", false);
         if (data) setGroupProducts(data.map(mapProduct));
     };
 
