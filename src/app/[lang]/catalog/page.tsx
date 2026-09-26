@@ -16,8 +16,8 @@ export async function generateMetadata({ params }: { params: { lang: string } })
             ? "Katalog | Velari - Premium Elektronika va Gadjetlar O'zbekistonda"
             : "Каталог | Velari - Премиум электроника и гаджеты в Узбекистане",
         description: lang === 'uz'
-            ? "Velari onlayn do'konida barcha turdagi smartfonlar, noutbuklar va gadjetlar katalogi. Muddatli to'lov, rasmiy kafolat va Toshkent bo'ylab tekin yetkazib berish."
-            : "Каталог всех видов смартфонов, ноутбуков и гаджетов в онлайн магазине Velari. Рассрочка, официальная гарантия и бесплатная доставка по Ташкенту.",
+            ? "Velari onlayn do'konida barcha turdagi smartfonlar, noutbuklar va gadjetlar katalogi. Muddatli to'lov, rasmiy kafolat va O'zbekiston bo'ylab yetkazib berish."
+            : "Каталог всех видов смартфонов, ноутбуков и гаджетов в онлайн магазине Velari. Рассрочка, официальная гарантия и доставка по всему Узбекистану.",
         keywords: ["katalog", "smartfonlar", "gadjetlar", "elektronika", "Velari katalogi", "Toshkent", "Uzbekistan", "muddatli to'lov"],
         openGraph: {
             title: lang === 'uz' 

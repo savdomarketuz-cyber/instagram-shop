@@ -15,8 +15,8 @@ export async function generateMetadata({ params }: { params: { lang: string } })
             ? "Velari | O'zbekistonda №1 Premium Elektronika Do'koni" 
             : "Velari | Премиум магазин электроники №1 в Узбекистане",
         description: lang === 'uz'
-            ? "iPhone, Samsung, Xiaomi va boshqa global brendlarni muddatli to'lovga sotib oling. Toshkent bo'ylab tekin yetkazib berish va rasmiy kafolat."
-            : "Покупайте iPhone, Samsung, Xiaomi и другие мировые бренды в рассрочку. Бесплатная доставка по Ташкенту и официальная гарантия.",
+            ? "iPhone, Samsung, Xiaomi va boshqa global brendlarni muddatli to'lovga sotib oling. O'zbekiston bo'ylab yetkazib berish va rasmiy kafolat."
+            : "Покупайте iPhone, Samsung, Xiaomi и другие мировые бренды в рассрочку. Доставка по всему Узбекистану и официальная гарантия.",
         keywords: ["Velari", "elektronika do'koni", "Toshkent", "muddatli to'lov", "iphone narxi", "samsung narxi", "O'zbekiston"],
         alternates: {
             canonical: `${baseUrl}/${lang}`,

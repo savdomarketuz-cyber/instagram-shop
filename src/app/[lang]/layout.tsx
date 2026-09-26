@@ -17,7 +17,7 @@ export const metadata = {
         default: "Velari | Zamonaviy Texnologiyalar va Gadjetlar Dunyosi",
         template: "%s | Velari"
     },
-    description: "Premium gadjetlar va elektronika do'koni. Apple, Samsung, Xiaomi mahsulotlari hamyonbop narxlarda. Muddatli to'lov, rasmiy kafolat va Toshkent bo'ylab tekin yetkazib berish.",
+    description: "Premium gadjetlar va elektronika do'koni. Apple, Samsung, Xiaomi mahsulotlari hamyonbop narxlarda. Muddatli to'lov, rasmiy kafolat va O'zbekiston bo'ylab yetkazib berish.",
     keywords: [
         "Velari", "velari.uz", "elektronika do'koni", "gadjetlar", "iphone narxi", "samsung narxi", 
         "Toshkent", "O'zbekistan", "muddatli to'lov", "bo'lib to'lash", "kreditga telefon", 

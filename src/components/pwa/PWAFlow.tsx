@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useStore } from "@/store/store";
+import { FREE_DELIVERY_THRESHOLD, fmtSom } from "@/lib/delivery";
 
 const LANG_KEY = "velari_lang_picked";
 const ONBOARDED_KEY = "velari_onboarded";
@@ -135,13 +136,14 @@ function LangPickerScreen({ onPick }: { onPick: (lang: "uz" | "ru") => void }) {
 // ── Onboarding ───────────────────────────────────────────────────────────────
 const SLIDES_UZ = [
     { emoji: "🛍️", title: "Barcha mahsulotlar bir joyda", sub: "Premium texnika, gadjetlar va ko'p narsalar" },
-    { emoji: "🚀", title: "Tez va bepul yetkazib berish", sub: "100 000 so'mdan yuqori buyurtmalarga bepul" },
+    // Chegara faqat src/lib/delivery.ts da
+    { emoji: "🚀", title: "Tez va bepul yetkazib berish", sub: `${fmtSom(FREE_DELIVERY_THRESHOLD, "uz")}dan yuqori buyurtmalarga bepul` },
     { emoji: "🔒", title: "Xavfsiz to'lov", sub: "Click, Payme va naqd to'lov imkoniyati" },
 ];
 
 const SLIDES_RU = [
     { emoji: "🛍️", title: "Все товары в одном месте", sub: "Премиум техника, гаджеты и многое другое" },
-    { emoji: "🚀", title: "Быстрая и бесплатная доставка", sub: "Бесплатно при заказе от 100 000 сум" },
+    { emoji: "🚀", title: "Быстрая и бесплатная доставка", sub: `Бесплатно при заказе от ${fmtSom(FREE_DELIVERY_THRESHOLD, "ru")}` },
     { emoji: "🔒", title: "Безопасная оплата", sub: "Click, Payme и наличными" },
 ];
 
