@@ -7,6 +7,7 @@ import { getProductIdFromSlug, getProductSlug } from "@/lib/slugify";
 import { getProductImageUrls, isIndexableProduct } from "@/lib/sitemap-data";
 import { getProductRealStock } from "@/lib/stock";
 import { RETURN_WINDOW_DAYS } from "@/lib/delivery";
+import { PUBLIC_PRODUCT_COLUMNS } from "@/lib/public-product";
 import { cleanText, getProductDescription, getProductIdentifiers, truncateAtWord } from "@/lib/seo-text";
 import { notFound, permanentRedirect } from 'next/navigation';
 
@@ -21,9 +22,10 @@ const getProductData = cache(async (identifier: string) => {
     try {
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
 
+        // Faqat ommaviy ustunlar — ichki maydonlar (tannarx, komissiya, embedding...) HTML'ga tushmasin
         let query = supabaseAdmin
             .from("products")
-            .select("*")
+            .select(PUBLIC_PRODUCT_COLUMNS)
             .eq("is_deleted", false);
 
         if (isUUID) {
@@ -40,7 +42,7 @@ const getProductData = cache(async (identifier: string) => {
                 ? supabaseAdmin.from("brands").select("name").eq("id", data.brand_id).maybeSingle()
                 : Promise.resolve({ data: null }),
             data.group_id
-                ? supabaseAdmin.from("products").select("*").eq("group_id", data.group_id).eq("is_deleted", false).order("created_at", { ascending: true })
+                ? supabaseAdmin.from("products").select(PUBLIC_PRODUCT_COLUMNS).eq("group_id", data.group_id).eq("is_deleted", false).order("created_at", { ascending: true })
                 : Promise.resolve({ data: null })
         ]);
 
