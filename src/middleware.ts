@@ -8,7 +8,6 @@ import Negotiator from 'negotiator';
  * Secure JWT Verification for Edge
  */
 import { verifyJwt } from '@/lib/jwt-utils';
-import { getProductIdFromSlug, getProductSlug } from '@/lib/slugify';
 
 /**
  * Locale detection
@@ -24,54 +23,6 @@ function getLocale(request: NextRequest): string | undefined {
         return matchLocale(languages, locales, i18n.defaultLocale);
     } catch (e) {
         return i18n.defaultLocale;
-    }
-}
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-async function redirectLegacyProductUrl(request: NextRequest): Promise<NextResponse | null> {
-    const match = request.nextUrl.pathname.match(/^\/(uz|ru)\/products\/([^/]+)$/);
-    if (!match) return null;
-
-    const [, lang, rawSlug] = match;
-    let slug: string;
-    try {
-        slug = decodeURIComponent(rawSlug);
-    } catch {
-        return null;
-    }
-
-    const identifier = getProductIdFromSlug(slug);
-    const isLegacy = UUID_RE.test(identifier) || !slug.includes('--');
-    if (!isLegacy || !/^[A-Za-z0-9_-]+$/.test(identifier)) return null;
-
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !anonKey) return null;
-
-    try {
-        const query = new URLSearchParams({
-            select: 'id,article,name,name_uz,name_ru',
-            is_deleted: 'eq.false',
-            or: `(id.eq."${identifier}",article.eq."${identifier}")`,
-            limit: '1',
-        });
-        const res = await fetch(`${supabaseUrl}/rest/v1/products?${query}`, {
-            headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
-        });
-        if (!res.ok) return null;
-        const [product] = await res.json();
-        if (!product) return null;
-
-        const canonicalSlug = getProductSlug(product, lang);
-        if (canonicalSlug === slug) return null;
-
-        const url = request.nextUrl.clone();
-        url.pathname = `/${lang}/products/${canonicalSlug}`;
-        return NextResponse.redirect(url, 308);
-    } catch {
-        // Baza javob bermasa — sahifaning o'zi (meta refresh) ishlayveradi
-        return null;
     }
 }
 
@@ -94,12 +45,6 @@ export async function middleware(request: NextRequest) {
         url.search = request.nextUrl.search;
         return NextResponse.redirect(url);
     }
-
-    // 2.5. Eski mahsulot URL'lari (…--<uuid>, yalang'och uuid yoki artikul) → 308 canonical slug'ga.
-    // Sahifa ichidagi permanentRedirect [lang]/loading.tsx tufayli faqat <meta refresh> (200) beradi,
-    // shuning uchun haqiqiy 308 shu yerda. Oddiy "nom--ART-XXX" URL'lar bazaga so'rovsiz o'tadi.
-    const legacyRedirect = await redirectLegacyProductUrl(request);
-    if (legacyRedirect) return legacyRedirect;
 
     // 3. Admin Protection
     let localePart: string = i18n.defaultLocale;
