@@ -32,8 +32,8 @@ export function isIndexableProduct(p: any): boolean {
 
     if (typeof p.image !== 'string' || p.image.trim() === '') return false;
 
-    const name = p.name_uz || p.name || p.name_ru;
-    if (typeof name !== 'string' || name.trim() === '') return false;
+    const hasName = [p.name_uz, p.name, p.name_ru].some((n) => typeof n === 'string' && n.trim() !== '');
+    if (!hasName) return false;
 
     if (!(p.article || p.id)) return false;
 

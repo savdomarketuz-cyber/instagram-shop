@@ -6,8 +6,14 @@ export const revalidate = 86400; // Regenerate sitemap every 24 hours
 
 // Build vaqtida mavjud fayllar oldindan yaratiladi (ISR); yangi paydo bo'lganlari so'rovda yaratiladi
 export async function generateStaticParams() {
-    const chunks = await getSitemapChunks();
-    return chunks.map((_, i) => ({ id: `${i}.xml` }));
+    try {
+        const chunks = await getSitemapChunks();
+        return chunks.map((_, i) => ({ id: `${i}.xml` }));
+    } catch (error) {
+        // Build yiqilmasin — fayllar birinchi so'rovda yaratiladi
+        console.error('Sitemap generateStaticParams failed:', error);
+        return [];
+    }
 }
 
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
