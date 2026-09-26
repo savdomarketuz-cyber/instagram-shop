@@ -68,10 +68,32 @@ const NAMED_ENTITIES: Record<string, string> = {
     ndash: '–', mdash: '—', hellip: '…', rsquo: '’', lsquo: '‘', rdquo: '”', ldquo: '“',
 };
 
-/** HTML teglari olib tashlanadi, entity'lar ochiladi, barcha bo'shliqlar bitta probelga, trim(). */
+// Emoji va dekorativ belgilar (+ variation selector, ZWJ, keycap). RegExp konstruktori orqali:
+// tsconfig target es5, \p{...} literal esa ES2018 talab qiladi — runtime (Node) uni qo'llaydi.
+const EMOJI_RE = new RegExp('[\\p{Extended_Pictographic}\\uFE0F\\u200D\\u20E3]', 'gu');
+
+/** Markdown belgilarini olib tashlaydi, matn qoladi. Qatorlar hali bo'linmagan holda chaqiriladi. */
+function stripMarkdown(text: string): string {
+    return text
+        .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')            // [matn](url) → matn
+        .replace(/`([^`]*)`/g, '$1')                          // `kod` → kod
+        .replace(/\*\*([\s\S]+?)\*\*/g, '$1')                 // **qalin**
+        .replace(/__([\s\S]+?)__/g, '$1')                     // __qalin__
+        .replace(/(^|[^\w*])\*(?!\s)([^*\n]+?)\*(?!\w)/g, '$1$2') // *kursiv*
+        .replace(/(^|[^\w])_(?!\s)([^_\n]+?)_(?!\w)/g, '$1$2')    // _kursiv_ (snake_case'ga tegmaydi)
+        .replace(/^[ \t]*#{1,6}[ \t]*/gm, '')                 // # sarlavha
+        .replace(/^[ \t]*[-*•][ \t]+/gm, '')                  // "- ", "* ", "• " ro'yxat
+        .replace(/\*\*|__/g, '');                             // juftsiz qolgan belgilar
+}
+
+/**
+ * Chiqish uchun matn tozalash (DB'dagi matnga tegmaydi): HTML teglari olib tashlanadi,
+ * entity'lar ochiladi, emoji va Markdown belgilari olib tashlanadi, bo'shliqlar bitta probelga, trim().
+ */
 function cleanText(value: unknown): string {
     if (typeof value !== 'string') return '';
-    return value
+    const decoded = value
+        .replace(/<br\s*\/?>|<\/(p|div|li|h[1-6])>/gi, '\n')
         .replace(/<[^>]*>/g, ' ')
         .replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (entity, code: string) => {
             if (code[0] === '#') {
@@ -79,7 +101,8 @@ function cleanText(value: unknown): string {
                 return Number.isFinite(n) && n > 0 && n <= 0x10ffff ? String.fromCodePoint(n) : entity;
             }
             return NAMED_ENTITIES[code.toLowerCase()] ?? entity;
-        })
+        });
+    return stripMarkdown(decoded.replace(EMOJI_RE, ''))
         .replace(/\s+/g, ' ')
         .trim();
 }
@@ -183,10 +206,9 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
         160,
     );
 
-    // Rasm bo'lmasa — umumiy OG rasm (faqat og/twitter uchun)
-    const ogImages = productImages.length > 0
-        ? productImages.map((url) => ({ url, alt: productName }))
-        : [{ url: OG_FALLBACK_IMAGE, width: 1200, height: 630, alt: productName }];
+    // og/twitter: birinchi 3 ta rasm + oxirida brend OG rasmi (jami ≤ 4).
+    // Rasm bo'lmasa — umumiy OG rasm. JSON-LD va sitemap'da esa hamma rasm qoladi.
+    const shareImages = productImages.length > 0 ? productImages.slice(0, 3) : [OG_FALLBACK_IMAGE];
 
     return {
         title: title,
@@ -198,7 +220,7 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
             siteName: 'Velari',
             images: [
                 // ⚡ Avval mahsulotning haqiqiy rasmlari (JSON-LD/image-sitemap bilan bir xil tartibda)
-                ...ogImages,
+                ...shareImages.map((url) => ({ url, alt: productName })),
                 // OG brend rasmi oxirida (Facebook/WhatsApp uchun)
                 { url: ogUrl.toString(), width: 1200, height: 630, alt: productName },
             ],
@@ -209,7 +231,7 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
             card: 'summary_large_image',
             title: title,
             description: description,
-            images: [primaryImage, ogUrl.toString()],
+            images: [...shareImages, ogUrl.toString()],
         },
         alternates: {
             canonical: canonicalUrl,
@@ -271,6 +293,11 @@ function ProductDataWrapper({ params, product, canonicalSlug }: { params: { lang
             "merchantReturnDays": RETURN_WINDOW_DAYS,
             "returnFees": "https://schema.org/ReturnFeesCustomerResponsibility",
             "refundType": "https://schema.org/FullRefund",
+            // Xaridor tovarni o'zi olib keladi yoki kuryer/pochta orqali yuboradi
+            "returnMethod": [
+                "https://schema.org/ReturnInStore",
+                "https://schema.org/ReturnByMail",
+            ],
             "merchantReturnLink": `https://velari.uz/${params.lang}/return-policy`,
         },
     };
