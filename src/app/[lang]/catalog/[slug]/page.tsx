@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import CatalogClient from '../CatalogClient';
 import { getCatalogCategories, resolveCategoryBySlug } from '@/lib/categories';
 import { getCategorySlug } from '@/lib/slugify';
@@ -9,6 +9,14 @@ import { getProductRealStock } from '@/lib/stock';
 
 export const revalidate = 86400; // 24 soat
 
+function decodeSlug(slug: string): string {
+    try {
+        return decodeURIComponent(slug);
+    } catch {
+        return slug;
+    }
+}
+
 export async function generateMetadata({ params }: { params: { lang: string; slug: string } }): Promise<Metadata> {
     const lang = params.lang === 'ru' ? 'ru' : 'uz';
     const baseUrl = 'https://velari.uz';
@@ -17,7 +25,7 @@ export async function generateMetadata({ params }: { params: { lang: string; slu
 
     if (!cat) {
         return {
-            title: "404 - Sahifa topilmadi | Velari",
+            title: { absolute: "404 - Sahifa topilmadi | Velari" },
             robots: { index: false, follow: false },
         };
     }
@@ -27,9 +35,10 @@ export async function generateMetadata({ params }: { params: { lang: string; slu
     const ruSlug = getCategorySlug(cat, 'ru');
     const canonicalSlug = lang === 'ru' ? ruSlug : uzSlug;
 
+    // "| Velari" ni catalog/layout shabloni qo'shadi
     const title = lang === 'ru'
-        ? `${name} — купить в Ташкенте | Velari`
-        : `${name} — Toshkentda sotib olish | Velari`;
+        ? `${name} — купить в Ташкенте`
+        : `${name} — Toshkentda sotib olish`;
     const description = lang === 'ru'
         ? `${name}: широкий выбор по выгодным ценам. Рассрочка, официальная гарантия и доставка по всему Узбекистану. Velari Market.`
         : `${name}: keng tanlov hamyonbop narxlarda. Muddatli to'lov, rasmiy kafolat va O'zbekiston bo'ylab yetkazib berish. Velari Market.`;
@@ -38,7 +47,7 @@ export async function generateMetadata({ params }: { params: { lang: string; slu
         title,
         description,
         openGraph: {
-            title, description,
+            title: `${title} | Velari`, description,
             url: `${baseUrl}/${lang}/catalog/${canonicalSlug}`,
             siteName: 'Velari', type: 'website',
             locale: lang === 'ru' ? 'ru_RU' : 'uz_UZ',
@@ -63,9 +72,15 @@ export default async function CategoryCatalogPage({ params }: { params: { lang: 
 
     if (!cat) notFound();
 
+    // Boshqa til slug'i (yoki eski/katta harfli shakl) bilan kelsa — shu tildagi canonical slug'ga 308
+    const canonicalSlug = getCategorySlug(cat, lang);
+    if (decodeSlug(params.slug) !== canonicalSlug) {
+        permanentRedirect(`/${lang}/catalog/${canonicalSlug}`);
+    }
+
     // Barcha ichki subkategoriya ID larini aniqlash
     const getAllIds = (catId: string): string[] => {
-        const children = categories.filter(c => c.parent_id === catId || (c as any).parentId === catId);
+        const children = categories.filter(c => c.parentId === catId);
         let ids = [catId];
         for (const child of children) ids = [...ids, ...getAllIds(child.id)];
         return ids;

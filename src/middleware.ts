@@ -26,11 +26,14 @@ function getLocale(request: NextRequest): string | undefined {
     }
 }
 
+const STATIC_FILE_RE = /\.(png|jpe?g|webp|avif|svg|ico|gif|txt|xml|js|css|map|json|woff2?|mp4|mp3|webmanifest|html)$/i;
+
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
-    // 1. Bypass static & public files
-    if (pathname.match(/\.(.*)$/) && !pathname.includes('/api/')) {
+    // 1. Bypass static & public files — faqat haqiqiy fayl kengaytmalari.
+    // Artikulida nuqta bor mahsulot slug'i (/products/nom--AB.12) middleware'dan o'tadi.
+    if (STATIC_FILE_RE.test(pathname) && !pathname.includes('/api/')) {
         return NextResponse.next();
     }
 
@@ -43,7 +46,8 @@ export async function middleware(request: NextRequest) {
         const locale = getLocale(request);
         const url = new URL(`/${locale}${pathname === '/' ? '' : pathname}`, request.url);
         url.search = request.nextUrl.search;
-        return NextResponse.redirect(url);
+        // 308 — doimiy: qidiruv tizimlari tilsiz manzilni /uz/... ga ko'chiradi
+        return NextResponse.redirect(url, 308);
     }
 
     // 3. Admin Protection

@@ -1,7 +1,8 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Katalog | Velari - Premium Electronics',
+    // Satr emas, shablon: aks holda catalog/[slug] sarlavhalariga "| Velari" qo'shilmaydi
+    title: { default: 'Katalog | Velari', template: '%s | Velari' },
     description: 'Barcha mahsulotlar turkumi: smartfonlar, gadjetlar va aksessuarlar. Velari do\'konida eng yaxshi tanlov va hamyonbop narxlar.',
     keywords: ['katalog', 'smartfonlar', 'gadjetlar', 'aksessuarlar', 'Velari katalog', 'Toshkent elektronika'],
     openGraph: {

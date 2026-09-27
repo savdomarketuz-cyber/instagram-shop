@@ -124,8 +124,8 @@ export async function generateMetadata({ params }: { params: { lang: string } })
     const lang = (params.lang === "ru" ? "ru" : "uz") as Lang;
     const baseUrl = "https://velari.uz";
     const title = lang === "ru"
-        ? "Условия возврата и обмена товаров — Velari Market"
-        : "Tovarlarni qaytarish va almashtirish shartlari — Velari Market";
+        ? "Условия возврата и обмена товаров"
+        : "Tovarlarni qaytarish va almashtirish shartlari";
     const description = lang === "ru"
         ? "Официальная политика возврата Velari Market: возврат в течение 14 дней, заводской брак, сроки возврата денег 1–7 дней. Согласно Закону РУз о защите прав потребителей."
         : "Velari Market rasmiy qaytarish siyosati: 14 kun ichida qaytarish, zavod braki, pulni 1–7 ish kunida qaytarish. O'zbekiston iste'molchi huquqlari qonuniga muvofiq.";
@@ -133,7 +133,7 @@ export async function generateMetadata({ params }: { params: { lang: string } })
     return {
         title,
         description,
-        openGraph: { title, description, url: `${baseUrl}/${lang}/return-policy`, siteName: "Velari", type: "website", locale: lang === "ru" ? "ru_RU" : "uz_UZ" },
+        openGraph: { title: `${title} | Velari`, description, url: `${baseUrl}/${lang}/return-policy`, siteName: "Velari", type: "website", locale: lang === "ru" ? "ru_RU" : "uz_UZ" },
         alternates: {
             canonical: `${baseUrl}/${lang}/return-policy`,
             languages: {

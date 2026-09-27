@@ -11,9 +11,12 @@ export async function generateMetadata({ params }: { params: { lang: string } })
     const baseUrl = 'https://velari.uz';
     
     return {
-        title: lang === 'uz' 
-            ? "Velari | O'zbekistonda №1 Premium Elektronika Do'koni" 
-            : "Velari | Премиум магазин электроники №1 в Узбекистане",
+        // Brend boshida — layout shabloni ("%s | Velari") qo'shilmasin
+        title: {
+            absolute: lang === 'uz'
+                ? "Velari | O'zbekistonda №1 Premium Elektronika Do'koni"
+                : "Velari | Премиум магазин электроники №1 в Узбекистане",
+        },
         description: lang === 'uz'
             ? "iPhone, Samsung, Xiaomi va boshqa global brendlarni muddatli to'lovga sotib oling. O'zbekiston bo'ylab yetkazib berish va rasmiy kafolat."
             : "Покупайте iPhone, Samsung, Xiaomi и другие мировые бренды в рассрочку. Доставка по всему Узбекистану и официальная гарантия.",

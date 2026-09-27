@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import WalletClient from "./WalletClient";
 
 export const metadata = {
-    title: "Mening hamyonim | Velari",
+    title: "Mening hamyonim",
     description: "Hamyon balansi va keshbeklar tarixi",
 };
 

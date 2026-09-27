@@ -3,8 +3,8 @@ import { Metadata } from "next";
 export async function generateMetadata({ params }: { params: { lang: string } }): Promise<Metadata> {
     const lang = params.lang === "ru" ? "ru" : "uz";
     const title = lang === "ru" 
-        ? "Reels | Короткие видео и обзоры товаров — Velari" 
-        : "Reels | Qisqa videolar va mahsulot sharhlari — Velari";
+        ? "Reels | Короткие видео и обзоры товаров"
+        : "Reels | Qisqa videolar va mahsulot sharhlari";
     const description = lang === "ru"
         ? "Смотрите интересные видео-обзоры современных гаджетов, электроники и товаров в магазине Velari."
         : "Velari do'konidagi zamonaviy gadjetlar va texnikalar haqidagi qiziqarli video sharhlarni tomosha qiling.";

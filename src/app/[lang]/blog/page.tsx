@@ -12,7 +12,8 @@ export async function generateMetadata({ params: { lang } }: any): Promise<Metad
     const baseUrl = 'https://velari.uz';
     
     return {
-        title: `${t.blog.title} | Velari`,
+        // t.blog.title = "Velari Insights" — shablon qo'shilsa "Velari" ikki marta chiqadi
+        title: { absolute: `${t.blog.title} — ${t.blog.subtitle}` },
         description: t.blog.subtitle,
         alternates: {
             canonical: `${baseUrl}/${lang}/blog`,

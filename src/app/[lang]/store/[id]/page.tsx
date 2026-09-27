@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: { params: { lang: string; id:
         notFound();
     }
 
-    const title = `${wh.name} | Velari`;
+    const title = wh.name;
     const description = wh.address 
         ? `${wh.name} do'konidagi barcha tovarlar. Manzil: ${wh.address}` 
         : `${wh.name} do'konidagi barcha mahsulotlar katalogi.`;

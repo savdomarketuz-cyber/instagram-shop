@@ -31,7 +31,7 @@ export async function generateMetadata({ params: { lang, slug } }: { params: { l
     const baseUrl = "https://velari.uz";
 
     return {
-        title: `${title} | Velari Insights`,
+        title,
         description,
         openGraph: {
             title,
@@ -39,6 +39,7 @@ export async function generateMetadata({ params: { lang, slug } }: { params: { l
             url: `${baseUrl}/${lang}/blog/${slug}`,
             images: [{ url: blog.image || "/og-image.png" }],
             type: 'article',
+            locale: lang === 'ru' ? 'ru_RU' : 'uz_UZ',
         },
         alternates: {
             canonical: `${baseUrl}/${lang}/blog/${slug}`,

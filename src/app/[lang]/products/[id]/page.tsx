@@ -108,7 +108,7 @@ export async function generateMetadata({ params }: { params: { lang: string, id:
     
     if (!product) {
         return {
-            title: "404 - Sahifa topilmadi | Velari",
+            title: { absolute: "404 - Sahifa topilmadi | Velari" },
             robots: { index: false, follow: false },
         };
     }

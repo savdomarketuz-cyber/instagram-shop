@@ -14,7 +14,7 @@ export async function generateMetadata({ params: { lang } }: { params: { lang: s
     const description = `${t.aboutUs.subtitle}. ${t.aboutUs.mainTitle}. ${shopName} market — O'zbekistonda sifatli elektronika va maishiy texnika do'koni.`;
 
     return {
-        title: title,
+        title: { absolute: title },
         description: description,
         openGraph: {
             title: title,

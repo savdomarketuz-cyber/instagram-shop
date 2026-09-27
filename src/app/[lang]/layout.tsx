@@ -1,5 +1,6 @@
 import "../globals.css";
 import { Inter } from "next/font/google";
+import type { Metadata } from "next";
 import { i18n } from "@/lib/i18n-config";
 
 export async function generateStaticParams() {
@@ -12,94 +13,107 @@ const inter = Inter({
     variable: "--font-inter",
 });
 
-export const metadata = {
-    title: {
-        default: "Velari | Zamonaviy Texnologiyalar va Gadjetlar Dunyosi",
-        template: "%s | Velari"
-    },
-    description: "Premium gadjetlar va elektronika do'koni. Apple, Samsung, Xiaomi mahsulotlari hamyonbop narxlarda. Muddatli to'lov, rasmiy kafolat va O'zbekiston bo'ylab yetkazib berish.",
-    keywords: [
-        "Velari", "velari.uz", "elektronika do'koni", "gadjetlar", "iphone narxi", "samsung narxi", 
-        "Toshkent", "O'zbekistan", "muddatli to'lov", "bo'lib to'lash", "kreditga telefon", 
-        "online shop", "internet do'kon", "arzon narxlar", "kafolatli texnika"
-    ],
-    authors: [{ name: "Velari Team" }],
-    creator: "Velari",
-    publisher: "Velari",
-    formatDetection: {
-        email: false,
-        address: false,
-        telephone: false,
-    },
-    icons: {
-        icon: [
-            { url: "/favicon.ico" },
-            { url: "/favicon-120x120.png", sizes: "120x120", type: "image/png" },
-            { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
-            { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
-        ],
-        apple: [
-            { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
-        ],
-        shortcut: "/favicon.ico",
-    },
-    metadataBase: new URL("https://velari.uz"),
-    alternates: {
-        languages: {
-            'uz-UZ': 'https://velari.uz/uz',
-            'ru-RU': 'https://velari.uz/ru',
-        },
-    },
-    robots: {
-        index: true,
-        follow: true,
-        googleBot: {
-            index: true,
-            follow: true,
-            'max-video-preview': -1,
-            'max-image-preview': 'large',
-            'max-snippet': -1,
-        },
-    },
-    openGraph: {
+const DEFAULT_META = {
+    uz: {
         title: "Velari | Zamonaviy Texnologiyalar va Gadjetlar Dunyosi",
-        description: "Premium tech store in Uzbekistan. Global brands, official warranty, and fast delivery. Buy iPhones, Samsung and Xiaomi with installments.",
-        url: "https://velari.uz",
-        siteName: "Velari",
-        images: [
-            {
-                url: "/og-image.png",
-                width: 1200,
-                height: 630,
-                alt: "Velari Premium Electronics Store",
-            },
-        ],
-        locale: "uz_UZ",
-        type: "website",
+        description: "Premium gadjetlar va elektronika do'koni. Apple, Samsung, Xiaomi mahsulotlari hamyonbop narxlarda. Muddatli to'lov, rasmiy kafolat va O'zbekiston bo'ylab yetkazib berish.",
+        ogDescription: "O'zbekistondagi premium elektronika do'koni. Global brendlar, rasmiy kafolat va tez yetkazib berish. iPhone, Samsung va Xiaomi — muddatli to'lovga.",
     },
-    twitter: {
-        card: "summary_large_image",
-        title: "Velari | Global Electronics",
-        description: "Premium tech store in Uzbekistan. Global brands, official warranty.",
-        images: ["/og-image.png"],
-    },
-    manifest: "/manifest.json",
-    appleWebApp: {
-        capable: true,
-        statusBarStyle: "default",
-        title: "Velari",
-    },
-    verification: {
-        // Bir nechta Google Search Console mulki/egasi tasdig'i — massiv => bir nechta meta-teg.
-        google: [
-            "LTHMhrgHGixfKuNRWuOnvLrkiUHaTuTiy1kCG",
-            "5mBCVxCoaxs77dV8KxCXZg7IOPa0ue7NKGB1C-6gS1A",
-        ],
-        // Yandex Webmaster tasdig'i — public/yandex_878ca82305d690c8.html bilan bir xil kod.
-        // Next.js buni <meta name="yandex-verification" content="..."> qilib render qiladi.
-        yandex: "878ca82305d690c8",
+    ru: {
+        title: "Velari | Мир современных технологий и гаджетов",
+        description: "Магазин премиальных гаджетов и электроники. Apple, Samsung, Xiaomi по доступным ценам. Рассрочка, официальная гарантия и доставка по всему Узбекистану.",
+        ogDescription: "Премиальный магазин электроники в Узбекистане. Мировые бренды, официальная гарантия и быстрая доставка. iPhone, Samsung и Xiaomi в рассрочку.",
     },
 };
+
+// Umumiy alternates.languages YO'Q: har indekslanadigan sahifa o'z canonical + hreflang'ini beradi.
+// Aks holda alternates'siz sahifa bosh sahifaga ishora qiluvchi hreflang'ni meros oladi.
+export async function generateMetadata({ params }: { params: { lang: string } }): Promise<Metadata> {
+    const lang = params.lang === "ru" ? "ru" : "uz";
+    const t = DEFAULT_META[lang];
+    return {
+        title: {
+            default: t.title,
+            template: "%s | Velari"
+        },
+        description: t.description,
+        keywords: [
+            "Velari", "velari.uz", "elektronika do'koni", "gadjetlar", "iphone narxi", "samsung narxi", 
+            "Toshkent", "O'zbekistan", "muddatli to'lov", "bo'lib to'lash", "kreditga telefon", 
+            "online shop", "internet do'kon", "arzon narxlar", "kafolatli texnika"
+        ],
+        authors: [{ name: "Velari Team" }],
+        creator: "Velari",
+        publisher: "Velari",
+        formatDetection: {
+            email: false,
+            address: false,
+            telephone: false,
+        },
+        icons: {
+            icon: [
+                { url: "/favicon.ico" },
+                { url: "/favicon-120x120.png", sizes: "120x120", type: "image/png" },
+                { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+                { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
+            ],
+            apple: [
+                { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+            ],
+            shortcut: "/favicon.ico",
+        },
+        metadataBase: new URL("https://velari.uz"),
+        robots: {
+            index: true,
+            follow: true,
+            googleBot: {
+                index: true,
+                follow: true,
+                'max-video-preview': -1,
+                'max-image-preview': 'large',
+                'max-snippet': -1,
+            },
+        },
+        openGraph: {
+            title: t.title,
+            description: t.ogDescription,
+            siteName: "Velari",
+            images: [
+                {
+                    url: "/og-image.png",
+                    width: 1200,
+                    height: 630,
+                    alt: "Velari Premium Electronics Store",
+                },
+            ],
+            locale: lang === "ru" ? "ru_RU" : "uz_UZ",
+            alternateLocale: lang === "ru" ? "uz_UZ" : "ru_RU",
+            type: "website",
+        },
+        twitter: {
+            card: "summary_large_image",
+            title: t.title,
+            description: t.ogDescription,
+            images: ["/og-image.png"],
+        },
+        manifest: "/manifest.json",
+        appleWebApp: {
+            capable: true,
+            statusBarStyle: "default",
+            title: "Velari",
+        },
+        verification: {
+            // Bir nechta Google Search Console mulki/egasi tasdig'i — massiv => bir nechta meta-teg.
+            google: [
+                "LTHMhrgHGixfKuNRWuOnvLrkiUHaTuTiy1kCG",
+                "5mBCVxCoaxs77dV8KxCXZg7IOPa0ue7NKGB1C-6gS1A",
+            ],
+            // Yandex Webmaster tasdig'i — public/yandex_878ca82305d690c8.html bilan bir xil kod.
+            // Next.js buni <meta name="yandex-verification" content="..."> qilib render qiladi.
+            yandex: "878ca82305d690c8",
+        },
+    };
+}
 
 export const viewport = {
     themeColor: [

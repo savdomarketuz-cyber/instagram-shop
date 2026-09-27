@@ -1,5 +1,5 @@
 # Velari.uz Robots.txt
-# Updated: 2026-04-19
+# Updated: 2026-09-27
 
 User-agent: Googlebot
 Allow: /
