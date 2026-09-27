@@ -391,7 +391,7 @@ export default function ProductClient({
             const PAGE_SIZE = 12;
             const from = infinitePage * PAGE_SIZE;
             let q = supabase.from("products")
-                .select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,avg_rating,review_count,stock,category_id,brand_id,model,color_name,group_id,article")
+                .select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,avg_rating,review_count,stock,category_id,brand_id,model,color_name,group_id,article")
                 .eq("is_deleted", false)
                 .order("sales", { ascending: false })
                 .range(from, from + PAGE_SIZE - 1);

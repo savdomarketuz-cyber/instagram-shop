@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { adminFrom } from "@/lib/admin-query";
+import { adminInsert } from "@/lib/admin-api";
 import { mapProduct } from "@/lib/mappers";
 import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
 import {
@@ -990,9 +991,12 @@ function AdminProducts() {
                 }
 
                 if (productsToInsert.length > 0) {
-                    const { error } = await supabase.from("products").insert(productsToInsert);
-                    if (error) throw error;
-                    
+                    // Server orqali (service role) — brauzerdagi anon kalit bilan emas.
+                    // 200 talik bo'laklar: Vercel so'rov hajmi limiti (4.5 MB) oshmasin.
+                    for (let i = 0; i < productsToInsert.length; i += 200) {
+                        await adminInsert("products", productsToInsert.slice(i, i + 200));
+                    }
+
                     // Notify Search Engines in Bulk for the new products
                     const newIds = productsToInsert.map(p => p.id);
                     fetch('/api/admin/notify-search', {

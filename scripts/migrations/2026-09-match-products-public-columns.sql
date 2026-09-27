@@ -3,7 +3,7 @@
 --
 -- Muammo: funksiya `SELECT p.*` / RETURNS SETOF products — brauzer (anon, ProductClient
 -- "o'xshash mahsulotlar") to'liq qatorni oladi: cost_price, additional_expenses, comm_*,
--- barcode, embedding, ai_persona, sales, total_views...
+-- barcode, embedding, ai_persona, total_views...
 --
 -- Yechim: qaytish turi faqat ommaviy ustunlar (src/lib/public-product.ts dagi
 -- PUBLIC_PRODUCT_COLUMNS bilan bir xil). SECURITY DEFINER — 4.5 da anon'dan `embedding`
@@ -44,6 +44,7 @@ RETURNS TABLE (
     express_delivery boolean,
     avg_rating numeric,
     review_count integer,
+    sales integer,
     created_at timestamptz
 )
 LANGUAGE sql
@@ -57,7 +58,7 @@ AS $function$
          p.image, p.images, p.image_metadata, p.video_url,
          p.category_id, p.brand_id, p.group_id, p.color_name,
          p.is_original, p.is_deleted, p.express_delivery,
-         p.avg_rating, p.review_count, p.created_at
+         p.avg_rating, p.review_count, p.sales, p.created_at
   FROM public.products p
   WHERE p.is_deleted = false
     AND p.id <> p_id
@@ -74,7 +75,7 @@ GRANT EXECUTE ON FUNCTION public.match_products_by_embedding(text, integer) TO a
 COMMIT;
 
 -- Tekshiruv (bajarilgandan keyin):
---   select * from public.match_products_by_embedding('<product id>', 3);  -- faqat yuqoridagi 28 ustun
+--   select * from public.match_products_by_embedding('<product id>', 3);  -- faqat yuqoridagi 29 ustun
 --
 -- Orqaga qaytarish:
 --   DROP FUNCTION public.match_products_by_embedding(text, integer);

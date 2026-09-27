@@ -94,13 +94,16 @@ export default function OrdersPage() {
                 if (missingProductIds.length > 0) {
                     const { data: productsData } = await supabase
                         .from("products")
-                        .select("id, image_url")
+                        // products jadvalida image_url yo'q — image va image_metadata (optimallashtirilgan variant uchun)
+                        .select("id, image, image_metadata")
                         .in("id", missingProductIds);
 
                     if (productsData) {
                         const updatedItems = items.map(item => {
                             const product = productsData.find(p => p.id === item.id);
-                            return product ? { ...item, image: product.image_url } : item;
+                            return product
+                                ? { ...item, image: product.image, image_metadata: item.image_metadata || product.image_metadata }
+                                : item;
                         });
                         setEnrichedItems(updatedItems);
                     }

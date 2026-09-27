@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: { params: { lang: string; id:
 }
 
 const PRODUCT_COLS =
-    "id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,avg_rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,created_at";
+    "id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,avg_rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,created_at";
 
 export default async function StorePage({ params }: { params: { lang: string; id: string } }) {
     const lang = params.lang === "ru" ? "ru" : "uz";

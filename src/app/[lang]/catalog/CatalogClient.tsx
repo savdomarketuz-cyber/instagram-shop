@@ -242,7 +242,7 @@ export default function CatalogClient({
             setLoadingProducts(true);
             try {
                 let query = supabase.from("products")
-                    .select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,avg_rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,express_delivery,created_at")
+                    .select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,avg_rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,express_delivery,created_at")
                     .eq("is_deleted", false);
 
                 const activeCat = subCat !== "all" ? subCat : mainCat;

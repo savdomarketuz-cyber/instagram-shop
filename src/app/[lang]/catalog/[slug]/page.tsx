@@ -79,7 +79,7 @@ export default async function CategoryCatalogPage({ params }: { params: { lang: 
     ] = await Promise.all([
         supabaseAdmin
             .from("products")
-            .select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,avg_rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,express_delivery,created_at")
+            .select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,avg_rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,express_delivery,created_at")
             .eq("is_deleted", false)
             .in("category_id", targetCatIds)
             .or("stock.gt.0,stock_details.neq.{}")
