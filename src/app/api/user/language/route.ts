@@ -33,12 +33,12 @@ export async function POST(req: NextRequest) {
                 user_phone: userPhone,
                 language: language,
                 updated_at: new Date().toISOString()
-            }, { onConflict: "id" }).then(() => {}).catch(() => {});
+            }, { onConflict: "id" }).then(() => {}, () => {});
 
             // B. users jadvaliga urinish (agar ustun mavjud bo'lsa)
             await supabaseAdmin.from("users").update({
                 language: language
-            }).eq("phone", userPhone).then(() => {}).catch(() => {});
+            }).eq("phone", userPhone).then(() => {}, () => {});
 
             // C. Telemetriya logiga yozish
             await supabaseAdmin.from("user_telemetry_logs").insert([{
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
                 event_type: "LANGUAGE_CHANGE",
                 event_value: language,
                 event_metadata: { language }
-            }]).then(() => {}).catch(() => {});
+            }]).then(() => {}, () => {});
         }
 
         // 3. Javob qaytarish va Cookie'larni yangilash (1 yil muddatga)

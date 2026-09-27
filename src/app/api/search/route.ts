@@ -147,7 +147,7 @@ async function generateGeminiImageEmbedding(imageDataUrl: string): Promise<numbe
         process.env.GEMINI_API_KEY_2,
         process.env.GEMINI_API_KEY,
     ].filter(Boolean) as string[];
-    const keys = [...new Set(rawKeys)];
+    const keys = Array.from(new Set(rawKeys));
 
     if (keys.length === 0) return null;
 
@@ -560,7 +560,7 @@ export async function POST(req: NextRequest) {
                             categories: currentCats,
                             updated_at: new Date().toISOString()
                         }).then(() => {});
-                    }).catch(() => {});
+                    }).then(undefined, () => {}); // = .catch (PromiseLike'da .catch tipi yo'q)
                 }
             }
         }

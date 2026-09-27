@@ -25,9 +25,9 @@ function verifyTelegramWebAppData(initData: string, botToken: string): { ok: boo
         urlParams.delete("hash");
 
         const params: string[] = [];
-        for (const [key, value] of urlParams.entries()) {
+        urlParams.forEach((value, key) => {
             params.push(`${key}=${value}`);
-        }
+        });
         params.sort();
         const dataCheckString = params.join("\n");
 
