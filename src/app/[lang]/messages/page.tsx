@@ -5,7 +5,6 @@ import { useStore } from "@/store/store";
 import { MessageSquare, Search, Loader2, Headset, X, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
 import { translations } from "@/lib/translations";
 
@@ -75,32 +74,18 @@ export default function MessagesPage() {
             router.push(`/${language}/login?redirect=${encodeURIComponent(window.location.pathname)}`);
             return;
         }
-        const myPhoneClean = user.phone.replace(/\D/g, '');
-
+        // Chatlar va support chati — server orqali (faqat o'zim ishtirok etgan chatlar)
         const fetchChats = async () => {
             try {
-                // 1. Fetch Private Chats
-                const { data: sessions, error } = await supabase
-                    .from("private_chats")
-                    .select("*")
-                    .contains("participants", [myPhoneClean])
-                    .order("last_timestamp", { ascending: false });
-                
-                if (error) throw error;
-                setChats(sessions || []);
-
-                // 2. Fetch Support Chat
-                const { data: support } = await supabase
-                    .from("support_chats")
-                    .select("*")
-                    .eq("id", user.phone)
-                    .single();
-                
-                if (support) setSupportChat(support);
-                
-                setLoading(false);
+                const res = await fetch("/api/me/chats", { cache: "no-store" });
+                const data = await res.json();
+                if (data?.success) {
+                    setChats(data.chats || []);
+                    if (data.supportChat) setSupportChat(data.supportChat);
+                }
             } catch (e) {
                 console.error("Chat fetch error:", e);
+            } finally {
                 setLoading(false);
             }
         };
@@ -108,30 +93,18 @@ export default function MessagesPage() {
         fetchChats();
         loadUsers(true);
 
-        // Real-time subscriptions
-        const privateChannel = supabase
-            .channel('private_chats_changes')
-            .on('postgres_changes', { 
-                event: '*', 
-                schema: 'public', 
-                table: 'private_chats',
-                filter: `participants=cs.{${user.phone}}` 
-            }, () => fetchChats())
-            .subscribe();
-
-        const supportChannel = supabase
-            .channel('support_chats_changes')
-            .on('postgres_changes', { 
-                event: '*', 
-                schema: 'public', 
-                table: 'support_chats',
-                filter: `id=eq.${user.phone}`
-            }, (payload) => setSupportChat(payload.new))
-            .subscribe();
+        // Jonli yangilanish: Realtime anon kalit bilan ishlaydi (endi yopiq) — o'rniga polling,
+        // faqat sahifa ko'rinib turganda; qaytib kelganda darhol yangilanadi.
+        const POLL_MS = 10000;
+        const timer = setInterval(() => {
+            if (document.visibilityState === "visible") fetchChats();
+        }, POLL_MS);
+        const onVisible = () => { if (document.visibilityState === "visible") fetchChats(); };
+        document.addEventListener("visibilitychange", onVisible);
 
         return () => {
-            supabase.removeChannel(privateChannel);
-            supabase.removeChannel(supportChannel);
+            clearInterval(timer);
+            document.removeEventListener("visibilitychange", onVisible);
         };
     }, [user, router, mounted, language]);
 

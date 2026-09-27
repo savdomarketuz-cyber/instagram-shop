@@ -99,12 +99,10 @@ export default function CheckoutPage() {
 
     const fetchWalletBalance = async () => {
         try {
-            const { data } = await supabase
-                .from("user_wallets")
-                .select("balance")
-                .eq("user_phone", user?.phone)
-                .single();
-            if (data) setWalletBalance(data.balance);
+            // Hamyon balansi — server orqali (faqat o'z hamyoni)
+            const res = await fetch("/api/me/wallet?summary=1", { cache: "no-store" });
+            const json = await res.json();
+            if (json?.wallet) setWalletBalance(json.wallet.balance);
         } catch (e) {
             console.error("Fetch wallet balance error:", e);
         }

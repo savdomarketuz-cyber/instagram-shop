@@ -113,12 +113,14 @@ function AccountContent() {
         }
 
         const fetchUserData = async () => {
-            const myPhoneClean = user.phone.replace(/\D/g, '');
-            
             try {
                 const [userRes, walletRes, cashbackRes, ordersRes] = await Promise.all([
                     supabase.from("users").select("*").eq("phone", user.phone).single(),
-                    supabase.from("user_wallets").select("balance").eq("user_phone", myPhoneClean).single(),
+                    // Hamyon balansi — server orqali (faqat o'z hamyoni)
+                    fetch("/api/me/wallet?summary=1", { cache: "no-store" })
+                        .then(r => r.json())
+                        .then(j => ({ data: j?.wallet ? { balance: j.wallet.balance } : null }))
+                        .catch(() => ({ data: null })),
                     supabase.from("orders").select("potential_cashback").eq("user_phone", user.phone).neq("status", "Yetkazildi").neq("status", "Bekor qilingan").gt("potential_cashback", 0),
                     supabase.from("orders").select("id").eq("user_phone", user.phone)
                 ]);

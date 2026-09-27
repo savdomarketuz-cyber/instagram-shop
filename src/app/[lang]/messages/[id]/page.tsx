@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { useStore } from "@/store/store";
 import { Send, ChevronLeft, Loader2, Paperclip, MoreVertical } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
 import { uploadToYandexS3 } from "@/lib/yandex-s3";
 
@@ -37,6 +36,24 @@ export default function P2PChatPage() {
 
     const roomId = user && targetPhone ? [user.phone.replace(/\D/g, ''), targetPhone.replace(/\D/g, '')].sort().join("_") : "";
 
+    // Oxirgi olingan xabar vaqti — polling faqat yangilarini so'raydi
+    const lastTsRef = useRef<string | null>(null);
+
+    const mergeMessages = (incoming: any[]) => {
+        if (!incoming.length) return false;
+        let added = false;
+        setMessages(prev => {
+            const ids = new Set(prev.map(m => m.id));
+            const fresh = incoming.filter(m => !ids.has(m.id));
+            if (!fresh.length) return prev;
+            added = true;
+            return [...prev, ...fresh];
+        });
+        const newest = incoming[incoming.length - 1]?.created_at;
+        if (newest && (!lastTsRef.current || newest > lastTsRef.current)) lastTsRef.current = newest;
+        return added;
+    };
+
     useEffect(() => {
         if (!mounted) return;
         if (!user || !targetPhone) {
@@ -44,64 +61,48 @@ export default function P2PChatPage() {
             return;
         }
 
-        const fetchTargetInfo = async () => {
-            const { data: userData } = await supabase.from("users").select("*").eq("phone", targetPhone).single();
-            const { data: statusData } = await supabase.from("user_status").select("*").eq("id", targetPhone).single();
+        const redirectToLogin = () => router.push(`/${language}/login?redirect=${encodeURIComponent(window.location.pathname)}`);
 
-            setTargetUserData({
-                name: userData?.name || "User",
-                username: userData?.username || targetPhone.slice(-4),
-                phone: targetPhone,
-                isOnline: statusData?.is_online || false
-            });
-        };
-        fetchTargetInfo();
-
-        const fetchMessages = async () => {
-            const { data, error } = await supabase
-                .from("private_messages")
-                .select("*")
-                .eq("chat_id", roomId)
-                .order("created_at", { ascending: true });
-
-            if (error) throw error;
-            setMessages(data || []);
-            setLoading(false);
-            scrollToBottom();
-        };
-        fetchMessages();
-
-        // Mark as Read
-        const markAsRead = async () => {
-            const myPhoneClean = user.phone.replace(/\D/g, '');
-            const { data: chat } = await supabase.from("private_chats").select("unread_count").eq("id", roomId).single();
-            if (chat) {
-                const newUnread = { ...(chat.unread_count || {}), [myPhoneClean]: 0 };
-                await supabase.from("private_chats").update({ unread_count: newUnread }).eq("id", roomId);
-            }
-        };
-        markAsRead();
-
-        const channel = supabase
-            .channel(`p2p_${roomId}`)
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'private_messages'
-            }, (payload) => {
-                if (payload.new.chat_id === roomId) {
-                    setMessages(prev => {
-                        const exists = prev.some(m => m.id === payload.new.id);
-                        if (exists) return prev;
-                        return [...prev, payload.new];
-                    });
+        // Xabarlar + suhbatdosh profili — server orqali (faqat o'zim ishtirok etgan chat);
+        // server chatni "o'qildi" deb ham belgilaydi.
+        const fetchInitial = async () => {
+            try {
+                const res = await fetch(`/api/me/messages?with=${encodeURIComponent(targetPhone)}`, { cache: "no-store" });
+                if (res.status === 401) return redirectToLogin();
+                const data = await res.json();
+                if (data?.success) {
+                    if (data.target) setTargetUserData(data.target);
+                    const list = data.messages || [];
+                    setMessages(list);
+                    lastTsRef.current = list.length ? list[list.length - 1].created_at : null;
                     scrollToBottom();
                 }
-            })
-            .subscribe();
+            } catch (e) {
+                console.error("Messages fetch error:", e);
+            } finally {
+                setLoading(false);
+            }
+        };
 
+        const fetchNew = async () => {
+            if (document.visibilityState !== "visible") return;
+            try {
+                const since = lastTsRef.current ? `&since=${encodeURIComponent(lastTsRef.current)}` : "";
+                const res = await fetch(`/api/me/messages?with=${encodeURIComponent(targetPhone)}${since}`, { cache: "no-store" });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data?.success && mergeMessages(data.messages || [])) scrollToBottom();
+            } catch { /* keyingi urinishda */ }
+        };
+
+        fetchInitial();
+
+        // Jonli yangilanish: Realtime anon kalit bilan ishlaydi (endi yopiq) — o'rniga polling
+        const timer = setInterval(fetchNew, 4000);
+        document.addEventListener("visibilitychange", fetchNew);
         return () => {
-            supabase.removeChannel(channel);
+            clearInterval(timer);
+            document.removeEventListener("visibilitychange", fetchNew);
         };
     }, [user, targetPhone, roomId, router, mounted]);
 
@@ -143,43 +144,23 @@ export default function P2PChatPage() {
                 setMessages(prev => prev.map(m => m.id === tempId ? { ...m, image: fileType === 'image' ? uploadedUrl : null, video: fileType === 'video' ? uploadedUrl : null } : m));
             }
 
-            const { data: existingChat } = await supabase.from("private_chats").select("id, unread_count").eq("id", roomId).single();
-            const otherPhoneClean = targetPhone.replace(/\D/g, '');
-            const myPhoneClean = user.phone.replace(/\D/g, '');
+            // Server chatni (kerak bo'lsa) yaratadi, xabarni yozadi, last_message/unread'ni yangilaydi
+            const res = await fetch("/api/me/messages", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    to: targetPhone,
+                    text: msgText,
+                    image: fileType === 'image' ? uploadedUrl : null,
+                    video: fileType === 'video' ? uploadedUrl : null,
+                }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data?.success || !data.message) throw new Error(data?.error || `HTTP ${res.status}`);
 
-            if (!existingChat) {
-                await supabase.from("private_chats").insert([{
-                    id: roomId,
-                    participants: [myPhoneClean, otherPhoneClean],
-                    participant_data: {
-                        [myPhoneClean]: { name: user.name || "User", username: user.username || user.phone },
-                        [otherPhoneClean]: { name: targetUserData?.name || "User", username: targetUserData?.username || otherPhoneClean }
-                    },
-                    unread_count: { [otherPhoneClean]: 1, [myPhoneClean]: 0 }
-                }]);
-            }
-
-            const { data: realMsg } = await supabase.from("private_messages").insert([{
-                id: crypto.randomUUID(),
-                chat_id: roomId,
-                text: msgText,
-                image: fileType === 'image' ? uploadedUrl : null,
-                video: fileType === 'video' ? uploadedUrl : null,
-                sender_id: user.phone
-            }]).select().single();
-
-            if (realMsg) {
-                setMessages(prev => prev.map(m => m.id === tempId ? realMsg : m));
-            }
-
-            const lastMsg = uploadedUrl ? (fileType === 'image' ? "🖼️ Foto" : "🎥 Video") : msgText;
-            const currentOtherUnread = existingChat?.unread_count?.[otherPhoneClean] || 0;
-
-            await supabase.from("private_chats").update({
-                last_message: lastMsg,
-                last_timestamp: new Date().toISOString(),
-                unread_count: { ...existingChat?.unread_count, [otherPhoneClean]: currentOtherUnread + 1 }
-            }).eq("id", roomId);
+            const realMsg = data.message;
+            setMessages(prev => prev.map(m => m.id === tempId ? realMsg : m));
+            if (!lastTsRef.current || realMsg.created_at > lastTsRef.current) lastTsRef.current = realMsg.created_at;
 
             setSelectedFile(null);
             setMediaPreview(null);
@@ -196,8 +177,9 @@ export default function P2PChatPage() {
     const handleDeleteMessage = async (msgId: string, forEveryone: boolean) => {
         try {
             if (forEveryone) {
-                await supabase.from("private_messages").delete().eq("id", msgId);
-                setMessages(prev => prev.filter(m => m.id !== msgId));
+                // Server faqat o'z xabarini o'chirishga ruxsat beradi
+                const res = await fetch(`/api/me/messages?id=${encodeURIComponent(msgId)}`, { method: "DELETE" });
+                if (res.ok) setMessages(prev => prev.filter(m => m.id !== msgId));
             } else {
                 setMessages(prev => prev.filter(m => m.id !== msgId));
             }
@@ -210,8 +192,8 @@ export default function P2PChatPage() {
         const confirm = window.confirm("Haqiqatdan ham ushbu suhbatni butunlay o'chirmoqchimisiz?");
         if (!confirm) return;
         try {
-            await supabase.from("private_messages").delete().eq("chat_id", roomId);
-            await supabase.from("private_chats").delete().eq("id", roomId);
+            const res = await fetch(`/api/me/messages?with=${encodeURIComponent(targetPhone)}&all=1`, { method: "DELETE" });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             router.push(`/${language}/messages`);
         } catch (error) {
             console.error("Error deleting chat:", error);

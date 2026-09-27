@@ -12,7 +12,6 @@ import {
     Star,
     CheckCircle2
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { useStore } from "@/store/store";
 import { translations } from "@/lib/translations";
 import { useRouter } from "next/navigation";
@@ -40,31 +39,33 @@ export default function WalletClient() {
 
     const fetchWalletData = async () => {
         if (!user) return;
-        const myPhoneClean = user.phone.replace(/\D/g, '');
-        
-        // Fetch Balance
-        const { data: wData } = await supabase.from("user_wallets").select("*").eq("user_phone", myPhoneClean).single();
-        
-        // Fetch Combined History (Cashback + Transfers)
-        const { data: cData } = await supabase.from("cashback_transactions").select("*").eq("user_phone", user.phone);
-        const { data: tData } = await supabase.from("wallet_transfers").select("*").or(`sender_phone.eq.${myPhoneClean},receiver_phone.eq.${myPhoneClean}`);
+        // Hamyon, tarix va kutilayotgan keshbek — server orqali (faqat o'z hamyoni)
+        let data: any = null;
+        try {
+            const res = await fetch("/api/me/wallet", { cache: "no-store" });
+            data = await res.json();
+        } catch (e) {
+            console.error("Wallet fetch error:", e);
+        }
+        if (!data?.success) {
+            setLoading(false);
+            return;
+        }
 
         const combined = [
-            ...(cData || []).map(c => ({ ...c, type: 'cashback', date: c.created_at, val: c.amount })),
-            ...(tData || []).map(t => ({ 
-                ...t, 
-                type: 'transfer', 
-                date: t.created_at, 
-                val: t.sender_phone === myPhoneClean ? -t.amount : t.amount,
-                isOutgoing: t.sender_phone === myPhoneClean
+            ...(data.cashback || []).map((c: any) => ({ ...c, type: 'cashback', date: c.created_at, val: c.amount })),
+            ...(data.transfers || []).map((t: any) => ({
+                ...t,
+                type: 'transfer',
+                date: t.created_at,
+                val: t.isOutgoing ? -t.amount : t.amount,
+                isOutgoing: t.isOutgoing
             }))
         ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-        if (wData) setWallet(wData);
+        if (data.wallet) setWallet(data.wallet);
         setTransactions(combined);
-
-        const { data: pOrders } = await supabase.from("orders").select("id, potential_cashback").eq("user_phone", user.phone).neq("status", "Yetkazildi").gt("potential_cashback", 0);
-        setPendingOrders(pOrders || []);
+        setPendingOrders(data.pendingOrders || []);
         setLoading(false);
     };
 
