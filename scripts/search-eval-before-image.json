@@ -1,0 +1,101 @@
+{
+ "base": "https://velari.uz",
+ "at": "2026-09-27T14:12:29.226Z",
+ "text": [],
+ "image": [
+  {
+   "id": "587d1eac-fc2d-40d8-980f-d223c90acb2b",
+   "name": "Soch va soqol olish uchun professional trimmer VGR",
+   "kb": 150,
+   "rank": 1,
+   "n": 17,
+   "status": 200,
+   "ms": 4322
+  },
+  {
+   "id": "9ab5d662-cb8d-4057-bdae-d03bf640916b",
+   "name": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-3086",
+   "kb": 81,
+   "rank": 1,
+   "n": 20,
+   "status": 200,
+   "ms": 2615
+  },
+  {
+   "id": "8b4f3e8a-59af-4bc2-909b-a6497c8379cc",
+   "name": "Soch quritish uchun professional fen VGR V401, Qiz",
+   "kb": 187,
+   "rank": 1,
+   "n": 14,
+   "status": 200,
+   "ms": 3084
+  },
+  {
+   "id": "847fd1ea-0757-4fec-a48d-94738004c567",
+   "name": "Zumba ZM-8061 brashing professional elektr tarog‘i",
+   "kb": 184,
+   "rank": 1,
+   "n": 15,
+   "status": 200,
+   "ms": 2999
+  },
+  {
+   "id": "9292466d-1ecd-4ccd-884e-038d85f28ae4",
+   "name": "Ayollar uchun professional epilyator VGR V-700, Oq",
+   "kb": 108,
+   "rank": 1,
+   "n": 16,
+   "status": 200,
+   "ms": 2333
+  },
+  {
+   "id": "e86d479e-14fb-4a28-9ba7-819b533a7368",
+   "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-T",
+   "kb": 81,
+   "rank": 1,
+   "n": 18,
+   "status": 200,
+   "ms": 2881
+  },
+  {
+   "id": "3bed45c7-fb6f-40df-9fc5-f8cf7a5d9181",
+   "name": "M·A·C STYLER MC-6815 soch quritgich, 1600 Vt, ioni",
+   "kb": 142,
+   "rank": 1,
+   "n": 19,
+   "status": 200,
+   "ms": 3415
+  },
+  {
+   "id": "a678d9d9-915a-4fbe-bc10-b934378f190e",
+   "name": "Telefon va kamera uchun shtativ tripod Jmary KP-22",
+   "kb": 60,
+   "rank": 1,
+   "n": 14,
+   "status": 200,
+   "ms": 2480
+  },
+  {
+   "id": "b6b23e2d-01fc-4735-9c65-731345c10384",
+   "name": "Portativ simsiz Bluetooth kalonka Sing-e KALONKA 5",
+   "kb": 203,
+   "rank": 1,
+   "n": 18,
+   "status": 200,
+   "ms": 2816
+  },
+  {
+   "id": "0ec09109-296f-49ee-8650-037c99b4e97e",
+   "name": "CRONIER CR-208 professional katushka apparati, zan",
+   "kb": 148,
+   "rank": 1,
+   "n": 16,
+   "status": 200,
+   "ms": 2468
+  }
+ ],
+ "imageSummary": {
+  "total": 10,
+  "top3": 10
+ }
+}

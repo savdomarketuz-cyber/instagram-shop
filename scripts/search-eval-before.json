@@ -1,0 +1,1576 @@
+{
+ "base": "https://velari.uz",
+ "at": "2026-09-27T14:10:26.273Z",
+ "text": [
+  {
+   "q": "tarozi",
+   "group": "top",
+   "gt": 0,
+   "n": 24,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 1431,
+   "top5": [
+    {
+     "id": "847fd1ea-0757-4fec-a48d-94738004c567",
+     "name": "Zumba ZM-8061 brashing professional elektr tarog‘i, harorat ",
+     "rel": false
+    },
+    {
+     "id": "d7296890-72f4-4354-8a0d-484f5c975456",
+     "name": "M·A·C STYLER MC6751 3-v-1 Profesional Fen-Taroq va Multistay",
+     "rel": false
+    },
+    {
+     "id": "78c79766-cf70-4d1e-9d2c-ce1f6a1070f4",
+     "name": "CRONIER CR-6911 fen taroq 6:1 keramika ployka",
+     "rel": false
+    },
+    {
+     "id": "f56920d9-a7b3-4d6b-8b88-465dbd77c4ae",
+     "name": "Professional fen-taroq, 360 daraja aylanuvchi VGR V-498, ker",
+     "rel": false
+    },
+    {
+     "id": "cb3f6c48-34c9-466a-93dd-0bcc6e61d662",
+     "name": "CRONIER CR-8211 2500W Fen-taroq: Keramik qoplama, Ion texnol",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "sumka",
+   "group": "top",
+   "gt": 0,
+   "n": 24,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": false,
+   "didYouMean": "bag",
+   "status": 200,
+   "ms": 742,
+   "top5": [
+    {
+     "id": "a39f677d-1003-4291-8cd2-383f3b228dcb",
+     "name": "Ayollar uchun professional epilyator Babyverse SE8, Oq",
+     "rel": false
+    },
+    {
+     "id": "60304879-4390-4938-a536-932f2917e22d",
+     "name": "VGR V-937 Soch Trimmi, Keramika Pichoqli, Batareya Displeyli",
+     "rel": false
+    },
+    {
+     "id": "887ebc55-f1e5-47c1-adb2-7904566ad66b",
+     "name": "Ayollar uchun professional epilyator Babyverse SE9, Oq",
+     "rel": false
+    },
+    {
+     "id": "10c71f8b-70ff-4648-af16-baaa214c89fa",
+     "name": "Cronier Professional CR-102 erkek ustarasi, 3 ravishli picho",
+     "rel": false
+    },
+    {
+     "id": "cc1b33dd-0901-4eb4-a873-ad07ae342333",
+     "name": "VGR V-989 Keramika pichoqli soch olish mashinasi, litij bata",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "telefon",
+   "group": "top",
+   "gt": 3,
+   "n": 5,
+   "rel5": 3,
+   "p5": 0.6,
+   "isFallback": true,
+   "didYouMean": "smartfon",
+   "status": 200,
+   "ms": 876,
+   "top5": [
+    {
+     "id": "833256f4-01b0-4ff3-ac50-e74a33200035",
+     "name": "Shtativ tripod Jmary KP-2205, telefon ushlagichi bilan kamer",
+     "rel": true
+    },
+    {
+     "id": "a678d9d9-915a-4fbe-bc10-b934378f190e",
+     "name": "Telefon va kamera uchun shtativ tripod Jmary KP-2274, Qora",
+     "rel": true
+    },
+    {
+     "id": "2d541418-7c3a-40d1-9e2b-c86e4707f656",
+     "name": "Jmary KP-2207 tripod, telefon va kamera ushlagichi bilan Pol",
+     "rel": true
+    },
+    {
+     "id": "9263b844-f3ca-4f9a-a4f1-d8797e1399ff",
+     "name": "VGR V-471 Professional Fen: 220V, Yagona Haroratli Salon Usl",
+     "rel": false
+    },
+    {
+     "id": "653b984d-65ef-4f25-a592-4a65a1a30b36",
+     "name": "Babyverse SE7 – Og‘riqsiz, xavfsiz va samarali lazer epilyat",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "dayson",
+   "group": "top",
+   "gt": 65,
+   "n": 2,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": false,
+   "didYouMean": "dyson",
+   "status": 200,
+   "ms": 470,
+   "top5": [
+    {
+     "id": "b331e56f-87d0-4e88-b9ad-3d393c8b5b05",
+     "name": "VGR V-671 professional soch va soqol trimmeri, ko'k rang, ka",
+     "rel": false
+    },
+    {
+     "id": "44063e45-3333-4fd9-9a7f-1fb82d052666",
+     "name": "VGR V-195 professional simsiz soch olish mashinasi, 8 ta nas",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "daysin",
+   "group": "top",
+   "gt": 65,
+   "n": 24,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 756,
+   "top5": [
+    {
+     "id": "4613c93c-9c76-4909-b2e1-a68931976c43",
+     "name": "M.A.C STYLER MC-2218 soch dazmol jingalak plita gofre qiling",
+     "rel": false
+    },
+    {
+     "id": "9ab5d662-cb8d-4057-bdae-d03bf640916b",
+     "name": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-3086C, Qora",
+     "rel": false
+    },
+    {
+     "id": "b53739ca-8ace-4c80-84fd-9156834aa112",
+     "name": "VGR V-012 Professional trimmer: Zanglamas po'lat pichoq, 120",
+     "rel": false
+    },
+    {
+     "id": "b495a122-641c-4d67-928b-f08b00575394",
+     "name": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-5518 TITAN, Ti",
+     "rel": false
+    },
+    {
+     "id": "6dfe9a79-d3e0-4d97-90eb-3e472350f044",
+     "name": "VGR V-653 Soch-Soqol Trimeri, DLC Pichoqlar, 2500mAh Batarey",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "vgr",
+   "group": "top",
+   "gt": 289,
+   "n": 24,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 504,
+   "top5": [
+    {
+     "id": "f3efe099-0248-42dd-bbd5-30698945e879",
+     "name": "VGR V-226 professional soch va soqol trimmeri, qizil, 150 da",
+     "rel": true
+    },
+    {
+     "id": "56ef22be-0561-48a4-a6c6-741ff63d8044",
+     "name": "VGR V-9371 Trimmer: 500 daq. batareya, LED ekran, 3 qo'shimc",
+     "rel": true
+    },
+    {
+     "id": "e6a058a2-f795-4bd1-b43b-41e6bcc1e38b",
+     "name": "VGR V-361 Soqol Mashinkasi: 60 Daqiqa Ishlash, Zanglamas Po'",
+     "rel": true
+    },
+    {
+     "id": "d5c22186-3068-4187-b7a0-65cc6f751b78",
+     "name": "VGR V-166 Professional Hair Clipper - bu professional soch o",
+     "rel": true
+    },
+    {
+     "id": "44babbbc-dad7-4bd5-9654-fb9ad03f4de4",
+     "name": "VGR V-129 soch qirqish mashinkasi, o'tkir po'lat pichoqlar",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "kiyim",
+   "group": "top",
+   "gt": 5,
+   "n": 3,
+   "rel5": 3,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 505,
+   "top5": [
+    {
+     "id": "fbf1a5c1-201f-467d-80e1-e52eaf8d12e9",
+     "name": "CRONIER CR-214 kiyimdagi yumaloqlarni olib tashlaydigan mash",
+     "rel": true
+    },
+    {
+     "id": "256c7851-6949-4a11-808f-419ef1568556",
+     "name": "CRONIER CR-211 Kiyim tozalagich mashina, metall pichoqli kir",
+     "rel": true
+    },
+    {
+     "id": "d846952b-054c-481e-92f4-784855b90385",
+     "name": "CRONIER CR-238 Kiyim Katyshi Olib Tashlash Mashinasi, Zangsi",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "iphone",
+   "group": "top",
+   "gt": 0,
+   "n": 8,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 457,
+   "top5": [
+    {
+     "id": "77159362-8ca8-4e62-9390-4330783dcf2f",
+     "name": "VGR V-965 Trimmer 4-1 Qurilma, 80 Daq, IPX6, Zağʻir Soqol Ol",
+     "rel": false
+    },
+    {
+     "id": "81c94b64-cfb5-4798-ab03-88bb17d6b8ff",
+     "name": "Fotoepilytor Babyverse SE10, tanava yuz uchun sovitish effek",
+     "rel": false
+    },
+    {
+     "id": "ac95dee6-5f54-4145-a509-375090cadea5",
+     "name": "Philips Lumea 9900 — uy sharoitida professional darajadagi I",
+     "rel": false
+    },
+    {
+     "id": "7a2228fb-37a1-4a62-a417-f7a622bdd02c",
+     "name": "CRONIER CR-8824 Fotoepilyator: IPL texnologiyasi, sovutishli",
+     "rel": false
+    },
+    {
+     "id": "5cf76dc8-5b30-498f-89a6-70eb07ad934a",
+     "name": "Cronier CR 8816 IPL Lazerli Fotoepilyator: Butun Tana uchun ",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "rolik",
+   "group": "top",
+   "gt": 0,
+   "n": 12,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 569,
+   "top5": [
+    {
+     "id": "20d3560d-d1b6-4adc-9173-6a562de5bfc6",
+     "name": "VGR V-759 Ayollar uchun 5-in-1 professional epilyator, pusht",
+     "rel": false
+    },
+    {
+     "id": "89fb709d-8f74-41b1-9e33-35fcaae46cf0",
+     "name": "VGR V-964 Voyager Soch Qirqish Mashinasi: Li-Ion Batareya, 3",
+     "rel": false
+    },
+    {
+     "id": "68413fee-2916-4dee-8f65-08adf71380cf",
+     "name": "Soch quritish uchun professional fen ENZO ENZO 9IN1, Pushti ",
+     "rel": false
+    },
+    {
+     "id": "549fbfda-3412-4117-b474-9c35a3ff1606",
+     "name": "VGR V-722 ayollar uchun professional epilyator, 2 tezlik, 10",
+     "rel": false
+    },
+    {
+     "id": "e81d67c4-765f-4062-8a9c-a97046cb4a9e",
+     "name": "VGR V-378 Soqol olish mashinasi, oltin qoplama pichoq, yuqor",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "kiyimlar",
+   "group": "top",
+   "gt": 5,
+   "n": 3,
+   "rel5": 3,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 438,
+   "top5": [
+    {
+     "id": "fbf1a5c1-201f-467d-80e1-e52eaf8d12e9",
+     "name": "CRONIER CR-214 kiyimdagi yumaloqlarni olib tashlaydigan mash",
+     "rel": true
+    },
+    {
+     "id": "256c7851-6949-4a11-808f-419ef1568556",
+     "name": "CRONIER CR-211 Kiyim tozalagich mashina, metall pichoqli kir",
+     "rel": true
+    },
+    {
+     "id": "d846952b-054c-481e-92f4-784855b90385",
+     "name": "CRONIER CR-238 Kiyim Katyshi Olib Tashlash Mashinasi, Zangsi",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "fen",
+   "group": "top",
+   "gt": 105,
+   "n": 14,
+   "rel5": 2,
+   "p5": 0.4,
+   "isFallback": false,
+   "didYouMean": "hair dryer",
+   "status": 200,
+   "ms": 658,
+   "top5": [
+    {
+     "id": "d5c22186-3068-4187-b7a0-65cc6f751b78",
+     "name": "VGR V-166 Professional Hair Clipper - bu professional soch o",
+     "rel": false
+    },
+    {
+     "id": "f9fb4c46-70bd-4af6-babd-3d91b15d2bc0",
+     "name": "MAC Styler MC-5681: Soch gofre, ildiz hajmi, Ttitanium-kerat",
+     "rel": false
+    },
+    {
+     "id": "917c67ac-6645-429d-8a14-94fd657f9848",
+     "name": "Cronier CR-2071 Professional elektr taroq brash, 200W, keram",
+     "rel": true
+    },
+    {
+     "id": "c63657a4-eeae-4722-b9e2-76497b996537",
+     "name": "Cronier CR-928 Professional soch bukmashki, 5 harorat, Turma",
+     "rel": false
+    },
+    {
+     "id": "57e8654e-7237-410a-a36b-fc6adc677b09",
+     "name": "M·A·C STYLER MC-6810 hamyon filtri, 1800W, ionizatsiyali, na",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "kosmetika",
+   "group": "top",
+   "gt": 0,
+   "n": 24,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": true,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 861,
+   "top5": [
+    {
+     "id": "7f8fcbb6-b736-47ad-a7c5-fbee8d06cfa2",
+     "name": "J·R·M STYLER JR-2035 Keramika qoplamali konusli ployka va go",
+     "rel": false
+    },
+    {
+     "id": "cbe2377c-06ef-4414-9f38-c425c8f2db0a",
+     "name": "J·R·M STYLER JRM-9001: ION keramika qoplama, 6000W professio",
+     "rel": false
+    },
+    {
+     "id": "78c79766-cf70-4d1e-9d2c-ce1f6a1070f4",
+     "name": "CRONIER CR-6911 fen taroq 6:1 keramika ployka",
+     "rel": false
+    },
+    {
+     "id": "a37aa330-b7cc-45b1-b7d8-82f51500206c",
+     "name": "M·A·C STYLER MC-6650 Fen-cho'tka, 5-in-1, Keramika",
+     "rel": false
+    },
+    {
+     "id": "f1f617cb-6b32-4f55-ac7b-8fae887cb5c2",
+     "name": "M·A·C STYLER MC-6700 Fen-cho'tka, Keramika qoplama, 1000W, H",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "planshet",
+   "group": "top",
+   "gt": 0,
+   "n": 24,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": false,
+   "didYouMean": "tablet",
+   "status": 200,
+   "ms": 601,
+   "top5": [
+    {
+     "id": "847fd1ea-0757-4fec-a48d-94738004c567",
+     "name": "Zumba ZM-8061 brashing professional elektr tarog‘i, harorat ",
+     "rel": false
+    },
+    {
+     "id": "f56920d9-a7b3-4d6b-8b88-465dbd77c4ae",
+     "name": "Professional fen-taroq, 360 daraja aylanuvchi VGR V-498, ker",
+     "rel": false
+    },
+    {
+     "id": "34c2e184-9538-4681-a432-673875ec12db",
+     "name": "VGR V-731 Professional Simsiz Epilyator, Keramika Pichoqli T",
+     "rel": false
+    },
+    {
+     "id": "a2f95f63-2854-4d3a-b5b0-079f822185ae",
+     "name": "M·A·C STYLER MC 6752 5-v-1 Fen-taroq: Keramika, Axborot va T",
+     "rel": false
+    },
+    {
+     "id": "917c67ac-6645-429d-8a14-94fd657f9848",
+     "name": "Cronier CR-2071 Professional elektr taroq brash, 200W, keram",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "dyson",
+   "group": "top",
+   "gt": 65,
+   "n": 2,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 441,
+   "top5": [
+    {
+     "id": "b331e56f-87d0-4e88-b9ad-3d393c8b5b05",
+     "name": "VGR V-671 professional soch va soqol trimmeri, ko'k rang, ka",
+     "rel": false
+    },
+    {
+     "id": "44063e45-3333-4fd9-9a7f-1fb82d052666",
+     "name": "VGR V-195 professional simsiz soch olish mashinasi, 8 ta nas",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "airpods",
+   "group": "top",
+   "gt": 5,
+   "n": 5,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 488,
+   "top5": [
+    {
+     "id": "e86d479e-14fb-4a28-9ba7-819b533a7368",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-TITAN, Tita",
+     "rel": true
+    },
+    {
+     "id": "de2715af-3ca4-4a27-a397-b92b24245277",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX, Ko'k",
+     "rel": true
+    },
+    {
+     "id": "b1da43ec-ce8a-42d3-9502-26389c52c9cd",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-PURPLE, Bin",
+     "rel": true
+    },
+    {
+     "id": "81d85c4e-dd36-4b70-a937-b657bf4cb9be",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-MIDNIGHT, M",
+     "rel": true
+    },
+    {
+     "id": "582d74c8-24ec-44f2-89f7-19ad7dc49666",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-ORANGE, To'",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "ipad",
+   "group": "top",
+   "gt": 0,
+   "n": 8,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 549,
+   "top5": [
+    {
+     "id": "3b5f6dc7-5194-4fae-b23f-bda1ddb939c3",
+     "name": "Soch quritish uchun professional fen Iparah P-510, Bej / Olt",
+     "rel": false
+    },
+    {
+     "id": "81c94b64-cfb5-4798-ab03-88bb17d6b8ff",
+     "name": "Fotoepilytor Babyverse SE10, tanava yuz uchun sovitish effek",
+     "rel": false
+    },
+    {
+     "id": "ac95dee6-5f54-4145-a509-375090cadea5",
+     "name": "Philips Lumea 9900 — uy sharoitida professional darajadagi I",
+     "rel": false
+    },
+    {
+     "id": "7a2228fb-37a1-4a62-a417-f7a622bdd02c",
+     "name": "CRONIER CR-8824 Fotoepilyator: IPL texnologiyasi, sovutishli",
+     "rel": false
+    },
+    {
+     "id": "5cf76dc8-5b30-498f-89a6-70eb07ad934a",
+     "name": "Cronier CR 8816 IPL Lazerli Fotoepilyator: Butun Tana uchun ",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "bleck",
+   "group": "top",
+   "gt": 0,
+   "n": 21,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 597,
+   "top5": [
+    {
+     "id": "e86d479e-14fb-4a28-9ba7-819b533a7368",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-TITAN, Tita",
+     "rel": false
+    },
+    {
+     "id": "b6b23e2d-01fc-4735-9c65-731345c10384",
+     "name": "Portativ simsiz Bluetooth kalonka Sing-e KALONKA 5, Qora",
+     "rel": false
+    },
+    {
+     "id": "0ee8eb82-618b-446a-9aec-a5022227b440",
+     "name": "VGR STEPLESS PRO 3IN1 (V-001 PRO) professional soch va soqol",
+     "rel": false
+    },
+    {
+     "id": "0f903003-efd7-4e81-aebd-a9fcbf57298f",
+     "name": "VGR V-195专业 soch-siqal trimmeri: BLDC motor, DLC pichoq",
+     "rel": false
+    },
+    {
+     "id": "de2715af-3ca4-4a27-a397-b92b24245277",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX, Ko'k",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "atir",
+   "group": "top",
+   "gt": 0,
+   "n": 24,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": true,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 1098,
+   "top5": [
+    {
+     "id": "377e45c3-17f4-494c-b58d-fa1c1c36f31f",
+     "name": "Soch quritish uchun professional fen M.A.C STYLER PINK, Push",
+     "rel": false
+    },
+    {
+     "id": "25c7c986-fde3-4ca2-8a28-515a44252cb1",
+     "name": "Ayollar uchun professional epilyator IBORRA BR-2020, Yashil ",
+     "rel": false
+    },
+    {
+     "id": "cc0ee761-e9bf-4157-83f0-f52386539bd6",
+     "name": "Ayollar uchun professional epilyator VGR V-750, Oq",
+     "rel": false
+    },
+    {
+     "id": "b6ff8c3c-9f45-4fb5-9c72-4fbae9cd1d87",
+     "name": "VGR V-618 Simsiz Professional Trimmer. Aqlli va aniq so'lg'i",
+     "rel": false
+    },
+    {
+     "id": "3f3a2cc0-b414-4568-ba89-bc8b2a7dd304",
+     "name": "Ayollar uchun professional epilyator M.A.C STYLER MC-P33, Qi",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "kasmetika",
+   "group": "top",
+   "gt": 0,
+   "n": 1,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 430,
+   "top5": [
+    {
+     "id": "47ce0b80-1fd2-4f0f-90ef-b0306efb2ceb",
+     "name": "VGR V-818 professional katik o'chiruvchi mashinka, 1200mAh U",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "pamada",
+   "group": "top",
+   "gt": 0,
+   "n": 9,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 597,
+   "top5": [
+    {
+     "id": "e622f26f-39e9-4fde-8a7f-2ecd6fe9ba07",
+     "name": "J·R·M STYLER JR-2026 Professional soch tekislagich: Keramika",
+     "rel": false
+    },
+    {
+     "id": "c3eb63e0-5242-4489-a031-c7ec2a403763",
+     "name": "Epilyator ayollar uchun suv otkazmaydigan VGR V-733 6tasi1da",
+     "rel": false
+    },
+    {
+     "id": "3a7c573b-70b6-49b6-9c8e-b98707cf4382",
+     "name": "Epilyator ayollar uchun suv otkazmaydigan VGR V-733 6tasi1da",
+     "rel": false
+    },
+    {
+     "id": "3c9b65f2-b8be-4fb1-8c75-b9c601508149",
+     "name": "M.A.C styler epilyatori, MC-7728, 3 ta 1 da professional epi",
+     "rel": false
+    },
+    {
+     "id": "ac95dee6-5f54-4145-a509-375090cadea5",
+     "name": "Philips Lumea 9900 — uy sharoitida professional darajadagi I",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "qora fen",
+   "group": "multi",
+   "gt": 28,
+   "n": 24,
+   "rel5": 1,
+   "p5": 0.2,
+   "isFallback": false,
+   "didYouMean": "black hair dryer",
+   "status": 200,
+   "ms": 1998,
+   "top5": [
+    {
+     "id": "2b914778-48a8-406a-9523-64ec92cbedfd",
+     "name": "VGR V-486 Issiq havo staileri, BLDC motor, 8 ta nasadka bila",
+     "rel": false
+    },
+    {
+     "id": "d5c22186-3068-4187-b7a0-65cc6f751b78",
+     "name": "VGR V-166 Professional Hair Clipper - bu professional soch o",
+     "rel": false
+    },
+    {
+     "id": "be03ce92-b422-4a43-9f07-3bba9ef9dc94",
+     "name": "VGR V-439 Black Fen 1600W, 50mm Metall Ust, Tezkur Quritish",
+     "rel": true
+    },
+    {
+     "id": "917c67ac-6645-429d-8a14-94fd657f9848",
+     "name": "Cronier CR-2071 Professional elektr taroq brash, 200W, keram",
+     "rel": false
+    },
+    {
+     "id": "57e8654e-7237-410a-a36b-fc6adc677b09",
+     "name": "M·A·C STYLER MC-6810 hamyon filtri, 1800W, ionizatsiyali, na",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "soch dazmoli",
+   "group": "multi",
+   "gt": 106,
+   "n": 1,
+   "rel5": 1,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": "utyujok",
+   "status": 200,
+   "ms": 997,
+   "top5": [
+    {
+     "id": "e622f26f-39e9-4fde-8a7f-2ecd6fe9ba07",
+     "name": "J·R·M STYLER JR-2026 Professional soch tekislagich: Keramika",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "burun trimmer",
+   "group": "multi",
+   "gt": 7,
+   "n": 24,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 1195,
+   "top5": [
+    {
+     "id": "30fa985b-a3d6-41b2-bd3e-ba87d42bef40",
+     "name": "VGR V-183 trimmeri: Li-ion, 16mm, suv o'tkazmaydigan, soqol ",
+     "rel": true
+    },
+    {
+     "id": "e930f3d7-72a9-4028-83bb-96682bf4a46f",
+     "name": "Trimmer soch, burun, soqol, olish uchun VGR V-102 qoliplari ",
+     "rel": true
+    },
+    {
+     "id": "61cd1569-1e1c-4da1-be25-c82e4dd506d0",
+     "name": "Cronier CR-308: USB, 3-in-1 soqol, burun va qosh trimmeri",
+     "rel": true
+    },
+    {
+     "id": "2a602a12-8f0e-4417-a114-b6fddb2c8649",
+     "name": "VGR Burun va Quloq Trimmeri: Zanglamas Po'lat, 150 Daq. Ish ",
+     "rel": true
+    },
+    {
+     "id": "8e97527a-3363-4fbf-8e53-1007c993e506",
+     "name": "VGR V-949 Trimmer 5v1: Soqol va Burun, 180 daq Ishlash",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "epilyator yuz uchun",
+   "group": "multi",
+   "gt": 2,
+   "n": 24,
+   "rel5": 1,
+   "p5": 0.2,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 1063,
+   "top5": [
+    {
+     "id": "81c94b64-cfb5-4798-ab03-88bb17d6b8ff",
+     "name": "Fotoepilytor Babyverse SE10, tanava yuz uchun sovitish effek",
+     "rel": true
+    },
+    {
+     "id": "25c7c986-fde3-4ca2-8a28-515a44252cb1",
+     "name": "Ayollar uchun professional epilyator IBORRA BR-2020, Yashil ",
+     "rel": false
+    },
+    {
+     "id": "85a39ac9-2c04-4157-8b30-1514536ebb2a",
+     "name": "Ayollar uchun professional epilyator VGR V-760, Yashil",
+     "rel": false
+    },
+    {
+     "id": "5cc0124a-d2cc-45fa-b138-06a1934baf9b",
+     "name": "MAC Styler MC-7726 Epilator: 2 tezlik, silliqlash va yovvoyi",
+     "rel": false
+    },
+    {
+     "id": "f43ab3bd-d192-4a01-9337-7e1eedbd46a9",
+     "name": "Ayollar uchun professional epilyator VGR V-739, Pushti",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "fen shotka",
+   "group": "multi",
+   "gt": 19,
+   "n": 24,
+   "rel5": 2,
+   "p5": 0.4,
+   "isFallback": false,
+   "didYouMean": "hair dryer shotka",
+   "status": 200,
+   "ms": 885,
+   "top5": [
+    {
+     "id": "f1f617cb-6b32-4f55-ac7b-8fae887cb5c2",
+     "name": "M·A·C STYLER MC-6700 Fen-cho'tka, Keramika qoplama, 1000W, H",
+     "rel": true
+    },
+    {
+     "id": "ff11c3e0-9650-4e59-acb2-de42f13821c2",
+     "name": "J·R·M STYLER JRM-802 Fen-cho'tka, 1200W, 3 harorat rejimi, t",
+     "rel": true
+    },
+    {
+     "id": "67587bb6-1577-4a3c-9a9d-6611a5253bb7",
+     "name": "VGR V-052 Hajm Olash Ma'shasinasi 500mAh USB",
+     "rel": false
+    },
+    {
+     "id": "0d35368b-7f53-4e00-a0b2-b96c2db7d7e9",
+     "name": "ENZO Professional EN-4140 6-in-1 issiq havo soch shashlari t",
+     "rel": false
+    },
+    {
+     "id": "d5c22186-3068-4187-b7a0-65cc6f751b78",
+     "name": "VGR V-166 Professional Hair Clipper - bu professional soch o",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "vgr soqol trimmer",
+   "group": "multi",
+   "gt": 210,
+   "n": 24,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 1505,
+   "top5": [
+    {
+     "id": "83b00b92-fc04-4587-ad82-ff4bac3abeb6",
+     "name": "Soch va soqol olish uchun professional trimmer VGR STEPLESS ",
+     "rel": true
+    },
+    {
+     "id": "7b31f974-d575-4760-a730-5594784396cb",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-977/377",
+     "rel": true
+    },
+    {
+     "id": "5f857204-ad9b-42c5-9eff-cc3fbc5bf95d",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-992-SAR",
+     "rel": true
+    },
+    {
+     "id": "7035f17e-c7c9-4687-846f-5e563f0dc487",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-119, Ko",
+     "rel": true
+    },
+    {
+     "id": "eb710f4c-3287-427e-ac86-d71f46fcf99b",
+     "name": "Soch va soqol olish uchun professional trimmer VGR STEPLESS ",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "oq kofta",
+   "group": "multi",
+   "gt": 0,
+   "n": 24,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": false,
+   "didYouMean": "white kofta",
+   "status": 200,
+   "ms": 1519,
+   "top5": [
+    {
+     "id": "ecb56b0e-6829-4b7c-b367-6cbf71abe43c",
+     "name": "Soch turmaklash uchun ko'p funksiyali stayler VGR V-483, Ko'",
+     "rel": false
+    },
+    {
+     "id": "eb710f4c-3287-427e-ac86-d71f46fcf99b",
+     "name": "Soch va soqol olish uchun professional trimmer VGR STEPLESS ",
+     "rel": false
+    },
+    {
+     "id": "7035f17e-c7c9-4687-846f-5e563f0dc487",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-119, Ko",
+     "rel": false
+    },
+    {
+     "id": "9d0bdb65-3e60-4595-8eaa-d1c7df2e1484",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-640 S3,",
+     "rel": false
+    },
+    {
+     "id": "e13bc25b-a215-4e54-b273-c3d135420861",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-645 S3,",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "maktab uchun sumka",
+   "group": "multi",
+   "gt": 0,
+   "n": 24,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": false,
+   "didYouMean": "maktab uchun bag",
+   "status": 200,
+   "ms": 1718,
+   "top5": [
+    {
+     "id": "e778e537-191c-4a59-b860-472640be5e45",
+     "name": "VGR V-155 bolalар uchun soch makishi, 2 soat ishlash vaqti",
+     "rel": false
+    },
+    {
+     "id": "28828263-2393-4569-afdb-6eba759dc18e",
+     "name": "CRONIER 1265 Bolalar uchun vakuumli soch mashinkasi, keramik",
+     "rel": false
+    },
+    {
+     "id": "f8cc655b-b302-47f5-8223-7604e9ebf11c",
+     "name": "VGR V-153 Bolalar uchun vakumli soch mashinkasi, zanglamaydi",
+     "rel": false
+    },
+    {
+     "id": "421f6159-9ebe-4f7e-ac15-776791d4dc60",
+     "name": "VGR V-155 zanglamas po'latli, vakuumli bolalar uchun soch ma",
+     "rel": false
+    },
+    {
+     "id": "238094fa-0355-4218-ab1a-b61950a0a979",
+     "name": "VGR V-153 Keramika pichoqli bolalar uchun xavfsiz soch to'g'",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "elektro velosiped",
+   "group": "multi",
+   "gt": 0,
+   "n": 24,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 1274,
+   "top5": [
+    {
+     "id": "3950e51c-b481-426d-b494-b7a6ec565927",
+     "name": "VGR 315 akkumulyatorli elektrobritva, 9 nasadka, USB zaryad ",
+     "rel": false
+    },
+    {
+     "id": "74ffc627-2920-438c-932b-8c0e0f99d0be",
+     "name": "CRONIER CR-829 Professional Elektrobritva, USB Zaryadli",
+     "rel": false
+    },
+    {
+     "id": "f45e75b1-1364-4234-a16c-f3f66affb0e7",
+     "name": "VGR V-290 Elektr Soqol Mashinasi: Zero Gapped Ustura va USB ",
+     "rel": false
+    },
+    {
+     "id": "f4e5033f-0e49-49a1-b0c2-80c7e1fe0bb3",
+     "name": "VGR V-305 Professional elektr britvasi, zanglamas po'lat pic",
+     "rel": false
+    },
+    {
+     "id": "1f68a19d-79f2-4cea-94e3-06f3d2cd384d",
+     "name": "CRONIER CR-1248 portativ elektr ustara: Yapon po'lati pichoq",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "bioaqua amino acid",
+   "group": "multi",
+   "gt": 0,
+   "n": 24,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 1033,
+   "top5": [
+    {
+     "id": "dfdd1063-0156-4181-b9e6-7d16f99e4220",
+     "name": "Soch quritish uchun professional fen M.A.C STYLER MC-2211, T",
+     "rel": false
+    },
+    {
+     "id": "8eda2c71-220b-4c8e-8a31-13c45cb6b1a1",
+     "name": "Soch turmaklash uchun ko'p funksiyali stayler M.A.C STYLER S",
+     "rel": false
+    },
+    {
+     "id": "1900879d-4369-4d5e-8d4a-bdc438160341",
+     "name": "M·A·C STYLER MC-5583 Soch Gofresini Tita Platalari va LCD Bo",
+     "rel": false
+    },
+    {
+     "id": "b1da43ec-ce8a-42d3-9502-26389c52c9cd",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-PURPLE, Bin",
+     "rel": false
+    },
+    {
+     "id": "5bc3c896-1d70-4240-9aae-d2e33017732a",
+     "name": "M·A·C STYLER MC-16D Fen-Taroq, 1000W, Keramik Qoplama bilan ",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "aksesuar",
+   "group": "zero",
+   "gt": 4,
+   "n": 1,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 799,
+   "top5": [
+    {
+     "id": "b53739ca-8ace-4c80-84fd-9156834aa112",
+     "name": "VGR V-012 Professional trimmer: Zanglamas po'lat pichoq, 120",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "achki",
+   "group": "zero",
+   "gt": 1,
+   "n": 3,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 816,
+   "top5": [
+    {
+     "id": "c63657a4-eeae-4722-b9e2-76497b996537",
+     "name": "Cronier CR-928 Professional soch bukmashki, 5 harorat, Turma",
+     "rel": false
+    },
+    {
+     "id": "b3c7df35-a6be-4710-952b-4267c6dcfb3a",
+     "name": "VGR V-455 Professional fen: Potent 2400W oqi uzgich",
+     "rel": false
+    },
+    {
+     "id": "d3abe8dd-bb80-492c-8105-2bddc1483c24",
+     "name": "VGR V-402 Professional AC Motorli Soch Quritgich",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "ryugzak",
+   "group": "zero",
+   "gt": 0,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 2593,
+   "top5": []
+  },
+  {
+   "q": "𝐔𝐳𝐮𝐤𝐥𝐚𝐫",
+   "group": "zero",
+   "gt": 0,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 1269,
+   "top5": []
+  },
+  {
+   "q": "acses",
+   "group": "zero",
+   "gt": 4,
+   "n": 2,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 488,
+   "top5": [
+    {
+     "id": "b3c7df35-a6be-4710-952b-4267c6dcfb3a",
+     "name": "VGR V-455 Professional fen: Potent 2400W oqi uzgich",
+     "rel": false
+    },
+    {
+     "id": "d3abe8dd-bb80-492c-8105-2bddc1483c24",
+     "name": "VGR V-402 Professional AC Motorli Soch Quritgich",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "𝐓𝐚𝐫𝐨𝐳𝐢",
+   "group": "zero",
+   "gt": 0,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 649,
+   "top5": []
+  },
+  {
+   "q": "epilyator",
+   "group": "zero",
+   "gt": 82,
+   "n": 24,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 736,
+   "top5": [
+    {
+     "id": "c3eb63e0-5242-4489-a031-c7ec2a403763",
+     "name": "Epilyator ayollar uchun suv otkazmaydigan VGR V-733 6tasi1da",
+     "rel": true
+    },
+    {
+     "id": "3a7c573b-70b6-49b6-9c8e-b98707cf4382",
+     "name": "Epilyator ayollar uchun suv otkazmaydigan VGR V-733 6tasi1da",
+     "rel": true
+    },
+    {
+     "id": "f43ab3bd-d192-4a01-9337-7e1eedbd46a9",
+     "name": "Ayollar uchun professional epilyator VGR V-739, Pushti",
+     "rel": true
+    },
+    {
+     "id": "a39f677d-1003-4291-8cd2-383f3b228dcb",
+     "name": "Ayollar uchun professional epilyator Babyverse SE8, Oq",
+     "rel": true
+    },
+    {
+     "id": "bef4b586-0c1c-44a7-8183-340e69cbe940",
+     "name": "Ayollar uchun professional epilyator M.A.C STYLER MC-7720, Q",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "hijab",
+   "group": "zero",
+   "gt": 0,
+   "n": 19,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": true,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 782,
+   "top5": [
+    {
+     "id": "57e8654e-7237-410a-a36b-fc6adc677b09",
+     "name": "M·A·C STYLER MC-6810 hamyon filtri, 1800W, ionizatsiyali, na",
+     "rel": false
+    },
+    {
+     "id": "c87f3340-674c-4746-9200-08c79030b7af",
+     "name": "M·A·C STYLER MC-016 Elektr Mum Eritgich, Sensorli Wax Heater",
+     "rel": false
+    },
+    {
+     "id": "ff11c3e0-9650-4e59-acb2-de42f13821c2",
+     "name": "J·R·M STYLER JRM-802 Fen-cho'tka, 1200W, 3 harorat rejimi, t",
+     "rel": false
+    },
+    {
+     "id": "f1f617cb-6b32-4f55-ac7b-8fae887cb5c2",
+     "name": "M·A·C STYLER MC-6700 Fen-cho'tka, Keramika qoplama, 1000W, H",
+     "rel": false
+    },
+    {
+     "id": "82a4d2f1-3360-4a75-bb9d-2a0f9a32ff1a",
+     "name": "M·A·C STYLER HC-3082A Keramika soch to'g'rilagich, ionizatsi",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "kõylakk",
+   "group": "zero",
+   "gt": 0,
+   "n": 1,
+   "rel5": 0,
+   "p5": 0,
+   "isFallback": true,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 842,
+   "top5": [
+    {
+     "id": "6a39bd5d-ef5f-4784-bd0d-ce150fa481bf",
+     "name": "VGR V-879 S2 Soch Olish Mashinkasi va Trimmer: Titaniylangan",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "airpos",
+   "group": "zero",
+   "gt": 5,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 677,
+   "top5": []
+  },
+  {
+   "q": "vgr v-097",
+   "group": "golden",
+   "gt": 1,
+   "n": 24,
+   "rel5": 1,
+   "p5": 0.2,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 843,
+   "top5": [
+    {
+     "id": "587d1eac-fc2d-40d8-980f-d223c90acb2b",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-097, Ku",
+     "rel": true
+    },
+    {
+     "id": "99d4ac49-61ed-4f61-809f-156b9d73715b",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-095, Ol",
+     "rel": false
+    },
+    {
+     "id": "6942f47d-c409-4ab9-878b-9fadbbe6a0bc",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-096, Ti",
+     "rel": false
+    },
+    {
+     "id": "926291cd-a655-4fea-a7c9-afbd54080bcb",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-099, Qo",
+     "rel": false
+    },
+    {
+     "id": "a856a83e-7b09-450c-bfdd-1a05cc3f2ef7",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-091, Ol",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "arpods",
+   "group": "golden",
+   "gt": 5,
+   "n": 5,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": "AirPods",
+   "status": 200,
+   "ms": 497,
+   "top5": [
+    {
+     "id": "e86d479e-14fb-4a28-9ba7-819b533a7368",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-TITAN, Tita",
+     "rel": true
+    },
+    {
+     "id": "de2715af-3ca4-4a27-a397-b92b24245277",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX, Ko'k",
+     "rel": true
+    },
+    {
+     "id": "b1da43ec-ce8a-42d3-9502-26389c52c9cd",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-PURPLE, Bin",
+     "rel": true
+    },
+    {
+     "id": "81d85c4e-dd36-4b70-a937-b657bf4cb9be",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-MIDNIGHT, M",
+     "rel": true
+    },
+    {
+     "id": "582d74c8-24ec-44f2-89f7-19ad7dc49666",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-ORANGE, To'",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "airpods max",
+   "group": "golden",
+   "gt": 5,
+   "n": 24,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 719,
+   "top5": [
+    {
+     "id": "de2715af-3ca4-4a27-a397-b92b24245277",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX, Ko'k",
+     "rel": true
+    },
+    {
+     "id": "e86d479e-14fb-4a28-9ba7-819b533a7368",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-TITAN, Tita",
+     "rel": true
+    },
+    {
+     "id": "81d85c4e-dd36-4b70-a937-b657bf4cb9be",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-MIDNIGHT, M",
+     "rel": true
+    },
+    {
+     "id": "582d74c8-24ec-44f2-89f7-19ad7dc49666",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-ORANGE, To'",
+     "rel": true
+    },
+    {
+     "id": "b1da43ec-ce8a-42d3-9502-26389c52c9cd",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-PURPLE, Bin",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "триммер",
+   "group": "golden",
+   "gt": 250,
+   "n": 24,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": "trimmer",
+   "status": 200,
+   "ms": 840,
+   "top5": [
+    {
+     "id": "e930f3d7-72a9-4028-83bb-96682bf4a46f",
+     "name": "Trimmer soch, burun, soqol, olish uchun VGR V-102 qoliplari ",
+     "rel": true
+    },
+    {
+     "id": "83b00b92-fc04-4587-ad82-ff4bac3abeb6",
+     "name": "Soch va soqol olish uchun professional trimmer VGR STEPLESS ",
+     "rel": true
+    },
+    {
+     "id": "7b31f974-d575-4760-a730-5594784396cb",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-977/377",
+     "rel": true
+    },
+    {
+     "id": "5f857204-ad9b-42c5-9eff-cc3fbc5bf95d",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-992-SAR",
+     "rel": true
+    },
+    {
+     "id": "7035f17e-c7c9-4687-846f-5e563f0dc487",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-119, Ko",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "soch olish mashinkasi",
+   "group": "golden",
+   "gt": 250,
+   "n": 24,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": "trimmer",
+   "status": 200,
+   "ms": 838,
+   "top5": [
+    {
+     "id": "e930f3d7-72a9-4028-83bb-96682bf4a46f",
+     "name": "Trimmer soch, burun, soqol, olish uchun VGR V-102 qoliplari ",
+     "rel": true
+    },
+    {
+     "id": "83b00b92-fc04-4587-ad82-ff4bac3abeb6",
+     "name": "Soch va soqol olish uchun professional trimmer VGR STEPLESS ",
+     "rel": true
+    },
+    {
+     "id": "7b31f974-d575-4760-a730-5594784396cb",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-977/377",
+     "rel": true
+    },
+    {
+     "id": "5f857204-ad9b-42c5-9eff-cc3fbc5bf95d",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-992-SAR",
+     "rel": true
+    },
+    {
+     "id": "7035f17e-c7c9-4687-846f-5e563f0dc487",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-119, Ko",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "naushnik",
+   "group": "golden",
+   "gt": 5,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": "earphones",
+   "status": 200,
+   "ms": 598,
+   "top5": []
+  },
+  {
+   "q": "klipper",
+   "group": "golden",
+   "gt": 250,
+   "n": 24,
+   "rel5": 4,
+   "p5": 0.8,
+   "isFallback": false,
+   "didYouMean": "clipper",
+   "status": 200,
+   "ms": 791,
+   "top5": [
+    {
+     "id": "d5c22186-3068-4187-b7a0-65cc6f751b78",
+     "name": "VGR V-166 Professional Hair Clipper - bu professional soch o",
+     "rel": true
+    },
+    {
+     "id": "61db1b84-fe76-4ece-86f7-e0972653083d",
+     "name": "CRONIER CR-362 Soqol malashinkasi: USB, 2 tomonlama pichoqli",
+     "rel": true
+    },
+    {
+     "id": "d7cd89e6-2151-44eb-9d39-065a4ca1d289",
+     "name": "CRONIER CR-9008A 3in1 Akkumulyatorli Trimmer: Soch va Soqol ",
+     "rel": true
+    },
+    {
+     "id": "917c67ac-6645-429d-8a14-94fd657f9848",
+     "name": "Cronier CR-2071 Professional elektr taroq brash, 200W, keram",
+     "rel": false
+    },
+    {
+     "id": "9f0ab511-1976-40b2-a71c-82d9f8608397",
+     "name": "CRONIER CR-9090 / CR-854 Professional Trimmer USB Zaryadkali",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "xyznonexistentqueryqwerty",
+   "group": "golden",
+   "gt": 0,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 709,
+   "top5": []
+  }
+ ],
+ "image": [],
+ "textSummary": {
+  "withInventory": 27,
+  "meanP5": 0.548,
+  "found": 19,
+  "noInventory": 21,
+  "noInventoryClean": 4,
+  "noiseResults": 295
+ }
+}
