@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { adminFrom } from "@/lib/admin-query";
 import { adminSelect } from "@/lib/admin-api";
 import { 
     Search, 
@@ -82,8 +82,7 @@ export default function PricingAdminPage() {
             const from = (page - 1) * itemsPerPage;
             const to = from + itemsPerPage - 1;
 
-            let query = supabase
-                .from("products")
+            let query = adminFrom("products")
                 .select("id, name, image, brand_id, model, price, old_price, cashback_type, cashback_value, comm_seller, comm_manager, comm_tm, cost_price, additional_expenses, is_deleted", { count: "exact" })
                 .eq("is_deleted", false);
 
@@ -203,8 +202,7 @@ export default function PricingAdminPage() {
         setIsExporting(true);
         try {
             // Fetch all products (not just current page) to export
-            const { data, error } = await supabase
-                .from("products")
+            const { data, error } = await adminFrom("products")
                 .select("id, name, brand_id, model, price, old_price, cashback_type, cashback_value, comm_seller, comm_manager, comm_tm, cost_price, additional_expenses")
                 .eq("is_deleted", false);
 

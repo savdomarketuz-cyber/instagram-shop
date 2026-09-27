@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Search, ChevronRight, CheckCircle, Truck, Clock, XCircle, MoreVertical, MapPin, Phone, Package, User, Globe, X, Info, Tag, Layers, Hash, ShieldCheck } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { adminFrom } from "@/lib/admin-query";
 import { normalizeOrderStatus, getStatusLabel, ADMIN_STATUS_TABS } from "@/lib/order-status";
 import Image from "next/image";
 
@@ -87,8 +87,7 @@ export default function AdminOrders() {
     const fetchFullProduct = async (productId: string) => {
         setProductLoading(true);
         try {
-            const { data, error } = await supabase
-                .from("products")
+            const { data, error } = await adminFrom("products")
                 .select("*")
                 .eq("id", productId)
                 .single();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { supabase } from "@/lib/supabase";
+import { adminFrom } from "@/lib/admin-query";
 import { adminApi } from "@/lib/admin-api";
 import { Timer, ToggleLeft, ToggleRight, Save, CheckCircle2, Loader2, Search, X } from "lucide-react";
 
@@ -172,8 +172,7 @@ export default function PromoCountdownAdmin() {
 
                     // Agar target_type manual va tanlangan mahsulotlar bo'lsa, faqat ularning nomlarini olib kelamiz
                     if (v.target_type === "manual" && Array.isArray(v.target_ids) && v.target_ids.length > 0) {
-                        const { data } = await supabase
-                            .from("products")
+                        const { data } = await adminFrom("products")
                             .select("id, name")
                             .in("id", v.target_ids);
                         if (isMounted && data) {
@@ -200,7 +199,7 @@ export default function PromoCountdownAdmin() {
 
         const timer = setTimeout(async () => {
             try {
-                let query = supabase.from("products").select("id, name").eq("is_deleted", false);
+                let query = adminFrom("products").select("id, name").eq("is_deleted", false);
                 if (search) {
                     query = query.ilike("name", `%${search}%`).limit(20);
                 } else {

@@ -4,6 +4,7 @@ import { useStore } from "@/store/store";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
+import { adminFrom } from "@/lib/admin-query";
 import { mapProduct } from "@/lib/mappers";
 import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
 import {
@@ -729,8 +730,7 @@ function AdminProducts() {
             const from = (page - 1) * itemsPerPage;
             const to = from + itemsPerPage - 1;
 
-            let query = supabase
-                .from("products")
+            let query = adminFrom("products")
                 .select("*", { count: "exact" });
 
             // Tab filter (Trash vs Active)
@@ -1385,7 +1385,7 @@ function AdminProducts() {
         if (!window.confirm("Barcha mahsulotlarni qidiruv tizimlariga qayta yubormoqchimisiz?")) return;
         setIsActionLoading(true);
         try {
-            const { data } = await supabase.from("products").select("id").eq("is_deleted", false);
+            const { data } = await adminFrom("products").select("id").eq("is_deleted", false);
             if (!data) return;
             const ids = data.map(p => p.id);
             // Process in chunks of 100 to avoid timeout

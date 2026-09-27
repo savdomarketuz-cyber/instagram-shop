@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { adminFrom } from "@/lib/admin-query";
 import { adminApi } from "@/lib/admin-api";
 import { Plus, Trash2, Save, Loader2, CheckCircle2, Eye, EyeOff, Image as ImageIcon, Music, Video } from "lucide-react";
 import Image from "next/image";
@@ -64,7 +65,7 @@ function StoryExtras({
         const term = q.trim();
         const timer = setTimeout(async () => {
             try {
-                let query = supabase.from("products").select("id, name").eq("is_deleted", false);
+                let query = adminFrom("products").select("id, name").eq("is_deleted", false);
                 if (term) {
                     query = query.ilike("name", `%${term}%`).limit(30);
                 } else {
@@ -177,8 +178,7 @@ export default function AdminStoriesPage() {
                     .flatMap(s => s.cta_ids || [])
             ));
             if (targetIds.length > 0) {
-                const { data: pData } = await supabase
-                    .from("products")
+                const { data: pData } = await adminFrom("products")
                     .select("id, name")
                     .in("id", targetIds);
                 if (pData) {

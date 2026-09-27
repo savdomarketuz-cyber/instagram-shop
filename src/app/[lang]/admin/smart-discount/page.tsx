@@ -5,7 +5,7 @@ import {
     Loader2, ToggleLeft, ToggleRight, Save, History,
     Search, X, Ban, Settings2, UserPlus, Trash2, Infinity as InfinityIcon, Bot, Hand
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { adminFrom } from "@/lib/admin-query";
 import { adminApi } from "@/lib/admin-api";
 
 type Config = {
@@ -76,8 +76,7 @@ export default function AdminSmartDiscountPage() {
 
         const timer = setTimeout(async () => {
             try {
-                const { data } = await supabase
-                    .from("products")
+                const { data } = await adminFrom("products")
                     .select("id, name")
                     .eq("is_deleted", false)
                     .ilike("name", `%${term}%`)
@@ -127,8 +126,7 @@ export default function AdminSmartDiscountPage() {
             // Faqat allaqachon istisno qilingan mahsulotlarning nomlarini olib kelamiz
             const excluded = json?.config?.excluded_product_ids || [];
             if (Array.isArray(excluded) && excluded.length > 0) {
-                const { data: prods } = await supabase
-                    .from("products")
+                const { data: prods } = await adminFrom("products")
                     .select("id, name")
                     .in("id", excluded);
                 if (prods) setProducts(prods);
