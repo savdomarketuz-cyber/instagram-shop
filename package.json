@@ -7,6 +7,7 @@
         "build": "next build",
         "start": "next start",
         "lint": "next lint",
+        "typecheck": "node --max-old-space-size=6144 ./node_modules/typescript/bin/tsc --noEmit",
         "embed": "node scripts/embed-products.mjs",
         "embed:force": "node scripts/embed-products.mjs --force",
         "test:health": "node scripts/health-check.mjs",
