@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
     const { data: user, error } = await db
         .from("users")
-        .select("id, phone, name, username, email, is_admin, created_at, last_login, affiliate_code, affiliate_role, affiliate_agreed, real_balance, affiliate_pin")
+        .select("id, phone, name, username, is_admin, created_at, last_login, affiliate_code, affiliate_role, affiliate_agreed, real_balance, affiliate_pin")
         .eq("phone", phone)
         .maybeSingle();
     if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
