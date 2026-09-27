@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getVapidKeys } from "@/lib/secrets";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { verifyJwt } from "@/lib/jwt-utils";
 
@@ -17,8 +18,7 @@ async function verifyAdmin(req: NextRequest) {
 export async function POST(req: NextRequest) {
     if (!(await verifyAdmin(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const pubKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "BDjNKYY_cp8NDYQsowXfhIlfikWZmhCDTvFJOWubcNwvOW-LPnBH70sITFARnWBxHOOF-xuT3d3kuy9lkwzQKs8";
-    const privKey = process.env.VAPID_PRIVATE_KEY || "VFjEhX16DW3x3g8NyNIdbg9M_WJQgMPopMjTP9vKdew";
+    const { publicKey: pubKey, privateKey: privKey } = getVapidKeys(); // yo'q bo'lsa -> xato (500)
 
     if (!pubKey || !privKey) {
         return NextResponse.json({ error: "VAPID kalitlari o'rnatilmagan (Server xatosi)" }, { status: 500 });

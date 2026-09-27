@@ -4,6 +4,7 @@ import { verifyJwt } from "@/lib/jwt-utils";
 import { revalidatePath } from "next/cache";
 import { sendOrderStatusNotification } from "@/lib/telegram";
 import { getProductSlug } from "@/lib/slugify";
+import { getAdminActor, logOrderStatusChange } from "@/lib/admin-audit";
 
 function toArray(value: any): any[] {
     if (!value) return [];
@@ -137,6 +138,16 @@ export async function POST(req: NextRequest) {
         else if (action === "update") {
             if (!matchConfig && !inConfig) return NextResponse.json({ error: "Match config required for update" }, { status: 400 });
             
+            // Buyurtma holati o'zgarsa — jurnal uchun eski holatlar oldindan olinadi
+            let ordersBefore: { id: string; status: string | null }[] = [];
+            if (table === "orders" && payload?.status) {
+                let beforeQuery: any = supabaseAdmin.from("orders").select("id, status");
+                if (matchConfig) beforeQuery = beforeQuery.eq(matchConfig.column, matchConfig.value);
+                if (inConfig) beforeQuery = beforeQuery.in(inConfig.column, inConfig.values);
+                const { data } = await beforeQuery;
+                ordersBefore = data || [];
+            }
+
             let updateQuery: any = query.update(payload);
             
             if (matchConfig) {
@@ -150,7 +161,14 @@ export async function POST(req: NextRequest) {
 
             const { data, error } = await updateQuery.select();
             if (error) throw error;
-            
+
+            if (ordersBefore.length) {
+                const actor = await getAdminActor(req);
+                for (const o of ordersBefore) {
+                    await logOrderStatusChange({ actor, orderId: o.id, oldStatus: o.status, newStatus: payload.status, source: "admin/crud", req });
+                }
+            }
+
             performSmartRevalidation(table, [...productSnapshot, ...toArray(data)]);
 
             // Mijozga Telegram orqali xabar yuborish (Buyurtma holati o'zgarganda)

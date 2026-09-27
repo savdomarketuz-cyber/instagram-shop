@@ -47,7 +47,6 @@ import {
     Copy,
     Link as LinkIcon
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { translations } from "@/lib/translations";
 import { mapUser, mapComment } from "@/lib/mappers";
 import Image from "next/image";
@@ -552,25 +551,15 @@ function ReviewsView({ user, language, showToast, onBack }: any) {
     const fetchReviewsData = async () => {
         if (!user) return;
         setLoading(true);
-        const myId = user.id || user.phone;
-        
-        // 1. Fetch all orders (delivered)
-        const { data: oData } = await supabase
-            .from("orders")
-            .select("*")
-            .eq("user_phone", user.phone)
-            .in("status", ["Yetkazildi", "Доставлено", "yetkazib berildi ✅"])
-            .order("created_at", { ascending: false });
-        
-        // 2. Fetch all user comments
-        const { data: cData } = await supabase
-            .from("comments")
-            .select("*, products(*)")
-            .or(`user_id.eq.${myId},user_phone.eq.${user.phone}`)
-            .order("created_at", { ascending: false });
+        // Yetkazilgan buyurtmalar va o'z sharhlarim — server orqali (sessiya bo'yicha)
+        const getJson = (url: string) => fetch(url, { cache: "no-store" }).then(r => r.json()).catch(() => null);
+        const [oRes, cRes] = await Promise.all([
+            getJson("/api/me/orders?delivered=1"),
+            getJson("/api/me/comments"),
+        ]);
 
-        if (oData) setOrders(oData);
-        if (cData) setComments(cData);
+        if (oRes?.success) setOrders(oRes.orders || []);
+        if (cRes?.success) setComments(cRes.comments || []);
         setLoading(false);
     };
 
@@ -881,12 +870,9 @@ function ReturnsView({ user, t, language, onBack }: any) {
 
     useEffect(() => {
         const fetchOrders = async () => {
-            const { data } = await supabase
-                .from("orders")
-                .select("*")
-                .eq("user_phone", user.phone)
-                .eq("status", "Yetkazildi")
-                .order("created_at", { ascending: false });
+            // Yetkazilgan buyurtmalar — server orqali (sessiya bo'yicha)
+            const res = await fetch("/api/me/orders?delivered=1", { cache: "no-store" }).then(r => r.json()).catch(() => null);
+            const data: any[] | null = res?.success ? res.orders : null;
 
             if (data) {
                 const now = new Date().getTime();
@@ -1069,8 +1055,9 @@ function PromoCodesView({ t, language, onBack }: any) {
 
     useEffect(() => {
         const fetchPromos = async () => {
-            const { data } = await supabase.from("promo_codes").select("*").eq("active", true).order("created_at", { ascending: false });
-            if (data) setPromos(data.filter(p => !p.expires_at || new Date(p.expires_at).getTime() > new Date().getTime()));
+            // Faol promo-kodlar — server orqali (promo_codes anon'ga yopiq)
+            const res = await fetch("/api/promo-codes/active", { cache: "no-store" }).then(r => r.json()).catch(() => null);
+            if (res?.success) setPromos(res.promos || []);
             setLoading(false);
         };
         fetchPromos();

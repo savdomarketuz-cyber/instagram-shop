@@ -1,4 +1,5 @@
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "BDjNKYY_cp8NDYQsowXfhIlfikWZmhCDTvFJOWubcNwvOW-LPnBH70sITFARnWBxHOOF-xuT3d3kuy9lkwzQKs8";
+// Faqat muhit o'zgaruvchisidan (qattiq yozilgan kalit yo'q); yo'q bo'lsa push obunasi o'tkazib yuboriladi
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 
 function urlBase64ToUint8Array(base64String: string) {
     const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -42,6 +43,7 @@ export async function subscribeToPushNotifications(userPhone?: string) {
         let subscription = await registration.pushManager.getSubscription();
 
         if (!subscription) {
+            if (!VAPID_PUBLIC_KEY) return null;
             const subscribeOptions = {
                 userVisibleOnly: true,
                 applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)

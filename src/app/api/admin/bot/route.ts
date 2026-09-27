@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logOrderStatusChange } from "@/lib/admin-audit";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { sendSupportReplyToCustomer, sendOrderStatusNotification } from "@/lib/telegram";
 import {
@@ -352,10 +353,14 @@ export async function POST(req: Request) {
                 else if (newStatus === "yetkazildi") dbStatus = "Yetkazildi";
                 else if (newStatus === "bekor_qilindi") dbStatus = "Bekor qilingan";
 
+                const { data: before } = await supabaseAdmin.from("orders").select("status").eq("id", orderId).maybeSingle();
                 await supabaseAdmin
                     .from("orders")
                     .update({ status: dbStatus, updated_at: new Date().toISOString() })
                     .eq("id", orderId);
+                await logOrderStatusChange({
+                    actor: `telegram:${chatId}`, orderId, oldStatus: before?.status, newStatus: dbStatus, source: "admin/bot",
+                });
 
                 // Mijozga ham avtomatik Telegram bildirishnoma yuborish
                 await sendOrderStatusNotification(orderId, newStatus);

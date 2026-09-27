@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getVapidKeys } from "@/lib/secrets";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { verifyJwt } from "@/lib/jwt-utils";
 import { sendCartReminder } from "@/lib/telegram";
@@ -29,8 +30,7 @@ async function sendInAppMessage(phone: string, text: string) {
 
 // Foydalanuvchining qurilmasiga web-push (PWA) yuborish
 async function sendWebPushToPhone(phone: string, title: string, body: string, url: string) {
-    const pubKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "BDjNKYY_cp8NDYQsowXfhIlfikWZmhCDTvFJOWubcNwvOW-LPnBH70sITFARnWBxHOOF-xuT3d3kuy9lkwzQKs8";
-    const privKey = process.env.VAPID_PRIVATE_KEY || "VFjEhX16DW3x3g8NyNIdbg9M_WJQgMPopMjTP9vKdew";
+    const { publicKey: pubKey, privateKey: privKey } = getVapidKeys(); // yo'q bo'lsa -> xato (500)
     if (!pubKey || !privKey || !phone) return;
 
     try {

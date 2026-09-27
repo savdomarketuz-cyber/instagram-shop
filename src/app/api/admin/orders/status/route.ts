@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { ClickAPI } from "@/lib/click";
+import { getAdminActor, logOrderStatusChange } from "@/lib/admin-audit";
 
 // Auth: middleware.ts barcha /api/admin/* ni himoya qiladi (admin_token tekshiradi).
 
@@ -43,7 +44,8 @@ export async function POST(req: Request) {
             }
         }
 
-        // 2. Update order status
+        // 2. Update order status (eski holat jurnal uchun oldin olinadi)
+        const { data: before } = await supabaseAdmin.from("orders").select("status").eq("id", orderId).maybeSingle();
         const { data: order, error } = await supabaseAdmin
             .from("orders")
             .update(updateData)
@@ -52,6 +54,11 @@ export async function POST(req: Request) {
             .single();
 
         if (error) throw error;
+
+        await logOrderStatusChange({
+            actor: await getAdminActor(req as any), orderId, oldStatus: before?.status, newStatus: status,
+            source: "admin/orders/status", req,
+        });
 
         // 3. Handle Affiliate Rewards
         if (status === "Yetkazildi") {

@@ -109,37 +109,7 @@ export async function POST(req: Request) {
             });
         }
 
-        // 3. Check for Legacy Affiliate Promo Code (Referral)
-        const { data: affiliateUser } = await supabaseAdmin
-            .from("users")
-            .select("phone, name")
-            .eq("affiliate_code", normalizedCode)
-            .single();
-
-        if (affiliateUser) {
-            // ANTI-FRAUD: Cannot use your own referral code
-            if (userPhone && userPhone === affiliateUser.phone) {
-                return NextResponse.json({ success: false, error: "O'z referal kodingizdan foydalana olmaysiz" });
-            }
-
-            // Get affiliate settings
-            const { data: settingsRow } = await supabaseAdmin
-                .from("site_settings")
-                .select("value")
-                .eq("key", "affiliate_settings")
-                .single();
-
-            const settings = settingsRow?.value || { buyer_discount: 10000 };
-            const discount = settings.buyer_discount || 0;
-
-            return NextResponse.json({ 
-                success: true, 
-                discount, 
-                code: normalizedCode, 
-                isAffiliate: true,
-                affiliateName: affiliateUser.name 
-            });
-        }
+        // 3. Referal kodlar (users.affiliate_code) o'chirilgan — chegirma ham, hamkor mukofoti ham berilmaydi.
 
         return NextResponse.json({ success: false, error: "Bunday promo kod mavjud emas" });
     } catch (error: any) {

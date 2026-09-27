@@ -103,13 +103,26 @@ export async function POST(req: NextRequest) {
             requestedStatus && ["awaiting_payment", "pending"].includes(normalizeOrderStatus(requestedStatus))
                 ? requestedStatus
                 : "To'lov kutilmoqda";
+        // Referal kodlar (users.affiliate_code) o'chirilgan: place_order RPC ular uchun chegirma beradi
+        // va hamkorga mukofot yozadi — shuning uchun bunday kod RPC'ga UZATILMAYDI (do'kon promo-kodi
+        // bo'lmasa). Hamkorlik promo-kodlari (affiliate_promo_codes) quyida alohida, is_active bilan.
+        let promoForRpc: string | null = validatedData.promoCode?.trim() || null;
+        if (promoForRpc) {
+            const variants = Array.from(new Set([promoForRpc, promoForRpc.toUpperCase()]));
+            const [{ data: storePromo }, { data: referrer }] = await Promise.all([
+                supabaseAdmin.from("promo_codes").select("id").in("code", variants).limit(1).maybeSingle(),
+                supabaseAdmin.from("users").select("id").in("affiliate_code", variants).limit(1).maybeSingle(),
+            ]);
+            if (referrer && !storePromo) promoForRpc = null;
+        }
+
         const { data, error } = await supabaseAdmin.rpc('place_order', {
             p_user_phone: validatedData.userPhone,
             p_items: validatedData.items,
             p_address: validatedData.address,
             p_coords: validatedData.coords || null,
             p_status: initialStatus,
-            p_promo_code: validatedData.promoCode || null,
+            p_promo_code: promoForRpc,
             p_wallet_usage: validatedData.walletUsage || 0
         });
 

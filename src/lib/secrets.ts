@@ -28,6 +28,15 @@ export function getAdminSecret(): string {
     return value;
 }
 
+/** Web Push (VAPID) kalit juftligi — server (admin push yuborish) uchun. */
+export function getVapidKeys(): { publicKey: string; privateKey: string } {
+    const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim();
+    const privateKey = process.env.VAPID_PRIVATE_KEY?.trim();
+    if (!publicKey) throw new MissingSecretError("NEXT_PUBLIC_VAPID_PUBLIC_KEY");
+    if (!privateKey) throw new MissingSecretError("VAPID_PRIVATE_KEY");
+    return { publicKey, privateKey };
+}
+
 /**
  * Parol xeshi tuzi — ADMIN_SECRET'ning XOM (qirqilmagan) qiymati, avvalgidek.
  * O'zgartirilsa, mavjud parollar mos kelmay qoladi.
