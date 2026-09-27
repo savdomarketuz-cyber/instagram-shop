@@ -58,6 +58,8 @@ const nextConfig = {
     poweredByHeader: false,
     compress: true,
     typescript: {
+        // Tekshiruv npm run typecheck'da — build'dan oldin, alohida jarayonda ("build" skriptiga qarang).
+        // Next ichidagi ikkinchi tekshiruv o'chiq: xotirani ikki marta yemasin.
         ignoreBuildErrors: true,
     },
     eslint: {
