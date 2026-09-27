@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 
 export async function GET(req: Request) {
     // Determine CRON security (Verified via headers from Vercel)
+    // Service role bilan ishlaydi — CRON_SECRET majburiy (yo'q bo'lsa hech kim ishga tushira olmaydi)
+    const cronSecret = process.env.CRON_SECRET?.trim();
+    if (!cronSecret) {
+        return NextResponse.json({ error: "Server configuration error: CRON_SECRET is not set" }, { status: 500 });
+    }
     const authHeader = req.headers.get('authorization');
-    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (authHeader !== `Bearer ${cronSecret}`) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { checkRateLimit } from "@/lib/rate-limiter";
+import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 
 export async function POST(req: NextRequest) {
     try {
+        // Server service role bilan yozadi (anon EXECUTE yopilgan) — shuning uchun IP bo'yicha chegara
+        const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+        if (!(await checkRateLimit(ip, 60, 60, 'search-click'))) {
+            return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+        }
+
         const { productId, query } = await req.json();
 
         if (!productId || !query || query.trim().length < 2) {
