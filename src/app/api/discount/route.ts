@@ -7,6 +7,7 @@ import {
     type DiscountConfig,
     type IntentSignals,
 } from "@/lib/smart-discount";
+import { getUserJwtSecret } from "@/lib/secrets";
 
 /**
  * Smart chegirma — mijoz tomoni (#41).
@@ -22,7 +23,7 @@ import {
 async function getUserPhone(req: NextRequest): Promise<string | null> {
     const token = req.cookies.get("user_token")?.value;
     if (!token) return null;
-    const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+    const JWT_SECRET = getUserJwtSecret();
     const payload = await verifyJwt(token, JWT_SECRET);
     return payload?.sub || null;
 }

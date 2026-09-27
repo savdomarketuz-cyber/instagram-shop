@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { getUserJwtSecret, getAdminSecret } from "@/lib/secrets";
 
 export const maxDuration = 60; // Vercel: max 60s on Hobby, 300s on Pro
 
@@ -43,8 +44,8 @@ export async function POST(req: NextRequest) {
         // 🛡 AUTH: Only authenticated users or admins can upload
         const adminToken = req.cookies.get('admin_token')?.value;
         const userToken = req.cookies.get('user_token')?.value;
-        const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim() || "default-secret";
-        const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+        const ADMIN_SECRET = getAdminSecret();
+        const JWT_SECRET = getUserJwtSecret();
 
         let payload = null;
         if (adminToken) {
@@ -198,7 +199,7 @@ export async function DELETE(req: NextRequest) {
     try {
         // 🔒 SECURE AUTH CHECK: Cryptographically verify Admin Token
         const adminToken = req.cookies.get('admin_token')?.value;
-        const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim() || "default-secret";
+        const ADMIN_SECRET = getAdminSecret();
         
         const payload = adminToken ? await verifyJwt(adminToken, ADMIN_SECRET) : null;
         

@@ -114,15 +114,16 @@ function AccountContent() {
 
         const fetchUserData = async () => {
             try {
-                const [userRes, walletRes, cashbackRes, ordersRes] = await Promise.all([
-                    supabase.from("users").select("*").eq("phone", user.phone).single(),
+                // Profil, balans va buyurtmalar xulosasi — server orqali (sessiya bo'yicha, faqat o'zimniki)
+                const getJson = (url: string) => fetch(url, { cache: "no-store" }).then(r => r.json()).catch(() => null);
+                const [userRes, walletRes, summary] = await Promise.all([
+                    getJson("/api/me/profile").then(j => ({ data: j?.success ? j.user : null })),
                     // Hamyon balansi — server orqali (faqat o'z hamyoni)
                     fetch("/api/me/wallet?summary=1", { cache: "no-store" })
                         .then(r => r.json())
                         .then(j => ({ data: j?.wallet ? { balance: j.wallet.balance } : null }))
                         .catch(() => ({ data: null })),
-                    supabase.from("orders").select("potential_cashback").eq("user_phone", user.phone).neq("status", "Yetkazildi").neq("status", "Bekor qilingan").gt("potential_cashback", 0),
-                    supabase.from("orders").select("id").eq("user_phone", user.phone)
+                    getJson("/api/me/orders-summary"),
                 ]);
 
                 if (userRes.data) {
@@ -136,11 +137,10 @@ function AccountContent() {
 
                 if (walletRes.data) setBalance(walletRes.data.balance);
 
-                if (cashbackRes.data) {
-                    const total = cashbackRes.data.reduce((sum, o) => sum + Number(o.potential_cashback), 0);
-                    setPendingCashback(total);
+                if (summary?.success) {
+                    setPendingCashback(Number(summary.pendingCashback) || 0);
+                    setOrderCount(Number(summary.orderCount) || 0);
                 }
-                if (ordersRes.data) setOrderCount(ordersRes.data.length);
             } catch (e) {
                 console.error("Error fetching account data:", e);
             } finally {

@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { getPasswordSalt } from "@/lib/secrets";
 
 /**
  * Parolni hash qilish (SHA-256)
@@ -6,7 +7,7 @@ import crypto from "crypto";
  * Note: This function uses Node.js 'crypto' and should only be used in Node.js environments.
  */
 export function hashPassword(password: string): string {
-    const salt = process.env.ADMIN_SECRET || "velari_fallback_shared_salt_2024";
+    const salt = getPasswordSalt();
     return crypto.createHash("sha256").update(password + salt).digest("hex");
 }
 

@@ -16,6 +16,7 @@ export const dynamic = "force-dynamic";
 
 const MAX_TEXT = 4000;
 const MAX_URL = 1000;
+const MAX_MESSAGES = 500;
 
 /** Sayt ishlatadigan xona ID formulasi: ikkala telefon raqamlari, saralangan, "_" bilan. */
 function roomIdFor(a: string, b: string): string {
@@ -55,22 +56,29 @@ export async function GET(req: NextRequest) {
     const roomId = roomIdFor(me, target);
     const { data: chat } = await db
         .from("private_chats")
-        .select("id, participants, unread_count")
+        .select("id, participants, unread_count, cleared_at")
         .eq("id", roomId)
         .maybeSingle();
     if (chat && !isParticipant(chat, myDigits)) {
         return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
     }
 
+    // "Faqat mendan": yashirilgan xabarlar va men tozalagan vaqtgacha bo'lganlar ko'rinmaydi
+    const clearedAt: string | undefined = chat?.cleared_at?.[myDigits];
+    const hasSince = Boolean(since && !Number.isNaN(Date.parse(since)));
     let query = db
         .from("private_messages")
         .select("id, chat_id, text, image, video, sender_id, created_at")
         .eq("chat_id", roomId)
-        .order("created_at", { ascending: true })
-        .limit(500);
-    if (since && !Number.isNaN(Date.parse(since))) query = query.gt("created_at", since);
-    const { data: messages, error } = await query;
+        .not("hidden_for", "cs", `{${myDigits}}`)
+        // Polling: since'dan keyingilar (eskidan yangiga); to'liq yuklash: 500 ta ENG YANGI
+        .order("created_at", { ascending: hasSince })
+        .limit(MAX_MESSAGES);
+    if (hasSince) query = query.gt("created_at", since!);
+    if (clearedAt) query = query.gt("created_at", clearedAt);
+    const { data: rows, error } = await query;
     if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const messages = hasSince ? rows || [] : (rows || []).slice().reverse();
 
     // Suhbatdoshning faqat ommaviy ma'lumotlari (to'liq poll'da)
     let targetInfo: any = undefined;
@@ -172,30 +180,50 @@ export async function DELETE(req: NextRequest) {
     const myDigits = phoneDigits(me);
     const params = req.nextUrl.searchParams;
 
+    // scope=me — faqat mendan (suhbatdoshda qoladi); scope=all (yoki eski all=1) — ikkala tarafdan
+    const scope = params.get("scope") === "me" ? "me" : (params.get("scope") === "all" || params.get("all") === "1") ? "all" : null;
+
     const msgId = params.get("id");
     if (msgId) {
-        const { data: msg } = await db.from("private_messages").select("id, chat_id, sender_id").eq("id", msgId).maybeSingle();
+        const { data: msg } = await db.from("private_messages").select("id, chat_id, sender_id, hidden_for").eq("id", msgId).maybeSingle();
         if (!msg) return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
         const { data: chat } = await db.from("private_chats").select("id, participants").eq("id", msg.chat_id).maybeSingle();
         const inChat = chat ? isParticipant(chat, myDigits) : msg.chat_id.split("_").includes(myDigits);
-        if (!inChat || phoneDigits(msg.sender_id) !== myDigits) {
+        if (!inChat) return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+
+        if (scope === "me") {
+            const hidden = Array.from(new Set([...(msg.hidden_for || []), myDigits]));
+            const { error } = await db.from("private_messages").update({ hidden_for: hidden }).eq("id", msgId);
+            if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+            return NextResponse.json({ success: true, scope });
+        }
+        // Ikkala tarafdan — faqat o'z xabarini
+        if (phoneDigits(msg.sender_id) !== myDigits) {
             return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
         }
         const { error } = await db.from("private_messages").delete().eq("id", msgId);
         if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, scope: "all" });
     }
 
     const target = params.get("with");
-    if (target && params.get("all") === "1") {
+    if (target && scope) {
         const roomId = roomIdFor(me, target);
-        const { data: chat } = await db.from("private_chats").select("id, participants").eq("id", roomId).maybeSingle();
+        const { data: chat } = await db.from("private_chats").select("id, participants, cleared_at").eq("id", roomId).maybeSingle();
         if (chat && !isParticipant(chat, myDigits)) return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+
+        if (scope === "me") {
+            if (!chat) return NextResponse.json({ success: true, scope });
+            const cleared = { ...(chat.cleared_at || {}), [myDigits]: new Date().toISOString() };
+            const { error } = await db.from("private_chats").update({ cleared_at: cleared }).eq("id", roomId);
+            if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+            return NextResponse.json({ success: true, scope });
+        }
         const { error: e1 } = await db.from("private_messages").delete().eq("chat_id", roomId);
         const { error: e2 } = await db.from("private_chats").delete().eq("id", roomId);
         if (e1 || e2) return NextResponse.json({ success: false, error: (e1 || e2)!.message }, { status: 500 });
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, scope: "all" });
     }
 
-    return NextResponse.json({ success: false, error: "id or with&all=1 is required" }, { status: 400 });
+    return NextResponse.json({ success: false, error: "id&scope or with&scope is required" }, { status: 400 });
 }

@@ -4,6 +4,7 @@ import { verifyJwt } from "@/lib/jwt-utils";
 import crypto from "crypto";
 import { hashPassword } from "@/lib/auth-utils";
 import { sendPinResetCode, sendMemberVerificationCode } from "@/lib/telegram";
+import { getUserJwtSecret } from "@/lib/secrets";
 
 function hashPin(pin: string, salt?: string): string {
     const s = salt || crypto.randomBytes(16).toString('hex');
@@ -25,7 +26,7 @@ async function getUserFromToken(req: NextRequest) {
     const token = req.cookies.get("user_token")?.value;
     if (!token) return null;
     
-    const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+    const JWT_SECRET = getUserJwtSecret();
     const payload = await verifyJwt(token, JWT_SECRET);
     if (!payload || !payload.sub) return null;
     

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { createJwt } from "@/lib/jwt-utils";
 import { PUBLIC_PRODUCT_COLUMNS } from "@/lib/public-product";
+import { getUserJwtSecret } from "@/lib/secrets";
 
 /**
  * Telegram bot bergan bir martalik token orqali saytga avtomatik kirish.
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
         }
 
         // 4. Sessiya tokeni (oddiy login bilan bir xil)
-        const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+        const JWT_SECRET = getUserJwtSecret();
         const jwt = await createJwt({
             sub: user.phone,
             role: "user",

@@ -174,25 +174,24 @@ export default function P2PChatPage() {
         }
     };
 
+    // "Faqat mendan" (scope=me) — menda yashiriladi, suhbatdoshda qoladi;
+    // "Ikkala tarafdan" (scope=all) — butunlay o'chiriladi (faqat o'z xabarini)
     const handleDeleteMessage = async (msgId: string, forEveryone: boolean) => {
         try {
-            if (forEveryone) {
-                // Server faqat o'z xabarini o'chirishga ruxsat beradi
-                const res = await fetch(`/api/me/messages?id=${encodeURIComponent(msgId)}`, { method: "DELETE" });
-                if (res.ok) setMessages(prev => prev.filter(m => m.id !== msgId));
-            } else {
-                setMessages(prev => prev.filter(m => m.id !== msgId));
-            }
+            const scope = forEveryone ? "all" : "me";
+            const res = await fetch(`/api/me/messages?id=${encodeURIComponent(msgId)}&scope=${scope}`, { method: "DELETE" });
+            if (res.ok) setMessages(prev => prev.filter(m => m.id !== msgId));
         } catch (error) {
             console.error("Error deleting message:", error);
         }
     };
 
-    const handleDeleteChat = async () => {
-        const confirm = window.confirm("Haqiqatdan ham ushbu suhbatni butunlay o'chirmoqchimisiz?");
-        if (!confirm) return;
+    const [showDeleteChat, setShowDeleteChat] = useState(false);
+
+    const handleDeleteChat = async (scope: "me" | "all") => {
+        setShowDeleteChat(false);
         try {
-            const res = await fetch(`/api/me/messages?with=${encodeURIComponent(targetPhone)}&all=1`, { method: "DELETE" });
+            const res = await fetch(`/api/me/messages?with=${encodeURIComponent(targetPhone)}&scope=${scope}`, { method: "DELETE" });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             router.push(`/${language}/messages`);
         } catch (error) {
@@ -254,7 +253,7 @@ export default function P2PChatPage() {
                         <button
                             onClick={() => {
                                 videoPreWarmer.triggerHaptic("medium");
-                                handleDeleteChat();
+                                setShowDeleteChat(true);
                             }}
                             className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors"
                         >
@@ -263,6 +262,33 @@ export default function P2PChatPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Suhbatni o'chirish — ikki tanlov */}
+            {showDeleteChat && (
+                <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/30 backdrop-blur-sm p-4" onClick={() => setShowDeleteChat(false)}>
+                    <div className="w-full max-w-[380px] bg-white rounded-3xl shadow-2xl p-5" onClick={(e) => e.stopPropagation()}>
+                        <p className="text-base font-bold text-[#111612] mb-1">
+                            {language === 'uz' ? "Suhbatni o'chirish" : "Удалить чат"}
+                        </p>
+                        <p className="text-xs text-[#737D75] mb-4">
+                            {language === 'uz'
+                                ? "“Faqat mendan” — suhbat sizda tozalanadi, suhbatdoshda qoladi. “Ikkala tarafdan” — hammasi butunlay o'chiriladi."
+                                : "«Только у меня» — чат очистится у вас, у собеседника останется. «У обоих» — всё будет удалено полностью."}
+                        </p>
+                        <div className="flex flex-col gap-2">
+                            <button onClick={() => handleDeleteChat("me")} className="w-full py-3 rounded-2xl text-sm font-semibold bg-[#F5F7F5] text-[#111612] active:scale-[0.98] transition-transform">
+                                {language === 'uz' ? "Faqat mendan" : "Только у меня"}
+                            </button>
+                            <button onClick={() => handleDeleteChat("all")} className="w-full py-3 rounded-2xl text-sm font-semibold bg-rose-50 text-rose-600 active:scale-[0.98] transition-transform">
+                                {language === 'uz' ? "Ikkala tarafdan" : "У обоих"}
+                            </button>
+                            <button onClick={() => setShowDeleteChat(false)} className="w-full py-2.5 rounded-2xl text-sm font-medium text-[#737D75]">
+                                {language === 'uz' ? "Bekor qilish" : "Отмена"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Chat Area */}
             <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2.5 no-scrollbar">
@@ -323,14 +349,14 @@ export default function P2PChatPage() {
                                                 onClick={() => handleDeleteMessage(msg.id, false)} 
                                                 className="w-full px-2.5 py-1.5 rounded-lg text-left text-[11px] font-semibold text-[#111612] hover:bg-[#F5F7F5]"
                                             >
-                                                {language === 'uz' ? "Mendan" : "У меня"}
+                                                {language === 'uz' ? "Faqat mendan" : "Только у меня"}
                                             </button>
                                             {isMe && (
                                                 <button 
                                                     onClick={() => handleDeleteMessage(msg.id, true)} 
                                                     className="w-full px-2.5 py-1.5 rounded-lg text-left text-[11px] font-semibold text-rose-600 hover:bg-rose-50"
                                                 >
-                                                    {language === 'uz' ? "Hamma uchun" : "Для всех"}
+                                                    {language === 'uz' ? "Ikkala tarafdan" : "У обоих"}
                                                 </button>
                                             )}
                                         </div>

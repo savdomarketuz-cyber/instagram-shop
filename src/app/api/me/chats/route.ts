@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdminFresh } from "@/lib/supabase-admin";
-import { getSessionPhone, phoneVariants } from "@/lib/user-session";
+import { getSessionPhone, phoneDigits, phoneVariants } from "@/lib/user-session";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     const [{ data: chats, error }, { data: support }] = await Promise.all([
         supabaseAdminFresh
             .from("private_chats")
-            .select("id, participants, participant_data, last_message, last_timestamp, unread_count, created_at")
+            .select("id, participants, participant_data, last_message, last_timestamp, unread_count, created_at, cleared_at")
             .overlaps("participants", variants)
             .order("last_timestamp", { ascending: false, nullsFirst: false }),
         supabaseAdminFresh
@@ -31,5 +31,14 @@ export async function GET(req: NextRequest) {
 
     if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
 
-    return NextResponse.json({ success: true, chats: chats || [], supportChat: support || null });
+    // "Faqat mendan" tozalangan suhbat — undan keyin yangi xabar kelmaguncha ro'yxatda ko'rinmaydi
+    const myDigits = phoneDigits(phone);
+    const visible = (chats || [])
+        .filter((ch: any) => {
+            const cleared = ch.cleared_at?.[myDigits];
+            return !cleared || (ch.last_timestamp && new Date(ch.last_timestamp) > new Date(cleared));
+        })
+        .map(({ cleared_at, ...ch }: any) => ch);
+
+    return NextResponse.json({ success: true, chats: visible, supportChat: support || null });
 }

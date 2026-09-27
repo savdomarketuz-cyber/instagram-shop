@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyJwt } from "@/lib/jwt-utils";
 import sharp from "sharp";
+import { getAdminSecret } from "@/lib/secrets";
 
 export const maxDuration = 60; // Vercel: max 60s on Hobby, 300s on Pro
 
@@ -77,7 +78,7 @@ async function uploadToS3(buffer: Buffer, key: string, contentType: string): Pro
 export async function POST(req: NextRequest) {
     // — Admin auth only —
     const adminToken  = req.cookies.get("admin_token")?.value;
-    const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim() || "default-secret";
+    const ADMIN_SECRET = getAdminSecret();
     const payload = adminToken ? await verifyJwt(adminToken, ADMIN_SECRET) : null;
     if (!payload) {
         return NextResponse.json({ error: "Admin ruxsati kerak" }, { status: 401 });

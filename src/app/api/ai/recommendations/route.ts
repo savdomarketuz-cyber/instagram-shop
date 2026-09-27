@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAiRecommendations, logAiActivity } from "@/lib/ai";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { verifyJwt } from "@/lib/jwt-utils";
+import { getUserJwtSecret } from "@/lib/secrets";
 
 export async function POST(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest) {
 
         // Verify User for security
         const userToken = req.cookies.get('user_token')?.value;
-        const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+        const JWT_SECRET = getUserJwtSecret();
         const payload = userToken ? await verifyJwt(userToken, JWT_SECRET) : null;
 
         if (!payload || (userPhone && payload.sub !== userPhone)) {

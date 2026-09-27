@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyJwt } from "@/lib/jwt-utils";
 import { writeVisitorLog, getGeoByIp } from "@/lib/visitor-log";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getUserJwtSecret } from "@/lib/secrets";
 
 export async function POST(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
 
     try {
         const userToken = req.cookies.get("user_token")?.value;
-        const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+        const JWT_SECRET = getUserJwtSecret();
 
         let userPhone: string | null = null;
         let userName = "Mehmon";

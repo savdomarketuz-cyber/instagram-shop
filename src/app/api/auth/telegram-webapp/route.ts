@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { createJwt } from "@/lib/jwt-utils";
 import { hashPassword } from "@/lib/auth-utils";
 import { PUBLIC_PRODUCT_COLUMNS } from "@/lib/public-product";
+import { getUserJwtSecret } from "@/lib/secrets";
 
 const BOT_TOKEN = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN || "";
 
@@ -137,7 +138,7 @@ export async function POST(req: NextRequest) {
         }
 
         // 5. Sessiya yaratish va JWT berish
-        const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+        const JWT_SECRET = getUserJwtSecret();
         const jwt = await createJwt({
             sub: user.phone,
             role: "user",

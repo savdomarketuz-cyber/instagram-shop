@@ -7,6 +7,8 @@ import { sendLowStockAlert } from "@/lib/telegram";
 import { computeStandardDelivery, EXPRESS_FREE_THRESHOLD } from "@/lib/delivery";
 import { estimateExpressDelivery, formatEta } from "@/lib/yandex-delivery";
 import { applyGlobalPromo, type PromoSettings } from "@/lib/promo-utils";
+import { getUserJwtSecret } from "@/lib/secrets";
+import { normalizeOrderStatus } from "@/lib/order-status";
 
 /**
  * Zod Schema for Order Validation
@@ -40,7 +42,7 @@ export async function POST(req: NextRequest) {
 
         // 🛡 JWT AUTH CHECK
         const userToken = req.cookies.get('user_token')?.value;
-        const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+        const JWT_SECRET = getUserJwtSecret();
         const payload = userToken ? await verifyJwt(userToken, JWT_SECRET) : null;
 
         const rawBody = await req.json();
@@ -95,9 +97,11 @@ export async function POST(req: NextRequest) {
         // Boshlang'ich holat: to'lovdan oldingi holat. Client lokalizatsiyalangan
         // qiymat yuborsa o'shani, aks holda o'zbekcha standart qiymatni yozamiz
         // (eski "pending" inglizcha qiymati endi ishlatilmaydi).
+        // Mijoz faqat to'lovdan oldingi holatni yubora oladi — "Yetkazildi" va h.k. qabul qilinmaydi.
+        const requestedStatus = typeof rawBody.p_status === "string" ? rawBody.p_status.trim() : "";
         const initialStatus =
-            typeof rawBody.p_status === "string" && rawBody.p_status.trim()
-                ? rawBody.p_status.trim()
+            requestedStatus && ["awaiting_payment", "pending"].includes(normalizeOrderStatus(requestedStatus))
+                ? requestedStatus
                 : "To'lov kutilmoqda";
         const { data, error } = await supabaseAdmin.rpc('place_order', {
             p_user_phone: validatedData.userPhone,
@@ -296,7 +300,8 @@ export async function POST(req: NextRequest) {
                     .eq("code", validatedData.promoCode.toUpperCase())
                     .single();
                 
-                if (promoData) {
+                // Faol bo'lmagan kod hamkorga mukofot yozmaydi (chegirma hisobi ham is_active'ni tekshiradi)
+                if (promoData && promoData.is_active) {
                     promoAffiliateId = promoData.affiliate_id;
                     const tariff = promoData.promo_code_tariffs;
                     

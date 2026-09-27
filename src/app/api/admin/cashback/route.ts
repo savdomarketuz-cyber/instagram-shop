@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { verifyJwt } from "@/lib/jwt-utils";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { getAdminSecret } from "@/lib/secrets";
 
 export async function GET(req: Request) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
@@ -9,7 +10,7 @@ export async function GET(req: Request) {
         if (!await checkRateLimit(ip, 20, 60)) return NextResponse.json({ error: "Rate limit" }, { status: 429 });
 
         const adminToken = (req as any).cookies?.get('admin_token')?.value || req.headers.get('cookie')?.split('admin_token=')[1]?.split(';')[0];
-        const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim() || "default-secret";
+        const ADMIN_SECRET = getAdminSecret();
         const payload = adminToken ? await verifyJwt(adminToken, ADMIN_SECRET) : null;
         if (!payload || payload.role !== 'admin') return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -54,7 +55,7 @@ export async function POST(req: Request) {
         if (!await checkRateLimit(ip, 10, 60)) return NextResponse.json({ error: "Rate limit" }, { status: 429 });
 
         const adminToken = (req as any).cookies?.get('admin_token')?.value || req.headers.get('cookie')?.split('admin_token=')[1]?.split(';')[0];
-        const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim() || "default-secret";
+        const ADMIN_SECRET = getAdminSecret();
         const payload = adminToken ? await verifyJwt(adminToken, ADMIN_SECRET) : null;
         if (!payload || payload.role !== 'admin') return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

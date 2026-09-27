@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { verifyJwt } from "@/lib/jwt-utils";
+import { getUserJwtSecret } from "@/lib/secrets";
 
 async function getUserFromToken(req: NextRequest) {
     const token = req.cookies.get("user_token")?.value;
     if (!token) return null;
-    const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+    const JWT_SECRET = getUserJwtSecret();
     const payload = await verifyJwt(token, JWT_SECRET);
     if (!payload || !payload.sub) return null;
     return payload.sub; // phone

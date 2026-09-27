@@ -4,6 +4,7 @@ import { mapProduct } from "@/lib/mappers";
 import { getProductRealStock } from "@/lib/stock";
 import { personalize, type AffinitySignals } from "@/lib/personalize";
 import { verifyJwt } from "@/lib/jwt-utils";
+import { getUserJwtSecret } from "@/lib/secrets";
 
 /**
  * Shaxsiy tavsiya endpoint'i — personalize() dvigatelini server'da ishlatadi.
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
 
         // Login holatini aniqlash (cookie bo'lmasa body'dagi userPhone'dan foydalanish)
         const token = req.cookies.get("user_token")?.value;
-        const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+        const JWT_SECRET = getUserJwtSecret();
         const payload = token ? await verifyJwt(token, JWT_SECRET) : null;
         const userPhone = payload?.sub || (typeof body.userPhone === "string" && body.userPhone !== "ADMIN" ? body.userPhone : null);
 

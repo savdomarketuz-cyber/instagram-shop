@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { verifyJwt } from "@/lib/jwt-utils";
+import { getUserJwtSecret } from "@/lib/secrets";
 
 /**
  * Foydalanuvchi tanlagan tilni (uz | ru) Supabase bazasiga va Cookie'ga saqlash
@@ -13,7 +14,7 @@ export async function POST(req: NextRequest) {
 
         // 1. Foydalanuvchi telefon raqamini aniqlash
         const token = req.cookies.get("user_token")?.value;
-        const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+        const JWT_SECRET = getUserJwtSecret();
         let tokenPhone: string | null = null;
         if (token) {
             try {

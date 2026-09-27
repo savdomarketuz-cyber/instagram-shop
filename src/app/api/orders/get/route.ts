@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { verifyJwt } from "@/lib/jwt-utils";
+import { getUserJwtSecret } from "@/lib/secrets";
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
 
     const token = req.cookies.get("user_token")?.value;
     if (!token) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-    const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+    const JWT_SECRET = getUserJwtSecret();
     const payload = await verifyJwt(token, JWT_SECRET);
     if (!payload || payload.sub !== userPhone) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
 

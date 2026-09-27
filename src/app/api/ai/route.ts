@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyJwt } from "@/lib/jwt-utils";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getAdminSecret } from "@/lib/secrets";
 
 const GROQ_API_KEYS = [
     process.env.GROQ_API_KEY_1 || "",
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
         if (!await checkRateLimit(ip, 5, 60)) return NextResponse.json({ error: "Rate limit" }, { status: 429 });
 
         const adminToken = req.cookies.get('admin_token')?.value;
-        const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim() || "default-secret";
+        const ADMIN_SECRET = getAdminSecret();
         const payload = adminToken ? await verifyJwt(adminToken, ADMIN_SECRET) : null;
         if (!payload || payload.role !== 'admin') {
             return NextResponse.json({ error: "Unauthorized (Admin only)" }, { status: 401 });

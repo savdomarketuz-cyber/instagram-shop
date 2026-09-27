@@ -4,6 +4,7 @@ import { hashPassword } from "@/lib/auth-utils";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { createJwt } from "@/lib/jwt-utils";
 import { writeVisitorLog, getGeoByIp } from "@/lib/visitor-log";
+import { getUserJwtSecret } from "@/lib/secrets";
 
 /**
  * Foydalanuvchi logini (Server-side)
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
             .eq("id", user.id);
 
 
-        const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+        const JWT_SECRET = getUserJwtSecret();
         const token = await createJwt({
             sub: user.phone,
             role: "user",

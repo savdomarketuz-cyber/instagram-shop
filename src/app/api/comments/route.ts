@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { verifyJwt } from "@/lib/jwt-utils";
+import { getUserJwtSecret, getAdminSecret } from "@/lib/secrets";
 
 export async function POST(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
@@ -21,8 +22,8 @@ export async function POST(req: NextRequest) {
         const token = req.cookies.get("user_token")?.value;
         const adminToken = req.cookies.get("admin_token")?.value;
         
-        const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
-        const ADMIN_SECRET = process.env.ADMIN_SECRET?.trim() || "default-secret";
+        const JWT_SECRET = getUserJwtSecret();
+        const ADMIN_SECRET = getAdminSecret();
 
         let authPayload = null;
         if (adminToken) {

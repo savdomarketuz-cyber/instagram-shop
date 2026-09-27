@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { verifyJwt } from "@/lib/jwt-utils";
 import { supabaseAdminFresh } from "@/lib/supabase-admin";
+import { getUserJwtSecret } from "@/lib/secrets";
 
 /**
  * Sayt foydalanuvchisi sessiyasi (user_token cookie) — /api/me/* route'lari uchun.
@@ -11,7 +12,7 @@ export async function getSessionPhone(req: NextRequest): Promise<string | null> 
     const token = req.cookies.get("user_token")?.value;
     if (!token) return null;
 
-    const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+    const JWT_SECRET = getUserJwtSecret();
     const payload: any = await verifyJwt(token, JWT_SECRET);
     if (!payload || typeof payload.sub !== "string" || !payload.sub) return null;
     if (payload.role && payload.role !== "user") return null;

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { mapProduct } from '@/lib/mappers';
 import { toPublicProduct } from '@/lib/public-product';
+import { getUserJwtSecret } from "@/lib/secrets";
 
 // RPC'larning o'z hisoblangan maydonlari + facet uchun tag (ichki ustun emas)
 const SEARCH_EXTRA_KEYS = ['tag', 'similarity', 'category_name', 'rating', 'reviews_count'];
@@ -308,7 +309,7 @@ export async function POST(req: NextRequest) {
         // 1.5 User Identifikatsiya (Cookie yoki JWT orqali)
         const userPhoneCookie = req.cookies.get('user_phone')?.value;
         const token = req.cookies.get("user_token")?.value;
-        const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_SECRET || "fallback_secret_key_123!";
+        const JWT_SECRET = getUserJwtSecret();
         let tokenPhone: string | null = null;
         if (token) {
             try {
