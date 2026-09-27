@@ -434,14 +434,12 @@ export default function HomeClient({
         return () => observer.disconnect();
     }, [hasMore, loading, isFetchingMore, pageNumber]);
 
-    const mobileSearchTimer = useRef<NodeJS.Timeout | null>(null);
     const searchAbortRef = useRef<AbortController | null>(null);
 
     // Qidiruvni to'liq tozalash: kutilayotgan debounce + uchayotgan so'rovni bekor qiladi.
     // Aks holda eskirgan javob qaytib, o'chirilgan so'zni qidiruv maydoniga tiklab qo'yardi.
     const clearMobileSearch = () => {
         videoPreWarmer.triggerHaptic("light");
-        if (mobileSearchTimer.current) { clearTimeout(mobileSearchTimer.current); mobileSearchTimer.current = null; }
         if (searchAbortRef.current) { searchAbortRef.current.abort(); searchAbortRef.current = null; }
         setSearch("");
         setSearchResults(null);
@@ -452,8 +450,6 @@ export default function HomeClient({
 
     const handleMobileSearch = async (e?: React.FormEvent, queryArg?: string) => {
         if (e) e.preventDefault();
-        // Enter bosilganda kutilayotgan debounce takror qidiruv qilmasin
-        if (mobileSearchTimer.current) { clearTimeout(mobileSearchTimer.current); mobileSearchTimer.current = null; }
         const q = (queryArg ?? search).trim();
         if (!q) { setSearchResults(null); return; }
 
@@ -490,9 +486,8 @@ export default function HomeClient({
     const handleMobileSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
         setSearch(val);
+        // To'liq qidiruv faqat Enter yoki qidiruv tugmasi bosilganda (handleMobileSearch)
         if (!val.trim()) { clearMobileSearch(); return; }
-        if (mobileSearchTimer.current) clearTimeout(mobileSearchTimer.current);
-        mobileSearchTimer.current = setTimeout(() => handleMobileSearch(undefined, val), 600);
     };
 
     return (
@@ -552,10 +547,15 @@ export default function HomeClient({
                     >
                         {isSearchLoading ? <Loader2 size={18} color="#9AA29C" className="animate-spin" /> : <Search size={18} color="#9AA29C" />}
                         <input
-                            type="text"
+                            type="search"
+                            name="q"
+                            enterKeyHint="search"
+                            autoComplete="off"
+                            aria-label={language === "uz" ? "Mahsulot qidirish" : "Поиск товаров"}
                             placeholder={language === "uz" ? "Mahsulot qidirish..." : "Поиск товаров..."}
                             value={search}
                             onChange={handleMobileSearchChange}
+                            className="[&::-webkit-search-cancel-button]:appearance-none"
                             style={{ flex: 1, fontSize: 14, color: "#0F1410", background: "none", border: "none", outline: "none", fontWeight: 500 }}
                         />
                         {search && (
@@ -581,6 +581,15 @@ export default function HomeClient({
                             title={language === "uz" ? "Rasm orqali qidirish" : "Поиск по фото"}
                         >
                             <Camera size={18} color="#2D6E3E" />
+                        </button>
+                        <button
+                            type="submit"
+                            aria-label={language === "uz" ? "Qidirish" : "Искать"}
+                            onClick={() => videoPreWarmer.triggerHaptic("light")}
+                            className="ios-icon-tap active:scale-90 transition-transform duration-150 shrink-0 flex items-center justify-center will-change-transform"
+                            style={{ width: 32, height: 32, borderRadius: 16, background: "#2D6E3E", border: "none", cursor: "pointer", marginRight: -8 }}
+                        >
+                            <Search size={16} color="#fff" />
                         </button>
                     </div>
                 </form>

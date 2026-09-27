@@ -231,6 +231,13 @@ export default function Navigation() {
             localStorage.setItem("velari_last_search", activeQuery.trim());
         } catch {}
 
+        // Katalogda to'liq qidiruvni CatalogClient o'zi (filtr/saralash bilan) bajaradi —
+        // bu yerda ham so'rov yuborilsa bitta Enter'ga 2 ta qidiruv ketardi.
+        if (isCatalogPage) {
+            setStoreGlobalQuery(activeQuery.trim());
+            return;
+        }
+
         useStore.setState({ isSearchLoading: true });
         try {
             const res = await fetch('/api/search', {
@@ -266,8 +273,8 @@ export default function Navigation() {
         setShowSuggestions(true);
         if (debounceTimer.current) clearTimeout(debounceTimer.current);
 
+        // Yozish paytida faqat yengil takliflar (suggest). To'liq qidiruv — faqat Enter/tugma bosilganda.
         debounceTimer.current = setTimeout(async () => {
-            setStoreGlobalQuery(val);
             // Oldingi uchayotgan suggest so'rovini bekor qilamiz — aks holda eskirgan
             // (sekin) javob keyin kelib yangi natijani ustiga yozadi (dropdown miltillashi).
             if (suggestAbortRef.current) suggestAbortRef.current.abort();
@@ -346,12 +353,16 @@ export default function Navigation() {
                         </div>
                         <input
                             ref={inputRef}
-                            type="text"
+                            type="search"
+                            name="q"
+                            enterKeyHint="search"
+                            autoComplete="off"
+                            aria-label={t.common.search}
                             placeholder={t.common.search}
                             value={search}
                             onChange={handleSearchChange}
                             onFocus={() => { if (search.trim()) setShowSuggestions(true); }}
-                            className="w-full bg-[#F5F9F6] border-2 border-transparent rounded-xl md:rounded-2xl py-2.5 md:py-3.5 pl-10 md:pl-14 pr-20 md:pr-24 text-[13.5px] md:text-base font-bold placeholder:text-gray-400 focus:bg-white focus:border-[#2d6e3e]/30 focus:ring-4 focus:ring-[#2d6e3e]/5 outline-none transition-[background-color,border-color,box-shadow] duration-200 shadow-sm"
+                            className="w-full bg-[#F5F9F6] border-2 border-transparent rounded-xl md:rounded-2xl py-2.5 md:py-3.5 pl-10 md:pl-14 pr-20 md:pr-24 text-[13.5px] md:text-base font-bold placeholder:text-gray-400 focus:bg-white focus:border-[#2d6e3e]/30 focus:ring-4 focus:ring-[#2d6e3e]/5 outline-none transition-[background-color,border-color,box-shadow] duration-200 shadow-sm [&::-webkit-search-cancel-button]:appearance-none"
                         />
                         <div className="absolute inset-y-0 right-2 flex items-center gap-1 md:gap-2">
                             {search && (
@@ -390,6 +401,7 @@ export default function Navigation() {
                             />
                             <button
                                 type="submit"
+                                aria-label={t.common.search}
                                 onClick={() => videoPreWarmer.triggerHaptic("light")}
                                 className={`ios-icon-tap active:scale-90 p-2 md:p-3 rounded-lg md:rounded-xl transition-transform duration-150 will-change-transform ${isSearchLoading ? 'velari-green-btn' : 'text-gray-400 hover:text-[#2d6e3e] hover:bg-white shadow-sm'}`}
                             >
@@ -437,7 +449,7 @@ export default function Navigation() {
                                             </Link>
                                         ))}
                                         <button 
-                                            type="submit" 
+                                            type="button" 
                                             onClick={() => {
                                                 videoPreWarmer.triggerHaptic("medium");
                                                 handleSearch();
