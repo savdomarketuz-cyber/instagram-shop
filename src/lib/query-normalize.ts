@@ -128,6 +128,9 @@ export function expandQuery(raw: string, dbSynonyms: Record<string, string> = {}
     let words = q.split(" ").filter(Boolean);
     const content = words.filter(w => !STOPWORDS.has(w));
     if (content.length) words = content;
+    // 1-2 harfli raqamsiz bo'laklar ("bu", yozilayotgan "st") — boshqa so'z bo'lsa tashlanadi
+    const meaningful = words.filter(w => w.length >= 3 || /\d/.test(w));
+    if (meaningful.length) words = meaningful;
 
     // brend/typo xaritasi natijasiga ham sinonim qo'llanadi: "airpos" → "airpods" → "quloqchin"
     const mapped = (k: string) => {

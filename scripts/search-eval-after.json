@@ -1,0 +1,1218 @@
+{
+ "base": "https://velari.uz",
+ "at": "2026-09-29T19:24:04.227Z",
+ "text": [
+  {
+   "q": "tarozi",
+   "group": "top",
+   "gt": 0,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 3586,
+   "top5": []
+  },
+  {
+   "q": "sumka",
+   "group": "top",
+   "gt": 0,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 1065,
+   "top5": []
+  },
+  {
+   "q": "telefon",
+   "group": "top",
+   "gt": 3,
+   "n": 3,
+   "rel5": 3,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 619,
+   "top5": [
+    {
+     "id": "a678d9d9-915a-4fbe-bc10-b934378f190e",
+     "name": "Telefon va kamera uchun shtativ tripod Jmary KP-2274, Qora",
+     "rel": true
+    },
+    {
+     "id": "2d541418-7c3a-40d1-9e2b-c86e4707f656",
+     "name": "Jmary KP-2207 tripod, telefon va kamera ushlagichi bilan Pol",
+     "rel": true
+    },
+    {
+     "id": "833256f4-01b0-4ff3-ac50-e74a33200035",
+     "name": "Shtativ tripod Jmary KP-2205, telefon ushlagichi bilan kamer",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "dayson",
+   "group": "top",
+   "gt": 98,
+   "n": 15,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 1047,
+   "top5": [
+    {
+     "id": "c514bf7f-3c09-452a-9570-43ce956ee3de",
+     "name": "Dayson JRM fen-stayler, 6 ta 1 da, soch jingalaklash va turm",
+     "rel": true
+    },
+    {
+     "id": "ecb56b0e-6829-4b7c-b367-6cbf71abe43c",
+     "name": "Soch turmaklash uchun ko'p funksiyali stayler VGR V-483, Ko'",
+     "rel": true
+    },
+    {
+     "id": "02ec4006-6c1c-440c-992d-faad7f6aeaba",
+     "name": "Soch turmaklash uchun ko'p funksiyali stayler VGR V-477-TO'Q",
+     "rel": true
+    },
+    {
+     "id": "b520c832-a80f-4571-a4a1-2cbafd04b4e5",
+     "name": "Soch turmaklash uchun ko'p funksiyali stayler M.A.C STYLER S",
+     "rel": true
+    },
+    {
+     "id": "f4de95db-d166-434a-bc1a-2a9862398f69",
+     "name": "CRONIER CR-8213 Seramik fen-taroq: Soch to'g'rilagich va haj",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "daysin",
+   "group": "top",
+   "gt": 98,
+   "n": 15,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 781,
+   "top5": [
+    {
+     "id": "c514bf7f-3c09-452a-9570-43ce956ee3de",
+     "name": "Dayson JRM fen-stayler, 6 ta 1 da, soch jingalaklash va turm",
+     "rel": true
+    },
+    {
+     "id": "ecb56b0e-6829-4b7c-b367-6cbf71abe43c",
+     "name": "Soch turmaklash uchun ko'p funksiyali stayler VGR V-483, Ko'",
+     "rel": true
+    },
+    {
+     "id": "02ec4006-6c1c-440c-992d-faad7f6aeaba",
+     "name": "Soch turmaklash uchun ko'p funksiyali stayler VGR V-477-TO'Q",
+     "rel": true
+    },
+    {
+     "id": "b520c832-a80f-4571-a4a1-2cbafd04b4e5",
+     "name": "Soch turmaklash uchun ko'p funksiyali stayler M.A.C STYLER S",
+     "rel": true
+    },
+    {
+     "id": "f4de95db-d166-434a-bc1a-2a9862398f69",
+     "name": "CRONIER CR-8213 Seramik fen-taroq: Soch to'g'rilagich va haj",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "vgr",
+   "group": "top",
+   "gt": 384,
+   "n": 24,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 1059,
+   "top5": [
+    {
+     "id": "3014d779-b538-459b-93c7-21606c0e0f44",
+     "name": "VGR V-150 Bolalar uchun Keramika Pichoqli Soch Mashinkasi (I",
+     "rel": true
+    },
+    {
+     "id": "5adc4bbc-6451-4a16-8671-c81fccf585fa",
+     "name": "VGR V-109, 13 in 1 professional soqol va soch trimmeri, 1200",
+     "rel": true
+    },
+    {
+     "id": "6c3d69f7-43fc-41e4-a134-d998114f2721",
+     "name": "VGR V-625 Trimmer 3-v-1: USB, 60 daq, Professional Pichoqlar",
+     "rel": true
+    },
+    {
+     "id": "780ad574-7d04-4ec1-ac9d-04de3a9c5ba9",
+     "name": "VGR V-269 Professional Sartaroshxona Trimmeri (DLC Pichoq, 2",
+     "rel": true
+    },
+    {
+     "id": "c762216c-2eaa-4aca-a4fb-d7cd5affd606",
+     "name": "VGR V-374 Erkaklar uchun simsiz soqol mashinasi, 150 daqiqa ",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "kiyim",
+   "group": "top",
+   "gt": 5,
+   "n": 3,
+   "rel5": 3,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 503,
+   "top5": [
+    {
+     "id": "256c7851-6949-4a11-808f-419ef1568556",
+     "name": "CRONIER CR-211 Kiyim tozalagich mashina, metall pichoqli kir",
+     "rel": true
+    },
+    {
+     "id": "d846952b-054c-481e-92f4-784855b90385",
+     "name": "CRONIER CR-238 Kiyim Katyshi Olib Tashlash Mashinasi, Zangsi",
+     "rel": true
+    },
+    {
+     "id": "fbf1a5c1-201f-467d-80e1-e52eaf8d12e9",
+     "name": "CRONIER CR-214 kiyimdagi yumaloqlarni olib tashlaydigan mash",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "iphone",
+   "group": "top",
+   "gt": 0,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 620,
+   "top5": []
+  },
+  {
+   "q": "rolik",
+   "group": "top",
+   "gt": 1,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 1509,
+   "top5": []
+  },
+  {
+   "q": "kiyimlar",
+   "group": "top",
+   "gt": 5,
+   "n": 3,
+   "rel5": 3,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": "kiyim",
+   "status": 200,
+   "ms": 909,
+   "top5": [
+    {
+     "id": "256c7851-6949-4a11-808f-419ef1568556",
+     "name": "CRONIER CR-211 Kiyim tozalagich mashina, metall pichoqli kir",
+     "rel": true
+    },
+    {
+     "id": "d846952b-054c-481e-92f4-784855b90385",
+     "name": "CRONIER CR-238 Kiyim Katyshi Olib Tashlash Mashinasi, Zangsi",
+     "rel": true
+    },
+    {
+     "id": "fbf1a5c1-201f-467d-80e1-e52eaf8d12e9",
+     "name": "CRONIER CR-214 kiyimdagi yumaloqlarni olib tashlaydigan mash",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "fen",
+   "group": "top",
+   "gt": 139,
+   "n": 24,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 1090,
+   "top5": [
+    {
+     "id": "00cdf14a-0b64-4196-94cb-1c1e50ba1381",
+     "name": "M·A·C STYLER MC-8877 Fen, keramikali qoplama, 2200 W katta q",
+     "rel": true
+    },
+    {
+     "id": "38f5305a-c1ab-4f29-a02e-4b211cd0c1ea",
+     "name": "M·A·C STYLER MC 6679 Professional Fen 2000W, Diffuzor va 3 K",
+     "rel": true
+    },
+    {
+     "id": "c514bf7f-3c09-452a-9570-43ce956ee3de",
+     "name": "Dayson JRM fen-stayler, 6 ta 1 da, soch jingalaklash va turm",
+     "rel": true
+    },
+    {
+     "id": "8b4f3e8a-59af-4bc2-909b-a6497c8379cc",
+     "name": "Soch quritish uchun professional fen VGR V401, Qizil",
+     "rel": true
+    },
+    {
+     "id": "8d2f2653-a34c-4a7a-a21f-3eaae72ecdea",
+     "name": "Soch quritish uchun professional fen VGR V-427, Qora",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "kosmetika",
+   "group": "top",
+   "gt": 2,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 776,
+   "top5": []
+  },
+  {
+   "q": "planshet",
+   "group": "top",
+   "gt": 0,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 738,
+   "top5": []
+  },
+  {
+   "q": "dyson",
+   "group": "top",
+   "gt": 98,
+   "n": 15,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 1144,
+   "top5": [
+    {
+     "id": "c514bf7f-3c09-452a-9570-43ce956ee3de",
+     "name": "Dayson JRM fen-stayler, 6 ta 1 da, soch jingalaklash va turm",
+     "rel": true
+    },
+    {
+     "id": "ecb56b0e-6829-4b7c-b367-6cbf71abe43c",
+     "name": "Soch turmaklash uchun ko'p funksiyali stayler VGR V-483, Ko'",
+     "rel": true
+    },
+    {
+     "id": "02ec4006-6c1c-440c-992d-faad7f6aeaba",
+     "name": "Soch turmaklash uchun ko'p funksiyali stayler VGR V-477-TO'Q",
+     "rel": true
+    },
+    {
+     "id": "b520c832-a80f-4571-a4a1-2cbafd04b4e5",
+     "name": "Soch turmaklash uchun ko'p funksiyali stayler M.A.C STYLER S",
+     "rel": true
+    },
+    {
+     "id": "f4de95db-d166-434a-bc1a-2a9862398f69",
+     "name": "CRONIER CR-8213 Seramik fen-taroq: Soch to'g'rilagich va haj",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "airpods",
+   "group": "top",
+   "gt": 5,
+   "n": 5,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 670,
+   "top5": [
+    {
+     "id": "b1da43ec-ce8a-42d3-9502-26389c52c9cd",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-PURPLE, Bin",
+     "rel": true
+    },
+    {
+     "id": "582d74c8-24ec-44f2-89f7-19ad7dc49666",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-ORANGE, To'",
+     "rel": true
+    },
+    {
+     "id": "81d85c4e-dd36-4b70-a937-b657bf4cb9be",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-MIDNIGHT, M",
+     "rel": true
+    },
+    {
+     "id": "de2715af-3ca4-4a27-a397-b92b24245277",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX, Ko'k",
+     "rel": true
+    },
+    {
+     "id": "e86d479e-14fb-4a28-9ba7-819b533a7368",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-TITAN, Tita",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "ipad",
+   "group": "top",
+   "gt": 0,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 612,
+   "top5": []
+  },
+  {
+   "q": "bleck",
+   "group": "top",
+   "gt": 0,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 651,
+   "top5": []
+  },
+  {
+   "q": "atir",
+   "group": "top",
+   "gt": 2,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 649,
+   "top5": []
+  },
+  {
+   "q": "kasmetika",
+   "group": "top",
+   "gt": 2,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 620,
+   "top5": []
+  },
+  {
+   "q": "pamada",
+   "group": "top",
+   "gt": 0,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 607,
+   "top5": []
+  },
+  {
+   "q": "qora fen",
+   "group": "multi",
+   "gt": 28,
+   "n": 24,
+   "rel5": 3,
+   "p5": 0.6,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 986,
+   "top5": [
+    {
+     "id": "8d2f2653-a34c-4a7a-a21f-3eaae72ecdea",
+     "name": "Soch quritish uchun professional fen VGR V-427, Qora",
+     "rel": true
+    },
+    {
+     "id": "e7bd22d9-6245-4cce-ac0f-b125ce96a448",
+     "name": "J·R·M STYLER Airwrap Fen 1500W: 6 da 1, Keramika Ployka va T",
+     "rel": false
+    },
+    {
+     "id": "b4ddb37e-bad8-46ef-944c-cfdc79862ec3",
+     "name": "VGR V-446 Professional Fen: 110000 RPM BLDC Dvigatel",
+     "rel": false
+    },
+    {
+     "id": "be03ce92-b422-4a43-9f07-3bba9ef9dc94",
+     "name": "VGR V-439 Black Fen 1600W, 50mm Metall Ust, Tezkur Quritish",
+     "rel": true
+    },
+    {
+     "id": "cab7e541-73e3-4b70-b041-c4fc65457a54",
+     "name": "Soch quritish uchun professional fen M.A.C STYLER MC-6699, Q",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "soch dazmoli",
+   "group": "multi",
+   "gt": 133,
+   "n": 24,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 945,
+   "top5": [
+    {
+     "id": "c514bf7f-3c09-452a-9570-43ce956ee3de",
+     "name": "Dayson JRM fen-stayler, 6 ta 1 da, soch jingalaklash va turm",
+     "rel": true
+    },
+    {
+     "id": "0570d585-378f-4699-b1ef-efa5c55f2fc2",
+     "name": "J·R·M STYLER JR-1055 Soch to‘g‘rilagich, Titan-keramika, 480",
+     "rel": true
+    },
+    {
+     "id": "e622f26f-39e9-4fde-8a7f-2ecd6fe9ba07",
+     "name": "J·R·M STYLER JR-2026 Professional soch tekislagich: Keramika",
+     "rel": true
+    },
+    {
+     "id": "d532465d-1e0d-4445-9d4f-a282aec4dafc",
+     "name": "M·A·C STYLER MC-5599 soch to'g'rilagichi (Keramika, LCD disp",
+     "rel": true
+    },
+    {
+     "id": "4613c93c-9c76-4909-b2e1-a68931976c43",
+     "name": "M.A.C STYLER MC-2218 soch dazmol jingalak plita gofre qiling",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "burun trimmer",
+   "group": "multi",
+   "gt": 10,
+   "n": 8,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 690,
+   "top5": [
+    {
+     "id": "c408d8b2-4e91-4c09-9957-888a863accfd",
+     "name": "VGR V-615 Burun va Quloq Trimmeri, USB Quvvatlanadigan Zangl",
+     "rel": true
+    },
+    {
+     "id": "2a602a12-8f0e-4417-a114-b6fddb2c8649",
+     "name": "VGR Burun va Quloq Trimmeri: Zanglamas Po'lat, 150 Daq. Ish ",
+     "rel": true
+    },
+    {
+     "id": "30fa985b-a3d6-41b2-bd3e-ba87d42bef40",
+     "name": "VGR V-183 trimmeri: Li-ion, 16mm, suv o'tkazmaydigan, soqol ",
+     "rel": true
+    },
+    {
+     "id": "61644ab9-be10-41c4-a37a-e30b808042c4",
+     "name": "VGR V-365 3v1 Elektrobritva: Soqol, Burun va Qosh uchun Trim",
+     "rel": true
+    },
+    {
+     "id": "61cd1569-1e1c-4da1-be25-c82e4dd506d0",
+     "name": "Cronier CR-308: USB, 3-in-1 soqol, burun va qosh trimmeri",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "epilyator yuz uchun",
+   "group": "multi",
+   "gt": 2,
+   "n": 2,
+   "rel5": 2,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 573,
+   "top5": [
+    {
+     "id": "81c94b64-cfb5-4798-ab03-88bb17d6b8ff",
+     "name": "Fotoepilytor Babyverse SE10, tanava yuz uchun sovitish effek",
+     "rel": true
+    },
+    {
+     "id": "71bad52f-2820-4f94-8982-16e352b6f125",
+     "name": "M·A·C STYLER MC-7729 5-darajali Epilator Wet&Dry quvvat yuz ",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "fen shotka",
+   "group": "multi",
+   "gt": 27,
+   "n": 24,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 891,
+   "top5": [
+    {
+     "id": "847fd1ea-0757-4fec-a48d-94738004c567",
+     "name": "Zumba ZM-8061 brashing professional elektr tarog‘i, harorat ",
+     "rel": true
+    },
+    {
+     "id": "cb3f6c48-34c9-466a-93dd-0bcc6e61d662",
+     "name": "CRONIER CR-8211 2500W Fen-taroq: Keramik qoplama, Ion texnol",
+     "rel": true
+    },
+    {
+     "id": "04b7920b-d1a1-40e3-a7fc-495b70f0d05b",
+     "name": "M·A·C STYLER MC-6620/6636 Fan-dazmol chotka: Seramikali, ion",
+     "rel": true
+    },
+    {
+     "id": "0da13118-453b-4be7-9cce-631b3063b020",
+     "name": "VGR V-494 Fen-Cho'tka: Soch Quritish va Uslash",
+     "rel": true
+    },
+    {
+     "id": "0e158f35-e08c-4a4a-8d53-4c17e00aef9b",
+     "name": "Soch turmaklash uchun fen-cho'tka VGR V-488, Ko'k",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "vgr soqol trimmer",
+   "group": "multi",
+   "gt": 281,
+   "n": 24,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 1659,
+   "top5": [
+    {
+     "id": "83b00b92-fc04-4587-ad82-ff4bac3abeb6",
+     "name": "Soch va soqol olish uchun professional trimmer VGR STEPLESS ",
+     "rel": true
+    },
+    {
+     "id": "4c65523f-7157-43c8-aec4-c98fb4ad35a2",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-763, Mo",
+     "rel": true
+    },
+    {
+     "id": "dbaa0ff2-d567-4aaa-9d35-83c55d669331",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V001, Qiz",
+     "rel": true
+    },
+    {
+     "id": "7b31f974-d575-4760-a730-5594784396cb",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-977/377",
+     "rel": true
+    },
+    {
+     "id": "fddbfaac-5e67-4bf6-a3b3-c7cee3cd8244",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-946, Ko",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "oq kofta",
+   "group": "multi",
+   "gt": 0,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 728,
+   "top5": []
+  },
+  {
+   "q": "maktab uchun sumka",
+   "group": "multi",
+   "gt": 0,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 2190,
+   "top5": []
+  },
+  {
+   "q": "elektro velosiped",
+   "group": "multi",
+   "gt": 0,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 2875,
+   "top5": []
+  },
+  {
+   "q": "bioaqua amino acid",
+   "group": "multi",
+   "gt": 0,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 1248,
+   "top5": []
+  },
+  {
+   "q": "aksesuar",
+   "group": "zero",
+   "gt": 4,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 982,
+   "top5": []
+  },
+  {
+   "q": "achki",
+   "group": "zero",
+   "gt": 2,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 745,
+   "top5": []
+  },
+  {
+   "q": "ryugzak",
+   "group": "zero",
+   "gt": 0,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 655,
+   "top5": []
+  },
+  {
+   "q": "𝐔𝐳𝐮𝐤𝐥𝐚𝐫",
+   "group": "zero",
+   "gt": 0,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 607,
+   "top5": []
+  },
+  {
+   "q": "acses",
+   "group": "zero",
+   "gt": 4,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 577,
+   "top5": []
+  },
+  {
+   "q": "𝐓𝐚𝐫𝐨𝐳𝐢",
+   "group": "zero",
+   "gt": 0,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 551,
+   "top5": []
+  },
+  {
+   "q": "epilyator",
+   "group": "zero",
+   "gt": 91,
+   "n": 24,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 1134,
+   "top5": [
+    {
+     "id": "3a7c573b-70b6-49b6-9c8e-b98707cf4382",
+     "name": "Epilyator ayollar uchun suv otkazmaydigan VGR V-733 6tasi1da",
+     "rel": true
+    },
+    {
+     "id": "c3eb63e0-5242-4489-a031-c7ec2a403763",
+     "name": "Epilyator ayollar uchun suv otkazmaydigan VGR V-733 6tasi1da",
+     "rel": true
+    },
+    {
+     "id": "e395bf09-7515-4d62-b774-e3b255eea167",
+     "name": "J·R·M STYLER JRM-2700 Mum va parafin erituvchisi, silikon ji",
+     "rel": true
+    },
+    {
+     "id": "a39f677d-1003-4291-8cd2-383f3b228dcb",
+     "name": "Ayollar uchun professional epilyator Babyverse SE8, Oq",
+     "rel": true
+    },
+    {
+     "id": "308f42df-b593-478f-a4a2-93389a3cef03",
+     "name": "Ayollar uchun professional epilyator Babyverse SE15, Oq",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "hijab",
+   "group": "zero",
+   "gt": 0,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 566,
+   "top5": []
+  },
+  {
+   "q": "kõylakk",
+   "group": "zero",
+   "gt": 0,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 586,
+   "top5": []
+  },
+  {
+   "q": "airpos",
+   "group": "zero",
+   "gt": 5,
+   "n": 5,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 699,
+   "top5": [
+    {
+     "id": "b1da43ec-ce8a-42d3-9502-26389c52c9cd",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-PURPLE, Bin",
+     "rel": true
+    },
+    {
+     "id": "582d74c8-24ec-44f2-89f7-19ad7dc49666",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-ORANGE, To'",
+     "rel": true
+    },
+    {
+     "id": "81d85c4e-dd36-4b70-a937-b657bf4cb9be",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-MIDNIGHT, M",
+     "rel": true
+    },
+    {
+     "id": "de2715af-3ca4-4a27-a397-b92b24245277",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX, Ko'k",
+     "rel": true
+    },
+    {
+     "id": "e86d479e-14fb-4a28-9ba7-819b533a7368",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-TITAN, Tita",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "vgr v-097",
+   "group": "golden",
+   "gt": 1,
+   "n": 5,
+   "rel5": 1,
+   "p5": 0.2,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 621,
+   "top5": [
+    {
+     "id": "587d1eac-fc2d-40d8-980f-d223c90acb2b",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-097, Ku",
+     "rel": true
+    },
+    {
+     "id": "6942f47d-c409-4ab9-878b-9fadbbe6a0bc",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-096, Ti",
+     "rel": false
+    },
+    {
+     "id": "926291cd-a655-4fea-a7c9-afbd54080bcb",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-099, Qo",
+     "rel": false
+    },
+    {
+     "id": "99d4ac49-61ed-4f61-809f-156b9d73715b",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-095, Ol",
+     "rel": false
+    },
+    {
+     "id": "a856a83e-7b09-450c-bfdd-1a05cc3f2ef7",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-091, Ol",
+     "rel": false
+    }
+   ]
+  },
+  {
+   "q": "arpods",
+   "group": "golden",
+   "gt": 5,
+   "n": 5,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 664,
+   "top5": [
+    {
+     "id": "b1da43ec-ce8a-42d3-9502-26389c52c9cd",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-PURPLE, Bin",
+     "rel": true
+    },
+    {
+     "id": "582d74c8-24ec-44f2-89f7-19ad7dc49666",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-ORANGE, To'",
+     "rel": true
+    },
+    {
+     "id": "81d85c4e-dd36-4b70-a937-b657bf4cb9be",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-MIDNIGHT, M",
+     "rel": true
+    },
+    {
+     "id": "de2715af-3ca4-4a27-a397-b92b24245277",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX, Ko'k",
+     "rel": true
+    },
+    {
+     "id": "e86d479e-14fb-4a28-9ba7-819b533a7368",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-TITAN, Tita",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "airpods max",
+   "group": "golden",
+   "gt": 5,
+   "n": 5,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 848,
+   "top5": [
+    {
+     "id": "e86d479e-14fb-4a28-9ba7-819b533a7368",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-TITAN, Tita",
+     "rel": true
+    },
+    {
+     "id": "b1da43ec-ce8a-42d3-9502-26389c52c9cd",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-PURPLE, Bin",
+     "rel": true
+    },
+    {
+     "id": "de2715af-3ca4-4a27-a397-b92b24245277",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX, Ko'k",
+     "rel": true
+    },
+    {
+     "id": "582d74c8-24ec-44f2-89f7-19ad7dc49666",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-ORANGE, To'",
+     "rel": true
+    },
+    {
+     "id": "81d85c4e-dd36-4b70-a937-b657bf4cb9be",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-MIDNIGHT, M",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "триммер",
+   "group": "golden",
+   "gt": 339,
+   "n": 24,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 958,
+   "top5": [
+    {
+     "id": "7125f54a-d27b-4347-9f2b-c355697e0edd",
+     "name": "KEMEI KM-2299 soch va soqol olish trimmer mashinasi",
+     "rel": true
+    },
+    {
+     "id": "2a307dd0-87b2-40af-9cac-88762cd826f7",
+     "name": "VGR V-185 trimeri, zanglamaydigan po'lat, 220 daqiqa ishlash",
+     "rel": true
+    },
+    {
+     "id": "7b34347c-a9d3-429c-9faa-b1038b997a55",
+     "name": "VGR V-905 Soqol Trimmeri: Zanglamas pichoq, Suv o'tkazmas, 2",
+     "rel": true
+    },
+    {
+     "id": "86a85946-1fe2-45ef-af66-d9a420b63d18",
+     "name": "VGR V-699 Trimmer: Titan pichoq, 4 nasadka, LED ekran",
+     "rel": true
+    },
+    {
+     "id": "aba48c0d-6166-4d42-9f48-ba813e3e5fbd",
+     "name": "VGR V-008 Trimmer: Zanglamaydigan po'lat, 120 daqiqa ishlash",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "soch olish mashinkasi",
+   "group": "golden",
+   "gt": 339,
+   "n": 24,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 1211,
+   "top5": [
+    {
+     "id": "83b00b92-fc04-4587-ad82-ff4bac3abeb6",
+     "name": "Soch va soqol olish uchun professional trimmer VGR STEPLESS ",
+     "rel": true
+    },
+    {
+     "id": "4c65523f-7157-43c8-aec4-c98fb4ad35a2",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-763, Mo",
+     "rel": true
+    },
+    {
+     "id": "dbaa0ff2-d567-4aaa-9d35-83c55d669331",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V001, Qiz",
+     "rel": true
+    },
+    {
+     "id": "7b31f974-d575-4760-a730-5594784396cb",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-977/377",
+     "rel": true
+    },
+    {
+     "id": "fddbfaac-5e67-4bf6-a3b3-c7cee3cd8244",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-946, Ko",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "naushnik",
+   "group": "golden",
+   "gt": 5,
+   "n": 5,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 885,
+   "top5": [
+    {
+     "id": "b1da43ec-ce8a-42d3-9502-26389c52c9cd",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-PURPLE, Bin",
+     "rel": true
+    },
+    {
+     "id": "582d74c8-24ec-44f2-89f7-19ad7dc49666",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-ORANGE, To'",
+     "rel": true
+    },
+    {
+     "id": "81d85c4e-dd36-4b70-a937-b657bf4cb9be",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-MIDNIGHT, M",
+     "rel": true
+    },
+    {
+     "id": "de2715af-3ca4-4a27-a397-b92b24245277",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX, Ko'k",
+     "rel": true
+    },
+    {
+     "id": "e86d479e-14fb-4a28-9ba7-819b533a7368",
+     "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX-TITAN, Tita",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "klipper",
+   "group": "golden",
+   "gt": 339,
+   "n": 24,
+   "rel5": 5,
+   "p5": 1,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 1524,
+   "top5": [
+    {
+     "id": "83b00b92-fc04-4587-ad82-ff4bac3abeb6",
+     "name": "Soch va soqol olish uchun professional trimmer VGR STEPLESS ",
+     "rel": true
+    },
+    {
+     "id": "4c65523f-7157-43c8-aec4-c98fb4ad35a2",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-763, Mo",
+     "rel": true
+    },
+    {
+     "id": "dbaa0ff2-d567-4aaa-9d35-83c55d669331",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V001, Qiz",
+     "rel": true
+    },
+    {
+     "id": "7b31f974-d575-4760-a730-5594784396cb",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-977/377",
+     "rel": true
+    },
+    {
+     "id": "fddbfaac-5e67-4bf6-a3b3-c7cee3cd8244",
+     "name": "Soch va soqol olish uchun professional trimmer VGR V-946, Ko",
+     "rel": true
+    }
+   ]
+  },
+  {
+   "q": "xyznonexistentqueryqwerty",
+   "group": "golden",
+   "gt": 0,
+   "n": 0,
+   "rel5": 0,
+   "p5": null,
+   "isFallback": false,
+   "didYouMean": null,
+   "status": 200,
+   "ms": 677,
+   "top5": []
+  }
+ ],
+ "image": [],
+ "textSummary": {
+  "withInventory": 31,
+  "meanP5": 0.735,
+  "found": 24,
+  "noInventory": 17,
+  "noInventoryClean": 17,
+  "noiseResults": 0
+ }
+}
