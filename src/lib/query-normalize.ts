@@ -106,10 +106,13 @@ export function cleanSearchText(raw: string): string {
         .trim();
 }
 
-/** O'zbekcha ko'plik/egalik qo'shimchasi: "kiyimlar" → "kiyim", "mashinkasi" → "mashinka" (asos ≥ 4 harf). */
+/** O'zbekcha ko'plik/egalik qo'shimchasi: "kiyimlar" → "kiyim", "mashinkasi" → "mashinka", "dazmoli" → "dazmol". */
 function uzStem(w: string): string | null {
     const m = w.match(/^(.{4,}?)(larni|larga|lari|lar|si)$/);
-    return m ? m[1] : null;
+    if (m) return m[1];
+    // undoshdan keyingi egalik "-i": "dazmoli" → "dazmol" (asos ≥ 5 harf)
+    const p = w.match(/^(.{4,}[bcdfghjklmnpqrstvxz])i$/);
+    return p ? p[1] : null;
 }
 
 /**
@@ -133,24 +136,32 @@ export function expandQuery(raw: string, dbSynonyms: Record<string, string> = {}
         return [...direct, ...chained];
     };
 
-    const groups: string[][] = [];
-    for (let i = 0; i < words.length; i++) {
-        const w = words[i];
-        const pair = i + 1 < words.length ? `${w} ${words[i + 1]}` : null;
-        const pairAlts = pair ? mapped(pair) : [];
-        if (pair && pairAlts.length) {
-            groups.push([pair, ...pairAlts]);
-            i++;
-            continue;
-        }
-        const alts = [w];
-        const stem = uzStem(w);
-        if (stem) alts.push(stem, ...mapped(stem));
+    // fuzzy: faqat xaridor yozgan so'z (va uning lotin transliti). O'zak/sinonim — "=" bilan, faqat aniq moslik
+    // ("tarozi" → o'zak "taroz" fuzzy'da "taroq"ga yopishardi).
+    type Alt = { v: string; exact: boolean };
+    const groups: Alt[][] = words.map(w => {
+        const alts: Alt[] = [{ v: w, exact: false }];
         const tr = transliterateLatin(w);
-        if (tr !== w) alts.push(tr);
-        alts.push(...mapped(w));
-        if (tr !== w) alts.push(...mapped(tr));
-        groups.push(alts);
+        if (tr !== w) alts.push({ v: tr, exact: false });
+        const stem = uzStem(w);
+        if (stem) alts.push({ v: stem, exact: true }, ...mapped(stem).map(v => ({ v, exact: true })));
+        alts.push(...mapped(w).map(v => ({ v, exact: true })));
+        if (tr !== w) alts.push(...mapped(tr).map(v => ({ v, exact: true })));
+        return alts;
+    });
+    // Ikki so'zli lug'at kaliti ("soch dazmoli" → "utyujok"): so'zlar alohida qoladi, sinonim ikkalasiga variant
+    for (let i = 0; i + 1 < words.length; i++) {
+        const pairAlts = mapped(`${words[i]} ${words[i + 1]}`).map(v => ({ v, exact: true }));
+        if (pairAlts.length) { groups[i].push(...pairAlts); groups[i + 1].push(...pairAlts); }
     }
-    return groups.map(g => Array.from(new Set(g.filter(Boolean))).slice(0, 6));
+    return groups.map(g => {
+        const seen = new Set<string>();
+        const out: string[] = [];
+        for (const a of g) {
+            if (!a.v || seen.has(a.v)) continue;
+            seen.add(a.v);
+            out.push(a.exact ? `=${a.v}` : a.v);
+        }
+        return out.slice(0, 6);
+    });
 }

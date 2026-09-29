@@ -69,10 +69,13 @@ BEGIN
     END IF;
 
     WITH grp AS (
-        SELECT g.ord, a.alt
+        -- "=" bilan boshlangan variant (o'zak, sinonim) — faqat aniq moslik; fuzzy faqat xaridor yozgan so'zga
+        SELECT g.ord,
+               CASE WHEN left(a.alt, 1) = '=' THEN substr(a.alt, 2) ELSE a.alt END AS alt,
+               left(a.alt, 1) = '=' AS exact
         FROM jsonb_array_elements(coalesce(p_groups, '[]'::jsonb)) WITH ORDINALITY AS g(alts, ord)
         CROSS JOIN LATERAL jsonb_array_elements_text(g.alts) AS a(alt)
-        WHERE length(a.alt) > 0
+        WHERE length(a.alt) > 1
     ),
     base AS (
         SELECT p.id, p.name, p.name_uz, p.name_ru, p.article, p.model, p.sku, p.category_id,
@@ -105,6 +108,7 @@ BEGIN
                    WHEN strpos(b.hay, grp.alt) > 0 THEN 1.0
                    -- ko'p so'zli variant (lug'atdagi "hair dryer") faqat aniq: fuzzy'da "Hair Clipper"ga yopishardi
                    WHEN strpos(grp.alt, ' ') > 0 THEN 0
+                   WHEN grp.exact THEN 0
                    -- fuzzy (typo): alohida so'z bilan, birinchi harfi bir xil va uzunligi yaqin bo'lsa.
                    -- Butun matn bilan solishtirilganda qo'shimchalar yopishardi ("uzuklar"≈"erkaklar", "ipad"≈"Iparah").
                    -- Qisqa so'zlarda (≤6) chegara +0.1.
