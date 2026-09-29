@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { adminSelect } from "@/lib/admin-api";
-import { TrendingUp, Users, ShoppingBag, DollarSign, Clock, ArrowRight } from "lucide-react";
+import { TrendingUp, Users, ShoppingBag, DollarSign, Clock, ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { mapOrder } from "@/lib/mappers";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -17,9 +17,12 @@ export default function AdminDashboard() {
     const [recentOrders, setRecentOrders] = useState<any[]>([]);
     const [chartData, setChartData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [embedStatus, setEmbedStatus] = useState<{ activeProducts: number; missingText: number; missingImage: number; command: string } | null>(null);
 
     useEffect(() => {
         fetchDashboardData();
+        // Qidiruv embedding'lari holati (yangi mahsulotlar qo'lda embedding qilinadi — cron yo'q)
+        fetch("/api/admin/embedding-status").then(r => (r.ok ? r.json() : null)).then(setEmbedStatus).catch(() => {});
     }, []);
 
     const fetchDashboardData = async () => {
@@ -117,6 +120,30 @@ export default function AdminDashboard() {
                     );
                 })}
             </div>
+
+            {/* Qidiruv embedding'lari: yangi/o'zgargan mahsulotlar qo'lda embedding qilinadi */}
+            {embedStatus && (
+                <div className={`p-4 md:p-6 rounded-[24px] md:rounded-[32px] border flex flex-col md:flex-row md:items-center gap-3 md:gap-6 ${embedStatus.missingText + embedStatus.missingImage > 0 ? "bg-amber-50 border-amber-200" : "bg-white border-gray-100 shadow-sm"}`}>
+                    <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white ${embedStatus.missingText + embedStatus.missingImage > 0 ? "bg-amber-500" : "bg-emerald-500"}`}>
+                            <Sparkles size={20} />
+                        </div>
+                        <div>
+                            <p className="text-[10px] md:text-sm font-bold text-gray-400 uppercase tracking-widest">Embedding&apos;i yo&apos;q mahsulotlar</p>
+                            <h3 className="text-lg md:text-2xl font-black">
+                                matn: {embedStatus.missingText} · rasm: {embedStatus.missingImage}
+                                <span className="text-sm text-gray-400 font-bold"> / {embedStatus.activeProducts}</span>
+                            </h3>
+                        </div>
+                    </div>
+                    {embedStatus.missingText + embedStatus.missingImage > 0 && (
+                        <p className="text-sm text-amber-800 font-medium">
+                            Yangi mahsulotlar qidiruvda to&apos;liq ishlashi uchun kompyuterda <code className="px-1.5 py-0.5 bg-white rounded border border-amber-200 font-mono text-xs">{embedStatus.command}</code> ni
+                            (yoki EMBEDDING-YANGILASH.bat ni) ishga tushiring.
+                        </p>
+                    )}
+                </div>
+            )}
 
             {/* Analytics Chart */}
             <div className="bg-white p-4 md:p-8 rounded-[28px] md:rounded-[40px] shadow-sm border border-gray-100">

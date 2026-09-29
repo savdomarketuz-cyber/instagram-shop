@@ -1,15 +1,13 @@
-name: Embed new products
+name: Embed products (manual)
 
-# Yangi qo'shilgan mahsulotlarni avtomatik embedding qiladi (semantik o'xshashlik/qidiruv uchun).
-# Lokal multilingual MiniLM modeli GitHub serverida ishlaydi — Vercel'da og'ir model kerak emas.
-# Faqat embedding YO'Q mahsulotlarni to'ldiradi (npm run embed, bayroqsiz).
+# Qidiruv embedding'lari: yangi va o'zgargan mahsulotlarning matn (gemini-embedding-001) va
+# rasm (gemini-embedding-2) vektorlari. Faqat qo'lda — Actions → "Embed products (manual)" → Run workflow.
+# Ega qarori: avtomatik jadval (cron) YO'Q. Odatda kompyuterda `npm run embed:all` yetadi.
+# Kalitlar faqat repo secrets'da (DATABASE_URL, GEMINI_API_KEY_1, GEMINI_API_KEY_2); skriptlar ularni chop etmaydi.
 
 on:
-  schedule:
-    - cron: '0 */3 * * *'   # har 3 soatda
-  workflow_dispatch: {}       # qo'lda ishga tushirish (Actions tabidan)
+  workflow_dispatch: {}
 
-# Bir vaqtda bittadan ortiq ishga tushmasin
 concurrency:
   group: embed-products
   cancel-in-progress: false
@@ -17,7 +15,7 @@ concurrency:
 jobs:
   embed:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -25,7 +23,9 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - name: Embed new products
-        run: npm run embed
+      - name: Embed new / changed products (text + images)
+        run: npm run embed:all
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GEMINI_API_KEY_1: ${{ secrets.GEMINI_API_KEY_1 }}
+          GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}

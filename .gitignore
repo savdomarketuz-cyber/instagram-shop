@@ -80,3 +80,6 @@ velari_ai_audio/ready_queue/
 __pycache__/
 *.pyc
 
+
+# embed-model-compare keshi
+scripts/.embed-cache/

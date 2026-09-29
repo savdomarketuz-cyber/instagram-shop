@@ -10,6 +10,8 @@
         "typecheck": "node --max-old-space-size=6144 ./node_modules/typescript/bin/tsc --noEmit",
         "embed": "node scripts/embed-products.mjs",
         "embed:force": "node scripts/embed-products.mjs --force",
+        "embed:images": "node scripts/embed-product-images.mjs",
+        "embed:all": "node scripts/embed-products.mjs && node scripts/embed-product-images.mjs",
         "test:health": "node scripts/health-check.mjs",
         "test:health:tg": "node scripts/health-check.mjs --telegram"
     },
