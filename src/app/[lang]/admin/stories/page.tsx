@@ -26,6 +26,8 @@ interface Story {
     cta_ids?: string[] | null;
     cta_label_uz?: string | null;
     cta_label_ru?: string | null;
+    // /api/admin/upload variantlari: aylana — lowResUrl/xs + blur, story ochilganda — lg
+    image_meta?: { blurDataURL?: string; lowResUrl?: string; xs?: string; md?: string; lg?: string } | null;
 }
 
 interface PickTarget { id: string; name: string; }
@@ -45,6 +47,7 @@ const EMPTY: Omit<Story, "id" | "sort_order"> = {
     cta_ids: [],
     cta_label_uz: "",
     cta_label_ru: "",
+    image_meta: null,
 };
 
 // Guruh + CTA tahrirlagich (alohida komponent — qidiruv holati saqlanishi uchun)
@@ -221,6 +224,7 @@ export default function AdminStoriesPage() {
                 title_uz: story.title_uz,
                 title_ru: story.title_ru,
                 image: story.image,
+                image_meta: story.image_meta || null,
                 link: story.link,
                 audio: story.audio || null,
                 video: story.video || null,
@@ -294,10 +298,15 @@ export default function AdminStoriesPage() {
                 throw new Error(json.error || `Yuklash muvaffaqiyatsiz (${res.status})`);
             }
 
+            // Rasm: variantlar (thumb/xs/md/lg + blur) avtomatik yaratiladi — image_meta ga saqlanadi
+            const meta = field === "image" && (json.lg || json.lowResUrl)
+                ? { blurDataURL: json.blurDataURL, lowResUrl: json.lowResUrl, xs: json.xs, md: json.md, lg: json.lg }
+                : null;
+            const patch: Partial<Story> = field === "image" ? { image: json.url, image_meta: meta } : { [field]: json.url };
             if (targetId === "new") {
-                setNewStory(prev => ({ ...prev, [field]: json.url }));
+                setNewStory(prev => ({ ...prev, ...patch }));
             } else {
-                setStories(prev => prev.map(s => s.id === targetId ? { ...s, [field]: json.url } : s));
+                setStories(prev => prev.map(s => s.id === targetId ? { ...s, ...patch } : s));
             }
         } catch (e: any) {
             alert("Yuklashda xatolik: " + e.message);
@@ -406,7 +415,7 @@ export default function AdminStoriesPage() {
                                 />
                                 <input
                                     value={s.image} placeholder="Rasm URL"
-                                    onChange={e => handleField(s.id, "image", e.target.value)}
+                                    onChange={e => { handleField(s.id, "image", e.target.value); handleField(s.id, "image_meta", null); }}
                                     className="px-4 py-2.5 rounded-xl border-2 border-gray-100 text-sm font-mono focus:outline-none focus:border-black transition-colors md:col-span-2"
                                 />
                                 <input
@@ -502,7 +511,7 @@ export default function AdminStoriesPage() {
                             onChange={e => setNewStory(p => ({ ...p, title_ru: e.target.value }))}
                             className="px-4 py-2.5 rounded-xl border-2 border-gray-100 text-sm font-semibold focus:outline-none focus:border-black transition-colors" />
                         <input value={newStory.image} placeholder="Rasm URL"
-                            onChange={e => setNewStory(p => ({ ...p, image: e.target.value }))}
+                            onChange={e => setNewStory(p => ({ ...p, image: e.target.value, image_meta: null }))}
                             className="px-4 py-2.5 rounded-xl border-2 border-gray-100 text-sm font-mono focus:outline-none focus:border-black transition-colors md:col-span-2" />
                         <input value={newStory.link} placeholder="Havola (ixtiyoriy)"
                             onChange={e => setNewStory(p => ({ ...p, link: e.target.value }))}

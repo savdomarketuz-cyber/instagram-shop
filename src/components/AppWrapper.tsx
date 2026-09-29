@@ -44,20 +44,24 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
     }, [lang, setLanguage, user?.phone]);
 
     // 📱 Telegram WebApp & Mini App Header Color Support
+    // (telegram-web-app.js faqat Telegram ichida async yuklanadi — yuklangach ham qo'llanadi)
     useEffect(() => {
-        if (typeof window !== "undefined") {
+        if (typeof window === "undefined") return;
+        const apply = () => {
             const tg = (window as any).Telegram?.WebApp;
-            if (tg) {
-                try {
-                    tg.ready?.();
-                    tg.setHeaderColor?.('#2d6e3e');
-                    tg.setBackgroundColor?.('#ffffff');
-                    tg.expand?.();
-                } catch {
-                    // silent fallback
-                }
+            if (!tg) return;
+            try {
+                tg.ready?.();
+                tg.setHeaderColor?.('#2d6e3e');
+                tg.setBackgroundColor?.('#ffffff');
+                tg.expand?.();
+            } catch {
+                // silent fallback
             }
-        }
+        };
+        apply();
+        window.addEventListener("telegram-webapp-ready", apply);
+        return () => window.removeEventListener("telegram-webapp-ready", apply);
     }, [pathname]);
 
     // 🛡️ GLOBAL API ERROR HANDLER

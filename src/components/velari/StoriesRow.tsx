@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
+import { buildStoryGroups, storySlideImage, type StoryGroupShape, type StoryImageMeta } from "@/lib/stories";
 import { ShoppingBag, Send, X, Zap } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { PUBLIC_PRODUCT_COLUMNS } from "@/lib/public-product";
@@ -25,16 +26,10 @@ interface Story {
     cta_ids?: string[] | null;
     cta_label_uz?: string | null;
     cta_label_ru?: string | null;
+    image_meta?: StoryImageMeta;
 }
 
-interface StoryGroup {
-    key: string;
-    coverImage: string;
-    coverIsVideo: boolean;
-    title_uz: string;
-    title_ru: string;
-    slides: Story[];
-}
+type StoryGroup = StoryGroupShape<Story>;
 
 const SEEN_KEY = "velari_seen_stories";
 const IMG_DURATION = 5000;   // ms — rasm slayd davomiyligi
@@ -141,27 +136,7 @@ export default function StoriesRow({
             .order("sort_order", { ascending: true })
             .then(({ data }) => {
                 if (!data) return;
-                const order: string[] = [];
-                const map = new Map<string, Story[]>();
-                (data as Story[]).forEach(s => {
-                    const key = s.group_key && s.group_key.trim() ? s.group_key.trim() : `__solo_${s.id}`;
-                    if (!map.has(key)) { map.set(key, []); order.push(key); }
-                    map.get(key)!.push(s);
-                });
-                const built: StoryGroup[] = order.map(key => {
-                    const slides = map.get(key)!;
-                    const first = slides[0];
-                    const cover = slides.find(x => x.image)?.image || "";
-                    return {
-                        key,
-                        coverImage: cover,
-                        coverIsVideo: !cover && !!first.video,
-                        title_uz: first.group_title_uz?.trim() || first.title_uz,
-                        title_ru: first.group_title_ru?.trim() || first.title_ru,
-                        slides,
-                    };
-                });
-                setGroups(built);
+                setGroups(buildStoryGroups(data as Story[]));
             });
     }, [initialGroups]);
 
@@ -397,7 +372,7 @@ export default function StoriesRow({
         return (
             <Image
                 key={s.id + "-i"}
-                src={s.image || "/placeholder.png"}
+                src={storySlideImage(s) || "/placeholder.png"}
                 alt={language === "uz" ? s.title_uz : s.title_ru}
                 fill sizes="100vw" priority
                 style={{ objectFit: "cover" }}
@@ -440,7 +415,10 @@ export default function StoriesRow({
                                         position: "relative", background: "#F0F0EC",
                                     }}>
                                         {g.coverImage ? (
-                                            <Image src={g.coverImage} alt={name} fill sizes="80px" style={{ objectFit: "cover" }} />
+                                            // eng kichik variant + blur; 1–2-aylana fetchpriority=high, qolganlari lazy
+                                            <Image src={g.coverThumb || g.coverImage} alt={name} fill sizes="80px" style={{ objectFit: "cover" }}
+                                                priority={idx < 2} loading={idx < 2 ? undefined : "lazy"}
+                                                placeholder={g.coverBlur ? "blur" : "empty"} blurDataURL={g.coverBlur} />
                                         ) : hasVideo ? (
                                             <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#111" }}>
                                                 <span style={{ fontSize: 20, color: "#fff" }}>▶</span>
@@ -496,7 +474,9 @@ export default function StoriesRow({
                                         position: "relative", background: "#F0F0EC",
                                     }}>
                                         {g.coverImage ? (
-                                            <Image src={g.coverImage} alt={name} fill sizes="100px" style={{ objectFit: "cover" }} />
+                                            <Image src={g.coverThumb || g.coverImage} alt={name} fill sizes="100px" style={{ objectFit: "cover" }}
+                                                priority={idx < 2} loading={idx < 2 ? undefined : "lazy"}
+                                                placeholder={g.coverBlur ? "blur" : "empty"} blurDataURL={g.coverBlur} />
                                         ) : hasVideo ? (
                                             <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#111" }}>
                                                 <span style={{ fontSize: 26, color: "#fff" }}>▶</span>
@@ -577,7 +557,7 @@ export default function StoriesRow({
                     <div style={{ position: "absolute", top: 22, left: 0, right: 0, zIndex: 5, display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", opacity: paused ? 0.4 : 1, transition: "opacity 200ms ease" }}>
                         <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", border: "2px solid rgba(255,255,255,0.4)", position: "relative", flexShrink: 0, background: GREEN }}>
                             {curGroup.coverImage && (
-                                <Image src={curGroup.coverImage} alt="" fill sizes="36px" style={{ objectFit: "cover" }} />
+                                <Image src={curGroup.coverThumb || curGroup.coverImage} alt="" fill sizes="36px" style={{ objectFit: "cover" }} />
                             )}
                         </div>
                         <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>

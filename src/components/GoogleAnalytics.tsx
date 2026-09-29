@@ -35,9 +35,10 @@ export default function GoogleAnalytics({ gaId }: { gaId?: string }) {
     <>
       <Script
         src={`https://www.googletagmanager.com/gtag/js?id=${id}`}
-        strategy="afterInteractive"
+        // LCP'dan keyin (window load + bo'sh vaqt) — birinchi ekranni kechiktirmasin
+        strategy="lazyOnload"
       />
-      <Script id="google-analytics" strategy="afterInteractive">
+      <Script id="google-analytics" strategy="lazyOnload">
         {`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}

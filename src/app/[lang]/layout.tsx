@@ -252,7 +252,8 @@ export default async function RootLayout({
                 <meta name="apple-mobile-web-app-capable" content="yes" />
                 <meta name="mobile-web-app-capable" content="yes" />
                 <meta name="telegram:header_color" content="#2d6e3e" />
-                <script src="https://telegram.org/js/telegram-web-app.js" async></script>
+                {/* telegram-web-app.js — faqat Telegram Mini App ichida (boshqa hamma uchun ~40 KB ortiqcha JS) */}
+                <script dangerouslySetInnerHTML={{ __html: `(function(){try{var h=location.hash||"";var inTg=h.indexOf("tgWebAppData")>=0||!!window.TelegramWebviewProxy||!!sessionStorage.getItem("__telegram__initParams");if(!inTg)return;var s=document.createElement("script");s.src="https://telegram.org/js/telegram-web-app.js";s.async=true;s.onload=function(){window.dispatchEvent(new Event("telegram-webapp-ready"))};document.head.appendChild(s)}catch(e){}})();` }} />
 
                 <link rel="icon" href="/favicon.ico" sizes="any" />
                 <link rel="icon" type="image/png" sizes="120x120" href="/favicon-120x120.png" />

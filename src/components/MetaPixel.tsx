@@ -48,7 +48,8 @@ export default function MetaPixel({ pixelId }: { pixelId?: string }) {
     <>
       <Script
         id="meta-pixel"
-        strategy="afterInteractive"
+        // LCP'dan keyin (window load + bo'sh vaqt) — birinchi ekranni kechiktirmasin
+        strategy="lazyOnload"
         dangerouslySetInnerHTML={{ __html: scriptHtml }}
       />
       <noscript>

@@ -1,3 +1,4 @@
+import { buildStoryGroups } from "@/lib/stories";
 import { Suspense } from "react";
 import HomeClient from "./HomeClient";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -102,31 +103,7 @@ async function getInitialData() {
                 color: c.color || null,
             }));
 
-        // Stories guruhlash
-        const buildStoryGroups = (data: any[]) => {
-            if (!data || data.length === 0) return [];
-            const order: string[] = [];
-            const map = new Map<string, any[]>();
-            data.forEach((s: any) => {
-                const key = s.group_key && s.group_key.trim() ? s.group_key.trim() : `__solo_${s.id}`;
-                if (!map.has(key)) { map.set(key, []); order.push(key); }
-                map.get(key)!.push(s);
-            });
-            return order.map(key => {
-                const slides = map.get(key)!;
-                const first = slides[0];
-                const cover = slides.find((x: any) => x.image)?.image || "";
-                return {
-                    key,
-                    coverImage: cover,
-                    coverIsVideo: !cover && !!first.video,
-                    title_uz: first.group_title_uz?.trim() || first.title_uz,
-                    title_ru: first.group_title_ru?.trim() || first.title_ru,
-                    slides,
-                };
-            });
-        };
-
+        // Stories guruhlash (src/lib/stories.ts): aylana — eng kichik variant + blur
         const storyGroups = buildStoryGroups(storiesData || []);
 
         return { products, categories, banners, bannerSettings, promoSettings, featuredCategories, storyGroups };

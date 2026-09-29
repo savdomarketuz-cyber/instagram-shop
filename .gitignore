@@ -83,3 +83,6 @@ __pycache__/
 
 # embed-model-compare keshi
 scripts/.embed-cache/
+
+# bir martalik skriptlar backup'lari (maxfiy ma'lumot bo'lishi mumkin)
+scripts/backups/

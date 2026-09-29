@@ -1,0 +1,439 @@
+[
+ {
+  "at": "2026-09-29T19:51:51.528Z",
+  "summary": {
+   "url": "https://velari.uz/uz",
+   "mobile": false,
+   "block": [],
+   "runs": 3,
+   "maxLongTask": 2225,
+   "tbt": 2206,
+   "fcp": 1608,
+   "lcp": 3520,
+   "totalKB": 2621
+  },
+  "runs": [
+   {
+    "run": 1,
+    "loadMs": 22265,
+    "fcp": 3588,
+    "lcp": 3956,
+    "lcpEl": "DIV",
+    "lcpUrl": null,
+    "maxLongTask": 2195,
+    "tbt": 2206,
+    "longTasks": [
+     {
+      "start": 22946,
+      "dur": 2195,
+      "attr": "unknown"
+     },
+     {
+      "start": 3512,
+      "dur": 99,
+      "attr": "unknown"
+     },
+     {
+      "start": 4383,
+      "dur": 90,
+      "attr": "unknown"
+     },
+     {
+      "start": 3613,
+      "dur": 63,
+      "attr": "unknown"
+     },
+     {
+      "start": 3425,
+      "dur": 59,
+      "attr": "unknown"
+     }
+    ],
+    "totalKB": 2092,
+    "byHostKB": {
+     "storage.yandexcloud.net": 861,
+     "velari.uz": 651,
+     "connect.facebook.net": 256,
+     "www.googletagmanager.com": 189,
+     "mc.yandex.ru": 109,
+     "telegram.org": 23,
+     "slmbethqqqugnktxwzdz.supabase.co": 1,
+     "stats.g.doubleclick.net": 1
+    }
+   },
+   {
+    "run": 2,
+    "loadMs": 40287,
+    "fcp": 1608,
+    "lcp": 3520,
+    "lcpEl": "DIV",
+    "lcpUrl": null,
+    "maxLongTask": 2240,
+    "tbt": 2230,
+    "longTasks": [
+     {
+      "start": 41271,
+      "dur": 2240,
+      "attr": "unknown"
+     },
+     {
+      "start": 3121,
+      "dur": 69,
+      "attr": "unknown"
+     },
+     {
+      "start": 4481,
+      "dur": 65,
+      "attr": "unknown"
+     },
+     {
+      "start": 3326,
+      "dur": 54,
+      "attr": "unknown"
+     },
+     {
+      "start": 24449,
+      "dur": 52,
+      "attr": "unknown"
+     }
+    ],
+    "totalKB": 2906,
+    "byHostKB": {
+     "storage.yandexcloud.net": 1674,
+     "velari.uz": 651,
+     "connect.facebook.net": 256,
+     "www.googletagmanager.com": 189,
+     "mc.yandex.ru": 109,
+     "telegram.org": 23,
+     "slmbethqqqugnktxwzdz.supabase.co": 2,
+     "stats.g.doubleclick.net": 1
+    }
+   },
+   {
+    "run": 3,
+    "loadMs": 19522,
+    "fcp": 1552,
+    "lcp": 2836,
+    "lcpEl": "DIV",
+    "lcpUrl": null,
+    "maxLongTask": 2225,
+    "tbt": 2205,
+    "longTasks": [
+     {
+      "start": 27305,
+      "dur": 2225,
+      "attr": "unknown"
+     },
+     {
+      "start": 3240,
+      "dur": 80,
+      "attr": "unknown"
+     }
+    ],
+    "totalKB": 2621,
+    "byHostKB": {
+     "storage.yandexcloud.net": 1389,
+     "velari.uz": 651,
+     "connect.facebook.net": 256,
+     "www.googletagmanager.com": 189,
+     "mc.yandex.ru": 109,
+     "telegram.org": 23,
+     "slmbethqqqugnktxwzdz.supabase.co": 2,
+     "stats.g.doubleclick.net": 1
+    }
+   }
+  ]
+ },
+ {
+  "at": "2026-09-29T19:52:43.110Z",
+  "summary": {
+   "url": "https://velari.uz/uz",
+   "mobile": false,
+   "block": [
+    "mc.yandex.ru"
+   ],
+   "runs": 3,
+   "maxLongTask": 71,
+   "tbt": 48,
+   "fcp": 1592,
+   "lcp": 3988,
+   "totalKB": 1979
+  },
+  "runs": [
+   {
+    "run": 1,
+    "loadMs": 3160,
+    "fcp": 1256,
+    "lcp": 3536,
+    "lcpEl": "DIV",
+    "lcpUrl": null,
+    "maxLongTask": 71,
+    "tbt": 48,
+    "longTasks": [
+     {
+      "start": 3722,
+      "dur": 71,
+      "attr": "unknown"
+     },
+     {
+      "start": 3266,
+      "dur": 69,
+      "attr": "unknown"
+     },
+     {
+      "start": 2851,
+      "dur": 58,
+      "attr": "unknown"
+     },
+     {
+      "start": 4137,
+      "dur": 50,
+      "attr": "unknown"
+     }
+    ],
+    "totalKB": 1793,
+    "byHostKB": {
+     "storage.yandexcloud.net": 666,
+     "velari.uz": 657,
+     "connect.facebook.net": 256,
+     "www.googletagmanager.com": 189,
+     "telegram.org": 23,
+     "slmbethqqqugnktxwzdz.supabase.co": 2,
+     "stats.g.doubleclick.net": 1,
+     "www.google.co.uz": 0
+    }
+   },
+   {
+    "run": 2,
+    "loadMs": 3692,
+    "fcp": 1592,
+    "lcp": 3988,
+    "lcpEl": "DIV",
+    "lcpUrl": null,
+    "maxLongTask": 67,
+    "tbt": 33,
+    "longTasks": [
+     {
+      "start": 3761,
+      "dur": 67,
+      "attr": "unknown"
+     },
+     {
+      "start": 4408,
+      "dur": 66,
+      "attr": "unknown"
+     }
+    ],
+    "totalKB": 2062,
+    "byHostKB": {
+     "storage.yandexcloud.net": 931,
+     "velari.uz": 657,
+     "connect.facebook.net": 260,
+     "www.googletagmanager.com": 189,
+     "telegram.org": 23,
+     "slmbethqqqugnktxwzdz.supabase.co": 1,
+     "stats.g.doubleclick.net": 1,
+     "www.google.co.uz": 0
+    }
+   },
+   {
+    "run": 3,
+    "loadMs": 4510,
+    "fcp": 3568,
+    "lcp": 4784,
+    "lcpEl": "DIV",
+    "lcpUrl": null,
+    "maxLongTask": 84,
+    "tbt": 55,
+    "longTasks": [
+     {
+      "start": 4119,
+      "dur": 84,
+      "attr": "unknown"
+     },
+     {
+      "start": 5522,
+      "dur": 61,
+      "attr": "unknown"
+     },
+     {
+      "start": 4557,
+      "dur": 60,
+      "attr": "unknown"
+     }
+    ],
+    "totalKB": 1979,
+    "byHostKB": {
+     "storage.yandexcloud.net": 894,
+     "velari.uz": 614,
+     "connect.facebook.net": 256,
+     "www.googletagmanager.com": 189,
+     "telegram.org": 23,
+     "slmbethqqqugnktxwzdz.supabase.co": 2,
+     "stats.g.doubleclick.net": 1,
+     "www.google.co.uz": 0
+    }
+   }
+  ]
+ },
+ {
+  "at": "2026-09-29T19:53:44.151Z",
+  "summary": {
+   "url": "https://velari.uz/uz",
+   "mobile": true,
+   "block": [],
+   "runs": 3,
+   "maxLongTask": 1879,
+   "tbt": 2981,
+   "fcp": 2008,
+   "lcp": 7096,
+   "totalKB": 1772
+  },
+  "runs": [
+   {
+    "run": 1,
+    "loadMs": 3902,
+    "fcp": 2784,
+    "lcp": 7096,
+    "lcpEl": "IMG",
+    "lcpUrl": "https://storage.yandexcloud.net/savdomarketimag/admin/images/1779585345739_story_image_1779585344701.avif",
+    "maxLongTask": 2254,
+    "tbt": 3435,
+    "longTasks": [
+     {
+      "start": 12958,
+      "dur": 2254,
+      "attr": "unknown"
+     },
+     {
+      "start": 10036,
+      "dur": 294,
+      "attr": "unknown"
+     },
+     {
+      "start": 4434,
+      "dur": 286,
+      "attr": "unknown"
+     },
+     {
+      "start": 3586,
+      "dur": 244,
+      "attr": "unknown"
+     },
+     {
+      "start": 15276,
+      "dur": 220,
+      "attr": "unknown"
+     }
+    ],
+    "totalKB": 1772,
+    "byHostKB": {
+     "storage.yandexcloud.net": 621,
+     "velari.uz": 570,
+     "connect.facebook.net": 256,
+     "www.googletagmanager.com": 189,
+     "mc.yandex.ru": 111,
+     "telegram.org": 23,
+     "slmbethqqqugnktxwzdz.supabase.co": 1,
+     "stats.g.doubleclick.net": 1
+    }
+   },
+   {
+    "run": 2,
+    "loadMs": 3792,
+    "fcp": 1308,
+    "lcp": 7052,
+    "lcpEl": "IMG",
+    "lcpUrl": "https://storage.yandexcloud.net/savdomarketimag/admin/images/1779503170165_story_image_1779503166108.avif",
+    "maxLongTask": 1833,
+    "tbt": 2981,
+    "longTasks": [
+     {
+      "start": 15559,
+      "dur": 1833,
+      "attr": "unknown"
+     },
+     {
+      "start": 5450,
+      "dur": 315,
+      "attr": "unknown"
+     },
+     {
+      "start": 4342,
+      "dur": 268,
+      "attr": "unknown"
+     },
+     {
+      "start": 17444,
+      "dur": 251,
+      "attr": "unknown"
+     },
+     {
+      "start": 3446,
+      "dur": 206,
+      "attr": "unknown"
+     }
+    ],
+    "totalKB": 1771,
+    "byHostKB": {
+     "storage.yandexcloud.net": 621,
+     "velari.uz": 569,
+     "connect.facebook.net": 256,
+     "www.googletagmanager.com": 189,
+     "mc.yandex.ru": 109,
+     "telegram.org": 23,
+     "slmbethqqqugnktxwzdz.supabase.co": 2,
+     "stats.g.doubleclick.net": 1
+    }
+   },
+   {
+    "run": 3,
+    "loadMs": 3868,
+    "fcp": 2008,
+    "lcp": 8104,
+    "lcpEl": "IMG",
+    "lcpUrl": "https://storage.yandexcloud.net/savdomarketimag/admin/images/1779585345739_story_image_1779585344701.avif",
+    "maxLongTask": 1879,
+    "tbt": 2931,
+    "longTasks": [
+     {
+      "start": 9576,
+      "dur": 1879,
+      "attr": "unknown"
+     },
+     {
+      "start": 8458,
+      "dur": 290,
+      "attr": "unknown"
+     },
+     {
+      "start": 12611,
+      "dur": 245,
+      "attr": "unknown"
+     },
+     {
+      "start": 3542,
+      "dur": 233,
+      "attr": "unknown"
+     },
+     {
+      "start": 4445,
+      "dur": 200,
+      "attr": "unknown"
+     }
+    ],
+    "totalKB": 2209,
+    "byHostKB": {
+     "storage.yandexcloud.net": 1053,
+     "velari.uz": 570,
+     "connect.facebook.net": 259,
+     "www.googletagmanager.com": 189,
+     "mc.yandex.ru": 111,
+     "telegram.org": 23,
+     "slmbethqqqugnktxwzdz.supabase.co": 1,
+     "stats.g.doubleclick.net": 1
+    }
+   }
+  ]
+ }
+]
