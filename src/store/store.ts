@@ -2,6 +2,9 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { supabase } from "@/lib/supabase";
 import type { Product, CartItem, User, Category, Toast, Language, SearchFacets } from "@/types";
+
+/** Qidiruv holati: API'dagi jami son (total), keyingi sahifa, qaysi so'rov/kategoriya uchun. */
+export type SearchMeta = { total: number; hasMore: boolean; page: number; query: string; category: string | null };
 import { ymGoal, ymAddToCart, ymRemoveFromCart } from "@/lib/metrika";
 
 // Re-export for backward compatibility
@@ -41,7 +44,10 @@ interface StoreState {
     didYouMean: string | null;
     isFallback: boolean;
     isSearchLoading: boolean;
-    setSearchResults: (results: Product[] | null, facets?: SearchFacets | null, didYouMean?: string | null, isFallback?: boolean) => void;
+    setSearchResults: (results: Product[] | null, facets?: SearchFacets | null, didYouMean?: string | null, isFallback?: boolean, meta?: SearchMeta | null) => void;
+    // Jami topilganlar soni (API total) va keyingi sahifa bormi — ekrandagi son sahifa hajmi emas
+    searchMeta: SearchMeta | null;
+    appendSearchResults: (results: Product[], hasMore: boolean, page: number) => void;
     prefetchedProducts: Record<string, Product>;
     setPrefetchedProduct: (product: Product) => void;
     // Shaxsiy smart-chegirma: productId -> foiz (login mijoz uchun aktiv offerlar)
@@ -136,7 +142,18 @@ export const useStore = create<StoreState>()(
             didYouMean: null,
             isFallback: false,
             isSearchLoading: false,
-            setSearchResults: (results, facets = null, didYouMean = null, isFallback = false) => set({ searchResults: results, searchFacets: facets, didYouMean: didYouMean, isFallback: isFallback }),
+            searchMeta: null,
+            setSearchResults: (results, facets = null, didYouMean = null, isFallback = false, meta = null) => set({
+                searchResults: results, searchFacets: facets, didYouMean: didYouMean, isFallback: isFallback,
+                searchMeta: results === null ? null : (meta ?? { total: results.length, hasMore: false, page: 1, query: "", category: null }),
+            }),
+            appendSearchResults: (results, hasMore, page) => set((state) => {
+                const seen = new Set((state.searchResults || []).map(p => p.id));
+                return {
+                    searchResults: [...(state.searchResults || []), ...results.filter(p => !seen.has(p.id))],
+                    searchMeta: state.searchMeta ? { ...state.searchMeta, hasMore, page } : null,
+                };
+            }),
             personalOffers: {},
             fetchPersonalOffers: async () => {
                 try {

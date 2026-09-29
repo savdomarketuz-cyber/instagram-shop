@@ -54,8 +54,9 @@ export default function HomeClient({
         toggleWishlist, setCachedProducts, homeScrollPosition, setHomeScrollPosition, 
         homeSearchQuery, setHomeSearchQuery, homeActiveFilter, setHomeActiveFilter, 
         homeActiveTab, setHomeActiveTab, searchResults, searchFacets, didYouMean, isFallback,
-        isSearchLoading, setSearchResults
+        isSearchLoading, setSearchResults, searchMeta
     } = useStore(useShallow(state => ({
+        searchMeta: state.searchMeta,
         cart: state.cart,
         wishlist: state.wishlist,
         language: state.language,
@@ -115,6 +116,8 @@ export default function HomeClient({
     const [scrolled, setScrolled] = useState(homeScrollPosition > 30);
     // Qidiruv natijalarida tanlangan kategoriya chipi (facet bo'yicha filtr)
     const [activeFacet, setActiveFacet] = useState<string | null>(null);
+    // Yangi qidiruv (yangi facets obyekti) — tanlangan chip tushadi; selectFacet eski obyektni saqlaydi
+    useEffect(() => { setActiveFacet(null); }, [searchFacets]);
 
     const observerTarget = useRef(null);
     // Birinchi mount default ko'rinish bo'lsa (server initialProducts) qayta yuklamaslik uchun
@@ -254,11 +257,7 @@ export default function HomeClient({
     // "Siz uchun" tabida mahsulotlarni shaxsiy tartibga ko'ra qayta saralash.
     const displayProducts = useMemo(() => {
         if (searchResults) {
-            // Qidiruvda kategoriya chipi tanlangan bo'lsa — natijalarni shu kategoriya bo'yicha filtrlaymiz.
-            // (facet kaliti API'da p.category || p.category_id || p.category_uz || "Boshqa" sifatida hisoblanadi.)
-            if (activeFacet) {
-                return searchResults.filter((p: any) => (p.category || p.category_id || p.category_uz || "Boshqa") === activeFacet);
-            }
+            // Kategoriya chipi tanlanganda natija serverdan shu kategoriya bilan qayta olinadi (selectFacet)
             return searchResults;
         }
         if (activeTab === "for_you" && personalOrder.length > 0) {
@@ -463,14 +462,15 @@ export default function HomeClient({
             const res = await fetch("/api/search", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ query: q, userPhone: user?.phone }),
+                body: JSON.stringify({ query: q, limit: 60 }),
                 signal: controller.signal,
             });
             // Bu so'rov eskirgan (yangi qidiruv yoki tozalash bo'lgan) bo'lsa — natijani qo'llamaymiz
             if (searchAbortRef.current !== controller) return;
             const data = res.ok ? await res.json() : { results: [], facets: null, didYouMean: null, isFallback: false };
             setActiveFacet(null); // yangi qidiruv — oldingi kategoriya filtri tushadi
-            setSearchResults(data.results || [], data.facets || null, data.didYouMean || null, !!data.isFallback);
+            setSearchResults(data.results || [], data.facets || null, data.didYouMean || null, !!data.isFallback,
+                { total: data.total ?? (data.results || []).length, hasMore: !!data.hasMore, page: 1, query: q, category: null });
             setHomeSearchQuery(q);
         } catch (err) {
             if ((err as any)?.name === "AbortError") return; // bekor qilingan — sokin
@@ -480,6 +480,59 @@ export default function HomeClient({
                 searchAbortRef.current = null;
                 useStore.setState({ isSearchLoading: false });
             }
+        }
+    };
+
+    // Kategoriya chipi: son BUTUN natija bo'yicha, shuning uchun natija ham serverdan shu kategoriya bilan
+    // olinadi (faqat yuklangan sahifani filtrlash sonlarga mos kelmasdi). Chiplar (facets) o'zgarmaydi.
+    const selectFacet = async (cat: string | null) => {
+        const q = (homeSearchQuery || search).trim();
+        if (!q) return;
+        setActiveFacet(cat);
+        if (searchAbortRef.current) searchAbortRef.current.abort();
+        const controller = new AbortController();
+        searchAbortRef.current = controller;
+        const keepFacets = useStore.getState().searchFacets;
+        useStore.setState({ isSearchLoading: true });
+        try {
+            const res = await fetch("/api/search", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query: q, limit: 60, category: cat || undefined }),
+                signal: controller.signal,
+            });
+            if (searchAbortRef.current !== controller) return;
+            const data = res.ok ? await res.json() : { results: [] };
+            setSearchResults(data.results || [], keepFacets, data.didYouMean || null, !!data.isFallback,
+                { total: data.total ?? (data.results || []).length, hasMore: !!data.hasMore, page: 1, query: q, category: cat });
+        } catch (err) {
+            if ((err as any)?.name !== "AbortError") console.error(err);
+        } finally {
+            if (searchAbortRef.current === controller) {
+                searchAbortRef.current = null;
+                useStore.setState({ isSearchLoading: false });
+            }
+        }
+    };
+
+    // "Yana yuklash": xuddi shu so'rov/kategoriya bilan keyingi sahifa
+    const [isLoadingMoreSearch, setIsLoadingMoreSearch] = useState(false);
+    const loadMoreSearch = async () => {
+        const meta = useStore.getState().searchMeta;
+        if (!meta?.hasMore || !meta.query || isLoadingMoreSearch) return;
+        setIsLoadingMoreSearch(true);
+        try {
+            const res = await fetch("/api/search", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query: meta.query, limit: 60, page: meta.page + 1, category: meta.category || undefined }),
+            });
+            const data = res.ok ? await res.json() : null;
+            if (data) useStore.getState().appendSearchResults(data.results || [], !!data.hasMore, meta.page + 1);
+        } catch (err) {
+            console.error("Load more search failed", err);
+        } finally {
+            setIsLoadingMoreSearch(false);
         }
     };
 
@@ -762,6 +815,8 @@ export default function HomeClient({
                                 <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.5, color: "#0F1410", margin: 0 }}>
                                     {isFallback && searchResults.length > 0
                                         ? (language === "uz" ? "Aniq moslik topilmadi" : "Точных совпадений нет")
+                                        : searchResults.length === 0 && !isSearchLoading
+                                        ? (language === "uz" ? "Hech narsa topilmadi" : "Ничего не найдено")
                                         : (!search
                                             ? (language === "uz" ? "Rasm bo'yicha qidiruv natijalari" : "Результаты поиска по фото")
                                             : (language === "uz" ? "Qidiruv natijalari" : "Результаты поиска"))}
@@ -769,9 +824,12 @@ export default function HomeClient({
                                 <p style={{ fontSize: 13, color: "#9AA29C", marginTop: 4, fontWeight: 500 }}>
                                     {isFallback && searchResults.length > 0
                                         ? (language === "uz" ? "Shunga o'xshash mahsulotlar:" : "Похожие товары:")
-                                        : `${searchResults.length} ${language === "uz" ? "ta mahsulot" : "товаров"}`}
+                                        : searchResults.length === 0
+                                        ? (language === "uz" ? "Bu so'rov bo'yicha do'konda mahsulot yo'q" : "По этому запросу товаров нет")
+                                        // Jami topilganlar (API total), yuklangan sahifa hajmi emas
+                                        : `${searchMeta?.total ?? searchResults.length} ${language === "uz" ? "ta mahsulot topildi" : "товаров найдено"}`}
                                 </p>
-                                {didYouMean && searchResults.length > 0 && (
+                                {didYouMean && (
                                     <p style={{ marginTop: 8, fontSize: 13, color: "#5A625C" }}>
                                         {language === "uz" ? "Balki: " : "Может быть: "}
                                         <button
@@ -783,11 +841,12 @@ export default function HomeClient({
                                                     const res = await fetch("/api/search", {
                                                         method: "POST",
                                                         headers: { "Content-Type": "application/json" },
-                                                        body: JSON.stringify({ query: didYouMean }),
+                                                        body: JSON.stringify({ query: didYouMean, limit: 60 }),
                                                     });
                                                     const data = await res.json();
                                                     setActiveFacet(null);
-                                                    setSearchResults(data.results || [], data.facets || null, data.didYouMean || null, !!data.isFallback);
+                                                    setSearchResults(data.results || [], data.facets || null, data.didYouMean || null, !!data.isFallback,
+                                                        { total: data.total ?? (data.results || []).length, hasMore: !!data.hasMore, page: 1, query: didYouMean, category: null });
                                                 } catch (e) {
                                                     console.error("Did you mean search failed", e);
                                                 } finally {
@@ -821,7 +880,7 @@ export default function HomeClient({
                                             key={cat}
                                             onClick={() => {
                                                 videoPreWarmer.triggerHaptic("selection");
-                                                setActiveFacet(prev => prev === cat ? null : cat);
+                                                selectFacet(on ? null : cat);
                                             }}
                                             className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
                                             style={{ padding: "8px 14px", borderRadius: 18, whiteSpace: "nowrap", background: on ? "#2D6E3E" : "#EAF3EC", border: "none", cursor: "pointer", fontSize: 13, fontWeight: on ? 700 : 500, color: on ? "#fff" : "#2D6E3E", transition: "background 160ms ease, color 160ms ease" }}
@@ -908,6 +967,22 @@ export default function HomeClient({
                     reasonMap={personalReasons}
                     showReasons={activeTab === "for_you" && !searchResults && !urlCategory}
                 />
+
+                {searchResults && searchMeta?.hasMore && (
+                    <div style={{ display: "flex", justifyContent: "center", margin: "24px 0 8px" }}>
+                        <button
+                            onClick={() => { videoPreWarmer.triggerHaptic("light"); loadMoreSearch(); }}
+                            disabled={isLoadingMoreSearch}
+                            className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
+                            style={{ padding: "13px 28px", borderRadius: 16, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", fontSize: 14, fontWeight: 600, opacity: isLoadingMoreSearch ? 0.6 : 1, display: "flex", alignItems: "center", gap: 8 }}
+                        >
+                            {isLoadingMoreSearch && <Loader2 size={16} className="animate-spin" />}
+                            {language === "uz"
+                                ? `Yana yuklash (${searchResults.length} / ${searchMeta.total})`
+                                : `Загрузить ещё (${searchResults.length} / ${searchMeta.total})`}
+                        </button>
+                    </div>
+                )}
             </div>
 
             <div ref={observerTarget} style={{ height: 100, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>

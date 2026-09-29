@@ -11,6 +11,8 @@ const BRAND_MAP: Record<string, string> = {
     "макбук": "MacBook", "makbuk": "MacBook", "macbook": "MacBook",
     "эйрподс": "AirPods", "эирподс": "AirPods", "airpods": "AirPods", "erpods": "AirPods",
     "airpod": "AirPods", "arpods": "AirPods", "arpod": "AirPods", "ayrpods": "AirPods", "ayrpod": "AirPods",
+    "airpos": "AirPods", "erpod": "AirPods",
+    "dayson": "Dyson", "daysin": "Dyson", "dyson": "Dyson", "дайсон": "Dyson",
     "podsmax": "Pods Max", "клиппер": "clipper", "клипер": "clipper", "kliper": "clipper",
     // Samsung
     "самсунг": "Samsung", "samsung": "Samsung", "samsng": "Samsung", "самсунк": "Samsung",
@@ -28,11 +30,15 @@ const BRAND_MAP: Record<string, string> = {
 const SYNONYM_MAP: Record<string, string> = {
     "telefon": "smartfon", "телефон": "smartfon", "smartphone": "smartfon",
     "naushnik": "quloqchin", "наушник": "quloqchin", "headphone": "quloqchin", "earphone": "quloqchin",
+    "airpods": "quloqchin", "earpods": "quloqchin",
+    // Dyson — sochda asosan multi-stayler (Airwrap) va fen; do'konda Dyson yo'q, o'xshash stayler/fen-cho'tkalar bor
+    "dyson": "stayler", "airwrap": "stayler",
     "soatlar": "soat", "часы": "soat", "watch": "soat", "smartwatch": "soat",
     "kompyuter": "kompyuter", "комп": "kompyuter", "pc": "kompyuter",
     "zaryadnik": "zaryad", "зарядка": "zaryad", "charger": "zaryad",
     "kabel": "kabel", "кабель": "kabel", "cable": "kabel", "provod": "kabel",
     "soch olish": "trimmer", "soch kesish": "trimmer", "mashinka": "trimmer", "стрижка": "trimmer",
+    "clipper": "trimmer", "klipper": "trimmer", "kliper": "trimmer",
     "fen": "fen", "фен": "fen", "hairdryer": "fen",
 };
 
@@ -78,4 +84,73 @@ export function normalizeQuery(raw: string): string {
     // trigram qidiruv kichik typo'larni o'zi ushlaydi
     const result = mapped.join(" ");
     return result === lower ? q : result;
+}
+
+// Qidiruvda ahamiyatsiz yordamchi so'zlar ("maktab uchun sumka" → maktab, sumka)
+const STOPWORDS = new Set(["uchun", "va", "bilan", "ham", "yoki", "для", "и", "с", "в", "на", "или", "for", "and", "with", "the"]);
+
+/**
+ * So'rov matnini tozalaydi: NFKC ("𝐔𝐳𝐮𝐤𝐥𝐚𝐫" → "uzuklar"), o'zbek apostroflari bitta ko'rinishga,
+ * harf/raqam/probel/'/./- dan boshqa belgilar (vergul, qavs, % va h.k.) olib tashlanadi.
+ */
+export function cleanSearchText(raw: string): string {
+    return (raw || "")
+        .normalize("NFKC")
+        .toLowerCase()
+        .replace(/[ʻʼ‘’`´]/g, "'")
+        // lotin (+kengaytma), kirill, raqam, probel, ' . - qoladi (ES5 target: \p{L} va /u ishlatilmaydi)
+        .replace(/[^a-z0-9À-ɏЀ-ӿ\s'.\-]/g, " ")
+        .replace(/(^|\s)[.'\-]+/g, " ")
+        .replace(/[.'\-]+(?=\s|$)/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+/** O'zbekcha ko'plik/egalik qo'shimchasi: "kiyimlar" → "kiyim", "mashinkasi" → "mashinka" (asos ≥ 4 harf). */
+function uzStem(w: string): string | null {
+    const m = w.match(/^(.{4,}?)(larni|larga|lari|lar|si)$/);
+    return m ? m[1] : null;
+}
+
+/**
+ * So'rovni token GURUHLARIGA ajratadi. Har guruh — bitta so'zning variantlari:
+ * [asl so'z, o'zak, kirill→lotin, brend/typo xaritasi, sinonim, admin lug'ati].
+ * Sinonim asl so'zni ALMASHTIRMAYDI, faqat qo'shiladi: mahsulot nomlari uz/ru, lug'atdagi
+ * inglizcha variant ("fen" → "hair dryer") yolg'iz qolsa asl so'z bilan topiladigan tovar yo'qolardi.
+ * Ikki so'zli lug'at kalitlari ("soch olish") bitta guruh bo'ladi.
+ */
+export function expandQuery(raw: string, dbSynonyms: Record<string, string> = {}): string[][] {
+    const q = cleanSearchText(raw);
+    if (!q) return [];
+    let words = q.split(" ").filter(Boolean);
+    const content = words.filter(w => !STOPWORDS.has(w));
+    if (content.length) words = content;
+
+    // brend/typo xaritasi natijasiga ham sinonim qo'llanadi: "airpos" → "airpods" → "quloqchin"
+    const mapped = (k: string) => {
+        const direct = [BRAND_MAP[k], SYNONYM_MAP[k], dbSynonyms[k]].filter((v): v is string => !!v).map(v => cleanSearchText(v));
+        const chained = direct.map(v => SYNONYM_MAP[v]).filter((v): v is string => !!v).map(v => cleanSearchText(v));
+        return [...direct, ...chained];
+    };
+
+    const groups: string[][] = [];
+    for (let i = 0; i < words.length; i++) {
+        const w = words[i];
+        const pair = i + 1 < words.length ? `${w} ${words[i + 1]}` : null;
+        const pairAlts = pair ? mapped(pair) : [];
+        if (pair && pairAlts.length) {
+            groups.push([pair, ...pairAlts]);
+            i++;
+            continue;
+        }
+        const alts = [w];
+        const stem = uzStem(w);
+        if (stem) alts.push(stem, ...mapped(stem));
+        const tr = transliterateLatin(w);
+        if (tr !== w) alts.push(tr);
+        alts.push(...mapped(w));
+        if (tr !== w) alts.push(...mapped(tr));
+        groups.push(alts);
+    }
+    return groups.map(g => Array.from(new Set(g.filter(Boolean))).slice(0, 6));
 }

@@ -19,6 +19,7 @@
 
 import fs from 'fs';
 import pg from 'pg';
+import { pathToFileURL } from 'url';
 import { getDatabaseUrl } from './get_db_url.mjs';
 
 const BASE = process.env.BASE || 'https://velari.uz';
@@ -93,11 +94,11 @@ export const TEXT_SET = [
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-function productText(p, cats) {
+export function productText(p, cats) {
     const c = cats.get(String(p.category_id)) || {};
     return [p.name, p.name_uz, p.name_ru, p.model, c.name, c.name_uz, c.name_ru].filter(Boolean).join(' | ').toLowerCase();
 }
-const isRel = (text, rules) => rules.every(r => r.test(text));
+export const isRel = (text, rules) => rules.every(r => r.test(text));
 
 async function post(body) {
     const t0 = Date.now();
@@ -196,4 +197,7 @@ async function main() {
     await db.end();
 }
 
-main().catch(e => { console.error('XATO:', e); process.exit(1); });
+// Boshqa skript (embed-model-compare) TEXT_SET'ni import qilganda ishga tushmasin
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+    main().catch(e => { console.error('XATO:', e); process.exit(1); });
+}

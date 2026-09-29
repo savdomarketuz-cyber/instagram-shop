@@ -103,6 +103,8 @@ export default function CatalogClient({
     const [lensResults, setLensResults] = useState<Product[]>([]);
     const [searchPage, setSearchPage] = useState(1);
     const [hasMoreSearch, setHasMoreSearch] = useState(false);
+    // API'dagi jami topilganlar soni (sahifa hajmi emas)
+    const [searchTotal, setSearchTotal] = useState<number | null>(null);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [didYouMean, setDidYouMean] = useState<string | null>(null);
     const isVisualActiveRef = useRef(false);
@@ -319,6 +321,7 @@ export default function CatalogClient({
                     setSearchResults(data.results);
                     setHasMoreSearch(!!data.hasMore);
                     setDidYouMean(data.didYouMean || null);
+                    setSearchTotal(typeof data.total === "number" ? data.total : data.results.length);
                 }
             } catch (err: any) {
                 if (err?.name !== "AbortError") {
@@ -638,6 +641,15 @@ export default function CatalogClient({
                             {didYouMean}
                         </button>
                     </div>
+                )}
+
+                {/* Qidiruv: jami topilganlar soni yoki "topilmadi" */}
+                {searchQuery.trim() && searchResults !== null && !isSearching && searchTotal !== null && (
+                    <p className="mb-3 mx-1 text-[13px] font-medium text-[#737D75]">
+                        {searchTotal === 0
+                            ? (language === "uz" ? "Hech narsa topilmadi — bu so'rov bo'yicha do'konda mahsulot yo'q" : "Ничего не найдено — по этому запросу товаров нет")
+                            : (language === "uz" ? `${searchTotal} ta mahsulot topildi` : `Найдено товаров: ${searchTotal}`)}
+                    </p>
                 )}
 
                 {/* Mahsulotlar ro'yxati (Bosh sahifa bilan 1:1 bir xil ProductGrid) */}

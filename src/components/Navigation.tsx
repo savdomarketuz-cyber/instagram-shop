@@ -136,7 +136,7 @@ export default function Navigation() {
                     const res = await fetch("/api/search", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ image: compressedBase64, limit: 50, userPhone: user?.phone })
+                        body: JSON.stringify({ image: compressedBase64, limit: 50 })
                     });
                     const data = await res.json();
                     
@@ -191,7 +191,7 @@ export default function Navigation() {
             const res = await fetch("/api/search", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ image: croppedBase64, limit: 50, userPhone: user?.phone })
+                body: JSON.stringify({ image: croppedBase64, limit: 50 })
             });
             const data = await res.json();
             if (data.results && data.results.length > 0) {
@@ -243,10 +243,11 @@ export default function Navigation() {
             const res = await fetch('/api/search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: activeQuery, userPhone: user?.phone })
+                body: JSON.stringify({ query: activeQuery, limit: 60 })
             });
             const data = res.ok ? await res.json() : { results: [], facets: null, didYouMean: null, isFallback: false };
-            setSearchResults(data.results || [], data.facets || null, data.didYouMean || null, !!data.isFallback);
+            setSearchResults(data.results || [], data.facets || null, data.didYouMean || null, !!data.isFallback,
+                { total: data.total ?? (data.results || []).length, hasMore: !!data.hasMore, page: 1, query: activeQuery.trim(), category: null });
             setStoreGlobalQuery(activeQuery);
             if (!isHomePage && !isCatalogPage) router.push(`/${language}`);
         } catch (err) {
@@ -285,7 +286,7 @@ export default function Navigation() {
                 const res = await fetch('/api/search', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: val, suggest: true, userPhone: user?.phone }),
+                    body: JSON.stringify({ query: val, suggest: true }),
                     signal: controller.signal,
                 });
                 // Bu so'rov eskirgan bo'lsa — natijani qo'llamaymiz
