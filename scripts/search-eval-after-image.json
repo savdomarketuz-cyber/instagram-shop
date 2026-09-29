@@ -1,0 +1,101 @@
+{
+ "base": "https://velari.uz",
+ "at": "2026-09-29T20:00:45.988Z",
+ "text": [],
+ "image": [
+  {
+   "id": "fddbfaac-5e67-4bf6-a3b3-c7cee3cd8244",
+   "name": "Soch va soqol olish uchun professional trimmer VGR",
+   "kb": 79,
+   "rank": 1,
+   "n": 20,
+   "status": 200,
+   "ms": 8019
+  },
+  {
+   "id": "9ab5d662-cb8d-4057-bdae-d03bf640916b",
+   "name": "Soch to'g'rilash uchun dazmol M.A.C STYLER MC-3086",
+   "kb": 81,
+   "rank": 1,
+   "n": 20,
+   "status": 200,
+   "ms": 9029
+  },
+  {
+   "id": "8b4f3e8a-59af-4bc2-909b-a6497c8379cc",
+   "name": "Soch quritish uchun professional fen VGR V401, Qiz",
+   "kb": 187,
+   "rank": 1,
+   "n": 20,
+   "status": 200,
+   "ms": 4494
+  },
+  {
+   "id": "847fd1ea-0757-4fec-a48d-94738004c567",
+   "name": "Zumba ZM-8061 brashing professional elektr tarog‘i",
+   "kb": 184,
+   "rank": 1,
+   "n": 20,
+   "status": 200,
+   "ms": 4527
+  },
+  {
+   "id": "5bc3c896-1d70-4240-9aae-d2e33017732a",
+   "name": "M·A·C STYLER MC-16D Fen-Taroq, 1000W, Keramik Qopl",
+   "kb": 118,
+   "rank": 1,
+   "n": 20,
+   "status": 200,
+   "ms": 3496
+  },
+  {
+   "id": "73fb0bd3-652b-43bb-8de7-c4478e1dd2de",
+   "name": "Ayollar uchun professional epilyator M.A.C STYLER ",
+   "kb": 111,
+   "rank": 1,
+   "n": 20,
+   "status": 200,
+   "ms": 3833
+  },
+  {
+   "id": "b1ad1b5f-2a2a-4b00-ab59-596c650501f7",
+   "name": "Portativ simsiz Bluetooth kalonka Sing-e ZQS-6212,",
+   "kb": 92,
+   "rank": 1,
+   "n": 20,
+   "status": 200,
+   "ms": 4061
+  },
+  {
+   "id": "de2715af-3ca4-4a27-a397-b92b24245277",
+   "name": "Simsiz Bluetooth quloqchinlar Apple PODS-MAX-LUX, ",
+   "kb": 105,
+   "rank": 1,
+   "n": 20,
+   "status": 200,
+   "ms": 6382
+  },
+  {
+   "id": "0ec09109-296f-49ee-8650-037c99b4e97e",
+   "name": "CRONIER CR-208 professional katushka apparati, zan",
+   "kb": 148,
+   "rank": 1,
+   "n": 20,
+   "status": 200,
+   "ms": 9214
+  },
+  {
+   "id": "a678d9d9-915a-4fbe-bc10-b934378f190e",
+   "name": "Telefon va kamera uchun shtativ tripod Jmary KP-22",
+   "kb": 60,
+   "rank": 1,
+   "n": 20,
+   "status": 200,
+   "ms": 4674
+  }
+ ],
+ "imageSummary": {
+  "total": 10,
+  "top3": 10
+ }
+}
