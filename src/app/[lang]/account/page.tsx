@@ -226,7 +226,7 @@ function AccountContent() {
                         {language === 'uz' ? 'Profilga kirib buyurtmalarni kuzating' : 'Войдите чтобы отслеживать заказы'}
                     </p>
                 </div>
-                <Link href={`/${language}/login`} style={{
+                <Link href={`/${language}/login`} prefetch={false} style={{
                     display: "block", width: "100%", maxWidth: 200, textAlign: "center",
                     background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)",
                     color: "#fff", padding: "16px 0", borderRadius: 18,
@@ -437,7 +437,7 @@ function AccountContent() {
                     {/* Stats row */}
                     <div style={{ marginTop: 18, display: "flex", gap: 8, position: "relative" }}>
                         <Link
-                            href={`/${language}/orders`}
+                            href={`/${language}/orders`} prefetch={false}
                             onClick={() => videoPreWarmer.triggerHaptic("light")}
                             className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform flex-1 p-2.5 rounded-[18px] bg-white/12 backdrop-blur-md border border-white/15 text-white no-underline block text-center"
                         >
@@ -445,7 +445,7 @@ function AccountContent() {
                             <div className="text-[11px] opacity-80 font-medium mt-0.5">{t.account.orders}</div>
                         </Link>
                         <Link
-                            href={`/${language}/wishlist`}
+                            href={`/${language}/wishlist`} prefetch={false}
                             onClick={() => videoPreWarmer.triggerHaptic("light")}
                             className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform flex-1 p-2.5 rounded-[18px] bg-white/12 backdrop-blur-md border border-white/15 text-white no-underline block text-center"
                         >

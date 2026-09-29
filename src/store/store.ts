@@ -4,6 +4,8 @@ import { supabase } from "@/lib/supabase";
 import type { Product, CartItem, User, Category, Toast, Language, SearchFacets } from "@/types";
 
 /** Qidiruv holati: API'dagi jami son (total), keyingi sahifa, qaysi so'rov/kategoriya uchun. */
+let warehousesInflight: Promise<void> | null = null;
+
 export type SearchMeta = { total: number; hasMore: boolean; page: number; query: string; category: string | null };
 import { ymGoal, ymAddToCart, ymRemoveFromCart } from "@/lib/metrika";
 
@@ -185,13 +187,19 @@ export const useStore = create<StoreState>()(
             warehouses: [],
             fetchWarehouses: async () => {
                 if (get().warehouses.length > 0) return; // ikki marta yuklamaymiz
-                try {
-                    const { data } = await supabase
-                        .from("warehouses")
-                        .select("id,name,logo,dbs_config,active")
-                        .eq("active", true);
-                    if (data) set({ warehouses: data });
-                } catch { /* offline — e'tibordan chetda */ }
+                // HomeClient va AppWrapper bir vaqtda chaqiradi — davom etayotgan so'rov ulashiladi (bitta so'rov)
+                if (warehousesInflight) return warehousesInflight;
+                warehousesInflight = (async () => {
+                    try {
+                        const { data } = await supabase
+                            .from("warehouses")
+                            .select("id,name,logo,dbs_config,active")
+                            .eq("active", true);
+                        if (data) set({ warehouses: data });
+                    } catch { /* offline — e'tibordan chetda */ }
+                    finally { warehousesInflight = null; }
+                })();
+                return warehousesInflight;
             },
         }),
         {

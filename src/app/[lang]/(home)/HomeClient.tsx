@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { Search, Sparkles, MapPin, ChevronRight, ChevronLeft, User, X, Loader2, LayoutGrid, Camera } from "lucide-react";
 import { useStore } from "@/store/store";
@@ -11,6 +11,17 @@ import { mapProduct, mapBanner } from "@/lib/mappers";
 import { getProductRealStock } from "@/lib/stock";
 import { translations } from "@/lib/translations";
 import { useSearchParams, useRouter } from "next/navigation";
+
+// URL filtri (?category / ?brand) — alohida komponent o'z Suspense'ida. useSearchParams HomeClient'ning
+// o'zida bo'lsa, butun bosh sahifa server'da render qilinmay (BAILOUT_TO_CLIENT_SIDE_RENDERING) HTML'da
+// faqat skeleton qolardi: story rasmi (LCP) va mahsulotlar JS yuklanib bo'lguncha ko'rinmasdi.
+function UrlFilterReader({ onChange }: { onChange: (category: string | null, brand: string | null) => void }) {
+    const searchParams = useSearchParams();
+    const category = searchParams.get("category");
+    const brand = searchParams.get("brand");
+    useEffect(() => { onChange(category, brand); }, [category, brand, onChange]);
+    return null;
+}
 
 // Components
 import { BannerSection } from "@/components/home/BannerSection";
@@ -44,10 +55,13 @@ export default function HomeClient({
     initialFeaturedCategories,
     initialStoryGroups,
 }: HomeClientProps) {
-    const searchParams = useSearchParams();
     const router = useRouter();
-    const urlCategory = searchParams.get("category");
-    const urlBrand = searchParams.get("brand");
+    const [urlCategory, setUrlCategory] = useState<string | null>(null);
+    const [urlBrand, setUrlBrand] = useState<string | null>(null);
+    const handleUrlFilter = useCallback((category: string | null, brand: string | null) => {
+        setUrlCategory(category);
+        setUrlBrand(brand);
+    }, []);
 
     const { 
         cart, wishlist, language, user, addToCart, updateQuantity, removeFromCart, 
@@ -545,6 +559,7 @@ export default function HomeClient({
 
     return (
         <main style={{ minHeight: "100svh", background: "#FAFAF6", paddingBottom: 100 }} className="max-w-[1600px] mx-auto">
+            <Suspense fallback={null}><UrlFilterReader onChange={handleUrlFilter} /></Suspense>
             <h1 className="sr-only">{t.common.homeTitle}</h1>
 
             {/* ── MOBILE: Velari sticky header ── */}
@@ -712,7 +727,7 @@ export default function HomeClient({
                         <div className="col-span-1 h-full flex flex-col gap-5">
                             <PromoCountdown language={language} initialSettings={initialPromo} variant="card" />
                             <Link
-                                href={`/${language}/login`}
+                                href={`/${language}/login`} prefetch={false}
                                 className="flex flex-1 min-h-0 flex-col justify-between transition-transform hover:-translate-y-0.5 active:scale-[0.98] duration-150 ease-out will-change-transform"
                                 style={{
                                     background: "linear-gradient(135deg,#FBF4E6 0%,#F7ECD4 100%)",

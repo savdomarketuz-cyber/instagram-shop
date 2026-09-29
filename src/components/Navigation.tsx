@@ -493,7 +493,7 @@ export default function Navigation() {
                         </Link>
 
                         <Link
-                            href={l("/orders")}
+                            href={l("/orders")} prefetch={false}
                             onClick={() => videoPreWarmer.triggerHaptic("light")}
                             className={`ios-icon-tap active:scale-95 flex flex-col items-center gap-1 group transition-colors duration-150 will-change-transform ${pathname === l('/orders') ? 'text-black' : 'text-gray-400 hover:text-black'}`}
                         >
@@ -504,7 +504,7 @@ export default function Navigation() {
                         </Link>
 
                         <Link
-                            href={l("/wishlist")}
+                            href={l("/wishlist")} prefetch={false}
                             onClick={() => videoPreWarmer.triggerHaptic("light")}
                             className={`ios-icon-tap active:scale-95 flex flex-col items-center gap-1 group transition-colors duration-150 will-change-transform ${pathname === l('/wishlist') ? 'text-black' : 'text-gray-400 hover:text-black'}`}
                         >
@@ -515,7 +515,7 @@ export default function Navigation() {
                         </Link>
 
                         <Link
-                            href={l("/cart")}
+                            href={l("/cart")} prefetch={false}
                             onClick={() => videoPreWarmer.triggerHaptic("light")}
                             className={`ios-icon-tap active:scale-95 flex flex-col items-center gap-1 group transition-colors duration-150 will-change-transform ${pathname === l('/cart') ? 'text-black' : 'text-gray-400 hover:text-black'}`}
                         >
@@ -538,7 +538,7 @@ export default function Navigation() {
                                 </Link>
                             ) : (
                                 <Link
-                                    href={l("/login")}
+                                    href={l("/login")} prefetch={false}
                                     onClick={() => videoPreWarmer.triggerHaptic("light")}
                                     className="ios-tap-feedback active:scale-95 bg-[#F2F3F5] hover:bg-black hover:text-white px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-150 shadow-sm hover:shadow-xl will-change-transform"
                                 >
@@ -637,6 +637,8 @@ export default function Navigation() {
                                 <Link
                                     key={tab.href}
                                     href={tab.href}
+                                    // Shaxsiy sahifalar (savat, xabarlar, login/kabinet) oldindan yuklanmaydi — 1-ekran trafigi kamayadi
+                                    prefetch={tab.href === l("/") || tab.href === l("/catalog") ? undefined : false}
                                     onClick={() => {
                                         setNavOptimisticIndex(idx);
                                         videoPreWarmer.triggerHaptic("selection");

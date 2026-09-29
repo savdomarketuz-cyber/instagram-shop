@@ -24,7 +24,8 @@ const MOBILE = args.includes('--mobile');
 const OUT = opt('--out', null);
 const BLOCK = args.flatMap((a, i) => (a === '--block' ? [args[i + 1]] : []));
 // A/B: sayt JS chunk'larida matnni "yo'lda" almashtirish, masalan --patch "clickmap:true=>clickmap:false"
-const PROFILE = args.includes('--profile'); // CPU profil: eng ko'p vaqt olgan funksiyalar (self time)
+const PROFILE = args.includes('--profile');
+const RESOURCES = args.includes('--resources'); // resurslar ro'yxati: boshlanish vaqti, hajm, tur // CPU profil: eng ko'p vaqt olgan funksiyalar (self time)
 const PATCHES = args.flatMap((a, i) => (a === '--patch' ? [args[i + 1].split('=>')] : []));
 const SETTLE_MS = Number(opt('--settle', '12000')); // load'dan keyin kutish (lazy skriptlar ham ishlasin)
 const CHROME = process.env.CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe';
@@ -78,7 +79,7 @@ async function runOnce(n) {
         const { sessionId: s } = await c.send('Target.attachToTarget', { targetId, flatten: true });
         const S = (m, p) => c.send(m, p, s);
 
-        const bytes = {}; let loaded = false; let patched = 0; const errors = [];
+        const bytes = {}; const starts = {}; let loaded = false; let patched = 0; const errors = [];
         c.on(async msg => {
             if (msg.sessionId !== s) return;
             if (msg.method === 'Fetch.requestPaused') {
@@ -97,7 +98,8 @@ async function runOnce(n) {
                 } catch { try { await S('Fetch.continueRequest', { requestId }); } catch {} }
                 return;
             }
-            if (msg.method === 'Network.responseReceived') bytes[msg.params.requestId] = { url: msg.params.response.url, len: 0 };
+            if (msg.method === 'Network.requestWillBeSent') starts[msg.params.requestId] = { t: msg.params.timestamp, type: msg.params.type, prio: msg.params.request.initialPriority };
+            if (msg.method === 'Network.responseReceived') bytes[msg.params.requestId] = { url: msg.params.response.url, len: 0, type: msg.params.type };
             if (msg.method === 'Network.loadingFinished' && bytes[msg.params.requestId]) bytes[msg.params.requestId].len = msg.params.encodedDataLength;
             if (msg.method === 'Page.loadEventFired') loaded = true;
             if (msg.method === 'Runtime.exceptionThrown') errors.push((msg.params.exceptionDetails.exception?.description || msg.params.exceptionDetails.text || '').split(String.fromCharCode(10))[0].slice(0, 160));
@@ -141,6 +143,13 @@ async function runOnce(n) {
         const fcp = P.fcp ?? 0;
         const lts = (P.lt || []).sort((a, b) => b.dur - a.dur);
         const tbt = (P.lt || []).filter(l => l.start >= fcp).reduce((sum, l) => sum + Math.max(0, l.dur - 50), 0);
+        if (RESOURCES) {
+            const t0s = Math.min(...Object.values(starts).map(x => x.t));
+            const list = Object.entries(bytes).map(([id, b]) => ({ ms: Math.round(((starts[id]?.t || t0s) - t0s) * 1000), kb: Math.round(b.len / 1024), type: b.type, prio: starts[id]?.prio, url: b.url.replace(/^https?:\/\//, '').slice(0, 90) }))
+                .filter(x => x.kb > 0).sort((a, b) => a.ms - b.ms);
+            console.log('  RESURSLAR (boshlanish ms, KB, tur, ustuvorlik):');
+            list.slice(0, 45).forEach(x => console.log(`    ${String(x.ms).padStart(6)}ms ${String(x.kb).padStart(5)}KB ${String(x.type).padEnd(10)} ${String(x.prio).padEnd(8)} ${x.url}`));
+        }
         const byHost = {};
         let total = 0;
         for (const b of Object.values(bytes)) { let h = 'other'; try { h = new URL(b.url).host; } catch {} byHost[h] = (byHost[h] || 0) + b.len; total += b.len; }

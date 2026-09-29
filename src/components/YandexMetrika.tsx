@@ -82,11 +82,8 @@ export default function YandexMetrika({ ymid }: { ymid?: string }) {
   return (
     <>
       <MetrikaPageTracker />
-      <noscript>
-        <div>
-          <img src={`https://mc.yandex.ru/watch/${id}`} style={{ position: 'absolute', left: '-9999px' }} alt="" />
-        </div>
-      </noscript>
+      {/* Xom HTML: React <img> uchun <link rel="preload"> qo'shib, JS'li foydalanuvchilarda ham so'rov yuborardi */}
+      <noscript dangerouslySetInnerHTML={{ __html: `<div><img src="https://mc.yandex.ru/watch/${id}" style="position:absolute;left:-9999px" alt="" /></div>` }} />
     </>
   );
 }

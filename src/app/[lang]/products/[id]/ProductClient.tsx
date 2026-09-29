@@ -1030,7 +1030,7 @@ export default function ProductClient({
                                                 </button>
                                             </div>
                                             <Link
-                                                href={`/${language}/cart`}
+                                                href={`/${language}/cart`} prefetch={false}
                                                 onClick={() => videoPreWarmer.triggerHaptic("light")}
                                                 className="glass-prominent-button h-[52px] px-5 rounded-[var(--radius-control)]"
                                             >
@@ -1233,7 +1233,7 @@ export default function ProductClient({
                                 </button>
                             </div>
                             <Link
-                                href={`/${language}/cart`}
+                                href={`/${language}/cart`} prefetch={false}
                                 onClick={() => videoPreWarmer.triggerHaptic("light")}
                                 className="glass-prominent-button"
                                 style={{ width: 48, height: 48, borderRadius: 16, flexShrink: 0, padding: 0 }}

@@ -52,15 +52,8 @@ export default function MetaPixel({ pixelId }: { pixelId?: string }) {
         strategy="lazyOnload"
         dangerouslySetInnerHTML={{ __html: scriptHtml }}
       />
-      <noscript>
-        <img
-          height="1"
-          width="1"
-          style={{ display: 'none' }}
-          src={`https://www.facebook.com/tr?id=${id}&ev=PageView&noscript=1`}
-          alt=""
-        />
-      </noscript>
+      {/* Xom HTML: React <img> uchun <link rel="preload"> qo'shib, JS'li foydalanuvchilarda ham so'rov yuborardi */}
+      <noscript dangerouslySetInnerHTML={{ __html: `<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${id}&ev=PageView&noscript=1" alt="" />` }} />
       <MetaPixelTracker pixelId={id} />
     </>
   );
