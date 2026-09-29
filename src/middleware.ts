@@ -46,8 +46,11 @@ export async function middleware(request: NextRequest) {
         const locale = getLocale(request);
         const url = new URL(`/${locale}${pathname === '/' ? '' : pathname}`, request.url);
         url.search = request.nextUrl.search;
-        // 308 — doimiy: qidiruv tizimlari tilsiz manzilni /uz/... ga ko'chiradi
-        return NextResponse.redirect(url, 308);
+        // 307 + Vary: til brauzer tiliga (Accept-Language) qarab tanlanadi — natija foydalanuvchiga bog'liq,
+        // shuning uchun doimiy (308) emas va keshlar tilni hisobga olsin. Slug redirect'lari (sahifalarda) 308.
+        const res = NextResponse.redirect(url, 307);
+        res.headers.set('Vary', 'Accept-Language');
+        return res;
     }
 
     // 3. Admin Protection

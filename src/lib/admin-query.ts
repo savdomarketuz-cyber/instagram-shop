@@ -17,6 +17,7 @@ export interface AdminQueryResult<T = any[]> {
 
 export class AdminQuery<T = any[]> implements PromiseLike<AdminQueryResult<T>> {
     private steps: Step[] = [];
+    private signal?: AbortSignal;
 
     constructor(private table: string) {}
 
@@ -47,6 +48,8 @@ export class AdminQuery<T = any[]> implements PromiseLike<AdminQueryResult<T>> {
     // single/maybeSingle — natija massiv emas, bitta qator
     single(): AdminQuery<any> { return this.add('single', []) as unknown as AdminQuery<any>; }
     maybeSingle(): AdminQuery<any> { return this.add('maybeSingle', []) as unknown as AdminQuery<any>; }
+    /** Eskirgan so'rovni bekor qilish (supabase-js abortSignal kabi). Bekor qilinsa error.code = 'ABORTED'. */
+    abortSignal(signal: AbortSignal): this { this.signal = signal; return this; }
 
     then<R1 = AdminQueryResult<T>, R2 = never>(
         onfulfilled?: ((value: AdminQueryResult<T>) => R1 | PromiseLike<R1>) | null,
@@ -62,6 +65,7 @@ export class AdminQuery<T = any[]> implements PromiseLike<AdminQueryResult<T>> {
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',
                 body: JSON.stringify({ table: this.table, steps: this.steps }),
+                signal: this.signal,
             });
             const json = await res.json().catch(() => ({}));
             if (!res.ok && !json.error) {
@@ -69,6 +73,7 @@ export class AdminQuery<T = any[]> implements PromiseLike<AdminQueryResult<T>> {
             }
             return { data: json.data ?? null, error: json.error ?? null, count: json.count ?? null };
         } catch (e: any) {
+            if (e?.name === 'AbortError') return { data: null, error: { message: 'aborted', code: 'ABORTED' }, count: null };
             return { data: null, error: { message: e?.message || 'Network error' }, count: null };
         }
     }

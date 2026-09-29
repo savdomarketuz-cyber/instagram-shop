@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import { supabaseAdminFresh } from "@/lib/supabase-admin";
 import { verifyJwt } from "@/lib/jwt-utils";
 
 export const dynamic = "force-dynamic";
@@ -46,7 +46,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ data: null, count: null, error: { message: "Only one select() allowed" } }, { status: 400 });
         }
 
-        let query: any = supabaseAdmin.from(table);
+        // Fresh (no-store) mijoz: admin har doim eng oxirgi holatni ko'rsin (Next fetch keshi emas)
+        let query: any = supabaseAdminFresh.from(table);
         for (const { m, a } of steps) {
             query = query[m](...a);
         }

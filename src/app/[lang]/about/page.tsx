@@ -10,8 +10,12 @@ export async function generateMetadata({ params: { lang } }: { params: { lang: s
     const settings = await getShopSettingsServer();
     const shopName = settings.name || 'Velari';
 
-    const title = `${t.aboutUs.title} | ${shopName} - O'zbekistonda №1 Premium Marketplace`;
-    const description = `${t.aboutUs.subtitle}. ${t.aboutUs.mainTitle}. ${shopName} market — O'zbekistonda sifatli elektronika va maishiy texnika do'koni.`;
+    const title = language === 'ru'
+        ? `${t.aboutUs.title} | ${shopName} — премиум маркетплейс №1 в Узбекистане`
+        : `${t.aboutUs.title} | ${shopName} - O'zbekistonda №1 Premium Marketplace`;
+    const description = language === 'ru'
+        ? `${t.aboutUs.subtitle}. ${t.aboutUs.mainTitle}. ${shopName} — магазин качественной электроники и бытовой техники в Узбекистане.`
+        : `${t.aboutUs.subtitle}. ${t.aboutUs.mainTitle}. ${shopName} market — O'zbekistonda sifatli elektronika va maishiy texnika do'koni.`;
 
     return {
         title: { absolute: title },

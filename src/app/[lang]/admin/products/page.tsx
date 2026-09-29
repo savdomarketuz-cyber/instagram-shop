@@ -1,7 +1,7 @@
 "use client";
 
 import { useStore } from "@/store/store";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { adminFrom } from "@/lib/admin-query";
@@ -108,6 +108,10 @@ interface Product {
 
 import { uploadToYandexS3, uploadAdminToYandexS3, uploadFromUrlToYandexS3 } from "@/lib/yandex-s3";
 
+// Ro'yxat uchun ustunlar: embedding / image_embedding (har biri JSON'da ~15 KB), embedding_hash,
+// ai_persona, tavsiflar YO'Q. Tahrirlash/Moomkin to'liq mahsulotni alohida oladi (loadFullProduct).
+const ADMIN_LIST_COLUMNS = "id,name,name_uz,name_ru,image,images,image_metadata,price,old_price,cost_price,stock,stock_details,category_id,brand_id,article,sku,model,barcode,sales,is_original,is_deleted,created_at,group_id,color_name,video_url,express_delivery,avg_rating,review_count";
+
 function AdminProducts() {
     const params = useParams();
     const pathname = usePathname();
@@ -119,7 +123,14 @@ function AdminProducts() {
     const [searchTerm, setSearchTerm] = useState("");
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
-    const [loading, setLoading] = useState(false);
+    // loading: birinchi yuklash (ro'yxat hali yo'q); listLoading: yangilash (eski ro'yxat ko'rinib turadi)
+    const [loading, setLoading] = useState(true);
+    const [listLoading, setListLoading] = useState(false);
+    const [listError, setListError] = useState<string | null>(null);
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+    const listReqRef = useRef(0);
+    const listAbortRef = useRef<AbortController | null>(null);
+    const listKeyRef = useRef<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
@@ -490,7 +501,7 @@ function AdminProducts() {
         const aTab = getParam("tab", "active") as any;
         const pNum = Number(getParam("page", "1")) || 1;
 
-        if (sTerm) setSearchTerm(sTerm);
+        if (sTerm) { setSearchTerm(sTerm); setDebouncedSearch(sTerm); }
         if (fCat) setFilterCategory(fCat);
         if (fBrand) setFilterBrand(fBrand);
         if (fStock) setFilterStock(fStock);
@@ -539,15 +550,31 @@ function AdminProducts() {
         view, activeTab, currentPage, isStateInitialized, pathname
     ]);
 
-    // 3. Reactive Data Fetching
+    // 3a. Qidiruv matni — 400 ms debounce (har harfga so'rov ketmasin)
     useEffect(() => {
-        if (isStateInitialized) {
-            fetchData(currentPage, false);
-        }
+        if (!isStateInitialized) return;
+        const t = setTimeout(() => setDebouncedSearch(searchTerm), 400);
+        return () => clearTimeout(t);
+    }, [searchTerm, isStateInitialized]);
+
+    // 3b. YAGONA yuklash oqimi: bitta o'zgarishga bitta so'rov.
+    // Qidiruv/filtr/saralash/tab o'zgarsa va sahifa 1 bo'lmasa — avval sahifa 1 ga o'tiladi,
+    // so'rov keyingi renderda (sahifa=1) bitta marta ketadi.
+    useEffect(() => {
+        if (!isStateInitialized) return;
+        const key = JSON.stringify([debouncedSearch, filterCategory, filterBrand, filterStock, filterPriceMin,
+            filterPriceMax, filterOriginal, filterDiscount, sortBy, activeTab, itemsPerPage]);
+        const changed = listKeyRef.current !== null && listKeyRef.current !== key;
+        listKeyRef.current = key;
+        if (changed && currentPage !== 1) { setCurrentPage(1); return; }
+        fetchData(currentPage);
     }, [
-        searchTerm, filterCategory, filterBrand, filterStock, filterPriceMin,
-        filterPriceMax, filterOriginal, filterDiscount, sortBy, activeTab, currentPage, isStateInitialized
+        debouncedSearch, filterCategory, filterBrand, filterStock, filterPriceMin, filterPriceMax,
+        filterOriginal, filterDiscount, sortBy, activeTab, itemsPerPage, currentPage, isStateInitialized
     ]);
+
+    // 3c. Kategoriya va brendlar — bir marta
+    useEffect(() => { loadCategoriesAndBrands(); }, []);
 
     // 4. Moomkin.uz Registry yuklash
     useEffect(() => {
@@ -723,16 +750,20 @@ function AdminProducts() {
         }
     };
 
-    const fetchData = async (page = 1, isInitial = false) => {
-        if (isInitial) setLoading(true);
+    const fetchData = async (page = 1, _isInitial = false) => {
+        // Faqat ENG OXIRGI so'rov javobi qo'llanadi: oldingisi bekor qilinadi, kech kelgan javob tashlanadi
+        const reqId = ++listReqRef.current;
+        listAbortRef.current?.abort();
+        const controller = new AbortController();
+        listAbortRef.current = controller;
+        setListLoading(true);
+        setListError(null);
         try {
-            console.log(`Fetching products (page ${page})...`);
-            
             const from = (page - 1) * itemsPerPage;
             const to = from + itemsPerPage - 1;
 
             let query = adminFrom("products")
-                .select("*", { count: "exact" });
+                .select(ADMIN_LIST_COLUMNS, { count: "exact" });
 
             // Tab filter (Trash vs Active)
             query = query.eq("is_deleted", activeTab === "trash");
@@ -740,7 +771,7 @@ function AdminProducts() {
             // KUCHLI QIDIRUV (foydalanuvchidagidek, personalizatsiyasiz):
             // ko'p maydon (nom/SKU/tavsif/artikul/model/barkod), uz/ru aralash (translit),
             // qism-so'z ("pods" -> "airpods"), brend/sinonim normalizatsiya.
-            const rawTerm = searchTerm.trim();
+            const rawTerm = debouncedSearch.trim();
             if (rawTerm) {
                 const fields = ["name", "name_uz", "name_ru", "sku", "description", "description_uz", "description_ru", "article", "model", "barcode"];
                 const clean = (s: string) => (s || "").replace(/[,()"'%\\]/g, " ").trim();
@@ -767,6 +798,7 @@ function AdminProducts() {
             if (filterBrand) query = query.eq("brand_id", filterBrand);
             const pMin = Number(filterPriceMin), pMax = Number(filterPriceMax);
             if (filterPriceMin && !isNaN(pMin)) query = query.gte("price", pMin);
+            if (filterPriceMax && !isNaN(pMax)) query = query.lte("price", pMax);
             if (filterStock === "in") query = query.or("stock.gt.0,stock_details.neq.{}");
             else if (filterStock === "out") query = query.lte("stock", 0).or("stock_details.is.null,stock_details.eq.{}");
             if (filterOriginal === "yes") query = query.eq("is_original", true);
@@ -787,18 +819,30 @@ function AdminProducts() {
 
             const { data: pData, count, error: pError } = await query
                 .order(srt.col, { ascending: srt.asc })
-                .range(from, to);
-            
+                .range(from, to)
+                .abortSignal(controller.signal);
+
+            if (reqId !== listReqRef.current || pError?.code === "ABORTED") return; // eskirgan so'rov
             if (pError) throw pError;
 
-            if (pData) {
-                setProducts(pData.map(mapProduct) as any);
-                if (count !== null) setTotalCount(count);
+            setProducts((pData || []).map(mapProduct) as any);
+            if (count !== null) setTotalCount(count);
+        } catch (error: any) {
+            if (reqId !== listReqRef.current) return;
+            console.error("Error fetching products:", error);
+            setListError(error?.message || "Mahsulotlarni yuklab bo'lmadi");
+        } finally {
+            if (reqId === listReqRef.current) {
+                setListLoading(false);
+                setLoading(false);
             }
+        }
+    };
 
-            // Categories & Brands — faqat birinchi marta (initial) yoki bo'sh bo'lganda yuklanadi.
-            // Paginatsiya yoki qidiruv o'zgarganda qayta-qayta butun bazani tortish butunlay olib tashlandi.
-            if (rawCategories.length === 0 || isInitial) {
+    // Kategoriya va brendlar — sahifa ochilganda bir marta (ro'yxat so'rovidan alohida)
+    const loadCategoriesAndBrands = async () => {
+        try {
+            {
                 const [{ data: allCats }, { data: bList }] = await Promise.all([
                     supabase.from("categories").select("id, name, name_uz, name_ru, parent_id, is_deleted"),
                     supabase.from("brands").select("id, name").eq("is_deleted", false).order("name"),
@@ -846,10 +890,27 @@ function AdminProducts() {
                 }
             }
         } catch (error) {
-            console.error("Error fetching data:", error);
-        } finally {
-            if (isInitial) setLoading(false);
+            console.error("Error fetching categories/brands:", error);
         }
+    };
+
+    // Tahrirlash / Moomkin uchun TO'LIQ mahsulot (ro'yxatda og'ir maydonlar yo'q — tavsif, komissiya va h.k.)
+    const loadFullProduct = async (p: any): Promise<any> => {
+        const { data, error } = await adminFrom("products").select("*").eq("id", p.id).single();
+        if (error || !data) {
+            alert("❌ Mahsulotni to'liq yuklab bo'lmadi: " + (error?.message || "topilmadi"));
+            return null;
+        }
+        return mapProduct(data);
+    };
+
+    const openEditProduct = async (p: any) => {
+        const full = await loadFullProduct(p);
+        if (!full) return;
+        const imagesStr = full.images ? full.images.join('; ') : full.image;
+        setNewProduct({ ...full, images_string: imagesStr });
+        setProductSelectionPath(getPathForCategory(full.category));
+        setIsModalOpen(true);
     };
 
     const generateArticle = () => {
@@ -1432,23 +1493,6 @@ function AdminProducts() {
         }
     };
 
-    // Fetch data when page, search or tab changes
-    useEffect(() => {
-        fetchData(currentPage, false);
-    }, [currentPage, activeTab, itemsPerPage]);
-
-    // Reset to page 1 and fetch when search term OR any filter changes
-    useEffect(() => {
-        const delayDebounceFn = setTimeout(() => {
-            if (currentPage !== 1) {
-                setCurrentPage(1);
-            } else {
-                fetchData(1, false);
-            }
-        }, 400);
-
-        return () => clearTimeout(delayDebounceFn);
-    }, [searchTerm, filterCategory, filterBrand, filterStock, filterPriceMin, filterPriceMax, filterOriginal, filterDiscount, sortBy]);
 
     const totalPages = Math.ceil(totalCount / itemsPerPage);
 
@@ -1654,16 +1698,42 @@ function AdminProducts() {
                 </div>
             )}
 
-            {loading ? (
+            {/* Xato: ko'rinadigan xabar + qayta urinish (ro'yxat bo'lsa u ham qoladi) */}
+            {listError && (
+                <div className="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700">
+                    <div className="flex items-center gap-3 text-sm font-bold">
+                        <AlertCircle size={20} />
+                        <span>Mahsulotlarni yuklab bo&apos;lmadi: {listError}</span>
+                    </div>
+                    <button
+                        onClick={() => fetchData(currentPage)}
+                        className="px-5 py-2.5 rounded-xl bg-red-600 text-white text-xs font-black uppercase tracking-widest hover:bg-red-700 active:scale-95 transition-all"
+                    >
+                        Qayta urinish
+                    </button>
+                </div>
+            )}
+
+            {/* Yangilanish belgisi: eski ro'yxat ko'rinib turadi */}
+            {listLoading && products.length > 0 && (
+                <div className="mb-3 flex items-center gap-2 text-xs font-bold text-gray-400">
+                    <Loader2 className="animate-spin" size={14} /> Yangilanmoqda...
+                </div>
+            )}
+
+            {(loading || (listLoading && products.length === 0)) && !listError ? (
                 <div className="flex flex-col items-center justify-center py-32 text-gray-400">
                     <Loader2 className="animate-spin mb-4" size={32} />
                     <p className="font-black uppercase tracking-widest text-xs">Yuklanmoqda...</p>
                 </div>
             ) : products.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-32 text-gray-400 border-2 border-dashed border-gray-100 rounded-[40px]">
-                    <AlertCircle className="mb-4" size={48} strokeWidth={1} />
-                    <p className="font-black uppercase tracking-widest text-xs">Mahsulotlar topilmadi</p>
-                </div>
+                listError ? null : (
+                    // Faqat server haqiqatan 0 natija qaytarganda
+                    <div className="flex flex-col items-center justify-center py-32 text-gray-400 border-2 border-dashed border-gray-100 rounded-[40px]">
+                        <AlertCircle className="mb-4" size={48} strokeWidth={1} />
+                        <p className="font-black uppercase tracking-widest text-xs">Mahsulotlar topilmadi</p>
+                    </div>
+                )
             ) : (
                 <>
                     {/* Select All Bar */}
@@ -1713,10 +1783,7 @@ function AdminProducts() {
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            const imagesStr = p.images ? p.images.join('; ') : p.image;
-                                                            setNewProduct({ ...p, images_string: imagesStr });
-                                                            setProductSelectionPath(getPathForCategory(p.category));
-                                                            setIsModalOpen(true);
+                                                            openEditProduct(p);
                                                         }}
                                                         className="p-4 bg-white/90 backdrop-blur-md text-black rounded-2xl shadow-xl hover:bg-white transition-all border border-gray-100 active:scale-90"
                                                     >
@@ -1882,7 +1949,7 @@ function AdminProducts() {
                                                                 type="button"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    openMoomkinModal(p);
+                                                                    loadFullProduct(p).then(full => { if (full) openMoomkinModal(full); });
                                                                 }}
                                                                 className="mt-1 inline-flex items-center gap-1 text-[9px] font-black text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-0.5 rounded-md transition-colors w-fit active:scale-95"
                                                             >
@@ -1896,7 +1963,7 @@ function AdminProducts() {
                                                         type="button"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            handleMoomkinIntegrate(p);
+                                                            loadFullProduct(p).then(full => { if (full) handleMoomkinIntegrate(full); });
                                                         }}
                                                         disabled={moomkinIntegrating === p.id}
                                                         className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-md shadow-red-500/20 active:scale-95 transition-all disabled:opacity-50"
@@ -1937,12 +2004,7 @@ function AdminProducts() {
                                                             >
                                                                 <Sparkles size={18} />
                                                             </button>
-                                                            <button onClick={() => {
-                                                                const imagesStr = p.images ? p.images.join('; ') : p.image;
-                                                                setNewProduct({ ...p, images_string: imagesStr });
-                                                                setProductSelectionPath(getPathForCategory(p.category));
-                                                                setIsModalOpen(true);
-                                                            }} className="p-3 text-gray-400 hover:text-black hover:bg-white rounded-xl hover:shadow-lg transition-all"><Edit size={18} /></button>
+                                                            <button onClick={() => openEditProduct(p)} className="p-3 text-gray-400 hover:text-black hover:bg-white rounded-xl hover:shadow-lg transition-all"><Edit size={18} /></button>
                                                             <button onClick={(e) => moveToTrash(p.id, e)} className="p-3 text-gray-400 hover:text-red-500 hover:bg-white rounded-xl hover:shadow-lg transition-all"><Trash2 size={18} /></button>
                                                         </>
                                                     ) : (
