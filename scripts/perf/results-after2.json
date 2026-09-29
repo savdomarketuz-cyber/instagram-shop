@@ -1,0 +1,285 @@
+[
+ {
+  "at": "2026-09-29T20:55:35.273Z",
+  "summary": {
+   "url": "https://velari.uz/uz",
+   "mobile": false,
+   "block": [],
+   "runs": 3,
+   "maxLongTask": 62,
+   "tbt": 12,
+   "fcp": 1420,
+   "lcp": 1420,
+   "totalKB": 2086
+  },
+  "runs": [
+   {
+    "run": 1,
+    "loadMs": 7837,
+    "patched": 0,
+    "errors": 2,
+    "page": "Velari | O'zbekistonda №1 Premium Elektronika Do'koni | body=3602",
+    "fcp": 2556,
+    "lcp": 2556,
+    "lcpEl": "DIV",
+    "lcpUrl": null,
+    "maxLongTask": 62,
+    "tbt": 12,
+    "longTasks": [
+     {
+      "start": 8447,
+      "dur": 62,
+      "attr": "unknown"
+     }
+    ],
+    "totalKB": 2086,
+    "byHostKB": {
+     "storage.yandexcloud.net": 951,
+     "velari.uz": 579,
+     "connect.facebook.net": 256,
+     "www.googletagmanager.com": 189,
+     "mc.yandex.ru": 110,
+     "slmbethqqqugnktxwzdz.supabase.co": 1,
+     "o4511188648656896.ingest.de.sentry.io": 1,
+     "stats.g.doubleclick.net": 1
+    }
+   },
+   {
+    "run": 2,
+    "loadMs": 5545,
+    "patched": 0,
+    "errors": 2,
+    "page": "Velari | O'zbekistonda №1 Premium Elektronika Do'koni | body=3025",
+    "fcp": 1420,
+    "lcp": 1420,
+    "lcpEl": "DIV",
+    "lcpUrl": null,
+    "maxLongTask": 62,
+    "tbt": 12,
+    "longTasks": [
+     {
+      "start": 6390,
+      "dur": 62,
+      "attr": "unknown"
+     }
+    ],
+    "totalKB": 2075,
+    "byHostKB": {
+     "storage.yandexcloud.net": 934,
+     "velari.uz": 584,
+     "connect.facebook.net": 256,
+     "www.googletagmanager.com": 189,
+     "mc.yandex.ru": 110,
+     "slmbethqqqugnktxwzdz.supabase.co": 1,
+     "stats.g.doubleclick.net": 1,
+     "o4511188648656896.ingest.de.sentry.io": 1
+    }
+   },
+   {
+    "run": 3,
+    "loadMs": 9923,
+    "patched": 0,
+    "errors": 2,
+    "page": "Velari | O'zbekistonda №1 Premium Elektronika Do'koni | body=3602",
+    "fcp": 1376,
+    "lcp": 1376,
+    "lcpEl": "DIV",
+    "lcpUrl": null,
+    "maxLongTask": 88,
+    "tbt": 11,
+    "longTasks": [
+     {
+      "start": 899,
+      "dur": 88,
+      "attr": "unknown"
+     },
+     {
+      "start": 10381,
+      "dur": 61,
+      "attr": "unknown"
+     }
+    ],
+    "totalKB": 2111,
+    "byHostKB": {
+     "storage.yandexcloud.net": 941,
+     "velari.uz": 612,
+     "connect.facebook.net": 256,
+     "www.googletagmanager.com": 189,
+     "mc.yandex.ru": 110,
+     "slmbethqqqugnktxwzdz.supabase.co": 1,
+     "o4511188648656896.ingest.de.sentry.io": 1,
+     "stats.g.doubleclick.net": 1
+    }
+   }
+  ]
+ },
+ {
+  "at": "2026-09-29T20:56:47.577Z",
+  "summary": {
+   "url": "https://velari.uz/uz",
+   "mobile": true,
+   "block": [],
+   "runs": 3,
+   "maxLongTask": 298,
+   "tbt": 1113,
+   "fcp": 1884,
+   "lcp": 2040,
+   "totalKB": 1839
+  },
+  "runs": [
+   {
+    "run": 1,
+    "loadMs": 3873,
+    "patched": 0,
+    "errors": 2,
+    "page": "Velari | O'zbekistonda №1 Premium Elektronika Do'koni | body=3540",
+    "fcp": 1880,
+    "lcp": 2040,
+    "lcpEl": "IMG",
+    "lcpUrl": "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' %3E%3Cfilter id='b' color",
+    "maxLongTask": 298,
+    "tbt": 971,
+    "longTasks": [
+     {
+      "start": 7853,
+      "dur": 298,
+      "attr": "unknown"
+     },
+     {
+      "start": 9702,
+      "dur": 212,
+      "attr": "unknown"
+     },
+     {
+      "start": 3423,
+      "dur": 205,
+      "attr": "unknown"
+     },
+     {
+      "start": 8500,
+      "dur": 183,
+      "attr": "unknown"
+     },
+     {
+      "start": 7509,
+      "dur": 146,
+      "attr": "unknown"
+     }
+    ],
+    "totalKB": 1839,
+    "byHostKB": {
+     "storage.yandexcloud.net": 738,
+     "velari.uz": 545,
+     "connect.facebook.net": 256,
+     "www.googletagmanager.com": 189,
+     "mc.yandex.ru": 109,
+     "slmbethqqqugnktxwzdz.supabase.co": 1,
+     "stats.g.doubleclick.net": 1,
+     "o4511188648656896.ingest.de.sentry.io": 1
+    }
+   },
+   {
+    "run": 2,
+    "loadMs": 8428,
+    "patched": 0,
+    "errors": 2,
+    "page": "Velari | O'zbekistonda №1 Premium Elektronika Do'koni | body=3540",
+    "fcp": 2264,
+    "lcp": 2264,
+    "lcpEl": "IMG",
+    "lcpUrl": "https://storage.yandexcloud.net/savdomarketimag/admin/images/1779585276620_story_image_1779585274721_thumb.webp",
+    "maxLongTask": 293,
+    "tbt": 1215,
+    "longTasks": [
+     {
+      "start": 11392,
+      "dur": 293,
+      "attr": "unknown"
+     },
+     {
+      "start": 12848,
+      "dur": 264,
+      "attr": "unknown"
+     },
+     {
+      "start": 2370,
+      "dur": 231,
+      "attr": "unknown"
+     },
+     {
+      "start": 11790,
+      "dur": 174,
+      "attr": "unknown"
+     },
+     {
+      "start": 7587,
+      "dur": 165,
+      "attr": "unknown"
+     }
+    ],
+    "totalKB": 1840,
+    "byHostKB": {
+     "storage.yandexcloud.net": 738,
+     "velari.uz": 539,
+     "connect.facebook.net": 260,
+     "www.googletagmanager.com": 189,
+     "mc.yandex.ru": 111,
+     "slmbethqqqugnktxwzdz.supabase.co": 1,
+     "o4511188648656896.ingest.de.sentry.io": 1,
+     "stats.g.doubleclick.net": 1
+    }
+   },
+   {
+    "run": 3,
+    "loadMs": 10460,
+    "patched": 0,
+    "errors": 2,
+    "page": "Velari | O'zbekistonda №1 Premium Elektronika Do'koni | body=3540",
+    "fcp": 1884,
+    "lcp": 1884,
+    "lcpEl": "IMG",
+    "lcpUrl": "https://storage.yandexcloud.net/savdomarketimag/admin/images/1779585276620_story_image_1779585274721_thumb.webp",
+    "maxLongTask": 338,
+    "tbt": 1113,
+    "longTasks": [
+     {
+      "start": 12802,
+      "dur": 338,
+      "attr": "unknown"
+     },
+     {
+      "start": 14445,
+      "dur": 227,
+      "attr": "unknown"
+     },
+     {
+      "start": 13293,
+      "dur": 211,
+      "attr": "unknown"
+     },
+     {
+      "start": 3761,
+      "dur": 197,
+      "attr": "unknown"
+     },
+     {
+      "start": 9977,
+      "dur": 153,
+      "attr": "unknown"
+     }
+    ],
+    "totalKB": 1824,
+    "byHostKB": {
+     "storage.yandexcloud.net": 729,
+     "velari.uz": 539,
+     "connect.facebook.net": 256,
+     "www.googletagmanager.com": 189,
+     "mc.yandex.ru": 109,
+     "slmbethqqqugnktxwzdz.supabase.co": 1,
+     "stats.g.doubleclick.net": 1,
+     "o4511188648656896.ingest.de.sentry.io": 1
+    }
+   }
+  ]
+ }
+]

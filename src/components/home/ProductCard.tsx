@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState, useRef } from "react";
+import { memo, useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Heart, Star, Minus, Plus, Sparkles, Truck, Store } from "lucide-react";
@@ -139,7 +139,14 @@ export const ProductCard = memo(({
   const stockEntries = item.stockDetails ? Object.entries(item.stockDetails) : [];
   const whId = stockEntries.find(([, q]) => Number(q) > 0)?.[0] || stockEntries[0]?.[0];
   const warehouse = warehouses.find((w: any) => String(w.id) === String(whId)) || warehouses[0];
-  const deliveryText = getDeliveryCardText(language, warehouse?.dbs_config || { cutoffHour: 16, deliveryDays: 1, offDays: [], holidays: [] });
+  // Yetkazish sanasi hozirgi vaqtga bog'liq — faqat brauzerda (mount'dan keyin) hisoblanadi.
+  // Render paytida hisoblansa server HTML (ISR, boshqa vaqt/UTC) bilan farq qilib, hydration xatosi
+  // (#425/#422) butun sahifani mijozda qayta chizdirardi.
+  const [deliveryText, setDeliveryText] = useState<string | null>(null);
+  const dbsConfig = warehouse?.dbs_config;
+  useEffect(() => {
+    setDeliveryText(getDeliveryCardText(language, dbsConfig || { cutoffHour: 16, deliveryDays: 1, offDays: [], holidays: [] }));
+  }, [language, dbsConfig]);
 
   const mainMedia = item.images?.[0] || item.image || "/placeholder.png";
   const isVideo = mainMedia.toLowerCase().endsWith(".mp4");
