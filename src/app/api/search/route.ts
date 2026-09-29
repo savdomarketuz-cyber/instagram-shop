@@ -78,10 +78,9 @@ export interface VisualAnalysis {
 // ── Rasm qidiruvi ────────────────────────────────────────────────────────────
 const IMAGE_MAX_BYTES = 1.5 * 1024 * 1024;
 const IMAGE_MODEL = 'gemini-embedding-2'; // product_image_embeddings bilan bir xil (scripts/embed-product-images.mjs)
-// Vaqtincha eski match_products_by_image (products.image_embedding, barcha mahsulotlar to'liq, sinovda 10/10).
-// product_image_embeddings (4 rasm, lg WEBP) to'liq to'ldirilgach match_products_by_image_v2 ga o'tiladi.
-const IMAGE_RPC = 'match_products_by_image';
-const IMAGE_MATCH_THRESHOLD = 0.32;
+// product_image_embeddings: har mahsulotdan 4 tagacha rasm (lg WEBP), eng yaxshi moslik; faqat stokdagilar.
+const IMAGE_RPC = 'match_products_by_image_v2';
+const IMAGE_MATCH_THRESHOLD = 0.35;
 
 /** data URL'ni tekshiradi: faqat jpeg/png/webp, ≤ 1.5 MB, sarlavha baytlari turga mos. */
 function parseImageDataUrl(image: unknown): { mime: string; data: string } | { error: string } {
