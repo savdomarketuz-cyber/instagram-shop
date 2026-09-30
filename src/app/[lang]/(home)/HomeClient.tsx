@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, Suspense, startTransition } from "react";
 import Link from "next/link";
 import { Search, Sparkles, MapPin, ChevronRight, ChevronLeft, User, X, Loader2, LayoutGrid, Camera } from "lucide-react";
 import { useStore } from "@/store/store";
@@ -259,9 +259,11 @@ export default function HomeClient({
                         order.push(r.id);
                         reasons[r.id] = { uz: r.reason_uz, ru: r.reason_ru };
                     });
-                    setPersonalOrder(order);
-                    setPersonalReasons(reasons);
-                    setAiProductIds(order);
+                    startTransition(() => {
+                        setPersonalOrder(order);
+                        setPersonalReasons(reasons);
+                        setAiProductIds(order);
+                    });
                 }
             } catch { /* sokin */ }
         };
@@ -575,6 +577,7 @@ export default function HomeClient({
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                     <Link
                         href={`/${language}/account`}
+                        prefetch={false}
                         onClick={() => videoPreWarmer.triggerHaptic("light")}
                         className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform block"
                         style={{ textDecoration: "none" }}
@@ -591,6 +594,7 @@ export default function HomeClient({
                         </div>
                     </Link>
                     <Link href={`/${language}/account`}
+                        prefetch={false}
                         onClick={() => videoPreWarmer.triggerHaptic("light")}
                         className="ios-icon-tap active:scale-90 transition-transform duration-150 ease-out will-change-transform"
                         style={{
@@ -667,6 +671,7 @@ export default function HomeClient({
             {!searchResults && !urlCategory && (
                 <div className="md:hidden" style={{ padding: "10px 20px 0" }}>
                     <Link href={`/${language}/catalog`}
+                        prefetch={false}
                         className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
                         style={{
                             height: 52, borderRadius: 18, display: "flex", alignItems: "center",
@@ -784,6 +789,7 @@ export default function HomeClient({
                                     </h2>
                                 </div>
                                 <Link href={`/${language}/catalog`}
+                                    prefetch={false}
                                     className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
                                     style={{
                                         alignSelf: "flex-start", padding: "10px 18px", borderRadius: 20,

@@ -6,7 +6,7 @@
  * (bosish, klaviatura, teginish, scroll) yoki `load` dan `delayMs` keyin (qaysi biri oldin) qo'shiladi.
  * Hodisalar yo'qolmaydi: fbq / gtag navbati (stub) darhol yaratiladi, skript yuklangach navbatni o'zi yuboradi.
  */
-export function runAfterFirstInteraction(cb: () => void, delayMs = 6000): () => void {
+export function runAfterFirstInteraction(cb: () => void, delayMs = 20000): () => void {
     if (typeof window === "undefined") return () => {};
     const events = ["pointerdown", "keydown", "touchstart", "scroll"];
     let done = false;

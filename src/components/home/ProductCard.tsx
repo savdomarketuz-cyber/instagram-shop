@@ -184,7 +184,7 @@ export const ProductCard = memo(({
       <Link
         href={`/${language}/products/${getProductSlug(item, language)}`}
         style={{ display: "flex", flexDirection: "column", flex: 1, textDecoration: "none", color: "inherit" }}
-        prefetch={true}
+        prefetch={false}
         onPointerEnter={() => prefetchFirstImage(item)}
         onClick={() => {
           const query = useStore.getState().homeSearchQuery;

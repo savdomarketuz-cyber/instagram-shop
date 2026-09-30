@@ -109,6 +109,7 @@ export default function FeaturedCategories({ language, initial }: { language: "u
             </h2>
             <Link
                 href={`/${language}/catalog`}
+                prefetch={false}
                 style={{ fontSize: 14, fontWeight: 600, color: "#2D6E3E", textDecoration: "none", display: "flex", alignItems: "center", gap: 2 }}
             >
                 {language === "uz" ? "Barchasi" : "Все"}
@@ -136,6 +137,7 @@ export default function FeaturedCategories({ language, initial }: { language: "u
                             <Link
                                 key={cat.id}
                                 href={`/${language}/catalog/${getCategorySlug(cat, language)}`}
+                                prefetch={false}
                                 onClick={() => videoPreWarmer.triggerHaptic("light")}
                                 className="ios-tap-feedback active:scale-90 transition-transform duration-150 ease-out select-none will-change-transform"
                                 style={{
@@ -187,6 +189,7 @@ export default function FeaturedCategories({ language, initial }: { language: "u
                             <Link
                                 key={cat.id}
                                 href={`/${language}/catalog/${getCategorySlug(cat, language)}`}
+                                prefetch={false}
                                 className="group ios-tap-feedback active:scale-95 transition-transform duration-150 ease-out will-change-transform"
                                 style={{
                                     flexShrink: 0, display: "flex", flexDirection: "column",

@@ -73,10 +73,20 @@ export default function YandexMetrika({ ymid }: { ymid?: string }) {
       document.head.appendChild(s);
     };
     events.forEach(e => window.addEventListener(e, load, { once: true, passive: true }));
-    if (typeof w.requestIdleCallback === 'function') w.requestIdleCallback(load, { timeout: 3500 });
-    else setTimeout(load, 3500);
+    let idleId: number | null = null;
+    let timerId: NodeJS.Timeout | null = null;
+    if (typeof w.requestIdleCallback === 'function') {
+      idleId = w.requestIdleCallback(load, { timeout: 15000 });
+    } else {
+      timerId = setTimeout(load, 15000);
+    }
 
-    return () => events.forEach(e => window.removeEventListener(e, load));
+    return () => {
+      done = true;
+      events.forEach(e => window.removeEventListener(e, load));
+      if (idleId !== null && typeof w.cancelIdleCallback === 'function') w.cancelIdleCallback(idleId);
+      if (timerId !== null) clearTimeout(timerId);
+    };
   }, [id]);
 
   return (
