@@ -4,6 +4,8 @@
 //   node --experimental-strip-types scripts/set-cache-control.mjs --dry           (faqat hisobot)
 //   node --experimental-strip-types scripts/set-cache-control.mjs                 (hammasi)
 //   node --experimental-strip-types scripts/set-cache-control.mjs --prefix admin/ (bitta papka)
+//   node --experimental-strip-types scripts/set-cache-control.mjs --from-db       (faqat bazada ishlatiladigan URL'lar —
+//        mahsulot rasmlari/variantlari/video, stories, kategoriya, banner, brend, blog; bucket'da ~70 ming obyekt bor)
 //
 // Qanday: obyekt o'z joyiga nusxalanadi (x-amz-copy-source + x-amz-metadata-directive: REPLACE) —
 // mazmuni va Content-Type saqlanadi, faqat Cache-Control qo'shiladi. Hech narsa o'chirilmaydi.
@@ -11,12 +13,14 @@
 // O'zgartirilgan obyektlar ro'yxati (oldingi sarlavhalar bilan): scripts/backups/cache-control-<vaqt>.json
 
 import fs from 'fs';
-import { readEnvFileKey } from './get_db_url.mjs';
+import pg from 'pg';
+import { getDatabaseUrl, readEnvFileKey } from './get_db_url.mjs';
 import { s3Request, IMMUTABLE_CACHE_CONTROL } from '../src/lib/s3-put.ts';
 
 const args = process.argv.slice(2);
 const DRY = args.includes('--dry');
 const PREFIX = args.includes('--prefix') ? args[args.indexOf('--prefix') + 1] : '';
+const FROM_DB = args.includes('--from-db');
 const CONCURRENCY = 8;
 const cfg = {
     accessKey: readEnvFileKey('YANDEX_S3_ACCESS_KEY') || '',
@@ -47,8 +51,37 @@ async function listAll() {
     return keys;
 }
 
+// Bazadagi barcha storage.yandexcloud.net URL'lari (JSON ichidagilari ham)
+async function listFromDb() {
+    const db = new pg.Client({ connectionString: getDatabaseUrl(), ssl: { rejectUnauthorized: false } });
+    await db.connect();
+    const prefix = `https://storage.yandexcloud.net/${cfg.bucket}/`;
+    const sources = [
+        `select concat_ws(' ', image, array_to_string(images, ' '), image_metadata::text, video_url) t from products where is_deleted = false`,
+        `select concat_ws(' ', image, image_meta::text, video, audio) t from stories`,
+        `select concat_ws(' ', image, image_meta::text) t from categories where is_deleted = false`,
+        `select concat_ws(' ', image_url_uz, image_url_ru, image_meta::text) t from banners`,
+        `select concat_ws(' ', image) t from brands where is_deleted = false`,
+        `select concat_ws(' ', image) t from blogs where is_deleted = false`,
+        `select concat_ws(' ', logo) t from warehouses`,
+    ];
+    const keys = new Set();
+    for (const q of sources) {
+        try {
+            for (const r of (await db.query(q)).rows) {
+                for (const m of String(r.t || '').matchAll(/https:\/\/storage\.yandexcloud\.net\/[^\s"',\\]+/g)) {
+                    if (m[0].startsWith(prefix)) keys.add(decodeURIComponent(m[0].slice(prefix.length).split('?')[0]));
+                }
+            }
+        } catch (e) { console.log(`⚠️ ${q.slice(0, 60)}…: ${e.message}`); }
+    }
+    await db.end();
+    console.log(`🗂  bazadan ${keys.size} ta URL`);
+    return [...keys].map(key => ({ key, size: 0 }));
+}
+
 async function main() {
-    const objects = await listAll();
+    const objects = FROM_DB ? await listFromDb() : await listAll();
     const changed = [];
     let ok = 0, skip = 0, fail = 0, done = 0;
     let i = 0;

@@ -57,7 +57,8 @@ async function getInitialData() {
             // Kategoriya vitrinasi sozlamasi (settings anon o'qishdan yopiq -> server orqali)
             supabaseAdmin.from("settings").select("data").eq("id", "featured_categories").maybeSingle(),
             // Bosh sahifa storylari (serverda keshlanadi, qayta yuklanganda sakrab chiqmasligi uchun)
-            supabaseAdmin.from("stories").select("*").eq("is_active", true).order("sort_order", { ascending: true })
+            // aniq ustunlar (image_meta — aylana uchun kichik variant); select("*") keshi yangi ustunni ko'rmay qolgan edi
+            supabaseAdmin.from("stories").select("id,title_uz,title_ru,image,image_meta,link,is_active,sort_order,audio,video,group_key,group_title_uz,group_title_ru,cta_type,cta_ids,cta_label_uz,cta_label_ru").eq("is_active", true).order("sort_order", { ascending: true })
         ]);
 
         // Mahsuloti bor (bo'sh bo'lmagan) kategoriyalar to'plamini hisoblash.
