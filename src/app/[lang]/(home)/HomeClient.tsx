@@ -799,7 +799,7 @@ export default function HomeClient({
             )}
 
             {/* Kategoriya vitrinasi — mobilda banner tagida, desktopda hero tagida (komponent o'zi mos blokni ko'rsatadi) */}
-            {!searchResults && !urlCategory && <FeaturedCategories language={language} initial={initialFeaturedCategories} />}
+            {!searchResults && !urlCategory && <Suspense fallback={null}><FeaturedCategories language={language} initial={initialFeaturedCategories} /></Suspense>}
 
             {/* Stories — desktopda kategoriyalardan keyin (kattaroq) */}
             {!searchResults && !urlCategory && <StoriesRow language={language} device="desktop" initialGroups={initialStoryGroups} />}
@@ -820,7 +820,7 @@ export default function HomeClient({
                 </div>
             )}
 
-            {!searchResults && !urlCategory && <TrustStrip language={language} />}
+            {!searchResults && !urlCategory && <Suspense fallback={null}><TrustStrip language={language} /></Suspense>}
 
             <div className="px-2 md:px-10 mt-4">
                 {searchResults && (
@@ -965,8 +965,11 @@ export default function HomeClient({
                     </div>
                 )}
 
-                {!searchResults && !urlCategory && <RecentlyViewed language={language} />}
+                {!searchResults && !urlCategory && <Suspense fallback={null}><RecentlyViewed language={language} /></Suspense>}
 
+                {/* Suspense chegaralari: HTML o'zgarmaydi, lekin React ularni alohida vazifalarda hydrate qiladi —
+                    bitta uzun (mobilda ~300 ms) vazifa o'rniga qisqa bo'laklar (TBT kamayadi) */}
+                <Suspense fallback={null}>
                 <ProductGrid
                     products={displayProducts}
                     loading={isSearchLoading || (loading && allProducts.length === 0)}
@@ -982,6 +985,7 @@ export default function HomeClient({
                     reasonMap={personalReasons}
                     showReasons={activeTab === "for_you" && !searchResults && !urlCategory}
                 />
+                </Suspense>
 
                 {searchResults && searchMeta?.hasMore && (
                     <div style={{ display: "flex", justifyContent: "center", margin: "24px 0 8px" }}>
