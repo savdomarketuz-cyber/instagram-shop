@@ -1,6 +1,6 @@
 'use client';
 
-import Script from 'next/script';
+import { runAfterFirstInteraction, injectScript } from '@/lib/third-party-gate';
 import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 
@@ -31,25 +31,17 @@ function GAPageTracker({ gaId }: { gaId: string }) {
 export default function GoogleAnalytics({ gaId }: { gaId?: string }) {
   const id = gaId || process.env.NEXT_PUBLIC_GA_ID || 'G-26H8F7XC2T';
 
-  return (
-    <>
-      <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=${id}`}
-        // LCP'dan keyin (window load + bo'sh vaqt) — birinchi ekranni kechiktirmasin
-        strategy="lazyOnload"
-      />
-      <Script id="google-analytics" strategy="lazyOnload">
-        {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          window.gtag = gtag;
-          gtag('js', new Date());
-          gtag('config', '${id}', {
-            page_path: window.location.pathname,
-          });
-        `}
-      </Script>
-      <GAPageTracker gaId={id} />
-    </>
-  );
+  useEffect(() => {
+    const w = window as any;
+    if (w.gtag) return;
+    // gtag navbati — darhol (dataLayer); config va hodisalar navbatda kutadi
+    w.dataLayer = w.dataLayer || [];
+    w.gtag = function () { w.dataLayer.push(arguments); };
+    w.gtag('js', new Date());
+    w.gtag('config', id, { page_path: window.location.pathname });
+    // gtag.js (~180 ms long task) — birinchi harakat yoki load + 6 s (src/lib/third-party-gate.ts)
+    return runAfterFirstInteraction(() => injectScript(`https://www.googletagmanager.com/gtag/js?id=${id}`));
+  }, [id]);
+
+  return <GAPageTracker gaId={id} />;
 }

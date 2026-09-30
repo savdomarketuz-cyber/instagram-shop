@@ -25,7 +25,8 @@ const OUT = opt('--out', null);
 const BLOCK = args.flatMap((a, i) => (a === '--block' ? [args[i + 1]] : []));
 // A/B: sayt JS chunk'larida matnni "yo'lda" almashtirish, masalan --patch "clickmap:true=>clickmap:false"
 const PROFILE = args.includes('--profile');
-const RESOURCES = args.includes('--resources'); // resurslar ro'yxati: boshlanish vaqti, hajm, tur // CPU profil: eng ko'p vaqt olgan funksiyalar (self time)
+const RESOURCES = args.includes('--resources');
+const TRACE = args.includes('--trace'); // long task'lar ichida nima: script, parse, layout, style... // resurslar ro'yxati: boshlanish vaqti, hajm, tur // CPU profil: eng ko'p vaqt olgan funksiyalar (self time)
 const PATCHES = args.flatMap((a, i) => (a === '--patch' ? [args[i + 1].split('=>')] : []));
 const SETTLE_MS = Number(opt('--settle', '12000')); // load'dan keyin kutish (lazy skriptlar ham ishlasin)
 const CHROME = process.env.CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe';
@@ -79,7 +80,7 @@ async function runOnce(n) {
         const { sessionId: s } = await c.send('Target.attachToTarget', { targetId, flatten: true });
         const S = (m, p) => c.send(m, p, s);
 
-        const bytes = {}; const starts = {}; let loaded = false; let patched = 0; const errors = [];
+        const bytes = {}; const starts = {}; let loaded = false; const traceEvents = []; let traceDone = null; let patched = 0; const errors = [];
         c.on(async msg => {
             if (msg.sessionId !== s) return;
             if (msg.method === 'Fetch.requestPaused') {
@@ -102,6 +103,8 @@ async function runOnce(n) {
             if (msg.method === 'Network.responseReceived') bytes[msg.params.requestId] = { url: msg.params.response.url, len: 0, type: msg.params.type };
             if (msg.method === 'Network.loadingFinished' && bytes[msg.params.requestId]) bytes[msg.params.requestId].len = msg.params.encodedDataLength;
             if (msg.method === 'Page.loadEventFired') loaded = true;
+            if (msg.method === 'Tracing.dataCollected') traceEvents.push(...msg.params.value);
+            if (msg.method === 'Tracing.tracingComplete' && traceDone) traceDone();
             if (msg.method === 'Runtime.exceptionThrown') errors.push((msg.params.exceptionDetails.exception?.description || msg.params.exceptionDetails.text || '').split(String.fromCharCode(10))[0].slice(0, 160));
         });
         await S('Page.enable'); await S('Network.enable'); await S('Runtime.enable');
@@ -119,11 +122,29 @@ async function runOnce(n) {
         }
         await S('Page.addScriptToEvaluateOnNewDocument', { source: OBSERVER });
         if (PROFILE) { await S('Profiler.enable'); await S('Profiler.setSamplingInterval', { interval: 500 }); await S('Profiler.start'); }
+        if (TRACE) await S('Tracing.start', { categories: 'devtools.timeline,disabled-by-default-devtools.timeline,v8.execute,blink.user_timing', transferMode: 'ReportEvents' });
         const t0 = Date.now();
         await S('Page.navigate', { url: URL_ });
         while (!loaded && Date.now() - t0 < 90000) await sleep(100);
         const loadMs = Date.now() - t0;
         await sleep(SETTLE_MS);
+        if (TRACE) {
+            await new Promise(r => { traceDone = r; S('Tracing.end'); });
+            // RunTask (>50 ms) ichidagi hodisalar — nom va URL bo'yicha jami vaqt
+            const main = traceEvents.filter(e => e.name === 'RunTask' && e.dur > 50000);
+            const pid = main[0]?.pid, tid = main[0]?.tid;
+            const inTask = (e) => main.some(t => e.ts >= t.ts && e.ts < t.ts + t.dur);
+            const agg = {};
+            for (const e of traceEvents) {
+                if (e.ph !== 'X' || e.pid !== pid || e.tid !== tid || e.name === 'RunTask' || !inTask(e)) continue;
+                if (!['EvaluateScript', 'v8.compile', 'v8.parseOnBackground', 'FunctionCall', 'ParseHTML', 'Layout', 'UpdateLayoutTree', 'RecalculateStyles', 'Paint', 'PrePaint', 'Layerize', 'TimerFire', 'EventDispatch', 'FireAnimationFrame', 'HitTest', 'MajorGC', 'MinorGC', 'v8.run', 'Decode Image', 'ImageDecodeTask'].includes(e.name)) continue;
+                const u = (e.args?.data?.url || e.args?.data?.stackTrace?.[0]?.url || '').replace(/^https?:\/\/[^/]+/, '').slice(-45);
+                const k = `${e.name}${u ? ' ' + u : ''}`;
+                agg[k] = (agg[k] || 0) + e.dur / 1000;
+            }
+            console.log(`  LONG TASK'LAR: ${main.length} ta, jami ${Math.round(main.reduce((s2, t) => s2 + t.dur, 0) / 1000)} ms. Ichida (ustma-ust sanaladi):`);
+            Object.entries(agg).sort((a, b) => b[1] - a[1]).slice(0, 18).forEach(([k, v]) => console.log(`    ${String(Math.round(v)).padStart(5)}ms  ${k}`));
+        }
         if (PROFILE) {
             const { profile } = await S('Profiler.stop');
             const dt = new Map(); // node id -> vaqt (ms)
