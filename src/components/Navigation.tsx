@@ -13,8 +13,10 @@ import { translations } from "@/lib/translations";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { SearchResult, Product } from "@/types";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
-import VisualSearchModal from "@/components/search/VisualSearchModal";
-import { VisualAnalysis } from "@/app/api/search/route";
+import dynamic from "next/dynamic";
+import type { VisualAnalysis } from "@/app/api/search/route";
+// Rasm qidiruvi oynasi (~22 KB) — faqat birinchi ochilganda yuklanadi (1-ekran JS'iga kirmaydi)
+const VisualSearchModal = dynamic(() => import("@/components/search/VisualSearchModal"), { ssr: false });
 
 export default function Navigation() {
     const user = useStore(state => state.user);
@@ -688,7 +690,7 @@ export default function Navigation() {
             })()}
 
             {/* Google Lens uslubidagi vizual qidiruv modal oynasi */}
-            <VisualSearchModal
+            {(isLensModalOpen || lensImagePreview) && <VisualSearchModal
                 isOpen={isLensModalOpen}
                 onClose={() => setIsLensModalOpen(false)}
                 imagePreview={lensImagePreview}
@@ -707,7 +709,7 @@ export default function Navigation() {
                         if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
                     }, 150);
                 }}
-            />
+            />}
         </>
     );
 }

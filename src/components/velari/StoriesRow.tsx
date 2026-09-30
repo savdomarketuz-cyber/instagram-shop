@@ -6,7 +6,9 @@ import { buildStoryGroups, storySlideImage, type StoryGroupShape, type StoryImag
 import { ShoppingBag, Send, X, Zap } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { PUBLIC_PRODUCT_COLUMNS } from "@/lib/public-product";
-import { QuickBuySheet } from "@/components/reels/QuickBuySheet";
+import dynamic from "next/dynamic";
+// Tezkor xarid oynasi (~39 KB) — faqat story'dagi tugma bosilganda yuklanadi
+const QuickBuySheet = dynamic(() => import("@/components/reels/QuickBuySheet").then(m => m.QuickBuySheet), { ssr: false });
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 interface Story {
