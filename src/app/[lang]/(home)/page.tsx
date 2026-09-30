@@ -79,7 +79,18 @@ async function getInitialData() {
 
         const visibleCatRows = rawCats.filter((c: any) => nonEmpty.has(String(c.id)));
 
-        const products = (productsData || []).map(mapProduct).filter((p: any) => getProductRealStock(p) > 0).slice(0, 20);
+        // image_metadata — faqat kartochka ishlatadigan rasmlar (asosiy + birinchi video bo'lmagan).
+        // To'liq meta (har rasmga blur base64) React payload'ini ~2x kattalashtirib, mobil hydration'ni sekinlatardi.
+        const trimMeta = (p: any) => {
+            const meta = p.image_metadata;
+            if (!meta || typeof meta !== "object") return p;
+            const imgs: string[] = Array.isArray(p.images) ? p.images : [];
+            const keep = new Set([imgs[0], p.image, imgs.find((u: string) => u && !u.toLowerCase().endsWith(".mp4"))].filter(Boolean));
+            const trimmed: Record<string, any> = {};
+            keep.forEach(k => { if (meta[k as string]) trimmed[k as string] = meta[k as string]; });
+            return { ...p, image_metadata: trimmed };
+        };
+        const products = (productsData || []).map(mapProduct).filter((p: any) => getProductRealStock(p) > 0).slice(0, 20).map(trimMeta);
         const categories = visibleCatRows.map(mapCategory);
         const banners = (bannersData || []).map(mapBanner);
         const bannerSettings = settingsData?.data
