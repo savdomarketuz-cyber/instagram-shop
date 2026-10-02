@@ -25,7 +25,16 @@ export async function GET(_request: Request, { params }: { params: { id: string 
             const v = d.value || d.value_uz || d.value_ru;
             return typeof v === 'string' && v.trim().length > 0;
         });
-        return NextResponse.json({ data: items });
+        return NextResponse.json(
+            { data: items },
+            {
+                headers: {
+                    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0',
+                }
+            }
+        );
     } catch (err: any) {
         return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
     }
