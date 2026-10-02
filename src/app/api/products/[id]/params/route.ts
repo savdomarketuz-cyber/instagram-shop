@@ -14,14 +14,17 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     try {
         const { data, error } = await supabaseAdmin
             .from('product_param_values')
-            .select('value, category_params(name, name_uz, name_ru)')
+            .select('value, value_uz, value_ru, category_params(name, name_uz, name_ru)')
             .eq('product_id', productId);
 
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
-        const items = (data || []).filter((d: any) => typeof d.value === 'string' && d.value.trim());
+        const items = (data || []).filter((d: any) => {
+            const v = d.value || d.value_uz || d.value_ru;
+            return typeof v === 'string' && v.trim().length > 0;
+        });
         return NextResponse.json({ data: items });
     } catch (err: any) {
         return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });

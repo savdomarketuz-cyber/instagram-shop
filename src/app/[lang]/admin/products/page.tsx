@@ -41,7 +41,7 @@ import {
     Layers,
     Check
 } from "lucide-react";
-import ProductParamsEditor from "@/components/admin/ProductParamsEditor";
+import ProductParamsEditor, { ParamValue } from "@/components/admin/ProductParamsEditor";
 import AdminTooltip from "@/components/admin/AdminTooltip";
 import { normalizeQuery, transliterateLatin } from "@/lib/query-normalize";
 import { useParams, usePathname, useSearchParams } from "next/navigation";
@@ -152,7 +152,7 @@ function AdminProducts() {
     const [brandLabels, setBrandLabels] = useState<{ [key: string]: string }>({});
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isBulkActionLoading, setIsBulkActionLoading] = useState(false);
-    const [paramValues, setParamValues] = useState<{param_id: string; value: string}[]>([]);
+    const [paramValues, setParamValues] = useState<ParamValue[]>([]);
 
     // Moomkin.uz integratsiya state'lari
     const [moomkinRegistry, setMoomkinRegistry] = useState<Record<string, { moomkin_id: number; price: number; name_uz: string; name_ru: string }>>({});
@@ -1291,7 +1291,11 @@ function AdminProducts() {
 
             // Save product parameters
             if (finalId && paramValues.length > 0) {
-                const validParams = paramValues.filter(pv => pv.value && pv.value.trim());
+                const validParams = paramValues.filter(pv => 
+                    (pv.value && pv.value.trim()) || 
+                    (pv.value_uz && pv.value_uz.trim()) || 
+                    (pv.value_ru && pv.value_ru.trim())
+                );
                 if (validParams.length > 0) {
                     fetch('/api/admin/product-params', {
                         method: 'POST',

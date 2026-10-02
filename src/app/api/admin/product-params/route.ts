@@ -47,10 +47,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const rows = params.map((p: { param_id: string; value: any }) => ({
+    const rows = params.map((p: { param_id: string; value?: string; value_uz?: string; value_ru?: string }) => ({
       product_id,
       param_id: p.param_id,
-      value: p.value,
+      value: p.value || p.value_uz || p.value_ru || '',
+      value_uz: p.value_uz || p.value || '',
+      value_ru: p.value_ru || p.value || '',
     }));
 
     const { data, error } = await supabaseAdmin
