@@ -76,7 +76,7 @@ export default function ProductClient({
     initialProduct,
     initialGroupProducts = []
 }: { 
-    params: { id: string }, 
+    params: { id: string; lang?: string }, 
     initialProduct?: Product | null,
     initialGroupProducts?: Product[]
 }) {
@@ -84,9 +84,17 @@ export default function ProductClient({
     const productIdentifier = getProductIdFromSlug(params.id);
     const { 
         addToCart, toggleWishlist, wishlist, cart, updateQuantity, 
-        removeFromCart, user, language, showToast, prefetchedProducts 
+        removeFromCart, user, language: storeLanguage, setLanguage, showToast, prefetchedProducts 
     } = useStore();
+    const routeLang = params.lang === 'ru' || params.lang === 'uz' ? (params.lang as 'uz' | 'ru') : null;
+    const language: 'uz' | 'ru' = routeLang || storeLanguage || 'uz';
     const t = translations[language];
+
+    useEffect(() => {
+        if (routeLang && storeLanguage !== routeLang) {
+            setLanguage(routeLang);
+        }
+    }, [routeLang, storeLanguage, setLanguage]);
 
     // Core Data State
     const prefetched = prefetchedProducts[productIdentifier];

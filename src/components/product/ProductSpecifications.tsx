@@ -20,9 +20,9 @@ export function ProductSpecifications({ productId, language }: { productId: stri
         if (!productId) return;
         setLoading(true);
         // Ommaviy o'qish endpointi (admin API mijozlar uchun yopiq — 401)
-        fetch(`/api/products/${encodeURIComponent(productId)}/params`, {
+        fetch(`/api/products/${encodeURIComponent(productId)}/params?t=${Date.now()}`, {
             cache: 'no-store',
-            headers: { 'Cache-Control': 'no-cache' }
+            headers: { 'Cache-Control': 'no-cache, no-store' }
         })
             .then(res => res.json())
             .then(data => {

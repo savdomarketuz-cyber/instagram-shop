@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { supabaseAdminFresh } from '@/lib/supabase-admin';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 // GET /api/products/{productId}/params — mahsulot xususiyatlari (ommaviy, faqat o'qish).
 // Faqat ko'rsatish uchun kerakli maydonlar qaytadi; yozish admin API'da (/api/admin/product-params).
@@ -12,7 +13,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     }
 
     try {
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await supabaseAdminFresh
             .from('product_param_values')
             .select('value, value_uz, value_ru, category_params(name, name_uz, name_ru)')
             .eq('product_id', productId);
