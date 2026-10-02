@@ -15,12 +15,16 @@ const YandexMapPicker = dynamic(() => import("@/components/YandexMapPicker"), {
 import { translations } from "@/lib/translations";
 import { ymGoal, ymPurchase } from "@/lib/metrika";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
+import { UZBEKISTAN_REGIONS, getRegionById } from "@/lib/regions";
+import { getDeliveryDateText } from "@/lib/date-utils";
 
 export default function CheckoutPage() {
     const router = useRouter();
-    const { cart, user, clearCart, language, showToast, cartPromo, setCartPromo } = useStore(useShallow(s => ({
+    const { cart, user, clearCart, language, showToast, cartPromo, setCartPromo, selectedRegion, setSelectedRegion, warehouses, fetchWarehouses } = useStore(useShallow(s => ({
         cart: s.cart, user: s.user, clearCart: s.clearCart, language: s.language, showToast: s.showToast,
-        cartPromo: s.cartPromo, setCartPromo: s.setCartPromo
+        cartPromo: s.cartPromo, setCartPromo: s.setCartPromo,
+        selectedRegion: s.selectedRegion, setSelectedRegion: s.setSelectedRegion,
+        warehouses: s.warehouses, fetchWarehouses: s.fetchWarehouses
     })));
     const [displayProducts, setDisplayProducts] = useState<any[]>([]);
     const [isFastBuy, setIsFastBuy] = useState(false);
@@ -39,6 +43,15 @@ export default function CheckoutPage() {
     const [deliveryType, setDeliveryType] = useState<"standard" | "express">("standard");
     const [expressInfo, setExpressInfo] = useState<{ eligible: boolean; price?: number; free?: boolean; etaText?: string; needCoords?: boolean } | null>(null);
     const [loadingExpress, setLoadingExpress] = useState(false);
+
+    useEffect(() => {
+        fetchWarehouses();
+    }, [fetchWarehouses]);
+
+    const currentWarehouse = warehouses?.find((w: any) => w.active) || warehouses?.[0];
+    const currentRegion = getRegionById(selectedRegion);
+    const regionName = language === "uz" ? currentRegion.name_uz : currentRegion.name_ru;
+    const deliveryDateFormatted = getDeliveryDateText(language, currentWarehouse?.dbs_config, selectedRegion);
 
     useEffect(() => {
         setMounted(true);
@@ -176,13 +189,20 @@ export default function CheckoutPage() {
     const deliveryBasis = Math.max(0, subtotal - smartDiscount);
 
     // Yetkazib berish narxi
-    const expressEligible = !!expressInfo?.eligible;
+    const isTashkent = selectedRegion === "tashkent_city" || selectedRegion === "tashkent_region";
+    const expressEligible = !!expressInfo?.eligible && isTashkent;
     const expressUsable = expressEligible && !!coords && expressInfo?.price != null;
     const standardFee = computeStandardDelivery(deliveryBasis);
     const expressFee = expressInfo?.free ? 0 : (expressInfo?.price || 0);
     const useExpress = deliveryType === "express" && expressUsable;
     const deliveryFee = useExpress ? expressFee : standardFee;
     const total = goodsTotal + deliveryFee; // Yakuniy summa (yetkazish bilan)
+
+    useEffect(() => {
+        if (!isTashkent && deliveryType === "express") {
+            setDeliveryType("standard");
+        }
+    }, [isTashkent, deliveryType]);
 
     // Tezkor (express) yetkazish — moslik + narx/vaqtni baholash
     useEffect(() => {
@@ -269,7 +289,7 @@ export default function CheckoutPage() {
                         quantity: item.quantity,
                         image: item.imageUrl || item.image
                     })),
-                    p_address: address,
+                    p_address: address ? (address.toLowerCase().includes(regionName.toLowerCase()) ? address : `${regionName}, ${address}`) : regionName,
                     p_coords: coords,
                     p_status: t.common.statusPendingPayment,
                     p_promo_code: promoData?.code || null,
@@ -389,6 +409,28 @@ export default function CheckoutPage() {
                     </div>
                 </div>
 
+                {/* Region */}
+                <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: "#737D75", letterSpacing: 0.3, textTransform: "uppercase", display: "block", marginBottom: 8 }}>
+                        {language === "uz" ? "Yetkazib berish viloyati / hududi" : "Регион доставки"}
+                    </label>
+                    <div style={{ position: "relative" }}>
+                        <select
+                            value={selectedRegion}
+                            onChange={e => {
+                                videoPreWarmer.triggerHaptic("selection");
+                                setSelectedRegion(e.target.value);
+                            }}
+                            style={{ width: "100%", background: "#fff", border: "1px solid rgba(15,20,16,0.06)", borderRadius: 20, padding: "14px 44px 14px 18px", fontSize: 14, fontWeight: 600, color: "#111612", outline: "none", cursor: "pointer", boxShadow: "0 4px 16px rgba(15,20,16,0.04)", appearance: "none", WebkitAppearance: "none" }}
+                        >
+                            {UZBEKISTAN_REGIONS.map(r => (
+                                <option key={r.id} value={r.id}>{language === "uz" ? r.name_uz : r.name_ru}</option>
+                            ))}
+                        </select>
+                        <div style={{ position: "absolute", right: 18, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "#737D75", fontSize: 11 }}>▼</div>
+                    </div>
+                </div>
+
                 {/* Address */}
                 <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
@@ -442,7 +484,9 @@ export default function CheckoutPage() {
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <p style={{ fontSize: 14, fontWeight: 700, color: "#111612", margin: 0 }}>{language === "uz" ? "Standart yetkazish" : "Стандартная доставка"}</p>
-                                    <p style={{ fontSize: 12, fontWeight: 500, color: "#737D75", margin: "2px 0 0" }}>{language === "uz" ? "Toshkent shahri bo'ylab" : "По городу Ташкент"}</p>
+                                    <p style={{ fontSize: 12, fontWeight: 500, color: "#737D75", margin: "2px 0 0" }}>
+                                        {language === "uz" ? `${regionName}ga yetkazish: ${deliveryDateFormatted}` : `Доставка в ${regionName}: ${deliveryDateFormatted}`}
+                                    </p>
                                 </div>
                                 <span style={{ fontSize: 13.5, fontWeight: 700, color: standardFee > 0 ? "#111612" : "#2D6E3E", flexShrink: 0 }}>
                                     {standardFee > 0 ? fmtSom(standardFee, language) : (language === "uz" ? "Bepul" : "Бесплатно")}
@@ -485,7 +529,9 @@ export default function CheckoutPage() {
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
                                 <p style={{ fontSize: 14, fontWeight: 700, color: "#111612", margin: 0 }}>{language === "uz" ? "Standart yetkazish" : "Стандартная доставка"}</p>
-                                <p style={{ fontSize: 12, fontWeight: 500, color: "#737D75", margin: "2px 0 0" }}>{language === "uz" ? "Toshkent shahri bo'ylab" : "По городу Ташкент"}</p>
+                                <p style={{ fontSize: 12, fontWeight: 500, color: "#737D75", margin: "2px 0 0" }}>
+                                    {language === "uz" ? `${regionName}ga yetkazish: ${deliveryDateFormatted}` : `Доставка в ${regionName}: ${deliveryDateFormatted}`}
+                                </p>
                             </div>
                             <span style={{ fontSize: 13.5, fontWeight: 700, color: standardFee > 0 ? "#111612" : "#2D6E3E", flexShrink: 0 }}>
                                 {standardFee > 0 ? fmtSom(standardFee, language) : (language === "uz" ? "Bepul" : "Бесплатно")}

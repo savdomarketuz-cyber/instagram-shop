@@ -136,6 +136,7 @@ export const ProductCard = memo(({
 
   // Mahsulot omborini (do'konini) aniqlab, yetkazish vaqtini hisoblaymiz
   const warehouses = useStore(s => s.warehouses);
+  const selectedRegion = useStore(s => s.selectedRegion);
   const stockEntries = item.stockDetails ? Object.entries(item.stockDetails) : [];
   const whId = stockEntries.find(([, q]) => Number(q) > 0)?.[0] || stockEntries[0]?.[0];
   const warehouse = warehouses.find((w: any) => String(w.id) === String(whId)) || warehouses[0];
@@ -145,8 +146,8 @@ export const ProductCard = memo(({
   const [deliveryText, setDeliveryText] = useState<string | null>(null);
   const dbsConfig = warehouse?.dbs_config;
   useEffect(() => {
-    setDeliveryText(getDeliveryCardText(language, dbsConfig || { cutoffHour: 16, deliveryDays: 1, offDays: [], holidays: [] }));
-  }, [language, dbsConfig]);
+    setDeliveryText(getDeliveryCardText(language, dbsConfig || { cutoffHour: 16, deliveryDays: 1, offDays: [], holidays: [] }, selectedRegion));
+  }, [language, dbsConfig, selectedRegion]);
 
   const mainMedia = item.images?.[0] || item.image || "/placeholder.png";
   const isVideo = mainMedia.toLowerCase().endsWith(".mp4");

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { adminSelect } from "@/lib/admin-api";
 import { Plus, Trash2, Edit2, Save, X, Loader2, Home as WarehouseIcon, MapPin, Truck, Clock, Calendar, Image as ImageIcon } from "lucide-react";
 import { uploadToYandexS3 } from "@/lib/yandex-s3";
+import { UZBEKISTAN_REGIONS, getDefaultRegionsDelivery } from "@/lib/regions";
 
 interface Warehouse {
     id: string;
@@ -13,7 +14,9 @@ interface Warehouse {
     type: "DBS" | "FBS" | "FBO";
     dbs: {
         cutoffHour: number;
+        processingDays: number;
         deliveryDays: number;
+        regionsDelivery: Record<string, number>;
         offDays: number[];
         holidays: string[];
     };
@@ -35,7 +38,9 @@ export default function AdminWarehouses() {
         type: "DBS" as "DBS" | "FBS" | "FBO",
         dbs: {
             cutoffHour: 16,
+            processingDays: 0,
             deliveryDays: 1,
+            regionsDelivery: getDefaultRegionsDelivery(),
             offDays: [0],
             holidays: [] as string[]
         },
@@ -62,16 +67,30 @@ export default function AdminWarehouses() {
     const fetchWarehouses = async () => {
         try {
             const data = await adminSelect<any[]>("warehouses", { orderBy: { column: "name", ascending: true } });
+            const defaultDelivery = getDefaultRegionsDelivery();
 
-            setWarehouses(data.map(w => ({
-                id: w.id,
-                name: w.name,
-                address: w.address,
-                logo: w.logo,
-                type: w.type,
-                dbs: w.dbs_config,
-                active: w.active
-            })) as Warehouse[]);
+            setWarehouses(data.map(w => {
+                const rawDbs = w.dbs_config || {};
+                return {
+                    id: w.id,
+                    name: w.name,
+                    address: w.address,
+                    logo: w.logo,
+                    type: w.type,
+                    dbs: {
+                        cutoffHour: Number(rawDbs.cutoffHour ?? 16),
+                        processingDays: Number(rawDbs.processingDays ?? 0),
+                        deliveryDays: Number(rawDbs.deliveryDays ?? 1),
+                        regionsDelivery: {
+                            ...defaultDelivery,
+                            ...(rawDbs.regionsDelivery || {})
+                        },
+                        offDays: Array.isArray(rawDbs.offDays) ? rawDbs.offDays : [0],
+                        holidays: Array.isArray(rawDbs.holidays) ? rawDbs.holidays : []
+                    },
+                    active: w.active
+                };
+            }) as Warehouse[]);
         } catch (error) {
             console.error("Fetch warehouses error:", error);
         } finally {
@@ -89,7 +108,14 @@ export default function AdminWarehouses() {
             address: "",
             logo: "",
             type: "DBS" as "DBS" | "FBS" | "FBO",
-            dbs: { cutoffHour: 16, deliveryDays: 1, offDays: [0], holidays: [] },
+            dbs: {
+                cutoffHour: 16,
+                processingDays: 0,
+                deliveryDays: 1,
+                regionsDelivery: getDefaultRegionsDelivery(),
+                offDays: [0],
+                holidays: []
+            },
             active: true
         });
         setEditId(null);
@@ -285,7 +311,27 @@ export default function AdminWarehouses() {
                                             </div>
                                             <div className="space-y-3">
                                                 <div className="flex justify-between items-center px-1">
-                                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Yetkazib berish muddati</label>
+                                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Qayta ishlash muddati (Omborda tayyorlash)</label>
+                                                    <span className="text-sm font-black italic bg-gray-50 px-3 py-1 rounded-lg">{formData.dbs.processingDays} kun</span>
+                                                </div>
+                                                <div className="relative">
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        max="14"
+                                                        value={formData.dbs.processingDays}
+                                                        onChange={e => setFormData({ ...formData, dbs: { ...formData.dbs, processingDays: Math.max(0, Number(e.target.value)) } })}
+                                                        className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-2xl p-4 font-black transition-all outline-none"
+                                                    />
+                                                    <Clock size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none" />
+                                                </div>
+                                                <p className="text-[8px] text-gray-400 font-bold italic uppercase tracking-tighter">
+                                                    Omborda buyurtmani yig'ish va kuryerga topshirish uchun ketadigan vaqt (kunlarda).
+                                                </p>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <div className="flex justify-between items-center px-1">
+                                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Umumiy fallback yetkazish muddati</label>
                                                     <span className="text-sm font-black italic bg-gray-50 px-3 py-1 rounded-lg">{formData.dbs.deliveryDays} kun</span>
                                                 </div>
                                                 <div className="relative">
@@ -299,6 +345,9 @@ export default function AdminWarehouses() {
                                                     />
                                                     <Clock size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none" />
                                                 </div>
+                                                <p className="text-[8px] text-gray-400 font-bold italic uppercase tracking-tighter">
+                                                    Agar viloyat sozlanmagan bo'lsa ishlatiladigan standart muddat.
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
@@ -357,6 +406,77 @@ export default function AdminWarehouses() {
                             </div>
                         </div>
 
+                        {formData.type === "DBS" && (
+                            <div className="mt-10 pt-8 border-t border-gray-100 space-y-6">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div>
+                                        <h3 className="text-xs font-black uppercase tracking-widest text-black flex items-center gap-2">
+                                            <MapPin size={16} /> Viloyatlar bo'yicha yetkazish muddatlari
+                                        </h3>
+                                        <p className="text-[10px] text-gray-400 font-bold mt-1">
+                                            14 ta hudud uchun kuryer yetkazish muddati (kunlarda).
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const updated: Record<string, number> = {};
+                                                UZBEKISTAN_REGIONS.forEach(r => { updated[r.id] = 2; });
+                                                setFormData(prev => ({ ...prev, dbs: { ...prev.dbs, regionsDelivery: updated } }));
+                                            }}
+                                            className="px-3.5 py-2 bg-gray-100 hover:bg-black hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                                        >
+                                            Barcha viloyatlarni 2 kunga sozlash
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setFormData(prev => ({ ...prev, dbs: { ...prev.dbs, regionsDelivery: getDefaultRegionsDelivery() } }));
+                                            }}
+                                            className="px-3.5 py-2 bg-gray-100 hover:bg-black hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                                        >
+                                            Standart (Toshkent 1, boshqalar 2)
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    {UZBEKISTAN_REGIONS.map(region => (
+                                        <div key={region.id} className="flex items-center justify-between p-3.5 bg-gray-50 rounded-2xl border border-gray-100/80 hover:border-gray-200 transition-all">
+                                            <div className="min-w-0 pr-2">
+                                                <p className="text-xs font-bold text-gray-800 truncate">{region.name_uz}</p>
+                                                <p className="text-[10px] text-gray-400 font-medium truncate">{region.name_ru}</p>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="30"
+                                                    value={formData.dbs.regionsDelivery[region.id] ?? region.defaultDays}
+                                                    onChange={e => {
+                                                        const val = Math.max(0, Number(e.target.value));
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            dbs: {
+                                                                ...prev.dbs,
+                                                                regionsDelivery: {
+                                                                    ...prev.dbs.regionsDelivery,
+                                                                    [region.id]: val
+                                                                }
+                                                            }
+                                                        }));
+                                                    }}
+                                                    className="w-14 bg-white border border-gray-200 focus:border-black rounded-xl py-2 px-1 text-center font-black text-sm outline-none transition-all shadow-sm"
+                                                />
+                                                <span className="text-[10px] font-bold text-gray-400">kun</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         <button
                             onClick={handleSave}
                             disabled={isSaving}
@@ -391,14 +511,18 @@ export default function AdminWarehouses() {
                         </div>
 
                         {w.type === "DBS" && (
-                            <div className="grid grid-cols-2 gap-4 border-t border-gray-50 pt-6">
+                            <div className="grid grid-cols-3 gap-3 border-t border-gray-50 pt-6">
                                 <div className="space-y-1">
                                     <p className="text-[8px] font-black uppercase text-gray-300">Cut-off</p>
                                     <p className="text-sm font-black italic">{w.dbs.cutoffHour}:00</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-[8px] font-black uppercase text-gray-300">Muddat</p>
-                                    <p className="text-sm font-black italic">{w.dbs.deliveryDays} kun</p>
+                                    <p className="text-[8px] font-black uppercase text-gray-300">Tayyorlash</p>
+                                    <p className="text-sm font-black italic">{w.dbs.processingDays || 0} kun</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[8px] font-black uppercase text-gray-300">Toshkent / Vil.</p>
+                                    <p className="text-sm font-black italic">{w.dbs.regionsDelivery?.tashkent_city ?? 1} / {w.dbs.regionsDelivery?.samarkand ?? 2} kun</p>
                                 </div>
                             </div>
                         )}

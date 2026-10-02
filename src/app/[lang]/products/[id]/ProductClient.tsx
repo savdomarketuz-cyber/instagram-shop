@@ -84,7 +84,8 @@ export default function ProductClient({
     const productIdentifier = getProductIdFromSlug(params.id);
     const { 
         addToCart, toggleWishlist, wishlist, cart, updateQuantity, 
-        removeFromCart, user, language: storeLanguage, setLanguage, showToast, prefetchedProducts 
+        removeFromCart, user, language: storeLanguage, setLanguage, showToast, prefetchedProducts,
+        selectedRegion
     } = useStore();
     const routeLang = params.lang === 'ru' || params.lang === 'uz' ? (params.lang as 'uz' | 'ru') : null;
     const language: 'uz' | 'ru' = routeLang || storeLanguage || 'uz';
@@ -764,7 +765,7 @@ export default function ProductClient({
                     t={t}
                     groupProducts={groupProducts}
                     totalStock={totalStock}
-                    getDeliveryDateText={() => getDeliveryDateText(language, deliverySettings)}
+                    getDeliveryDateText={() => getDeliveryDateText(language, deliverySettings, selectedRegion)}
                     onDescriptionOpen={() => setIsDescriptionModalOpen(true)}
                     personalOffer={personalOffer}
                 />
@@ -1071,7 +1072,7 @@ export default function ProductClient({
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{language === 'uz' ? 'Yetkazib berish' : 'Доставка'}</p>
-                                    <p className="text-base font-black italic">{getDeliveryDateText(language, deliverySettings)}</p>
+                                    <p className="text-base font-black italic">{getDeliveryDateText(language, deliverySettings, selectedRegion)}</p>
                                     <p className="text-[11px] text-gray-500 font-medium">{language === 'uz' ? "Toshkent bo'ylab tekin" : 'Бесплатно по Ташкенту'}</p>
                                 </div>
                             </div>

@@ -64,6 +64,9 @@ interface StoreState {
     // Savatda qo'llangan promo-kod (checkout sahifasiga uzatiladi)
     cartPromo: { code: string; discount: number } | null;
     setCartPromo: (promo: { code: string; discount: number } | null) => void;
+    // Yetkazib berish hududi (viloyat)
+    selectedRegion: string;
+    setSelectedRegion: (regionId: string) => void;
 }
 
 export const useStore = create<StoreState>()(
@@ -74,6 +77,13 @@ export const useStore = create<StoreState>()(
             user: null,
             language: "uz",
             setLanguage: (lang) => set({ language: lang }),
+            selectedRegion: "tashkent_city",
+            setSelectedRegion: (regionId: string) => {
+                if (typeof window !== 'undefined') {
+                    try { localStorage.setItem('velari_selected_region', regionId); } catch {}
+                }
+                set({ selectedRegion: regionId });
+            },
             addToCart: (product) => set((state) => {
                 const existing = state.cart.find((item) => item.id === product.id);
                 const maxStock = product.stock ?? 999;
@@ -209,11 +219,16 @@ export const useStore = create<StoreState>()(
                 wishlist: state.wishlist,
                 user: state.user,
                 language: state.language,
+                selectedRegion: state.selectedRegion,
             }),
             // Eski 'instagram-shop-storage' dan ma'lumotlarni ko'chirish
             onRehydrateStorage: () => (state) => {
                 if (typeof window === 'undefined') return;
                 try {
+                    const savedRegion = localStorage.getItem('velari_selected_region');
+                    if (savedRegion && state) {
+                        state.selectedRegion = savedRegion;
+                    }
                     const oldKey = 'instagram-shop-storage';
                     const oldRaw = localStorage.getItem(oldKey);
                     const newRaw = localStorage.getItem('velari-store');
@@ -224,6 +239,7 @@ export const useStore = create<StoreState>()(
                             state.wishlist = old.state.wishlist || [];
                             state.user = old.state.user || null;
                             state.language = old.state.language || 'uz';
+                            state.selectedRegion = old.state.selectedRegion || savedRegion || 'tashkent_city';
                         }
                         localStorage.removeItem(oldKey);
                     }

@@ -1,20 +1,26 @@
-// Ombor `dbs_config` (cutoffHour/deliveryDays/offDays/holidays) ni date-utils kutadigan
-// formatga ({cutoff, days, offDays, holidays}) o'tkazadi.
+// Ombor `dbs_config` (cutoffHour/deliveryDays/processingDays/regionsDelivery/offDays/holidays) ni date-utils kutadigan
+// formatga ({cutoff, processingDays, days, regionsDelivery, offDays, holidays}) o'tkazadi.
 export const normalizeDbsConfig = (dbs: any) => ({
-    cutoff: Number(dbs?.cutoffHour ?? 16),
-    days: Number(dbs?.deliveryDays ?? 1),
+    cutoff: Number(dbs?.cutoffHour ?? dbs?.cutoff ?? 16),
+    processingDays: Number(dbs?.processingDays ?? 0),
+    days: Number(dbs?.deliveryDays ?? dbs?.days ?? 1),
+    regionsDelivery: (dbs?.regionsDelivery && typeof dbs.regionsDelivery === 'object') ? dbs.regionsDelivery : {},
     offDays: Array.isArray(dbs?.offDays) ? dbs.offDays : [],
     holidays: Array.isArray(dbs?.holidays) ? dbs.holidays : [],
 });
 
 // Mahsulot kartochkasi uchun qisqa yetkazish matni:
 // "Bugun yetkaziladi" / "Ertaga yetkaziladi" / "Indinga yetkaziladi" / "3-iyunda yetkaziladi"
-export const getDeliveryCardText = (language: string, dbs: any): string => {
+export const getDeliveryCardText = (language: string, dbs: any, selectedRegion: string = "tashkent_city"): string => {
     const s = normalizeDbsConfig(dbs);
     const now = new Date();
-    let daysToAdd = now.getHours() >= s.cutoff ? s.days + 1 : s.days;
+    const regionDays = Number(s.regionsDelivery[selectedRegion] ?? s.days ?? (selectedRegion === "tashkent_city" || selectedRegion === "tashkent_region" ? 1 : 2));
+    let totalDays = s.processingDays + regionDays;
+    if (now.getHours() >= s.cutoff) {
+        totalDays += 1;
+    }
     const d = new Date();
-    d.setDate(now.getDate() + daysToAdd);
+    d.setDate(now.getDate() + totalDays);
 
     const isOff = (date: Date) => {
         const y = date.getFullYear();
@@ -43,12 +49,18 @@ export const getDeliveryCardText = (language: string, dbs: any): string => {
     return `${d.getDate()}-${monthsUz[d.getMonth()]}da yetkaziladi`;
 };
 
-export const getDeliveryDateText = (language: string, deliverySettings: any) => {
+export const getDeliveryDateText = (language: string, deliverySettings: any, selectedRegion: string = "tashkent_city") => {
+    const s = normalizeDbsConfig(deliverySettings);
+    const regionDays = Number(s.regionsDelivery[selectedRegion] ?? s.days ?? (selectedRegion === "tashkent_city" || selectedRegion === "tashkent_region" ? 1 : 2));
+    
     const now = new Date();
-    const currentHour = now.getHours();
-    let daysToAdd = currentHour >= (deliverySettings?.cutoff || 16) ? (deliverySettings?.days || 1) + 1 : (deliverySettings?.days || 1);
+    let totalDays = s.processingDays + regionDays;
+    if (now.getHours() >= s.cutoff) {
+        totalDays += 1;
+    }
+    
     const deliveryDate = new Date();
-    deliveryDate.setDate(now.getDate() + daysToAdd);
+    deliveryDate.setDate(now.getDate() + totalDays);
     
     const isOff = (date: Date) => {
         const dayNum = date.getDay();
@@ -56,7 +68,7 @@ export const getDeliveryDateText = (language: string, deliverySettings: any) => 
         const m = String(date.getMonth() + 1).padStart(2, '0');
         const d = String(date.getDate()).padStart(2, '0');
         const dateStr = `${y}-${m}-${d}`;
-        return (deliverySettings?.offDays || []).includes(dayNum) || (deliverySettings?.holidays || []).includes(dateStr);
+        return s.offDays.includes(dayNum) || s.holidays.includes(dateStr);
     };
 
     let iterations = 0;
