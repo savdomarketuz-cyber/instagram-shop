@@ -146,9 +146,12 @@ export const ProductCard = memo(({
   const [deliveryText, setDeliveryText] = useState<string | null>(null);
   const dbsConfig = warehouse?.dbs_config;
   useEffect(() => {
-    if (!dbsConfig && warehouses.length === 0) return;
-    setDeliveryText(getDeliveryCardText(language, dbsConfig || { cutoffHour: 16, deliveryDays: 1, offDays: [], holidays: [] }, selectedRegion));
-  }, [language, dbsConfig, selectedRegion, warehouses.length]);
+    if (!dbsConfig) {
+      setDeliveryText(null);
+      return;
+    }
+    setDeliveryText(getDeliveryCardText(language, dbsConfig, selectedRegion));
+  }, [language, dbsConfig, selectedRegion]);
 
   const mainMedia = item.images?.[0] || item.image || "/placeholder.png";
   const isVideo = mainMedia.toLowerCase().endsWith(".mp4");

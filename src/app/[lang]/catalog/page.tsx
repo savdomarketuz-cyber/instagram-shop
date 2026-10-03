@@ -56,7 +56,8 @@ export default async function CatalogPage({ params, searchParams }: {
         categories,
         { data: productsData },
         { data: brandsData },
-        { data: pcData }
+        { data: pcData },
+        { data: warehousesData }
     ] = await Promise.all([
         getCatalogCategories(),
         supabaseAdmin
@@ -75,7 +76,11 @@ export default async function CatalogPage({ params, searchParams }: {
             .from("products")
             .select("category_id, stock, stock_details")
             .eq("is_deleted", false)
-            .or("stock.gt.0,stock_details.neq.{}")
+            .or("stock.gt.0,stock_details.neq.{}"),
+        supabaseAdmin
+            .from("warehouses")
+            .select("id,name,logo,dbs_config,active")
+            .eq("active", true)
     ]);
 
     // Eski `?category=ID` havolalarni toza URL'ga 301-redirect (SEO + indekslangan URL'lar)
@@ -100,6 +105,7 @@ export default async function CatalogPage({ params, searchParams }: {
             initialProducts={mappedProducts}
             initialBrands={(brandsData || []) as any}
             initialProductCatIds={validCatIds}
+            initialWarehouses={warehousesData || []}
         />
     );
 }

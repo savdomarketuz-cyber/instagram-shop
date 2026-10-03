@@ -90,7 +90,8 @@ export default async function CategoryCatalogPage({ params }: { params: { lang: 
     const [
         { data: productsData },
         { data: brandsData },
-        { data: pcData }
+        { data: pcData },
+        { data: warehousesData }
     ] = await Promise.all([
         supabaseAdmin
             .from("products")
@@ -109,7 +110,11 @@ export default async function CategoryCatalogPage({ params }: { params: { lang: 
             .from("products")
             .select("category_id, stock, stock_details")
             .eq("is_deleted", false)
-            .or("stock.gt.0,stock_details.neq.{}")
+            .or("stock.gt.0,stock_details.neq.{}"),
+        supabaseAdmin
+            .from("warehouses")
+            .select("id,name,logo,dbs_config,active")
+            .eq("active", true)
     ]);
 
     const mappedProducts = (productsData || []).map(mapProduct).filter((p: any) => getProductRealStock(p) > 0);
@@ -125,6 +130,7 @@ export default async function CategoryCatalogPage({ params }: { params: { lang: 
             initialProducts={mappedProducts}
             initialBrands={(brandsData || []) as any}
             initialProductCatIds={validCatIds}
+            initialWarehouses={warehousesData || []}
         />
     );
 }

@@ -39,6 +39,7 @@ interface CatalogClientProps {
     initialProducts?: Product[];
     initialBrands?: Brand[];
     initialProductCatIds?: string[];
+    initialWarehouses?: any[];
 }
 
 type SortKey = "popular" | "new" | "price_asc" | "price_desc" | "rating";
@@ -48,8 +49,19 @@ export default function CatalogClient({
     initialCategory,
     initialProducts,
     initialBrands,
-    initialProductCatIds
+    initialProductCatIds,
+    initialWarehouses
 }: CatalogClientProps) {
+    // Serverdan kelgan omborlarni store'ga darhol o'rnatish (0ms)
+    if (typeof window !== "undefined" && initialWarehouses && initialWarehouses.length > 0 && useStore.getState().warehouses.length === 0) {
+        useStore.setState({ warehouses: initialWarehouses });
+    }
+    useEffect(() => {
+        if (initialWarehouses && initialWarehouses.length > 0) {
+            useStore.setState({ warehouses: initialWarehouses });
+        }
+    }, [initialWarehouses]);
+
     const router = useRouter();
     const {
         language, cachedCategories, setCachedCategories,

@@ -220,7 +220,6 @@ export const useStore = create<StoreState>()(
                 user: state.user,
                 language: state.language,
                 selectedRegion: state.selectedRegion,
-                warehouses: state.warehouses,
             }),
             // Eski 'instagram-shop-storage' dan ma'lumotlarni ko'chirish
             onRehydrateStorage: () => (state) => {

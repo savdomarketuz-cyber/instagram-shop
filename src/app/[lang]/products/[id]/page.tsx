@@ -37,13 +37,14 @@ const getProductData = cache(async (identifier: string) => {
         const { data } = await query.single();
         if (!data) return null;
 
-        const [brandRes, groupRes] = await Promise.all([
+        const [brandRes, groupRes, warehousesRes] = await Promise.all([
             data.brand_id
                 ? supabaseAdmin.from("brands").select("name").eq("id", data.brand_id).maybeSingle()
                 : Promise.resolve({ data: null }),
             data.group_id
                 ? supabaseAdmin.from("products").select(PUBLIC_PRODUCT_COLUMNS).eq("group_id", data.group_id).eq("is_deleted", false).order("created_at", { ascending: true })
-                : Promise.resolve({ data: null })
+                : Promise.resolve({ data: null }),
+            supabaseAdmin.from("warehouses").select("id,name,logo,dbs_config,active").eq("active", true)
         ]);
 
         const brandName = brandRes.data?.name || undefined;
@@ -55,6 +56,7 @@ const getProductData = cache(async (identifier: string) => {
             ...mapProduct(data),
             brand_name: brandName,
             initialGroupProducts,
+            initialWarehouses: warehousesRes.data || [],
             // isIndexableProduct snake_case maydonlarni tekshiradi — XOM DB qatoriga qo'llanadi
             isIndexable: isIndexableProduct(data),
         };
@@ -377,6 +379,7 @@ function ProductDataWrapper({ params, product, canonicalSlug }: { params: { lang
                 params={params} 
                 initialProduct={product} 
                 initialGroupProducts={product.initialGroupProducts || []}
+                initialWarehouses={product.initialWarehouses || []}
             />
         </>
     );

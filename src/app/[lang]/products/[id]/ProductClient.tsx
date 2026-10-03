@@ -74,12 +74,24 @@ function StoreCard({ store, language }: { store: { id: string; name: string; log
 export default function ProductClient({ 
     params, 
     initialProduct,
-    initialGroupProducts = []
+    initialGroupProducts = [],
+    initialWarehouses = []
 }: { 
     params: { id: string; lang?: string }, 
     initialProduct?: Product | null,
-    initialGroupProducts?: Product[]
+    initialGroupProducts?: Product[],
+    initialWarehouses?: any[]
 }) {
+    // Serverdan kelgan omborlarni store'ga darhol o'rnatish (0ms)
+    if (typeof window !== "undefined" && initialWarehouses && initialWarehouses.length > 0 && useStore.getState().warehouses.length === 0) {
+        useStore.setState({ warehouses: initialWarehouses });
+    }
+    useEffect(() => {
+        if (initialWarehouses && initialWarehouses.length > 0) {
+            useStore.setState({ warehouses: initialWarehouses });
+        }
+    }, [initialWarehouses]);
+
     const router = useRouter();
     const productIdentifier = getProductIdFromSlug(params.id);
     const { 
@@ -197,11 +209,12 @@ export default function ProductClient({
 
     // Boshlang'ich holatdayoq store'dagi omborni olamiz (0ms, birdaniga!)
     const activeWarehouse = useMemo(() => {
-        if (!storeWarehouses || storeWarehouses.length === 0) return null;
+        const whs = (storeWarehouses && storeWarehouses.length > 0) ? storeWarehouses : initialWarehouses;
+        if (!whs || whs.length === 0) return null;
         const targetProd = product || initialProduct;
         const availableWhId = Object.keys(targetProd?.stockDetails || {}).find(id => Number((targetProd?.stockDetails as Record<string, number>)[id]) > 0);
-        return storeWarehouses.find((w: any) => w.id === availableWhId) || storeWarehouses[0];
-    }, [storeWarehouses, product, initialProduct]);
+        return whs.find((w: any) => w.id === availableWhId) || whs[0];
+    }, [storeWarehouses, initialWarehouses, product, initialProduct]);
 
     const [deliverySettings, setDeliverySettings] = useState<any | null>(activeWarehouse?.dbs_config || null);
     useEffect(() => {

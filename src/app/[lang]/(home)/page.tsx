@@ -45,7 +45,8 @@ async function getInitialData() {
             { data: promoData },
             { data: prodCatRows },
             { data: featuredSettingRow },
-            { data: storiesData }
+            { data: storiesData },
+            { data: warehousesData }
         ] = await Promise.all([
             supabaseAdmin.from("products").select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,avg_rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,express_delivery,created_at").eq("is_deleted", false).or("stock.gt.0,stock_details.neq.{}").order("sales", { ascending: false }).order("avg_rating", { ascending: false }).limit(30),
             supabaseAdmin.from("categories").select("id,name,name_uz,name_ru,parent_id,image,image_meta,icon,color,is_deleted").eq("is_deleted", false).order("name", { ascending: true }),
@@ -58,7 +59,8 @@ async function getInitialData() {
             supabaseAdmin.from("settings").select("data").eq("id", "featured_categories").maybeSingle(),
             // Bosh sahifa storylari (serverda keshlanadi, qayta yuklanganda sakrab chiqmasligi uchun)
             // aniq ustunlar (image_meta — aylana uchun kichik variant); select("*") keshi yangi ustunni ko'rmay qolgan edi
-            supabaseAdmin.from("stories").select("id,title_uz,title_ru,image,image_meta,link,is_active,sort_order,audio,video,group_key,group_title_uz,group_title_ru,cta_type,cta_ids,cta_label_uz,cta_label_ru").eq("is_active", true).order("sort_order", { ascending: true })
+            supabaseAdmin.from("stories").select("id,title_uz,title_ru,image,image_meta,link,is_active,sort_order,audio,video,group_key,group_title_uz,group_title_ru,cta_type,cta_ids,cta_label_uz,cta_label_ru").eq("is_active", true).order("sort_order", { ascending: true }),
+            supabaseAdmin.from("warehouses").select("id,name,logo,dbs_config,active").eq("active", true)
         ]);
 
         // Mahsuloti bor (bo'sh bo'lmagan) kategoriyalar to'plamini hisoblash.
@@ -118,15 +120,15 @@ async function getInitialData() {
         // Stories guruhlash (src/lib/stories.ts): aylana — eng kichik variant + blur
         const storyGroups = buildStoryGroups(storiesData || []);
 
-        return { products, categories, banners, bannerSettings, promoSettings, featuredCategories, storyGroups };
+        return { products, categories, banners, bannerSettings, promoSettings, featuredCategories, storyGroups, warehouses: warehousesData || [] };
     } catch (error) {
         console.error("Server-side fetch failed:", error);
-        return { products: [], categories: [], banners: [], bannerSettings: { desktopHeight: 210, borderRadius: 32 }, promoSettings: null, featuredCategories: [], storyGroups: [] };
+        return { products: [], categories: [], banners: [], bannerSettings: { desktopHeight: 210, borderRadius: 32 }, promoSettings: null, featuredCategories: [], storyGroups: [], warehouses: [] };
     }
 }
 
 async function HomeDataWrapper() {
-    const { products, categories, banners, bannerSettings, promoSettings, featuredCategories, storyGroups } = await getInitialData();
+    const { products, categories, banners, bannerSettings, promoSettings, featuredCategories, storyGroups, warehouses } = await getInitialData();
 
     return (
         <HomeClient
@@ -137,6 +139,7 @@ async function HomeDataWrapper() {
             initialPromo={promoSettings}
             initialFeaturedCategories={featuredCategories}
             initialStoryGroups={storyGroups}
+            initialWarehouses={warehouses}
         />
     );
 }

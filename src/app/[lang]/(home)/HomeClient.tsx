@@ -46,6 +46,7 @@ interface HomeClientProps {
     initialPromo?: any;
     initialFeaturedCategories?: any[];
     initialStoryGroups?: any[];
+    initialWarehouses?: any[];
 }
 
 export default function HomeClient({
@@ -56,7 +57,18 @@ export default function HomeClient({
     initialPromo,
     initialFeaturedCategories,
     initialStoryGroups,
+    initialWarehouses,
 }: HomeClientProps) {
+    // Serverdan kelgan omborlarni store'ga darhol o'rnatish (0ms, qayta so'rovsiz va sakrashlarsiz)
+    if (typeof window !== "undefined" && initialWarehouses && initialWarehouses.length > 0 && useStore.getState().warehouses.length === 0) {
+        useStore.setState({ warehouses: initialWarehouses });
+    }
+    useEffect(() => {
+        if (initialWarehouses && initialWarehouses.length > 0) {
+            useStore.setState({ warehouses: initialWarehouses });
+        }
+    }, [initialWarehouses]);
+
     const router = useRouter();
     const [urlCategory, setUrlCategory] = useState<string | null>(null);
     const [urlBrand, setUrlBrand] = useState<string | null>(null);
