@@ -1,4 +1,5 @@
 import { isUzbekistanHoliday } from "@/lib/holidays";
+import { getRegionById } from "@/lib/regions";
 
 // Ombor `dbs_config` (cutoffHour/deliveryDays/processingDays/regionsDelivery/offDays/holidays) ni date-utils kutadigan
 // formatga ({cutoff, processingDays, days, regionsDelivery, offDays, holidays}) o'tkazadi.
@@ -16,7 +17,12 @@ export const normalizeDbsConfig = (dbs: any) => ({
 export const getDeliveryCardText = (language: string, dbs: any, selectedRegion: string = "tashkent_city"): string => {
     const s = normalizeDbsConfig(dbs);
     const now = new Date();
-    const regionDays = Number(s.regionsDelivery[selectedRegion] ?? s.days ?? (selectedRegion === "tashkent_city" || selectedRegion === "tashkent_region" ? 1 : 2));
+    const defaultRegionDays = getRegionById(selectedRegion).defaultDays;
+    const isTashkent = selectedRegion === "tashkent_city" || selectedRegion === "tashkent_region";
+    const regionDays = Number(
+        s.regionsDelivery[selectedRegion] ?? 
+        (isTashkent ? (s.days || defaultRegionDays) : defaultRegionDays)
+    );
     let totalDays = s.processingDays + regionDays;
     if (now.getHours() >= s.cutoff) {
         totalDays += 1;
@@ -53,7 +59,12 @@ export const getDeliveryCardText = (language: string, dbs: any, selectedRegion: 
 
 export const getDeliveryDateText = (language: string, deliverySettings: any, selectedRegion: string = "tashkent_city") => {
     const s = normalizeDbsConfig(deliverySettings);
-    const regionDays = Number(s.regionsDelivery[selectedRegion] ?? s.days ?? (selectedRegion === "tashkent_city" || selectedRegion === "tashkent_region" ? 1 : 2));
+    const defaultRegionDays = getRegionById(selectedRegion).defaultDays;
+    const isTashkent = selectedRegion === "tashkent_city" || selectedRegion === "tashkent_region";
+    const regionDays = Number(
+        s.regionsDelivery[selectedRegion] ?? 
+        (isTashkent ? (s.days || defaultRegionDays) : defaultRegionDays)
+    );
     
     const now = new Date();
     let totalDays = s.processingDays + regionDays;
