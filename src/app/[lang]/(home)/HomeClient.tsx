@@ -33,6 +33,8 @@ import PromoCountdown from "@/components/velari/PromoCountdown";
 import StoriesRow from "@/components/velari/StoriesRow";
 import FeaturedCategories from "@/components/home/FeaturedCategories";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
+import LocationSelectModal from "@/components/modals/LocationSelectModal";
+import { getRegionById, getClosestRegion } from "@/lib/regions";
 
 import type { Product, Category, Banner } from "@/types";
 
@@ -124,7 +126,10 @@ export default function HomeClient({
     const [bannerSettings, setBannerSettings] = useState(initialBannerSettings);
     const [catalogCategoryCount, setCatalogCategoryCount] = useState(0);
     const [catalogProductCount, setCatalogProductCount] = useState(0);
-    const [locationLabel, setLocationLabel] = useState(language === "ru" ? "Ташкент, Юнусабад" : "Toshkent, Yunusobod");
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+    const selectedRegion = useStore(s => s.selectedRegion);
+    const currentRegion = getRegionById(selectedRegion);
+    const currentRegionName = language === "ru" ? currentRegion.name_ru : currentRegion.name_uz;
     // Sticky header ko'rinishi (blur) — darhol yangilanadigan, debounce QILINMAGAN holat.
     // (homeScrollPosition 300ms debounce bilan yangilangani uchun header'ni unga bog'lab bo'lmaydi.)
     const [scrolled, setScrolled] = useState(homeScrollPosition > 30);
@@ -172,50 +177,38 @@ export default function HomeClient({
         }
     }, [initialProducts]);
 
-    // GPS asosida yetkazib berish manzilini aniqlash (keshlangan, sahifa ochilganda avto)
+    // Yangi foydalanuvchi uchun avtomatik joylashuvni aniqlash (faqat qo'lda tanlanmagan bo'lsa)
     useEffect(() => {
-        const langCode = language === "ru" ? "ru" : "uz";
-        const cacheKey = `velari_geo_label_${langCode}`;
-
         try {
-            const cached = localStorage.getItem(cacheKey);
-            if (cached) {
-                setLocationLabel(cached);
-                return;
-            }
+            const isManual = localStorage.getItem("velari_region_manually_set");
+            if (isManual === "true") return; // Foydalanuvchi o'zi tanlagan bo'lsa, hech qachon qayta yozilmaydi!
         } catch {}
 
         if (typeof navigator === "undefined" || !navigator.geolocation) return;
 
         const geoTimer = setTimeout(() => {
+            try {
+                if (localStorage.getItem("velari_region_manually_set") === "true") return;
+            } catch {}
+
             navigator.geolocation.getCurrentPosition(
-                async (pos) => {
-                    const { latitude, longitude } = pos.coords;
+                (pos) => {
                     try {
-                        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=${langCode}&countrycodes=uz`);
-                        const data = await res.json();
-                        const a = data?.address;
-                        if (!a) return;
-
-                        const city = a.city || a.town || a.county || a.state || "";
-                        const district = a.city_district || a.suburb || a.neighbourhood || a.borough || "";
-                        const label = [city, district].filter(Boolean).join(", ");
-
-                        if (label) {
-                            setLocationLabel(label);
-                            try { localStorage.setItem(cacheKey, label); } catch {}
-                        }
-                    } catch {
-                        // Tarmoq/geocoder xatosi — default qoladi
+                        if (localStorage.getItem("velari_region_manually_set") === "true") return;
+                    } catch {}
+                    const { latitude, longitude } = pos.coords;
+                    const closest = getClosestRegion(latitude, longitude);
+                    if (closest?.id) {
+                        useStore.getState().setSelectedRegion(closest.id);
                     }
                 },
-                () => { /* Ruxsat berilmadi — default qoladi */ },
+                () => { /* GPS rad etilsa default (tashkent_city) qoladi */ },
                 { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 }
             );
         }, 3000);
 
         return () => clearTimeout(geoTimer);
-    }, [language]);
+    }, []);
 
     // Shaxsiy smart-chegirmalarni yuklash (login mijoz) — kartochkalarda ko'rsatish uchun
     useEffect(() => {
@@ -575,12 +568,13 @@ export default function HomeClient({
                 padding: "12px 20px 12px",
             }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                    <Link
-                        href={`/${language}/account`}
-                        prefetch={false}
-                        onClick={() => videoPreWarmer.triggerHaptic("light")}
-                        className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform block"
-                        style={{ textDecoration: "none" }}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            videoPreWarmer.triggerHaptic("light");
+                            setIsLocationModalOpen(true);
+                        }}
+                        className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform block text-left bg-transparent border-none cursor-pointer p-0"
                     >
                         <div style={{ fontSize: 12, color: "#9AA29C", fontWeight: 500 }}>
                             {language === "ru" ? "Доставка в" : "Yetkazib berish"}
@@ -588,11 +582,11 @@ export default function HomeClient({
                         <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
                             <MapPin size={14} color="#2D6E3E" />
                             <span style={{ fontSize: 15, fontWeight: 600, color: "#0F1410", letterSpacing: -0.2 }}>
-                                {locationLabel}
+                                {currentRegionName}
                             </span>
                             <ChevronRight size={13} color="#9AA29C" />
                         </div>
-                    </Link>
+                    </button>
                     <Link href={`/${language}/account`}
                         prefetch={false}
                         onClick={() => videoPreWarmer.triggerHaptic("light")}
@@ -1021,6 +1015,11 @@ export default function HomeClient({
                     <span style={{ fontSize: 11, fontWeight: 500, color: "#9AA29C" }}>{language === "uz" ? "Barcha mahsulotlar ko'rsatildi" : "Все товары показаны"}</span>
                 )}
             </div>
+
+            <LocationSelectModal
+                isOpen={isLocationModalOpen}
+                onClose={() => setIsLocationModalOpen(false)}
+            />
         </main>
     );
 }

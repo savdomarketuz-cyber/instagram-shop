@@ -436,7 +436,7 @@ export const ProductCard = memo(({
               WebkitTapHighlightColor: "transparent",
             }}
           >
-            {item.express_delivery ? (
+            {(item.express_delivery && selectedRegion === 'tashkent_city') ? (
               <span style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", lineHeight: "1.15" }}>
                 <span style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 4.5, fontWeight: 600 }}>
                   <Truck size={13} strokeWidth={2.4} /> {language === "uz" ? "Tezkor yetkazish" : "Экспресс доставка"}
