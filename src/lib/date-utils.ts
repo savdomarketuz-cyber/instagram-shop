@@ -1,3 +1,5 @@
+import { isUzbekistanHoliday } from "@/lib/holidays";
+
 // Ombor `dbs_config` (cutoffHour/deliveryDays/processingDays/regionsDelivery/offDays/holidays) ni date-utils kutadigan
 // formatga ({cutoff, processingDays, days, regionsDelivery, offDays, holidays}) o'tkazadi.
 export const normalizeDbsConfig = (dbs: any) => ({
@@ -26,7 +28,7 @@ export const getDeliveryCardText = (language: string, dbs: any, selectedRegion: 
         const y = date.getFullYear();
         const m = String(date.getMonth() + 1).padStart(2, "0");
         const dd = String(date.getDate()).padStart(2, "0");
-        return s.offDays.includes(date.getDay()) || s.holidays.includes(`${y}-${m}-${dd}`);
+        return s.offDays.includes(date.getDay()) || s.holidays.includes(`${y}-${m}-${dd}`) || isUzbekistanHoliday(date);
     };
     let i = 0;
     while (isOff(d) && i < 30) { d.setDate(d.getDate() + 1); i++; }
@@ -68,7 +70,7 @@ export const getDeliveryDateText = (language: string, deliverySettings: any, sel
         const m = String(date.getMonth() + 1).padStart(2, '0');
         const d = String(date.getDate()).padStart(2, '0');
         const dateStr = `${y}-${m}-${d}`;
-        return s.offDays.includes(dayNum) || s.holidays.includes(dateStr);
+        return s.offDays.includes(dayNum) || s.holidays.includes(dateStr) || isUzbekistanHoliday(date);
     };
 
     let iterations = 0;

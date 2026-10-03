@@ -3,9 +3,9 @@
 import { useStore } from "@/store/store";
 import { useShallow } from "zustand/react/shallow";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
-import { AlertCircle, ArrowLeft, Loader2, PackageX, MapPin, Globe, Tag, X, Wallet, Check, Truck, Zap, Clock } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, PackageX, MapPin, Globe, Tag, X, Wallet, Check, Truck, Zap, Clock, Building2, Search, Phone } from "lucide-react";
 import { computeStandardDelivery, fmtSom } from "@/lib/delivery";
 import dynamic from "next/dynamic";
 const YandexMapPicker = dynamic(() => import("@/components/YandexMapPicker"), {
@@ -17,6 +17,7 @@ import { ymGoal, ymPurchase } from "@/lib/metrika";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
 import { UZBEKISTAN_REGIONS, getRegionById } from "@/lib/regions";
 import { getDeliveryDateText } from "@/lib/date-utils";
+import { getPickupPointsByRegion, PickupPoint } from "@/lib/pickup-points";
 
 export default function CheckoutPage() {
     const router = useRouter();
@@ -52,6 +53,38 @@ export default function CheckoutPage() {
     const currentRegion = getRegionById(selectedRegion);
     const regionName = language === "uz" ? currentRegion.name_uz : currentRegion.name_ru;
     const deliveryDateFormatted = getDeliveryDateText(language, currentWarehouse?.dbs_config, selectedRegion);
+
+    // Yetkazib berish usuli: kuryer orqali eshikkacha yoki BTS / EMU punktidan olib ketish
+    const [deliveryMethod, setDeliveryMethod] = useState<"courier" | "pickup">("courier");
+    const [selectedPickupPoint, setSelectedPickupPoint] = useState<PickupPoint | null>(null);
+    const [pickupProviderFilter, setPickupProviderFilter] = useState<"all" | "bts" | "emu">("all");
+    const [pickupSearchQuery, setPickupSearchQuery] = useState("");
+
+    // Tanlangan viloyat o'zgarganda tanlangan punkt boshqa viloyatda bo'lsa uni tozalash
+    useEffect(() => {
+        if (selectedPickupPoint && selectedPickupPoint.region_id !== selectedRegion) {
+            setSelectedPickupPoint(null);
+        }
+    }, [selectedRegion, selectedPickupPoint]);
+
+    const regionPickupPoints = useMemo(() => {
+        return getPickupPointsByRegion(selectedRegion);
+    }, [selectedRegion]);
+
+    const btsCount = useMemo(() => regionPickupPoints.filter(p => p.provider === "bts").length, [regionPickupPoints]);
+    const emuCount = useMemo(() => regionPickupPoints.filter(p => p.provider === "emu").length, [regionPickupPoints]);
+
+    const filteredPickupPoints = useMemo(() => {
+        const q = pickupSearchQuery.trim().toLowerCase();
+        return regionPickupPoints.filter(p => {
+            if (pickupProviderFilter !== "all" && p.provider !== pickupProviderFilter) return false;
+            if (!q) return true;
+            const matchName = p.name.toLowerCase().includes(q);
+            const matchAddr = p.address.toLowerCase().includes(q);
+            const matchLandmark = p.landmark ? p.landmark.toLowerCase().includes(q) : false;
+            return matchName || matchAddr || matchLandmark;
+        });
+    }, [regionPickupPoints, pickupProviderFilter, pickupSearchQuery]);
 
     useEffect(() => {
         setMounted(true);
@@ -190,11 +223,11 @@ export default function CheckoutPage() {
 
     // Yetkazib berish narxi
     const isTashkent = selectedRegion === "tashkent_city" || selectedRegion === "tashkent_region";
-    const expressEligible = !!expressInfo?.eligible && isTashkent;
+    const expressEligible = !!expressInfo?.eligible && isTashkent && deliveryMethod === "courier";
     const expressUsable = expressEligible && !!coords && expressInfo?.price != null;
     const standardFee = computeStandardDelivery(deliveryBasis);
     const expressFee = expressInfo?.free ? 0 : (expressInfo?.price || 0);
-    const useExpress = deliveryType === "express" && expressUsable;
+    const useExpress = deliveryMethod === "courier" && deliveryType === "express" && expressUsable;
     const deliveryFee = useExpress ? expressFee : standardFee;
     const total = goodsTotal + deliveryFee; // Yakuniy summa (yetkazish bilan)
 
@@ -273,9 +306,39 @@ export default function CheckoutPage() {
 
         if (isSubmitting || isValidating) return;
 
+        if (deliveryMethod === "pickup") {
+            if (!selectedPickupPoint) {
+                showToast(
+                    language === "uz"
+                        ? "Iltimos, o'zingizga qulay BTS yoki EMU punktini tanlang"
+                        : "Пожалуйста, выберите пункт выдачи BTS или EMU",
+                    'error'
+                );
+                return;
+            }
+        } else {
+            if (!address.trim()) {
+                showToast(
+                    language === "uz" ? "Iltimos, yetkazib berish manzilini kiriting" : "Пожалуйста, введите адрес доставки",
+                    'error'
+                );
+                return;
+            }
+        }
+
         setIsSubmitting(true);
         ymGoal('begin_checkout'); // Analytics: rasmiylashtirishni boshladi
         try {
+            let finalAddress = "";
+            let finalCoords = coords;
+
+            if (deliveryMethod === "pickup" && selectedPickupPoint) {
+                finalAddress = `[${selectedPickupPoint.provider.toUpperCase()} PUNKT]: ${selectedPickupPoint.name}, ${selectedPickupPoint.address} (Mo'ljal: ${selectedPickupPoint.landmark || '-'}, Tel: ${selectedPickupPoint.phone})`;
+                finalCoords = [selectedPickupPoint.lat, selectedPickupPoint.lng];
+            } else {
+                finalAddress = address ? (address.toLowerCase().includes(regionName.toLowerCase()) ? address : `${regionName}, ${address}`) : regionName;
+            }
+
             // Using secure API instead of direct RPC
             const response = await fetch(`/api/orders/place`, {
                 method: 'POST',
@@ -289,11 +352,11 @@ export default function CheckoutPage() {
                         quantity: item.quantity,
                         image: item.imageUrl || item.image
                     })),
-                    p_address: address ? (address.toLowerCase().includes(regionName.toLowerCase()) ? address : `${regionName}, ${address}`) : regionName,
-                    p_coords: coords,
+                    p_address: finalAddress,
+                    p_coords: finalCoords,
                     p_status: t.common.statusPendingPayment,
                     p_promo_code: promoData?.code || null,
-                    p_delivery_type: useExpress ? "express" : "standard",
+                    p_delivery_type: (deliveryMethod === "courier" && useExpress) ? "express" : "standard",
                     p_wallet_usage: useWallet ? Math.min(walletBalance, goodsTotal) : 0,
                     p_referral_data: (() => {
                         const cookieStr = document.cookie.split('; ').find(row => row.startsWith('affiliate_data='));
@@ -431,114 +494,453 @@ export default function CheckoutPage() {
                     </div>
                 </div>
 
-                {/* Address */}
+                {/* Yetkazib berish usuli (Kuryer vs Punkt) */}
                 <div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                        <label style={{ fontSize: 11, fontWeight: 600, color: "#737D75", letterSpacing: 0.3, textTransform: "uppercase" }}>{t.common.address}</label>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: "#737D75", letterSpacing: 0.3, textTransform: "uppercase", display: "block", marginBottom: 8 }}>
+                        {language === "uz" ? "Yetkazib berish usuli" : "Способ получения"}
+                    </label>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                        {/* Kuryer orqali eshikkacha */}
                         <button
                             type="button"
                             onClick={() => {
-                                videoPreWarmer.triggerHaptic("light");
-                                setIsMapOpen(true);
+                                videoPreWarmer.triggerHaptic("selection");
+                                setDeliveryMethod("courier");
                             }}
-                            className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
-                            style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, color: "#2D6E3E", background: "#EAF3EC", border: "none", borderRadius: 12, padding: "6px 12px", cursor: "pointer" }}
+                            className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
+                            style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "flex-start",
+                                gap: 8,
+                                background: deliveryMethod === "courier" ? "#F8FAF8" : "#fff",
+                                border: deliveryMethod === "courier" ? "1.5px solid #2D6E3E" : "1px solid rgba(15,20,16,0.06)",
+                                borderRadius: 20,
+                                padding: "14px 16px",
+                                cursor: "pointer",
+                                textAlign: "left",
+                                boxShadow: "0 4px 16px rgba(15,20,16,0.04)"
+                            }}
                         >
-                            <MapPin size={12} />
-                            {t.common.selectOnMap}
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                                <div style={{ width: 36, height: 36, borderRadius: 12, background: deliveryMethod === "courier" ? "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" : "#F0F2EF", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                    <Truck size={18} color={deliveryMethod === "courier" ? "#fff" : "#737D75"} />
+                                </div>
+                                {deliveryMethod === "courier" && (
+                                    <div style={{ width: 18, height: 18, borderRadius: 9, background: "#2D6E3E", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                        <Check size={11} color="#fff" strokeWidth={3} />
+                                    </div>
+                                )}
+                            </div>
+                            <div>
+                                <p style={{ fontSize: 13.5, fontWeight: 700, color: "#111612", margin: 0 }}>
+                                    {language === "uz" ? "Kuryer orqali" : "Курьером"}
+                                </p>
+                                <p style={{ fontSize: 11, fontWeight: 500, color: "#737D75", margin: "2px 0 0" }}>
+                                    {language === "uz" ? "Eshikkacha yetkazish" : "До вашей двери"}
+                                </p>
+                            </div>
                         </button>
-                    </div>
-                    <div style={{ position: "relative" }}>
-                        <input
-                            required
-                            type="text"
-                            value={address}
-                            onChange={e => setAddress(e.target.value)}
-                            placeholder={t.common.addressPlaceholder}
-                            style={{ width: "100%", background: "#fff", border: "1px solid rgba(15,20,16,0.06)", borderRadius: 20, padding: "14px 48px 14px 18px", fontSize: 14, fontWeight: 500, color: "#111612", outline: "none", boxSizing: "border-box", boxShadow: "0 4px 16px rgba(15,20,16,0.04)" }}
-                        />
-                        {coords && <Globe size={16} color="#2D6E3E" style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)" }} />}
+
+                        {/* BTS / EMU punktidan olib ketish */}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                videoPreWarmer.triggerHaptic("selection");
+                                setDeliveryMethod("pickup");
+                            }}
+                            className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
+                            style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "flex-start",
+                                gap: 8,
+                                background: deliveryMethod === "pickup" ? "#F8FAF8" : "#fff",
+                                border: deliveryMethod === "pickup" ? "1.5px solid #2D6E3E" : "1px solid rgba(15,20,16,0.06)",
+                                borderRadius: 20,
+                                padding: "14px 16px",
+                                cursor: "pointer",
+                                textAlign: "left",
+                                boxShadow: "0 4px 16px rgba(15,20,16,0.04)"
+                            }}
+                        >
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                                <div style={{ width: 36, height: 36, borderRadius: 12, background: deliveryMethod === "pickup" ? "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" : "#F0F2EF", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                    <Building2 size={18} color={deliveryMethod === "pickup" ? "#fff" : "#737D75"} />
+                                </div>
+                                {deliveryMethod === "pickup" && (
+                                    <div style={{ width: 18, height: 18, borderRadius: 9, background: "#2D6E3E", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                        <Check size={11} color="#fff" strokeWidth={3} />
+                                    </div>
+                                )}
+                            </div>
+                            <div>
+                                <p style={{ fontSize: 13.5, fontWeight: 700, color: "#111612", margin: 0 }}>
+                                    {language === "uz" ? "Punktidan olish" : "Самовывоз"}
+                                </p>
+                                <p style={{ fontSize: 11, fontWeight: 500, color: "#737D75", margin: "2px 0 0" }}>
+                                    {language === "uz" ? `BTS va EMU (${regionPickupPoints.length})` : `BTS и EMU (${regionPickupPoints.length})`}
+                                </p>
+                            </div>
+                        </button>
                     </div>
                 </div>
 
-                {/* Yetkazib berish usuli */}
-                <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: "#737D75", letterSpacing: 0.3, textTransform: "uppercase", display: "block", marginBottom: 8 }}>
-                        {language === "uz" ? "Yetkazib berish usuli" : "Способ доставки"}
-                    </label>
+                {deliveryMethod === "courier" ? (
+                    <>
+                        {/* Address */}
+                        <div>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                                <label style={{ fontSize: 11, fontWeight: 600, color: "#737D75", letterSpacing: 0.3, textTransform: "uppercase" }}>{t.common.address}</label>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        videoPreWarmer.triggerHaptic("light");
+                                        setIsMapOpen(true);
+                                    }}
+                                    className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
+                                    style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, color: "#2D6E3E", background: "#EAF3EC", border: "none", borderRadius: 12, padding: "6px 12px", cursor: "pointer" }}
+                                >
+                                    <MapPin size={12} />
+                                    {t.common.selectOnMap}
+                                </button>
+                            </div>
+                            <div style={{ position: "relative" }}>
+                                <input
+                                    required={deliveryMethod === "courier"}
+                                    type="text"
+                                    value={address}
+                                    onChange={e => setAddress(e.target.value)}
+                                    placeholder={t.common.addressPlaceholder}
+                                    style={{ width: "100%", background: "#fff", border: "1px solid rgba(15,20,16,0.06)", borderRadius: 20, padding: "14px 48px 14px 18px", fontSize: 14, fontWeight: 500, color: "#111612", outline: "none", boxSizing: "border-box", boxShadow: "0 4px 16px rgba(15,20,16,0.04)" }}
+                                />
+                                {coords && <Globe size={16} color="#2D6E3E" style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)" }} />}
+                            </div>
+                        </div>
 
-                    {expressEligible ? (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                            {/* Standart */}
+                        {/* Courier Speed Option: Standard vs Express */}
+                        <div>
+                            {expressEligible ? (
+                                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                                    {/* Standart */}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            videoPreWarmer.triggerHaptic("selection");
+                                            setDeliveryType("standard");
+                                        }}
+                                        className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
+                                        style={{ display: "flex", alignItems: "center", gap: 12, background: deliveryType === "standard" ? "#F8FAF8" : "#fff", border: deliveryType === "standard" ? "1.5px solid #2D6E3E" : "1px solid rgba(15,20,16,0.06)", borderRadius: 22, padding: "14px 16px", cursor: "pointer", textAlign: "left", boxShadow: "0 4px 16px rgba(15,20,16,0.04)" }}
+                                    >
+                                        <div style={{ width: 42, height: 42, borderRadius: 14, background: deliveryType === "standard" ? "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" : "#F0F2EF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                            <Truck size={20} color={deliveryType === "standard" ? "#fff" : "#9AA29C"} />
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <p style={{ fontSize: 14, fontWeight: 700, color: "#111612", margin: 0 }}>{language === "uz" ? "Standart yetkazish" : "Стандартная доставка"}</p>
+                                            <p style={{ fontSize: 12, fontWeight: 500, color: "#737D75", margin: "2px 0 0" }}>
+                                                {language === "uz" ? `${regionName}ga yetkazish: ${deliveryDateFormatted}` : `Доставка в ${regionName}: ${deliveryDateFormatted}`}
+                                            </p>
+                                        </div>
+                                        <span style={{ fontSize: 13.5, fontWeight: 700, color: standardFee > 0 ? "#111612" : "#2D6E3E", flexShrink: 0 }}>
+                                            {standardFee > 0 ? fmtSom(standardFee, language) : (language === "uz" ? "Bepul" : "Бесплатно")}
+                                        </span>
+                                    </button>
+
+                                    {/* Tezkor */}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            videoPreWarmer.triggerHaptic("selection");
+                                            setDeliveryType("express");
+                                        }}
+                                        disabled={!coords}
+                                        className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
+                                        style={{ display: "flex", alignItems: "center", gap: 12, background: deliveryType === "express" ? "#F8FAF8" : "#fff", border: deliveryType === "express" ? "1.5px solid #2D6E3E" : "1px solid rgba(15,20,16,0.06)", borderRadius: 22, padding: "14px 16px", cursor: coords ? "pointer" : "not-allowed", textAlign: "left", boxShadow: "0 4px 16px rgba(15,20,16,0.04)", opacity: coords ? 1 : 0.7 }}
+                                    >
+                                        <div style={{ width: 42, height: 42, borderRadius: 14, background: deliveryType === "express" ? "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" : "#EEF0FF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                            <Zap size={20} color={deliveryType === "express" ? "#fff" : "#2D6E3E"} />
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <p style={{ fontSize: 14, fontWeight: 700, color: "#111612", margin: 0 }}>{language === "uz" ? "Tezkor yetkazish" : "Экспресс-доставка"}</p>
+                                            <p style={{ fontSize: 12, fontWeight: 500, color: "#737D75", margin: "2px 0 0", display: "flex", alignItems: "center", gap: 4 }}>
+                                                {loadingExpress
+                                                    ? (language === "uz" ? "Hisoblanmoqda..." : "Расчёт...")
+                                                    : !coords
+                                                        ? (language === "uz" ? "Manzilni xaritadan tanlang" : "Выберите адрес на карте")
+                                                        : (<><Clock size={11} /> {expressInfo?.etaText || (language === "uz" ? "30 daqiqa — 1.5 soat" : "30 мин — 1.5 ч")}</>)}
+                                            </p>
+                                        </div>
+                                        <span style={{ fontSize: 13.5, fontWeight: 700, color: expressFee > 0 ? "#2D6E3E" : "#2D6E3E", flexShrink: 0 }}>
+                                            {!coords ? "—" : (expressFee > 0 ? fmtSom(expressFee, language) : (language === "uz" ? "Bepul" : "Бесплатно"))}
+                                        </span>
+                                    </button>
+                                </div>
+                            ) : (
+                                <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#fff", border: "1px solid rgba(15,20,16,0.06)", borderRadius: 22, padding: "14px 16px", boxShadow: "0 4px 16px rgba(15,20,16,0.04)" }}>
+                                    <div style={{ width: 42, height: 42, borderRadius: 14, background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                        <Truck size={20} color="#fff" />
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <p style={{ fontSize: 14, fontWeight: 700, color: "#111612", margin: 0 }}>{language === "uz" ? "Standart yetkazish" : "Стандартная доставка"}</p>
+                                        <p style={{ fontSize: 12, fontWeight: 500, color: "#737D75", margin: "2px 0 0" }}>
+                                            {language === "uz" ? `${regionName}ga yetkazish: ${deliveryDateFormatted}` : `Доставка в ${regionName}: ${deliveryDateFormatted}`}
+                                        </p>
+                                    </div>
+                                    <span style={{ fontSize: 13.5, fontWeight: 700, color: standardFee > 0 ? "#111612" : "#2D6E3E", flexShrink: 0 }}>
+                                        {standardFee > 0 ? fmtSom(standardFee, language) : (language === "uz" ? "Bepul" : "Бесплатно")}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </>
+                ) : (
+                    /* BTS va EMU punktlari tanlash bloki */
+                    <div style={{ background: "#fff", borderRadius: 24, padding: "16px 18px", boxShadow: "0 4px 16px rgba(15,20,16,0.04)", border: "1px solid rgba(15,20,16,0.06)", display: "flex", flexDirection: "column", gap: 12 }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <label style={{ fontSize: 11, fontWeight: 600, color: "#737D75", letterSpacing: 0.3, textTransform: "uppercase" }}>
+                                {language === "uz" ? "Topshirish punktini tanlang" : "Выберите пункт выдачи"}
+                            </label>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: "#2D6E3E" }}>
+                                {regionName} ({regionPickupPoints.length})
+                            </span>
+                        </div>
+
+                        {/* Tanlangan punkt info banner */}
+                        {selectedPickupPoint ? (
+                            <div style={{ background: "#EAF3EC", border: "1.5px solid #2D6E3E", borderRadius: 18, padding: "12px 14px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                                        <span style={{ fontSize: 9.5, fontWeight: 800, padding: "2px 7px", borderRadius: 6, background: selectedPickupPoint.provider === "bts" ? "#0066FF" : "#FF6600", color: "#fff", textTransform: "uppercase" }}>
+                                            {selectedPickupPoint.provider.toUpperCase()} EXPRESS
+                                        </span>
+                                        <span style={{ fontSize: 13, fontWeight: 700, color: "#111612" }} className="truncate">
+                                            {selectedPickupPoint.name}
+                                        </span>
+                                    </div>
+                                    <p style={{ fontSize: 12, color: "#2D6E3E", margin: "2px 0 0", fontWeight: 500 }}>
+                                        {selectedPickupPoint.address}
+                                    </p>
+                                    {selectedPickupPoint.landmark && (
+                                        <p style={{ fontSize: 11, color: "#444E46", margin: "2px 0 0", fontStyle: "italic" }}>
+                                            📍 {language === "uz" ? "Mo'ljal" : "Ориентир"}: {selectedPickupPoint.landmark}
+                                        </p>
+                                    )}
+                                </div>
+                                <div style={{ width: 22, height: 22, borderRadius: 11, background: "#2D6E3E", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                    <Check size={13} color="#fff" strokeWidth={3} />
+                                </div>
+                            </div>
+                        ) : (
+                            <div style={{ background: "#FFF9EB", border: "1px dashed #F59E0B", borderRadius: 16, padding: "10px 14px", fontSize: 12, fontWeight: 600, color: "#B45309" }}>
+                                ⚠️ {language === "uz" ? "Iltimos, quyidagi ro'yxatdan eng qulay punktni tanlang:" : "Пожалуйста, выберите подходящий пункт из списка ниже:"}
+                            </div>
+                        )}
+
+                        {/* Filtrlar: Barchasi, BTS, EMU */}
+                        <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2 }}>
                             <button
                                 type="button"
                                 onClick={() => {
                                     videoPreWarmer.triggerHaptic("selection");
-                                    setDeliveryType("standard");
+                                    setPickupProviderFilter("all");
                                 }}
-                                className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
-                                style={{ display: "flex", alignItems: "center", gap: 12, background: deliveryType === "standard" ? "#F8FAF8" : "#fff", border: deliveryType === "standard" ? "1.5px solid #2D6E3E" : "1px solid rgba(15,20,16,0.06)", borderRadius: 22, padding: "14px 16px", cursor: "pointer", textAlign: "left", boxShadow: "0 4px 16px rgba(15,20,16,0.04)" }}
+                                style={{
+                                    padding: "7px 12px",
+                                    borderRadius: 12,
+                                    fontSize: 11.5,
+                                    fontWeight: 700,
+                                    border: "none",
+                                    background: pickupProviderFilter === "all" ? "#111612" : "#F0F2EF",
+                                    color: pickupProviderFilter === "all" ? "#fff" : "#444E46",
+                                    cursor: "pointer",
+                                    whiteSpace: "nowrap"
+                                }}
                             >
-                                <div style={{ width: 42, height: 42, borderRadius: 14, background: deliveryType === "standard" ? "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" : "#F0F2EF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                    <Truck size={20} color={deliveryType === "standard" ? "#fff" : "#9AA29C"} />
-                                </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    <p style={{ fontSize: 14, fontWeight: 700, color: "#111612", margin: 0 }}>{language === "uz" ? "Standart yetkazish" : "Стандартная доставка"}</p>
-                                    <p style={{ fontSize: 12, fontWeight: 500, color: "#737D75", margin: "2px 0 0" }}>
-                                        {language === "uz" ? `${regionName}ga yetkazish: ${deliveryDateFormatted}` : `Доставка в ${regionName}: ${deliveryDateFormatted}`}
-                                    </p>
-                                </div>
-                                <span style={{ fontSize: 13.5, fontWeight: 700, color: standardFee > 0 ? "#111612" : "#2D6E3E", flexShrink: 0 }}>
-                                    {standardFee > 0 ? fmtSom(standardFee, language) : (language === "uz" ? "Bepul" : "Бесплатно")}
-                                </span>
+                                {language === "uz" ? "Barchasi" : "Все"} ({regionPickupPoints.length})
                             </button>
-
-                            {/* Tezkor */}
                             <button
                                 type="button"
                                 onClick={() => {
                                     videoPreWarmer.triggerHaptic("selection");
-                                    setDeliveryType("express");
+                                    setPickupProviderFilter("bts");
                                 }}
-                                disabled={!coords}
-                                className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
-                                style={{ display: "flex", alignItems: "center", gap: 12, background: deliveryType === "express" ? "#F8FAF8" : "#fff", border: deliveryType === "express" ? "1.5px solid #2D6E3E" : "1px solid rgba(15,20,16,0.06)", borderRadius: 22, padding: "14px 16px", cursor: coords ? "pointer" : "not-allowed", textAlign: "left", boxShadow: "0 4px 16px rgba(15,20,16,0.04)", opacity: coords ? 1 : 0.7 }}
+                                style={{
+                                    padding: "7px 12px",
+                                    borderRadius: 12,
+                                    fontSize: 11.5,
+                                    fontWeight: 700,
+                                    border: "none",
+                                    background: pickupProviderFilter === "bts" ? "#0066FF" : "#F0F2EF",
+                                    color: pickupProviderFilter === "bts" ? "#fff" : "#0066FF",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 5,
+                                    whiteSpace: "nowrap"
+                                }}
                             >
-                                <div style={{ width: 42, height: 42, borderRadius: 14, background: deliveryType === "express" ? "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)" : "#EEF0FF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                    <Zap size={20} color={deliveryType === "express" ? "#fff" : "#2D6E3E"} />
-                                </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    <p style={{ fontSize: 14, fontWeight: 700, color: "#111612", margin: 0 }}>{language === "uz" ? "Tezkor yetkazish" : "Экспресс-доставка"}</p>
-                                    <p style={{ fontSize: 12, fontWeight: 500, color: "#737D75", margin: "2px 0 0", display: "flex", alignItems: "center", gap: 4 }}>
-                                        {loadingExpress
-                                            ? (language === "uz" ? "Hisoblanmoqda..." : "Расчёт...")
-                                            : !coords
-                                                ? (language === "uz" ? "Manzilni xaritadan tanlang" : "Выберите адрес на карте")
-                                                : (<><Clock size={11} /> {expressInfo?.etaText || (language === "uz" ? "30 daqiqa — 1.5 soat" : "30 мин — 1.5 ч")}</>)}
-                                    </p>
-                                </div>
-                                <span style={{ fontSize: 13.5, fontWeight: 700, color: expressFee > 0 ? "#2D6E3E" : "#2D6E3E", flexShrink: 0 }}>
-                                    {!coords ? "—" : (expressFee > 0 ? fmtSom(expressFee, language) : (language === "uz" ? "Bepul" : "Бесплатно"))}
-                                </span>
+                                <span style={{ width: 6, height: 6, borderRadius: 3, background: pickupProviderFilter === "bts" ? "#fff" : "#0066FF" }} />
+                                BTS Express ({btsCount})
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    videoPreWarmer.triggerHaptic("selection");
+                                    setPickupProviderFilter("emu");
+                                }}
+                                style={{
+                                    padding: "7px 12px",
+                                    borderRadius: 12,
+                                    fontSize: 11.5,
+                                    fontWeight: 700,
+                                    border: "none",
+                                    background: pickupProviderFilter === "emu" ? "#FF6600" : "#F0F2EF",
+                                    color: pickupProviderFilter === "emu" ? "#fff" : "#FF6600",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 5,
+                                    whiteSpace: "nowrap"
+                                }}
+                            >
+                                <span style={{ width: 6, height: 6, borderRadius: 3, background: pickupProviderFilter === "emu" ? "#fff" : "#FF6600" }} />
+                                EMU Express ({emuCount})
                             </button>
                         </div>
-                    ) : (
-                        <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#fff", border: "1px solid rgba(15,20,16,0.06)", borderRadius: 22, padding: "14px 16px", boxShadow: "0 4px 16px rgba(15,20,16,0.04)" }}>
-                            <div style={{ width: 42, height: 42, borderRadius: 14, background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                <Truck size={20} color="#fff" />
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{ fontSize: 14, fontWeight: 700, color: "#111612", margin: 0 }}>{language === "uz" ? "Standart yetkazish" : "Стандартная доставка"}</p>
-                                <p style={{ fontSize: 12, fontWeight: 500, color: "#737D75", margin: "2px 0 0" }}>
-                                    {language === "uz" ? `${regionName}ga yetkazish: ${deliveryDateFormatted}` : `Доставка в ${regionName}: ${deliveryDateFormatted}`}
-                                </p>
-                            </div>
-                            <span style={{ fontSize: 13.5, fontWeight: 700, color: standardFee > 0 ? "#111612" : "#2D6E3E", flexShrink: 0 }}>
+
+                        {/* Qidiruv input */}
+                        <div style={{ position: "relative" }}>
+                            <Search size={15} color="#737D75" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }} />
+                            <input
+                                type="text"
+                                value={pickupSearchQuery}
+                                onChange={e => setPickupSearchQuery(e.target.value)}
+                                placeholder={language === "uz" ? "Filial nomi yoki manzil bo'yicha qidirish..." : "Поиск по названию или адресу..."}
+                                style={{
+                                    width: "100%",
+                                    background: "#F5F5F0",
+                                    border: "1px solid transparent",
+                                    borderRadius: 14,
+                                    padding: "10px 14px 10px 38px",
+                                    fontSize: 13,
+                                    fontWeight: 500,
+                                    color: "#111612",
+                                    outline: "none",
+                                    boxSizing: "border-box"
+                                }}
+                            />
+                            {pickupSearchQuery && (
+                                <button
+                                    type="button"
+                                    onClick={() => setPickupSearchQuery("")}
+                                    style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#737D75", fontSize: 13 }}
+                                >
+                                    ✕
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Punktlar ro'yxati (Scrollable) */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 380, overflowY: "auto", paddingRight: 4 }}>
+                            {filteredPickupPoints.length === 0 ? (
+                                <div style={{ textAlign: "center", padding: "30px 10px", color: "#737D75", fontSize: 12.5 }}>
+                                    {language === "uz" ? "Ushbu qidiruv bo'yicha filiallar topilmadi" : "По вашему запросу филиалы не найдены"}
+                                </div>
+                            ) : (
+                                filteredPickupPoints.map(point => {
+                                    const isSelected = selectedPickupPoint?.id === point.id;
+                                    return (
+                                        <div
+                                            key={point.id}
+                                            onClick={() => {
+                                                videoPreWarmer.triggerHaptic("selection");
+                                                setSelectedPickupPoint(point);
+                                            }}
+                                            className="ios-tap-feedback active:scale-[0.99] transition-transform duration-150"
+                                            style={{
+                                                background: isSelected ? "#F8FAF8" : "#fff",
+                                                border: isSelected ? "1.5px solid #2D6E3E" : "1px solid rgba(15,20,16,0.06)",
+                                                borderRadius: 18,
+                                                padding: "12px 14px",
+                                                cursor: "pointer",
+                                                boxShadow: isSelected ? "0 4px 16px rgba(45,110,62,0.08)" : "0 2px 8px rgba(15,20,16,0.03)"
+                                            }}
+                                        >
+                                            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+                                                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                                                    <span style={{
+                                                        fontSize: 9.5,
+                                                        fontWeight: 800,
+                                                        padding: "2px 7px",
+                                                        borderRadius: 6,
+                                                        background: point.provider === "bts" ? "#0066FF" : "#FF6600",
+                                                        color: "#fff",
+                                                        letterSpacing: 0.3
+                                                    }}>
+                                                        {point.provider === "bts" ? "BTS EXPRESS" : "EMU EXPRESS"}
+                                                    </span>
+                                                    <span style={{ fontSize: 13, fontWeight: 700, color: "#111612" }}>
+                                                        {point.name}
+                                                    </span>
+                                                </div>
+                                                <div style={{
+                                                    width: 18,
+                                                    height: 18,
+                                                    borderRadius: 9,
+                                                    border: isSelected ? "none" : "1.5px solid #C4C9C5",
+                                                    background: isSelected ? "#2D6E3E" : "transparent",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    flexShrink: 0,
+                                                    marginTop: 2
+                                                }}>
+                                                    {isSelected && <Check size={11} color="#fff" strokeWidth={3} />}
+                                                </div>
+                                            </div>
+
+                                            <p style={{ fontSize: 12, fontWeight: 500, color: "#444E46", margin: "6px 0 2px", lineHeight: 1.35 }}>
+                                                {point.address}
+                                            </p>
+
+                                            {point.landmark && (
+                                                <p style={{ fontSize: 11, fontWeight: 500, color: "#737D75", margin: "0 0 6px", fontStyle: "italic" }}>
+                                                    📍 {language === "uz" ? "Mo'ljal" : "Ориентир"}: {point.landmark}
+                                                </p>
+                                            )}
+
+                                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 6, paddingTop: 6, borderTop: "1px dashed rgba(15,20,16,0.06)", fontSize: 11, color: "#737D75", flexWrap: "wrap" }}>
+                                                <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                                    <Clock size={11} color="#737D75" />
+                                                    {point.schedule || "09:00 - 18:00"}
+                                                </span>
+                                                {point.phone && (
+                                                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                                        <Phone size={11} color="#737D75" />
+                                                        {point.phone}
+                                                    </span>
+                                                )}
+                                                <span style={{ fontWeight: 600, color: "#2D6E3E" }}>
+                                                    {deliveryDateFormatted}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
+
+                        {/* Standart yetkazish narxi punkti uchun */}
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 8, borderTop: "1px solid rgba(15,20,16,0.06)" }}>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: "#737D75" }}>
+                                {language === "uz" ? "Punktga yetkazish to'lovi:" : "Стоимость доставки в пункт:"}
+                            </span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: standardFee > 0 ? "#111612" : "#2D6E3E" }}>
                                 {standardFee > 0 ? fmtSom(standardFee, language) : (language === "uz" ? "Bepul" : "Бесплатно")}
                             </span>
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
 
                 {/* Promo Code */}
                 <div style={{ background: "#fff", borderRadius: 24, padding: "16px 18px", boxShadow: "0 4px 16px rgba(15,20,16,0.04)", border: "1px solid rgba(15,20,16,0.06)" }}>
