@@ -187,8 +187,35 @@ export default function ProductClient({
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
-    const [deliverySettings, setDeliverySettings] = useState<{ cutoff: number; days: number; offDays: string[]; holidays: string[] } | null>(null);
+    const storeWarehouses = useStore(s => s.warehouses);
+    const fetchWarehouses = useStore(s => s.fetchWarehouses);
+    useEffect(() => {
+        if (!storeWarehouses || storeWarehouses.length === 0) {
+            fetchWarehouses();
+        }
+    }, [storeWarehouses, fetchWarehouses]);
+
+    // Boshlang'ich holatdayoq store'dagi omborni olamiz (0ms, birdaniga!)
+    const activeWarehouse = useMemo(() => {
+        if (!storeWarehouses || storeWarehouses.length === 0) return null;
+        const targetProd = product || initialProduct;
+        const availableWhId = Object.keys(targetProd?.stockDetails || {}).find(id => Number((targetProd?.stockDetails as Record<string, number>)[id]) > 0);
+        return storeWarehouses.find((w: any) => w.id === availableWhId) || storeWarehouses[0];
+    }, [storeWarehouses, product, initialProduct]);
+
+    const [deliverySettings, setDeliverySettings] = useState<any | null>(activeWarehouse?.dbs_config || null);
+    useEffect(() => {
+        if (activeWarehouse?.dbs_config) {
+            setDeliverySettings(activeWarehouse.dbs_config);
+        }
+    }, [activeWarehouse]);
+
     const [store, setStore] = useState<{ id: string; name: string; logo: string | null } | null>(null);
+    useEffect(() => {
+        if (activeWarehouse) {
+            setStore({ id: activeWarehouse.id, name: activeWarehouse.name, logo: activeWarehouse.logo || null });
+        }
+    }, [activeWarehouse]);
 
     // --- MLM Referral Tracking ---
     useEffect(() => {
@@ -322,12 +349,7 @@ export default function ProductClient({
         // Sxema: warehouses.dbs_config (eski kod warehouse.data.dbs ni o'qigan — xato edi)
         const dbs = warehouse?.dbs_config || warehouse?.data?.dbs;
         if (dbs) {
-            setDeliverySettings({
-                cutoff: Number(dbs.cutoffHour) || 16,
-                days: Number(dbs.deliveryDays) || 1,
-                offDays: Array.isArray(dbs.offDays) ? dbs.offDays : [],
-                holidays: Array.isArray(dbs.holidays) ? dbs.holidays : []
-            });
+            setDeliverySettings(dbs);
         }
     };
 
@@ -765,7 +787,7 @@ export default function ProductClient({
                     t={t}
                     groupProducts={groupProducts}
                     totalStock={totalStock}
-                    getDeliveryDateText={() => getDeliveryDateText(language, deliverySettings, selectedRegion)}
+                    getDeliveryDateText={() => deliverySettings ? getDeliveryDateText(language, deliverySettings, selectedRegion) : (language === "uz" ? "Yetkazib berish..." : "Доставка...")}
                     onDescriptionOpen={() => setIsDescriptionModalOpen(true)}
                     personalOffer={personalOffer}
                 />
@@ -1072,7 +1094,7 @@ export default function ProductClient({
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{language === 'uz' ? 'Yetkazib berish' : 'Доставка'}</p>
-                                    <p className="text-base font-black italic">{getDeliveryDateText(language, deliverySettings, selectedRegion)}</p>
+                                    <p className="text-base font-black italic">{deliverySettings ? getDeliveryDateText(language, deliverySettings, selectedRegion) : (language === "uz" ? "Yetkazib berish..." : "Доставка...")}</p>
                                     <p className="text-[11px] text-gray-500 font-medium">{language === 'uz' ? "Toshkent bo'ylab tekin" : 'Бесплатно по Ташкенту'}</p>
                                 </div>
                             </div>
