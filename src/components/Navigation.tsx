@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Heart, ShoppingBag, MessageSquare, Clapperboard, LayoutGrid, User, ShoppingCart, BookOpen, Loader2, Sparkles, X, Home, Camera } from "lucide-react";
+import { Search, Heart, ShoppingBag, MessageSquare, Clapperboard, LayoutGrid, User, ShoppingCart, BookOpen, Loader2, Sparkles, X, Home, Camera, MapPin, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import Logo from "./Logo";
+import LocationSelectModal from "@/components/modals/LocationSelectModal";
+import { getRegionById } from "@/lib/regions";
 import { getProductSlug } from "@/lib/slugify";
 import { getOptimizedImageUrl } from "@/lib/imageVariants";
 import { useStore } from "@/store/store";
@@ -24,6 +26,10 @@ export default function Navigation() {
     const wishlist = useStore(state => state.wishlist);
     const language = useStore(state => state.language);
     const setHomeSearchQuery = useStore(state => state.setHomeSearchQuery);
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+    const selectedRegion = useStore(state => state.selectedRegion);
+    const currentRegion = getRegionById(selectedRegion);
+    const currentRegionName = language === "ru" ? currentRegion.name_ru : currentRegion.name_uz;
     const pathname = usePathname();
     const router = useRouter();
     const t = translations[language];
@@ -349,6 +355,30 @@ export default function Navigation() {
                             <span>{language === 'uz' ? 'Katalog' : 'Каталог'}</span>
                         </Link>
                     )}
+
+                    {/* Desktop Location Selector */}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            videoPreWarmer.triggerHaptic("light");
+                            setIsLocationModalOpen(true);
+                        }}
+                        className="hidden md:flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-[#F5F9F6] hover:bg-[#EAF3EC] border border-gray-100 hover:border-[#2D6E3E]/20 transition-all text-left cursor-pointer shrink-0 active:scale-[0.98] select-none"
+                        title={language === 'ru' ? 'Выбрать регион доставки' : 'Yetkazib berish hududini tanlash'}
+                    >
+                        <div className="w-7 h-7 rounded-xl bg-[#EAF3EC] text-[#2D6E3E] flex items-center justify-center shrink-0">
+                            <MapPin size={15} />
+                        </div>
+                        <div className="flex flex-col leading-tight">
+                            <span className="text-[10px] text-gray-400 font-medium">
+                                {language === 'ru' ? 'Доставка:' : 'Yetkazib berish:'}
+                            </span>
+                            <span className="text-xs font-bold text-[#111612] max-w-[110px] lg:max-w-[140px] truncate">
+                                {currentRegionName}
+                            </span>
+                        </div>
+                        <ChevronDown size={13} className="text-gray-400 ml-0.5" />
+                    </button>
 
                     <form onSubmit={handleSearch} className={`flex-1 relative group ${isCatalogPage ? 'w-full' : 'max-w-2xl'}`}>
                         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
@@ -710,6 +740,11 @@ export default function Navigation() {
                     }, 150);
                 }}
             />}
+
+            <LocationSelectModal
+                isOpen={isLocationModalOpen}
+                onClose={() => setIsLocationModalOpen(false)}
+            />
         </>
     );
 }
