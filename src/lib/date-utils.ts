@@ -19,9 +19,12 @@ export const getDeliveryCardText = (language: string, dbs: any, selectedRegion: 
     const now = new Date();
     const defaultRegionDays = getRegionById(selectedRegion).defaultDays;
     const isTashkent = selectedRegion === "tashkent_city" || selectedRegion === "tashkent_region";
+    // Toshkent bo'lsa: ombor deliveryDays yoki regionsDelivery['tashkent_city'], aks holda default
+    // Viloyatlar bo'lsa: regionsDelivery[selectedRegion] yoki viloyat defaultDays (2 kun)
     const regionDays = Number(
-        s.regionsDelivery[selectedRegion] ?? 
-        (isTashkent ? (s.days || defaultRegionDays) : defaultRegionDays)
+        isTashkent 
+            ? (s.regionsDelivery[selectedRegion] ?? s.days ?? defaultRegionDays)
+            : (s.regionsDelivery[selectedRegion] ?? defaultRegionDays)
     );
     let totalDays = s.processingDays + regionDays;
     if (now.getHours() >= s.cutoff) {
@@ -61,9 +64,12 @@ export const getDeliveryDateText = (language: string, deliverySettings: any, sel
     const s = normalizeDbsConfig(deliverySettings);
     const defaultRegionDays = getRegionById(selectedRegion).defaultDays;
     const isTashkent = selectedRegion === "tashkent_city" || selectedRegion === "tashkent_region";
+    // Toshkent bo'lsa: ombor deliveryDays yoki regionsDelivery['tashkent_city'], aks holda default
+    // Viloyatlar bo'lsa: regionsDelivery[selectedRegion] yoki viloyat defaultDays (2 kun)
     const regionDays = Number(
-        s.regionsDelivery[selectedRegion] ?? 
-        (isTashkent ? (s.days || defaultRegionDays) : defaultRegionDays)
+        isTashkent 
+            ? (s.regionsDelivery[selectedRegion] ?? s.days ?? defaultRegionDays)
+            : (s.regionsDelivery[selectedRegion] ?? defaultRegionDays)
     );
     
     const now = new Date();

@@ -340,7 +340,21 @@ export default function AdminWarehouses() {
                                                         min="0"
                                                         max="30"
                                                         value={formData.dbs.deliveryDays}
-                                                        onChange={e => setFormData({ ...formData, dbs: { ...formData.dbs, deliveryDays: Math.max(0, Number(e.target.value)) } })}
+                                                        onChange={e => {
+                                                            const val = Math.max(0, Number(e.target.value));
+                                                            setFormData(prev => ({
+                                                                ...prev,
+                                                                dbs: {
+                                                                    ...prev.dbs,
+                                                                    deliveryDays: val,
+                                                                    regionsDelivery: {
+                                                                        ...prev.dbs.regionsDelivery,
+                                                                        tashkent_city: val,
+                                                                        tashkent_region: val
+                                                                    }
+                                                                }
+                                                            }));
+                                                        }}
                                                         className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-2xl p-4 font-black transition-all outline-none"
                                                     />
                                                     <Clock size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none" />
@@ -418,6 +432,17 @@ export default function AdminWarehouses() {
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2 flex-wrap">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const updated: Record<string, number> = {};
+                                                UZBEKISTAN_REGIONS.forEach(r => { updated[r.id] = formData.dbs.deliveryDays; });
+                                                setFormData(prev => ({ ...prev, dbs: { ...prev.dbs, regionsDelivery: updated } }));
+                                            }}
+                                            className="px-3.5 py-2 bg-gray-100 hover:bg-black hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                                        >
+                                            Barchasini umumiy kunga ({formData.dbs.deliveryDays} kun) sozlash
+                                        </button>
                                         <button
                                             type="button"
                                             onClick={() => {
