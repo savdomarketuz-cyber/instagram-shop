@@ -47,7 +47,7 @@ async function getToken(): Promise<string> {
     }
 
     const data = await res.json();
-    cachedToken = data.access_token as string;
+    cachedToken = (data.data?.access_token || data.access_token) as string;
     tokenExpiry = Date.now() + 23.5 * 60 * 60 * 1000;
     return cachedToken!;
 }
@@ -135,7 +135,7 @@ async function uploadImageFromUrl(imageUrl: string): Promise<number | null> {
 
         if (!uploadRes.ok) return null;
         const uploadData = await uploadRes.json();
-        return uploadData.id as number;
+        return (uploadData.data?.id || uploadData.id) as number;
     } catch {
         return null;
     }
@@ -147,6 +147,22 @@ async function uploadImageFromUrl(imageUrl: string): Promise<number | null> {
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const action = searchParams.get("action");
+
+    if (action === "check" || action === "ping") {
+        try {
+            const res = await moomkinFetch(`/admin/company/${MOOMKIN_COMPANY_ID}`);
+            const data = await res.json();
+            return NextResponse.json({
+                success: true,
+                connected: res.ok,
+                status: res.status,
+                company: data.data?.name || data.data || "VELARI",
+                company_id: MOOMKIN_COMPANY_ID,
+            });
+        } catch (err: any) {
+            return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+        }
+    }
 
     if (action === "registry") {
         const registry = loadRegistry();
@@ -173,7 +189,7 @@ export async function GET(req: NextRequest) {
                 return NextResponse.json({ error: `Moomkin error: ${res.status}` }, { status: res.status });
             }
             const data = await res.json();
-            return NextResponse.json(data);
+            return NextResponse.json(data.data || data);
         } catch (err: any) {
             return NextResponse.json({ error: err.message }, { status: 500 });
         }
@@ -244,7 +260,7 @@ export async function POST(req: NextRequest) {
         }
 
         const created = await createRes.json();
-        const moomkinId = created.id as number;
+        const moomkinId = (created.data?.id || created.id) as number;
 
         registry[supabase_id] = {
             supabase_id,
@@ -302,7 +318,7 @@ export async function PATCH(req: NextRequest) {
         }
 
         const updated = await updateRes.json();
-        return NextResponse.json({ success: true, data: updated });
+        return NextResponse.json({ success: true, data: updated.data || updated });
     } catch (err: any) {
         console.error("Moomkin update error:", err);
         return NextResponse.json({ error: err.message }, { status: 500 });

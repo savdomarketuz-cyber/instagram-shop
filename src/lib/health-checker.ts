@@ -131,10 +131,19 @@ function getApiRegistry(): ApiTestItem[] {
         },
         {
             path: "ai:moomkin",
-            name: "Moomkin AI Aqlli Katalog Integratsiyasi",
+            name: "Moomkin.uz Aqlli Katalog Integratsiyasi",
             category: "🧠 Sun'iy Intellekt va AI Modellar",
             test: async () => {
-                return { note: "Moomkin AI sinxronizatsiyasi faol" };
+                const res = await fetch("https://api.moomkin.uz/api/v1/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ phone: "+998950821188", password: "Abdulaziz2244" }),
+                    signal: AbortSignal.timeout(6000),
+                });
+                if (!res.ok) throw new Error(`Moomkin API login xatosi: ${res.status}`);
+                const data = await res.json();
+                if (!data.data?.access_token && !data.access_token) throw new Error("Moomkin access_token olinmadi");
+                return { note: "Moomkin.uz API ulanishi faol (Avtorizatsiya muvaffaqiyatli)" };
             }
         },
         {
