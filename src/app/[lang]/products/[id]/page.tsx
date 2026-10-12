@@ -77,7 +77,8 @@ function decodeSlug(slug: string): string {
 }
 
 // ⚡ Eng mashhur 200 mahsulotni SEO slug shaklida pre-render (CDN'dan 0ms).
-// ⚡ Eng asosiy mahsulotlarni build vaqtida pre-render qilish (qolganlari ISR orqali birinchi so'rovda yaratiladi va 24 soat keshlanadi)
+// Har mahsulot uchun uz va ru slug — sitemap/canonical bilan AYNAN mos bo'ladi.
+// (Avval UUID + artikul render qilinardi: UUID dublikat, artikul esa buzilgan 404 edi.)
 export async function generateStaticParams() {
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
         return [];
@@ -89,7 +90,7 @@ export async function generateStaticParams() {
             .select("id, article, name, name_uz, name_ru")
             .eq("is_deleted", false)
             .order("sales", { ascending: false })
-            .limit(20);
+            .limit(200);
 
         if (!products) return [];
 

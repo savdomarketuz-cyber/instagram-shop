@@ -57,7 +57,6 @@ const nextConfig = {
     reactStrictMode: true,
     poweredByHeader: false,
     compress: true,
-    staticPageGenerationTimeout: 180,
     typescript: {
         // Tekshiruv npm run typecheck'da — build'dan oldin, alohida jarayonda ("build" skriptiga qarang).
         // Next ichidagi ikkinchi tekshiruv o'chiq: xotirani ikki marta yemasin.
