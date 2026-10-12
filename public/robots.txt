@@ -10,6 +10,12 @@ Allow: /
 Disallow: /api/
 Host: https://velari.uz
 
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: SemrushBot-SA
+Disallow: /
+
 User-agent: *
 Allow: /
 Disallow: /api/
