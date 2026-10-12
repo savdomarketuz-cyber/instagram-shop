@@ -4,16 +4,10 @@ import { getSitemapChunks, renderUrlset, SITEMAP_XML_HEADERS } from '@/lib/sitem
 // Bola sitemap: /sitemap/0.xml, /sitemap/1.xml, ...
 export const revalidate = 86400; // Regenerate sitemap every 24 hours
 
-// Build vaqtida mavjud fayllar oldindan yaratiladi (ISR); yangi paydo bo'lganlari so'rovda yaratiladi
+// Build vaqtida barcha minglab mahsulotlarni tortib timeout bermasligi uchun
+// bo'laklar birinchi so'rov kelganda generatsiya qilinadi va 24 soat keshlanadi (ISR)
 export async function generateStaticParams() {
-    try {
-        const chunks = await getSitemapChunks();
-        return chunks.map((_, i) => ({ id: `${i}.xml` }));
-    } catch (error) {
-        // Build yiqilmasin — fayllar birinchi so'rovda yaratiladi
-        console.error('Sitemap generateStaticParams failed:', error);
-        return [];
-    }
+    return [];
 }
 
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
