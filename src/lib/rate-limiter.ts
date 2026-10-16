@@ -43,7 +43,9 @@ export async function checkRateLimit(ip: string, limit: number, windowSeconds: n
 
             const multi = redis.multi();
             multi.incr(key);
-            multi.expire(key, windowSeconds);
+            if (current === null) {
+                multi.expire(key, windowSeconds);
+            }
             await multi.exec();
 
             return true;

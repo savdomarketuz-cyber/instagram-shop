@@ -1,12 +1,43 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { getSessionPhone, phoneDigits } from "@/lib/user-session";
+import { verifyJwt } from "@/lib/jwt-utils";
+import { getAdminSecret } from "@/lib/secrets";
 
+async function checkChatAuth(req: NextRequest, chatId: string): Promise<{ authorized: boolean; status?: number; error?: string }> {
+    const adminToken = req.cookies.get("admin_token")?.value;
+    if (adminToken) {
+        try {
+            const adminSecret = getAdminSecret();
+            const adminPayload: any = await verifyJwt(adminToken, adminSecret);
+            if (adminPayload && adminPayload.role === "admin") {
+                return { authorized: true };
+            }
+        } catch {
+            // fallback to user check
+        }
+    }
+
+    if (chatId.startsWith("visitor_")) {
+        if (chatId.length < 12) {
+            return { authorized: false, status: 401, error: "Unauthorized" };
+        }
+        return { authorized: true };
+    }
+
+    const sessionPhone = await getSessionPhone(req);
+    if (!sessionPhone || phoneDigits(sessionPhone) !== phoneDigits(chatId)) {
+        return { authorized: false, status: 401, error: "Unauthorized" };
+    }
+
+    return { authorized: true };
+}
 
 /**
  * GET: Fetch messages for a specific chat
  */
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const chatId = searchParams.get("chat_id");
     const ip = req.headers.get("x-forwarded-for") || "unknown";
@@ -14,12 +45,14 @@ export async function GET(req: Request) {
     if (!chatId) return NextResponse.json({ error: "No chat ID" }, { status: 400 });
 
     try {
-        if (!await checkRateLimit(ip, 30, 60)) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+        if (!await checkRateLimit(ip, 30, 60, "support-chat-get")) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+
+        const auth = await checkChatAuth(req, chatId);
+        if (!auth.authorized) {
+            return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
+        }
 
         // 🛡 SECURITY: Verify requester identity
-        // In a real app, we'd check JWT. Here, since we don't have user JWT yet,
-        // we at least ensure the chatId is provided and later RLS/API will enforce.
-        
         const { data, error } = await supabaseAdmin
             .from("support_messages")
             .select("*")
@@ -37,13 +70,20 @@ export async function GET(req: Request) {
 /**
  * POST: Send a new message
  */
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
 
     try {
-        if (!await checkRateLimit(ip, 15, 60)) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+        if (!await checkRateLimit(ip, 15, 60, "support-chat-post")) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
 
         const { chat_id, text, image, video, sender_id, sender_type } = await req.json();
+
+        if (!chat_id) return NextResponse.json({ error: "No chat ID" }, { status: 400 });
+
+        const auth = await checkChatAuth(req, chat_id);
+        if (!auth.authorized) {
+            return NextResponse.json({ error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
+        }
 
         // 🛡 SECURITY: Hard-code is_admin to false for public API users
         // Only internal admin routes can set is_admin: true

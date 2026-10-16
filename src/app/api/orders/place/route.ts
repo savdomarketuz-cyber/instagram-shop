@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     try {
         // 0. RATE LIMITING
-        if (!await checkRateLimit(ip, 15, 60)) {
+        if (!await checkRateLimit(ip, 15, 60, "orders-place")) {
             return NextResponse.json({ success: false, message: "Juda ko'p urinish. Bir ozdan so'ng qayta urinib ko'ring." }, { status: 429 });
         }
 
@@ -277,6 +277,39 @@ export async function POST(req: NextRequest) {
             }
         } catch (e) {
             console.error("Promo redemption record error:", e);
+        }
+        // ----------------------------------
+
+        // --- Smart discount redemption ---
+        try {
+            const orderId = data?.orderId;
+            if (data?.success && orderId) {
+                const itemIds = (validatedData.items || []).map((i: any) => String(i.id));
+                if (itemIds.length > 0) {
+                    const updatePayload: Record<string, any> = {
+                        status: "redeemed",
+                        redeemed_order_id: String(orderId)
+                    };
+                    const { error: redeemErr } = await supabaseAdmin
+                        .from("smart_discount_offers")
+                        .update(updatePayload)
+                        .eq("user_identifier", validatedData.userPhone)
+                        .eq("status", "active")
+                        .in("product_id", itemIds);
+
+                    if (redeemErr) {
+                        // Fallback agar redeemed_order_id ustuni mavjud bo'lmasa
+                        await supabaseAdmin
+                            .from("smart_discount_offers")
+                            .update({ status: "redeemed" })
+                            .eq("user_identifier", validatedData.userPhone)
+                            .eq("status", "active")
+                            .in("product_id", itemIds);
+                    }
+                }
+            }
+        } catch (sdoErr) {
+            console.error("Smart discount redemption error:", sdoErr);
         }
         // ----------------------------------
 

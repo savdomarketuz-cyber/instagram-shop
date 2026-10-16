@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdminFresh as db } from "@/lib/supabase-admin";
 import { getSessionPhone, phoneDigits, phoneVariants } from "@/lib/user-session";
+import { normalizeOrderStatus } from "@/lib/order-status";
 
 export const dynamic = "force-dynamic";
 
@@ -46,12 +47,17 @@ export async function GET(req: NextRequest) {
             .gt("potential_cashback", 0),
     ]);
 
+    const activePendingOrders = (pendingOrders || []).filter((o) => {
+        const st = normalizeOrderStatus(o.status);
+        return st !== "delivered" && st !== "cancelled";
+    });
+
     return NextResponse.json({
         success: true,
         myPhone: digits,
         wallet: wallet ? { balance: wallet.balance, wallet_number: wallet.wallet_number, is_active: wallet.is_active, created_at: wallet.created_at, updated_at: wallet.updated_at } : null,
         cashback: cashback || [],
         transfers: (transfers || []).map((t) => ({ ...t, isOutgoing: phoneDigits(t.sender_phone) === digits })),
-        pendingOrders: pendingOrders || [],
+        pendingOrders: activePendingOrders,
     });
 }

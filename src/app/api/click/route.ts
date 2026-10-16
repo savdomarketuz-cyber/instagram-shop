@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { sendOrderNotification } from "@/lib/telegram";
+import { normalizeOrderStatus } from "@/lib/order-status";
 
 // POST URL for both Prepare and Complete
 export async function POST(req: Request) {
@@ -68,11 +69,11 @@ export async function POST(req: Request) {
             }
 
             // Check if payment is already paid or cancelled
-            if (order.status === "paid") {
+            const normStatus = normalizeOrderStatus(order.status);
+            if (normStatus === "paid" || normStatus === "delivered") {
                 return NextResponse.json({ error: -4, error_note: "ALREADY PAID" });
             }
-
-            if (order.status === "cancelled") {
+            if (normStatus === "cancelled") {
                 return NextResponse.json({ error: -9, error_note: "ORDER CANCELLED" });
             }
 

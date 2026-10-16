@@ -1,15 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { sendTransferOTP } from "@/lib/telegram";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { transferSchema } from "@/lib/validators";
+import { getSessionPhone, phoneDigits } from "@/lib/user-session";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
 
     try {
         // 0. RATE LIMITING (3 transfers per minute)
-        if (!await checkRateLimit(ip, 3, 60)) {
+        if (!await checkRateLimit(ip, 3, 60, "wallet-transfer-req")) {
             return NextResponse.json({ success: false, message: "Juda ko'p urinish. Bir daqiqadan so'ng qayta urining." }, { status: 429 });
         }
 
@@ -21,6 +22,11 @@ export async function POST(req: Request) {
         }
 
         const { senderPhone, receiverPhone, amount, isGift } = validation.data;
+
+        const sessionPhone = await getSessionPhone(req as any);
+        if (!sessionPhone || phoneDigits(sessionPhone) !== phoneDigits(senderPhone)) {
+            return NextResponse.json({ success: false, message: "Ruxsat etilmadi. Iltimos, qayta tizimga kiring." }, { status: 401 });
+        }
 
         if (senderPhone === receiverPhone) {
             return NextResponse.json({ success: false, message: "O'zingizga o'tkazma qila olmaysiz" });

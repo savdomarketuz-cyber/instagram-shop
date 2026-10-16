@@ -1,17 +1,23 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { getSessionPhone, phoneDigits } from "@/lib/user-session";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
 
     try {
         // 0. RATE LIMITING (5 attempts per minute to prevent brute-force)
-        if (!await checkRateLimit(ip, 5, 60)) {
+        if (!await checkRateLimit(ip, 5, 60, "wallet-transfer-confirm")) {
             return NextResponse.json({ success: false, message: "Juda ko'p urinish. Bir daqiqadan so'ng qayta urining." }, { status: 429 });
         }
 
         const { senderPhone, receiverPhone, amount, code } = await req.json();
+
+        const sessionPhone = await getSessionPhone(req as any);
+        if (!sessionPhone || phoneDigits(sessionPhone) !== phoneDigits(senderPhone)) {
+            return NextResponse.json({ success: false, message: "Ruxsat etilmadi. Iltimos, qayta tizimga kiring." }, { status: 401 });
+        }
 
         // 1. Execute Atomic DB Transaction (Locked RPC V4 with Attempt Limits)
         const { data, error } = await supabaseAdmin.rpc('process_p2p_transfer_v4', {

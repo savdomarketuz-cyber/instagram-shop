@@ -17,7 +17,7 @@ import { ymGoal, ymPurchase } from "@/lib/metrika";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
 import { UZBEKISTAN_REGIONS, getRegionById } from "@/lib/regions";
 import { getDeliveryDateText } from "@/lib/date-utils";
-import { getPickupPointsByRegion, PickupPoint } from "@/lib/pickup-points";
+import { loadPickupPointsByRegion, PickupPoint } from "@/lib/pickup-points";
 
 export default function CheckoutPage() {
     const router = useRouter();
@@ -67,9 +67,21 @@ export default function CheckoutPage() {
         }
     }, [selectedRegion, selectedPickupPoint]);
 
-    const regionPickupPoints = useMemo(() => {
-        return getPickupPointsByRegion(selectedRegion);
-    }, [selectedRegion]);
+    const [regionPickupPoints, setRegionPickupPoints] = useState<PickupPoint[]>([]);
+
+    useEffect(() => {
+        if (deliveryMethod === "pickup") {
+            let active = true;
+            loadPickupPointsByRegion(selectedRegion).then((points) => {
+                if (active) {
+                    setRegionPickupPoints(points);
+                }
+            });
+            return () => {
+                active = false;
+            };
+        }
+    }, [deliveryMethod, selectedRegion]);
 
     const btsCount = useMemo(() => regionPickupPoints.filter(p => p.provider === "bts").length, [regionPickupPoints]);
     const emuCount = useMemo(() => regionPickupPoints.filter(p => p.provider === "emu").length, [regionPickupPoints]);

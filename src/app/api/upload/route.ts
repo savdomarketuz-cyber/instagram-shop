@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     try {
         // 0. RATE LIMITING (3 uploads per minute)
-        if (!await checkRateLimit(ip, 3, 60)) {
+        if (!await checkRateLimit(ip, 3, 60, "upload")) {
             return NextResponse.json({ error: "Juda ko'p urinish. Bir daqiqadan so'ng qayta urining." }, { status: 429 });
         }
 

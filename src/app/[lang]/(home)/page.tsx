@@ -54,7 +54,7 @@ async function getInitialData() {
             supabaseAdmin.from("settings").select("data").eq("id", "banners").single(),
             supabaseAdmin.from("site_settings").select("value").eq("key", "promo_countdown").single(),
             // Mahsuloti bor kategoriyalarni aniqlash uchun barcha mahsulot category_id lari
-            supabaseAdmin.from("products").select("category_id, stock, stock_details").eq("is_deleted", false).or("stock.gt.0,stock_details.neq.{}"),
+            supabaseAdmin.from("products").select("category_id, stock, stock_details").eq("is_deleted", false).or("stock.gt.0,stock_details.neq.{}").limit(10000),
             // Kategoriya vitrinasi sozlamasi (settings anon o'qishdan yopiq -> server orqali)
             supabaseAdmin.from("settings").select("data").eq("id", "featured_categories").maybeSingle(),
             // Bosh sahifa storylari (serverda keshlanadi, qayta yuklanganda sakrab chiqmasligi uchun)

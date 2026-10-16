@@ -183,6 +183,26 @@ export async function POST(req: NextRequest) {
                 if (orderIdToNotify) {
                     sendOrderStatusNotification(orderIdToNotify, payload.status);
                 }
+
+                // Handle Affiliate Rewards (MLM)
+                const updatedOrderIds: string[] = (data && Array.isArray(data) ? data : ordersBefore)
+                    .map((o: any) => String(o.id))
+                    .filter(Boolean);
+
+                if (payload.status === "Yetkazildi") {
+                    const { distributeCommissions } = await import("@/lib/mlm-utils");
+                    for (const orderId of updatedOrderIds) {
+                        distributeCommissions(orderId).catch(err => console.error("MLM Distribute Error (CRUD):", err));
+                    }
+                } else if (payload.status === "Bekor qilingan") {
+                    for (const orderId of updatedOrderIds) {
+                        await supabaseAdmin
+                            .from("affiliate_transactions")
+                            .update({ status: "rejected" })
+                            .eq("order_id", orderId)
+                            .eq("status", "pending");
+                    }
+                }
             }
             
             return NextResponse.json({ success: true, data });

@@ -34,11 +34,15 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
         if (lang && (lang === 'uz' || lang === 'ru')) {
             setLanguage(lang as Language);
             if (user?.phone) {
-                fetch('/api/user/language', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ language: lang, phone: user.phone })
-                }).catch(() => {});
+                const syncKey = `${user.phone}:${lang}`;
+                if (typeof window !== "undefined" && sessionStorage.getItem("synced_lang") !== syncKey) {
+                    sessionStorage.setItem("synced_lang", syncKey);
+                    fetch('/api/user/language', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ language: lang, phone: user.phone })
+                    }).catch(() => {});
+                }
             }
         }
     }, [lang, setLanguage, user?.phone]);
@@ -218,6 +222,18 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
             clearInterval(intervalId);
             document.removeEventListener('click', handleGlobalClick);
             document.removeEventListener("visibilitychange", handleVisibility);
+        };
+    }, [user?.phone, pathname]);
+
+    // Foydalanuvchi saytdan chiqib ketganda (tab yopilganda/boshqa saytga o'tganda) oflayn qilish
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+
+        const handlePageHide = () => {
+            if (user?.phone === 'ADMIN') return;
+            const sessionId = user?.phone || localStorage.getItem("shop_visitor_id");
+            if (!sessionId) return;
+
             fetch("/api/client-sync", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -228,7 +244,10 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
                 keepalive: true
             }).catch(() => {});
         };
-    }, [user?.phone, pathname]);
+
+        window.addEventListener("pagehide", handlePageHide);
+        return () => window.removeEventListener("pagehide", handlePageHide);
+    }, [user?.phone]);
 
     // Sync cart to Supabase
     useEffect(() => {

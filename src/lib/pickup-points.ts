@@ -1,5 +1,3 @@
-import rawPoints from "./data/pickup-points.json";
-
 export interface PickupPoint {
     id: string;             // Masalan: "emu-182" yoki "bts-0108"
     provider: "bts" | "emu";
@@ -13,14 +11,38 @@ export interface PickupPoint {
     lng: number;
 }
 
-const PICKUP_POINTS: PickupPoint[] = rawPoints as PickupPoint[];
+let cachedPoints: PickupPoint[] | null = null;
+let loadPromise: Promise<PickupPoint[]> | null = null;
+
+async function ensurePointsLoaded(): Promise<PickupPoint[]> {
+    if (cachedPoints) return cachedPoints;
+    if (loadPromise) return loadPromise;
+
+    loadPromise = (async () => {
+        const mod = await import("./data/pickup-points.json");
+        cachedPoints = (mod.default || mod) as PickupPoint[];
+        return cachedPoints;
+    })();
+
+    return loadPromise;
+}
+
+export async function loadPickupPointsByRegion(regionId: string, provider?: "bts" | "emu"): Promise<PickupPoint[]> {
+    const points = await ensurePointsLoaded();
+    return points.filter(p => {
+        if (p.region_id !== regionId) return false;
+        if (provider && p.provider !== provider) return false;
+        return true;
+    });
+}
 
 export function getAllPickupPoints(): PickupPoint[] {
-    return PICKUP_POINTS;
+    return cachedPoints || [];
 }
 
 export function getPickupPointsByRegion(regionId: string, provider?: "bts" | "emu"): PickupPoint[] {
-    return PICKUP_POINTS.filter(p => {
+    if (!cachedPoints) return [];
+    return cachedPoints.filter(p => {
         if (p.region_id !== regionId) return false;
         if (provider && p.provider !== provider) return false;
         return true;
@@ -28,5 +50,5 @@ export function getPickupPointsByRegion(regionId: string, provider?: "bts" | "em
 }
 
 export function getPickupPointById(id: string): PickupPoint | undefined {
-    return PICKUP_POINTS.find(p => p.id === id);
+    return (cachedPoints || []).find(p => p.id === id);
 }

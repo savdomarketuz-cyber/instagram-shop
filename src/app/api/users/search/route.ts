@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        if (!await checkRateLimit(ip, 60, 60)) return NextResponse.json({ error: "Rate limit" }, { status: 429 });
+        if (!await checkRateLimit(ip, 60, 60, "users-search")) return NextResponse.json({ error: "Rate limit" }, { status: 429 });
 
         let data: any[] = [];
         if (isSuggested) {

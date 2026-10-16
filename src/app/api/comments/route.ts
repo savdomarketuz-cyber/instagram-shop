@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
 
     try {
-        if (!await checkRateLimit(ip, 5, 60)) {
+        if (!await checkRateLimit(ip, 10, 60, "comments")) {
             return NextResponse.json({ success: false, message: "Juda ko'p urinish." }, { status: 429 });
         }
 
@@ -25,14 +25,22 @@ export async function POST(req: NextRequest) {
         const JWT_SECRET = getUserJwtSecret();
         const ADMIN_SECRET = getAdminSecret();
 
-        let authPayload = null;
+        let authPayload: any = null;
         if (adminToken) {
-            authPayload = await verifyJwt(adminToken, ADMIN_SECRET);
-            // Admin can act on behalf of any user phone (for moderation) or their own
-        } else if (token) {
-            authPayload = await verifyJwt(token, JWT_SECRET);
-            if (!authPayload || authPayload.sub !== p_user_phone) {
-                return NextResponse.json({ success: false, message: "Sessiya xatosi. Iltimos qayta kiring." }, { status: 401 });
+            try {
+                authPayload = await verifyJwt(adminToken, ADMIN_SECRET);
+            } catch {
+                authPayload = null;
+            }
+        }
+        if (!authPayload && token) {
+            try {
+                authPayload = await verifyJwt(token, JWT_SECRET);
+                if (!authPayload || authPayload.sub !== p_user_phone) {
+                    return NextResponse.json({ success: false, message: "Sessiya xatosi. Iltimos qayta kiring." }, { status: 401 });
+                }
+            } catch {
+                authPayload = null;
             }
         }
 
@@ -40,9 +48,11 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, message: "Sharh qoldirish uchun tizimga kiring." }, { status: 401 });
         }
 
+        const isAdmin = Boolean(authPayload && (authPayload as any).role === 'admin');
+
         // 🛡 ACTION: ADD COMMENT
         if (action === 'insert') {
-            const { product_id, text, type, rating, parent_id } = p_comment_data;
+            const { product_id, text, type, rating, parent_id, user_name, user_avatar, images, video_url } = p_comment_data || {};
 
             // 1. MUST HAVE PURCHASED TO REVIEW
             if (type === 'review' && !parent_id) {
@@ -62,9 +72,25 @@ export async function POST(req: NextRequest) {
 
             // 2. Insert Comment
             // comments.id — text primary key (default yo'q), shuning uchun bu yerda generatsiya qilamiz.
+            const allowedFields = {
+                product_id,
+                text,
+                type: type || 'review',
+                rating,
+                parent_id,
+                user_name,
+                user_avatar,
+                images,
+                video_url
+            };
+            const sanitizedData = Object.fromEntries(
+                Object.entries(allowedFields).filter(([_, v]) => v !== undefined)
+            );
+
             const { data, error } = await supabaseAdmin.from("comments").insert([{
                 id: (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`),
-                ...p_comment_data,
+                ...sanitizedData,
+                is_admin: isAdmin ? Boolean(p_comment_data.is_admin) : false,
                 user_id: p_user_phone, // We use phone as identity for now
                 created_at: new Date().toISOString()
             }]);
@@ -86,7 +112,7 @@ export async function POST(req: NextRequest) {
             
             // Allow update/delete if it's the owner or if an admin (check phone)
             // Note: In real app, verify admin status properly
-            const isOwner = comment.user_id === p_user_phone;
+            const isOwner = comment.user_id === p_user_phone || isAdmin;
             if (!isOwner && action !== 'react') {
                 return NextResponse.json({ success: false, message: "Ruxsat etilmadi." }, { status: 403 });
             }
@@ -95,13 +121,23 @@ export async function POST(req: NextRequest) {
                 await supabaseAdmin.from("comments").delete().eq("id", p_comment_id);
             } else if (action === 'update') {
                 await supabaseAdmin.from("comments").update({ 
-                    text: p_comment_data.text, 
+                    text: p_comment_data?.text, 
                     is_edited: true,
                     updated_at: new Date().toISOString() 
                 }).eq("id", p_comment_id);
             } else if (action === 'react') {
+                const rawReactions = p_comment_data?.reactions;
+                if (!rawReactions || typeof rawReactions !== "object" || Array.isArray(rawReactions)) {
+                    return NextResponse.json({ success: false, message: "Noto'g'ri reaksiya formati." }, { status: 400 });
+                }
+                const sanitizedReactions: Record<string, number> = {};
+                for (const [key, val] of Object.entries(rawReactions)) {
+                    if (typeof val === 'number' && val >= 0 && val <= 100000) {
+                        sanitizedReactions[key] = Math.floor(val);
+                    }
+                }
                 await supabaseAdmin.from("comments").update({ 
-                    reactions: p_comment_data.reactions 
+                    reactions: sanitizedReactions 
                 }).eq("id", p_comment_id);
             }
 

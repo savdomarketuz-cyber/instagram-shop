@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
 
     try {
-        if (!await checkRateLimit(ip, 3, 60)) {
+        if (!await checkRateLimit(ip, 3, 60, "orders-return")) {
             return NextResponse.json({ success: false, message: "Juda ko'p urinish." }, { status: 429 });
         }
 

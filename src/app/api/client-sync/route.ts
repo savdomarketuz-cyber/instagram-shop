@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getSessionPhone, phoneDigits } from "@/lib/user-session";
 
 export async function POST(req: NextRequest) {
     try {
@@ -8,6 +9,11 @@ export async function POST(req: NextRequest) {
         if (type === "cart") {
             const { user_phone, items } = payload;
             if (!user_phone) return NextResponse.json({ error: "Missing user_phone" }, { status: 400 });
+
+            const sessionPhone = await getSessionPhone(req);
+            if (!sessionPhone || phoneDigits(sessionPhone) !== phoneDigits(user_phone)) {
+                return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            }
             
             if (!items || items.length === 0) {
                 await supabaseAdmin.from("active_carts").delete().eq("user_phone", user_phone);
@@ -19,6 +25,13 @@ export async function POST(req: NextRequest) {
                 }, { onConflict: "user_phone" });
             }
         } else if (type === "status") {
+            if (payload?.user_phone) {
+                const sessionPhone = await getSessionPhone(req);
+                if (!sessionPhone || phoneDigits(sessionPhone) !== phoneDigits(payload.user_phone)) {
+                    payload.user_phone = null;
+                    payload.type = "visitor";
+                }
+            }
             const { id, is_online, updated_at } = payload;
             if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
             
@@ -28,6 +41,13 @@ export async function POST(req: NextRequest) {
                 updated_at: updated_at || new Date().toISOString()
             }, { onConflict: "id" });
         } else if (type === "status_update") {
+            if (payload?.user_phone) {
+                const sessionPhone = await getSessionPhone(req);
+                if (!sessionPhone || phoneDigits(sessionPhone) !== phoneDigits(payload.user_phone)) {
+                    payload.user_phone = null;
+                    payload.type = "visitor";
+                }
+            }
             const { id, is_online, updated_at } = payload;
             if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
             

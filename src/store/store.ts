@@ -5,6 +5,8 @@ import type { Product, CartItem, User, Category, Toast, Language, SearchFacets }
 
 /** Qidiruv holati: API'dagi jami son (total), keyingi sahifa, qaysi so'rov/kategoriya uchun. */
 let warehousesInflight: Promise<void> | null = null;
+let promoFetchedAt = 0;
+let offersFetchedAt = 0;
 
 export type SearchMeta = { total: number; hasMore: boolean; page: number; query: string; category: string | null };
 import { ymGoal, ymAddToCart, ymRemoveFromCart } from "@/lib/metrika";
@@ -127,7 +129,10 @@ export const useStore = create<StoreState>()(
             setCart: (cart) => set({ cart }),
             clearCart: () => set({ cart: [] }),
             setUser: (user) => set({ user }),
-            logout: () => set({ user: null, cart: [], wishlist: [], personalOffers: {} }),
+            logout: () => {
+                offersFetchedAt = 0;
+                set({ user: null, cart: [], wishlist: [], personalOffers: {} });
+            },
             cachedProducts: [],
             cachedCategories: [],
             setCachedProducts: (products) => set({ cachedProducts: products }),
@@ -168,9 +173,12 @@ export const useStore = create<StoreState>()(
             }),
             personalOffers: {},
             fetchPersonalOffers: async () => {
+                const now = Date.now();
+                if (now - offersFetchedAt < 60000) return;
                 try {
                     const res = await fetch("/api/discount");
                     const json = await res.json();
+                    offersFetchedAt = Date.now();
                     if (json?.success && Array.isArray(json.offers)) {
                         const map: Record<string, number> = {};
                         for (const o of json.offers) {
@@ -184,9 +192,12 @@ export const useStore = create<StoreState>()(
             },
             globalPromo: null,
             fetchGlobalPromo: async () => {
+                const now = Date.now();
+                if (now - promoFetchedAt < 60000) return;
                 try {
                     const res = await fetch("/api/promo");
                     const json = await res.json();
+                    promoFetchedAt = Date.now();
                     if (json?.success && json.promo) {
                         set({ globalPromo: json.promo });
                     }
