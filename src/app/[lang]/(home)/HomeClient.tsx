@@ -64,7 +64,7 @@ export default function HomeClient({
         useStore.setState({ warehouses: initialWarehouses });
     }
     if (typeof window !== "undefined" && initialPromo !== undefined && useStore.getState().globalPromo === null) {
-        useStore.setState({ globalPromo: initialPromo });
+        useStore.getState().setGlobalPromo(initialPromo);
     }
     useEffect(() => {
         if (initialWarehouses && initialWarehouses.length > 0) {
@@ -73,7 +73,7 @@ export default function HomeClient({
     }, [initialWarehouses]);
     useEffect(() => {
         if (initialPromo !== undefined) {
-            useStore.setState({ globalPromo: initialPromo });
+            useStore.getState().setGlobalPromo(initialPromo);
         }
     }, [initialPromo]);
 

@@ -59,6 +59,7 @@ interface StoreState {
     fetchPersonalOffers: () => Promise<void>;
     // Global Promo Countdown settings
     globalPromo: any | null;
+    setGlobalPromo: (promo: any | null) => void;
     fetchGlobalPromo: () => Promise<void>;
     // Omborlar (do'konlar) — yetkazish vaqti va do'kon nomi uchun
     warehouses: any[];
@@ -191,6 +192,10 @@ export const useStore = create<StoreState>()(
                 } catch { /* offline yoki guest — e'tibordan chetda */ }
             },
             globalPromo: null,
+            setGlobalPromo: (promo) => {
+                promoFetchedAt = Date.now();
+                set({ globalPromo: promo });
+            },
             fetchGlobalPromo: async () => {
                 const now = Date.now();
                 if (now - promoFetchedAt < 60000) return;
