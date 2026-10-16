@@ -7,7 +7,7 @@ import { useStore } from "@/store/store";
 import { useShallow } from "zustand/react/shallow";
 import { supabase } from "@/lib/supabase";
 import { PUBLIC_PRODUCT_COLUMNS } from "@/lib/public-product";
-import { mapProduct, mapBanner } from "@/lib/mappers";
+import { mapProduct, mapBanner, mapCategory } from "@/lib/mappers";
 import { getProductRealStock } from "@/lib/stock";
 import { translations } from "@/lib/translations";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -59,15 +59,23 @@ export default function HomeClient({
     initialStoryGroups,
     initialWarehouses,
 }: HomeClientProps) {
-    // Serverdan kelgan omborlarni store'ga darhol o'rnatish (0ms, qayta so'rovsiz va sakrashlarsiz)
+    // Serverdan kelgan omborlar va promo'ni store'ga darhol o'rnatish (0ms, qayta so'rovsiz va sakrashlarsiz)
     if (typeof window !== "undefined" && initialWarehouses && initialWarehouses.length > 0 && useStore.getState().warehouses.length === 0) {
         useStore.setState({ warehouses: initialWarehouses });
+    }
+    if (typeof window !== "undefined" && initialPromo !== undefined && useStore.getState().globalPromo === null) {
+        useStore.setState({ globalPromo: initialPromo });
     }
     useEffect(() => {
         if (initialWarehouses && initialWarehouses.length > 0) {
             useStore.setState({ warehouses: initialWarehouses });
         }
     }, [initialWarehouses]);
+    useEffect(() => {
+        if (initialPromo !== undefined) {
+            useStore.setState({ globalPromo: initialPromo });
+        }
+    }, [initialPromo]);
 
     const router = useRouter();
     const [urlCategory, setUrlCategory] = useState<string | null>(null);
@@ -118,6 +126,16 @@ export default function HomeClient({
     const [personalOrder, setPersonalOrder] = useState<string[]>([]);
     const [personalReasons, setPersonalReasons] = useState<Record<string, { uz: string; ru: string }>>({});
     const personalizeDoneRef = useRef<string | null>(null);
+    const restoredScrollRef = useRef(false);
+
+    // Scroll pozitsiyasini faqat bir marta mount bo'lganda tiklash
+    useEffect(() => {
+        if (!restoredScrollRef.current && homeScrollPosition > 0) {
+            restoredScrollRef.current = true;
+            window.scrollTo({ top: homeScrollPosition, behavior: 'instant' as ScrollBehavior });
+        }
+    }, [homeScrollPosition]);
+
     const [allCategories, setAllCategories] = useState<Category[]>(initialCategories);
     const [banners, setBanners] = useState<Banner[]>(initialBanners);
     const [search, setSearch] = useState(homeSearchQuery);
@@ -136,7 +154,7 @@ export default function HomeClient({
     const [pageNumber, setPageNumber] = useState(0);
     const [hasMore, setHasMore] = useState(initialProducts.length >= 20);
     const [bannerSettings, setBannerSettings] = useState(initialBannerSettings);
-    const [catalogCategoryCount, setCatalogCategoryCount] = useState(0);
+    const [catalogCategoryCount, setCatalogCategoryCount] = useState(initialCategories.length);
     const [catalogProductCount, setCatalogProductCount] = useState(0);
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const selectedRegion = useStore(s => s.selectedRegion);
@@ -162,20 +180,24 @@ export default function HomeClient({
         }
     }, [urlCategory, setHomeActiveFilter]);
 
-    // Katalog tugmasi uchun kategoriya va mahsulot sonini olish
+    // Boshlang'ich ma'lumotlar yo'q bo'lsa yuklash (ortiqcha count so'rovlarisiz)
     useEffect(() => {
-        const fetchCounts = async () => {
+        const fetchCategories = async () => {
             try {
-                const [catRes, prodRes] = await Promise.all([
-                    supabase.from("categories").select("id", { count: "exact", head: true }).eq("is_deleted", false),
-                    supabase.from("products").select("id", { count: "exact", head: true }).eq("is_deleted", false),
-                ]);
-                if (catRes.count != null) setCatalogCategoryCount(catRes.count);
-                if (prodRes.count != null) setCatalogProductCount(prodRes.count);
+                const { data } = await supabase.from("categories").select("*").eq("is_deleted", false);
+                if (data) setAllCategories(data.map(mapCategory));
             } catch {}
         };
-        fetchCounts();
-    }, []);
+        const fetchBanners = async () => {
+            try {
+                const { data } = await supabase.from("banners").select("*").eq("active", true).order("order_index");
+                if (data) setBanners(data.map(mapBanner));
+            } catch {}
+        };
+
+        if (initialCategories.length === 0) fetchCategories();
+        if (banners.length === 0) fetchBanners();
+    }, [initialCategories.length, banners.length]);
 
     // Sync local search with store
     useEffect(() => {
@@ -314,14 +336,13 @@ export default function HomeClient({
             })
             .subscribe();
 
-        if (homeScrollPosition > 0) {
-            window.scrollTo({ top: homeScrollPosition, behavior: 'instant' as ScrollBehavior });
-        }
-
         let timeoutId: NodeJS.Timeout;
         const handleScrollEvent = () => {
-            // Header blur uchun — darhol (debounce'siz)
-            setScrolled(window.scrollY > 30);
+            // Header blur uchun — faqat holat o'zgargandagina yangilash
+            setScrolled((prev) => {
+                const next = window.scrollY > 30;
+                return prev === next ? prev : next;
+            });
             // Scroll pozitsiyasini eslab qolish — debounce bilan (tez-tez yozmaslik uchun)
             clearTimeout(timeoutId);
             timeoutId = setTimeout(() => {
@@ -336,7 +357,7 @@ export default function HomeClient({
             supabase.removeChannel(settingsChannel);
             window.removeEventListener('scroll', handleScrollEvent);
         };
-    }, [homeScrollPosition, setHomeScrollPosition]);
+    }, [setHomeScrollPosition]);
 
     // Re-fetch when filters change (reset pagination)
     useEffect(() => {

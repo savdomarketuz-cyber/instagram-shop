@@ -3,8 +3,10 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { mapProduct } from "@/lib/mappers";
 import { getProductRealStock } from "@/lib/stock";
 import { personalize, type AffinitySignals } from "@/lib/personalize";
-import { verifyJwt } from "@/lib/jwt-utils";
-import { getUserJwtSecret } from "@/lib/secrets";
+import { getSessionPhone } from "@/lib/user-session";
+
+let candidatesCache: { data: any[]; expiresAt: number } | null = null;
+const CANDIDATES_TTL_MS = 5 * 60 * 1000;
 
 /**
  * Shaxsiy tavsiya endpoint'i — personalize() dvigatelini server'da ishlatadi.
@@ -25,11 +27,8 @@ export async function POST(req: NextRequest) {
         const limit = Math.min(Number(body.limit) || 12, 30);
         const lastSearch = typeof body.lastSearch === "string" ? body.lastSearch.trim() : "";
 
-        // Login holatini aniqlash (cookie bo'lmasa body'dagi userPhone'dan foydalanish)
-        const token = req.cookies.get("user_token")?.value;
-        const JWT_SECRET = getUserJwtSecret();
-        const payload = token ? await verifyJwt(token, JWT_SECRET) : null;
-        const userPhone = payload?.sub || (typeof body.userPhone === "string" && body.userPhone !== "ADMIN" ? body.userPhone : null);
+        // Login holatini aniqlash (faqat JWT sessiya orqali — IDOR himoyasi)
+        const userPhone = await getSessionPhone(req);
 
         // Oxirgi qidiruv bo'yicha mahsulotlarni aniqlash
         let searchAttentionIds: string[] = [];
@@ -79,16 +78,25 @@ export async function POST(req: NextRequest) {
             attentionProducts = attentionIds.map(id => byId.get(id)).filter(Boolean) as any[];
         }
 
-        // 3. Nomzodlar (sotuv va reyting bo'yicha eng sara 200 ta mahsulot)
-        const { data: candData } = await supabaseAdmin
-            .from("products")
-            .select(PERSONA_SELECT)
-            .eq("is_deleted", false)
-            .or("stock.gt.0,stock_details.neq.{}")
-            .order("sales", { ascending: false })
-            .order("avg_rating", { ascending: false })
-            .limit(200);
-        const candidates = (candData || []).map(mapProduct).filter(p => getProductRealStock(p) > 0);
+        // 3. Nomzodlar (sotuv va reyting bo'yicha eng sara 200 ta mahsulot - 5 min in-memory kesh)
+        let candidates: ReturnType<typeof mapProduct>[] = [];
+        if (candidatesCache && candidatesCache.expiresAt > Date.now()) {
+            candidates = candidatesCache.data;
+        } else {
+            const { data: candData, error } = await supabaseAdmin
+                .from("products")
+                .select(PERSONA_SELECT)
+                .eq("is_deleted", false)
+                .or("stock.gt.0,stock_details.neq.{}")
+                .order("sales", { ascending: false })
+                .order("avg_rating", { ascending: false })
+                .limit(200);
+
+            if (!error && candData) {
+                candidates = (candData || []).map(mapProduct).filter(p => getProductRealStock(p) > 0);
+                candidatesCache = { data: candidates, expiresAt: Date.now() + CANDIDATES_TTL_MS };
+            }
+        }
 
         // 4. Moslashtirish
         const ranked = personalize(candidates, attentionProducts, affinity, { limit, excludeIds });

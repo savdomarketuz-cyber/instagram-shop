@@ -96,7 +96,7 @@ export async function GET(req: NextRequest) {
     }
 
     // O'qildi deb belgilash (menga tegishli barcha kalit variantlari)
-    if (chat) {
+    if (chat && (!since || (messages && messages.length > 0))) {
         const unread: Record<string, number> = { ...(chat.unread_count || {}) };
         const myKeys = Object.keys(unread).filter((k) => phoneDigits(decodeURIComponent(k)) === myDigits);
         if (myKeys.some((k) => Number(unread[k]) > 0) || !(myDigits in unread)) {

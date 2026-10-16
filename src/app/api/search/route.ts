@@ -132,6 +132,10 @@ function ilikeFallback(tokens: string[], limit: number, offset = 0) {
 export async function POST(req: NextRequest) {
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
 
+    if (!(await checkRateLimit(ip, 60, 60, "search"))) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     try {
         const body = await req.json();
         const { query, image, suggest, page = 1, limit, category, brand, brands, minPrice, maxPrice, rating, sort } = body || {};

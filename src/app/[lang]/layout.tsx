@@ -146,6 +146,7 @@ export default async function RootLayout({
     children: React.ReactNode;
     params: { lang: string };
 }) {
+    const validLang = ['uz', 'ru'].includes(params?.lang) ? params.lang : 'uz';
     const settings = await getShopSettingsServer();
     const shopName = settings.name || "Velari";
 
@@ -186,7 +187,7 @@ export default async function RootLayout({
         "url": "https://velari.uz",
         "potentialAction": {
             "@type": "SearchAction",
-            "target": "https://velari.uz/search?q={search_term_string}",
+            "target": "https://velari.uz/" + validLang + "/catalog?q={search_term_string}",
             "query-input": "required name=search_term_string"
         }
     };
@@ -239,7 +240,7 @@ export default async function RootLayout({
         ]
     };
 
-    const displayLang = ['uz', 'ru'].includes(params.lang) ? params.lang : 'uz';
+    const displayLang = validLang;
 
     return (
         <html lang={displayLang} className={inter.variable}>

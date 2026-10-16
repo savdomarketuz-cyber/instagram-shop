@@ -28,7 +28,7 @@ const ReviewsSection = dynamic(() => import("@/components/product/ReviewsSection
     loading: () => <div className="h-40 animate-pulse bg-gray-50 rounded-3xl mx-4 my-8" />,
     ssr: false,
 });
-import { ProductDescriptionModal } from "@/components/product/ProductDescriptionModal";
+const ProductDescriptionModal = dynamic(() => import("@/components/product/ProductDescriptionModal").then(m => ({ default: m.ProductDescriptionModal })), { ssr: false });
 import { ProductSpecifications } from "@/components/product/ProductSpecifications";
 const RelatedProducts = dynamic(() => import("@/components/product/RelatedProducts").then(mod => ({ default: mod.RelatedProducts })), {
     loading: () => <div className="h-80 animate-pulse bg-gray-50 rounded-[50px] mx-10 my-20" />,
@@ -281,8 +281,9 @@ export default function ProductClient({
 
             // Kategoriya ma'lumotini yuklash (breadcrumb to'g'ri nom ko'rsatishi uchun)
             if (initialProduct.category) {
-                supabase.from("categories").select("*").eq("id", initialProduct.category).maybeSingle()
-                    .then(({ data: catData }) => { if (catData) setCategoryData(catData); });
+                const cachedCat = useStore.getState().cachedCategories?.find((c: any) => c.id === initialProduct.category);
+                if (cachedCat) setCategoryData(cachedCat);
+                else supabase.from("categories").select("*").eq("id", initialProduct.category).maybeSingle().then(({ data: catData }) => { if (catData) setCategoryData(catData); });
             }
 
             // Secondary priority: Defer background sections to free up initial render thread
@@ -349,7 +350,8 @@ export default function ProductClient({
     };
 
     const fetchDeliverySettings = async (productData: Product) => {
-        const { data: warehouses } = await supabase.from("warehouses").select("*");
+        const storeWarehouses = initialWarehouses?.length ? initialWarehouses : useStore.getState().warehouses;
+        const warehouses = storeWarehouses?.length ? storeWarehouses : (await supabase.from("warehouses").select("*")).data;
         if (!warehouses) return;
 
         const availableWhId = Object.keys(productData.stockDetails || {}).find(id => (productData.stockDetails as Record<string, number>)[id] > 0);
@@ -1224,12 +1226,14 @@ export default function ProductClient({
                 </div>
             )}
 
-            <ProductDescriptionModal 
-                isOpen={isDescriptionModalOpen}
-                onClose={() => setIsDescriptionModalOpen(false)}
-                product={product}
-                language={language}
-            />
+            {isDescriptionModalOpen && (
+                <ProductDescriptionModal 
+                    isOpen={isDescriptionModalOpen}
+                    onClose={() => setIsDescriptionModalOpen(false)}
+                    product={product}
+                    language={language}
+                />
+            )}
 
             {/* Mobile Floating Sticky CTA — Liquid Glass Capsule */}
             <div 

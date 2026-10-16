@@ -46,8 +46,9 @@ export default function ReelsPage() {
                 .range(from, to),
             supabase
                 .from("products")
-                .select("id,name,name_uz,name_ru,price,old_price,images,image,image_metadata,video_url,stock_details,category_id,color_name,model,group_id,article,stock,created_at")
+                .select("id,name,name_uz,name_ru,price,old_price,images,image,video_url,stock_details,category_id,color_name,model,group_id,article,stock,created_at")
                 .not("video_url", "is", null)
+                .eq("is_deleted", false)
                 .neq("video_url", "")
                 .order("created_at", { ascending: false })
                 .range(from, to),
@@ -79,7 +80,7 @@ export default function ReelsPage() {
         for (const p of productsRes.data || []) {
             if (!p.video_url) continue;
             const rawImg = p.image || (Array.isArray(p.images) ? p.images[0] : null) || "/placeholder.png";
-            const poster = getOptimizedImageUrl(p.image_metadata, rawImg, 'xs');
+            const poster = rawImg;
             const rawUrls = String(p.video_url).split(/[;,]/).map((u) => sanitizeVideoUrl(u)).filter(Boolean);
             rawUrls.forEach((vUrl, uIdx) => {
                 productItems.push({
@@ -93,7 +94,7 @@ export default function ReelsPage() {
                     oldPrice: Number(p.old_price) || 0,
                     image: poster,
                     rawImage: rawImg,
-                    image_metadata: p.image_metadata,
+                    image_metadata: undefined,
                     images: Array.isArray(p.images) ? p.images : (rawImg ? [rawImg] : []),
                     stockDetails: p.stock_details || null,
                     stock: Number(p.stock) || 0,

@@ -22,7 +22,8 @@ import { useStore } from "@/store/store";
 import { supabase } from "@/lib/supabase";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
 import { sanitizeVideoUrl } from "@/lib/video-url";
-import { QuickBuySheet } from "@/components/reels/QuickBuySheet";
+import dynamic from "next/dynamic";
+const QuickBuySheet = dynamic(() => import("@/components/reels/QuickBuySheet").then((m) => m.QuickBuySheet), { ssr: false });
 
 interface SingleReelProps {
     reel: any;

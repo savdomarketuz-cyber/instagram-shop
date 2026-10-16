@@ -12,7 +12,8 @@ import { ProductGrid } from "@/components/home/ProductGrid";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
 import { getProductRealStock } from "@/lib/stock";
 import type { Product } from "@/types";
-import VisualSearchModal from "@/components/search/VisualSearchModal";
+import dynamic from "next/dynamic";
+const VisualSearchModal = dynamic(() => import("@/components/search/VisualSearchModal"), { ssr: false });
 import type { VisualAnalysis } from "@/app/api/search/route";
 
 const GREEN = "#2D6E3E";
@@ -816,22 +817,24 @@ export default function CatalogClient({
             </BottomSheet>
 
             {/* Google Lens uslubidagi vizual qidiruv modal oynasi */}
-            <VisualSearchModal
-                isOpen={isLensModalOpen}
-                onClose={() => setIsLensModalOpen(false)}
-                imagePreview={lensImagePreview}
-                isAnalyzing={isLensAnalyzing}
-                results={lensResults}
-                language={language}
-                onChangePhoto={() => fileInputRef.current?.click()}
-                onCropSearch={handleCropSearch}
-                onViewResults={() => {
-                    setIsLensModalOpen(false);
-                    setTimeout(() => {
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                    }, 120);
-                }}
-            />
+            {isLensModalOpen && (
+                <VisualSearchModal
+                    isOpen={isLensModalOpen}
+                    onClose={() => setIsLensModalOpen(false)}
+                    imagePreview={lensImagePreview}
+                    isAnalyzing={isLensAnalyzing}
+                    results={lensResults}
+                    language={language}
+                    onChangePhoto={() => fileInputRef.current?.click()}
+                    onCropSearch={handleCropSearch}
+                    onViewResults={() => {
+                        setIsLensModalOpen(false);
+                        setTimeout(() => {
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                        }, 120);
+                    }}
+                />
+            )}
         </div>
     );
 }

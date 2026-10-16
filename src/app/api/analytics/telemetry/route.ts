@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
+import { getSessionPhone } from "@/lib/user-session";
 
 export async function POST(req: NextRequest) {
     try {
@@ -13,10 +14,9 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { eventType, productId, categoryId, eventValue, metadata } = body;
 
-        // 1. Identify User (Phone if logged in, otherwise Session Cookie or IP as fallback fallback)
-        const userPhoneCookie = req.cookies.get('user_phone')?.value;
-        const fallbackSession = req.headers.get('x-forwarded-for') || req.ip || 'anonymous_session';
-        const userIdentifier = userPhoneCookie || fallbackSession;
+        // 1. Identify User (Phone if logged in via user_token session, otherwise IP fallback)
+        const sessionPhone = await getSessionPhone(req);
+        const userIdentifier = sessionPhone || ip;
 
         if (!eventType) {
              return NextResponse.json({ error: "Missing event type" }, { status: 400 });

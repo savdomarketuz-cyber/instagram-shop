@@ -110,14 +110,22 @@ export default async function CategoryCatalogPage({ params }: { params: { lang: 
             .from("products")
             .select("category_id, stock, stock_details")
             .eq("is_deleted", false)
-            .or("stock.gt.0,stock_details.neq.{}"),
+            .or("stock.gt.0,stock_details.neq.{}")
+            .limit(10000),
         supabaseAdmin
             .from("warehouses")
             .select("id,name,logo,dbs_config,active")
             .eq("active", true)
     ]);
 
-    const mappedProducts = (productsData || []).map(mapProduct).filter((p: any) => getProductRealStock(p) > 0);
+    const mappedProducts = (productsData || [])
+        .map(mapProduct)
+        .filter((p: any) => getProductRealStock(p) > 0)
+        .map((d: any) => {
+            const firstImg = d.images?.[0] || d.image;
+            const trimmedMeta = firstImg && d.image_metadata?.[firstImg] ? { [firstImg]: d.image_metadata[firstImg] } : {};
+            return { ...d, image_metadata: trimmedMeta };
+        });
     const validCatIds = (pcData || [])
         .filter((r: any) => getProductRealStock(r) > 0)
         .map((r: any) => r.category_id)
