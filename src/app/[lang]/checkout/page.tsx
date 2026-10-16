@@ -70,18 +70,16 @@ export default function CheckoutPage() {
     const [regionPickupPoints, setRegionPickupPoints] = useState<PickupPoint[]>([]);
 
     useEffect(() => {
-        if (deliveryMethod === "pickup") {
-            let active = true;
-            loadPickupPointsByRegion(selectedRegion).then((points) => {
-                if (active) {
-                    setRegionPickupPoints(points);
-                }
-            });
-            return () => {
-                active = false;
-            };
-        }
-    }, [deliveryMethod, selectedRegion]);
+        let active = true;
+        loadPickupPointsByRegion(selectedRegion).then((points) => {
+            if (active) {
+                setRegionPickupPoints(points);
+            }
+        });
+        return () => {
+            active = false;
+        };
+    }, [selectedRegion]);
 
     const btsCount = useMemo(() => regionPickupPoints.filter(p => p.provider === "bts").length, [regionPickupPoints]);
     const emuCount = useMemo(() => regionPickupPoints.filter(p => p.provider === "emu").length, [regionPickupPoints]);
@@ -591,7 +589,9 @@ export default function CheckoutPage() {
                                     {language === "uz" ? "Punktidan olish" : "Самовывоз"}
                                 </p>
                                 <p style={{ fontSize: 11, fontWeight: 500, color: "#737D75", margin: "2px 0 0" }}>
-                                    {language === "uz" ? `BTS va EMU (${regionPickupPoints.length})` : `BTS и EMU (${regionPickupPoints.length})`}
+                                    {language === "uz"
+                                        ? (regionPickupPoints.length > 0 ? `BTS va EMU (${regionPickupPoints.length})` : "BTS va EMU")
+                                        : (regionPickupPoints.length > 0 ? `BTS и EMU (${regionPickupPoints.length})` : "BTS и EMU")}
                                 </p>
                             </div>
                         </button>
