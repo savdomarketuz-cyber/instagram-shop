@@ -1,12 +1,35 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getSessionPhone, phoneDigits } from "@/lib/user-session";
+import { checkRateLimit } from "@/lib/rate-limiter";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     try {
+        const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+        if (!(await checkRateLimit(ip, 5, 60, "returns-legacy"))) {
+            return NextResponse.json({ success: false, error: "Too many requests" }, { status: 429 });
+        }
+
         const { orderId, userPhone, items, reason } = await req.json();
 
         if (!orderId || !userPhone || !items || items.length === 0) {
             return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
+        }
+
+        const sessionPhone = await getSessionPhone(req);
+        if (!sessionPhone || phoneDigits(sessionPhone) !== phoneDigits(userPhone)) {
+            return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+        }
+
+        // Buyurtma foydalanuvchiga tegishli ekanini tekshirish
+        const { data: order, error: orderErr } = await supabaseAdmin
+            .from("orders")
+            .select("id, user_phone")
+            .eq("id", orderId)
+            .maybeSingle();
+
+        if (orderErr || !order || phoneDigits(order.user_phone) !== phoneDigits(sessionPhone)) {
+            return NextResponse.json({ success: false, error: "Buyurtma sizga tegishli emas yoki topilmadi" }, { status: 403 });
         }
 
         // 1. Create return request

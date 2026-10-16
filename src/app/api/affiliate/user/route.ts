@@ -5,6 +5,7 @@ import crypto from "crypto";
 import { hashPassword } from "@/lib/auth-utils";
 import { sendPinResetCode, sendMemberVerificationCode } from "@/lib/telegram";
 import { getUserJwtSecret } from "@/lib/secrets";
+import { checkRateLimit } from "@/lib/rate-limiter";
 
 function hashPin(pin: string, salt?: string): string {
     const s = salt || crypto.randomBytes(16).toString('hex');
@@ -47,34 +48,20 @@ export async function GET(req: NextRequest) {
 
         if (userError || !user) throw userError || new Error("User not found");
 
-        // 1a. Get Cashback Wallet Balance
-        const { data: wallet } = await supabaseAdmin
-            .from("user_wallets")
-            .select("balance")
-            .eq("user_phone", userPhone)
-            .single();
+        // 2. Parallel fetch for wallet, downline, transactions, and withdrawals
+        const [
+            { data: wallet },
+            { data: teamMembers },
+            { data: transactions },
+            { data: withdrawals }
+        ] = await Promise.all([
+            supabaseAdmin.from("user_wallets").select("balance").eq("user_phone", userPhone).maybeSingle(),
+            supabaseAdmin.from("users").select("id, phone, name, affiliate_role, created_at").eq("upline_id", user.id),
+            supabaseAdmin.from("affiliate_transactions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+            supabaseAdmin.from("withdraw_requests").select("*").eq("user_phone", userPhone).order("created_at", { ascending: false }),
+        ]);
 
         const wallet_balance = wallet?.balance || 0;
-
-        // 2. Get Team Members (Downline)
-        const { data: teamMembers } = await supabaseAdmin
-            .from("users")
-            .select("id, phone, name, affiliate_role, created_at")
-            .eq("upline_id", user.id);
-
-        // 3. Get Affiliate Transactions (Frozen/Pending/Released)
-        const { data: transactions } = await supabaseAdmin
-            .from("affiliate_transactions")
-            .select("*")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false });
-
-        // 4. Get Withdrawal History
-        const { data: withdrawals } = await supabaseAdmin
-            .from("withdraw_requests")
-            .select("*")
-            .eq("user_phone", userPhone)
-            .order("created_at", { ascending: false });
 
         return NextResponse.json({
             success: true,
@@ -103,6 +90,22 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { action, pin, amount, card_number, memberPhone, verificationCode, productId } = body;
 
+        // Brute-force himoyasi (1 daqiqada 5 ta urinish)
+        const rateLimitedActions = [
+            "verify_pin",
+            "verify_password",
+            "add_team_member",
+            "verify_telegram_reset",
+            "request_telegram_reset",
+            "request_member_verification",
+            "withdraw"
+        ];
+        if (rateLimitedActions.includes(action)) {
+            if (!(await checkRateLimit(`${userPhone}:${action}`, 5, 60, "affiliate-pin"))) {
+                return NextResponse.json({ error: "Juda ko'p urinish. 1 daqiqa kuting." }, { status: 429 });
+            }
+        }
+
         // --- PIN SETUP ---
         if (action === "set_pin") {
             if (!pin || pin.length !== 4) return NextResponse.json({ error: "PIN 4 ta raqam bo'lishi kerak" }, { status: 400 });
@@ -121,7 +124,12 @@ export async function POST(req: NextRequest) {
 
         // --- AGREE CONTRACT ---
         if (action === "agree_contract") {
-            await supabaseAdmin.from("users").update({ affiliate_agreed: true, affiliate_role: 'top_manager' }).eq("phone", userPhone);
+            const { data: curr } = await supabaseAdmin.from("users").select("affiliate_role, upline_id").eq("phone", userPhone).single();
+            if (!curr?.affiliate_role && !curr?.upline_id) {
+                await supabaseAdmin.from("users").update({ affiliate_agreed: true, affiliate_role: 'top_manager' }).eq("phone", userPhone);
+            } else {
+                await supabaseAdmin.from("users").update({ affiliate_agreed: true }).eq("phone", userPhone);
+            }
             return NextResponse.json({ success: true });
         }
 

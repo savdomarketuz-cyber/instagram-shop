@@ -22,31 +22,32 @@ export async function POST(req: NextRequest) {
                 if (payload?.sub && payload.sub !== "ADMIN") tokenPhone = String(payload.sub);
             } catch {}
         }
-        const userPhoneCookie = req.cookies.get("user_phone")?.value;
-        const userPhone = body.phone || tokenPhone || userPhoneCookie || null;
+        const userPhone = tokenPhone;
 
-        // 2. Agar foydalanuvchi mavjud bo'lsa, Supabase bazasiga yozish
+        // 2. Agar foydalanuvchi mavjud bo'lsa, Supabase bazasiga yozish (parallel)
         if (userPhone) {
-            // A. user_interests jadvaliga saqlash (yoki yangilash)
-            await supabaseAdmin.from("user_interests").upsert({
-                id: userPhone,
-                user_phone: userPhone,
-                language: language,
-                updated_at: new Date().toISOString()
-            }, { onConflict: "id" }).then(() => {}, () => {});
+            await Promise.allSettled([
+                // A. user_interests jadvaliga saqlash (yoki yangilash)
+                supabaseAdmin.from("user_interests").upsert({
+                    id: userPhone,
+                    user_phone: userPhone,
+                    language: language,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: "id" }),
 
-            // B. users jadvaliga urinish (agar ustun mavjud bo'lsa)
-            await supabaseAdmin.from("users").update({
-                language: language
-            }).eq("phone", userPhone).then(() => {}, () => {});
+                // B. users jadvaliga urinish (agar ustun mavjud bo'lsa)
+                supabaseAdmin.from("users").update({
+                    language: language
+                }).eq("phone", userPhone),
 
-            // C. Telemetriya logiga yozish
-            await supabaseAdmin.from("user_telemetry_logs").insert([{
-                user_identifier: userPhone,
-                event_type: "LANGUAGE_CHANGE",
-                event_value: language,
-                event_metadata: { language }
-            }]).then(() => {}, () => {});
+                // C. Telemetriya logiga yozish
+                supabaseAdmin.from("user_telemetry_logs").insert([{
+                    user_identifier: userPhone,
+                    event_type: "LANGUAGE_CHANGE",
+                    event_value: language,
+                    event_metadata: { language }
+                }])
+            ]);
         }
 
         // 3. Javob qaytarish va Cookie'larni yangilash (1 yil muddatga)

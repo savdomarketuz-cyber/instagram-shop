@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { mapProduct } from "@/lib/mappers";
 import { notFound } from "next/navigation";
@@ -5,13 +6,18 @@ import StoreClient from "./StoreClient";
 
 export const revalidate = 300; // 5 daqiqalik Edge Cache — Vercel CPU sarfini tejaydi
 
-export async function generateMetadata({ params }: { params: { lang: string; id: string } }) {
-    const lang = params.lang === "ru" ? "ru" : "uz";
+const getWarehouse = cache(async (id: string) => {
     const { data: wh } = await supabaseAdmin
         .from("warehouses")
-        .select("id,name,address,active")
-        .eq("id", params.id)
-        .single();
+        .select("id,name,logo,address,active")
+        .eq("id", id)
+        .maybeSingle();
+    return wh;
+});
+
+export async function generateMetadata({ params }: { params: { lang: string; id: string } }) {
+    const lang = params.lang === "ru" ? "ru" : "uz";
+    const wh = await getWarehouse(params.id);
 
     if (!wh || wh.active === false) {
         notFound();
@@ -42,11 +48,7 @@ const PRODUCT_COLS =
 export default async function StorePage({ params }: { params: { lang: string; id: string } }) {
     const lang = params.lang === "ru" ? "ru" : "uz";
 
-    const { data: wh } = await supabaseAdmin
-        .from("warehouses")
-        .select("id,name,logo,address,active")
-        .eq("id", params.id)
-        .single();
+    const wh = await getWarehouse(params.id);
 
     if (!wh || wh.active === false) notFound();
 
@@ -59,7 +61,12 @@ export default async function StorePage({ params }: { params: { lang: string; id
 
     const products = (rows || [])
         .filter((p: any) => Number((p.stock_details || {})[params.id]) > 0)
-        .map(mapProduct);
+        .map(mapProduct)
+        .map((d: any) => {
+            const firstImg = d.images?.[0] || d.image;
+            const trimmedMeta = firstImg && d.image_metadata?.[firstImg] ? { [firstImg]: d.image_metadata[firstImg] } : {};
+            return { ...d, image_metadata: trimmedMeta };
+        });
 
     return (
         <StoreClient

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { verifyJwt } from "@/lib/jwt-utils";
 import { getUserJwtSecret } from "@/lib/secrets";
+import { checkRateLimit } from "@/lib/rate-limiter";
 
 async function getUserFromToken(req: NextRequest) {
     const token = req.cookies.get("user_token")?.value;
@@ -19,17 +20,17 @@ export async function GET(req: NextRequest) {
         const { data: user } = await supabaseAdmin.from("users").select("id").eq("phone", phone).single();
         if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-        // Get my active promo codes
-        const { data: myCodes } = await supabaseAdmin
-            .from("affiliate_promo_codes")
-            .select("*, promo_code_tariffs(*)")
-            .eq("affiliate_id", user.id);
-
-        // Get available tariffs
-        const { data: tariffs } = await supabaseAdmin
-            .from("promo_code_tariffs")
-            .select("*")
-            .eq("is_active", true);
+        // Get my active promo codes & available tariffs in parallel
+        const [{ data: myCodes }, { data: tariffs }] = await Promise.all([
+            supabaseAdmin
+                .from("affiliate_promo_codes")
+                .select("*, promo_code_tariffs(*)")
+                .eq("affiliate_id", user.id),
+            supabaseAdmin
+                .from("promo_code_tariffs")
+                .select("*")
+                .eq("is_active", true)
+        ]);
 
         return NextResponse.json({ success: true, myCodes: myCodes || [], tariffs: tariffs || [] });
     } catch (error: any) {
@@ -42,8 +43,17 @@ export async function POST(req: NextRequest) {
     if (!phone) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
+        if (!(await checkRateLimit(phone, 10, 60, "affiliate-promo"))) {
+            return NextResponse.json({ error: "Juda ko'p urinish. 1 daqiqa kuting." }, { status: 429 });
+        }
+
         const { tariffId, customCode } = await req.json();
         if (!tariffId || !customCode) return NextResponse.json({ error: "Tariff and Code required" }, { status: 400 });
+
+        const cleanCode = String(customCode).trim().toUpperCase();
+        if (!/^[A-Z0-9_-]{3,20}$/.test(cleanCode)) {
+            return NextResponse.json({ error: "Promo-kod faqat 3-20 ta harf va raqamdan iborat bo'lishi kerak" }, { status: 400 });
+        }
 
         const { data: user } = await supabaseAdmin.from("users").select("id").eq("phone", phone).single();
         if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -52,8 +62,8 @@ export async function POST(req: NextRequest) {
         const { data: existing } = await supabaseAdmin
             .from("affiliate_promo_codes")
             .select("id")
-            .eq("code", customCode.toUpperCase())
-            .single();
+            .eq("code", cleanCode)
+            .maybeSingle();
 
         if (existing) return NextResponse.json({ error: "Bu promo-kod band" }, { status: 400 });
 
@@ -62,7 +72,7 @@ export async function POST(req: NextRequest) {
             .insert({
                 affiliate_id: user.id,
                 tariff_id: tariffId,
-                code: customCode.toUpperCase()
+                code: cleanCode
             })
             .select();
 
