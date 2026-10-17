@@ -464,11 +464,11 @@ export const ProductCard = memo(({
 }, (prev, next) => {
   if (prev.item !== next.item) return false;
   if (prev.language !== next.language || prev.priority !== next.priority || prev.reason !== next.reason || prev.brandLabel !== next.brandLabel) return false;
-  const prevQty = prev.cart.find(c => c.id === prev.item.id)?.quantity ?? 0;
-  const nextQty = next.cart.find(c => c.id === next.item.id)?.quantity ?? 0;
+  const prevQty = (prev.cart || []).find(c => c.id === prev.item.id)?.quantity ?? 0;
+  const nextQty = (next.cart || []).find(c => c.id === next.item.id)?.quantity ?? 0;
   if (prevQty !== nextQty) return false;
-  const prevWish = prev.wishlist.some(w => w.id === prev.item.id);
-  const nextWish = next.wishlist.some(w => w.id === next.item.id);
+  const prevWish = (prev.wishlist || []).some(w => w.id === prev.item.id);
+  const nextWish = (next.wishlist || []).some(w => w.id === next.item.id);
   if (prevWish !== nextWish) return false;
   return true;
 });

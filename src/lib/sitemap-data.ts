@@ -106,7 +106,7 @@ async function getNonEmptyCategoryIds(categories: { id: string; parent_id?: stri
     const stockRows = await fetchAllRows<{ category_id: string | null; stock: any; stock_details: any }>(
         'products',
         'id, category_id, stock, stock_details',
-        (q) => q.eq('is_deleted', false).or('stock.gt.0,stock_details.neq.{}'),
+        (q) => q.eq('is_deleted', false).gt('stock', 0),
     );
 
     const parentOf = new Map<string, string | null>();

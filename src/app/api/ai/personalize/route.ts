@@ -87,9 +87,9 @@ export async function POST(req: NextRequest) {
                 .from("products")
                 .select(PERSONA_SELECT)
                 .eq("is_deleted", false)
-                .or("stock.gt.0,stock_details.neq.{}")
-                .order("sales", { ascending: false })
-                .order("avg_rating", { ascending: false })
+                .gt("stock", 0)
+                .order("sales", { ascending: false, nullsFirst: false })
+                .order("avg_rating", { ascending: false, nullsFirst: false })
                 .limit(200);
 
             if (!error && candData) {

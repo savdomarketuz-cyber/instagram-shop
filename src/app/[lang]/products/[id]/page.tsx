@@ -89,7 +89,8 @@ export async function generateStaticParams() {
             .from("products")
             .select("id, article, name, name_uz, name_ru")
             .eq("is_deleted", false)
-            .order("sales", { ascending: false })
+            .gt("stock", 0)
+            .order("sales", { ascending: false, nullsFirst: false })
             .limit(200);
 
         if (!products) return [];

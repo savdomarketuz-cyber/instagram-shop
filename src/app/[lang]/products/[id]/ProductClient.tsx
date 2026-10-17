@@ -383,6 +383,7 @@ export default function ProductClient({
             .select(PUBLIC_PRODUCT_COLUMNS)
             .eq("category_id", category)
             .eq("is_deleted", false)
+            .gt("stock", 0)
             .neq("id", currentId)
             .limit(10);
 
@@ -394,6 +395,7 @@ export default function ProductClient({
             .from("products")
             .select(PUBLIC_PRODUCT_COLUMNS)
             .eq("is_deleted", false)
+            .gt("stock", 0)
             .neq("id", initialProduct?.id || productIdentifier)
             .limit(10);
         
@@ -412,7 +414,8 @@ export default function ProductClient({
             .from("products")
             .select(PUBLIC_PRODUCT_COLUMNS)
             .eq("is_deleted", false)
-            .order("sales", { ascending: false })
+            .gt("stock", 0)
+            .order("sales", { ascending: false, nullsFirst: false })
             .limit(20);
         
         if (data) {
@@ -439,7 +442,8 @@ export default function ProductClient({
             let q = supabase.from("products")
                 .select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,avg_rating,review_count,stock,category_id,brand_id,model,color_name,group_id,article")
                 .eq("is_deleted", false)
-                .order("sales", { ascending: false })
+                .gt("stock", 0)
+                .order("sales", { ascending: false, nullsFirst: false })
                 .range(from, from + PAGE_SIZE - 1);
             if (excludeIds.length) q = q.not("id", "in", `(${excludeIds.join(",")})`);
             const { data } = await q;

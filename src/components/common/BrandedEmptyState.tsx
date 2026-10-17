@@ -43,7 +43,8 @@ export default function BrandedEmptyState({
                 .from("products")
                 .select(PUBLIC_PRODUCT_COLUMNS)
                 .eq("is_deleted", false)
-                .order("sales", { ascending: false })
+                .gt("stock", 0)
+                .order("sales", { ascending: false, nullsFirst: false })
                 .limit(18);
             
             let finalProducts = popData ? popData.map(mapProduct) : [];

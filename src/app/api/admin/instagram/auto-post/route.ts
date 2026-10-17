@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
                 .from('products')
                 .select('*')
                 .eq('is_deleted', false)
-                .or('stock.gt.0,stock_details.neq.{}');
+                .gt('stock', 0);
 
             const inStockData = (data || []).filter((p: any) => getProductRealStock(p) > 0);
 

@@ -392,7 +392,7 @@ export default function HomeClient({
                 .from("products")
                 .select(PUBLIC_PRODUCT_COLUMNS)
                 .eq("is_deleted", false)
-                .or("stock.gt.0,stock_details.neq.{}");
+                .gt("stock", 0);
 
             if (activeFilter !== 'all') {
                 const targetCategory = allCategories.find(c => c.id === activeFilter || c.name === activeFilter);
@@ -433,9 +433,9 @@ export default function HomeClient({
             }
 
             if (activeTab === "popular") {
-                query = query.order("sales", { ascending: false });
+                query = query.order("sales", { ascending: false, nullsFirst: false });
             } else {
-                query = query.order("created_at", { ascending: false });
+                query = query.order("created_at", { ascending: false, nullsFirst: false });
             }
 
             const { data: newProductsData, error } = await query.range(from, to);

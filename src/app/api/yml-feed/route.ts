@@ -22,7 +22,7 @@ export async function GET() {
                 .from("products")
                 .select("id, name, name_uz, name_ru, price, old_price, image, images, description, description_uz, description_ru, stock, article, category_id, brand_id, is_deleted, updated_at")
                 .eq("is_deleted", false)
-                .order("sales", { ascending: false }),
+                .order("sales", { ascending: false, nullsFirst: false }),
             supabaseAdmin
                 .from("categories")
                 .select("id, name, name_uz, name_ru, parent_id")

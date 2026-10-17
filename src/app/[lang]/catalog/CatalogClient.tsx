@@ -219,7 +219,8 @@ export default function CatalogClient({
             if (!initialProductCatIds || initialProductCatIds.length === 0) {
                 const { data: pcData } = await supabase
                     .from("products").select("category_id, stock, stock_details").eq("is_deleted", false)
-                    .or("stock.gt.0,stock_details.neq.{}");
+                    .gt("stock", 0)
+                    .limit(10000);
                 if (pcData) {
                     const validIds = pcData
                         .filter((r: any) => getProductRealStock(r) > 0)
@@ -258,7 +259,8 @@ export default function CatalogClient({
             try {
                 let query = supabase.from("products")
                     .select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,avg_rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,express_delivery,created_at")
-                    .eq("is_deleted", false);
+                    .eq("is_deleted", false)
+                    .gt("stock", 0);
 
                 const activeCat = subCat !== "all" ? subCat : mainCat;
                 if (activeCat !== "all") {
@@ -271,7 +273,7 @@ export default function CatalogClient({
                     query = query.in("category_id", getAllIds(activeCat));
                 }
 
-                const { data } = await query.order("sales", { ascending: false }).limit(150);
+                const { data } = await query.order("sales", { ascending: false, nullsFirst: false }).limit(150);
                 const inStock = (data || []).map(mapProduct).filter((p: any) => getProductRealStock(p) > 0);
                 setProducts(inStock);
             } catch (e) {

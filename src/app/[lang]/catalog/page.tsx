@@ -64,8 +64,8 @@ export default async function CatalogPage({ params, searchParams }: {
             .from("products")
             .select("id,name,name_uz,name_ru,price,old_price,image,images,image_metadata,sales,avg_rating,review_count,stock,stock_details,category_id,brand_id,video_url,model,color_name,group_id,is_original,article,express_delivery,created_at")
             .eq("is_deleted", false)
-            .or("stock.gt.0,stock_details.neq.{}")
-            .order("sales", { ascending: false })
+            .gt("stock", 0)
+            .order("sales", { ascending: false, nullsFirst: false })
             .limit(100),
         supabaseAdmin
             .from("brands")
@@ -76,7 +76,7 @@ export default async function CatalogPage({ params, searchParams }: {
             .from("products")
             .select("category_id, stock, stock_details")
             .eq("is_deleted", false)
-            .or("stock.gt.0,stock_details.neq.{}")
+            .gt("stock", 0)
             .limit(10000),
         supabaseAdmin
             .from("warehouses")

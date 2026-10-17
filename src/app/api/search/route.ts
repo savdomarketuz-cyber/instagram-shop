@@ -122,7 +122,7 @@ async function generateGeminiImageEmbedding(mime: string, data: string): Promise
 // ── Zaxira (RPC xatosi bo'lsa): ILIKE, har so'z AND ────────────────────────────
 function ilikeFallback(tokens: string[], limit: number, offset = 0) {
     // cleanSearchText: vergul/qavs/%/_ va boshqa belgilar olib tashlangan — PostgREST .or() sintaksisi buzilmaydi
-    let q = supabaseAdmin.from('products').select(PUBLIC_PRODUCT_COLUMNS).eq('is_deleted', false).or('stock.gt.0,stock_details.neq.{}');
+    let q = supabaseAdmin.from('products').select(PUBLIC_PRODUCT_COLUMNS).eq('is_deleted', false).gt('stock', 0);
     for (const t of tokens.map(x => x.replace(/[.'-]/g, ' ').trim()).filter(x => x.length >= 2).slice(0, 5)) {
         q = q.or(['name', 'name_uz', 'name_ru', 'article', 'model'].map(f => `${f}.ilike.%${t}%`).join(','));
     }
