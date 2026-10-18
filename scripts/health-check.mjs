@@ -128,9 +128,47 @@ function getFullRegistry() {
             const res = await supabaseFetch("/rest/v1/categories?select=id,name,name_uz,name_ru&limit=5");
             return { note: "Toifalar faol" };
         }},
-        { path: "front:product_details", name: "Mahsulot Kartochkasi va Rasmlar", category: "🛍️ Xaridorlar Do'koni (Frontend)", fn: async () => {
-            const res = await supabaseFetch("/rest/v1/products?select=id,name,price,stock&is_deleted=eq.false&limit=5");
-            return { note: "Tovar sahifalari soz" };
+        { path: "front:home_vitrina", name: "Bosh Sahifa Vitrinasi (Top Sotuvdagi Tovarlar)", category: "🛍️ Xaridorlar Do'koni (Frontend)", fn: async () => {
+            const res = await supabaseFetch("/rest/v1/products?select=id,name,price,stock,sales&is_deleted=eq.false&stock=gt.0&order=sales.desc.nullslast&limit=30");
+            const data = await res.json();
+            const count = Array.isArray(data) ? data.length : 0;
+            if (count === 0) return { status: "fail", note: "Bosh sahifada birorta ham sotuvdagi tovar yo'q (0 ta)!", error: "Vitrina bo'sh!" };
+            if (count < 5) return { status: "warn", note: `Bosh sahifada tovarlar soni juda oz (${count} ta)` };
+            return { note: `Bosh sahifa vitrinasi soz (${count} ta tovar xaridorlarga ko'rinmoqda)` };
+        }},
+        { path: "front:catalog_stock", name: "Katalog Bo'limi va Real Stok Tekshiruvi", category: "🛍️ Xaridorlar Do'koni (Frontend)", fn: async () => {
+            const res = await supabaseFetch("/rest/v1/products?select=id,name,price,stock&is_deleted=eq.false&stock=gt.0&limit=100");
+            const data = await res.json();
+            const count = Array.isArray(data) ? data.length : 0;
+            if (count === 0) return { status: "fail", note: "Katalogda birorta ham sotuvda mavjud tovar yo'q (0 ta)!", error: "Katalog bo'sh!" };
+            return { note: `Katalogda ${count} ta mahsulot sotuvga tayyor` };
+        }},
+        { path: "front:stock_inventory", name: "Ombor Zaxirasi Balansi (Mavjud va Tugaganlar)", category: "🛍️ Xaridorlar Do'koni (Frontend)", fn: async () => {
+            const [inRes, outRes] = await Promise.all([
+                supabaseFetch("/rest/v1/products?select=id&is_deleted=eq.false&stock=gt.0", { headers: { Prefer: "count=exact", Range: "0-0" } }),
+                supabaseFetch("/rest/v1/products?select=id&is_deleted=eq.false&stock=lte.0", { headers: { Prefer: "count=exact", Range: "0-0" } }),
+            ]);
+            const parseCount = (h) => {
+                const cr = h.get("content-range") || "";
+                const total = cr.split("/")[1];
+                return total ? parseInt(total, 10) : 0;
+            };
+            const inStock = parseCount(inRes.headers);
+            const outStock = parseCount(outRes.headers);
+            if (inStock === 0) return { status: "fail", note: "DIQQAT: Omborda sotuvdagi barcha tovarlar tugagan (0 ta)!", error: "Zaxira 0!" };
+            return { note: `Sotuvda: ${inStock} ta | Zaxirasi tugagan: ${outStock} ta` };
+        }},
+        { path: "front:live_website", name: "Jonli Do'kon Sayti (velari.uz HTTP 200 & Render)", category: "🛍️ Xaridorlar Do'koni (Frontend)", fn: async () => {
+            const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://velari.uz").replace(/\/$/, "");
+            try {
+                const res = await fetch(`${siteUrl}/uz`, { headers: { "User-Agent": "VelariHealthCheck/1.0" }, signal: AbortSignal.timeout(8000) });
+                if (!res.ok) return { status: "fail", note: `${siteUrl} xato kodi qaytardi: ${res.status}`, error: `HTTP ${res.status}` };
+                const html = await res.text();
+                if (!html || html.length < 5000) return { status: "warn", note: "Sayt HTML hajmi shubhali darajada kichik", error: "Qisqa HTML" };
+                return { note: `Sayt barqaror ishlamoqda (HTTP 200, ${(html.length / 1024).toFixed(0)} KB)` };
+            } catch (e) {
+                return { status: "warn", note: `Jonli saytga ulanishda ogohlantirish: ${e.message}` };
+            }
         }},
         { path: "front:cart_checkout", name: "Savat va Buyurtma Rasmiylashtirish", category: "🛍️ Xaridorlar Do'koni (Frontend)", fn: async () => ({ note: "Savat va checkout soz" }) },
         { path: "front:order_place", name: "Buyurtma Yaratish (Atomik place_order)", category: "🛍️ Xaridorlar Do'koni (Frontend)", fn: async () => ({ note: "Atomik buyurtma faol" }) },
@@ -193,6 +231,7 @@ function getFullRegistry() {
             if (!ADMIN_BOT_TOKEN) return { status: "fail", note: "Admin bot tokeni yo'q" };
             const res = await fetch(`https://api.telegram.org/bot${ADMIN_BOT_TOKEN}/getMe`);
             const data = await res.json();
+            if (!data.ok || !data.result) return { status: "warn", note: data.description || "Javob bermadi" };
             return { note: `@${data.result.username} faol` };
         }},
         { path: "infra:telegram_customer_bot", name: "Telegram Mijoz Xabarnoma Boti", category: "🌐 Infratuzilma va Integratsiyalar", fn: async () => {
@@ -307,6 +346,22 @@ async function main() {
             header += `   • 🌐 Infratuzilma: 10 ta\n`;
             header += `   • ✅ Faol: <b>${passed} ta</b> | ⚠️ Ogohlantirish: <b>${warnings} ta</b> | ❌ Xatolik: <b>${failed} ta</b>\n`;
             header += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+            if (failed > 0) {
+                header += `🚨 <b>QUYIDAGI MODULLARDA XATOLIK ANIQLANDI (${failed} ta):</b>\n`;
+                for (const item of results.filter(r => r.status === "fail")) {
+                    header += `   ❌ <b>${escapeHtml(item.name)}:</b> <code>${escapeHtml(item.error || item.note)}</code>\n`;
+                }
+                header += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+            }
+
+            const vitrinaItem = results.find(r => r.path === "front:home_vitrina");
+            const stockItem = results.find(r => r.path === "front:stock_inventory");
+            if (vitrinaItem || stockItem) {
+                header += `🛍 <b>Do'kon Vitrinasi:</b> <i>${vitrinaItem?.note || "Soz"}</i>\n`;
+                if (stockItem) header += `📦 <b>Ombor Qoldig'i:</b> <i>${stockItem.note}</i>\n`;
+                header += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+            }
 
             const messages = [];
             let currentMsg = header;
