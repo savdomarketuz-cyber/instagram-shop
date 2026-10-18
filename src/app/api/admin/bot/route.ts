@@ -616,8 +616,24 @@ export async function POST(req: Request) {
                     .select("*", { count: "exact", head: true })
                     .gt("unread_by_admin", 0);
 
+                // Vitrina va tovarlar holati tekshiruvi
+                const [inStockRes, homeProdsRes] = await Promise.all([
+                    supabaseAdmin.from("products").select("id", { count: "exact", head: true }).eq("is_deleted", false).gt("stock", 0),
+                    supabaseAdmin.from("products").select("id").eq("is_deleted", false).gt("stock", 0).order("sales", { ascending: false, nullsFirst: false }).limit(30)
+                ]);
+                const inStockCount = inStockRes.count || 0;
+                const homeProdsCount = homeProdsRes.data?.length || 0;
+                const vitrinaOk = inStockCount > 0 && homeProdsCount > 0;
+                const vitrinaBadge = vitrinaOk ? `✅ Soz (${inStockCount} ta tovar sotuvda)` : `🚨 XATOLIK: Tovarlar ko'rinmayapti!`;
+
                 let text = `📊 <b>Bugungi Savdo va Statistika</b>\n`;
                 text += `📅 <i>${new Date().toLocaleDateString("uz-UZ", { timeZone: "Asia/Tashkent" })}</i>\n\n`;
+                text += `🛍 <b>Do'kon Vitrinasi:</b> ${vitrinaBadge}\n`;
+                if (!vitrinaOk) {
+                    text += `   ⚠️ <i>DIQQAT: Bosh sahifada xaridorga tovarlar ko'rinmayapti!</i>\n\n`;
+                } else {
+                    text += `\n`;
+                }
                 text += `💰 <b>Bugungi tushum:</b> <b>${totalRevenue.toLocaleString()} so'm</b>\n`;
                 text += `📦 <b>Jami buyurtmalar:</b> <b>${count} ta</b>\n`;
                 text += `   • 🚚 Yetkazilmoqda: <b>${onWayCount} ta</b>\n`;

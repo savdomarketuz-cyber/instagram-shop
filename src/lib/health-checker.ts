@@ -188,12 +188,86 @@ function getApiRegistry(): ApiTestItem[] {
             }
         },
         {
-            path: "front:product_details",
-            name: "Mahsulot Kartochkasi va Rasmlar",
+            path: "front:home_vitrina",
+            name: "Bosh Sahifa Vitrinasi (Top Sotuvdagi Tovarlar)",
             category: "🛍️ Xaridorlar Do'koni (Frontend)",
             test: async () => {
-                const { data, error } = await supabaseAdmin.from("products").select("id, name, price, stock").eq("is_deleted", false).limit(5);
-                return { note: "Tovar sahifalari soz" };
+                const { data, error } = await supabaseAdmin
+                    .from("products")
+                    .select("id, name, price, stock, sales")
+                    .eq("is_deleted", false)
+                    .gt("stock", 0)
+                    .order("sales", { ascending: false, nullsFirst: false })
+                    .limit(30);
+                if (error) throw error;
+                const count = data?.length || 0;
+                if (count === 0) {
+                    return { status: "fail", note: "Bosh sahifada birorta ham sotuvdagi tovar yo'q (0 ta)!", error: "Vitrina bo'sh!" };
+                }
+                if (count < 5) {
+                    return { status: "warn", note: `Bosh sahifada tovarlar soni juda oz (${count} ta)` };
+                }
+                return { note: `Bosh sahifa vitrinasi soz (${count} ta tovar xaridorlarga ko'rinmoqda)` };
+            }
+        },
+        {
+            path: "front:catalog_stock",
+            name: "Katalog Bo'limi va Real Stok Tekshiruvi",
+            category: "🛍️ Xaridorlar Do'koni (Frontend)",
+            test: async () => {
+                const { data, error } = await supabaseAdmin
+                    .from("products")
+                    .select("id, name, price, stock, category_id")
+                    .eq("is_deleted", false)
+                    .gt("stock", 0)
+                    .limit(100);
+                if (error) throw error;
+                const inStockCount = data?.length || 0;
+                if (inStockCount === 0) {
+                    return { status: "fail", note: "Katalogda birorta ham sotuvda mavjud tovar yo'q (0 ta)!", error: "Katalog bo'sh!" };
+                }
+                return { note: `Katalogda ${inStockCount} ta mahsulot sotuvga tayyor` };
+            }
+        },
+        {
+            path: "front:stock_inventory",
+            name: "Ombor Zaxirasi Balansi (Mavjud va Tugaganlar)",
+            category: "🛍️ Xaridorlar Do'koni (Frontend)",
+            test: async () => {
+                const [inStockRes, outStockRes] = await Promise.all([
+                    supabaseAdmin.from("products").select("id", { count: "exact", head: true }).eq("is_deleted", false).gt("stock", 0),
+                    supabaseAdmin.from("products").select("id", { count: "exact", head: true }).eq("is_deleted", false).lte("stock", 0),
+                ]);
+                const inStock = inStockRes.count || 0;
+                const outStock = outStockRes.count || 0;
+                if (inStock === 0) {
+                    return { status: "fail", note: "DIQQAT: Omborda sotuvdagi barcha tovarlar tugagan (0 ta)!", error: "Zaxira 0!" };
+                }
+                return { note: `Sotuvda: ${inStock} ta | Zaxirasi tugagan: ${outStock} ta` };
+            }
+        },
+        {
+            path: "front:live_website",
+            name: "Jonli Do'kon Sayti (velari.uz HTTP 200 & Render)",
+            category: "🛍️ Xaridorlar Do'koni (Frontend)",
+            test: async () => {
+                const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://velari.uz";
+                try {
+                    const res = await fetch(`${siteUrl}/uz`, {
+                        headers: { "User-Agent": "VelariHealthCheck/1.0" },
+                        signal: AbortSignal.timeout(8000),
+                    });
+                    if (!res.ok) {
+                        return { status: "fail", note: `${siteUrl} xato kodi qaytardi: ${res.status}`, error: `HTTP ${res.status}` };
+                    }
+                    const html = await res.text();
+                    if (!html || html.length < 5000) {
+                        return { status: "warn", note: "Sayt HTML hajmi shubhali darajada kichik", error: "Qisqa HTML" };
+                    }
+                    return { note: `Sayt barqaror ishlamoqda (HTTP 200, ${(html.length / 1024).toFixed(0)} KB)` };
+                } catch (e: any) {
+                    return { status: "warn", note: `Jonli saytga ulanishda ogohlantirish: ${e.message}` };
+                }
             }
         },
         {
@@ -739,6 +813,24 @@ export async function runFullSystemDiagnostic(): Promise<FullDiagnosticReport> {
     header += `   • 🌐 <b>Infratuzilma & Baza:</b> 10 ta\n`;
     header += `   • ✅ <b>Faol:</b> <b>${passed} ta</b> | ⚠️ <b>Ogohlantirish:</b> <b>${warnings} ta</b> | ❌ <b>Xatolik:</b> <b>${failed} ta</b>\n`;
     header += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+    // 🚨 Agar xatoliklar bo'lsa, xabarning eng boshida darhol ko'rsatiladi
+    if (failed > 0) {
+        header += `🚨 <b>QUYIDAGI MODULLARDA XATOLIK ANIQLANDI (${failed} ta):</b>\n`;
+        for (const item of results.filter(r => r.status === "fail")) {
+            header += `   ❌ <b>${escapeHtml(item.name)}:</b> <code>${escapeHtml(item.error || item.note)}</code>\n`;
+        }
+        header += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+    }
+
+    // Vitrina va ombor holati qisqacha xulosasi
+    const vitrinaItem = results.find(r => r.path === "front:home_vitrina");
+    const stockItem = results.find(r => r.path === "front:stock_inventory");
+    if (vitrinaItem || stockItem) {
+        header += `🛍 <b>Do'kon Vitrinasi:</b> <i>${vitrinaItem?.note || "Soz"}</i>\n`;
+        if (stockItem) header += `📦 <b>Ombor Qoldig'i:</b> <i>${stockItem.note}</i>\n`;
+        header += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+    }
 
     const telegramMessages: string[] = [];
     let currentMsg = header;

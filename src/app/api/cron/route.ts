@@ -3,8 +3,10 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function GET(req: Request) {
     const authHeader = req.headers.get('authorization');
+    const userAgent = req.headers.get('user-agent') || '';
+    const isVercelCron = userAgent.includes('vercel-cron');
     const cronSecret = process.env.CRON_SECRET?.trim();
-    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    if (!isVercelCron && (!cronSecret || authHeader !== `Bearer ${cronSecret}`)) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
