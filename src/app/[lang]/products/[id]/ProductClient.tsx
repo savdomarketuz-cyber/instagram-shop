@@ -688,17 +688,24 @@ export default function ProductClient({
                                    <Plus size={18} strokeWidth={3} />
                                </button>
                            </div>
-                        ) : (
-                            <button
-                                onClick={() => {
-                                    videoPreWarmer.triggerHaptic("medium");
-                                    addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any);
-                                }}
-                                className="px-10 py-4 rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] ios-tap-feedback active:scale-95 transition-transform duration-150 ease-out will-change-transform flex items-center gap-3 velari-green-btn"
-                            >
-                                <Plus size={18} strokeWidth={3} /> {language === 'uz' ? "SAVATGA" : "В КОРЗИНУ"}
-                            </button>
-                        )}
+                        ) : totalStock <= 0 ? (
+                             <button
+                                 disabled
+                                 className="px-10 py-4 rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] bg-gray-200 text-gray-500 cursor-not-allowed flex items-center gap-3"
+                             >
+                                 {language === 'uz' ? "MAVJUD EMAS" : "НЕТ В НАЛИЧИИ"}
+                             </button>
+                         ) : (
+                             <button
+                                 onClick={() => {
+                                     videoPreWarmer.triggerHaptic("medium");
+                                     addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any);
+                                 }}
+                                 className="px-10 py-4 rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] ios-tap-feedback active:scale-95 transition-transform duration-150 ease-out will-change-transform flex items-center gap-3 velari-green-btn"
+                             >
+                                 <Plus size={18} strokeWidth={3} /> {language === 'uz' ? "SAVATGA" : "В КОРЗИНУ"}
+                             </button>
+                         )}
                     </div>
                 </div>
             </div>
@@ -768,6 +775,18 @@ export default function ProductClient({
                                 <Plus size={15} />
                             </button>
                         </div>
+                    ) : totalStock <= 0 ? (
+                        <button
+                            disabled
+                            style={{
+                                flexShrink: 0, height: 44, borderRadius: 14, border: "none", cursor: "not-allowed",
+                                padding: "0 18px", background: "#E5E7EB", color: "#6B7280",
+                                fontSize: 13, fontWeight: 700, letterSpacing: -0.2,
+                                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                            }}
+                        >
+                            {language === 'uz' ? "Mavjud emas" : "Нет в наличии"}
+                        </button>
                     ) : (
                         <button
                             onClick={() => {
@@ -1087,6 +1106,13 @@ export default function ProductClient({
                                                 <ShoppingBag size={18} strokeWidth={2} />
                                             </Link>
                                         </div>
+                                    ) : totalStock <= 0 ? (
+                                        <button
+                                            disabled
+                                            className="flex-1 h-[52px] text-sm font-semibold rounded-[var(--radius-control)] bg-gray-200 text-gray-500 cursor-not-allowed flex items-center justify-center gap-2"
+                                        >
+                                            <span>{language === 'uz' ? "Mavjud emas" : "Нет в наличии"}</span>
+                                        </button>
                                     ) : (
                                         <button
                                             onClick={() => {
@@ -1294,6 +1320,14 @@ export default function ProductClient({
                                 <ShoppingBag size={19} color="#fff" strokeWidth={2} />
                             </Link>
                         </div>
+                    ) : totalStock <= 0 ? (
+                        <button
+                            disabled
+                            className="flex-1 text-sm font-semibold bg-gray-200 text-gray-500 cursor-not-allowed flex items-center justify-center gap-2"
+                            style={{ height: 48, borderRadius: 16 }}
+                        >
+                            <span>{language === 'uz' ? "Mavjud emas" : "Нет в наличии"}</span>
+                        </button>
                     ) : (
                         <button
                             onClick={() => {

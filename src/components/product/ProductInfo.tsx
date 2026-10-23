@@ -137,13 +137,19 @@ export const ProductInfo = ({
             )}
 
             {/* Stock */}
-            {totalStock > 0 && (
+            {totalStock > 0 ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#EAF3EC", borderRadius: 16, padding: "12px 14px", marginBottom: 10 }}>
                     <div style={{ width: 28, height: 28, borderRadius: 9, background: GREEN, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <Check size={15} color="#fff" strokeWidth={3} />
                     </div>
                     <span style={{ fontSize: 13, fontWeight: 600, color: "#1F5A30" }}>
                         {language === "uz" ? "Omborda mavjud" : "В наличии"}: <strong style={{ fontWeight: 700 }}>{Number(totalStock)} {language === "uz" ? "ta" : "шт"}</strong>
+                    </span>
+                </div>
+            ) : (
+                <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#FEE2E2", borderRadius: 16, padding: "12px 14px", marginBottom: 10 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#991B1B" }}>
+                        {language === "uz" ? "Mavjud emas" : "Нет в наличии"}
                     </span>
                 </div>
             )}

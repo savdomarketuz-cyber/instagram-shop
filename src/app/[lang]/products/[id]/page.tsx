@@ -15,9 +15,30 @@ import { cache } from 'react';
 
 export const revalidate = 86400; // 24 soat cache (Admin panelda mahsulot ozgarsa revalidatePath orqali darhol yangilanadi)
 
+// ⚡ Fast 404 tekshiruvi: noto'g'ri identifikatorlar uchun Supabase so'rovlarini chetlab o'tish
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ARTICLE_OR_SLUG_ID_REGEX = /^[a-zA-Z0-9_-]{3,64}$/;
+
+const INVALID_IDENTIFIERS = new Set([
+    'undefined', 'null', 'nan', 'nil', 'true', 'false',
+    'admin', 'api', 'cart', 'checkout', 'robots', 'sitemap',
+    'favicon', 'index', 'test', 'search', 'catalog', 'products',
+    '[object object]'
+]);
+
+function isValidProductIdentifier(identifier: string | null | undefined): boolean {
+    if (!identifier || typeof identifier !== 'string') return false;
+    const clean = identifier.trim();
+    if (clean.length < 3 || clean.length > 64) return false;
+    // Fayl kengaytmalari (.php, .html, .js) yoki xavfli belgilarni darhol bloklash
+    if (/[./\\%<>;?]/.test(clean)) return false;
+    if (INVALID_IDENTIFIERS.has(clean.toLowerCase())) return false;
+    return UUID_REGEX.test(clean) || ARTICLE_OR_SLUG_ID_REGEX.test(clean);
+}
+
 // 🚀 Memoize the database call to prevent double-fetching in Metadata & Page
 const getProductData = cache(async (identifier: string) => {
-    if (!identifier || !process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
+    if (!identifier || !isValidProductIdentifier(identifier) || !process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
 
     try {
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
@@ -106,7 +127,20 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: { params: { lang: string, id: string } }): Promise<Metadata> {
-    const productIdOrArticle = getProductIdFromSlug(params.id);
+    const rawId = params?.id;
+    if (!rawId || typeof rawId !== 'string') {
+        return {
+            title: { absolute: "404 - Sahifa topilmadi | Velari" },
+            robots: { index: false, follow: false },
+        };
+    }
+    const productIdOrArticle = getProductIdFromSlug(rawId);
+    if (!isValidProductIdentifier(productIdOrArticle)) {
+        return {
+            title: { absolute: "404 - Sahifa topilmadi | Velari" },
+            robots: { index: false, follow: false },
+        };
+    }
     const product = await getProductData(productIdOrArticle);
     
     if (!product) {
@@ -387,7 +421,14 @@ function ProductDataWrapper({ params, product, canonicalSlug }: { params: { lang
 }
 
 export default async function Page({ params }: { params: { lang: string, id: string } }) {
-    const productIdOrArticle = getProductIdFromSlug(params.id);
+    const rawId = params?.id;
+    if (!rawId || typeof rawId !== 'string') {
+        notFound();
+    }
+    const productIdOrArticle = getProductIdFromSlug(rawId);
+    if (!isValidProductIdentifier(productIdOrArticle)) {
+        notFound();
+    }
     const product: any = await getProductData(productIdOrArticle);
     
     if (!product) notFound();

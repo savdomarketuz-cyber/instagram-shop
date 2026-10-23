@@ -1,14 +1,97 @@
 # Velari.uz Robots.txt
-# Updated: 2026-09-27
+# Optimized for SEO Crawl Budget & Vercel Serverless CPU Reduction
+# Updated: 2026-10-23
 
 User-agent: Googlebot
 Allow: /
+Allow: /_next/static/
+Allow: /_next/image
 Disallow: /api/
+Disallow: /admin/
+Disallow: /*/admin/
+Disallow: /cart
+Disallow: /*/cart
+Disallow: /checkout
+Disallow: /*/checkout
+Disallow: /account
+Disallow: /*/account
+Disallow: /orders
+Disallow: /*/orders
+Disallow: /order-success
+Disallow: /*/order-success
+Disallow: /payment
+Disallow: /*/payment
+Disallow: /wallet
+Disallow: /*/wallet
+Disallow: /wishlist
+Disallow: /*/wishlist
+Disallow: /messages
+Disallow: /*/messages
+Disallow: /chat
+Disallow: /*/chat
+Disallow: /login
+Disallow: /*/login
+Disallow: /auth/
+Disallow: /*/auth/
+# Disallow dynamic sorting/filtering parameter crawls that exhaust serverless execution
+Disallow: /*?*sort=
+Disallow: /*?*filter=
+Disallow: /*?*q=
+Disallow: /*?*search=
+Disallow: /*?*minPrice=
+Disallow: /*?*maxPrice=
+Disallow: /*?*brand=
+Disallow: /*?*ref=
+Disallow: /*?*utm_
 
 User-agent: Yandex
 Allow: /
+Allow: /_next/static/
+Allow: /_next/image
 Disallow: /api/
+Disallow: /admin/
+Disallow: /*/admin/
+Disallow: /cart
+Disallow: /*/cart
+Disallow: /checkout
+Disallow: /*/checkout
+Disallow: /account
+Disallow: /*/account
+Disallow: /orders
+Disallow: /*/orders
+Disallow: /order-success
+Disallow: /*/order-success
+Disallow: /payment
+Disallow: /*/payment
+Disallow: /wallet
+Disallow: /*/wallet
+Disallow: /wishlist
+Disallow: /*/wishlist
+Disallow: /messages
+Disallow: /*/messages
+Disallow: /chat
+Disallow: /*/chat
+Disallow: /login
+Disallow: /*/login
+Disallow: /auth/
+Disallow: /*/auth/
+Disallow: /*?*sort=
+Disallow: /*?*filter=
+Disallow: /*?*q=
+Disallow: /*?*search=
+Disallow: /*?*minPrice=
+Disallow: /*?*maxPrice=
+Disallow: /*?*brand=
+Disallow: /*?*ref=
+Disallow: /*?*utm_
 Host: https://velari.uz
+
+# Aggressive crawlers & commercial SEO scrapers that consume serverless compute
+User-agent: Bytespider
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
 
 User-agent: SemrushBot
 Disallow: /
@@ -16,9 +99,58 @@ Disallow: /
 User-agent: SemrushBot-SA
 Disallow: /
 
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: PetalBot
+Disallow: /
+
 User-agent: *
 Allow: /
+Allow: /_next/static/
+Allow: /_next/image
 Disallow: /api/
+Disallow: /admin/
+Disallow: /*/admin/
+Disallow: /cart
+Disallow: /*/cart
+Disallow: /checkout
+Disallow: /*/checkout
+Disallow: /account
+Disallow: /*/account
+Disallow: /orders
+Disallow: /*/orders
+Disallow: /order-success
+Disallow: /*/order-success
+Disallow: /payment
+Disallow: /*/payment
+Disallow: /wallet
+Disallow: /*/wallet
+Disallow: /wishlist
+Disallow: /*/wishlist
+Disallow: /messages
+Disallow: /*/messages
+Disallow: /chat
+Disallow: /*/chat
+Disallow: /login
+Disallow: /*/login
+Disallow: /auth/
+Disallow: /*/auth/
+Disallow: /*?*sort=
+Disallow: /*?*filter=
+Disallow: /*?*q=
+Disallow: /*?*search=
+Disallow: /*?*minPrice=
+Disallow: /*?*maxPrice=
+Disallow: /*?*brand=
+Disallow: /*?*ref=
+Disallow: /*?*utm_
 
 Sitemap: https://velari.uz/sitemap.xml
 Sitemap: https://velari.uz/image-sitemap.xml
