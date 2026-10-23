@@ -76,6 +76,8 @@ const nextConfig = {
         imageSizes: [64, 128, 256, 384],
         remotePatterns: [
             { protocol: 'https', hostname: 'images.unsplash.com' },
+            { protocol: 'https', hostname: 'media.velari.uz' },
+            { protocol: 'https', hostname: '**.backblazeb2.com' },
             { protocol: 'https', hostname: 'storage.yandexcloud.net' },
             { protocol: 'https', hostname: '**.yandexcloud.net' },
             { protocol: 'https', hostname: '**.googleapis.com' },

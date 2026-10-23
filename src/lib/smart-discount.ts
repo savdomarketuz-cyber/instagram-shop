@@ -120,10 +120,13 @@ export function evaluateOffer(
 ): EligibilityResult {
     const breakdown = computeIntentScore(signals);
 
+    const excludedProducts = Array.isArray(cfg.excluded_product_ids) ? cfg.excluded_product_ids : [];
+    const excludedCategories = Array.isArray(cfg.excluded_category_ids) ? cfg.excluded_category_ids : [];
+
     if (!cfg.enabled) return { eligible: false, score: breakdown.score, breakdown, blockReason: "disabled" };
-    if (cfg.excluded_product_ids?.includes(ctx.productId))
+    if (excludedProducts.includes(ctx.productId))
         return { eligible: false, score: breakdown.score, breakdown, blockReason: "product_excluded" };
-    if (ctx.categoryId && cfg.excluded_category_ids?.includes(ctx.categoryId))
+    if (ctx.categoryId && excludedCategories.includes(ctx.categoryId))
         return { eligible: false, score: breakdown.score, breakdown, blockReason: "category_excluded" };
     if (breakdown.score < cfg.intent_threshold)
         return { eligible: false, score: breakdown.score, breakdown, blockReason: "below_threshold" };

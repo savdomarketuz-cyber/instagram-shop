@@ -39,8 +39,8 @@ async function loadConfig(): Promise<DiscountConfig> {
         offer_ttl_hours: Number(data.offer_ttl_hours),
         cooldown_hours: Number(data.cooldown_hours),
         max_active_offers_per_user: Number(data.max_active_offers_per_user),
-        excluded_product_ids: data.excluded_product_ids || [],
-        excluded_category_ids: data.excluded_category_ids || [],
+        excluded_product_ids: Array.isArray(data.excluded_product_ids) ? data.excluded_product_ids : [],
+        excluded_category_ids: Array.isArray(data.excluded_category_ids) ? data.excluded_category_ids : [],
     };
 }
 

@@ -8,8 +8,53 @@ export const mapProduct = (p: any): Product => {
         group_id, color_name, ...rest
     } = p;
 
+    // Normalize images and enrich image_metadata defensively if JSON strings or objects are encountered
+    let images: string[] = [];
+    const rawImages = p.images || rest.images;
+    const meta = { ...(p.image_metadata || rest.image_metadata || {}) };
+
+    if (Array.isArray(rawImages)) {
+        images = rawImages.map((img: any) => {
+            if (typeof img === 'string') {
+                if (img.trim().startsWith('{')) {
+                    try {
+                        const parsed = JSON.parse(img);
+                        const url = parsed.url || parsed.original;
+                        if (url) {
+                            const v: any = {};
+                            if (parsed.xs) v.xs = parsed.xs;
+                            if (parsed.md) v.md = parsed.md;
+                            if (parsed.lg) v.lg = parsed.lg;
+                            if (parsed.lowResUrl) v.lowResUrl = parsed.lowResUrl;
+                            if (parsed.blurDataURL) v.blurDataURL = parsed.blurDataURL;
+                            meta[url] = { ...(meta[url] || {}), ...v };
+                            return url;
+                        }
+                    } catch {}
+                }
+                return img;
+            }
+            if (typeof img === 'object' && img !== null) {
+                const url = img.url || img.original;
+                if (url) {
+                    const v: any = {};
+                    if (img.xs) v.xs = img.xs;
+                    if (img.md) v.md = img.md;
+                    if (img.lg) v.lg = img.lg;
+                    if (img.lowResUrl) v.lowResUrl = img.lowResUrl;
+                    if (img.blurDataURL) v.blurDataURL = img.blurDataURL;
+                    meta[url] = { ...(meta[url] || {}), ...v };
+                    return url;
+                }
+            }
+            return '';
+        }).filter(Boolean);
+    }
+
     return {
         ...rest,
+        images,
+        image_metadata: Object.keys(meta).length > 0 ? meta : undefined,
         isDeleted: is_deleted,
         createdAt: created_at,
         category: category_id,
