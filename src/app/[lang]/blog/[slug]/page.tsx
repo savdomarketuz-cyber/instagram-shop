@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ChevronLeft, Calendar, Clock, Eye, Share2 } from "lucide-react";
 import { notFound } from "next/navigation";
 import LinkedProducts from "./LinkedProducts";
+import BlogContentRenderer from "./BlogContentRenderer";
 import { PUBLIC_PRODUCT_COLUMNS } from "@/lib/public-product";
 
 const getBlogData = cache(async (slug: string) => {
@@ -55,16 +56,10 @@ export async function generateMetadata({ params: { lang, slug } }: { params: { l
 export default async function BlogPostPage({ params: { lang, slug } }: { params: { lang: string, slug: string } }) {
     const t = translations[lang as 'uz' | 'ru'];
 
-    // 1. Fetch Blog
-    const { data: blogData } = await supabaseAdmin
-        .from("blogs")
-        .select("*")
-        .eq("slug", slug)
-        .eq("is_deleted", false)
-        .single();
+    // 1. Fetch Blog (Memoized via cache)
+    const blog = await getBlogData(slug);
+    if (!blog) notFound();
 
-    if (!blogData) notFound();
-    const blog = mapBlog(blogData);
     const baseUrl = "https://velari.uz";
     const title = lang === 'uz' ? blog.title_uz : blog.title_ru;
     const description = lang === 'uz'
@@ -97,8 +92,10 @@ export default async function BlogPostPage({ params: { lang, slug } }: { params:
         if (pData) linkedProducts = pData.map(mapProduct);
     }
 
-    // 3. Increment Views (Simple update)
-    await supabaseAdmin.from("blogs").update({ views: (blog.views || 0) + 1 }).eq("id", blog.id);
+    // 3. Increment Views safely without blocking
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        Promise.resolve(supabaseAdmin.from("blogs").update({ views: (blog.views || 0) + 1 }).eq("id", blog.id)).catch(() => {});
+    }
 
     return (
         <main className="min-h-screen pb-32" style={{ background: "#FAFAF6" }}>
@@ -149,12 +146,14 @@ export default async function BlogPostPage({ params: { lang, slug } }: { params:
                 </div>
             </div>
 
-            {/* 3. Content Section */}
+            {/* 3. Content Section with Rich Formatting & Inline Products */}
             <div className="max-w-3xl mx-auto px-6 pt-12 md:pt-16">
-                <article className="prose prose-lg max-w-none">
-                    <div className="text-[#111612]/90 leading-relaxed font-normal text-base md:text-lg whitespace-pre-wrap">
-                        {lang === 'uz' ? blog.content_uz : blog.content_ru}
-                    </div>
+                <article className="max-w-none">
+                    <BlogContentRenderer
+                        content={lang === 'uz' ? blog.content_uz : blog.content_ru}
+                        lang={lang as any}
+                        products={linkedProducts}
+                    />
                 </article>
 
                 <div className="mt-14 pt-8 border-t border-[rgba(15,20,16,0.08)] flex items-center justify-between">
