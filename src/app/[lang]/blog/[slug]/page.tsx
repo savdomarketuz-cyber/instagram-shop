@@ -67,6 +67,15 @@ export default async function BlogPostPage({ params: { lang, slug } }: { params:
         : (blog.excerpt_ru || blog.content_ru);
     const image = blog.image?.startsWith('http') ? blog.image : `${baseUrl}${blog.image || '/og-image.png'}`;
     const articleUrl = `${baseUrl}/${lang}/blog/${slug}`;
+
+    const rawDate = blog.created_at || (blog as any).createdAt || blog.updated_at;
+    const dateObj = rawDate ? new Date(rawDate) : null;
+    const dateStr = dateObj && !isNaN(dateObj.getTime())
+        ? dateObj.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'uz-UZ', { day: 'numeric', month: 'short', year: 'numeric' })
+        : (lang === 'uz' ? 'Yangi' : 'Новое');
+
+    const categoryLabel = blog.category || (lang === 'uz' ? "Qo'llanma" : "Гайд");
+
     const blogJsonLd = {
         "@context": "https://schema.org",
         "@type": "BlogPosting",
@@ -74,9 +83,9 @@ export default async function BlogPostPage({ params: { lang, slug } }: { params:
         "headline": title,
         "description": description.substring(0, 160),
         "image": [image],
-        "datePublished": blog.created_at,
+        "datePublished": blog.created_at || blog.updated_at,
         "dateModified": blog.updated_at || blog.created_at,
-        "author": { "@type": "Organization", "name": "Velari Insights" },
+        "author": { "@type": "Organization", "name": "Velari" },
         "publisher": { "@type": "Organization", "name": "Velari" },
     };
 
@@ -129,14 +138,14 @@ export default async function BlogPostPage({ params: { lang, slug } }: { params:
                 <div className="absolute bottom-12 md:bottom-16 left-0 right-0 z-30 px-6">
                     <div className="max-w-4xl mx-auto">
                         <span className="inline-block bg-[#2D6E3E] text-white px-3.5 py-1.5 rounded-full text-xs font-semibold mb-4 shadow-sm">
-                            {blog.category || 'Insights'}
+                            {categoryLabel}
                         </span>
                         <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight leading-tight mb-4 drop-shadow-sm">
                             {lang === 'uz' ? blog.title_uz : blog.title_ru}
                         </h1>
 
                         <div className="flex flex-wrap items-center gap-4 md:gap-6 text-white/80 text-xs font-medium">
-                            <div className="flex items-center gap-1.5"><Calendar size={14} className="text-emerald-400" /> {new Date(blog.created_at).toLocaleDateString()}</div>
+                            <div className="flex items-center gap-1.5"><Calendar size={14} className="text-emerald-400" /> {dateStr}</div>
                             <span>•</span>
                             <div className="flex items-center gap-1.5"><Clock size={14} className="text-emerald-400" /> {blog.readTime} {t.blog.readTime}</div>
                             <span>•</span>
@@ -160,7 +169,7 @@ export default async function BlogPostPage({ params: { lang, slug } }: { params:
                     <button className="flex items-center gap-2 text-[rgba(15,20,16,0.6)] font-semibold text-xs hover:text-[#111612] transition-colors group">
                         <Share2 size={15} className="group-hover:rotate-12 transition-transform duration-200" /> {lang === 'uz' ? 'Maqolani ulashing' : 'Поделиться статьей'}
                     </button>
-                    <div className="text-[rgba(15,20,16,0.4)] font-medium text-xs tracking-wider uppercase">VELARI INSIGHTS</div>
+                    <div className="text-[rgba(15,20,16,0.4)] font-medium text-xs tracking-wider uppercase">VELARI BLOG</div>
                 </div>
             </div>
 

@@ -242,8 +242,8 @@ export const translations = {
             ]
         },
         blog: {
-            title: "Velari Insights",
-            subtitle: "Texnologiya, gadjetlar va zamonaviy yechimlar olami",
+            title: "Foydali maqolalar",
+            subtitle: "Texnika va gadjetlarni to'g'ri tanlash bo'yicha amaliy maslahatlar",
             readMore: "Batafsil o'qish",
             readTime: "daqiqa",
             views: "ko'rishlar",
@@ -494,8 +494,8 @@ export const translations = {
             ]
         },
         blog: {
-            title: "Velari Insights",
-            subtitle: "Мир технологий, гаджетов и современных решений",
+            title: "Полезные статьи",
+            subtitle: "Практические советы и руководства по выбору техники",
             readMore: "Читать далее",
             readTime: "мин",
             views: "просмотров",

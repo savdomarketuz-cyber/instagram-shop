@@ -590,32 +590,38 @@ export default function Navigation() {
                         href: l("/"), 
                         label: t.nav.home, 
                         active: isHomePage, 
-                        icon: (on: boolean) => <Home size={22} strokeWidth={on ? 2.4 : 1.8} /> 
+                        icon: (on: boolean) => <Home size={20} strokeWidth={on ? 2.4 : 1.8} /> 
                     },
                     { 
                         href: l("/catalog"), 
                         label: language === 'uz' ? 'Katalog' : 'Каталог', 
                         active: pathname === l("/catalog") || pathname?.startsWith(l("/catalog/")), 
-                        icon: (on: boolean) => <LayoutGrid size={22} strokeWidth={on ? 2.4 : 1.8} /> 
+                        icon: (on: boolean) => <LayoutGrid size={20} strokeWidth={on ? 2.4 : 1.8} /> 
+                    },
+                    { 
+                        href: l("/reels"), 
+                        label: t.nav.reels, 
+                        active: isReels, 
+                        icon: (on: boolean) => <Clapperboard size={20} strokeWidth={on ? 2.4 : 1.8} /> 
                     },
                     { 
                         href: l("/cart"), 
                         label: t.nav.cart, 
                         active: pathname === l("/cart"), 
                         badge: cartCount, 
-                        icon: (on: boolean) => <ShoppingCart size={22} strokeWidth={on ? 2.4 : 1.8} /> 
+                        icon: (on: boolean) => <ShoppingCart size={20} strokeWidth={on ? 2.4 : 1.8} /> 
                     },
                     { 
                         href: l("/messages"), 
                         label: language === 'uz' ? 'Xabarlar' : 'Чаты', 
                         active: pathname === l("/messages") || pathname?.startsWith(l("/messages/")), 
-                        icon: (on: boolean) => <MessageSquare size={22} strokeWidth={on ? 2.4 : 1.8} /> 
+                        icon: (on: boolean) => <MessageSquare size={20} strokeWidth={on ? 2.4 : 1.8} /> 
                     },
                     { 
                         href: user ? l("/account") : l("/login"), 
                         label: t.nav.profile, 
                         active: !!pathname?.includes("/account") || (!user && !!pathname?.includes("/login")), 
-                        icon: (on: boolean) => <User size={22} strokeWidth={on ? 2.4 : 1.8} /> 
+                        icon: (on: boolean) => <User size={20} strokeWidth={on ? 2.4 : 1.8} /> 
                     },
                 ];
                 const currentPathIndex = tabs.findIndex(tab => tab.active);
@@ -646,7 +652,7 @@ export default function Navigation() {
                                     top: 6,
                                     bottom: "max(env(safe-area-inset-bottom, 6px), 6px)",
                                     left: 4,
-                                    width: "calc((100% - 8px) / 5)",
+                                    width: "calc((100% - 8px) / 6)",
                                     transform: `translateX(${activeIndex * 100}%)`,
                                     display: "flex",
                                     alignItems: "center",
@@ -654,7 +660,7 @@ export default function Navigation() {
                                 }}
                             >
                                 <div
-                                    className={`w-[60px] h-[44px] rounded-full transition-colors duration-200 ${
+                                    className={`w-[46px] h-[42px] rounded-full transition-colors duration-200 ${
                                         isReels 
                                             ? "bg-white/20 shadow-sm" 
                                             : "bg-[#EAF3EC] shadow-[0_2px_8px_rgba(45,110,62,0.12)]"
@@ -670,7 +676,7 @@ export default function Navigation() {
                                     key={tab.href}
                                     href={tab.href}
                                     // Shaxsiy sahifalar (savat, xabarlar, login/kabinet) oldindan yuklanmaydi — 1-ekran trafigi kamayadi
-                                    prefetch={tab.href === l("/") || tab.href === l("/catalog") ? undefined : false}
+                                    prefetch={tab.href === l("/") || tab.href === l("/catalog") || tab.href === l("/reels") ? undefined : false}
                                     onClick={() => {
                                         setNavOptimisticIndex(idx);
                                         videoPreWarmer.triggerHaptic("selection");
@@ -688,7 +694,7 @@ export default function Navigation() {
                                     }}
                                 >
                                     <div
-                                        className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-full transition-colors duration-200 ${
+                                        className={`flex flex-col items-center gap-0.5 px-1 py-1 rounded-full transition-colors duration-200 ${
                                             isActive 
                                                 ? (isReels ? "text-white" : "text-[#2D6E3E]")
                                                 : (isReels ? "text-white/60" : "text-[#737D75]")
