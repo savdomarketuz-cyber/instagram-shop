@@ -262,10 +262,8 @@ export default async function RootLayout({
                 <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png" />
                 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
-                <link rel="preconnect" href="https://storage.yandexcloud.net" crossOrigin="anonymous" />
-                <link rel="dns-prefetch" href="https://storage.yandexcloud.net" />
-                <link rel="preconnect" href="https://slmbethqqqugnktxwzdz.supabase.co" crossOrigin="anonymous" />
-                <link rel="dns-prefetch" href="https://slmbethqqqugnktxwzdz.supabase.co" />
+                <link rel="preconnect" href="https://media.velari.uz" crossOrigin="anonymous" />
+                <link rel="dns-prefetch" href="https://media.velari.uz" />
 
                 <script
                     type="application/ld+json"

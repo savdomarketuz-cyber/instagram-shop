@@ -314,28 +314,8 @@ export default function HomeClient({
         return allProducts;
     }, [searchResults, activeFacet, activeTab, personalOrder, allProducts]);
 
-    // Real-time updates for Banners and Settings (Supabase Realtime)
+    // Scroll listener & position tracking (Banners & settings are server-rendered with ISR)
     useEffect(() => {
-        const bannersChannel = supabase
-            .channel('banners-changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'banners' }, async () => {
-                const { data } = await supabase.from('banners').select('*').eq('active', true).order('order_index');
-                setBanners((data || []).map(mapBanner));
-            })
-            .subscribe();
-
-        const settingsChannel = supabase
-            .channel('settings-changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'settings', filter: 'id=eq.banners' }, (payload: any) => {
-                if (payload.new && payload.new.data) {
-                    setBannerSettings({
-                        desktopHeight: payload.new.data.desktopHeight || 210,
-                        borderRadius: payload.new.data.borderRadius || 32
-                    });
-                }
-            })
-            .subscribe();
-
         let timeoutId: NodeJS.Timeout;
         const handleScrollEvent = () => {
             // Header blur uchun — faqat holat o'zgargandagina yangilash
@@ -353,8 +333,7 @@ export default function HomeClient({
         window.addEventListener('scroll', handleScrollEvent, { passive: true });
 
         return () => {
-            supabase.removeChannel(bannersChannel);
-            supabase.removeChannel(settingsChannel);
+            clearTimeout(timeoutId);
             window.removeEventListener('scroll', handleScrollEvent);
         };
     }, [setHomeScrollPosition]);
