@@ -1,3 +1,27 @@
+function getMatchingWarehouse(whs: any[] | null | undefined, prod: any): any {
+    if (!whs || whs.length === 0) return null;
+    const availableWhId = Object.keys(prod?.stockDetails || {}).find(id => Number((prod?.stockDetails as Record<string, number>)[id]) > 0);
+    if (availableWhId) {
+        const found = whs.find((w: any) => w.id === availableWhId);
+        if (found) return found;
+    }
+    if (prod?.warehouse_id) {
+        const found = whs.find((w: any) => w.id === prod.warehouse_id);
+        if (found) return found;
+    }
+    const n = ((prod?.name || '') + ' ' + (prod?.name_ru || '') + ' ' + (prod?.name_uz || '')).toLowerCase();
+    if (/planshet|telefon|smartfon|soat|naushnik|gadget|powerbank/i.test(n)) {
+        return whs.find((w: any) => w.name?.includes('GADGET')) || whs.find((w: any) => w.name?.includes('ELECTRONIK')) || whs[0];
+    }
+    if (/fen|trimmer|dazmol|mashinka|stayler|epilyator|texnika|choynak|changyutgich/i.test(n)) {
+        return whs.find((w: any) => w.name?.includes('ELECTRONIK')) || whs.find((w: any) => w.name?.includes('HOME')) || whs[0];
+    }
+    if (/kiyim|kofta|shim|oyoq|sumka|fashion/i.test(n)) {
+        return whs.find((w: any) => w.name?.includes('FASHION')) || whs[0];
+    }
+    return whs.find((w: any) => w.name?.includes('ELECTRONIK')) || whs[0];
+}
+
 "use client";
 
 import { useStore } from "@/store/store";
@@ -210,10 +234,8 @@ export default function ProductClient({
     // Boshlang'ich holatdayoq store'dagi omborni olamiz (0ms, birdaniga!)
     const activeWarehouse = useMemo(() => {
         const whs = (storeWarehouses && storeWarehouses.length > 0) ? storeWarehouses : initialWarehouses;
-        if (!whs || whs.length === 0) return null;
         const targetProd = product || initialProduct;
-        const availableWhId = Object.keys(targetProd?.stockDetails || {}).find(id => Number((targetProd?.stockDetails as Record<string, number>)[id]) > 0);
-        return whs.find((w: any) => w.id === availableWhId) || whs[0];
+        return getMatchingWarehouse(whs, targetProd);
     }, [storeWarehouses, initialWarehouses, product, initialProduct]);
 
     const [deliverySettings, setDeliverySettings] = useState<any | null>(activeWarehouse?.dbs_config || null);
@@ -354,8 +376,7 @@ export default function ProductClient({
         const warehouses = storeWarehouses?.length ? storeWarehouses : (await supabase.from("warehouses").select("*")).data;
         if (!warehouses) return;
 
-        const availableWhId = Object.keys(productData.stockDetails || {}).find(id => (productData.stockDetails as Record<string, number>)[id] > 0);
-        const warehouse = warehouses.find(w => w.id === availableWhId) || warehouses[0];
+        const warehouse = getMatchingWarehouse(warehouses, productData);
 
         if (warehouse) {
             setStore({ id: warehouse.id, name: warehouse.name, logo: warehouse.logo || null });
@@ -493,8 +514,8 @@ export default function ProductClient({
     , [product]);
 
     const handleFastBuy = () => {
+        if (!product || totalStock <= 0) return;
         videoPreWarmer.triggerHaptic("medium");
-        if (!product) return;
         const item = {
             id: product.id,
             name: product.name,
@@ -659,12 +680,14 @@ export default function ProductClient({
                             <Heart size={20} fill={isWishlisted ? "currentColor" : "none"} />
                         </button>
 
-                        <button 
-                            onClick={handleFastBuy}
-                            className="ios-tap-feedback active:scale-95 px-10 py-4 bg-[#F2F3F5] hover:bg-black hover:text-white text-black rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-200"
-                        >
-                            {language === 'uz' ? "Tezkor xarid" : "Купить сейчас"}
-                        </button>
+                        {totalStock > 0 && (
+                            <button 
+                                onClick={handleFastBuy}
+                                className="ios-tap-feedback active:scale-95 px-10 py-4 bg-[#F2F3F5] hover:bg-black hover:text-white text-black rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-200"
+                            >
+                                {language === 'uz' ? "Tezkor xarid" : "Купить сейчас"}
+                            </button>
+                        )}
 
                         {cartItem ? (
                            <div className="flex items-center rounded-[24px] overflow-hidden h-[56px]" style={{ background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", boxShadow: "0 8px 24px rgba(45,110,62,0.28)" }}>
@@ -1068,62 +1091,66 @@ export default function ProductClient({
                             {/* Action Buttons */}
                             <div className="grid grid-cols-1 gap-3 mt-8">
                                 <div className="flex gap-3 items-stretch">
-                                    <button 
-                                        onClick={handleFastBuy}
-                                        className="glass-tinted-button flex-1 h-[52px] text-sm font-semibold rounded-[var(--radius-control)]"
-                                    >
-                                        {language === 'uz' ? "Tezkor xarid" : "Купить сейчас"}
-                                    </button>
-
-                                    {cartItem ? (
-                                        <div className="flex-1 flex items-center gap-2 animate-in fade-in zoom-in duration-200">
-                                            <div className="flex-1 bg-[#EAF3EC] h-[52px] rounded-[var(--radius-control)] flex items-center justify-around">
-                                                <button 
-                                                    onClick={() => {
-                                                        videoPreWarmer.triggerHaptic("light");
-                                                        updateQuantity(product.id, cartItem.quantity - 1);
-                                                    }} 
-                                                    className="ios-icon-tap active:scale-85 p-2.5 text-[#2D6E3E] transition-transform duration-150"
-                                                >
-                                                    <Minus size={18} strokeWidth={2.4} />
-                                                </button>
-                                                <span className="text-base font-bold text-[#111612]">{cartItem.quantity}</span>
-                                                <button 
-                                                    onClick={() => {
-                                                        videoPreWarmer.triggerHaptic("light");
-                                                        updateQuantity(product.id, cartItem.quantity + 1);
-                                                    }} 
-                                                    className="ios-icon-tap active:scale-85 p-2.5 text-[#2D6E3E] transition-transform duration-150"
-                                                >
-                                                    <Plus size={18} strokeWidth={2.4} />
-                                                </button>
-                                            </div>
-                                            <Link
-                                                href={`/${language}/cart`} prefetch={false}
-                                                onClick={() => videoPreWarmer.triggerHaptic("light")}
-                                                className="glass-prominent-button h-[52px] px-5 rounded-[var(--radius-control)]"
-                                            >
-                                                <ShoppingBag size={18} strokeWidth={2} />
-                                            </Link>
-                                        </div>
-                                    ) : totalStock <= 0 ? (
+                                    {totalStock <= 0 ? (
                                         <button
                                             disabled
-                                            className="flex-1 h-[52px] text-sm font-semibold rounded-[var(--radius-control)] bg-gray-200 text-gray-500 cursor-not-allowed flex items-center justify-center gap-2"
+                                            className="w-full h-[52px] text-sm font-semibold rounded-[var(--radius-control)] bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 border border-gray-200 select-none"
                                         >
-                                            <span>{language === 'uz' ? "Mavjud emas" : "Нет в наличии"}</span>
+                                            <span className="font-bold">{language === 'uz' ? "Mavjud emas" : "Нет в наличии"}</span>
                                         </button>
                                     ) : (
-                                        <button
-                                            onClick={() => {
-                                                videoPreWarmer.triggerHaptic("medium");
-                                                addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any);
-                                            }}
-                                            className="glass-prominent-button flex-1 h-[52px] text-sm font-semibold rounded-[var(--radius-control)]"
-                                        >
-                                            <ShoppingBag size={18} strokeWidth={2} />
-                                            <span>{language === 'uz' ? "Savatga qo'shish" : "В корзину"}</span>
-                                        </button>
+                                        <>
+                                            <button 
+                                                onClick={handleFastBuy}
+                                                className="glass-tinted-button flex-1 h-[52px] text-sm font-semibold rounded-[var(--radius-control)]"
+                                            >
+                                                {language === 'uz' ? "Tezkor xarid" : "Купить сейчас"}
+                                            </button>
+
+                                            {cartItem ? (
+                                                <div className="flex-1 flex items-center gap-2 animate-in fade-in zoom-in duration-200">
+                                                    <div className="flex-1 bg-[#EAF3EC] h-[52px] rounded-[var(--radius-control)] flex items-center justify-around">
+                                                        <button 
+                                                            onClick={() => {
+                                                                videoPreWarmer.triggerHaptic("light");
+                                                                updateQuantity(product.id, cartItem.quantity - 1);
+                                                            }} 
+                                                            className="ios-icon-tap active:scale-85 p-2.5 text-[#2D6E3E] transition-transform duration-150"
+                                                        >
+                                                            <Minus size={18} strokeWidth={2.4} />
+                                                        </button>
+                                                        <span className="text-base font-bold text-[#111612]">{cartItem.quantity}</span>
+                                                        <button 
+                                                            onClick={() => {
+                                                                videoPreWarmer.triggerHaptic("light");
+                                                                updateQuantity(product.id, cartItem.quantity + 1);
+                                                            }} 
+                                                            className="ios-icon-tap active:scale-85 p-2.5 text-[#2D6E3E] transition-transform duration-150"
+                                                        >
+                                                            <Plus size={18} strokeWidth={2.4} />
+                                                        </button>
+                                                    </div>
+                                                    <Link
+                                                        href={`/${language}/cart`} prefetch={false}
+                                                        onClick={() => videoPreWarmer.triggerHaptic("light")}
+                                                        className="glass-prominent-button h-[52px] px-5 rounded-[var(--radius-control)]"
+                                                    >
+                                                        <ShoppingBag size={18} strokeWidth={2} />
+                                                    </Link>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={() => {
+                                                        videoPreWarmer.triggerHaptic("medium");
+                                                        addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any);
+                                                    }}
+                                                    className="glass-prominent-button flex-1 h-[52px] text-sm font-semibold rounded-[var(--radius-control)]"
+                                                >
+                                                    <ShoppingBag size={18} strokeWidth={2} />
+                                                    <span>{language === 'uz' ? "Savatga qo'shish" : "В корзину"}</span>
+                                                </button>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             </div>
@@ -1273,75 +1300,79 @@ export default function ProductClient({
                 }}
             >
                 <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
-                    {/* Tezkor xarid (Secondary Action) */}
-                    <button
-                        onClick={handleFastBuy}
-                        className="glass-tinted-button text-xs font-semibold"
-                        style={{
-                            flexShrink: 0, height: 48, borderRadius: 16, padding: "0 16px",
-                        }}
-                    >
-                        {language === 'uz' ? "Tezkor xarid" : "Купить"}
-                    </button>
-
-                    {/* Cart CTA (Primary Action) */}
-                    {cartItem ? (
-                        <div style={{ flex: 1, display: "flex", gap: 6, alignItems: "stretch" }}>
-                            <div style={{ flex: 1, background: "#EAF3EC", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "space-around", height: 48 }}>
-                                <button
-                                    aria-label="Kamaytirish"
-                                    onClick={() => {
-                                        videoPreWarmer.triggerHaptic("light");
-                                        updateQuantity(product.id, cartItem.quantity - 1);
-                                    }}
-                                    className="ios-icon-tap active:scale-85 p-2 text-[#2D6E3E]"
-                                >
-                                    <Minus size={17} strokeWidth={2.4} />
-                                </button>
-                                <span style={{ fontSize: 15, fontWeight: 700, color: "#111612" }}>{cartItem.quantity}</span>
-                                <button
-                                    aria-label="Ko'paytirish"
-                                    onClick={() => {
-                                        videoPreWarmer.triggerHaptic("light");
-                                        updateQuantity(product.id, cartItem.quantity + 1);
-                                    }}
-                                    className="ios-icon-tap active:scale-85 p-2 text-[#2D6E3E]"
-                                >
-                                    <Plus size={17} strokeWidth={2.4} />
-                                </button>
-                            </div>
-                            <Link
-                                href={`/${language}/cart`} prefetch={false}
-                                onClick={() => videoPreWarmer.triggerHaptic("light")}
-                                className="glass-prominent-button"
-                                style={{ width: 48, height: 48, borderRadius: 16, flexShrink: 0, padding: 0 }}
-                                aria-label="Savatga o'tish"
-                            >
-                                <ShoppingBag size={19} color="#fff" strokeWidth={2} />
-                            </Link>
-                        </div>
-                    ) : totalStock <= 0 ? (
+                    {totalStock <= 0 ? (
                         <button
                             disabled
-                            className="flex-1 text-sm font-semibold bg-gray-200 text-gray-500 cursor-not-allowed flex items-center justify-center gap-2"
+                            className="flex-1 text-sm font-semibold bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 border border-gray-200 select-none"
                             style={{ height: 48, borderRadius: 16 }}
                         >
-                            <span>{language === 'uz' ? "Mavjud emas" : "Нет в наличии"}</span>
+                            <span className="font-bold">{language === 'uz' ? "Mavjud emas" : "Нет в наличии"}</span>
                         </button>
                     ) : (
-                        <button
-                            onClick={() => {
-                                videoPreWarmer.triggerHaptic("medium");
-                                addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any);
-                            }}
-                            className="glass-prominent-button flex-1 text-sm font-semibold"
-                            style={{
-                                height: 48, borderRadius: 16,
-                            }}
-                        >
-                            <ShoppingBag size={17} color="#fff" strokeWidth={2} />
-                            <span>{language === 'uz' ? "Savatga qo'shish" : "В корзину"}</span>
-                        </button>
+                        <>
+                            {/* Tezkor xarid (Secondary Action) */}
+                            <button
+                                onClick={handleFastBuy}
+                                className="glass-tinted-button text-xs font-semibold"
+                                style={{
+                                    flexShrink: 0, height: 48, borderRadius: 16, padding: "0 16px",
+                                }}
+                            >
+                                {language === 'uz' ? "Tezkor xarid" : "Купить"}
+                            </button>
+
+                            {/* Cart CTA (Primary Action) */}
+                            {cartItem ? (
+                                <div style={{ flex: 1, display: "flex", gap: 6, alignItems: "stretch" }}>
+                                    <div style={{ flex: 1, background: "#EAF3EC", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "space-around", height: 48 }}>
+                                        <button
+                                            aria-label="Kamaytirish"
+                                            onClick={() => {
+                                                videoPreWarmer.triggerHaptic("light");
+                                                updateQuantity(product.id, cartItem.quantity - 1);
+                                            }}
+                                            className="ios-icon-tap active:scale-85 p-2 text-[#2D6E3E]"
+                                        >
+                                            <Minus size={17} strokeWidth={2.4} />
+                                        </button>
+                                        <span style={{ fontSize: 15, fontWeight: 700, color: "#111612" }}>{cartItem.quantity}</span>
+                                        <button
+                                            aria-label="Ko'paytirish"
+                                            onClick={() => {
+                                                videoPreWarmer.triggerHaptic("light");
+                                                updateQuantity(product.id, cartItem.quantity + 1);
+                                            }}
+                                            className="ios-icon-tap active:scale-85 p-2 text-[#2D6E3E]"
+                                        >
+                                            <Plus size={17} strokeWidth={2.4} />
+                                        </button>
+                                    </div>
+                                    <Link
+                                        href={`/${language}/cart`} prefetch={false}
+                                        onClick={() => videoPreWarmer.triggerHaptic("light")}
+                                        className="glass-prominent-button"
+                                        style={{ width: 48, height: 48, borderRadius: 16, flexShrink: 0, padding: 0 }}
+                                        aria-label="Savatga o'tish"
+                                    >
+                                        <ShoppingBag size={19} color="#fff" strokeWidth={2} />
+                                    </Link>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={() => {
+                                        videoPreWarmer.triggerHaptic("medium");
+                                        addToCart({ ...product, imageUrl: product.image, stock: totalStock } as any);
+                                    }}
+                                    className="glass-prominent-button flex-1 text-sm font-semibold"
+                                    style={{
+                                        height: 48, borderRadius: 16,
+                                    }}
+                                >
+                                    <ShoppingBag size={17} color="#fff" strokeWidth={2} />
+                                    <span>{language === 'uz' ? "Savatga qo'shish" : "В корзину"}</span>
+                                </button>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
