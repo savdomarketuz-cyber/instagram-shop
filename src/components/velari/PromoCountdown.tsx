@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface PromoSettings {
     enabled: boolean;
@@ -59,19 +59,58 @@ export default function PromoCountdown({ language, initialSettings, variant = "s
         return { status: "ended", timeLeft: null };
     };
 
+    const rootRef = useRef<HTMLElement | null>(null);
     const initialState = computeState(settings);
     const [status, setStatus] = useState(initialState.status);
     const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(initialState.timeLeft);
 
     useEffect(() => {
         if (!settings) return;
-        const id = setInterval(() => {
+
+        let intervalId: ReturnType<typeof setInterval> | null = null;
+
+        const tick = () => {
             const next = computeState(settings);
             setStatus(next.status);
             setTimeLeft(next.timeLeft);
-            if (next.status === "ended") clearInterval(id);
-        }, 1000);
-        return () => clearInterval(id);
+            if (next.status === "ended" && intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+        };
+
+        const syncTimer = () => {
+            const el = rootRef.current;
+            const visible = !!el && el.offsetParent !== null && document.visibilityState !== "hidden";
+            if (!visible) {
+                if (intervalId) {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                }
+                return;
+            }
+            tick();
+            if (!intervalId) {
+                intervalId = setInterval(tick, 1000);
+            }
+        };
+
+        syncTimer();
+
+        let ro: ResizeObserver | null = null;
+        if (typeof ResizeObserver !== "undefined" && rootRef.current) {
+            ro = new ResizeObserver(syncTimer);
+            ro.observe(rootRef.current);
+        }
+        window.addEventListener("resize", syncTimer, { passive: true });
+        document.addEventListener("visibilitychange", syncTimer);
+
+        return () => {
+            if (intervalId) clearInterval(intervalId);
+            if (ro) ro.disconnect();
+            window.removeEventListener("resize", syncTimer);
+            document.removeEventListener("visibilitychange", syncTimer);
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [settings]);
 
@@ -121,13 +160,14 @@ export default function PromoCountdown({ language, initialSettings, variant = "s
             </div>
         );
         if (settings.link && status === "active") {
-            return <a href={settings.link} className="hidden md:flex flex-1 min-h-0" style={{ textDecoration: "none" }}>{card}</a>;
+            return <a ref={(el) => { rootRef.current = el; }} href={settings.link} className="hidden md:flex flex-1 min-h-0" style={{ textDecoration: "none" }}>{card}</a>;
         }
-        return <div className="hidden md:flex flex-1 min-h-0">{card}</div>;
+        return <div ref={(el) => { rootRef.current = el; }} className="hidden md:flex flex-1 min-h-0">{card}</div>;
     }
 
     const inner = (
         <div
+            ref={settings.link && status === "active" ? undefined : (el) => { rootRef.current = el; }}
             className="md:hidden mx-4 mt-4"
             style={{ borderRadius: 20, overflow: "hidden" }}
         >
@@ -175,7 +215,12 @@ export default function PromoCountdown({ language, initialSettings, variant = "s
 
     if (settings.link && status === "active") {
         return (
-            <a href={settings.link} style={{ textDecoration: "none", display: "block" }}>
+            <a
+                ref={(el) => { rootRef.current = el; }}
+                href={settings.link}
+                className="md:hidden block"
+                style={{ textDecoration: "none" }}
+            >
                 {inner}
             </a>
         );

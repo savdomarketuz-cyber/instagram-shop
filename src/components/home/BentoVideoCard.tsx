@@ -103,7 +103,7 @@ export const BentoVideoCard = memo(({
             <div className="absolute bottom-0 left-0 right-0 h-44 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none z-10" />
 
             {/* Top Badge (Instagram Explore Tag) */}
-            <div className="absolute top-3.5 left-3.5 z-20 flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white text-[11px] font-medium tracking-wide">
+            <div className="absolute top-3.5 left-3.5 z-20 flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/65 border border-white/20 text-white text-[11px] font-medium tracking-wide">
                 <Clapperboard size={12} className="text-emerald-400" />
                 <span>Explore Reel</span>
             </div>
@@ -118,7 +118,7 @@ export const BentoVideoCard = memo(({
                         videoPreWarmer.triggerHaptic("light");
                         setIsMuted(!isMuted);
                     }}
-                    className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white flex items-center justify-center active:scale-90 transition-transform duration-150"
+                    className="w-9 h-9 rounded-full bg-black/65 border border-white/20 text-white flex items-center justify-center active:scale-90 transition-transform duration-150"
                 >
                     {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
                 </button>
@@ -131,7 +131,7 @@ export const BentoVideoCard = memo(({
                         videoPreWarmer.triggerHaptic("light");
                         toggleWishlist(item);
                     }}
-                    className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white flex items-center justify-center active:scale-90 transition-transform duration-150"
+                    className="w-9 h-9 rounded-full bg-black/65 border border-white/20 text-white flex items-center justify-center active:scale-90 transition-transform duration-150"
                 >
                     <Heart size={15} fill={isWished ? "#ef4444" : "none"} className={isWished ? "text-red-500" : "text-white"} />
                 </button>
@@ -192,7 +192,7 @@ export const BentoVideoCard = memo(({
                         className={`w-10 h-10 rounded-xl flex items-center justify-center active:scale-90 transition-transform duration-150 border ${
                             isInCart
                                 ? "bg-gradient-to-r from-[#2D6E3E] to-[#1F5A30] text-white border-transparent shadow-md"
-                                : "bg-white/20 backdrop-blur-md text-white border-white/30 hover:bg-white hover:text-black"
+                                : "bg-black/55 text-white border-white/30 hover:bg-white hover:text-black"
                         }`}
                     >
                         {isInCart ? <Check size={16} strokeWidth={3} /> : <Plus size={16} strokeWidth={3} />}

@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState, useRef, useEffect } from "react";
+import { memo, useState, useRef, useEffect, useMemo, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Heart, Star, Minus, Plus, Sparkles, Truck, Store } from "lucide-react";
@@ -12,9 +12,23 @@ import { makeVariantLoader, hasVariants, getOptimizedImageUrl, getMetaForUrl } f
 import { getDeliveryCardText } from "@/lib/date-utils";
 import { sanitizeVideoUrl } from "@/lib/video-url";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
+import { applyGlobalPromo } from "@/lib/promo-utils";
 
 const GREEN = "#2D6E3E";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+
+const emptySubscribe = () => () => {};
+const getClientHydrated = () => true;
+const getServerHydrated = () => false;
+
+/**
+ * Umumiy modul darajasidagi hydration holati:
+ * SSR va ilk client hydration'da `false` qaytarib HTML 100% mosligini saqlaydi,
+ * keyin esa 20+ alohida `useEffect(setState)` o'rniga bitta sinxron o'tishda `true` bo'ladi.
+ */
+function useHydrated(): boolean {
+    return useSyncExternalStore(emptySubscribe, getClientHydrated, getServerHydrated);
+}
 
 const DEVICE_SIZES = [640, 750, 828, 1080, 1200];
 function getCarouselW(): number {
@@ -46,7 +60,7 @@ function prefetchFirstImage(item: Product) {
     link.rel = "prefetch";
     link.as = "image";
     link.href = href;
-    (link as any).fetchPriority = "high";
+    (link as any).fetchPriority = "low";
     document.head.appendChild(link);
 }
 
@@ -89,9 +103,7 @@ function WishBtn({ isWished, onClick, language }: { isWished: boolean; onClick: 
         width: 38,
         height: 38,
         borderRadius: 19,
-        background: "rgba(255, 255, 255, 0.85)",
-        backdropFilter: "blur(14px)",
-        WebkitBackdropFilter: "blur(14px)",
+        background: "rgba(255, 255, 255, 0.94)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -114,8 +126,6 @@ function WishBtn({ isWished, onClick, language }: { isWished: boolean; onClick: 
   );
 }
 
-import { applyGlobalPromo } from "@/lib/promo-utils";
-
 export const ProductCard = memo(({
   item: rawItem, language, t, cart, wishlist,
   toggleWishlist, addToCart, updateQuantity, removeFromCart,
@@ -124,7 +134,14 @@ export const ProductCard = memo(({
   const globalPromo = useStore(s => s.globalPromo);
   const item = applyGlobalPromo(rawItem, globalPromo);
   const imgWrapRef = useRef<HTMLDivElement>(null);
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [imgLoaded, setImgLoaded] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    };
+  }, []);
 
   const isInCart = cart.find(ci => ci.id === item.id);
   const isWished = wishlist.some(w => w.id === item.id);
@@ -140,18 +157,13 @@ export const ProductCard = memo(({
   const stockEntries = item.stockDetails ? Object.entries(item.stockDetails) : [];
   const whId = stockEntries.find(([, q]) => Number(q) > 0)?.[0] || stockEntries[0]?.[0];
   const warehouse = warehouses.find((w: any) => String(w.id) === String(whId)) || warehouses[0];
-  // Yetkazish sanasi hozirgi vaqtga bog'liq — faqat brauzerda (mount'dan keyin) hisoblanadi.
-  // Render paytida hisoblansa server HTML (ISR, boshqa vaqt/UTC) bilan farq qilib, hydration xatosi
-  // (#425/#422) butun sahifani mijozda qayta chizdirardi.
-  const [deliveryText, setDeliveryText] = useState<string | null>(null);
+  // Yetkazish sanasi hozirgi vaqtga bog'liq — faqat hydration'dan keyin bitta sinxron o'tishda hisoblanadi.
+  const isHydrated = useHydrated();
   const dbsConfig = warehouse?.dbs_config;
-  useEffect(() => {
-    if (!dbsConfig) {
-      setDeliveryText(null);
-      return;
-    }
-    setDeliveryText(getDeliveryCardText(language, dbsConfig, selectedRegion));
-  }, [language, dbsConfig, selectedRegion]);
+  const deliveryText = useMemo(
+    () => (isHydrated && dbsConfig ? getDeliveryCardText(language, dbsConfig, selectedRegion) : null),
+    [isHydrated, language, dbsConfig, selectedRegion]
+  );
 
   const mainMedia = item.images?.[0] || item.image || "/placeholder.png";
   const isVideo = mainMedia.toLowerCase().endsWith(".mp4");
@@ -161,7 +173,6 @@ export const ProductCard = memo(({
     : 0;
 
   const badge = discount > 0 ? `-${discount}%` : item.sales > 50 ? "HIT" : null;
-  const badgeBg = badge === "HIT" ? "#0F1410" : "#FF3B30";
 
   const name = (language === "uz" ? item.name_uz : item.name_ru) || item.name;
   const brandName = brandLabel || "";
@@ -173,7 +184,7 @@ export const ProductCard = memo(({
 
   return (
     <div 
-      className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 ease-out select-none will-change-transform"
+      className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 ease-out select-none"
       style={{
         background: "#fff",
         borderRadius: 24,
@@ -183,14 +194,31 @@ export const ProductCard = memo(({
         boxShadow: "0 4px 20px rgba(15,20,16,0.06)",
         border: "1px solid rgba(15,20,16,0.06)",
         WebkitTapHighlightColor: "transparent",
-        transform: "translate3d(0,0,0)",
       }}>
       {/* Image area */}
       <Link
         href={`/${language}/products/${getProductSlug(item, language)}`}
         style={{ display: "flex", flexDirection: "column", flex: 1, textDecoration: "none", color: "inherit" }}
         prefetch={false}
-        onPointerEnter={() => prefetchFirstImage(item)}
+        onPointerEnter={() => {
+          if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+          hoverTimerRef.current = setTimeout(() => {
+            hoverTimerRef.current = null;
+            prefetchFirstImage(item);
+          }, 180);
+        }}
+        onPointerLeave={() => {
+          if (hoverTimerRef.current) {
+            clearTimeout(hoverTimerRef.current);
+            hoverTimerRef.current = null;
+          }
+        }}
+        onPointerCancel={() => {
+          if (hoverTimerRef.current) {
+            clearTimeout(hoverTimerRef.current);
+            hoverTimerRef.current = null;
+          }
+        }}
         onClick={() => {
           const query = useStore.getState().homeSearchQuery;
           if (query && query.trim().length >= 2) {
@@ -239,9 +267,7 @@ export const ProductCard = memo(({
                 left: 8,
                 padding: "3px 9px",
                 borderRadius: 9999,
-                background: badge === "HIT" ? "rgba(17, 22, 18, 0.85)" : "rgba(239, 68, 68, 0.9)",
-                backdropFilter: "blur(10px)",
-                WebkitBackdropFilter: "blur(10px)",
+                background: badge === "HIT" ? "rgba(17, 22, 18, 0.92)" : "#EF4444",
                 border: "1px solid rgba(255, 255, 255, 0.25)",
                 color: "#fff",
                 fontSize: 10.5,

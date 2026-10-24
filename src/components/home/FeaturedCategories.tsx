@@ -139,7 +139,7 @@ export default function FeaturedCategories({ language, initial }: { language: "u
                                 href={`/${language}/catalog/${getCategorySlug(cat, language)}`}
                                 prefetch={false}
                                 onClick={() => videoPreWarmer.triggerHaptic("light")}
-                                className="ios-tap-feedback active:scale-90 transition-transform duration-150 ease-out select-none will-change-transform"
+                                className="ios-tap-feedback active:scale-90 transition-transform duration-150 ease-out select-none"
                                 style={{
                                     flexShrink: 0, display: "flex", flexDirection: "column",
                                     alignItems: "center", gap: 8, textDecoration: "none",
@@ -159,7 +159,7 @@ export default function FeaturedCategories({ language, initial }: { language: "u
                                     }}
                                 >
                                     {cat.image ? (
-                                        <img src={getOptimizedImageUrl(cat.image_meta, cat.image, 'xs')} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                                        <img src={getOptimizedImageUrl(cat.image_meta, cat.image, 'xs')} alt={name} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                                     ) : (cat.icon || "📦")}
                                 </div>
                                 <span style={{
@@ -190,7 +190,7 @@ export default function FeaturedCategories({ language, initial }: { language: "u
                                 key={cat.id}
                                 href={`/${language}/catalog/${getCategorySlug(cat, language)}`}
                                 prefetch={false}
-                                className="group ios-tap-feedback active:scale-95 transition-transform duration-150 ease-out will-change-transform"
+                                className="group ios-tap-feedback active:scale-95 transition-transform duration-150 ease-out"
                                 style={{
                                     flexShrink: 0, display: "flex", flexDirection: "column",
                                     alignItems: "center", gap: 12, textDecoration: "none",
@@ -209,7 +209,7 @@ export default function FeaturedCategories({ language, initial }: { language: "u
                                     }}
                                 >
                                     {cat.image ? (
-                                        <img src={getOptimizedImageUrl(cat.image_meta, cat.image, 'xs')} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                                        <img src={getOptimizedImageUrl(cat.image_meta, cat.image, 'xs')} alt={name} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                                     ) : (cat.icon || "📦")}
                                 </div>
                                 <span style={{

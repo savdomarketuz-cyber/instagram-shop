@@ -130,7 +130,7 @@ export default function StoriesRow({
     // — Data fetch + guruhlash —
     useEffect(() => {
         setSeenIds(getSeenIds());
-        if (initialGroups && initialGroups.length > 0) return;
+        if (initialGroups !== undefined) return;
         supabase
             .from("stories")
             .select("*")
@@ -417,9 +417,9 @@ export default function StoriesRow({
                                         position: "relative", background: "#F0F0EC",
                                     }}>
                                         {g.coverImage ? (
-                                            // eng kichik variant + blur; 1–2-aylana fetchpriority=high, qolganlari lazy
+                                            // eng kichik variant + blur; lazy loading orqali yashirin nusxa rasm yuklamaydi
                                             <Image src={g.coverThumb || g.coverImage} alt={name} fill sizes="80px" style={{ objectFit: "cover" }}
-                                                priority={idx < 2} loading={idx < 2 ? undefined : "lazy"}
+                                                loading="lazy"
                                                 placeholder={g.coverBlur ? "blur" : "empty"} blurDataURL={g.coverBlur} />
                                         ) : hasVideo ? (
                                             <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#111" }}>
@@ -477,7 +477,7 @@ export default function StoriesRow({
                                     }}>
                                         {g.coverImage ? (
                                             <Image src={g.coverThumb || g.coverImage} alt={name} fill sizes="100px" style={{ objectFit: "cover" }}
-                                                priority={idx < 2} loading={idx < 2 ? undefined : "lazy"}
+                                                loading="lazy"
                                                 placeholder={g.coverBlur ? "blur" : "empty"} blurDataURL={g.coverBlur} />
                                         ) : hasVideo ? (
                                             <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#111" }}>

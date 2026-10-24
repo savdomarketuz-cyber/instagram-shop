@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo, Suspense, startTransition } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, Suspense, startTransition } from "react";
 import Link from "next/link";
 import { Search, Sparkles, MapPin, ChevronRight, ChevronLeft, User, X, Loader2, LayoutGrid, Camera, BookOpen } from "lucide-react";
 import { useStore } from "@/store/store";
@@ -38,6 +38,8 @@ import { getRegionById, getClosestRegion } from "@/lib/regions";
 
 import type { Product, Category, Banner } from "@/types";
 
+const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
 interface HomeClientProps {
     initialProducts: Product[];
     initialCategories: Category[];
@@ -59,23 +61,23 @@ export default function HomeClient({
     initialStoryGroups,
     initialWarehouses,
 }: HomeClientProps) {
-    // Serverdan kelgan omborlar va promo'ni store'ga darhol o'rnatish (0ms, qayta so'rovsiz va sakrashlarsiz)
-    if (typeof window !== "undefined" && initialWarehouses && initialWarehouses.length > 0 && useStore.getState().warehouses.length === 0) {
-        useStore.setState({ warehouses: initialWarehouses });
-    }
-    if (typeof window !== "undefined" && initialPromo !== undefined && useStore.getState().globalPromo === null) {
-        useStore.getState().setGlobalPromo(initialPromo);
-    }
-    useEffect(() => {
-        if (initialWarehouses && initialWarehouses.length > 0) {
-            useStore.setState({ warehouses: initialWarehouses });
+    // Serverdan kelgan omborlar va promo'ni pre-paint bosqichida yagona setState bilan sinxronlash
+    useIsoLayoutEffect(() => {
+        const cur = useStore.getState();
+        const patch: Partial<typeof cur> = {};
+        let hasChanges = false;
+        if (initialWarehouses && initialWarehouses.length > 0 && cur.warehouses.length === 0) {
+            patch.warehouses = initialWarehouses;
+            hasChanges = true;
         }
-    }, [initialWarehouses]);
-    useEffect(() => {
-        if (initialPromo !== undefined) {
-            useStore.getState().setGlobalPromo(initialPromo);
+        if (initialPromo !== undefined && cur.globalPromo !== initialPromo) {
+            patch.globalPromo = initialPromo;
+            hasChanges = true;
         }
-    }, [initialPromo]);
+        if (hasChanges) {
+            useStore.setState(patch);
+        }
+    }, [initialWarehouses, initialPromo]);
 
     const router = useRouter();
     const [urlCategory, setUrlCategory] = useState<string | null>(null);
@@ -253,7 +255,7 @@ export default function HomeClient({
 
     // Omborlar (yetkazish vaqti + do'kon nomi uchun) — bir marta
     useEffect(() => {
-        useStore.getState().fetchWarehouses();
+        if (!initialWarehouses || initialWarehouses.length === 0) useStore.getState().fetchWarehouses();
     }, []);
 
     // Shaxsiy tavsiya — persona-asosli moslashtirish (mehmon + login, sabab bilan).
@@ -586,7 +588,7 @@ export default function HomeClient({
                             videoPreWarmer.triggerHaptic("light");
                             setIsLocationModalOpen(true);
                         }}
-                        className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform block text-left bg-transparent border-none cursor-pointer p-0"
+                        className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 block text-left bg-transparent border-none cursor-pointer p-0"
                     >
                         <div style={{ fontSize: 12, color: "#9AA29C", fontWeight: 500 }}>
                             {language === "ru" ? "Доставка в" : "Yetkazib berish"}
@@ -601,7 +603,7 @@ export default function HomeClient({
                     </button>
                     <Link href={`/${language}/blog`}
                         onClick={() => videoPreWarmer.triggerHaptic("light")}
-                        className="ios-icon-tap active:scale-90 transition-transform duration-150 ease-out will-change-transform"
+                        className="ios-icon-tap active:scale-90 transition-transform duration-150 ease-out"
                         style={{
                             width: 40, height: 40, borderRadius: 20, background: "#fff",
                             display: "flex", alignItems: "center", justifyContent: "center",
@@ -617,7 +619,7 @@ export default function HomeClient({
                 </div>
                 <form onSubmit={handleMobileSearch}>
                     <div
-                        className="active:scale-[0.99] transition-transform duration-150 will-change-transform"
+                        className="active:scale-[0.99] transition-transform duration-150"
                         style={{
                             width: "100%", height: 46, borderRadius: 23,
                             background: "#fff", display: "flex", alignItems: "center", gap: 10, padding: "0 16px",
@@ -639,7 +641,7 @@ export default function HomeClient({
                         />
                         {search && (
                             <button type="button" onClick={clearMobileSearch}
-                                className="ios-icon-tap active:scale-85 transition-transform duration-150 will-change-transform"
+                                className="ios-icon-tap active:scale-85 transition-transform duration-150"
                                 style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
                                 <X size={16} color="#9AA29C" />
                             </button>
@@ -656,7 +658,7 @@ export default function HomeClient({
                                     window.dispatchEvent(new CustomEvent("velari-trigger-visual-search"));
                                 }
                             }}
-                            className="ios-icon-tap active:scale-85 transition-transform duration-150 p-1 text-[#2D6E3E] hover:bg-[#EAF3EC] rounded-xl shrink-0 flex items-center justify-center will-change-transform"
+                            className="ios-icon-tap active:scale-85 transition-transform duration-150 p-1 text-[#2D6E3E] hover:bg-[#EAF3EC] rounded-xl shrink-0 flex items-center justify-center"
                             title={language === "uz" ? "Rasm orqali qidirish" : "Поиск по фото"}
                         >
                             <Camera size={18} color="#2D6E3E" />
@@ -665,7 +667,7 @@ export default function HomeClient({
                             type="submit"
                             aria-label={language === "uz" ? "Qidirish" : "Искать"}
                             onClick={() => videoPreWarmer.triggerHaptic("light")}
-                            className="ios-icon-tap active:scale-90 transition-transform duration-150 shrink-0 flex items-center justify-center will-change-transform"
+                            className="ios-icon-tap active:scale-90 transition-transform duration-150 shrink-0 flex items-center justify-center"
                             style={{ width: 32, height: 32, borderRadius: 16, background: "#2D6E3E", border: "none", cursor: "pointer", marginRight: -8 }}
                         >
                             <Search size={16} color="#fff" />
@@ -679,7 +681,7 @@ export default function HomeClient({
                 <div className="md:hidden" style={{ padding: "10px 20px 0" }}>
                     <Link href={`/${language}/catalog`}
                         prefetch={false}
-                        className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
+                        className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150"
                         style={{
                             height: 52, borderRadius: 18, display: "flex", alignItems: "center",
                             justifyContent: "space-between", padding: "0 18px",
@@ -740,7 +742,7 @@ export default function HomeClient({
                             <PromoCountdown language={language} initialSettings={initialPromo} variant="card" />
                             <Link
                                 href={`/${language}/login`} prefetch={false}
-                                className="flex flex-1 min-h-0 flex-col justify-between transition-transform hover:-translate-y-0.5 active:scale-[0.98] duration-150 ease-out will-change-transform"
+                                className="flex flex-1 min-h-0 flex-col justify-between transition-transform hover:-translate-y-0.5 active:scale-[0.98] duration-150 ease-out"
                                 style={{
                                     background: "linear-gradient(135deg,#FBF4E6 0%,#F7ECD4 100%)",
                                     borderRadius: 24, padding: "20px 22px", textDecoration: "none",
@@ -797,7 +799,7 @@ export default function HomeClient({
                                 </div>
                                 <Link href={`/${language}/catalog`}
                                     prefetch={false}
-                                    className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
+                                    className="ios-tap-feedback active:scale-95 transition-transform duration-150"
                                     style={{
                                         alignSelf: "flex-start", padding: "10px 18px", borderRadius: 20,
                                         background: "#fff", fontSize: 13, fontWeight: 600, color: "#0F1410", textDecoration: "none",
@@ -881,7 +883,7 @@ export default function HomeClient({
                                                     useStore.setState({ isSearchLoading: false });
                                                 }
                                             }}
-                                            className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform inline-block"
+                                            className="ios-tap-feedback active:scale-95 transition-transform duration-150 inline-block"
                                             style={{ color: "#2D6E3E", fontWeight: 600, background: "none", border: "none", cursor: "pointer", fontSize: 13 }}
                                         >
                                             {didYouMean}
@@ -891,7 +893,7 @@ export default function HomeClient({
                             </div>
                             <button
                                 onClick={clearMobileSearch}
-                                className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
+                                className="ios-tap-feedback active:scale-95 transition-transform duration-150"
                                 style={{ padding: "10px 18px", borderRadius: 20, background: "#fff", border: "1px solid rgba(15,20,16,0.08)", fontSize: 13, fontWeight: 600, color: "#5A625C", cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}
                             >
                                 {language === "uz" ? "Tozalash" : "Очистить"}
@@ -910,7 +912,7 @@ export default function HomeClient({
                                                 videoPreWarmer.triggerHaptic("selection");
                                                 selectFacet(on ? null : cat);
                                             }}
-                                            className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
+                                            className="ios-tap-feedback active:scale-95 transition-transform duration-150"
                                             style={{ padding: "8px 14px", borderRadius: 18, whiteSpace: "nowrap", background: on ? "#2D6E3E" : "#EAF3EC", border: "none", cursor: "pointer", fontSize: 13, fontWeight: on ? 700 : 500, color: on ? "#fff" : "#2D6E3E", transition: "background 160ms ease, color 160ms ease" }}
                                         >
                                             {label} <span style={{ opacity: 0.6 }}>({count as number})</span>
@@ -928,7 +930,7 @@ export default function HomeClient({
                         <button
                             onClick={() => { setActiveFilter("all"); setHomeActiveFilter("all"); router.push(`/${language}`); }}
                             aria-label={language === "uz" ? "Orqaga" : "Назад"}
-                            className="ios-icon-tap active:scale-90 transition-transform duration-150 will-change-transform"
+                            className="ios-icon-tap active:scale-90 transition-transform duration-150"
                             style={{ width: 40, height: 40, borderRadius: 14, background: "#fff", border: "1px solid rgba(15,20,16,0.08)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, boxShadow: "0 2px 8px rgba(15,20,16,0.04)" }}
                         >
                             <ChevronLeft size={20} color="#0F1410" />
@@ -954,7 +956,7 @@ export default function HomeClient({
                                     setActiveTab(tab);
                                     setHomeActiveTab(tab);
                                 }}
-                                className="ios-tap-feedback active:scale-95 transition-transform duration-150 will-change-transform"
+                                className="ios-tap-feedback active:scale-95 transition-transform duration-150"
                                 style={{
                                     flex: 1, paddingBottom: 12, paddingTop: 4, textAlign: "center",
                                     position: "relative", background: "none", border: "none", cursor: "pointer",
@@ -1005,7 +1007,7 @@ export default function HomeClient({
                         <button
                             onClick={() => { videoPreWarmer.triggerHaptic("light"); loadMoreSearch(); }}
                             disabled={isLoadingMoreSearch}
-                            className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150 will-change-transform"
+                            className="ios-tap-feedback active:scale-[0.98] transition-transform duration-150"
                             style={{ padding: "13px 28px", borderRadius: 16, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #2D6E3E 0%, #1F5A30 100%)", color: "#fff", fontSize: 14, fontWeight: 600, opacity: isLoadingMoreSearch ? 0.6 : 1, display: "flex", alignItems: "center", gap: 8 }}
                         >
                             {isLoadingMoreSearch && <Loader2 size={16} className="animate-spin" />}

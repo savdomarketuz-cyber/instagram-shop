@@ -328,9 +328,7 @@ body.affiliate-active footer {
 
 /* iOS System Utilities */
 .ios-tap-feedback {
-  transform: translate3d(0, 0, 0);
   transition: transform 140ms cubic-bezier(0.32, 0.72, 0, 1);
-  will-change: transform;
   -webkit-tap-highlight-color: transparent;
 }
 .ios-tap-feedback:active {
@@ -338,9 +336,7 @@ body.affiliate-active footer {
 }
 
 .ios-icon-tap {
-  transform: translate3d(0, 0, 0);
   transition: transform 140ms cubic-bezier(0.32, 0.72, 0, 1);
-  will-change: transform;
   -webkit-tap-highlight-color: transparent;
 }
 .ios-icon-tap:active {
