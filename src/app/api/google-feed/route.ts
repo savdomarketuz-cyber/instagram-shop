@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getProductSlug } from "@/lib/slugify";
-import { computeStandardDelivery } from "@/lib/delivery";
+import { computeStandardDelivery, isExpressFree } from "@/lib/delivery";
 import { fetchAllRows, fetchIndexableProducts, getProductImageUrls } from "@/lib/sitemap-data";
 import { getProductRealStock } from "@/lib/stock";
 import { getProductDescription, getProductIdentifiers, truncateAtWord } from "@/lib/seo-text";
@@ -29,7 +29,7 @@ export async function GET() {
         // Mahsulotlar — sitemap bilan AYNAN bir xil to'plam (fetchAllRows + isIndexableProduct)
         const [products, categories, brands] = await Promise.all([
             fetchIndexableProducts(
-                "id, name, name_uz, name_ru, price, old_price, image, images, image_metadata, description, description_uz, description_ru, stock, stock_details, article, model, category_id, brand_id, is_deleted, updated_at",
+                "id, name, name_uz, name_ru, price, old_price, image, images, image_metadata, description, description_uz, description_ru, stock, stock_details, article, model, category_id, brand_id, express_delivery, is_deleted, updated_at",
             ),
             fetchAllRows("categories", "id, name, name_ru, name_uz, parent_id", (q) => q.eq("is_deleted", false)),
             fetchAllRows("brands", "id, name", (q) => q.eq("is_deleted", false)),
@@ -111,8 +111,23 @@ ${identifierLines}
       <g:product_type>${catPath}</g:product_type>
       <g:shipping>
         <g:country>UZ</g:country>
+        <g:service>Standard</g:service>
         <g:price>${shippingPrice}</g:price>
-      </g:shipping>
+        <g:min_handling_time>0</g:min_handling_time>
+        <g:max_handling_time>1</g:max_handling_time>
+        <g:min_transit_time>1</g:min_transit_time>
+        <g:max_transit_time>2</g:max_transit_time>
+      </g:shipping>${p.express_delivery ? `
+      <g:shipping>
+        <g:country>UZ</g:country>
+        <g:region>Tashkent</g:region>
+        <g:service>Express 2 Hours</g:service>
+        <g:price>${isExpressFree(actualPrice) ? "0 UZS" : "25000 UZS"}</g:price>
+        <g:min_handling_time>0</g:min_handling_time>
+        <g:max_handling_time>0</g:max_handling_time>
+        <g:min_transit_time>0</g:min_transit_time>
+        <g:max_transit_time>1</g:max_transit_time>
+      </g:shipping>` : ""}
     </item>`;
         }).filter(Boolean).join("\n");
 

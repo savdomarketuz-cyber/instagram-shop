@@ -6,7 +6,7 @@ import { mapProduct } from "@/lib/mappers";
 import { getProductIdFromSlug, getProductSlug } from "@/lib/slugify";
 import { getProductImageUrls, isIndexableProduct } from "@/lib/sitemap-data";
 import { getProductRealStock } from "@/lib/stock";
-import { RETURN_WINDOW_DAYS } from "@/lib/delivery";
+import { RETURN_WINDOW_DAYS, computeStandardDelivery, isExpressFree } from "@/lib/delivery";
 import { PUBLIC_PRODUCT_COLUMNS } from "@/lib/public-product";
 import { cleanText, getProductDescription, getProductIdentifiers, truncateAtWord } from "@/lib/seo-text";
 import { notFound, permanentRedirect } from 'next/navigation';
@@ -257,6 +257,69 @@ function ProductDataWrapper({ params, product, canonicalSlug }: { params: { lang
     // Stok — src/lib/stock.ts (katalog, savat, checkout bilan bir xil qoida)
     const inStock = getProductRealStock(product) > 0;
 
+    // Google Shopping / AI Overviews uchun standart va tezkor yetkazish tafsilotlari
+    const standardShippingFee = computeStandardDelivery(product.price);
+    const shippingDetailsList: any[] = [
+        {
+            "@type": "OfferShippingDetails",
+            "shippingRate": {
+                "@type": "MonetaryAmount",
+                "value": standardShippingFee,
+                "currency": "UZS"
+            },
+            "shippingDestination": {
+                "@type": "DefinedRegion",
+                "addressCountry": "UZ"
+            },
+            "deliveryTime": {
+                "@type": "ShippingDeliveryTime",
+                "handlingTime": {
+                    "@type": "QuantitativeValue",
+                    "minValue": 0,
+                    "maxValue": 1,
+                    "unitCode": "DAY"
+                },
+                "transitTime": {
+                    "@type": "QuantitativeValue",
+                    "minValue": 1,
+                    "maxValue": 2,
+                    "unitCode": "DAY"
+                }
+            }
+        }
+    ];
+
+    if (product.express_delivery) {
+        shippingDetailsList.unshift({
+            "@type": "OfferShippingDetails",
+            "shippingRate": {
+                "@type": "MonetaryAmount",
+                "value": isExpressFree(product.price) ? 0 : 25000,
+                "currency": "UZS"
+            },
+            "shippingDestination": {
+                "@type": "DefinedRegion",
+                "addressCountry": "UZ",
+                "addressRegion": "Tashkent"
+            },
+            "deliveryTime": {
+                "@type": "ShippingDeliveryTime",
+                "handlingTime": {
+                    "@type": "QuantitativeValue",
+                    "minValue": 0,
+                    "maxValue": 0,
+                    "unitCode": "HOUR"
+                },
+                "transitTime": {
+                    "@type": "QuantitativeValue",
+                    "minValue": 1,
+                    "maxValue": 2,
+                    "unitCode": "HOUR"
+                }
+            }
+        });
+    }
+
     const offerBase: any = {
         "@type": "Offer",
         "url": canonicalProductUrl,
@@ -265,6 +328,7 @@ function ProductDataWrapper({ params, product, canonicalSlug }: { params: { lang
         "itemCondition": "https://schema.org/NewCondition",
         "availability": inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
         "seller": { "@type": "Organization", "name": "Velari" },
+        "shippingDetails": shippingDetailsList,
         "hasMerchantReturnPolicy": {
             "@type": "MerchantReturnPolicy",
             "applicableCountry": "UZ",
@@ -306,7 +370,7 @@ function ProductDataWrapper({ params, product, canonicalSlug }: { params: { lang
         "@context": "https://schema.org",
         "@type": "Product",
         "name": productName,
-        "description": truncateAtWord(descriptionText || productName, 500),
+        "description": truncateAtWord(descriptionText || productName, 2500),
         "sku": product.sku || product.article || product.id,
         "offers": offerBase
     };
