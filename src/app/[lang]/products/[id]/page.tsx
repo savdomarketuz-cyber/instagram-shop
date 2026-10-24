@@ -52,10 +52,34 @@ const getProductData = cache(async (identifier: string) => {
         if (isUUID) {
             query = query.or(`id.eq.${identifier},article.eq.${identifier}`);
         } else {
-            query = query.eq("article", identifier);
+            // Case-insensitive artikul qidirish + agar 'l' harfi 'I' bilan adashgan bo'lsa (Google crawl xatoligi)
+            const altIdentifier = identifier.startsWith('l') ? ('I' + identifier.slice(1)) : (identifier.startsWith('I') ? ('l' + identifier.slice(1)) : '');
+            if (altIdentifier) {
+                query = query.or(`article.eq.${identifier},article.ilike.${identifier},article.eq.${altIdentifier},article.ilike.${altIdentifier}`);
+            } else {
+                query = query.or(`article.eq.${identifier},article.ilike.${identifier}`);
+            }
         }
 
-        const { data } = await query.single();
+        let { data } = await query.limit(1).maybeSingle();
+
+        // ⚡ Agar topilmasa va identifikator maxsus eski slug bo'lsa (masalan: "vgr-v195-qora")
+        if (!data && !isUUID) {
+            const modelMatch = identifier.match(/(?:vgr[-_]?)?([a-z]\d{2,4}|[a-z]-\d{2,4}|\d{3,5})/i);
+            if (modelMatch) {
+                const rawModel = modelMatch[1];
+                const modelFormatted = rawModel.replace(/^([a-z])(\d+)$/i, '$1-$2').toUpperCase();
+                const { data: fallbackData } = await supabaseAdmin
+                    .from("products")
+                    .select(PUBLIC_PRODUCT_COLUMNS)
+                    .eq("is_deleted", false)
+                    .or(`model.ilike.${rawModel},model.ilike.${modelFormatted},name.ilike.%${rawModel}%,article.ilike.%${rawModel}%`)
+                    .limit(1)
+                    .maybeSingle();
+                if (fallbackData) data = fallbackData;
+            }
+        }
+
         if (!data) return null;
 
         const [brandRes, groupRes, warehousesRes] = await Promise.all([
