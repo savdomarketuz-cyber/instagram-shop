@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo, Suspense, startTransition } from "react";
 import Link from "next/link";
-import { Search, Sparkles, MapPin, ChevronRight, ChevronLeft, User, X, Loader2, LayoutGrid, Camera } from "lucide-react";
+import { Search, Sparkles, MapPin, ChevronRight, ChevronLeft, User, X, Loader2, LayoutGrid, Camera, BookOpen } from "lucide-react";
 import { useStore } from "@/store/store";
 import { useShallow } from "zustand/react/shallow";
 import { supabase } from "@/lib/supabase";
@@ -620,8 +620,7 @@ export default function HomeClient({
                             <ChevronRight size={13} color="#9AA29C" />
                         </div>
                     </button>
-                    <Link href={`/${language}/account`}
-                        prefetch={false}
+                    <Link href={`/${language}/blog`}
                         onClick={() => videoPreWarmer.triggerHaptic("light")}
                         className="ios-icon-tap active:scale-90 transition-transform duration-150 ease-out will-change-transform"
                         style={{
@@ -630,9 +629,11 @@ export default function HomeClient({
                             boxShadow: "0 2px 8px rgba(15,20,16,0.05)", position: "relative", flexShrink: 0,
                             textDecoration: "none",
                         }}
+                        title={language === "ru" ? "Блог и статьи" : "Foydali maqolalar (Blog)"}
+                        aria-label={language === "ru" ? "Блог и статьи" : "Foydali maqolalar"}
                     >
-                        <User size={18} color="#0F1410" />
-                        {user && <div style={{ position: "absolute", top: 8, right: 9, width: 8, height: 8, borderRadius: 4, background: "#2D6E3E", border: "2px solid #FAFAF6" }} />}
+                        <BookOpen size={18} color="#2D6E3E" />
+                        <div style={{ position: "absolute", top: 7, right: 8, width: 7, height: 7, borderRadius: 4, background: "#2D6E3E", border: "1.5px solid #fff" }} />
                     </Link>
                 </div>
                 <form onSubmit={handleMobileSearch}>
