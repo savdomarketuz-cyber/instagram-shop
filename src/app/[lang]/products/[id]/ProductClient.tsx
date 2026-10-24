@@ -1,3 +1,5 @@
+"use client";
+
 function getMatchingWarehouse(whs: any[] | null | undefined, prod: any): any {
     if (!whs || whs.length === 0) return null;
     const availableWhId = Object.keys(prod?.stockDetails || {}).find(id => Number((prod?.stockDetails as Record<string, number>)[id]) > 0);
@@ -21,8 +23,6 @@ function getMatchingWarehouse(whs: any[] | null | undefined, prod: any): any {
     }
     return whs.find((w: any) => w.name?.includes('ELECTRONIK')) || whs[0];
 }
-
-"use client";
 
 import { useStore } from "@/store/store";
 import { useRouter } from "next/navigation";
