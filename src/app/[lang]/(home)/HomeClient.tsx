@@ -299,22 +299,14 @@ export default function HomeClient({
         run();
     }, [user?.phone, allProducts.length]);
 
-    // "Siz uchun" tabida mahsulotlarni shaxsiy tartibga ko'ra qayta saralash.
+    // Mahsulotlar tartibi — barqaror (foydalanuvchi mahsulotga kirib chiqqanda o'rni almashib ketmasligi uchun)
     const displayProducts = useMemo(() => {
         if (searchResults) {
             // Kategoriya chipi tanlanganda natija serverdan shu kategoriya bilan qayta olinadi (selectFacet)
             return searchResults;
         }
-        if (activeTab === "for_you" && personalOrder.length > 0) {
-            const rank = new Map(personalOrder.map((id, i) => [id, i]));
-            return [...allProducts].sort((a, b) => {
-                const ra = rank.has(a.id) ? rank.get(a.id)! : Number.MAX_SAFE_INTEGER;
-                const rb = rank.has(b.id) ? rank.get(b.id)! : Number.MAX_SAFE_INTEGER;
-                return ra - rb;
-            });
-        }
         return allProducts;
-    }, [searchResults, activeFacet, activeTab, personalOrder, allProducts]);
+    }, [searchResults, allProducts]);
 
     // Scroll listener & position tracking (Banners & settings are server-rendered with ISR)
     useEffect(() => {
@@ -946,6 +938,8 @@ export default function HomeClient({
                     </div>
                 )}
 
+                {!searchResults && !urlCategory && <RecentlyViewed language={language} />}
+
                 {!searchResults && !urlCategory && (
                     <div style={{ display: "flex", borderBottom: "1px solid rgba(15,20,16,0.06)", marginBottom: 20, marginLeft: 8, marginRight: 8 }}>
                         {["for_you", "popular"].map(tab => (
@@ -1001,7 +995,6 @@ export default function HomeClient({
                 />
                 </Suspense>
 
-                {!searchResults && !urlCategory && <Suspense fallback={null}><RecentlyViewed language={language} /></Suspense>}
 
                 {searchResults && searchMeta?.hasMore && (
                     <div style={{ display: "flex", justifyContent: "center", margin: "24px 0 8px" }}>

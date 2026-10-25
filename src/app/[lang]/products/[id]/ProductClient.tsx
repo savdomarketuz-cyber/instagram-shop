@@ -171,7 +171,7 @@ export default function ProductClient({
     // Track recently viewed
     useEffect(() => {
         if (product?.id) {
-            trackProductView(product.id);
+            trackProductView(product);
             // Analytics: e-commerce mahsulot ko'rinishi
             ymViewProduct({ id: product.id, name: product.name, price: product.price, category: (product as any).category, brand: (product as any).brand });
         }

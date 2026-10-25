@@ -12,15 +12,41 @@ import { useStore } from "@/store/store";
 import { applyGlobalPromo } from "@/lib/promo-utils";
 
 const STORAGE_KEY = "velari_recently_viewed";
+const STORAGE_ITEMS_KEY = "velari_recently_viewed_items";
 const MAX_ITEMS = 10;
 
-export function trackProductView(productId: string) {
+export function trackProductView(productOrId: string | Product) {
+    if (!productOrId) return;
     try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        const ids: string[] = raw ? JSON.parse(raw) : [];
-        const filtered = ids.filter(id => id !== productId);
-        filtered.unshift(productId);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered.slice(0, MAX_ITEMS)));
+        const isObj = typeof productOrId === "object";
+        const productId = isObj ? productOrId.id : productOrId;
+        if (!productId) return;
+
+        // 1. Maintain IDs list (for analytics & AI recommendations)
+        const rawIds = localStorage.getItem(STORAGE_KEY);
+        const ids: string[] = rawIds ? JSON.parse(rawIds) : [];
+        const filteredIds = ids.filter(id => id !== productId);
+        filteredIds.unshift(productId);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredIds.slice(0, MAX_ITEMS)));
+
+        // 2. Maintain full product objects (for 0ms instant display without layout shift)
+        if (isObj) {
+            const rawItems = localStorage.getItem(STORAGE_ITEMS_KEY);
+            const items: any[] = rawItems ? JSON.parse(rawItems) : [];
+            const filteredItems = items.filter(item => item && item.id !== productId);
+            filteredItems.unshift({
+                id: productOrId.id,
+                name: productOrId.name,
+                name_uz: productOrId.name_uz,
+                name_ru: productOrId.name_ru,
+                price: productOrId.price,
+                oldPrice: productOrId.oldPrice,
+                image: productOrId.image,
+                images: productOrId.images,
+                image_metadata: productOrId.image_metadata
+            });
+            localStorage.setItem(STORAGE_ITEMS_KEY, JSON.stringify(filteredItems.slice(0, MAX_ITEMS)));
+        }
     } catch {
         // localStorage unavailable
     }
@@ -30,6 +56,18 @@ export function getRecentlyViewedIds(): string[] {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
         return raw ? JSON.parse(raw) : [];
+    } catch {
+        return [];
+    }
+}
+
+export function getRecentlyViewedProducts(): Product[] {
+    try {
+        const raw = localStorage.getItem(STORAGE_ITEMS_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed.filter(item => item && typeof item === "object" && item.id);
     } catch {
         return [];
     }
@@ -49,6 +87,14 @@ export default function RecentlyViewed({ language, currentProductId }: RecentlyV
     const personalOffers = useStore(s => s.personalOffers);
 
     useEffect(() => {
+        // 1. Instant local load (0ms — prevents layout shift)
+        const cached = getRecentlyViewedProducts().filter(p => p.id !== currentProductId);
+        if (cached.length > 0) {
+            setProducts(cached);
+            return;
+        }
+
+        // 2. Fallback for legacy ID-only storage
         const ids = getRecentlyViewedIds().filter(id => id !== currentProductId);
         if (ids.length === 0) return;
 
@@ -59,7 +105,6 @@ export default function RecentlyViewed({ language, currentProductId }: RecentlyV
             .eq("is_deleted", false)
             .then(({ data }) => {
                 if (!data) return;
-                // Preserve localStorage order
                 const mapped = ids
                     .map(id => data.find(d => d.id === id))
                     .filter(Boolean)
@@ -73,39 +118,48 @@ export default function RecentlyViewed({ language, currentProductId }: RecentlyV
     const fmtPrice = (n: number) =>
         n.toLocaleString("ru-RU") + (language === "ru" ? " сум" : " so'm");
 
-
     return (
-        <div className="md:hidden mt-8 mb-2">
+        <div className="w-full mt-6 mb-6 overflow-hidden select-none">
             {/* Header */}
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: "0 20px 12px" }}>
-                <h2 style={{ fontSize: 19, fontWeight: 700, letterSpacing: -0.4, color: "#0F1410", margin: 0 }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: "0 8px 12px" }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: -0.4, color: "#0F1410", margin: 0 }}>
                     {language === "uz" ? "Yaqinda ko'rdingiz" : "Недавно смотрели"}
                 </h2>
             </div>
 
-            {/* Horizontal scroll */}
+            {/* Horizontal scroll (Works on Mobile and Desktop) */}
             <div
-                style={{ display: "flex", gap: 10, overflowX: "auto", padding: "0 20px 4px", scrollbarWidth: "none" }}
-                className="no-scrollbar"
+                style={{ display: "flex", gap: 12, overflowX: "auto", padding: "2px 8px 8px", scrollbarWidth: "none" }}
+                className="no-scrollbar touch-pan-x"
             >
-                {products.map((product, idx) => {
+                {products.map((product) => {
                     const name = (language === "uz" ? product.name_uz : product.name_ru) || product.name;
                     const mainImg = product.images?.[0] || product.image || "/placeholder.png";
                     const slug = getProductSlug(product, language);
+
+                    const promoProduct = applyGlobalPromo(product, globalPromo);
+                    const personalPct = personalOffers[product.id] || 0;
+                    const hasPersonal = personalPct > 0;
+                    const displayPrice = hasPersonal
+                        ? Math.round(promoProduct.price * (1 - personalPct / 100))
+                        : promoProduct.price;
+                    const struckPrice = hasPersonal
+                        ? (promoProduct.oldPrice && promoProduct.oldPrice > promoProduct.price ? promoProduct.oldPrice : promoProduct.price)
+                        : (promoProduct.oldPrice && promoProduct.oldPrice > promoProduct.price ? promoProduct.oldPrice : null);
 
                     return (
                         <Link
                             key={product.id}
                             href={`/${language}/products/${slug}`}
+                            className="ios-tap-feedback active:scale-[0.97] transition-transform duration-150 shrink-0"
                             style={{
-                                flexShrink: 0,
-                                width: 130,
+                                width: 140,
                                 background: "#fff",
-                                borderRadius: 18,
+                                borderRadius: 20,
                                 overflow: "hidden",
                                 textDecoration: "none",
-                                boxShadow: "0 2px 8px rgba(15,20,16,0.05)",
-                                animation: `velari-cart-in ${260 + idx * 40}ms ${EASE} both`,
+                                border: "1px solid rgba(15,20,16,0.06)",
+                                boxShadow: "0 2px 10px rgba(15,20,16,0.04)",
                                 display: "flex",
                                 flexDirection: "column",
                             }}
@@ -115,13 +169,13 @@ export default function RecentlyViewed({ language, currentProductId }: RecentlyV
                                     src={product.image_metadata?.[mainImg]?.lowResUrl || mainImg}
                                     alt={name}
                                     fill
-                                    sizes="130px"
+                                    sizes="140px"
                                     style={{ objectFit: "cover" }}
                                     placeholder={product.image_metadata?.[mainImg]?.blurDataURL ? "blur" : "empty"}
                                     blurDataURL={product.image_metadata?.[mainImg]?.blurDataURL}
                                 />
                             </div>
-                            <div style={{ padding: "8px 10px 10px" }}>
+                            <div style={{ padding: "8px 10px 10px", display: "flex", flexDirection: "column", flex: 1, justifyContent: "space-between" }}>
                                 <div style={{
                                     fontSize: 12,
                                     fontWeight: 600,
@@ -132,47 +186,27 @@ export default function RecentlyViewed({ language, currentProductId }: RecentlyV
                                     WebkitLineClamp: 2,
                                     WebkitBoxOrient: "vertical" as const,
                                     overflow: "hidden",
-                                    marginBottom: 4,
+                                    marginBottom: 6,
                                 }}>
                                     {name}
                                 </div>
-                                {(() => {
-                                    // Smart chegirma (globalPromo) va shaxsiy chegirma (personalOffers) ni qo'llamiz
-                                    const promoProduct = applyGlobalPromo(product, globalPromo);
-                                    const personalPct = personalOffers[product.id] || 0;
-                                    const hasPersonal = personalPct > 0;
-                                    const displayPrice = hasPersonal
-                                        ? Math.round(promoProduct.price * (1 - personalPct / 100))
-                                        : promoProduct.price;
-                                    const struckPrice = hasPersonal
-                                        ? (promoProduct.oldPrice && promoProduct.oldPrice > promoProduct.price ? promoProduct.oldPrice : promoProduct.price)
-                                        : (promoProduct.oldPrice && promoProduct.oldPrice > promoProduct.price ? promoProduct.oldPrice : null);
-                                    const hasDiscount = displayPrice < product.price || !!struckPrice;
-                                    return (
-                                        <>
-                                            <div style={{ display: "flex", alignItems: "baseline", gap: 4, flexWrap: "wrap" }}>
-                                                <span style={{
-                                                    fontSize: 13,
-                                                    fontWeight: 700,
-                                                    color: (hasPersonal || (promoProduct.price < product.price)) ? "#4F46E5" : "#0F1410",
-                                                    letterSpacing: -0.2
-                                                }}>
-                                                    {fmtPrice(displayPrice)}
-                                                </span>
-                                                {struckPrice && (
-                                                    <span style={{ fontSize: 10, color: "#9AA29C", textDecoration: "line-through" }}>
-                                                        {fmtPrice(struckPrice)}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            {hasPersonal && (
-                                                <div style={{ fontSize: 9, fontWeight: 800, color: "#4F46E5", letterSpacing: 0.2, textTransform: "uppercase", marginTop: 1 }}>
-                                                    {language === "uz" ? `Siz uchun −${personalPct}%` : `Для вас −${personalPct}%`}
-                                                </div>
-                                            )}
-                                        </>
-                                    );
-                                })()}
+                                <div>
+                                    <div style={{ display: "flex", alignItems: "baseline", gap: 4, flexWrap: "wrap" }}>
+                                        <span style={{
+                                            fontSize: 13,
+                                            fontWeight: 700,
+                                            color: (hasPersonal || (promoProduct.price < product.price)) ? "#2D6E3E" : "#0F1410",
+                                            letterSpacing: -0.2
+                                        }}>
+                                            {fmtPrice(displayPrice)}
+                                        </span>
+                                        {struckPrice && (
+                                            <span style={{ fontSize: 10, color: "#9AA29C", textDecoration: "line-through" }}>
+                                                {fmtPrice(struckPrice)}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </Link>
                     );
