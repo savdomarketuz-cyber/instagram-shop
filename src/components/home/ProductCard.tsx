@@ -3,7 +3,7 @@
 import { memo, useState, useRef, useEffect, useMemo, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, Star, Minus, Plus, Sparkles, Truck, Store } from "lucide-react";
+import { Heart, Star, Minus, Plus, Sparkles, Truck, Store, Clapperboard } from "lucide-react";
 import { useStore } from "@/store/store";
 import { Product, CartItem } from "@/types";
 import { TranslationKeys } from "@/lib/translations";
@@ -266,6 +266,8 @@ export const ProductCard = memo(({
               isOriginal: item.isOriginal,
               rating: item.rating,
               reviewCount: item.reviewCount,
+              stockDetails: item.stockDetails,
+              stock: item.stock || totalStock,
               image_metadata: item.image_metadata,
               rect: {
                 top: rect.top,
@@ -329,6 +331,63 @@ export const ProductCard = memo(({
               </div>
             )}
 
+            {isVideo && (
+              <div style={{
+                position: "absolute",
+                top: 8,
+                left: badge ? 70 : 8,
+                padding: "3px 8px",
+                borderRadius: 9999,
+                background: "rgba(0, 0, 0, 0.55)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+                color: "#fff",
+                fontSize: 10,
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                zIndex: 2,
+              }}>
+                <Clapperboard size={11} color="#fff" />
+                <span>Reel</span>
+              </div>
+            )}
+
+            {/* AI Personalization Tag — floating on bottom-left of image (0 layout shift) */}
+            {reason && (
+              <div style={{
+                position: "absolute",
+                bottom: 8,
+                left: 8,
+                padding: "3px 8px",
+                borderRadius: 9999,
+                background: "rgba(255, 255, 255, 0.92)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                border: "1px solid rgba(255, 255, 255, 0.8)",
+                boxShadow: "0 2px 8px rgba(15, 20, 16, 0.08)",
+                display: "flex",
+                alignItems: "center",
+                gap: 3.5,
+                zIndex: 2,
+                maxWidth: "calc(100% - 16px)",
+              }}>
+                <Sparkles size={10} color={GREEN} style={{ flexShrink: 0 }} />
+                <span style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  color: GREEN,
+                  letterSpacing: -0.1,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}>
+                  {reason}
+                </span>
+              </div>
+            )}
+
             <WishBtn
               isWished={isWished}
               language={language}
@@ -377,20 +436,6 @@ export const ProductCard = memo(({
           }}>
             {name}
           </div>
-
-          {/* Personal reason — "nega bu senga" (halol, persona'dan) */}
-          {reason && (
-            <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
-              <Sparkles size={11} color={GREEN} style={{ flexShrink: 0 }} />
-              <span style={{
-                fontSize: 10.5, fontWeight: 500, color: GREEN, letterSpacing: -0.1,
-                lineHeight: 1.2, display: "-webkit-box", WebkitLineClamp: 1,
-                WebkitBoxOrient: "vertical" as const, overflow: "hidden",
-              }}>
-                {reason}
-              </span>
-            </div>
-          )}
 
           {/* Rating */}
           <div style={{ display: "flex", alignItems: "center", gap: 3.5, marginTop: 5 }}>

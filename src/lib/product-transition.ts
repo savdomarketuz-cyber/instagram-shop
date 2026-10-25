@@ -17,6 +17,8 @@ export interface TransitionProductPayload {
     isOriginal?: boolean;
     rating?: number;
     reviewCount?: number;
+    stockDetails?: Record<string, number>;
+    stock?: number;
     image_metadata?: any;
     rect: {
         top: number;

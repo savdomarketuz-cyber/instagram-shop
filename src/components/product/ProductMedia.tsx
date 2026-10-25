@@ -8,6 +8,7 @@ import { Product, MediaItemType } from "@/types";
 import { useStore } from "@/store/store";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
 import { getMetaForUrl } from "@/lib/imageVariants";
+import { productTransitionManager } from "@/lib/product-transition";
 
 interface ProductMediaProps {
     allMedia: MediaItemType[];
@@ -203,6 +204,9 @@ export const ProductMedia = ({
                                     onClick={() => {}}
                                     alt={product.name}
                                     priority={i === 0}
+                                    onLoadComplete={i === 0 ? () => {
+                                        productTransitionManager.markReady(product?.id);
+                                    } : undefined}
                                 />
                             </div>
 

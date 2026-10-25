@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { ChevronLeft, Heart, Search, Check, Star, Maximize2, ShoppingBag } from "lucide-react";
+import { ChevronLeft, Heart, Search, Check, Star, Maximize2, ShoppingBag, ChevronDown } from "lucide-react";
 import { productTransitionManager, type TransitionProductPayload } from "@/lib/product-transition";
 
 // Snappy firm timing (Total ~0.74s sequence):
@@ -160,12 +160,12 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
 
     // Desktop Left Gallery:
     const desktopThumbLeft = contentLeft;
-    const desktopThumbWidth = 160; // w-40 (160px)
-    const desktopHeroLeft = contentLeft + 200; // after 160px thumbnails + 40px gap
-    const desktopHeroWidth = Math.min(620, Math.max(380, col7Width - 200));
-    const desktopHeroHeight = 800; // Matches fixed h-[800px] in ProductClient.tsx exactly
-    const desktopHeroTop = 216; // header (~112px) + py-12 (~48px) + breadcrumbs (~56px) = exactly 216px
-    const desktopHeroRadius = 40; // rounded-[40px]
+    const desktopThumbWidth = 116; // Matches style={{ width: 116 }} in ProductClient.tsx exactly
+    const desktopHeroLeft = contentLeft + 148; // after 116px thumbnails + 32px (gap-8)
+    const desktopHeroWidth = Math.min(640, Math.max(380, col7Width - 148));
+    const desktopHeroHeight = 736; // Matches fixed h-[736px] in ProductClient.tsx exactly
+    const desktopHeroTop = 220; // header (112px) + py-12 (48px) + breadcrumbs (20px) + mb-10 (40px) = exactly 220px
+    const desktopHeroRadius = 32; // Matches rounded-[32px] in ProductClient.tsx
 
     // Desktop Right Info Panel:
     const desktopInfoTop = isLg ? desktopHeroTop : (desktopHeroTop + desktopHeroHeight + 24);
@@ -253,7 +253,7 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                             justifyContent: "space-between",
                             alignItems: "flex-start",
                             zIndex: 262,
-                            opacity: isFadingOut ? 0 : (showInfo ? 1 : 0),
+                            opacity: showInfo ? 1 : 0,
                             pointerEvents: "none",
                         }}
                     >
@@ -340,13 +340,14 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                                 position: "fixed",
                                 top: mobileImgTop + mobileImgHeight - 16,
                                 left: 0,
-                                width: mobileImgWidth,
+                                right: 0,
+                                width: "100%",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
                                 gap: 6,
                                 zIndex: 262,
-                                opacity: isFadingOut ? 0 : (showInfo ? 1 : 0),
+                                opacity: showInfo ? 1 : 0,
                                 transform: showInfo ? "scale(1)" : "scale(0.3)",
                                 transition: `opacity ${INFO_SLIDE_MS}ms ease-out, transform ${INFO_SLIDE_MS}ms cubic-bezier(0.34, 1.56, 0.64, 1)`,
                                 pointerEvents: "none",
@@ -435,6 +436,47 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                                 )}
                             </div>
                         </div>
+
+                        {/* Variants Pills (if available in payload.stockDetails) */}
+                        {payload.stockDetails && Object.keys(payload.stockDetails).length > 1 && (
+                            <div style={{ marginBottom: 14 }}>
+                                <p style={{ fontSize: 11, fontWeight: 600, color: "#737D75", letterSpacing: 0.2, textTransform: "uppercase", margin: "0 0 8px" }}>
+                                    {lang === "uz" ? "Variantlar" : "Варианты"}
+                                </p>
+                                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                    {Object.entries(payload.stockDetails).slice(0, 6).map(([variant], idx) => (
+                                        <div
+                                            key={variant}
+                                            style={{
+                                                padding: "6px 12px",
+                                                borderRadius: 12,
+                                                fontSize: 12,
+                                                fontWeight: 600,
+                                                background: idx === 0 ? "#111612" : "#FFFFFF",
+                                                color: idx === 0 ? "#FFFFFF" : "#111612",
+                                                border: idx === 0 ? "1.5px solid #111612" : "1px solid rgba(15,20,16,0.12)",
+                                            }}
+                                        >
+                                            {variant}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Warehouse Stock Badge */}
+                        {(payload.stock ?? (payload.stockDetails ? Object.values(payload.stockDetails).reduce((a, b) => a + (Number(b) || 0), 0) : 0)) > 0 && (
+                            <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#EAF3EC", borderRadius: 16, padding: "12px 14px", marginBottom: 10 }}>
+                                <div style={{ width: 28, height: 28, borderRadius: 9, background: "#2D6E3E", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                    <Check size={15} color="#fff" strokeWidth={3} />
+                                </div>
+                                <span style={{ fontSize: 13, fontWeight: 600, color: "#1F5A30" }}>
+                                    {lang === "uz" ? "Omborda mavjud" : "В наличии"}: <strong style={{ fontWeight: 700 }}>
+                                        {payload.stock ?? Object.values(payload.stockDetails || {}).reduce((a, b) => a + (Number(b) || 0), 0)} {lang === "uz" ? "ta" : "шт"}
+                                    </strong>
+                                </span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Mobile Floating Sticky CTA — Slides UP smoothly from bottom */}
@@ -503,16 +545,18 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                         <span style={{ color: "#111612", fontStyle: "italic" }}>{name}</span>
                     </div>
 
-                    {/* Left Thumbnails Column: Matches w-40 (160px) on the left */}
+                    {/* Left Thumbnails Column: Matches w-[116px] and h-[736px] (4.5 thumbnails visible) */}
                     <div
                         style={{
                             position: "fixed",
                             top: desktopHeroTop,
                             left: desktopThumbLeft,
                             width: desktopThumbWidth,
+                            height: desktopHeroHeight,
+                            overflow: "hidden",
                             display: "flex",
                             flexDirection: "column",
-                            gap: 16,
+                            gap: 10,
                             opacity: showInfo ? 1 : 0,
                             transform: showInfo ? "translateY(0)" : "translateY(16px)",
                             transition: `opacity ${INFO_SLIDE_MS}ms ease-out, transform ${INFO_SLIDE_MS}ms ${FIRM_EASE}`,
@@ -521,7 +565,8 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                         }}
                     >
                         <div
-                            className="aspect-[3/4] rounded-3xl overflow-hidden border-2 border-black scale-95 shadow-xl relative bg-gray-50"
+                            className="rounded-2xl overflow-hidden border-2 border-black scale-95 shadow-xl relative bg-gray-50 shrink-0"
+                            style={{ width: 116, height: 154.6, aspectRatio: "3 / 4" }}
                         >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
@@ -530,8 +575,72 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                                 className="w-full h-full object-cover"
                             />
                         </div>
-                        <div className="aspect-[3/4] rounded-3xl overflow-hidden border-2 border-gray-100 opacity-40 bg-gray-100" />
-                        <div className="aspect-[3/4] rounded-3xl overflow-hidden border-2 border-gray-100 opacity-20 bg-gray-100" />
+                        <div
+                            className="rounded-2xl overflow-hidden border-2 border-gray-100 opacity-60 bg-gray-50 shrink-0"
+                            style={{ width: 116, height: 154.6, aspectRatio: "3 / 4" }}
+                        >
+                            {payload.secondImgSrc ? (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img
+                                    src={payload.secondImgSrc}
+                                    alt=""
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-gray-100" />
+                            )}
+                        </div>
+                        <div
+                            className="rounded-2xl overflow-hidden border-2 border-gray-100 opacity-60 bg-gray-50 shrink-0"
+                            style={{ width: 116, height: 154.6, aspectRatio: "3 / 4" }}
+                        >
+                            {payload.images && payload.images[2] ? (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img
+                                    src={payload.images[2]}
+                                    alt=""
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-gray-100" />
+                            )}
+                        </div>
+                        <div
+                            className="rounded-2xl overflow-hidden border-2 border-gray-100 opacity-60 bg-gray-50 shrink-0"
+                            style={{ width: 116, height: 154.6, aspectRatio: "3 / 4" }}
+                        >
+                            {payload.images && payload.images[3] ? (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img
+                                    src={payload.images[3]}
+                                    alt=""
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-gray-100" />
+                            )}
+                        </div>
+                        {/* 5th thumbnail: peek preview cut in half */}
+                        <div
+                            className="rounded-2xl overflow-hidden border-2 border-gray-100 opacity-40 bg-gray-50 shrink-0"
+                            style={{ width: 116, height: 154.6, aspectRatio: "3 / 4" }}
+                        >
+                            {payload.images && payload.images[4] ? (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img
+                                    src={payload.images[4]}
+                                    alt=""
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-gray-100" />
+                            )}
+                        </div>
+                        {payload.images && payload.images.length > 4 && (
+                            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-white shadow-md border border-gray-200 flex items-center justify-center text-gray-700">
+                                <ChevronDown size={16} strokeWidth={2.5} />
+                            </div>
+                        )}
                     </div>
 
                     {/* Right Column Info Panel: Matches ProductClient.tsx col-5 */}
@@ -578,10 +687,33 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                                 </div>
                             </div>
 
+                            {/* Desktop Variants Pills */}
+                            {payload.stockDetails && Object.keys(payload.stockDetails).length > 1 && (
+                                <div className="mb-6">
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                                        {lang === "uz" ? "Variantlar" : "Варианты"}
+                                    </p>
+                                    <div className="flex gap-2 flex-wrap">
+                                        {Object.entries(payload.stockDetails).slice(0, 6).map(([variant], idx) => (
+                                            <div
+                                                key={variant}
+                                                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border ${idx === 0 ? "bg-black text-white border-black" : "bg-white text-black border-gray-200"}`}
+                                            >
+                                                {variant}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="flex items-center gap-3 bg-green-50 p-4 rounded-3xl border border-green-100 mb-6">
                                 <div className="p-2 bg-green-100 text-green-600 rounded-2xl"><Check size={18} strokeWidth={3} /></div>
                                 <p className="text-xs font-black text-gray-700 uppercase tracking-tighter">
-                                    {lang === "uz" ? "Mavjud" : "В наличии"}: <span className="text-black">{lang === "uz" ? "Omborda bor" : "Есть на складе"}</span>
+                                    {lang === "uz" ? "Mavjud" : "В наличии"}: <span className="text-black">
+                                        {((payload.stock ?? (payload.stockDetails ? Object.values(payload.stockDetails).reduce((a, b) => a + (Number(b) || 0), 0) : 0)) > 0)
+                                            ? `${payload.stock ?? Object.values(payload.stockDetails || {}).reduce((a, b) => a + (Number(b) || 0), 0)} ${lang === "uz" ? "ta omborda" : "шт на складе"}`
+                                            : (lang === "uz" ? "Omborda bor" : "Есть на складе")}
+                                    </span>
                                 </p>
                             </div>
 

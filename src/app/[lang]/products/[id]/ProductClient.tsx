@@ -30,7 +30,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { mapProduct, mapComment } from "@/lib/mappers";
 import { translations } from "@/lib/translations";
-import { Loader2, Plus, Minus, ShoppingBag, Heart, Star, Check, Truck, Clock, ShieldCheck, RefreshCw, Store as StoreIcon, ChevronRight, ChevronLeft, Maximize2, X } from "lucide-react";
+import { Loader2, Plus, Minus, ShoppingBag, Heart, Star, Check, Truck, Clock, ShieldCheck, RefreshCw, Store as StoreIcon, ChevronRight, ChevronLeft, ChevronDown, Maximize2, X } from "lucide-react";
 import Link from "next/link";
 import { getDeliveryDateText } from "@/lib/date-utils";
 import Image from "next/image";
@@ -117,9 +117,12 @@ export default function ProductClient({
     const router = useRouter();
     const productIdentifier = getProductIdFromSlug(params.id);
 
-    // Sahifa muvaffaqiyatli mount bo'lganda transition manager'ga xabar berish (miltillash va oq fon bo'lmasligi uchun)
+    // Rasm yuklanishi cho'zilib ketsa fallback: 1.2 soniyadan so'ng avtomatik markReady
     useEffect(() => {
-        productTransitionManager.markReady(productIdentifier);
+        const timer = setTimeout(() => {
+            productTransitionManager.markReady(productIdentifier);
+        }, 1200);
+        return () => clearTimeout(timer);
     }, [productIdentifier]);
     const { 
         addToCart, toggleWishlist, wishlist, cart, updateQuantity, 
@@ -166,6 +169,7 @@ export default function ProductClient({
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
     const [popularLoading, setPopularLoading] = useState(false);
     const [maxDesktopLoadIndex, setMaxDesktopLoadIndex] = useState(0);
+    const desktopThumbRef = useRef<HTMLDivElement>(null);
 
     // Infinite scroll state
     const [infiniteProducts, setInfiniteProducts] = useState<Product[]>([]);
@@ -865,7 +869,7 @@ export default function ProductClient({
 
             {/* Desktop View (E-commerce Grid Style) */}
             <div className="hidden md:block max-w-[1600px] mx-auto px-10 py-12">
-                <div className="flex items-center gap-2 text-xs text-gray-400 font-bold uppercase tracking-widest mb-10 overflow-x-auto no-scrollbar whitespace-nowrap">
+                <div className="flex items-center gap-2 text-xs text-gray-400 font-bold uppercase tracking-widest mb-10 overflow-x-auto no-scrollbar whitespace-nowrap h-5">
                     <Link href={`/${language}`} className="hover:text-black transition-colors">{language === 'uz' ? 'MAHSULOTLAR' : 'ТОВАРЫ'}</Link>
                     {categoryData && (
                         <>
@@ -880,56 +884,73 @@ export default function ProductClient({
                 </div>
 
                 <div className="grid grid-cols-12 gap-16">
-                    {/* Left: Gallery */}
-                    <div className="col-span-12 lg:col-span-7 flex gap-10 h-[800px]">
-                        <div className="flex flex-col gap-4 overflow-y-auto no-scrollbar w-40 shrink-0">
-                            {allMedia.map((media, i) => (
-                                <button 
-                                    key={i}
-                                    onClick={() => {
-                                        videoPreWarmer.triggerHaptic("selection");
-                                        setActiveImage(i);
-                                    }}
-                                    className={`ios-tap-feedback active:scale-95 aspect-[3/4] rounded-3xl overflow-hidden border-2 transition-transform duration-150 group ${activeImage === i ? "border-black scale-95 shadow-xl" : "border-gray-50 opacity-60 hover:opacity-100"}`}
-                                >
-                                    {media.type === 'image' ? (
-                                        <div className="relative w-full h-full bg-gray-50">
-                                            {/* Zanjirli yuklanish: Faqat o'z navbati kelgan rasm yuklanadi */}
-                                            {i <= maxDesktopLoadIndex ? (
-                                                <Image
-                                                    src={getOptimizedImageUrl(product.image_metadata, media.url, 'xs')}
-                                                    fill
-                                                    className="object-cover group-hover:scale-110 transition-transform"
-                                                    alt={`${(product[`name_${language}` as keyof typeof product] as string) || product.name} - ${i + 1}`}
-                                                    sizes="160px"
-                                                    loader={hasVariants(product.image_metadata, media.url) ? makeVariantLoader(product.image_metadata) : undefined}
-                                                    onLoad={() => setMaxDesktopLoadIndex(prev => Math.max(prev, i + 1))}
+                    {/* Left: Gallery (Exactly 4.5 thumbnails visible + down scroll button) */}
+                    <div className="col-span-12 lg:col-span-7 flex gap-8 h-[736px]">
+                        <div className="relative flex flex-col shrink-0" style={{ width: 116 }}>
+                            <div
+                                ref={desktopThumbRef}
+                                className="flex flex-col gap-2.5 overflow-y-auto no-scrollbar h-full touch-pan-y"
+                            >
+                                {allMedia.map((media, i) => (
+                                    <button 
+                                        key={i}
+                                        onClick={() => {
+                                            videoPreWarmer.triggerHaptic("selection");
+                                            setActiveImage(i);
+                                        }}
+                                        className={`ios-tap-feedback active:scale-95 shrink-0 rounded-2xl overflow-hidden border-2 transition-transform duration-150 group ${activeImage === i ? "border-black scale-95 shadow-xl" : "border-gray-100 opacity-60 hover:opacity-100"}`}
+                                        style={{ width: 116, height: 154.6, aspectRatio: "3 / 4" }}
+                                    >
+                                        {media.type === 'image' ? (
+                                            <div className="relative w-full h-full bg-gray-50">
+                                                {/* Zanjirli yuklanish: Faqat o'z navbati kelgan rasm yuklanadi */}
+                                                {i <= maxDesktopLoadIndex ? (
+                                                    <Image
+                                                        src={getOptimizedImageUrl(product.image_metadata, media.url, 'xs')}
+                                                        fill
+                                                        className="object-cover group-hover:scale-110 transition-transform"
+                                                        alt={`${(product[`name_${language}` as keyof typeof product] as string) || product.name} - ${i + 1}`}
+                                                        sizes="116px"
+                                                        loader={hasVariants(product.image_metadata, media.url) ? makeVariantLoader(product.image_metadata) : undefined}
+                                                        onLoad={() => setMaxDesktopLoadIndex(prev => Math.max(prev, i + 1))}
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full bg-gray-50/50 flex items-center justify-center animate-pulse" />
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="relative w-full h-full bg-black">
+                                                <video 
+                                                    src={media.url} 
+                                                    className="w-full h-full object-cover opacity-60"
+                                                    muted
+                                                    playsInline
                                                 />
-                                            ) : (
-                                                <div className="w-full h-full bg-gray-50/50 flex items-center justify-center animate-pulse" />
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className="relative w-full h-full bg-black">
-                                            <video 
-                                                src={media.url} 
-                                                className="w-full h-full object-cover opacity-60"
-                                                muted
-                                                playsInline
-                                            />
-                                            <div className="absolute inset-0 flex items-center justify-center text-white">
-                                                <div className="bg-black/50 backdrop-blur-md rounded-full p-2">
-                                                    <Loader2 size={20} className="animate-spin" />
+                                                <div className="absolute inset-0 flex items-center justify-center text-white">
+                                                    <div className="bg-black/50 backdrop-blur-md rounded-full p-2">
+                                                        <Loader2 size={20} className="animate-spin" />
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                            {allMedia.length > 4 && (
+                                <button
+                                    onClick={() => {
+                                        desktopThumbRef.current?.scrollBy({ top: 165, behavior: 'smooth' });
+                                    }}
+                                    aria-label="Scroll thumbnails down"
+                                    className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-white shadow-md border border-gray-200 flex items-center justify-center text-gray-700 hover:text-black hover:scale-105 active:scale-90 transition-transform z-10"
+                                >
+                                    <ChevronDown size={16} strokeWidth={2.5} />
                                 </button>
-                            ))}
+                            )}
                         </div>
                         <div
                             onClick={() => setLightboxIndex(activeImage)}
-                            className="flex-1 bg-white rounded-[40px] overflow-hidden relative group/hero shadow-xl shadow-black/5 border border-gray-100/80 cursor-pointer"
+                            className="flex-1 bg-white rounded-[32px] overflow-hidden relative group/hero shadow-xl shadow-black/5 border border-gray-100/80 cursor-pointer h-full"
                         >
                             {allMedia[activeImage]?.type === 'video' ? (
                                 <div className="w-full h-full bg-black relative flex items-center justify-center">
@@ -954,7 +975,10 @@ export default function ProductClient({
                                     quality={85}
                                     fetchPriority="high"
                                     loader={hasVariants(product.image_metadata, allMedia[activeImage]?.url || "") ? makeVariantLoader(product.image_metadata) : undefined}
-                                    onLoad={() => setMaxDesktopLoadIndex(prev => Math.max(prev, 1))}
+                                    onLoad={() => {
+                                        setMaxDesktopLoadIndex(prev => Math.max(prev, 1));
+                                        productTransitionManager.markReady(product?.id || productIdentifier);
+                                    }}
                                 />
                             )}
                             
