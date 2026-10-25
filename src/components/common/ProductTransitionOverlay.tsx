@@ -103,11 +103,11 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
 
     if (!payload) return null;
 
-    const isMobile = typeof window !== "undefined" ? window.innerWidth < 1024 : true;
+    const isMobile = typeof window !== "undefined" ? window.innerWidth < 768 : true;
     const windowWidth = typeof window !== "undefined" ? window.innerWidth : 390;
 
     // --- 1:1 PIXEL-PERFECT DESTINATION GEOMETRY MATCHING REAL PRODUCT PAGE ---
-    // Mobile matches ProductMedia (pt-2 pb-6 px-5 min-w-[85vw]) + ProductInfo (padding 20px 20px 120px)
+    // Mobile (< 768px) matches ProductMedia (pt-2 pb-6 px-5 min-w-[85vw]) + ProductInfo (padding 20px 20px 120px)
     const mobileImgWidth = windowWidth * 0.85; // exactly 85vw
     const mobileImgHeight = mobileImgWidth * (4 / 3); // aspect-[3/4]
     const mobileImgTop = 8; // pt-2
@@ -115,22 +115,24 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
     const mobileImgRadius = 28; // rounded-[28px]
     const mobileInfoTop = mobileImgTop + mobileImgHeight + 24; // pb-6 ends, ProductInfo begins
 
-    // Desktop matches ProductClient (max-w-[1600px] px-10 py-12, 12-col grid, col-7 left gallery, col-5 right info)
+    // Desktop (>= 768px) matches ProductClient (max-w-[1600px] px-10 py-12, 12-col grid)
     const containerWidth = Math.min(1600, windowWidth);
     const containerLeft = (windowWidth - containerWidth) / 2;
     const contentLeft = containerLeft + 40; // px-10
     const availableWidth = containerWidth - 80;
-    const col7Width = (availableWidth - 64) * (7 / 12);
-    const col5Width = (availableWidth - 64) * (5 / 12);
+
+    const isLg = windowWidth >= 1024;
+    const col7Width = isLg ? (availableWidth - 64) * (7 / 12) : availableWidth;
+    const col5Width = isLg ? (availableWidth - 64) * (5 / 12) : availableWidth;
 
     const desktopHeroLeft = contentLeft + 200; // after 160px thumbnails + 40px gap
     const desktopHeroWidth = Math.min(620, Math.max(380, col7Width - 200));
     const desktopHeroHeight = Math.min(760, desktopHeroWidth * (4 / 3));
-    const desktopHeroTop = 175; // header + py-12 breadcrumbs
+    const desktopHeroTop = 175; // header (~112px) + py-12 breadcrumbs (~60px)
     const desktopHeroRadius = 40;
 
-    const desktopInfoTop = desktopHeroTop + 16;
-    const desktopInfoLeft = desktopHeroLeft + desktopHeroWidth + 56;
+    const desktopInfoTop = isLg ? (desktopHeroTop + 16) : (desktopHeroTop + desktopHeroHeight + 24);
+    const desktopInfoLeft = isLg ? (desktopHeroLeft + desktopHeroWidth + 56) : contentLeft;
     const desktopInfoWidth = Math.min(480, col5Width);
 
     // Dynamic destination based on viewport
