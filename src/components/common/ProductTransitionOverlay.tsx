@@ -6,42 +6,47 @@ import Image from "next/image";
 import { productTransitionManager, type TransitionProductPayload } from "@/lib/product-transition";
 import { getOptimizedImageUrl, hasVariants, makeVariantLoader, getMetaForUrl } from "@/lib/imageVariants";
 
+const EXPAND_DURATION_MS = 340;
+
 export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: string }) {
     const pathname = usePathname();
     const [payload, setPayload] = useState<TransitionProductPayload | null>(null);
     const [isExpanded, setIsExpanded] = useState(false);
     const [isFadingOut, setIsFadingOut] = useState(false);
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Subscribe to transition events
+    const startTimeRef = useRef<number>(0);
+    const dismissTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const safetyTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Subscribe to product transition trigger
     useEffect(() => {
         const unsubscribe = productTransitionManager.subscribe((newPayload) => {
             if (newPayload) {
-                if (timeoutRef.current) clearTimeout(timeoutRef.current);
-                if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
+                if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+                if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
 
+                startTimeRef.current = Date.now();
                 setPayload(newPayload);
                 setIsExpanded(false);
                 setIsFadingOut(false);
 
-                // Start expansion on next animation frame
+                // Start expansion on the next animation frame
                 requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
                         setIsExpanded(true);
                     });
                 });
 
-                // Safety timeout: only if route navigation fails completely (3 seconds)
-                timeoutRef.current = setTimeout(() => {
-                    handleDismiss();
+                // Safety timeout: dismiss after 3s if user aborts or navigation fails
+                safetyTimerRef.current = setTimeout(() => {
+                    dismissOverlay();
                 }, 3000);
             } else {
-                handleDismiss();
+                dismissOverlay();
             }
         });
 
-        // Popstate / back button resets immediately
+        // Browser back/forward button resets immediately
         const handlePopstate = () => {
             productTransitionManager.clear();
             setPayload(null);
@@ -53,30 +58,34 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
         return () => {
             unsubscribe();
             window.removeEventListener("popstate", handlePopstate);
-            if (timeoutRef.current) clearTimeout(timeoutRef.current);
-            if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
+            if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+            if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
         };
     }, []);
 
-    // When pathname changes to product detail page, handoff smoothly
+    // When the target product page is mounted by Next.js
     useEffect(() => {
         if (payload && pathname?.includes("/products/")) {
-            const timer = setTimeout(() => {
-                handleDismiss();
-            }, 80);
-            return () => clearTimeout(timer);
+            // Calculate how much of the expansion animation has elapsed
+            const elapsed = Date.now() - startTimeRef.current;
+            const remaining = Math.max(0, EXPAND_DURATION_MS - elapsed);
+
+            // Wait until expansion is 100% finished before dissolving into the real page
+            if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+            dismissTimerRef.current = setTimeout(() => {
+                dismissOverlay();
+            }, remaining + 20);
         }
     }, [pathname, payload]);
 
-    const handleDismiss = () => {
+    const dismissOverlay = () => {
         setIsFadingOut(true);
-        if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
-        fadeTimeoutRef.current = setTimeout(() => {
+        setTimeout(() => {
             setPayload(null);
             setIsExpanded(false);
             setIsFadingOut(false);
             productTransitionManager.clear();
-        }, 220);
+        }, 140);
     };
 
     if (!payload) return null;
@@ -84,16 +93,13 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
     const isMobile = typeof window !== "undefined" ? window.innerWidth < 1024 : true;
     const windowWidth = typeof window !== "undefined" ? window.innerWidth : 390;
 
-    // --- EXACT TARGET POSITIONING ---
-    // Mobile: at top (under minimal status bar) with px-5
-    // Desktop: in left gallery column (NOT center), exactly where ProductClient renders it!
-    let targetTop = 16;
+    // --- PIXEL-MATCHING DESTINATION POSITIONS ---
+    let targetTop = 14;
     let targetLeft = 20;
     let targetWidth = Math.min(windowWidth - 40, 480);
     let targetHeight = targetWidth * (4 / 3);
     let targetBorderRadius = 28;
 
-    // Desktop Info position (to the right of the image)
     let infoTop = targetTop + targetHeight + 16;
     let infoLeft = targetLeft;
     let infoWidth = targetWidth;
@@ -104,20 +110,20 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
         const contentLeft = containerLeft + 40; // px-10
 
         // In ProductClient: 12-col grid. Left col-7 has thumbnails (160px) + gap-10 (40px) = 200px
-        const galleryLeft = contentLeft + 200;
-        const availableCol7 = (containerWidth - 80) * (7 / 12) - 40;
-        const mainImgW = Math.min(620, Math.max(420, availableCol7 - 200));
+        const availableWidth = containerWidth - 80;
+        const col7Width = (availableWidth - 64) * (7 / 12);
+        const mainImgW = Math.min(620, Math.max(380, col7Width - 200));
 
-        targetTop = 180; // Below header (~112px) + py-12 breadcrumbs (~60px)
-        targetLeft = galleryLeft;
+        targetTop = 175; // Below header (~112px) + py-12 breadcrumbs (~60px)
+        targetLeft = contentLeft + 200;
         targetWidth = mainImgW;
         targetHeight = Math.min(760, mainImgW * (4 / 3));
         targetBorderRadius = 40; // matches ProductClient rounded-[40px]
 
         // Right side info (col-5)
-        infoTop = targetTop + 20;
-        infoLeft = targetLeft + targetWidth + 48; // gap-16
-        infoWidth = Math.min(480, (containerWidth - 80) * (5 / 12) - 40);
+        infoTop = targetTop + 16;
+        infoLeft = targetLeft + targetWidth + 56;
+        infoWidth = Math.min(480, (availableWidth - 64) * (5 / 12));
     }
 
     const boxStyle: React.CSSProperties = {
@@ -132,8 +138,8 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
         boxShadow: isExpanded
             ? "0 25px 50px -12px rgba(15,20,16,0.18), 0 2px 8px rgba(15,20,16,0.06)"
             : "0 4px 20px rgba(15,20,16,0.06)",
-        transition: "all 480ms cubic-bezier(0.16, 1, 0.3, 1)",
-        zIndex: 260, // Above header (z-90 / z-120)
+        transition: `all ${EXPAND_DURATION_MS}ms cubic-bezier(0.2, 0.9, 0.3, 1)`,
+        zIndex: 260,
         willChange: "top, left, width, height, border-radius",
     };
 
@@ -150,16 +156,16 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
             className={`fixed inset-0 z-[250] ${isFadingOut ? "pointer-events-none" : "pointer-events-auto"}`}
             style={{
                 opacity: isFadingOut ? 0 : 1,
-                transition: "opacity 220ms ease-out",
+                transition: "opacity 140ms ease-out",
             }}
             aria-hidden="true"
         >
-            {/* Full-screen clean backdrop that covers the old page smoothly */}
+            {/* Smooth full-screen backdrop */}
             <div
                 className="absolute inset-0 bg-[#FAFAF6]"
                 style={{
                     opacity: isExpanded ? 0.98 : 0,
-                    transition: "opacity 420ms cubic-bezier(0.16, 1, 0.3, 1)",
+                    transition: `opacity ${EXPAND_DURATION_MS - 40}ms ease-out`,
                 }}
             />
 
@@ -203,8 +209,8 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                     left: infoLeft,
                     width: infoWidth,
                     opacity: isExpanded ? 1 : 0,
-                    transform: isExpanded ? "translateY(0)" : "translateY(24px)",
-                    transition: "all 440ms cubic-bezier(0.16, 1, 0.3, 1) 120ms",
+                    transform: isExpanded ? "translateY(0)" : "translateY(20px)",
+                    transition: `all ${EXPAND_DURATION_MS - 40}ms cubic-bezier(0.2, 0.9, 0.3, 1) 40ms`,
                     zIndex: 261,
                 }}
             >

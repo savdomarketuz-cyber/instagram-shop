@@ -635,7 +635,7 @@ export default function ProductClient({
     if (!product) return null;
 
     return (
-        <div className="bg-white min-h-screen text-black font-sans selection:bg-black selection:text-white animate-in fade-in duration-500">
+        <div className="bg-white min-h-screen text-black font-sans selection:bg-black selection:text-white">
             
             {/* Sticky Quick-Buy Bar (Desktop) */}
             <div className={`hidden md:flex fixed top-20 md:top-24 left-0 right-0 bg-white/95 backdrop-blur-2xl z-[90] border-b border-gray-100 py-4 shadow-2xl transition-transform duration-300 transition-opacity duration-300 ease-out will-change-transform transform ${isScrolledPast ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}`}>
