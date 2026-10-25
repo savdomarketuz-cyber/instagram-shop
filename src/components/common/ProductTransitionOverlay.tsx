@@ -1,20 +1,19 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import Image from "next/image";
 import { ChevronLeft, Heart, Search, Check, Star } from "lucide-react";
 import { productTransitionManager, type TransitionProductPayload } from "@/lib/product-transition";
-import { getOptimizedImageUrl, hasVariants, makeVariantLoader, getMetaForUrl } from "@/lib/imageVariants";
 
-// 1-second staged choreography:
-// 1) 0ms -> 480ms: Only the image expands from card rect into 1:1 destination position
-// 2) 480ms -> 860ms: Details (badge, title, rating, price card, controls) slide down into place
-// 3) 900ms -> 1040ms: Seamless 140ms dissolve into the pre-mounted destination page
-const IMAGE_EXPAND_MS = 480;
-const INFO_SLIDE_MS = 380;
-const FADE_OUT_START_MS = 900;
-const FADE_OUT_DURATION = 140;
-const CLEANUP_MS = 1060;
+// Firm, snappy Apple-grade timing (Total ~0.76s sequence):
+// 1) 0ms -> 360ms: Image expands FIRMLY and SNAPPY to the LEFT position (0 blur, original catalog image)
+// 2) 360ms -> 640ms: Details (badge, title, rating, price card) slide down firmly into place
+// 3) 660ms -> 760ms: Clean 100ms handoff to the pre-mounted real page
+const IMAGE_EXPAND_MS = 360;
+const INFO_SLIDE_MS = 280;
+const FADE_OUT_START_MS = 660;
+const FADE_OUT_DURATION = 100;
+const CLEANUP_MS = 780;
+const FIRM_EASE = "cubic-bezier(0.2, 0.9, 0.25, 1)";
 
 export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: string }) {
     const [payload, setPayload] = useState<TransitionProductPayload | null>(null);
@@ -57,24 +56,24 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                 setShowInfo(false);
                 setIsFadingOut(false);
 
-                // Stage 1: Card image expands into destination (starts on next frame)
+                // Stage 1: Card image expands firmly to the left destination
                 requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
                         setIsExpanded(true);
                     });
                 });
 
-                // Stage 2: After image expansion completes (480ms), show & slide down product info
+                // Stage 2: After image expansion completes (360ms), slide down product info
                 timerInfoRef.current = setTimeout(() => {
                     setShowInfo(true);
                 }, IMAGE_EXPAND_MS);
 
-                // Stage 3: At 900ms, start gentle fade-out into underlying real page
+                // Stage 3: At 660ms, gentle dissolve into real page
                 timerFadeRef.current = setTimeout(() => {
                     setIsFadingOut(true);
                 }, FADE_OUT_START_MS);
 
-                // Stage 4: Overlay cleanup at 1060ms (~1s total sequence complete)
+                // Stage 4: Overlay cleanup at 780ms
                 timerDoneRef.current = setTimeout(() => {
                     resetState();
                 }, CLEANUP_MS);
@@ -106,34 +105,35 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
     const isMobile = typeof window !== "undefined" ? window.innerWidth < 768 : true;
     const windowWidth = typeof window !== "undefined" ? window.innerWidth : 390;
 
-    // --- 1:1 PIXEL-PERFECT DESTINATION GEOMETRY MATCHING REAL PRODUCT PAGE ---
-    // Mobile (< 768px) matches ProductMedia (pt-2 pb-6 px-5 min-w-[85vw]) + ProductInfo (padding 20px 20px 120px)
-    const mobileImgWidth = windowWidth * 0.85; // exactly 85vw
-    const mobileImgHeight = mobileImgWidth * (4 / 3); // aspect-[3/4]
-    const mobileImgTop = 8; // pt-2
-    const mobileImgLeft = 20; // px-5
-    const mobileImgRadius = 28; // rounded-[28px]
-    const mobileInfoTop = mobileImgTop + mobileImgHeight + 24; // pb-6 ends, ProductInfo begins
+    // --- LEFT-ALIGNED GEOMETRY (NO CENTER FLOATING) ---
+    // Mobile (< 768px): Left: 16px, aligned strictly to the left
+    const mobileImgLeft = 16;
+    const mobileImgTop = 8;
+    const mobileImgWidth = Math.min(windowWidth - 32, 420);
+    const mobileImgHeight = mobileImgWidth * (4 / 3);
+    const mobileImgRadius = 24;
+    const mobileInfoTop = mobileImgTop + mobileImgHeight + 20;
 
-    // Desktop (>= 768px) matches ProductClient (max-w-[1600px] px-10 py-12, 12-col grid)
+    // Desktop (>= 768px): Strictly on the LEFT (starting at contentLeft)
     const containerWidth = Math.min(1600, windowWidth);
     const containerLeft = (windowWidth - containerWidth) / 2;
-    const contentLeft = containerLeft + 40; // px-10
+    const contentLeft = containerLeft + 40; // px-10 left margin
     const availableWidth = containerWidth - 80;
 
     const isLg = windowWidth >= 1024;
     const col7Width = isLg ? (availableWidth - 64) * (7 / 12) : availableWidth;
     const col5Width = isLg ? (availableWidth - 64) * (5 / 12) : availableWidth;
 
-    const desktopHeroLeft = contentLeft + 200; // after 160px thumbnails + 40px gap
-    const desktopHeroWidth = Math.min(620, Math.max(380, col7Width - 200));
+    // Placed strictly on the LEFT at contentLeft (NO 200px empty gap pushing to center!)
+    const desktopHeroLeft = contentLeft;
+    const desktopHeroWidth = Math.min(580, col7Width);
     const desktopHeroHeight = Math.min(760, desktopHeroWidth * (4 / 3));
-    const desktopHeroTop = 175; // header (~112px) + py-12 breadcrumbs (~60px)
-    const desktopHeroRadius = 40;
+    const desktopHeroTop = 160;
+    const desktopHeroRadius = 36;
 
-    const desktopInfoTop = isLg ? (desktopHeroTop + 16) : (desktopHeroTop + desktopHeroHeight + 24);
-    const desktopInfoLeft = isLg ? (desktopHeroLeft + desktopHeroWidth + 56) : contentLeft;
-    const desktopInfoWidth = Math.min(480, col5Width);
+    const desktopInfoTop = isLg ? desktopHeroTop : (desktopHeroTop + desktopHeroHeight + 24);
+    const desktopInfoLeft = isLg ? (desktopHeroLeft + desktopHeroWidth + 48) : contentLeft;
+    const desktopInfoWidth = Math.min(500, col5Width);
 
     // Dynamic destination based on viewport
     const targetTop = isMobile ? mobileImgTop : desktopHeroTop;
@@ -153,9 +153,9 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
         overflow: "hidden",
         border: isExpanded ? "1px solid #F3F4F6" : "1px solid rgba(15,20,16,0.06)",
         boxShadow: isExpanded
-            ? "0 1px 2px 0 rgba(0, 0, 0, 0.05)"
+            ? "0 4px 20px -2px rgba(15,20,16,0.10)"
             : "0 4px 20px rgba(15,20,16,0.06)",
-        transition: `top ${IMAGE_EXPAND_MS}ms cubic-bezier(0.16, 1, 0.3, 1), left ${IMAGE_EXPAND_MS}ms cubic-bezier(0.16, 1, 0.3, 1), width ${IMAGE_EXPAND_MS}ms cubic-bezier(0.16, 1, 0.3, 1), height ${IMAGE_EXPAND_MS}ms cubic-bezier(0.16, 1, 0.3, 1), border-radius ${IMAGE_EXPAND_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
+        transition: `top ${IMAGE_EXPAND_MS}ms ${FIRM_EASE}, left ${IMAGE_EXPAND_MS}ms ${FIRM_EASE}, width ${IMAGE_EXPAND_MS}ms ${FIRM_EASE}, height ${IMAGE_EXPAND_MS}ms ${FIRM_EASE}, border-radius ${IMAGE_EXPAND_MS}ms ${FIRM_EASE}`,
         zIndex: 260,
         willChange: "top, left, width, height, border-radius",
     };
@@ -165,8 +165,9 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
         return n.toLocaleString("ru-RU") + (lang === "ru" ? " сум" : " so'm");
     };
 
-    const meta = getMetaForUrl(payload.image_metadata, payload.image);
     const isVideo = payload.image?.toLowerCase().endsWith(".mp4");
+    // Use the exact crisp image bitmap already displayed on the card (NO blurDataURL, NO waiting!)
+    const activeImageSrc = payload.cardImgSrc || payload.image;
 
     return (
         <div
@@ -177,7 +178,7 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
             }}
             aria-hidden="true"
         >
-            {/* Background 1:1 match: Mobile has #fff behind media and #FAFAF6 below it */}
+            {/* Background: Mobile has #fff behind media and #FAFAF6 below it */}
             {isMobile ? (
                 <div
                     className="absolute inset-0 pointer-events-none"
@@ -199,7 +200,7 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                 />
             )}
 
-            {/* Mobile Floating Top Controls: Exact 1:1 match with ProductMedia.tsx */}
+            {/* Mobile Floating Top Controls */}
             {isMobile && (
                 <div
                     style={{
@@ -230,7 +231,7 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                 </div>
             )}
 
-            {/* Stage 1: Expanding Card Hero Element (glides from card position to left-aligned 85vw) */}
+            {/* Stage 1: Expanding Card Hero Element (Firm, sharp, 100% crisp original catalog image) */}
             <div style={boxStyle}>
                 <div className="relative w-full h-full bg-[#F5F5F0]">
                     {isVideo ? (
@@ -243,20 +244,12 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                             className="w-full h-full object-cover"
                         />
                     ) : (
-                        <Image
-                            src={getOptimizedImageUrl(payload.image_metadata, payload.image, "md")}
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                            src={activeImageSrc}
                             alt={name}
-                            fill
-                            priority
-                            sizes={isMobile ? "85vw" : "620px"}
-                            className="object-cover"
-                            loader={
-                                hasVariants(payload.image_metadata, payload.image)
-                                    ? makeVariantLoader(payload.image_metadata)
-                                    : undefined
-                            }
-                            placeholder={meta?.blurDataURL ? "blur" : "empty"}
-                            blurDataURL={meta?.blurDataURL}
+                            className="w-full h-full object-cover select-none pointer-events-none"
+                            draggable={false}
                         />
                     )}
                 </div>
@@ -274,8 +267,8 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                         background: "#FAFAF6",
                         padding: "20px 20px 120px",
                         opacity: showInfo ? 1 : 0,
-                        transform: showInfo ? "translateY(0)" : "translateY(-20px)",
-                        transition: `opacity ${INFO_SLIDE_MS}ms ease-out, transform ${INFO_SLIDE_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
+                        transform: showInfo ? "translateY(0)" : "translateY(-16px)",
+                        transition: `opacity ${INFO_SLIDE_MS}ms ease-out, transform ${INFO_SLIDE_MS}ms ${FIRM_EASE}`,
                         zIndex: 261,
                         pointerEvents: "none",
                         overflow: "hidden",
@@ -332,7 +325,7 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                 </div>
             )}
 
-            {/* Stage 2 (Desktop): Right Column Info 1:1 match with ProductClient.tsx */}
+            {/* Stage 2 (Desktop): Right Column Info (Firmly to the right of the left-aligned hero image) */}
             {!isMobile && (
                 <div
                     style={{
@@ -341,8 +334,8 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                         left: desktopInfoLeft,
                         width: desktopInfoWidth,
                         opacity: showInfo ? 1 : 0,
-                        transform: showInfo ? "translateY(0)" : "translateY(-20px)",
-                        transition: `opacity ${INFO_SLIDE_MS}ms ease-out, transform ${INFO_SLIDE_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
+                        transform: showInfo ? "translateY(0)" : "translateY(-16px)",
+                        transition: `opacity ${INFO_SLIDE_MS}ms ease-out, transform ${INFO_SLIDE_MS}ms ${FIRM_EASE}`,
                         zIndex: 261,
                         pointerEvents: "none",
                     }}

@@ -11,6 +11,7 @@ export interface TransitionProductPayload {
     price: number;
     oldPrice?: number;
     image: string;
+    cardImgSrc?: string;
     image_metadata?: any;
     rect: {
         top: number;

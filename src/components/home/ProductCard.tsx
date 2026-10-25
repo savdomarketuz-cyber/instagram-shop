@@ -246,6 +246,9 @@ export const ProductCard = memo(({
 
           if (imgWrapRef.current) {
             const rect = imgWrapRef.current.getBoundingClientRect();
+            const imgEl = imgWrapRef.current.querySelector("img") as HTMLImageElement | null;
+            const cardImgSrc = imgEl?.currentSrc || imgEl?.src || getOptimizedImageUrl(item.image_metadata, mainMedia, "xs");
+
             productTransitionManager.trigger({
               id: item.id,
               name: item.name,
@@ -254,6 +257,7 @@ export const ProductCard = memo(({
               price: item.price,
               oldPrice: item.oldPrice,
               image: mainMedia,
+              cardImgSrc: cardImgSrc,
               image_metadata: item.image_metadata,
               rect: {
                 top: rect.top,
