@@ -13,7 +13,7 @@ import { notFound, permanentRedirect } from 'next/navigation';
 
 import { cache } from 'react';
 
-export const revalidate = 86400; // 24 soat cache (Admin panelda mahsulot ozgarsa revalidatePath orqali darhol yangilanadi)
+export const revalidate = false; // Cheksiz kesh (faqat admin panelda mahsulot o'zgarganda revalidatePath orqali yangilanadi)
 
 // ⚡ Fast 404 tekshiruvi: noto'g'ri identifikatorlar uchun Supabase so'rovlarini chetlab o'tish
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -121,29 +121,28 @@ function decodeSlug(slug: string): string {
     }
 }
 
-// ⚡ Eng mashhur 200 mahsulotni SEO slug shaklida pre-render (CDN'dan 0ms).
-// Har mahsulot uchun uz va ru slug — sitemap/canonical bilan AYNAN mos bo'ladi.
-// (Avval UUID + artikul render qilinardi: UUID dublikat, artikul esa buzilgan 404 edi.)
-export async function generateStaticParams() {
+// ⚡ Eng mashhur mahsulotlarni SEO slug shaklida pre-render (CDN'dan 0ms tayyor kesh).
+// Tilga mos holda (uz/ru) har mahsulot uchun slug shakllanadi va stock=0 bo'lsa ham
+// Googlebot/foydalanuvchi birinchi kirganidayoq 100% keshdan (PRERENDER) oladi.
+export async function generateStaticParams({ params }: { params: { lang: string } }) {
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
         return [];
     }
 
     try {
+        const lang = params?.lang === 'ru' ? 'ru' : 'uz';
         const { data: products } = await supabaseAdmin
             .from("products")
             .select("id, article, name, name_uz, name_ru")
             .eq("is_deleted", false)
-            .gt("stock", 0)
             .order("sales", { ascending: false, nullsFirst: false })
-            .limit(200);
+            .limit(350);
 
         if (!products) return [];
 
-        return products.flatMap((p) => [
-            { id: getProductSlug(p, 'uz') },
-            { id: getProductSlug(p, 'ru') },
-        ]);
+        return products.map((p) => ({
+            id: getProductSlug(p, lang),
+        }));
     } catch (err) {
         console.error("generateStaticParams error:", err);
         return [];

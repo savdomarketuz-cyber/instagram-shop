@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: { params: { lang: string } })
     };
 }
 
-export const revalidate = 86400; // 24 soatda bir marta yangilanadi (ISR limitni tejash uchun)
+export const revalidate = false; // Cheksiz kesh (faqat admin panelda banner, tovar yoki kategoriya o'zgarganda revalidatePath orqali yangilanadi)
 
 async function getInitialData() {
     try {
