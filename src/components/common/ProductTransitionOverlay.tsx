@@ -151,7 +151,7 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                         />
                     ) : (
                         <Image
-                            src={getOptimizedImageUrl(payload.image_metadata, payload.image, "sm")}
+                            src={getOptimizedImageUrl(payload.image_metadata, payload.image, "md")}
                             alt={name}
                             fill
                             priority

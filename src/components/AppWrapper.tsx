@@ -379,7 +379,7 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
             <ConnectivityListener />
             <DynamicFavicon />
             <SmartTabTitle />
-            <ProductTransitionOverlay lang={displayLang} />
+            <ProductTransitionOverlay lang={lang} />
             {showNav && <Navigation />}
 
             <PWAFlow />
