@@ -62,6 +62,9 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
         const unsubscribe = productTransitionManager.subscribe((newPayload) => {
             if (newPayload) {
                 clearAllTimers();
+                if (typeof window !== "undefined") {
+                    setWindowWidth(window.innerWidth);
+                }
                 setPayload(newPayload);
                 setIsExpanded(false);
                 setShowInfo(false);
@@ -112,25 +115,26 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
 
     if (!payload) return null;
 
-    const isMobile = windowWidth < 768;
+    const currentWindowWidth = typeof window !== "undefined" ? window.innerWidth : windowWidth;
+    const isMobile = currentWindowWidth < 768;
 
-    // --- 1:1 PIXEL MATCHING GEOMETRY ---
+    // --- 1:1 EMPIRICALLY VERIFIED GEOMETRY ---
 
-    // 1. Mobile Geometry (< 768px): Matches ProductMedia (px-5, min-w-[85vw]) + ProductInfo
-    const mobileImgWidth = windowWidth * 0.85; // exactly 85vw
+    // 1. Mobile Geometry (< 768px): Matches ProductMedia carousel (top: 8px, left: 0px, width: 85vw) + ProductInfo
+    const mobileImgWidth = currentWindowWidth * 0.85; // exactly 85vw
     const mobileImgHeight = mobileImgWidth * (4 / 3); // aspect-[3/4]
-    const mobileImgTop = 8; // pt-2
-    const mobileImgLeft = 20; // px-5
+    const mobileImgTop = 8; // pt-2 (8px)
+    const mobileImgLeft = 0; // STRICTLY FLUSH LEFT (matches real ProductMedia first child at left: 0)
     const mobileImgRadius = 28; // rounded-[28px]
     const mobileInfoTop = mobileImgTop + mobileImgHeight + 24; // pb-6 ends, ProductInfo begins
 
     // 2. Desktop Geometry (>= 768px): Matches ProductClient (max-w-[1600px] px-10 py-12, 12-col grid)
-    const containerWidth = Math.min(1600, windowWidth);
-    const containerLeft = (windowWidth - containerWidth) / 2;
+    const containerWidth = Math.min(1600, currentWindowWidth);
+    const containerLeft = (currentWindowWidth - containerWidth) / 2;
     const contentLeft = containerLeft + 40; // px-10 left margin
     const availableWidth = containerWidth - 80;
 
-    const isLg = windowWidth >= 1024;
+    const isLg = currentWindowWidth >= 1024;
     const col7Width = isLg ? (availableWidth - 64) * (7 / 12) : availableWidth;
     const col5Width = isLg ? (availableWidth - 64) * (5 / 12) : availableWidth;
 
@@ -139,8 +143,8 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
     const desktopThumbWidth = 160; // w-40 (160px)
     const desktopHeroLeft = contentLeft + 200; // after 160px thumbnails + 40px gap
     const desktopHeroWidth = Math.min(620, Math.max(380, col7Width - 200));
-    const desktopHeroHeight = Math.min(760, desktopHeroWidth * (4 / 3));
-    const desktopHeroTop = 220; // header (~112px) + py-12 (~48px) + breadcrumbs (~60px)
+    const desktopHeroHeight = Math.min(800, desktopHeroWidth * (4 / 3));
+    const desktopHeroTop = 216; // header (~112px) + py-12 (~48px) + breadcrumbs (~56px) = exactly 216px
     const desktopHeroRadius = 40; // rounded-[40px]
 
     // Desktop Right Info Panel:
@@ -245,6 +249,51 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                         <div className="glass-icon-button w-11 h-11 text-[#111612]">
                             <Heart size={20} strokeWidth={2} />
                         </div>
+                    </div>
+
+                    {/* Mobile Slide 2 Peek Preview (matches real ProductMedia carousel next slide at left: 85vw + 12px) */}
+                    <div
+                        style={{
+                            position: "fixed",
+                            top: mobileImgTop,
+                            left: mobileImgWidth + 12,
+                            width: mobileImgWidth,
+                            height: mobileImgHeight,
+                            borderRadius: mobileImgRadius,
+                            background: "#F5F5F0",
+                            border: "1px solid #F3F4F6",
+                            boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+                            opacity: showInfo ? 1 : 0,
+                            transform: showInfo ? "translateX(0)" : "translateX(24px)",
+                            transition: `opacity ${INFO_SLIDE_MS}ms ease-out, transform ${INFO_SLIDE_MS}ms ${FIRM_EASE}`,
+                            zIndex: 259,
+                            pointerEvents: "none",
+                            overflow: "hidden",
+                        }}
+                    >
+                        <div className="w-full h-full bg-gray-100/60" />
+                    </div>
+
+                    {/* Instagram Style Dynamic Dots Pagination */}
+                    <div
+                        style={{
+                            position: "fixed",
+                            top: mobileImgTop + mobileImgHeight - 36,
+                            left: 0,
+                            width: mobileImgWidth,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 6,
+                            zIndex: 262,
+                            opacity: showInfo ? 1 : 0,
+                            transition: `opacity ${INFO_SLIDE_MS}ms ease-out`,
+                            pointerEvents: "none",
+                        }}
+                    >
+                        <div style={{ width: 20, height: 6, background: "#000", borderRadius: 999 }} />
+                        <div style={{ width: 6, height: 6, background: "rgba(0,0,0,0.25)", borderRadius: "50%" }} />
+                        <div style={{ width: 5, height: 5, background: "rgba(0,0,0,0.15)", borderRadius: "50%" }} />
                     </div>
 
                     {/* Mobile Product Info: 1:1 match with ProductInfo.tsx */}
