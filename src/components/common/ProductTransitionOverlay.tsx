@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { ChevronLeft, Heart, Search, Check, Star, Maximize2 } from "lucide-react";
+import { ChevronLeft, Heart, Search, Check, Star, Maximize2, ShoppingBag } from "lucide-react";
 import { productTransitionManager, type TransitionProductPayload } from "@/lib/product-transition";
 
 // Snappy firm timing (Total ~0.76s sequence):
@@ -143,7 +143,7 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
     const desktopThumbWidth = 160; // w-40 (160px)
     const desktopHeroLeft = contentLeft + 200; // after 160px thumbnails + 40px gap
     const desktopHeroWidth = Math.min(620, Math.max(380, col7Width - 200));
-    const desktopHeroHeight = Math.min(800, desktopHeroWidth * (4 / 3));
+    const desktopHeroHeight = 800; // Matches fixed h-[800px] in ProductClient.tsx exactly
     const desktopHeroTop = 216; // header (~112px) + py-12 (~48px) + breadcrumbs (~56px) = exactly 216px
     const desktopHeroRadius = 40; // rounded-[40px]
 
@@ -222,7 +222,7 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
             {/* ========================================================================= */}
             {isMobile && (
                 <>
-                    {/* Floating Top Controls */}
+                    {/* Floating Top Controls (Matches ProductMedia.tsx 1:1) */}
                     <div
                         style={{
                             position: "fixed",
@@ -238,6 +238,7 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                             pointerEvents: "none",
                         }}
                     >
+                        {/* Left Group */}
                         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                             <div className="glass-icon-button w-11 h-11 text-[#111612]">
                                 <ChevronLeft size={20} strokeWidth={2} />
@@ -246,12 +247,23 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                                 <Search size={19} strokeWidth={2} />
                             </div>
                         </div>
-                        <div className="glass-icon-button w-11 h-11 text-[#111612]">
-                            <Heart size={20} strokeWidth={2} />
+
+                        {/* Right Group (Exact 2 buttons: Share + Heart) */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                            <div className="glass-icon-button w-11 h-11 text-[#111612]">
+                                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                                    <polyline points="16 6 12 2 8 6" />
+                                    <line x1="12" y1="2" x2="12" y2="15" />
+                                </svg>
+                            </div>
+                            <div className="glass-icon-button w-11 h-11 text-[#111612]">
+                                <Heart size={19} strokeWidth={2} fill="none" color="currentColor" />
+                            </div>
                         </div>
                     </div>
 
-                    {/* Mobile Slide 2 Peek Preview (matches real ProductMedia carousel next slide at left: 85vw + 12px) */}
+                    {/* Mobile Slide 2 Peek Preview (slides in from right with blur-to-sharp effect) */}
                     <div
                         style={{
                             position: "fixed",
@@ -264,37 +276,52 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                             border: "1px solid #F3F4F6",
                             boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
                             opacity: showInfo ? 1 : 0,
-                            transform: showInfo ? "translateX(0)" : "translateX(24px)",
-                            transition: `opacity ${INFO_SLIDE_MS}ms ease-out, transform ${INFO_SLIDE_MS}ms ${FIRM_EASE}`,
+                            transform: showInfo ? "translateX(0)" : "translateX(36px)",
+                            filter: showInfo ? "blur(0px)" : "blur(10px)",
+                            transition: `opacity ${INFO_SLIDE_MS + 40}ms ease-out, transform ${INFO_SLIDE_MS + 40}ms ${FIRM_EASE}, filter ${INFO_SLIDE_MS + 40}ms ease-out`,
                             zIndex: 259,
                             pointerEvents: "none",
                             overflow: "hidden",
                         }}
                     >
-                        <div className="w-full h-full bg-gray-100/60" />
+                        {payload.secondImgSrc ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                                src={payload.secondImgSrc}
+                                alt=""
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <div className="w-full h-full bg-gray-100/60" />
+                        )}
                     </div>
 
-                    {/* Instagram Style Dynamic Dots Pagination */}
-                    <div
-                        style={{
-                            position: "fixed",
-                            top: mobileImgTop + mobileImgHeight - 36,
-                            left: 0,
-                            width: mobileImgWidth,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 6,
-                            zIndex: 262,
-                            opacity: showInfo ? 1 : 0,
-                            transition: `opacity ${INFO_SLIDE_MS}ms ease-out`,
-                            pointerEvents: "none",
-                        }}
-                    >
-                        <div style={{ width: 20, height: 6, background: "#000", borderRadius: 999 }} />
-                        <div style={{ width: 6, height: 6, background: "rgba(0,0,0,0.25)", borderRadius: "50%" }} />
-                        <div style={{ width: 5, height: 5, background: "rgba(0,0,0,0.15)", borderRadius: "50%" }} />
-                    </div>
+                    {/* Instagram Style Dynamic Dots Pagination (Water drop / ripple spring entry) */}
+                    {(payload.images && payload.images.length > 1) && (
+                        <div
+                            style={{
+                                position: "fixed",
+                                top: mobileImgTop + mobileImgHeight - 16,
+                                left: 0,
+                                width: mobileImgWidth,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 6,
+                                zIndex: 262,
+                                opacity: showInfo ? 1 : 0,
+                                transform: showInfo ? "scale(1)" : "scale(0.3)",
+                                transition: `opacity ${INFO_SLIDE_MS}ms ease-out, transform ${INFO_SLIDE_MS}ms cubic-bezier(0.34, 1.56, 0.64, 1)`,
+                                pointerEvents: "none",
+                            }}
+                        >
+                            <div style={{ width: 20, height: 6, background: "#000", borderRadius: 999 }} />
+                            <div style={{ width: 6, height: 6, background: "rgba(0,0,0,0.25)", borderRadius: "50%" }} />
+                            {payload.images.length > 2 && (
+                                <div style={{ width: 5, height: 5, background: "rgba(0,0,0,0.15)", borderRadius: "50%" }} />
+                            )}
+                        </div>
+                    )}
 
                     {/* Mobile Product Info: 1:1 match with ProductInfo.tsx */}
                     <div
@@ -314,30 +341,39 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                             overflow: "hidden",
                         }}
                     >
-                        {/* Original badge */}
-                        <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#EAF3EC", borderRadius: 10, padding: "6px 12px", marginBottom: 12 }}>
-                            <div style={{ width: 16, height: 16, borderRadius: "50%", background: "#2D6E3E", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <Check size={9} color="#fff" strokeWidth={4} />
+                        {/* Original badge (only if product is actually original) */}
+                        {payload.isOriginal && (
+                            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#EAF3EC", borderRadius: 10, padding: "6px 12px", marginBottom: 12 }}>
+                                <div style={{ width: 16, height: 16, borderRadius: "50%", background: "#2D6E3E", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                    <Check size={9} color="#fff" strokeWidth={4} />
+                                </div>
+                                <span style={{ fontSize: 10, fontWeight: 800, color: "#2D6E3E", letterSpacing: 0.4, textTransform: "uppercase" }}>
+                                    {lang === "uz" ? "Original sifat" : "Оригинальное качество"}
+                                </span>
                             </div>
-                            <span style={{ fontSize: 10, fontWeight: 800, color: "#2D6E3E", letterSpacing: 0.4, textTransform: "uppercase" }}>
-                                {lang === "uz" ? "Original sifat" : "Оригинальное качество"}
-                            </span>
-                        </div>
+                        )}
 
                         {/* Name */}
                         <h1 style={{ fontSize: 21, fontWeight: 600, letterSpacing: -0.3, color: "#0F1410", lineHeight: 1.3, margin: "0 0 8px" }}>
                             {name}
                         </h1>
 
-                        {/* Rating */}
+                        {/* Rating - Matches ProductInfo.tsx exactly */}
                         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
                             <div style={{ display: "flex", gap: 2 }}>
                                 {[...Array(5)].map((_, i) => (
-                                    <Star key={i} size={13} fill="#F6B100" color="#F6B100" />
+                                    <Star
+                                        key={i}
+                                        size={13}
+                                        fill={(payload.rating || 0) > i ? "#F6B100" : "none"}
+                                        color={(payload.rating || 0) > i ? "#F6B100" : "#D0D5CF"}
+                                    />
                                 ))}
                             </div>
                             <span style={{ fontSize: 13, fontWeight: 500, color: "#737D75" }}>
-                                5.0 ({lang === "uz" ? "Yangi mahsulot" : "Новый товар"})
+                                {(payload.reviewCount || 0) > 0
+                                    ? `${(payload.rating || 0).toFixed(1)} (${payload.reviewCount} ${lang === "uz" ? "sharh" : "отзыв"})`
+                                    : (lang === "uz" ? "Yangi mahsulot" : "Новый товар")}
                             </span>
                         </div>
 
@@ -360,6 +396,40 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                                         </span>
                                     </div>
                                 )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Mobile Floating Sticky CTA — Slides UP smoothly from bottom */}
+                    <div 
+                        className="fixed bottom-3 left-3 right-3 max-w-lg mx-auto z-[262] glass-strong rounded-[24px] p-2 border border-white/80 shadow-[0_12px_36px_rgba(28,70,42,0.18)] select-none pointer-events-none"
+                        style={{
+                            paddingBottom: "max(env(safe-area-inset-bottom, 8px), 8px)",
+                            opacity: showInfo ? 1 : 0,
+                            transform: showInfo ? "translateY(0)" : "translateY(120%)",
+                            transition: `opacity ${INFO_SLIDE_MS}ms ease-out, transform ${INFO_SLIDE_MS}ms ${FIRM_EASE}`,
+                        }}
+                    >
+                        <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
+                            {/* Tezkor xarid (Secondary Action) */}
+                            <div
+                                className="glass-tinted-button text-xs font-semibold flex items-center justify-center text-[#111612]"
+                                style={{
+                                    flexShrink: 0, height: 48, borderRadius: 16, padding: "0 16px",
+                                }}
+                            >
+                                {lang === "uz" ? "Tezkor xarid" : "Купить"}
+                            </div>
+
+                            {/* Cart CTA (Primary Action) */}
+                            <div
+                                className="glass-prominent-button flex-1 text-xs font-semibold"
+                                style={{
+                                    height: 48, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "#fff",
+                                }}
+                            >
+                                <ShoppingBag size={18} color="#fff" strokeWidth={2} />
+                                <span>{lang === "uz" ? "Savatga qo'shish" : "В корзину"}</span>
                             </div>
                         </div>
                     </div>
@@ -445,11 +515,15 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                             <p className="text-2xl lg:text-3xl font-semibold tracking-tight text-[#111612] mb-3 leading-snug">
                                 {name}
                             </p>
-                            <div className="flex items-center gap-2 mb-6 bg-gray-50/70 w-fit px-3.5 py-1.5 rounded-xl">
-                                <Star size={15} className="text-yellow-400 fill-yellow-400" />
-                                <span className="font-semibold text-xs text-[#111612]">5.0</span>
-                                <span className="text-xs text-gray-400 font-medium ml-1.5">({lang === "uz" ? "Yangi mahsulot" : "Новый товар"})</span>
-                            </div>
+                            
+                            {/* Rating (Matches ProductClient.tsx desktop: only shown if reviewCount > 0) */}
+                            {(payload.reviewCount || 0) > 0 && (
+                                <div className="flex items-center gap-2 mb-6 bg-gray-50/70 w-fit px-3.5 py-1.5 rounded-xl">
+                                    <Star size={15} className="text-yellow-400 fill-yellow-400" />
+                                    <span className="font-semibold text-xs text-[#111612]">{(payload.rating || 5.0).toFixed(1)}</span>
+                                    <span className="text-xs text-gray-400 font-medium ml-1.5">({payload.reviewCount} {lang === "uz" ? "ta sharh" : "отзывов"})</span>
+                                </div>
+                            )}
 
                             <div className="flex flex-col gap-1 mb-6">
                                 <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
@@ -472,6 +546,17 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                                 <p className="text-xs font-black text-gray-700 uppercase tracking-tighter">
                                     {lang === "uz" ? "Mavjud" : "В наличии"}: <span className="text-black">{lang === "uz" ? "Omborda bor" : "Есть на складе"}</span>
                                 </p>
+                            </div>
+
+                            {/* Desktop Action Buttons */}
+                            <div className="flex gap-3 items-stretch mt-6">
+                                <div className="glass-tinted-button flex-1 h-[52px] text-sm font-semibold rounded-[var(--radius-control)] flex items-center justify-center text-[#111612]">
+                                    {lang === 'uz' ? "Tezkor xarid" : "Купить сейчас"}
+                                </div>
+                                <div className="glass-prominent-button flex-1 h-[52px] text-sm font-semibold rounded-[var(--radius-control)] flex items-center justify-center gap-2 text-white">
+                                    <ShoppingBag size={18} strokeWidth={2} />
+                                    <span>{lang === 'uz' ? "Savatga qo'shish" : "В корзину"}</span>
+                                </div>
                             </div>
                         </div>
                     </div>

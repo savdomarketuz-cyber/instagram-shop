@@ -12,6 +12,11 @@ export interface TransitionProductPayload {
     oldPrice?: number;
     image: string;
     cardImgSrc?: string;
+    secondImgSrc?: string;
+    images?: string[];
+    isOriginal?: boolean;
+    rating?: number;
+    reviewCount?: number;
     image_metadata?: any;
     rect: {
         top: number;

@@ -249,6 +249,9 @@ export const ProductCard = memo(({
             const imgEl = imgWrapRef.current.querySelector("img") as HTMLImageElement | null;
             const cardImgSrc = imgEl?.currentSrc || imgEl?.src || getOptimizedImageUrl(item.image_metadata, mainMedia, "xs");
 
+            const secondMedia = item.images && item.images.length > 1 ? item.images[1] : undefined;
+            const secondImgSrc = secondMedia ? getOptimizedImageUrl(item.image_metadata, secondMedia, "md") : undefined;
+
             productTransitionManager.trigger({
               id: item.id,
               name: item.name,
@@ -258,6 +261,11 @@ export const ProductCard = memo(({
               oldPrice: item.oldPrice,
               image: mainMedia,
               cardImgSrc: cardImgSrc,
+              secondImgSrc: secondImgSrc,
+              images: item.images,
+              isOriginal: item.isOriginal,
+              rating: item.rating,
+              reviewCount: item.reviewCount,
               image_metadata: item.image_metadata,
               rect: {
                 top: rect.top,
