@@ -177,7 +177,6 @@ export const ProductMedia = ({
                             onClick={i === activeImage ? handleDoubleTap : undefined}
                             style={{
                                 scrollSnapAlign: 'start',
-                                ...(i === activeImage ? { viewTransitionName: `product-img-${product.id}` } : {})
                             } as React.CSSProperties}
                             className="min-w-[85vw] aspect-[3/4] rounded-[28px] overflow-hidden bg-gray-50 flex items-center justify-center relative shadow-sm border border-gray-100"
                         >

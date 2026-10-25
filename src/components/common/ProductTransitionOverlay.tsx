@@ -1,92 +1,104 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { productTransitionManager, type TransitionProductPayload } from "@/lib/product-transition";
 import { getOptimizedImageUrl, hasVariants, makeVariantLoader, getMetaForUrl } from "@/lib/imageVariants";
 
-const EXPAND_DURATION_MS = 340;
+// 1-second staged choreography:
+// 1) 0ms -> 480ms: Only the image expands from card to hero
+// 2) 480ms -> 860ms: Details (title, badge, price) slide down into place
+// 3) 900ms -> 1040ms: Smooth 140ms fade-out into the mounted product page
+const IMAGE_EXPAND_MS = 480;
+const INFO_SLIDE_MS = 380;
+const FADE_OUT_START_MS = 900;
+const FADE_OUT_DURATION = 140;
+const CLEANUP_MS = 1060;
 
 export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: string }) {
-    const pathname = usePathname();
     const [payload, setPayload] = useState<TransitionProductPayload | null>(null);
     const [isExpanded, setIsExpanded] = useState(false);
+    const [showInfo, setShowInfo] = useState(false);
     const [isFadingOut, setIsFadingOut] = useState(false);
 
-    const startTimeRef = useRef<number>(0);
-    const dismissTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const timerInfoRef = useRef<NodeJS.Timeout | null>(null);
+    const timerFadeRef = useRef<NodeJS.Timeout | null>(null);
+    const timerDoneRef = useRef<NodeJS.Timeout | null>(null);
     const safetyTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    const clearAllTimers = () => {
+        if (timerInfoRef.current) clearTimeout(timerInfoRef.current);
+        if (timerFadeRef.current) clearTimeout(timerFadeRef.current);
+        if (timerDoneRef.current) clearTimeout(timerDoneRef.current);
+        if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
+        timerInfoRef.current = null;
+        timerFadeRef.current = null;
+        timerDoneRef.current = null;
+        safetyTimerRef.current = null;
+    };
+
+    const resetState = () => {
+        clearAllTimers();
+        setPayload(null);
+        setIsExpanded(false);
+        setShowInfo(false);
+        setIsFadingOut(false);
+        productTransitionManager.clear();
+    };
 
     // Subscribe to product transition trigger
     useEffect(() => {
         const unsubscribe = productTransitionManager.subscribe((newPayload) => {
             if (newPayload) {
-                if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
-                if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
-
-                startTimeRef.current = Date.now();
+                clearAllTimers();
                 setPayload(newPayload);
                 setIsExpanded(false);
+                setShowInfo(false);
                 setIsFadingOut(false);
 
-                // Start expansion on the next animation frame
+                // Phase 1: Card image expands to hero (starts on next frame)
                 requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
                         setIsExpanded(true);
                     });
                 });
 
-                // Safety timeout: dismiss after 3s if user aborts or navigation fails
+                // Phase 2: After image expansion completes (480ms), show & slide down product info
+                timerInfoRef.current = setTimeout(() => {
+                    setShowInfo(true);
+                }, IMAGE_EXPAND_MS);
+
+                // Phase 3: At 900ms, start gentle fade-out into underlying page
+                timerFadeRef.current = setTimeout(() => {
+                    setIsFadingOut(true);
+                }, FADE_OUT_START_MS);
+
+                // Phase 4: Overlay cleanup at 1060ms (~1s total choreography complete)
+                timerDoneRef.current = setTimeout(() => {
+                    resetState();
+                }, CLEANUP_MS);
+
+                // Safety timeout: dismiss after 3s if navigation fails or aborts
                 safetyTimerRef.current = setTimeout(() => {
-                    dismissOverlay();
+                    resetState();
                 }, 3000);
             } else {
-                dismissOverlay();
+                resetState();
             }
         });
 
         // Browser back/forward button resets immediately
         const handlePopstate = () => {
-            productTransitionManager.clear();
-            setPayload(null);
-            setIsExpanded(false);
-            setIsFadingOut(false);
+            resetState();
         };
         window.addEventListener("popstate", handlePopstate);
 
         return () => {
             unsubscribe();
             window.removeEventListener("popstate", handlePopstate);
-            if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
-            if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
+            clearAllTimers();
         };
     }, []);
-
-    // When the target product page is mounted by Next.js
-    useEffect(() => {
-        if (payload && pathname?.includes("/products/")) {
-            // Calculate how much of the expansion animation has elapsed
-            const elapsed = Date.now() - startTimeRef.current;
-            const remaining = Math.max(0, EXPAND_DURATION_MS - elapsed);
-
-            // Wait until expansion is 100% finished before dissolving into the real page
-            if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
-            dismissTimerRef.current = setTimeout(() => {
-                dismissOverlay();
-            }, remaining + 20);
-        }
-    }, [pathname, payload]);
-
-    const dismissOverlay = () => {
-        setIsFadingOut(true);
-        setTimeout(() => {
-            setPayload(null);
-            setIsExpanded(false);
-            setIsFadingOut(false);
-            productTransitionManager.clear();
-        }, 140);
-    };
 
     if (!payload) return null;
 
@@ -138,9 +150,21 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
         boxShadow: isExpanded
             ? "0 25px 50px -12px rgba(15,20,16,0.18), 0 2px 8px rgba(15,20,16,0.06)"
             : "0 4px 20px rgba(15,20,16,0.06)",
-        transition: `all ${EXPAND_DURATION_MS}ms cubic-bezier(0.2, 0.9, 0.3, 1)`,
+        transition: `top ${IMAGE_EXPAND_MS}ms cubic-bezier(0.16, 1, 0.3, 1), left ${IMAGE_EXPAND_MS}ms cubic-bezier(0.16, 1, 0.3, 1), width ${IMAGE_EXPAND_MS}ms cubic-bezier(0.16, 1, 0.3, 1), height ${IMAGE_EXPAND_MS}ms cubic-bezier(0.16, 1, 0.3, 1), border-radius ${IMAGE_EXPAND_MS}ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow ${IMAGE_EXPAND_MS}ms ease-out`,
         zIndex: 260,
         willChange: "top, left, width, height, border-radius",
+    };
+
+    const infoStyle: React.CSSProperties = {
+        position: "fixed",
+        top: infoTop,
+        left: infoLeft,
+        width: infoWidth,
+        opacity: showInfo ? 1 : 0,
+        transform: showInfo ? "translateY(0)" : "translateY(-20px)",
+        transition: `opacity ${INFO_SLIDE_MS}ms ease-out, transform ${INFO_SLIDE_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
+        zIndex: 261,
+        pointerEvents: "none",
     };
 
     const name = (lang === "ru" ? payload.name_ru : payload.name_uz) || payload.name;
@@ -156,7 +180,7 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
             className={`fixed inset-0 z-[250] ${isFadingOut ? "pointer-events-none" : "pointer-events-auto"}`}
             style={{
                 opacity: isFadingOut ? 0 : 1,
-                transition: "opacity 140ms ease-out",
+                transition: `opacity ${FADE_OUT_DURATION}ms ease-out`,
             }}
             aria-hidden="true"
         >
@@ -164,12 +188,12 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
             <div
                 className="absolute inset-0 bg-[#FAFAF6]"
                 style={{
-                    opacity: isExpanded ? 0.98 : 0,
-                    transition: `opacity ${EXPAND_DURATION_MS - 40}ms ease-out`,
+                    opacity: isExpanded ? 1 : 0,
+                    transition: `opacity ${IMAGE_EXPAND_MS - 40}ms ease-out`,
                 }}
             />
 
-            {/* Expanding Card Hero Element */}
+            {/* Stage 1: Expanding Card Hero Element */}
             <div style={boxStyle}>
                 <div className="relative w-full h-full bg-[#F5F5F0]">
                     {isVideo ? (
@@ -201,19 +225,8 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                 </div>
             </div>
 
-            {/* Product Title and Price Expansion */}
-            <div
-                style={{
-                    position: "fixed",
-                    top: infoTop,
-                    left: infoLeft,
-                    width: infoWidth,
-                    opacity: isExpanded ? 1 : 0,
-                    transform: isExpanded ? "translateY(0)" : "translateY(20px)",
-                    transition: `all ${EXPAND_DURATION_MS - 40}ms cubic-bezier(0.2, 0.9, 0.3, 1) 40ms`,
-                    zIndex: 261,
-                }}
-            >
+            {/* Stage 2: Product Title and Price slide down beneath the image */}
+            <div style={infoStyle}>
                 <div className="inline-block px-3 py-1 bg-[#EAF3EC] text-[#2D6E3E] rounded-full text-[10px] font-extrabold uppercase tracking-wider mb-2">
                     {lang === "uz" ? "Original sifat" : "Оригинальное качество"}
                 </div>

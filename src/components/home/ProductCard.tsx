@@ -230,6 +230,7 @@ export const ProductCard = memo(({
           if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) {
             return;
           }
+          e.preventDefault();
 
           useStore.getState().setPrefetchedProduct(item);
 
@@ -240,6 +241,8 @@ export const ProductCard = memo(({
               body: JSON.stringify({ productId: item.id, query: query.trim() }),
             }).catch(() => null);
           }
+
+          const targetUrl = `/${language}/products/${getProductSlug(item, language)}`;
 
           if (imgWrapRef.current) {
             const rect = imgWrapRef.current.getBoundingClientRect();
@@ -260,6 +263,8 @@ export const ProductCard = memo(({
               },
             });
           }
+
+          router.push(targetUrl);
         }}
       >
         <div style={{ position: "relative", width: "100%" }}>

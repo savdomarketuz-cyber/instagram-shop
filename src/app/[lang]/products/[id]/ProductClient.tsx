@@ -924,7 +924,6 @@ export default function ProductClient({
                         <div
                             onClick={() => setLightboxIndex(activeImage)}
                             className="flex-1 bg-white rounded-[40px] overflow-hidden relative group/hero shadow-xl shadow-black/5 border border-gray-100/80 cursor-pointer"
-                            style={{ viewTransitionName: `product-img-${product.id}` } as React.CSSProperties}
                         >
                             {allMedia[activeImage]?.type === 'video' ? (
                                 <div className="w-full h-full bg-black relative flex items-center justify-center">
