@@ -13,6 +13,8 @@ import { getDeliveryCardText } from "@/lib/date-utils";
 import { sanitizeVideoUrl } from "@/lib/video-url";
 import { videoPreWarmer } from "@/lib/videoPreWarmer";
 import { applyGlobalPromo } from "@/lib/promo-utils";
+import { useRouter } from "next/navigation";
+import { productTransitionManager } from "@/lib/product-transition";
 
 const GREEN = "#2D6E3E";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
@@ -131,6 +133,7 @@ export const ProductCard = memo(({
   toggleWishlist, addToCart, updateQuantity, removeFromCart,
   priority = false, reason, brandLabel,
 }: ProductCardProps) => {
+  const router = useRouter();
   const globalPromo = useStore(s => s.globalPromo);
   const item = applyGlobalPromo(rawItem, globalPromo);
   const imgWrapRef = useRef<HTMLDivElement>(null);
@@ -200,12 +203,16 @@ export const ProductCard = memo(({
         href={`/${language}/products/${getProductSlug(item, language)}`}
         style={{ display: "flex", flexDirection: "column", flex: 1, textDecoration: "none", color: "inherit" }}
         prefetch={false}
+        onPointerDown={() => {
+          router.prefetch(`/${language}/products/${getProductSlug(item, language)}`);
+        }}
         onPointerEnter={() => {
           if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
           hoverTimerRef.current = setTimeout(() => {
             hoverTimerRef.current = null;
+            router.prefetch(`/${language}/products/${getProductSlug(item, language)}`);
             prefetchFirstImage(item);
-          }, 180);
+          }, 120);
         }}
         onPointerLeave={() => {
           if (hoverTimerRef.current) {
@@ -219,13 +226,39 @@ export const ProductCard = memo(({
             hoverTimerRef.current = null;
           }
         }}
-        onClick={() => {
+        onClick={(e) => {
+          if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) {
+            return;
+          }
+
+          useStore.getState().setPrefetchedProduct(item);
+
           const query = useStore.getState().homeSearchQuery;
           if (query && query.trim().length >= 2) {
             fetch("/api/analytics/search-click", {
               method: "POST",
               body: JSON.stringify({ productId: item.id, query: query.trim() }),
             }).catch(() => null);
+          }
+
+          if (imgWrapRef.current) {
+            const rect = imgWrapRef.current.getBoundingClientRect();
+            productTransitionManager.trigger({
+              id: item.id,
+              name: item.name,
+              name_uz: item.name_uz,
+              name_ru: item.name_ru,
+              price: item.price,
+              oldPrice: item.oldPrice,
+              image: mainMedia,
+              image_metadata: item.image_metadata,
+              rect: {
+                top: rect.top,
+                left: rect.left,
+                width: rect.width,
+                height: rect.height,
+              },
+            });
           }
         }}
       >

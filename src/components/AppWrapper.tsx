@@ -20,6 +20,7 @@ import { subscribeToPushNotifications } from "@/lib/push-notifications";
 import { Language } from "@/types";
 import DynamicFavicon from "@/components/common/DynamicFavicon";
 import SmartTabTitle from "@/components/common/SmartTabTitle";
+import ProductTransitionOverlay from "@/components/common/ProductTransitionOverlay";
 
 export default function AppWrapper({ children, lang }: { children: React.ReactNode, lang?: string }) {
     const cart = useStore(state => state.cart);
@@ -378,6 +379,7 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
             <ConnectivityListener />
             <DynamicFavicon />
             <SmartTabTitle />
+            <ProductTransitionOverlay lang={displayLang} />
             {showNav && <Navigation />}
 
             <PWAFlow />
