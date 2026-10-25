@@ -122,8 +122,12 @@ export default function HomeClient({
 
     const t = translations[language];
     
-    // UI State
-    const [allProducts, setAllProducts] = useState<Product[]>(initialProducts);
+    // UI State — Agar store'da allaqachon yuklangan mahsulotlar bo'lsa (mahsulot sahifasidan orqaga qaytganda) ularni tiklaymiz
+    const [allProducts, setAllProducts] = useState<Product[]>(() => {
+        const saved = useStore.getState().homeFeedProducts;
+        if (saved && saved.length > 0) return saved;
+        return initialProducts;
+    });
     const [aiProductIds, setAiProductIds] = useState<string[]>([]);
     const [personalOrder, setPersonalOrder] = useState<string[]>([]);
     const [personalReasons, setPersonalReasons] = useState<Record<string, { uz: string; ru: string }>>({});
@@ -153,8 +157,16 @@ export default function HomeClient({
     const [activeTab, setActiveTab] = useState(homeActiveTab);
     const [loading, setLoading] = useState(initialProducts.length === 0);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
-    const [pageNumber, setPageNumber] = useState(0);
-    const [hasMore, setHasMore] = useState(initialProducts.length >= 20);
+    const [pageNumber, setPageNumber] = useState<number>(() => {
+        return useStore.getState().homeFeedPage || 0;
+    });
+    const [hasMore, setHasMore] = useState<boolean>(() => {
+        const saved = useStore.getState().homeFeedProducts;
+        if (saved && saved.length > 0) {
+            return useStore.getState().homeFeedHasMore;
+        }
+        return initialProducts.length >= 20;
+    });
     const [bannerSettings, setBannerSettings] = useState(initialBannerSettings);
     const [catalogCategoryCount, setCatalogCategoryCount] = useState(initialCategories.length);
     const [catalogProductCount, setCatalogProductCount] = useState(0);
@@ -210,6 +222,9 @@ export default function HomeClient({
     useEffect(() => {
         if (initialProducts && initialProducts.length > 0) {
             useStore.getState().setCachedProducts(initialProducts);
+            if (!useStore.getState().homeFeedProducts) {
+                useStore.getState().setHomeFeed(initialProducts, 0, initialProducts.length >= 20);
+            }
         }
     }, [initialProducts]);
 
@@ -420,10 +435,15 @@ export default function HomeClient({
             const availableProducts = newProducts.filter(p => getProductRealStock(p) > 0);
 
             if (isLoadMore) {
-                setAllProducts(prev => [...prev, ...availableProducts]);
+                setAllProducts(prev => {
+                    const next = [...prev, ...availableProducts];
+                    useStore.getState().setHomeFeed(next, currentPage, newProducts.length === 20);
+                    return next;
+                });
                 setPageNumber(currentPage);
             } else {
                 setAllProducts(availableProducts);
+                useStore.getState().setHomeFeed(availableProducts, 0, newProducts.length === 20);
                 if (activeFilter === 'all' && !search) setCachedProducts(availableProducts);
             }
 

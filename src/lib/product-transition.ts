@@ -27,10 +27,13 @@ export interface TransitionProductPayload {
 }
 
 type TransitionListener = (payload: TransitionProductPayload | null) => void;
+type ReadyListener = (productId?: string) => void;
 
 class ProductTransitionManager {
     private listeners = new Set<TransitionListener>();
+    private readyListeners = new Set<ReadyListener>();
     private activePayload: TransitionProductPayload | null = null;
+    private destinationReady: boolean = false;
 
     subscribe(listener: TransitionListener) {
         this.listeners.add(listener);
@@ -39,13 +42,31 @@ class ProductTransitionManager {
         };
     }
 
+    subscribeReady(listener: ReadyListener) {
+        this.readyListeners.add(listener);
+        return () => {
+            this.readyListeners.delete(listener);
+        };
+    }
+
     trigger(payload: TransitionProductPayload) {
         this.activePayload = payload;
+        this.destinationReady = false;
         this.listeners.forEach((fn) => fn(payload));
+    }
+
+    markReady(productId?: string) {
+        this.destinationReady = true;
+        this.readyListeners.forEach((fn) => fn(productId));
+    }
+
+    isReady() {
+        return this.destinationReady;
     }
 
     clear() {
         this.activePayload = null;
+        this.destinationReady = false;
         this.listeners.forEach((fn) => fn(null));
     }
 

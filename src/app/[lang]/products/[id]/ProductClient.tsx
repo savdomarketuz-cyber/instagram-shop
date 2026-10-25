@@ -42,6 +42,7 @@ import { videoPreWarmer } from "@/lib/videoPreWarmer";
 
 // Components
 import { ProductMedia } from "@/components/product/ProductMedia";
+import { productTransitionManager } from "@/lib/product-transition";
 import { ProductInfo } from "@/components/product/ProductInfo";
 import { ProductCard } from "@/components/home/ProductCard";
 import dynamic from "next/dynamic";
@@ -115,6 +116,11 @@ export default function ProductClient({
 
     const router = useRouter();
     const productIdentifier = getProductIdFromSlug(params.id);
+
+    // Sahifa muvaffaqiyatli mount bo'lganda transition manager'ga xabar berish (miltillash va oq fon bo'lmasligi uchun)
+    useEffect(() => {
+        productTransitionManager.markReady(productIdentifier);
+    }, [productIdentifier]);
     const { 
         addToCart, toggleWishlist, wishlist, cart, updateQuantity, 
         removeFromCart, user, language: storeLanguage, setLanguage, showToast, prefetchedProducts,

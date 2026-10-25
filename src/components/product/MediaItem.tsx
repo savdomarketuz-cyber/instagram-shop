@@ -121,8 +121,6 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority 
                 sizes="(max-width: 768px) 85vw, 50vw"
                 priority={priority}
                 loader={hasV ? makeVariantLoader(metaForUrl) : undefined}
-                placeholder={media.blurDataURL ? "blur" : "empty"}
-                blurDataURL={media.blurDataURL}
                 onLoad={() => onLoadComplete?.()}
                 referrerPolicy="no-referrer"
             />

@@ -41,6 +41,10 @@ interface StoreState {
     homeActiveTab: string;
     setHomeActiveFilter: (filter: string) => void;
     setHomeActiveTab: (tab: string) => void;
+    homeFeedProducts: Product[] | null;
+    homeFeedPage: number;
+    homeFeedHasMore: boolean;
+    setHomeFeed: (products: Product[], page: number, hasMore: boolean) => void;
     toast: Toast | null;
     showToast: (message: string, type?: Toast['type']) => void;
     searchResults: Product[] | null;
@@ -146,6 +150,10 @@ export const useStore = create<StoreState>()(
             homeActiveTab: "for_you",
             setHomeActiveFilter: (filter) => set({ homeActiveFilter: filter }),
             setHomeActiveTab: (tab) => set({ homeActiveTab: tab }),
+            homeFeedProducts: null,
+            homeFeedPage: 0,
+            homeFeedHasMore: true,
+            setHomeFeed: (products, page, hasMore) => set({ homeFeedProducts: products, homeFeedPage: page, homeFeedHasMore: hasMore }),
             toast: null,
             showToast: (message, type = 'success') => {
                 set({ toast: { message, type } });

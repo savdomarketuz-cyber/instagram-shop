@@ -4,15 +4,13 @@ import { useEffect, useState, useRef } from "react";
 import { ChevronLeft, Heart, Search, Check, Star, Maximize2, ShoppingBag } from "lucide-react";
 import { productTransitionManager, type TransitionProductPayload } from "@/lib/product-transition";
 
-// Snappy firm timing (Total ~0.76s sequence):
+// Snappy firm timing (Total ~0.74s sequence):
 // 1) 0ms -> 360ms: Image expands firmly into 1:1 destination (Desktop: col-7 hero, Mobile: left 85vw)
 // 2) 360ms -> 640ms: Desktop (thumbnails + right info panel) / Mobile (info + top controls) slide firmly into place
-// 3) 660ms -> 760ms: Clean 100ms dissolve into the pre-mounted real page
+// 3) Synchronized completion: When animation finishes (640ms) AND real page mounts -> 100ms smooth dissolve
 const IMAGE_EXPAND_MS = 360;
 const INFO_SLIDE_MS = 280;
-const FADE_OUT_START_MS = 660;
 const FADE_OUT_DURATION = 100;
-const CLEANUP_MS = 780;
 const FIRM_EASE = "cubic-bezier(0.2, 0.9, 0.25, 1)";
 
 export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: string }) {
@@ -37,6 +35,9 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
     const timerDoneRef = useRef<NodeJS.Timeout | null>(null);
     const safetyTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+    const animDoneRef = useRef(false);
+    const destReadyRef = useRef(false);
+
     const clearAllTimers = () => {
         if (timerInfoRef.current) clearTimeout(timerInfoRef.current);
         if (timerFadeRef.current) clearTimeout(timerFadeRef.current);
@@ -54,10 +55,25 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
         setIsExpanded(false);
         setShowInfo(false);
         setIsFadingOut(false);
+        animDoneRef.current = false;
+        destReadyRef.current = false;
         productTransitionManager.clear();
     };
 
-    // Subscribe to product transition trigger
+    const triggerFadeOut = () => {
+        setIsFadingOut(true);
+        timerDoneRef.current = setTimeout(() => {
+            resetState();
+        }, FADE_OUT_DURATION);
+    };
+
+    const tryComplete = () => {
+        if (animDoneRef.current && destReadyRef.current) {
+            triggerFadeOut();
+        }
+    };
+
+    // Subscribe to product transition trigger & destination readiness
     useEffect(() => {
         const unsubscribe = productTransitionManager.subscribe((newPayload) => {
             if (newPayload) {
@@ -69,6 +85,8 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                 setIsExpanded(false);
                 setShowInfo(false);
                 setIsFadingOut(false);
+                animDoneRef.current = false;
+                destReadyRef.current = productTransitionManager.isReady();
 
                 // Stage 1: Card image expands firmly into destination
                 requestAnimationFrame(() => {
@@ -82,23 +100,24 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                     setShowInfo(true);
                 }, IMAGE_EXPAND_MS);
 
-                // Stage 3: At 660ms, gentle dissolve into the pre-mounted real page
+                // Stage 3: Animation complete at 640ms — check if destination is already mounted
                 timerFadeRef.current = setTimeout(() => {
-                    setIsFadingOut(true);
-                }, FADE_OUT_START_MS);
+                    animDoneRef.current = true;
+                    tryComplete();
+                }, IMAGE_EXPAND_MS + INFO_SLIDE_MS);
 
-                // Stage 4: Overlay cleanup at 780ms
-                timerDoneRef.current = setTimeout(() => {
-                    resetState();
-                }, CLEANUP_MS);
-
-                // Safety timeout: dismiss after 3s if unexpected error occurs
+                // Safety timeout: dismiss after 2.5s if unexpected error occurs
                 safetyTimerRef.current = setTimeout(() => {
                     resetState();
-                }, 3000);
+                }, 2500);
             } else {
                 resetState();
             }
+        });
+
+        const unsubReady = productTransitionManager.subscribeReady(() => {
+            destReadyRef.current = true;
+            tryComplete();
         });
 
         const handlePopstate = () => {
@@ -108,6 +127,7 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
 
         return () => {
             unsubscribe();
+            unsubReady();
             window.removeEventListener("popstate", handlePopstate);
             clearAllTimers();
         };
@@ -222,7 +242,7 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
             {/* ========================================================================= */}
             {isMobile && (
                 <>
-                    {/* Floating Top Controls (Matches ProductMedia.tsx 1:1) */}
+                    {/* Floating Top Controls (Matches ProductMedia.tsx 1:1, Zero-milky opacity, immediate yield on real page mount) */}
                     <div
                         style={{
                             position: "fixed",
@@ -233,13 +253,21 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                             justifyContent: "space-between",
                             alignItems: "flex-start",
                             zIndex: 262,
-                            opacity: showInfo ? 1 : 0,
-                            transition: `opacity ${INFO_SLIDE_MS}ms ease-out`,
+                            opacity: isFadingOut ? 0 : (showInfo ? 1 : 0),
                             pointerEvents: "none",
                         }}
                     >
                         {/* Left Group */}
-                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 10,
+                                transform: showInfo ? "scale(1)" : "scale(0.3)",
+                                transformOrigin: "top left",
+                                transition: `transform ${INFO_SLIDE_MS}ms cubic-bezier(0.34, 1.56, 0.64, 1)`,
+                            }}
+                        >
                             <div className="glass-icon-button w-11 h-11 text-[#111612]">
                                 <ChevronLeft size={20} strokeWidth={2} />
                             </div>
@@ -249,7 +277,16 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                         </div>
 
                         {/* Right Group (Exact 2 buttons: Share + Heart) */}
-                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 10,
+                                transform: showInfo ? "scale(1)" : "scale(0.3)",
+                                transformOrigin: "top right",
+                                transition: `transform ${INFO_SLIDE_MS}ms cubic-bezier(0.34, 1.56, 0.64, 1)`,
+                            }}
+                        >
                             <div className="glass-icon-button w-11 h-11 text-[#111612]">
                                 <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
@@ -263,7 +300,7 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                         </div>
                     </div>
 
-                    {/* Mobile Slide 2 Peek Preview (slides in from right with blur-to-sharp effect) */}
+                    {/* Mobile Slide 2 Peek Preview (slides in from left to right with blur-to-sharp effect) */}
                     <div
                         style={{
                             position: "fixed",
@@ -276,7 +313,7 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                             border: "1px solid #F3F4F6",
                             boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
                             opacity: showInfo ? 1 : 0,
-                            transform: showInfo ? "translateX(0)" : "translateX(36px)",
+                            transform: showInfo ? "translateX(0)" : "translateX(-48px)",
                             filter: showInfo ? "blur(0px)" : "blur(10px)",
                             transition: `opacity ${INFO_SLIDE_MS + 40}ms ease-out, transform ${INFO_SLIDE_MS + 40}ms ${FIRM_EASE}, filter ${INFO_SLIDE_MS + 40}ms ease-out`,
                             zIndex: 259,
@@ -309,7 +346,7 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                                 justifyContent: "center",
                                 gap: 6,
                                 zIndex: 262,
-                                opacity: showInfo ? 1 : 0,
+                                opacity: isFadingOut ? 0 : (showInfo ? 1 : 0),
                                 transform: showInfo ? "scale(1)" : "scale(0.3)",
                                 transition: `opacity ${INFO_SLIDE_MS}ms ease-out, transform ${INFO_SLIDE_MS}ms cubic-bezier(0.34, 1.56, 0.64, 1)`,
                                 pointerEvents: "none",

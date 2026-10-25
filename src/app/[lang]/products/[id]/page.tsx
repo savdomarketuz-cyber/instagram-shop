@@ -535,14 +535,14 @@ export default async function Page({ params }: { params: { lang: string, id: str
 
 function ProductSkeleton() {
     return (
-        <div className="min-h-screen bg-white animate-pulse">
+        <div className="min-h-screen bg-[#FAFAF6] animate-pulse">
             <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-2 gap-12">
-                <div className="aspect-[1080/1440] bg-gray-50 rounded-3xl" />
+                <div className="aspect-[1080/1440] bg-gray-100/80 rounded-3xl" />
                 <div className="space-y-6">
-                    <div className="h-10 w-3/4 bg-gray-50 rounded-xl" />
-                    <div className="h-6 w-1/4 bg-gray-50 rounded-lg" />
-                    <div className="h-24 w-full bg-gray-50 rounded-2xl" />
-                    <div className="h-16 w-full bg-gray-50 rounded-2xl" />
+                    <div className="h-10 w-3/4 bg-gray-100/80 rounded-xl" />
+                    <div className="h-6 w-1/4 bg-gray-100/80 rounded-lg" />
+                    <div className="h-24 w-full bg-gray-100/80 rounded-2xl" />
+                    <div className="h-16 w-full bg-gray-100/80 rounded-2xl" />
                 </div>
             </div>
         </div>
