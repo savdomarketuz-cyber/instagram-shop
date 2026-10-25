@@ -187,15 +187,15 @@ export default function ProductClient({
         }
     }, [product?.id]);
 
-    // Shaxsiy chegirma (smart/manual offer) — login mijozga ko'rsatiladi
+    // Shaxsiy chegirma (smart/manual offer) — ro'yxatdan o'tgan mijoz va doimiy mehmonga ko'rsatiladi
     const [personalOffer, setPersonalOffer] = useState<{ percent: number; reason_uz?: string; reason_ru?: string; expires_at: string | null } | null>(null);
     useEffect(() => {
         const pid = product?.id;
-        if (!pid || !user) { setPersonalOffer(null); return; }
+        if (!pid) { setPersonalOffer(null); return; }
         let cancelled = false;
         const inWishlist = wishlist.some(w => w.id === pid);
         // 1) AI taklifini "mint" qilishga urinish (config yoqilgan bo'lsa), so'ng
-        // 2) barcha aktiv takliflardan shu mahsulotникини olish (manual ham, config'dan mustaqil)
+        // 2) barcha aktiv takliflardan shu mahsulotnikini olish (manual ham, config'dan mustaqil)
         fetch("/api/discount", {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ productId: pid, inWishlist }),
@@ -965,21 +965,31 @@ export default function ProductClient({
                                     />
                                 </div>
                             ) : (
-                                <Image
-                                    src={getOptimizedImageUrl(product.image_metadata, allMedia[activeImage]?.url || "", 'lg')}
-                                    fill
-                                    className="object-contain p-4 md:p-6 group-hover:scale-105 transition-transform duration-500"
-                                    alt={`${(product[`name_${language}` as keyof typeof product] as string) || product.name} - ${language === 'uz' ? 'Asosiy rasm' : 'Основное изображение'}`}
-                                    priority
-                                    sizes="(max-width: 1024px) 100vw, 60vw"
-                                    quality={85}
-                                    fetchPriority="high"
-                                    loader={hasVariants(product.image_metadata, allMedia[activeImage]?.url || "") ? makeVariantLoader(product.image_metadata) : undefined}
-                                    onLoad={() => {
-                                        setMaxDesktopLoadIndex(prev => Math.max(prev, 1));
-                                        productTransitionManager.markReady(product?.id || productIdentifier);
-                                    }}
-                                />
+                                <>
+                                    {/* Desktop instant cached placeholder (0 white screen) */}
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                        src={getOptimizedImageUrl(product.image_metadata, allMedia[activeImage]?.url || "", 'xs')}
+                                        alt=""
+                                        className="absolute inset-0 w-full h-full object-contain p-4 md:p-6"
+                                        draggable={false}
+                                    />
+                                    <Image
+                                        src={getOptimizedImageUrl(product.image_metadata, allMedia[activeImage]?.url || "", 'lg')}
+                                        fill
+                                        className="object-contain p-4 md:p-6 group-hover:scale-105 transition-transform duration-500 relative z-[2]"
+                                        alt={`${(product[`name_${language}` as keyof typeof product] as string) || product.name} - ${language === 'uz' ? 'Asosiy rasm' : 'Основное изображение'}`}
+                                        priority
+                                        sizes="(max-width: 1024px) 100vw, 60vw"
+                                        quality={85}
+                                        fetchPriority="high"
+                                        loader={hasVariants(product.image_metadata, allMedia[activeImage]?.url || "") ? makeVariantLoader(product.image_metadata) : undefined}
+                                        onLoad={() => {
+                                            setMaxDesktopLoadIndex(prev => Math.max(prev, 1));
+                                            productTransitionManager.markReady(product?.id || productIdentifier);
+                                        }}
+                                    />
+                                </>
                             )}
                             
                             {/* Zoom hint badge */}

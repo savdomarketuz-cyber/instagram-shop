@@ -100,6 +100,14 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
             return newId;
         })();
 
+        // Mehmon uchun 1 yillik doimiy visitor_id cookie (smart chegirma va telemetriya uchun)
+        if (typeof document !== "undefined" && sessionId) {
+            const hasVisitorCookie = document.cookie.split("; ").some(row => row.startsWith("visitor_id="));
+            if (!hasVisitorCookie) {
+                document.cookie = `visitor_id=${sessionId}; path=/; max-age=31536000; SameSite=Lax`;
+            }
+        }
+
         const getFriendlyPath = (path: string) => {
             if (path === "/") return "Asosiy sahifa";
             if (path.startsWith("/products/")) return "Mahsulot ko'rmoqda";

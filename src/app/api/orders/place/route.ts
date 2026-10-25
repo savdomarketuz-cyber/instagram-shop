@@ -290,21 +290,37 @@ export async function POST(req: NextRequest) {
                         status: "redeemed",
                         redeemed_order_id: String(orderId)
                     };
+                    const visitorId = req.cookies.get("visitor_id")?.value;
+                    const userIdentifiers = [validatedData.userPhone];
+                    if (visitorId && visitorId !== validatedData.userPhone) {
+                        userIdentifiers.push(visitorId);
+                    }
+
                     const { error: redeemErr } = await supabaseAdmin
                         .from("smart_discount_offers")
                         .update(updatePayload)
-                        .eq("user_identifier", validatedData.userPhone)
+                        .in("user_identifier", userIdentifiers)
                         .eq("status", "active")
                         .in("product_id", itemIds);
 
                     if (redeemErr) {
-                        // Fallback agar redeemed_order_id ustuni mavjud bo'lmasa
                         await supabaseAdmin
                             .from("smart_discount_offers")
                             .update({ status: "redeemed" })
-                            .eq("user_identifier", validatedData.userPhone)
+                            .in("user_identifier", userIdentifiers)
                             .eq("status", "active")
                             .in("product_id", itemIds);
+                    }
+
+                    if (visitorId && visitorId !== validatedData.userPhone) {
+                        await supabaseAdmin
+                            .from("smart_discount_offers")
+                            .update({ user_identifier: validatedData.userPhone })
+                            .eq("user_identifier", visitorId);
+                        await supabaseAdmin
+                            .from("user_telemetry_logs")
+                            .update({ user_identifier: validatedData.userPhone })
+                            .eq("user_identifier", visitorId);
                     }
                 }
             }

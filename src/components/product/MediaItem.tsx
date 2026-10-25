@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Play } from "lucide-react";
 import Image from "next/image";
 import { makeVariantLoader, hasVariants } from "@/lib/imageVariants";
@@ -26,6 +26,18 @@ interface MediaItemProps {
 
 export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority = false, onLoadComplete }: MediaItemProps) => {
     const videoRef = useRef<HTMLVideoElement>(null);
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [showPlaceholder, setShowPlaceholder] = useState(true);
+
+    useEffect(() => {
+        if (isLoaded) {
+            // Asl rasm kelganda, vaqtinchalik rasm 0.5 soniyadan keyin yo'q bo'ladi
+            const timer = setTimeout(() => {
+                setShowPlaceholder(false);
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [isLoaded]);
 
     useEffect(() => {
         if (media.type === 'video' && videoRef.current) {
@@ -108,20 +120,37 @@ export const MediaItem = ({ media, isActive, isLightbox, onClick, alt, priority 
         media.lg ? `${media.lg} 1080w` : null,
     ].filter(Boolean).join(", ");
 
+    const cachedPlaceholder = media.xs || media.lowResUrl || media.url;
+
     return (
         <div
             className="w-full h-full flex items-center justify-center cursor-pointer relative overflow-hidden bg-gray-50"
             onClick={onClick}
         >
+            {/* 1. Vaqtinchalik keshdagi rasm: 0ms da ko'rinadi (0.5s oq fon umuman bo'lmaydi) */}
+            {showPlaceholder && cachedPlaceholder && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                    src={cachedPlaceholder}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover"
+                    draggable={false}
+                />
+            )}
+
+            {/* 2. Asl yuqori sifatli rasm: to'g'ridan-to'g'ri vaqtinchalik rasm ustidan paydo bo'ladi */}
             <Image
                 src={optimizedSrc}
                 alt={alt || "Velari mahsulotlari - Sifatli elektronika va maishiy texnika"}
                 fill
-                className="object-cover"
+                className={`object-cover transition-opacity duration-300 ${isLoaded ? "opacity-100" : "opacity-0"}`}
                 sizes="(max-width: 768px) 85vw, 50vw"
                 priority={priority}
                 loader={hasV ? makeVariantLoader(metaForUrl) : undefined}
-                onLoad={() => onLoadComplete?.()}
+                onLoad={() => {
+                    setIsLoaded(true);
+                    onLoadComplete?.();
+                }}
                 referrerPolicy="no-referrer"
             />
         </div>

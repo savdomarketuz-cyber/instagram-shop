@@ -15,17 +15,22 @@ import { getUserJwtSecret } from "@/lib/secrets";
  *  GET  → shu foydalanuvchining barcha aktiv (amaldagi) takliflari.
  *  POST { productId, inWishlist? } → shu mahsulot uchun taklifni baholaydi va kerak bo'lsa yaratadi.
  *
- * Faqat login bo'lgan foydalanuvchi uchun (taklif shaxsiy va identifikatorga bog'lanadi).
- * Signallar SERVER tomonda yig'iladi (telemetry + active_carts) — client'ga ishonilmaydi
- * (inWishlist faqat yumshoq turtki, foiz baribir admin max % bilan cheklangan).
+ * Ham ro'yxatdan o'tgan foydalanuvchi (telefon), ham mehmon (doimiy visitor_id) uchun ishlaydi!
  */
 
-async function getUserPhone(req: NextRequest): Promise<string | null> {
+async function getUserIdentifier(req: NextRequest): Promise<string | null> {
     const token = req.cookies.get("user_token")?.value;
-    if (!token) return null;
-    const JWT_SECRET = getUserJwtSecret();
-    const payload = await verifyJwt(token, JWT_SECRET);
-    return payload?.sub || null;
+    if (token) {
+        const JWT_SECRET = getUserJwtSecret();
+        const payload = await verifyJwt(token, JWT_SECRET);
+        if (payload?.sub) return payload.sub;
+    }
+    // Mehmon foydalanuvchi — doimiy 1 yillik visitor_id cookie
+    const visitorId = req.cookies.get("visitor_id")?.value;
+    if (visitorId && visitorId.length >= 6) {
+        return visitorId;
+    }
+    return null;
 }
 
 async function loadConfig(): Promise<DiscountConfig> {
@@ -45,25 +50,25 @@ async function loadConfig(): Promise<DiscountConfig> {
 }
 
 /** Eskirgan aktiv takliflarni 'expired' qiladi (lazy). */
-async function expireStale(userPhone: string) {
+async function expireStale(userIdentifier: string) {
     await supabaseAdmin
         .from("smart_discount_offers")
         .update({ status: "expired" })
-        .eq("user_identifier", userPhone)
+        .eq("user_identifier", userIdentifier)
         .eq("status", "active")
         .lt("expires_at", new Date().toISOString());
 }
 
 export async function GET(req: NextRequest) {
     try {
-        const userPhone = await getUserPhone(req);
-        if (!userPhone) return NextResponse.json({ success: true, offers: [] });
+        const userIdentifier = await getUserIdentifier(req);
+        if (!userIdentifier) return NextResponse.json({ success: true, offers: [] });
 
-        await expireStale(userPhone);
+        await expireStale(userIdentifier);
         const { data } = await supabaseAdmin
             .from("smart_discount_offers")
             .select("id, product_id, percent, reason_uz, reason_ru, expires_at, created_at")
-            .eq("user_identifier", userPhone)
+            .eq("user_identifier", userIdentifier)
             .eq("status", "active")
             .order("created_at", { ascending: false });
 
@@ -75,8 +80,12 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        const userPhone = await getUserPhone(req);
-        if (!userPhone) return NextResponse.json({ success: true, offer: null, reason: "guest" });
+        let userIdentifier = await getUserIdentifier(req);
+        let newVisitorCookie: string | null = null;
+        if (!userIdentifier) {
+            userIdentifier = "visitor_" + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+            newVisitorCookie = userIdentifier;
+        }
 
         const body = await req.json().catch(() => ({}));
         const productId = String(body.productId || "");
@@ -84,58 +93,92 @@ export async function POST(req: NextRequest) {
         if (!productId) return NextResponse.json({ success: false, error: "productId required" }, { status: 400 });
 
         const cfg = await loadConfig();
-        if (!cfg.enabled) return NextResponse.json({ success: true, offer: null, reason: "disabled" });
+        if (!cfg.enabled) {
+            const res = NextResponse.json({ success: true, offer: null, reason: "disabled" });
+            if (newVisitorCookie) {
+                res.cookies.set("visitor_id", newVisitorCookie, { maxAge: 365 * 24 * 3600, path: "/", sameSite: "lax" });
+            }
+            return res;
+        }
 
-        await expireStale(userPhone);
+        await expireStale(userIdentifier);
 
         // Allaqachon aktiv taklif bormi? — qaytaramiz (yangi yaratmaymiz)
         const { data: existing } = await supabaseAdmin
             .from("smart_discount_offers")
             .select("id, product_id, percent, reason_uz, reason_ru, expires_at")
-            .eq("user_identifier", userPhone)
+            .eq("user_identifier", userIdentifier)
             .eq("product_id", productId)
             .eq("status", "active")
             .gt("expires_at", new Date().toISOString())
             .maybeSingle();
-        if (existing) return NextResponse.json({ success: true, offer: existing, reason: "existing" });
+        if (existing) {
+            const res = NextResponse.json({ success: true, offer: existing, reason: "existing" });
+            if (newVisitorCookie) {
+                res.cookies.set("visitor_id", newVisitorCookie, { maxAge: 365 * 24 * 3600, path: "/", sameSite: "lax" });
+            }
+            return res;
+        }
 
         // Cooldown: shu user×mahsulotga yaqinda taklif berilganmi (har qanday status)?
         const cooldownSince = new Date(Date.now() - cfg.cooldown_hours * 3600_000).toISOString();
         const { count: recentCount } = await supabaseAdmin
             .from("smart_discount_offers")
             .select("id", { count: "exact", head: true })
-            .eq("user_identifier", userPhone)
+            .eq("user_identifier", userIdentifier)
             .eq("product_id", productId)
             .gte("created_at", cooldownSince);
-        if ((recentCount || 0) > 0) return NextResponse.json({ success: true, offer: null, reason: "cooldown" });
+        if ((recentCount || 0) > 0) {
+            const res = NextResponse.json({ success: true, offer: null, reason: "cooldown" });
+            if (newVisitorCookie) {
+                res.cookies.set("visitor_id", newVisitorCookie, { maxAge: 365 * 24 * 3600, path: "/", sameSite: "lax" });
+            }
+            return res;
+        }
 
         // Aktiv takliflar limiti
         const { count: activeCount } = await supabaseAdmin
             .from("smart_discount_offers")
             .select("id", { count: "exact", head: true })
-            .eq("user_identifier", userPhone)
+            .eq("user_identifier", userIdentifier)
             .eq("status", "active")
             .gt("expires_at", new Date().toISOString());
-        if ((activeCount || 0) >= cfg.max_active_offers_per_user)
-            return NextResponse.json({ success: true, offer: null, reason: "max_active" });
+        if ((activeCount || 0) >= cfg.max_active_offers_per_user) {
+            const res = NextResponse.json({ success: true, offer: null, reason: "max_active" });
+            if (newVisitorCookie) {
+                res.cookies.set("visitor_id", newVisitorCookie, { maxAge: 365 * 24 * 3600, path: "/", sameSite: "lax" });
+            }
+            return res;
+        }
 
         // Signallarni server tomonda yig'ish
-        const signals = await gatherSignals(userPhone, productId, clientInWishlist);
+        const signals = await gatherSignals(userIdentifier, productId, clientInWishlist);
 
         // Mahsulot kategoriyasi (istisno tekshiruvi uchun)
         const { data: prod } = await supabaseAdmin
             .from("products").select("category_id, is_deleted").eq("id", productId).single();
-        if (!prod || prod.is_deleted) return NextResponse.json({ success: true, offer: null, reason: "no_product" });
+        if (!prod || prod.is_deleted) {
+            const res = NextResponse.json({ success: true, offer: null, reason: "no_product" });
+            if (newVisitorCookie) {
+                res.cookies.set("visitor_id", newVisitorCookie, { maxAge: 365 * 24 * 3600, path: "/", sameSite: "lax" });
+            }
+            return res;
+        }
 
         const result = evaluateOffer(signals, cfg, { productId, categoryId: prod.category_id });
-        if (!result.eligible)
-            return NextResponse.json({ success: true, offer: null, reason: result.blockReason, score: result.score });
+        if (!result.eligible) {
+            const res = NextResponse.json({ success: true, offer: null, reason: result.blockReason, score: result.score });
+            if (newVisitorCookie) {
+                res.cookies.set("visitor_id", newVisitorCookie, { maxAge: 365 * 24 * 3600, path: "/", sameSite: "lax" });
+            }
+            return res;
+        }
 
         const expiresAt = new Date(Date.now() + cfg.offer_ttl_hours * 3600_000).toISOString();
         const { data: inserted, error } = await supabaseAdmin
             .from("smart_discount_offers")
             .insert({
-                user_identifier: userPhone,
+                user_identifier: userIdentifier,
                 product_id: productId,
                 percent: result.percent,
                 intent_score: result.score,
@@ -149,20 +192,24 @@ export async function POST(req: NextRequest) {
             .single();
         if (error) throw error;
 
-        return NextResponse.json({ success: true, offer: inserted, reason: "created" });
+        const res = NextResponse.json({ success: true, offer: inserted, reason: "created" });
+        if (newVisitorCookie) {
+            res.cookies.set("visitor_id", newVisitorCookie, { maxAge: 365 * 24 * 3600, path: "/", sameSite: "lax" });
+        }
+        return res;
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
 
-async function gatherSignals(userPhone: string, productId: string, clientInWishlist: boolean): Promise<IntentSignals> {
+async function gatherSignals(userIdentifier: string, productId: string, clientInWishlist: boolean): Promise<IntentSignals> {
     const since = new Date(Date.now() - 30 * 24 * 3600_000).toISOString();
 
     // Telemetry: ko'rishlar, savatga qo'shish, dwell, qaytib kelish (xil kunlar)
     const { data: events } = await supabaseAdmin
         .from("user_telemetry_logs")
         .select("event_type, event_value, created_at")
-        .eq("user_identifier", userPhone)
+        .eq("user_identifier", userIdentifier)
         .eq("product_id", productId)
         .gte("created_at", since)
         .limit(500);
@@ -176,12 +223,16 @@ async function gatherSignals(userPhone: string, productId: string, clientInWishl
         if (e.created_at) days.add(String(e.created_at).slice(0, 10));
     });
 
-    // Hozir savatda turibdimi (active_carts — ishonchli manba)
+    // Hozir savatda turibdimi (active_carts — login user uchun, yoki mehmon uchun cartAdds signali)
     let inCart = false;
-    const { data: cart } = await supabaseAdmin
-        .from("active_carts").select("items").eq("user_phone", userPhone).maybeSingle();
-    if (cart?.items && Array.isArray(cart.items)) {
-        inCart = cart.items.some((it: any) => String(it.id) === productId);
+    if (userIdentifier.startsWith("visitor_")) {
+        inCart = cartAdds > 0;
+    } else {
+        const { data: cart } = await supabaseAdmin
+            .from("active_carts").select("items").eq("user_phone", userIdentifier).maybeSingle();
+        if (cart?.items && Array.isArray(cart.items)) {
+            inCart = cart.items.some((it: any) => String(it.id) === productId);
+        }
     }
 
     return {

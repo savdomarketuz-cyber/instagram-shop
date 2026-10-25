@@ -95,9 +95,21 @@ export const useStore = create<StoreState>()(
                 const existing = state.cart.find((item) => item.id === product.id);
                 const maxStock = product.stock ?? 999;
 
-                // Analytics: savatga qo'shish goal + e-commerce
+                // Analytics: savatga qo'shish goal + e-commerce + smart discount telemetry
                 ymGoal('add_to_cart', { product_id: product.id });
                 ymAddToCart({ id: product.id, name: product.name, price: product.price, category: (product as any).category, brand: (product as any).brand });
+                if (typeof window !== "undefined") {
+                    fetch('/api/analytics/telemetry', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            eventType: 'CART_ADD',
+                            productId: product.id,
+                            categoryId: (product as any).category,
+                            eventValue: 1,
+                        })
+                    }).catch(() => {});
+                }
 
                 if (existing) {
                     if (existing.quantity >= maxStock) return {};

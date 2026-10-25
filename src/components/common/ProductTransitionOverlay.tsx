@@ -333,34 +333,6 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                         )}
                     </div>
 
-                    {/* Instagram Style Dynamic Dots Pagination (Water drop / ripple spring entry) */}
-                    {(payload.images && payload.images.length > 1) && (
-                        <div
-                            style={{
-                                position: "fixed",
-                                top: mobileImgTop + mobileImgHeight - 16,
-                                left: 0,
-                                right: 0,
-                                width: "100%",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                gap: 6,
-                                zIndex: 262,
-                                opacity: showInfo ? 1 : 0,
-                                transform: showInfo ? "scale(1)" : "scale(0.3)",
-                                transition: `opacity ${INFO_SLIDE_MS}ms ease-out, transform ${INFO_SLIDE_MS}ms cubic-bezier(0.34, 1.56, 0.64, 1)`,
-                                pointerEvents: "none",
-                            }}
-                        >
-                            <div style={{ width: 20, height: 6, background: "#000", borderRadius: 999 }} />
-                            <div style={{ width: 6, height: 6, background: "rgba(0,0,0,0.25)", borderRadius: "50%" }} />
-                            {payload.images.length > 2 && (
-                                <div style={{ width: 5, height: 5, background: "rgba(0,0,0,0.15)", borderRadius: "50%" }} />
-                            )}
-                        </div>
-                    )}
-
                     {/* Mobile Product Info: 1:1 match with ProductInfo.tsx */}
                     <div
                         style={{

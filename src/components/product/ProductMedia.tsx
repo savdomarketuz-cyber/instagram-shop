@@ -221,32 +221,6 @@ export const ProductMedia = ({
                     {/* Extra space at the end */}
                     <div className="min-w-[10vw]" />
                 </div>
-                
-                {/* Instagram Style Dynamic Dots Pagination */}
-                {allMedia.length > 1 && (
-                    <div className="absolute bottom-10 left-0 right-0 flex items-center justify-center gap-1.5 z-20 pointer-events-none">
-                        {allMedia.map((_, i) => {
-                            const diff = Math.abs(i - activeImage);
-                            let sizeClass = "w-1.5 h-1.5 bg-black/20 rounded-full";
-                            if (diff === 0) {
-                                sizeClass = "w-5 h-1.5 bg-black rounded-full shadow-sm";
-                            } else if (diff === 1) {
-                                sizeClass = "w-2 h-2 bg-black/40 rounded-full";
-                            } else if (diff === 2) {
-                                sizeClass = "w-1.5 h-1.5 bg-black/25 rounded-full";
-                            } else {
-                                sizeClass = "w-1 h-1 bg-black/15 rounded-full";
-                            }
-
-                            return (
-                                <div
-                                    key={i}
-                                    className={`transition-transform duration-200 transition-colors duration-200 ${sizeClass}`}
-                                />
-                            );
-                        })}
-                    </div>
-                )}
 
                 {/* Floating Top Controls */}
                 <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-30 pointer-events-none">

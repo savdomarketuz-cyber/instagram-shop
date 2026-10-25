@@ -14,9 +14,10 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { eventType, productId, categoryId, eventValue, metadata } = body;
 
-        // 1. Identify User (Phone if logged in via user_token session, otherwise IP fallback)
+        // 1. Identify User (Phone if logged in via user_token session, otherwise visitor_id, otherwise IP fallback)
         const sessionPhone = await getSessionPhone(req);
-        const userIdentifier = sessionPhone || ip;
+        const visitorId = req.cookies.get("visitor_id")?.value;
+        const userIdentifier = sessionPhone || visitorId || body?.visitorId || ip;
 
         if (!eventType) {
              return NextResponse.json({ error: "Missing event type" }, { status: 400 });
