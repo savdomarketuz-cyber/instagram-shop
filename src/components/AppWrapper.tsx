@@ -330,8 +330,19 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
     // Footer (Biz haqimizda / Foydalanuvchilarga / Tadbirkorlarga) faqat profil bo'limida
     const isAccount = pathWithoutLocale === "/account" || pathWithoutLocale.startsWith("/account/");
 
-    // Manual Scroll Restoration Logic (debounced + passive listener)
+    // Manual Scroll Restoration Logic (debounced + passive listener) — faqat ro'yxat sahifalari uchun (Home, Catalog, Store)
     useEffect(() => {
+        if (!pathname) return;
+
+        // Mahsulot sahifasida doimo sahifa boshiga o'tadi (skrol eslab qolinmaydi)
+        if (isProductDetail) {
+            try {
+                sessionStorage.removeItem(`scroll_${pathname}`);
+            } catch {}
+            window.scrollTo({ top: 0, behavior: 'instant' });
+            return;
+        }
+
         let timer: NodeJS.Timeout;
         const handleScroll = () => {
             clearTimeout(timer);
@@ -357,7 +368,7 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
             clearTimeout(timer);
             window.removeEventListener('scroll', handleScroll);
         };
-    }, [pathname]);
+    }, [pathname, isProductDetail]);
 
     if (isAdmin) {
         return (

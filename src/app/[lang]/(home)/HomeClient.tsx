@@ -980,7 +980,6 @@ export default function HomeClient({
                     </div>
                 )}
 
-                {!searchResults && !urlCategory && <Suspense fallback={null}><RecentlyViewed language={language} /></Suspense>}
 
                 {/* Suspense chegaralari: HTML o'zgarmaydi, lekin React ularni alohida vazifalarda hydrate qiladi —
                     bitta uzun (mobilda ~300 ms) vazifa o'rniga qisqa bo'laklar (TBT kamayadi) */}
@@ -1001,6 +1000,8 @@ export default function HomeClient({
                     showReasons={activeTab === "for_you" && !searchResults && !urlCategory}
                 />
                 </Suspense>
+
+                {!searchResults && !urlCategory && <Suspense fallback={null}><RecentlyViewed language={language} /></Suspense>}
 
                 {searchResults && searchMeta?.hasMore && (
                     <div style={{ display: "flex", justifyContent: "center", margin: "24px 0 8px" }}>

@@ -25,17 +25,17 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                 setIsExpanded(false);
                 setIsFadingOut(false);
 
-                // Start expansion on the very next render frame
+                // Start expansion on next animation frame
                 requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
                         setIsExpanded(true);
                     });
                 });
 
-                // Safety timeout: If navigation doesn't finish within 600ms, gently dismiss
+                // Safety timeout: only if route navigation fails completely (3 seconds)
                 timeoutRef.current = setTimeout(() => {
                     handleDismiss();
-                }, 600);
+                }, 3000);
             } else {
                 handleDismiss();
             }
@@ -45,6 +45,8 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
         const handlePopstate = () => {
             productTransitionManager.clear();
             setPayload(null);
+            setIsExpanded(false);
+            setIsFadingOut(false);
         };
         window.addEventListener("popstate", handlePopstate);
 
@@ -56,13 +58,12 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
         };
     }, []);
 
-    // When pathname changes to the product detail page, initiate smooth handoff
+    // When pathname changes to product detail page, handoff smoothly
     useEffect(() => {
         if (payload && pathname?.includes("/products/")) {
-            // Give Next.js 50ms to paint the real product page under the overlay, then fade out
             const timer = setTimeout(() => {
                 handleDismiss();
-            }, 60);
+            }, 80);
             return () => clearTimeout(timer);
         }
     }, [pathname, payload]);
@@ -75,39 +76,64 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
             setIsExpanded(false);
             setIsFadingOut(false);
             productTransitionManager.clear();
-        }, 180);
+        }, 220);
     };
 
     if (!payload) return null;
 
-    const isMobile = typeof window !== "undefined" ? window.innerWidth < 768 : true;
+    const isMobile = typeof window !== "undefined" ? window.innerWidth < 1024 : true;
     const windowWidth = typeof window !== "undefined" ? window.innerWidth : 390;
 
-    // Destination dimensions (matching ProductMedia.tsx aspect-3/4 on mobile & desktop)
-    const targetWidth = isMobile
-        ? Math.min(windowWidth - 40, 480)
-        : Math.min(540, windowWidth * 0.4);
-    const targetHeight = targetWidth * (4 / 3);
-    const targetTop = isMobile ? 8 : 72;
-    const targetLeft = isMobile
-        ? 20
-        : Math.max(40, (windowWidth - targetWidth) / 2 - 160);
+    // --- EXACT TARGET POSITIONING ---
+    // Mobile: at top (under minimal status bar) with px-5
+    // Desktop: in left gallery column (NOT center), exactly where ProductClient renders it!
+    let targetTop = 16;
+    let targetLeft = 20;
+    let targetWidth = Math.min(windowWidth - 40, 480);
+    let targetHeight = targetWidth * (4 / 3);
+    let targetBorderRadius = 28;
 
-    // Current animated box style
+    // Desktop Info position (to the right of the image)
+    let infoTop = targetTop + targetHeight + 16;
+    let infoLeft = targetLeft;
+    let infoWidth = targetWidth;
+
+    if (!isMobile) {
+        const containerWidth = Math.min(1600, windowWidth);
+        const containerLeft = (windowWidth - containerWidth) / 2;
+        const contentLeft = containerLeft + 40; // px-10
+
+        // In ProductClient: 12-col grid. Left col-7 has thumbnails (160px) + gap-10 (40px) = 200px
+        const galleryLeft = contentLeft + 200;
+        const availableCol7 = (containerWidth - 80) * (7 / 12) - 40;
+        const mainImgW = Math.min(620, Math.max(420, availableCol7 - 200));
+
+        targetTop = 180; // Below header (~112px) + py-12 breadcrumbs (~60px)
+        targetLeft = galleryLeft;
+        targetWidth = mainImgW;
+        targetHeight = Math.min(760, mainImgW * (4 / 3));
+        targetBorderRadius = 40; // matches ProductClient rounded-[40px]
+
+        // Right side info (col-5)
+        infoTop = targetTop + 20;
+        infoLeft = targetLeft + targetWidth + 48; // gap-16
+        infoWidth = Math.min(480, (containerWidth - 80) * (5 / 12) - 40);
+    }
+
     const boxStyle: React.CSSProperties = {
         position: "fixed",
         top: isExpanded ? targetTop : payload.rect.top,
         left: isExpanded ? targetLeft : payload.rect.left,
         width: isExpanded ? targetWidth : payload.rect.width,
         height: isExpanded ? targetHeight : payload.rect.height,
-        borderRadius: isExpanded ? 28 : 24,
+        borderRadius: isExpanded ? targetBorderRadius : 24,
         background: "#ffffff",
         overflow: "hidden",
         boxShadow: isExpanded
-            ? "0 20px 40px rgba(15,20,16,0.12), 0 1px 3px rgba(15,20,16,0.04)"
+            ? "0 25px 50px -12px rgba(15,20,16,0.18), 0 2px 8px rgba(15,20,16,0.06)"
             : "0 4px 20px rgba(15,20,16,0.06)",
-        transition: "all 260ms cubic-bezier(0.22, 1, 0.36, 1)",
-        zIndex: 100,
+        transition: "all 480ms cubic-bezier(0.16, 1, 0.3, 1)",
+        zIndex: 260, // Above header (z-90 / z-120)
         willChange: "top, left, width, height, border-radius",
     };
 
@@ -121,23 +147,23 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
 
     return (
         <div
-            className="fixed inset-0 z-[99] pointer-events-none"
+            className={`fixed inset-0 z-[250] ${isFadingOut ? "pointer-events-none" : "pointer-events-auto"}`}
             style={{
                 opacity: isFadingOut ? 0 : 1,
-                transition: "opacity 160ms ease-out",
+                transition: "opacity 220ms ease-out",
             }}
             aria-hidden="true"
         >
-            {/* Backdrop that fades in to cover the background cleanly */}
+            {/* Full-screen clean backdrop that covers the old page smoothly */}
             <div
                 className="absolute inset-0 bg-[#FAFAF6]"
                 style={{
-                    opacity: isExpanded ? 0.96 : 0,
-                    transition: "opacity 240ms cubic-bezier(0.22, 1, 0.36, 1)",
+                    opacity: isExpanded ? 0.98 : 0,
+                    transition: "opacity 420ms cubic-bezier(0.16, 1, 0.3, 1)",
                 }}
             />
 
-            {/* Expanding Shared Card Element */}
+            {/* Expanding Card Hero Element */}
             <div style={boxStyle}>
                 <div className="relative w-full h-full bg-[#F5F5F0]">
                     {isVideo ? (
@@ -155,7 +181,7 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                             alt={name}
                             fill
                             priority
-                            sizes={isMobile ? "90vw" : "540px"}
+                            sizes={isMobile ? "95vw" : "620px"}
                             className="object-cover"
                             loader={
                                 hasVariants(payload.image_metadata, payload.image)
@@ -169,28 +195,31 @@ export default function ProductTransitionOverlay({ lang = "uz" }: { lang?: strin
                 </div>
             </div>
 
-            {/* Smooth Title & Price Expansion Below Target Image */}
+            {/* Product Title and Price Expansion */}
             <div
                 style={{
                     position: "fixed",
-                    top: targetTop + targetHeight + 16,
-                    left: targetLeft,
-                    width: targetWidth,
+                    top: infoTop,
+                    left: infoLeft,
+                    width: infoWidth,
                     opacity: isExpanded ? 1 : 0,
-                    transform: isExpanded ? "translateY(0)" : "translateY(16px)",
-                    transition: "all 240ms cubic-bezier(0.22, 1, 0.36, 1) 60ms",
-                    zIndex: 101,
+                    transform: isExpanded ? "translateY(0)" : "translateY(24px)",
+                    transition: "all 440ms cubic-bezier(0.16, 1, 0.3, 1) 120ms",
+                    zIndex: 261,
                 }}
             >
-                <h2 className="text-[19px] font-bold text-[#111612] line-clamp-2 leading-snug tracking-tight">
+                <div className="inline-block px-3 py-1 bg-[#EAF3EC] text-[#2D6E3E] rounded-full text-[10px] font-extrabold uppercase tracking-wider mb-2">
+                    {lang === "uz" ? "Original sifat" : "Оригинальное качество"}
+                </div>
+                <h2 className="text-[20px] lg:text-[26px] font-bold text-[#111612] line-clamp-2 leading-snug tracking-tight">
                     {name}
                 </h2>
-                <div className="flex items-baseline gap-3 mt-2">
-                    <span className="text-[18px] font-extrabold text-[#2D6E3E]">
+                <div className="flex items-baseline gap-3 mt-3">
+                    <span className="text-[20px] lg:text-[24px] font-extrabold text-[#2D6E3E]">
                         {fmtPrice(payload.price)}
                     </span>
                     {payload.oldPrice && payload.oldPrice > payload.price && (
-                        <span className="text-[13px] text-gray-400 line-through font-semibold">
+                        <span className="text-[14px] text-gray-400 line-through font-semibold">
                             {fmtPrice(payload.oldPrice)}
                         </span>
                     )}
