@@ -53,12 +53,9 @@ export default function CatalogClient({
     initialProductCatIds,
     initialWarehouses
 }: CatalogClientProps) {
-    // Serverdan kelgan omborlarni store'ga darhol o'rnatish (0ms)
-    if (typeof window !== "undefined" && initialWarehouses && initialWarehouses.length > 0 && useStore.getState().warehouses.length === 0) {
-        useStore.setState({ warehouses: initialWarehouses });
-    }
+    // Serverdan kelgan omborlarni store'ga xavfsiz o'rnatish
     useEffect(() => {
-        if (initialWarehouses && initialWarehouses.length > 0) {
+        if (initialWarehouses && initialWarehouses.length > 0 && useStore.getState().warehouses.length === 0) {
             useStore.setState({ warehouses: initialWarehouses });
         }
     }, [initialWarehouses]);
