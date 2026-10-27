@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Scissors, Wind, Sparkles, Headphones, RotateCcw } from "lucide-react";
+import { Scissors, Wind, Sparkles, Headphones, Building2, RotateCcw } from "lucide-react";
 import { ShowroomZone } from "./showroom-data";
 import { translations } from "@/lib/translations";
 
@@ -34,6 +34,11 @@ export default function NavigationDock({ activeZone, lang, onSelectZone }: Navig
             id: "gadgets",
             label: t.showroom.gadgets,
             icon: <Headphones size={17} />
+        },
+        {
+            id: "exterior",
+            label: (t.showroom as any).exterior || "Tashqi Fasad",
+            icon: <Building2 size={17} />
         },
         {
             id: "all",

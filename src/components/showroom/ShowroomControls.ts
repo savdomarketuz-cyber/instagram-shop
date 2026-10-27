@@ -12,13 +12,12 @@ export interface ObstacleBox {
 export interface ShowroomControlsCallbacks {
     onSelectProduct: (item: { stand: ShowroomShowcaseStand; product: Product }) => void;
     onCloseOverlay: () => void;
-    onNearbyChange: (item: { stand: ShowroomShowcaseStand; product: Product } | null, isAiming: boolean) => void;
     onPointerLockChange?: (locked: boolean) => void;
 }
 
 export class ShowroomControls {
     public mode: "FREE_ROAM" | "INSPECT" = "FREE_ROAM";
-    public playerPos = new THREE.Vector3(0, 1.65, 8.5);
+    public playerPos = new THREE.Vector3(0, 1.65, 9.2);
     public velocity = new THREE.Vector3(0, 0, 0);
     public verticalVelocity = 0;
     public isGrounded = true;
@@ -29,42 +28,50 @@ export class ShowroomControls {
     private bobTimer = 0;
     private bobOffset = new THREE.Vector3(0, 0, 0);
 
-    // Inspect rejimidagi kamera parametrlari
+    // Inspect rejimidagi kamera
     public inspectCamPos = new THREE.Vector3(0, 1.65, 8.5);
     public inspectLookAt = new THREE.Vector3(0, 1.1, -0.5);
     private currentInspectLookAt = new THREE.Vector3(0, 1.1, -0.5);
 
-    // Kiritish holatlari
+    // Kiritish
     private keysPressed: Record<string, boolean> = {};
     private joystickVector = { x: 0, y: 0 };
-    public isSprinting = false;
 
-    // Sichqoncha va sensorli teginish
+    // Sichqoncha va sensorli drag
     private isPointerLocked = false;
     private isMouseDown = false;
     private previousMousePos = { x: 0, y: 0 };
 
-    // Sensorli ekran (Touch Look)
+    // Tap/Click aniqlash (Adashib ochilib ketmaslik uchun)
+    private pointerDownPos = { x: 0, y: 0 };
+    private pointerDownTime = 0;
+
+    // Sensorli ekran (Touch Look - o'ng taraf)
     private activeTouchLookId: number | null = null;
     private touchLookPrevX = 0;
     private touchLookPrevY = 0;
-    private touchStartTime = 0;
 
-    // Raycasting va nishon
+    // Raycasting (Faqat to'g'ridan-to'g'ri bosilganda ishlatiladi)
     private raycaster = new THREE.Raycaster();
-    private screenCenter = new THREE.Vector2(0, 0);
-    public nearbyItemData: { stand: ShowroomShowcaseStand; product: Product } | null = null;
-    public isAimingAtItem = false;
+    private tapVector = new THREE.Vector2();
 
-    // To'siqlar: 4 ta katta eman stol (uzunligi 4.2m, kengligi 1.6m) + o'yinchi radiusi 0.35m
+    // TO'SIQLAR: 8 ta to'q yong'oq stol + Fasad oynalari + Xona/Ko'cha chegaralari
     private obstacles: ObstacleBox[] = [
-        { minX: -7.95, maxX: -3.05, minZ: -1.65, maxZ: 0.65 }, // Trimmers (x: -5.5, z: -0.5)
-        { minX: -2.45, maxX: 2.45, minZ: -5.65, maxZ: -3.35 },  // Hair Care (x: 0.0, z: -4.5)
-        { minX: 3.05, maxX: 7.95, minZ: -1.65, maxZ: 0.65 },   // Shavers (x: 5.5, z: -0.5)
-        { minX: -2.45, maxX: 2.45, minZ: 2.35, maxZ: 4.65 }     // Gadgets (x: 0.0, z: 3.5)
+        // 8 ta stol (uzunligi 4.2m x kengligi 1.6m + o'yinchi radiusi 0.35m)
+        { minX: -7.95, maxX: -3.05, minZ: -0.15, maxZ: 2.15 },   // Trimmerlar (x: -5.5, z: 1.0)
+        { minX: -7.95, maxX: -3.05, minZ: -5.65, maxZ: -3.35 },  // Fenlar (x: -5.5, z: -4.5)
+        { minX: 3.05, maxX: 7.95, minZ: -0.15, maxZ: 2.15 },    // Sheyverlar (x: 5.5, z: 1.0)
+        { minX: 3.05, maxX: 7.95, minZ: -5.65, maxZ: -3.35 },   // Audio (x: 5.5, z: -4.5)
+        { minX: -2.45, maxX: 2.45, minZ: -2.65, maxZ: -0.35 },   // Markaziy Flagman (x: 0, z: -1.5)
+        { minX: -2.45, maxX: 2.45, minZ: -8.15, maxZ: -5.85 },   // Markaziy Orqa (x: 0, z: -7.0)
+        { minX: -12.95, maxX: -8.05, minZ: -2.65, maxZ: -0.35 }, // Chap qanot (x: -10.5, z: -1.5)
+        { minX: 8.05, maxX: 12.95, minZ: -2.65, maxZ: -0.35 },  // O'ng qanot (x: 10.5, z: -1.5)
+
+        // Fasad shisha devorlari (Kirish o'rtada -3.0 dan +3.0 gacha ochiq)
+        { minX: -15.5, maxX: -3.0, minZ: 10.7, maxZ: 11.3 },     // Chap fasad oynasi
+        { minX: 3.0, maxX: 15.5, minZ: 10.7, maxZ: 11.3 }        // O'ng fasad oynasi
     ];
 
-    // Qayta ishlatiluvchi yordamchi vektorlar (Garbage Collector yuki bo'lmasligi uchun)
     private _forward = new THREE.Vector3();
     private _right = new THREE.Vector3();
     private _inputDir = new THREE.Vector3();
@@ -74,23 +81,18 @@ export class ShowroomControls {
 
     private container: HTMLElement;
     private camera: THREE.PerspectiveCamera;
-    private stands: ShowroomShowcaseStand[];
     private interactiveMeshes: THREE.Object3D[];
     private callbacks: ShowroomControlsCallbacks;
-
-    // Event listener tozalash uchun
     private listenersCleanup: (() => void)[] = [];
 
     constructor(
         container: HTMLElement,
         camera: THREE.PerspectiveCamera,
-        stands: ShowroomShowcaseStand[],
         interactiveMeshes: THREE.Object3D[],
         callbacks: ShowroomControlsCallbacks
     ) {
         this.container = container;
         this.camera = camera;
-        this.stands = stands;
         this.interactiveMeshes = interactiveMeshes;
         this.callbacks = callbacks;
 
@@ -107,7 +109,7 @@ export class ShowroomControls {
         document.addEventListener("pointerlockchange", onPointerLockChange);
         this.listenersCleanup.push(() => document.removeEventListener("pointerlockchange", onPointerLockChange));
 
-        // 2. Mouse Look & Drag
+        // 2. Mouse Look & Clean Click
         const onMouseMove = (e: MouseEvent) => {
             const yMult = this.invertY ? 1 : -1;
             if (this.isPointerLocked) {
@@ -128,21 +130,25 @@ export class ShowroomControls {
         const onMouseDown = (e: MouseEvent) => {
             if ((e.target as HTMLElement).closest("button") || (e.target as HTMLElement).closest("a")) return;
 
+            this.isMouseDown = true;
+            this.previousMousePos = { x: e.clientX, y: e.clientY };
+            this.pointerDownPos = { x: e.clientX, y: e.clientY };
+            this.pointerDownTime = Date.now();
+
             if (!document.pointerLockElement && this.mode === "FREE_ROAM") {
                 this.container.requestPointerLock?.();
             }
-
-            this.isMouseDown = true;
-            this.previousMousePos = { x: e.clientX, y: e.clientY };
-
-            // Agar nishonda turgan bo'lsa darhol ochish
-            if (this.nearbyItemData && this.mode === "FREE_ROAM") {
-                this.inspectStand(this.nearbyItemData);
-            }
         };
 
-        const onMouseUp = () => {
+        const onMouseUp = (e: MouseEvent) => {
             this.isMouseDown = false;
+
+            // Agar qisqa toza bosish (drag emas) bo'lsa, mahsulotni tekshirish
+            const moveDist = Math.hypot(e.clientX - this.pointerDownPos.x, e.clientY - this.pointerDownPos.y);
+            const elapsed = Date.now() - this.pointerDownTime;
+            if (moveDist < 7 && elapsed < 300 && this.mode === "FREE_ROAM") {
+                this.checkTapOnProduct(e.clientX, e.clientY);
+            }
         };
 
         window.addEventListener("mousemove", onMouseMove);
@@ -154,7 +160,7 @@ export class ShowroomControls {
             window.removeEventListener("mouseup", onMouseUp);
         });
 
-        // 3. Sensorli Ekran (Touch 360° Drag Look)
+        // 3. Sensorli Ekran (Ekranning o'ng tomoni orqali Touch Look)
         const onTouchStart = (e: TouchEvent) => {
             for (let i = 0; i < e.changedTouches.length; i++) {
                 const touch = e.changedTouches[i];
@@ -162,13 +168,14 @@ export class ShowroomControls {
                 if (target.closest("button") || target.closest("a") || target.closest(".no-drag")) {
                     continue;
                 }
-                // Agar joystick maydonida bo'lmasa, qarash (camera look) uchun olamiz
-                if (this.activeTouchLookId === null) {
+
+                // Ekranning o'ng yarmi: Kamerani aylantirish (Look around)
+                if (touch.clientX >= window.innerWidth / 2 && this.activeTouchLookId === null) {
                     this.activeTouchLookId = touch.identifier;
                     this.touchLookPrevX = touch.clientX;
                     this.touchLookPrevY = touch.clientY;
-                    this.touchStartTime = Date.now();
-                    break;
+                    this.pointerDownPos = { x: touch.clientX, y: touch.clientY };
+                    this.pointerDownTime = Date.now();
                 }
             }
         };
@@ -183,7 +190,7 @@ export class ShowroomControls {
                     this.touchLookPrevX = touch.clientX;
                     this.touchLookPrevY = touch.clientY;
 
-                    const touchSensitivity = 0.0042;
+                    const touchSensitivity = 0.0044;
                     const yMult = this.invertY ? 1 : -1;
                     this.yaw += dx * touchSensitivity;
                     this.pitch += dy * touchSensitivity * yMult;
@@ -197,10 +204,10 @@ export class ShowroomControls {
             for (let i = 0; i < e.changedTouches.length; i++) {
                 const touch = e.changedTouches[i];
                 if (touch.identifier === this.activeTouchLookId) {
-                    const elapsed = Date.now() - this.touchStartTime;
-                    // Agar qisqa tap bo'lsa va nishonda tovar bo'lsa, ochish
-                    if (elapsed < 280 && this.nearbyItemData && this.mode === "FREE_ROAM") {
-                        this.inspectStand(this.nearbyItemData);
+                    const moveDist = Math.hypot(touch.clientX - this.pointerDownPos.x, touch.clientY - this.pointerDownPos.y);
+                    const elapsed = Date.now() - this.pointerDownTime;
+                    if (moveDist < 8 && elapsed < 280 && this.mode === "FREE_ROAM") {
+                        this.checkTapOnProduct(touch.clientX, touch.clientY);
                     }
                     this.activeTouchLookId = null;
                     break;
@@ -217,25 +224,13 @@ export class ShowroomControls {
             window.removeEventListener("touchend", onTouchEnd);
         });
 
-        // 4. Klaviaturada harakat (Minecraft WASD + Space + Shift)
+        // 4. Klaviaturada harakat (Minecraft WASD + Space)
         const onKeyDown = (e: KeyboardEvent) => {
             const key = e.key.toLowerCase();
             this.keysPressed[key] = true;
 
-            if (key === "shift") {
-                this.isSprinting = true;
-            }
-
             if (key === " " || key === "space") {
                 this.jump();
-            }
-
-            if (key === "e") {
-                if (this.mode === "FREE_ROAM" && this.nearbyItemData) {
-                    this.inspectStand(this.nearbyItemData);
-                } else if (this.mode === "INSPECT") {
-                    this.exitInspect();
-                }
             }
 
             if (key === "escape") {
@@ -246,11 +241,7 @@ export class ShowroomControls {
         };
 
         const onKeyUp = (e: KeyboardEvent) => {
-            const key = e.key.toLowerCase();
-            this.keysPressed[key] = false;
-            if (key === "shift") {
-                this.isSprinting = false;
-            }
+            this.keysPressed[e.key.toLowerCase()] = false;
         };
 
         window.addEventListener("keydown", onKeyDown);
@@ -262,25 +253,39 @@ export class ShowroomControls {
     }
 
     /**
-     * Virtual Joystick'dan olingan harakat vektori (-1..1)
+     * FAQATGINA TO'G'RIDAN-TO'G'RI MAHSULOT USTIGA BOSILGANDA RAYCAST TEKSHIRUVI
+     * Adashib ochilib ketish 100% yo'qoladi!
      */
+    public checkTapOnProduct(clientX: number, clientY: number) {
+        this.tapVector.x = (clientX / window.innerWidth) * 2 - 1;
+        this.tapVector.y = -(clientY / window.innerHeight) * 2 + 1;
+
+        this.raycaster.setFromCamera(this.tapVector, this.camera);
+        const intersects = this.raycaster.intersectObjects(this.interactiveMeshes, false);
+
+        if (intersects.length > 0) {
+            const hit = intersects[0];
+            // Faqat o'yinchidan yaqin masofadagi (< 5.5 metr) stendlar ochiladi
+            if (hit.distance < 5.5 && hit.object.userData?.stand && hit.object.userData?.product) {
+                this.inspectStand({
+                    stand: hit.object.userData.stand,
+                    product: hit.object.userData.product
+                });
+            }
+        }
+    }
+
     public setJoystickMove(vector: { x: number; y: number }) {
         this.joystickVector = vector;
     }
 
-    /**
-     * Sakrash harakati (Minecraft Jump Impulse)
-     */
     public jump() {
         if (this.isGrounded && this.mode === "FREE_ROAM") {
-            this.verticalVelocity = 5.2; // m/s sakrash kuchlanishi
+            this.verticalVelocity = 5.2;
             this.isGrounded = false;
         }
     }
 
-    /**
-     * Vitrinaga silliq yaqinlashib ko'rish
-     */
     public inspectStand(item: { stand: ShowroomShowcaseStand; product: Product }) {
         this.mode = "INSPECT";
         this.inspectCamPos.set(...item.stand.focusPosition);
@@ -288,17 +293,11 @@ export class ShowroomControls {
         this.callbacks.onSelectProduct(item);
     }
 
-    /**
-     * Erkin harakatga qaytish
-     */
     public exitInspect() {
         this.mode = "FREE_ROAM";
         this.callbacks.onCloseOverlay();
     }
 
-    /**
-     * Belgilangan nuqtaga va burchakka bir zumda teleport qilish
-     */
     public teleportTo(pos: [number, number, number], lookAt: [number, number, number]) {
         this.mode = "FREE_ROAM";
         this.playerPos.set(...pos);
@@ -312,15 +311,15 @@ export class ShowroomControls {
     }
 
     /**
-     * Minecraft uslubidagi fizik harakat va to'siqlardan sirpanish
+     * MINECRAFT FIZIKASI VA STOLLAR/DEVORLARDAN SIRPANISH (OBSTACLE SLIDING)
      */
-    public update(delta: number, frameCount: number) {
+    public update(delta: number) {
         if (this.mode === "FREE_ROAM") {
-            // 1) Kameraning gorizontal yo'nalishi (Horizontal Yaw)
+            // 1) Kameraning gorizontal yo'nalishi
             this._forward.set(Math.sin(this.yaw), 0, -Math.cos(this.yaw));
             this._right.set(-this._forward.z, 0, this._forward.x);
 
-            // 2) Kiritish yo'nalishi: Klaviaturadagi tugmalar + Virtual Joystick
+            // 2) Kiritish: Klaviatura + Suzuvchi Joystik
             this._inputDir.set(0, 0, 0);
 
             if (this.keysPressed["w"] || this.keysPressed["arrowup"]) this._inputDir.add(this._forward);
@@ -328,8 +327,7 @@ export class ShowroomControls {
             if (this.keysPressed["d"] || this.keysPressed["arrowright"]) this._inputDir.add(this._right);
             if (this.keysPressed["a"] || this.keysPressed["arrowleft"]) this._inputDir.sub(this._right);
 
-            // Virtual Joystick qo'shish
-            if (Math.hypot(this.joystickVector.x, this.joystickVector.y) > 0.08) {
+            if (Math.hypot(this.joystickVector.x, this.joystickVector.y) > 0.06) {
                 this._inputDir.addScaledVector(this._forward, this.joystickVector.y);
                 this._inputDir.addScaledVector(this._right, this.joystickVector.x);
             }
@@ -338,15 +336,15 @@ export class ShowroomControls {
                 this._inputDir.normalize();
             }
 
-            // 3) Minecraft tezlanishi va yer ishqalanishi (Ground Friction & Glide)
-            const speed = this.isSprinting ? 6.8 : 4.0;
-            this._targetVelocity.copy(this._inputDir).multiplyScalar(speed);
+            // 3) Optimal, tez va qulay yurish tezligi (4.8 m/s)
+            const walkSpeed = 4.8;
+            this._targetVelocity.copy(this._inputDir).multiplyScalar(walkSpeed);
 
-            const accelRate = this._inputDir.lengthSq() > 0 ? 14.0 : 12.0;
+            const accelRate = this._inputDir.lengthSq() > 0 ? 15.0 : 12.0;
             this.velocity.x = THREE.MathUtils.lerp(this.velocity.x, this._targetVelocity.x, accelRate * delta);
             this.velocity.z = THREE.MathUtils.lerp(this.velocity.z, this._targetVelocity.z, accelRate * delta);
 
-            // 4) Gravitatsiya va Sakrash
+            // 4) Gravitatsiya
             this.verticalVelocity -= 18.0 * delta;
             this.playerPos.y += this.verticalVelocity * delta;
 
@@ -356,13 +354,16 @@ export class ShowroomControls {
                 this.isGrounded = true;
             }
 
-            // 5) To'siqlardan sirpanish (Obstacle Sliding Physics)
-            // X va Z o'qlari bo'yicha alohida tekshiriladi, bu o'yinchiga devor bo'ylab silliq sirpanish imkonini beradi.
+            // 5) To'siqlardan sirpanish (Ichki zal va tashqi ko'cha)
             const nextX = this.playerPos.x + this.velocity.x * delta;
             const nextZ = this.playerPos.z + this.velocity.z * delta;
 
+            // X bo'yicha chegaralar (Zal ichida: -14.2 .. 14.2, Tashqi ko'chada: -22 .. 22)
+            const isOutside = this.playerPos.z > 11.2;
+            const boundX = isOutside ? 22.0 : 14.2;
+
             let canMoveX = true;
-            if (nextX < -12.4 || nextX > 12.4) canMoveX = false;
+            if (nextX < -boundX || nextX > boundX) canMoveX = false;
             for (let i = 0; i < this.obstacles.length; i++) {
                 const obs = this.obstacles[i];
                 if (nextX >= obs.minX && nextX <= obs.maxX && this.playerPos.z >= obs.minZ && this.playerPos.z <= obs.maxZ) {
@@ -376,8 +377,9 @@ export class ShowroomControls {
                 this.velocity.x = 0;
             }
 
+            // Z bo'yicha chegaralar (Orqa devor: -11.6, Tashqi ko'cha oxiri: +26.0)
             let canMoveZ = true;
-            if (nextZ < -11.8 || nextZ > 11.2) canMoveZ = false;
+            if (nextZ < -11.6 || nextZ > 26.0) canMoveZ = false;
             for (let i = 0; i < this.obstacles.length; i++) {
                 const obs = this.obstacles[i];
                 if (this.playerPos.x >= obs.minX && this.playerPos.x <= obs.maxX && nextZ >= obs.minZ && nextZ <= obs.maxZ) {
@@ -391,15 +393,13 @@ export class ShowroomControls {
                 this.velocity.z = 0;
             }
 
-            // 6) Head Bobbing (Qadam bosish tebranishi)
-            const horizontalSpeed = Math.hypot(this.velocity.x, this.velocity.z);
-            if (horizontalSpeed > 0.3 && this.isGrounded) {
-                const bobFreq = this.isSprinting ? 14 : 9;
-                this.bobTimer += delta * bobFreq;
-                const bobAmp = this.isSprinting ? 0.040 : 0.022;
+            // 6) Head Bobbing
+            const hSpeed = Math.hypot(this.velocity.x, this.velocity.z);
+            if (hSpeed > 0.3 && this.isGrounded) {
+                this.bobTimer += delta * 10;
                 this.bobOffset.set(
-                    Math.cos(this.bobTimer * 0.5) * bobAmp * 0.5,
-                    Math.sin(this.bobTimer) * bobAmp,
+                    Math.cos(this.bobTimer * 0.5) * 0.025 * 0.5,
+                    Math.sin(this.bobTimer) * 0.025,
                     0
                 );
             } else {
@@ -408,7 +408,7 @@ export class ShowroomControls {
 
             this.camera.position.copy(this.playerPos).add(this.bobOffset);
 
-            // 7) Kamera qarashi
+            // 7) Kamera yo'nalishi
             this._lookDirection.set(
                 Math.sin(this.yaw) * Math.cos(this.pitch),
                 Math.sin(this.pitch),
@@ -416,45 +416,8 @@ export class ShowroomControls {
             );
             this._camTarget.copy(this.camera.position).add(this._lookDirection);
             this.camera.lookAt(this._camTarget);
-
-            // 8) Nishon (Raycasting) va Yaqinlik tekshiruvi (Har 2 kadrda)
-            if (frameCount % 2 === 0) {
-                this.raycaster.setFromCamera(this.screenCenter, this.camera);
-                const intersects = this.raycaster.intersectObjects(this.interactiveMeshes, false);
-
-                let foundNearby: { stand: ShowroomShowcaseStand; product: Product } | null = null;
-                let aiming = false;
-
-                if (intersects.length > 0 && intersects[0].distance < 6.5) {
-                    const hitObj = intersects[0].object;
-                    if (hitObj.userData?.itemData) {
-                        foundNearby = hitObj.userData.itemData;
-                        aiming = true;
-                    }
-                }
-
-                // Agar to'g'ridan-to'g'ri nishonga olinmagan bo'lsa, eng yaqin stendni topish
-                if (!foundNearby) {
-                    let minDistance = 2.8;
-                    for (let i = 0; i < this.stands.length; i++) {
-                        const stand = this.stands[i];
-                        const dist = Math.hypot(
-                            this.playerPos.x - stand.position[0],
-                            this.playerPos.z - stand.position[2]
-                        );
-                        if (dist < minDistance) {
-                            minDistance = dist;
-                            foundNearby = { stand, product: stand.product };
-                        }
-                    }
-                }
-
-                this.nearbyItemData = foundNearby;
-                this.isAimingAtItem = aiming;
-                this.callbacks.onNearbyChange(foundNearby, aiming);
-            }
         } else {
-            // INSPECT REJIMI (Ekran oldiga silliq yaqinlashish va qarash)
+            // INSPECT REJIMI
             this.camera.position.lerp(this.inspectCamPos, 0.09);
             this.currentInspectLookAt.lerp(this.inspectLookAt, 0.09);
             this.camera.lookAt(this.currentInspectLookAt);

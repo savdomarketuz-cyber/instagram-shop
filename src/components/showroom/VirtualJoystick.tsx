@@ -1,147 +1,148 @@
 "use client";
 
 import React, { useRef, useState, useCallback, useEffect } from "react";
-import { Zap, ArrowUp } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 
 interface VirtualJoystickProps {
     onMove: (vector: { x: number; y: number }) => void;
     onJump: () => void;
-    onSprintToggle: (sprint: boolean) => void;
-    isSprinting: boolean;
+    onTap?: (clientX: number, clientY: number) => void;
 }
 
-const JOYSTICK_RADIUS = 52; // Max distance knob can travel from center
+const JOYSTICK_RADIUS = 50;
 
-export default function VirtualJoystick({
-    onMove,
-    onJump,
-    onSprintToggle,
-    isSprinting
-}: VirtualJoystickProps) {
-    const baseRef = useRef<HTMLDivElement>(null);
+export default function VirtualJoystick({ onMove, onJump, onTap }: VirtualJoystickProps) {
+    const [isVisible, setIsVisible] = useState(false);
+    const [basePos, setBasePos] = useState({ x: 0, y: 0 });
     const [knobPos, setKnobPos] = useState({ x: 0, y: 0 });
-    const [isActive, setIsActive] = useState(false);
-    const activePointerIdRef = useRef<number | null>(null);
-    const centerRef = useRef({ x: 0, y: 0 });
 
-    const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
+    const touchIdRef = useRef<number | null>(null);
+    const originRef = useRef({ x: 0, y: 0 });
+    const touchStartPosRef = useRef({ x: 0, y: 0 });
+    const touchStartTimeRef = useRef(0);
 
-        if (activePointerIdRef.current !== null) return;
-        activePointerIdRef.current = e.pointerId;
+    const handleTouchStart = useCallback((e: TouchEvent) => {
+        // Faqat ekranning chap yarmidagi (`clientX < window.innerWidth / 2`) teginishlar
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            const touch = e.changedTouches[i];
+            const target = touch.target as HTMLElement;
 
-        const base = baseRef.current;
-        if (!base) return;
+            // Agar tugma yoki havola ustiga bosilgan bo'lsa o'tkazib yuboramiz
+            if (target.closest("button") || target.closest("a") || target.closest(".no-joystick")) {
+                continue;
+            }
 
-        base.setPointerCapture(e.pointerId);
-        const rect = base.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        centerRef.current = { x: centerX, y: centerY };
+            if (touch.clientX < window.innerWidth / 2 && touchIdRef.current === null) {
+                touchIdRef.current = touch.identifier;
+                originRef.current = { x: touch.clientX, y: touch.clientY };
+                touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
+                touchStartTimeRef.current = Date.now();
 
-        const deltaX = e.clientX - centerX;
-        const deltaY = e.clientY - centerY;
-        const distance = Math.hypot(deltaX, deltaY);
-        const clampedDist = Math.min(distance, JOYSTICK_RADIUS);
-        const angle = Math.atan2(deltaY, deltaX);
+                setBasePos({ x: touch.clientX, y: touch.clientY });
+                setKnobPos({ x: 0, y: 0 });
+                setIsVisible(true);
+                break;
+            }
+        }
+    }, []);
 
-        const knobX = Math.cos(angle) * clampedDist;
-        const knobY = Math.sin(angle) * clampedDist;
+    const handleTouchMove = useCallback((e: TouchEvent) => {
+        if (touchIdRef.current === null) return;
 
-        setKnobPos({ x: knobX, y: knobY });
-        setIsActive(true);
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            const touch = e.changedTouches[i];
+            if (touch.identifier === touchIdRef.current) {
+                const deltaX = touch.clientX - originRef.current.x;
+                const deltaY = touch.clientY - originRef.current.y;
+                const dist = Math.hypot(deltaX, deltaY);
+                const clamped = Math.min(dist, JOYSTICK_RADIUS);
+                const angle = Math.atan2(deltaY, deltaX);
 
-        // Normalize to -1.0 .. 1.0 (Y inverted so UP is positive forward)
-        const normX = knobX / JOYSTICK_RADIUS;
-        const normY = -(knobY / JOYSTICK_RADIUS);
-        onMove({ x: normX, y: normY });
+                const kx = Math.cos(angle) * clamped;
+                const ky = Math.sin(angle) * clamped;
+                setKnobPos({ x: kx, y: ky });
+
+                // Normalizatsiya (-1..1), Y yuqoriga musbat
+                const normX = kx / JOYSTICK_RADIUS;
+                const normY = -(ky / JOYSTICK_RADIUS);
+                onMove({ x: normX, y: normY });
+                break;
+            }
+        }
     }, [onMove]);
 
-    const handlePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-        if (e.pointerId !== activePointerIdRef.current) return;
-        e.preventDefault();
-        e.stopPropagation();
+    const handleTouchEnd = useCallback((e: TouchEvent) => {
+        if (touchIdRef.current === null) return;
 
-        const deltaX = e.clientX - centerRef.current.x;
-        const deltaY = e.clientY - centerRef.current.y;
-        const distance = Math.hypot(deltaX, deltaY);
-        const clampedDist = Math.min(distance, JOYSTICK_RADIUS);
-        const angle = Math.atan2(deltaY, deltaX);
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            const touch = e.changedTouches[i];
+            if (touch.identifier === touchIdRef.current) {
+                const moveDist = Math.hypot(
+                    touch.clientX - touchStartPosRef.current.x,
+                    touch.clientY - touchStartPosRef.current.y
+                );
+                const elapsed = Date.now() - touchStartTimeRef.current;
 
-        const knobX = Math.cos(angle) * clampedDist;
-        const knobY = Math.sin(angle) * clampedDist;
+                // Agar foydalanuvchi barmoqni siljitmasdan shunchaki bosgan bo'lsa (Tap):
+                // Mahsulotga bosilgan bo'lishi mumkinligini tekshirish uchun onTap'ga uzatamiz!
+                if (moveDist < 8 && elapsed < 280 && onTap) {
+                    onTap(touch.clientX, touch.clientY);
+                }
 
-        setKnobPos({ x: knobX, y: knobY });
+                touchIdRef.current = null;
+                setIsVisible(false);
+                setKnobPos({ x: 0, y: 0 });
+                onMove({ x: 0, y: 0 });
+                break;
+            }
+        }
+    }, [onMove, onTap]);
 
-        // Normalize: X (-1 left, +1 right), Y (+1 forward, -1 backward)
-        const normX = knobX / JOYSTICK_RADIUS;
-        const normY = -(knobY / JOYSTICK_RADIUS);
-        onMove({ x: normX, y: normY });
-    }, [onMove]);
-
-    const handlePointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-        if (e.pointerId !== activePointerIdRef.current) return;
-        e.preventDefault();
-        e.stopPropagation();
-
-        activePointerIdRef.current = null;
-        setKnobPos({ x: 0, y: 0 });
-        setIsActive(false);
-        onMove({ x: 0, y: 0 });
-    }, [onMove]);
-
-    // Safety release on unmount or blur
     useEffect(() => {
+        window.addEventListener("touchstart", handleTouchStart, { passive: true });
+        window.addEventListener("touchmove", handleTouchMove, { passive: true });
+        window.addEventListener("touchend", handleTouchEnd, { passive: true });
+        window.addEventListener("touchcancel", handleTouchEnd, { passive: true });
+
         return () => {
-            onMove({ x: 0, y: 0 });
+            window.removeEventListener("touchstart", handleTouchStart);
+            window.removeEventListener("touchmove", handleTouchMove);
+            window.removeEventListener("touchend", handleTouchEnd);
+            window.removeEventListener("touchcancel", handleTouchEnd);
         };
-    }, [onMove]);
+    }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
     return (
-        <div className="fixed bottom-6 left-5 z-40 flex items-end gap-3 select-none pointer-events-auto touch-none no-drag">
-            {/* ANALOG TOUCH JOYSTICK BASE */}
-            <div
-                ref={baseRef}
-                onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerUp}
-                onPointerCancel={handlePointerUp}
-                className={`relative flex h-32 w-32 items-center justify-center rounded-full border border-white/40 backdrop-blur-2xl transition-all shadow-[0_10px_35px_rgba(0,0,0,0.22)] ${
-                    isActive
-                        ? "bg-black/45 border-emerald-500/60 ring-2 ring-emerald-500/30 scale-105"
-                        : "bg-black/30 border-white/30"
-                }`}
-                style={{ touchAction: "none" }}
-            >
-                {/* Visual Directional Guides (Crosshair ticks) */}
-                <div className="absolute h-full w-[1.5px] bg-white/15" />
-                <div className="absolute w-full h-[1.5px] bg-white/15" />
-                <div className="absolute h-16 w-16 rounded-full border border-white/10" />
-
-                {/* THUMB KNOB */}
+        <>
+            {/* FOYDALANUVCHI BARMOQ BOSGAN JOYDA PAYDO BO'LUVCHI SUZUVCHI JOYSTIK */}
+            {isVisible && (
                 <div
-                    className={`absolute flex h-14 w-14 items-center justify-center rounded-full shadow-2xl transition-transform ease-out ${
-                        isActive
-                            ? "bg-gradient-to-tr from-emerald-600 to-teal-400 text-white shadow-emerald-500/50 scale-110"
-                            : "bg-white/80 text-emerald-950 backdrop-blur-md"
-                    }`}
+                    className="pointer-events-none fixed z-40 flex items-center justify-center rounded-full border border-emerald-400/50 bg-black/40 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.35)] -translate-x-1/2 -translate-y-1/2 animate-in fade-in duration-100"
                     style={{
-                        transform: `translate(${knobPos.x}px, ${knobPos.y}px)`,
-                        transitionDuration: isActive ? "0ms" : "180ms"
+                        left: `${basePos.x}px`,
+                        top: `${basePos.y}px`,
+                        width: `${JOYSTICK_RADIUS * 2 + 20}px`,
+                        height: `${JOYSTICK_RADIUS * 2 + 20}px`
                     }}
                 >
-                    <div
-                        className={`h-4 w-4 rounded-full border-2 ${
-                            isActive ? "border-white bg-white/40" : "border-emerald-600 bg-emerald-600/30"
-                        }`}
-                    />
-                </div>
-            </div>
+                    {/* Markaziy doira yo'naltiruvchisi */}
+                    <div className="absolute h-10 w-10 rounded-full border border-white/20" />
 
-            {/* ACTION BUTTONS: SPRINT & JUMP */}
-            <div className="flex flex-col gap-2.5 pb-2">
-                {/* JUMP BUTTON (Minecraft Jump) */}
+                    {/* Silliq boshqaruv thumbstick tugmasi */}
+                    <div
+                        className="h-12 w-12 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 shadow-lg shadow-emerald-500/40 flex items-center justify-center text-white"
+                        style={{
+                            transform: `translate(${knobPos.x}px, ${knobPos.y}px)`,
+                            transition: "transform 16ms linear"
+                        }}
+                    >
+                        <div className="h-4 w-4 rounded-full border-2 border-white bg-white/40" />
+                    </div>
+                </div>
+            )}
+
+            {/* SAKRASH (JUMP) TUGMASI — O'ng pastki tomonda qulay joylashgan */}
+            <div className="fixed bottom-6 right-6 z-40 select-none pointer-events-auto touch-none no-joystick">
                 <button
                     type="button"
                     onPointerDown={(e) => {
@@ -149,30 +150,12 @@ export default function VirtualJoystick({
                         e.stopPropagation();
                         onJump();
                     }}
-                    className="flex h-13 w-13 items-center justify-center rounded-2xl border border-white/40 bg-white/90 text-emerald-950 shadow-xl backdrop-blur-2xl active:bg-emerald-600 active:text-white active:scale-90 transition-all ring-1 ring-black/5"
-                    title="Sakrash (Jump)"
+                    className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/30 bg-black/45 text-white shadow-2xl backdrop-blur-xl active:bg-emerald-600 active:scale-90 transition-all ring-1 ring-white/10"
+                    title="Sakrash"
                 >
-                    <ArrowUp size={22} className="stroke-[2.5]" />
-                </button>
-
-                {/* SPRINT BUTTON */}
-                <button
-                    type="button"
-                    onPointerDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onSprintToggle(!isSprinting);
-                    }}
-                    className={`flex h-13 w-13 items-center justify-center rounded-2xl border text-xs font-black shadow-xl backdrop-blur-2xl transition-all active:scale-90 ${
-                        isSprinting
-                            ? "bg-emerald-600 text-white border-emerald-400 shadow-emerald-600/40"
-                            : "bg-white/90 text-emerald-950 border-white/40 ring-1 ring-black/5"
-                    }`}
-                    title="Tez yugurish (Sprint)"
-                >
-                    <Zap size={20} className={isSprinting ? "fill-white" : "text-emerald-700"} />
+                    <ArrowUp size={24} className="stroke-[2.5]" />
                 </button>
             </div>
-        </div>
+        </>
     );
 }

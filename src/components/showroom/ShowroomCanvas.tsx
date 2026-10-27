@@ -13,6 +13,7 @@ import {
 } from "./showroom-data";
 import { ShowroomWorld } from "./ShowroomWorld";
 import { ShowroomControls } from "./ShowroomControls";
+import { ShowroomAudio } from "./ShowroomAudio";
 import VirtualJoystick from "./VirtualJoystick";
 import ProductDetailOverlay from "./ProductDetailOverlay";
 import NavigationDock from "./NavigationDock";
@@ -28,17 +29,15 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
     const containerRef = useRef<HTMLDivElement>(null);
     const worldRef = useRef<ShowroomWorld | null>(null);
     const controlsRef = useRef<ShowroomControls | null>(null);
+    const audioRef = useRef<ShowroomAudio | null>(null);
 
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [activeZone, setActiveZone] = useState<ShowroomZone>("all");
     const [soundEnabled, setSoundEnabled] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isPointerLocked, setIsPointerLocked] = useState(false);
-    const [nearbyItem, setNearbyItem] = useState<{ stand: ShowroomShowcaseStand; product: Product } | null>(null);
-    const [isAimedAtItem, setIsAimedAtItem] = useState(false);
     const [invertY, setInvertY] = useState(false);
     const [isTouchDevice, setIsTouchDevice] = useState(false);
-    const [isSprinting, setIsSprinting] = useState(false);
 
     const t = translations[lang];
 
@@ -51,8 +50,13 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
         checkTouch();
     }, []);
 
+    // Ambient Lofi / Lounge fon musiqasini yoqish/o'chirish
     const toggleSound = useCallback(() => {
-        setSoundEnabled((prev) => !prev);
+        if (!audioRef.current) {
+            audioRef.current = new ShowroomAudio();
+        }
+        const state = audioRef.current.toggle();
+        setSoundEnabled(state);
     }, []);
 
     const toggleInvertY = useCallback(() => {
@@ -87,7 +91,7 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
         }
     }, []);
 
-    // Virtual Joystick hodisalari
+    // Suzuvchi Dinamik Joystik harakatlari
     const handleJoystickMove = useCallback((vector: { x: number; y: number }) => {
         if (controlsRef.current) {
             controlsRef.current.setJoystickMove(vector);
@@ -100,10 +104,9 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
         }
     }, []);
 
-    const handleJoystickSprintToggle = useCallback((sprint: boolean) => {
-        setIsSprinting(sprint);
+    const handleJoystickTap = useCallback((clientX: number, clientY: number) => {
         if (controlsRef.current) {
-            controlsRef.current.isSprinting = sprint;
+            controlsRef.current.checkTapOnProduct(clientX, clientY);
         }
     }, []);
 
@@ -111,23 +114,17 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
         const container = containerRef.current;
         if (!container) return;
 
-        // 1. 24 TA VITRINA STENDLARINI QURISH (4 ta stol x 2 tomon x 3 tadan)
+        // 1. 48 TA VITRINA STENDLARINI QURISH (8 ta stol x 2 tomon x 3 tadan)
         const stands = buildShowroomStands(initialProducts);
 
         // 2. 3D VR OLAMINI ISHGA TUSHIRISH (World Engine)
-        const world = new ShowroomWorld(container, stands, lang, {
-            trimmers: t.showroom.trimmers,
-            hairCare: t.showroom.hairCare,
-            shavers: t.showroom.shavers,
-            gadgets: t.showroom.gadgets
-        });
+        const world = new ShowroomWorld(container, stands, lang, initialProducts);
         worldRef.current = world;
 
-        // 3. MINECRAFT FIZIKASI VA BOSHQARUV TIZIMINI ISHGA TUSHIRISH (Controls Engine)
+        // 3. MINECRAFT FIZIKASI VA FAQAT TO'G'RIDAN-TO'G'RI BOSILGANDA OCHILUVCHI BOSHQARUV TIZIMI
         const controls = new ShowroomControls(
             container,
             world.camera,
-            stands,
             world.interactiveMeshes,
             {
                 onSelectProduct: (item) => {
@@ -135,10 +132,6 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
                 },
                 onCloseOverlay: () => {
                     setSelectedProduct(null);
-                },
-                onNearbyChange: (item, isAiming) => {
-                    setNearbyItem(item);
-                    setIsAimedAtItem(isAiming);
                 },
                 onPointerLockChange: (locked) => {
                     setIsPointerLocked(locked);
@@ -148,22 +141,19 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
         controls.invertY = invertY;
         controlsRef.current = controls;
 
-        // 4. ANIMATSIYA VA RENDER HALQASI
+        // 4. ANIMATSIYA VA RENDER HALQASI (60 FPS OPTIMALLASHGAN)
         let animationFrameId: number;
         const clock = new THREE.Clock();
-        let frameCount = 0;
 
         const animate = () => {
             animationFrameId = requestAnimationFrame(animate);
-            frameCount++;
             const delta = Math.min(clock.getDelta(), 0.1);
-            const elapsed = clock.getElapsedTime();
 
-            // Fizika va boshqaruv yangilanishi
-            controls.update(delta, frameCount);
+            // Fizika yangilanishi
+            controls.update(delta);
 
-            // 3D VR Olam yangilanishi (hotspotlar, animatsiyalar)
-            world.update(elapsed, controls.nearbyItemData?.stand.id);
+            // Stendlardagi rasmlar har 3 soniyada avtomatik navbatlanishi
+            world.update(delta);
 
             // Render
             world.render();
@@ -172,7 +162,7 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
         animate();
         setIsLoading(false);
 
-        // 5. RESPONSIVE RESIZE HODISASI (Telefon o'girilganda yoki ekran o'zgarganda)
+        // 5. RESPONSIVE RESIZE HODISASI
         const onResize = () => {
             world.handleResize();
         };
@@ -183,63 +173,27 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
             window.removeEventListener("resize", onResize);
             controls.dispose();
             world.dispose();
+            if (audioRef.current) {
+                audioRef.current.dispose();
+                audioRef.current = null;
+            }
             controlsRef.current = null;
             worldRef.current = null;
         };
-    }, [initialProducts, lang, t, invertY]);
+    }, [initialProducts, lang, invertY]);
 
     return (
-        <div className="relative h-screen w-screen overflow-hidden bg-[#F5F5F7] select-none font-sans">
+        <div className="relative h-screen w-screen overflow-hidden bg-[#0c0e12] select-none font-sans">
             {/* 3D WebGL Canvas Conteyneri */}
             <div ref={containerRef} className="absolute inset-0 h-full w-full cursor-grab active:cursor-grabbing" />
 
-            {/* O'YIN MARKAZIY CROSSHAIR (GTA / MINECRAFT RETICLE) */}
-            {!selectedProduct && (
-                <div className="pointer-events-none fixed inset-0 z-20 flex items-center justify-center">
-                    <div
-                        className={`flex items-center justify-center rounded-full transition-all duration-150 ${
-                            isAimedAtItem
-                                ? "h-6 w-6 border-2 border-emerald-500 bg-emerald-500/20 scale-125"
-                                : "h-2.5 w-2.5 bg-black/40 border border-white/60"
-                        }`}
-                    >
-                        {isAimedAtItem && <div className="h-1.5 w-1.5 rounded-full bg-emerald-600" />}
-                    </div>
-                </div>
-            )}
-
-            {/* GTA-USLUBIDAGI INTERAKTIV KO'RISH TUGMASI (PROMPT BANNER) */}
-            {nearbyItem && !selectedProduct && (
-                <div className="fixed bottom-20 sm:bottom-24 left-1/2 z-30 -translate-x-1/2 max-w-[calc(100vw-2rem)] w-auto animate-in fade-in slide-in-from-bottom-2 duration-150">
-                    <button
-                        onClick={() => handleSelectProduct(nearbyItem)}
-                        className="flex items-center gap-2.5 sm:gap-3 rounded-2xl border border-black/10 bg-white/95 px-4 sm:px-5 py-2.5 sm:py-3 shadow-[0_12px_35px_rgba(0,0,0,0.18)] backdrop-blur-2xl transition-all hover:scale-105 active:scale-95 ring-1 ring-black/5"
-                    >
-                        <span className="flex h-7 px-2.5 items-center justify-center rounded-lg bg-emerald-600 text-xs font-black uppercase text-white shadow-sm tracking-wider">
-                            E
-                        </span>
-                        <div className="flex flex-col text-left overflow-hidden">
-                            <span className="line-clamp-1 text-xs font-extrabold text-[#1d1d1f]">
-                                {lang === "ru"
-                                    ? nearbyItem.product.name_ru || nearbyItem.product.name
-                                    : nearbyItem.product.name_uz || nearbyItem.product.name}
-                            </span>
-                            <span className="text-[11px] font-semibold text-emerald-700">
-                                {nearbyItem.product.price?.toLocaleString("uz-UZ")} so&apos;m • {lang === "ru" ? "Осмотреть" : "Ko'rish"}
-                            </span>
-                        </div>
-                    </button>
-                </div>
-            )}
-
-            {/* MOBIL QURILMALAR UCHUN VIRTUAL ANALOG JOYSTIK */}
+            {/* MOBIL QURILMALAR UCHUN SUZUVCHI DINAMIK JOYSTIK (Ekranning chap yarmida qayerga bosilsa o'sha yerda paydo bo'ladi) */}
             {!selectedProduct && !isLoading && (isTouchDevice || true) && (
                 <div className="sm:hidden">
                     <VirtualJoystick
                         onMove={handleJoystickMove}
                         onJump={handleJoystickJump}
-                        onSprintToggle={handleJoystickSprintToggle}
-                        isSprinting={isSprinting}
+                        onTap={handleJoystickTap}
                     />
                 </div>
             )}
@@ -247,23 +201,23 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
             {/* POINTER LOCK ISHORASI (Faqat kompyuterda) */}
             {!isPointerLocked && !selectedProduct && !isLoading && (
                 <div className="pointer-events-none fixed top-6 left-1/2 z-30 -translate-x-1/2 animate-in fade-in duration-300 hidden sm:block">
-                    <div className="flex items-center gap-2 rounded-full border border-black/8 bg-white/90 px-4 py-2 text-xs font-semibold text-[#1d1d1f] shadow-lg backdrop-blur-xl ring-1 ring-black/5">
-                        <MousePointer size={14} className="text-emerald-600 animate-bounce" />
-                        <span>{lang === "ru" ? "Кликните для управления WASD + мышь" : "Simulyator boshqaruviga kirish uchun ekranni bosing"}</span>
+                    <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/75 px-4 py-2 text-xs font-semibold text-white shadow-2xl backdrop-blur-xl ring-1 ring-white/10">
+                        <MousePointer size={14} className="text-emerald-400 animate-bounce" />
+                        <span>{lang === "ru" ? "Кликните для управления WASD + мышь (клик по товару для просмотра)" : "Simulyator boshqaruviga kirish uchun ekranni bosing"}</span>
                     </div>
                 </div>
             )}
 
             {/* YUKLANISH KO'RSATKICHI */}
             {isLoading && (
-                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#F5F5F7] text-[#1d1d1f]">
+                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#0c0e12] text-white">
                     <div className="relative mb-4 flex h-16 w-16 items-center justify-center">
                         <div className="absolute h-full w-full rounded-full border-2 border-emerald-500/20 animate-ping" />
-                        <div className="h-12 w-12 rounded-full border-2 border-emerald-600 border-t-transparent animate-spin" />
-                        <Sparkles size={20} className="absolute text-emerald-600" />
+                        <div className="h-12 w-12 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+                        <Sparkles size={20} className="absolute text-emerald-400" />
                     </div>
-                    <span className="text-sm font-semibold tracking-wider uppercase text-[#86868b]">
-                        Showroom yuklanmoqda...
+                    <span className="text-sm font-semibold tracking-wider uppercase text-neutral-400">
+                        Velari Showroom yuklanmoqda...
                     </span>
                 </div>
             )}
@@ -272,21 +226,21 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
             <div className="fixed top-6 left-6 z-30 flex items-center gap-3">
                 <Link
                     href={`/${lang}`}
-                    className="flex h-11 items-center gap-2.5 rounded-full border border-black/8 bg-white/90 px-4 text-xs font-semibold text-[#1d1d1f] shadow-[0_8px_30px_rgba(0,0,0,0.06)] backdrop-blur-xl transition-all hover:bg-white hover:scale-105 active:scale-95 ring-1 ring-black/5"
+                    className="flex h-11 items-center gap-2.5 rounded-full border border-white/10 bg-black/60 px-4 text-xs font-semibold text-white shadow-[0_8px_30px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-all hover:bg-black/80 hover:scale-105 active:scale-95 ring-1 ring-white/10"
                 >
                     <ArrowLeft size={16} />
                     <span>{t.showroom.backToShop}</span>
                 </Link>
             </div>
 
-            {/* YUQORI O'NG BOSHQARUV: OVOZ VA Y-O'QI SOZLAMASI */}
+            {/* YUQORI O'NG BOSHQARUV: OVOZ (AMBIENT LOUNGE MUSIC) VA Y-O'QI SOZLAMASI */}
             <div className="fixed top-6 right-6 z-30 flex items-center gap-2">
                 <button
                     onClick={toggleInvertY}
-                    className={`flex h-11 px-3.5 items-center justify-center rounded-full border text-xs font-bold transition-all shadow-sm backdrop-blur-xl ring-1 ring-black/5 ${
+                    className={`flex h-11 px-3.5 items-center justify-center rounded-full border text-xs font-bold transition-all shadow-sm backdrop-blur-xl ring-1 ring-white/10 ${
                         invertY
-                            ? "bg-emerald-600 text-white border-emerald-500"
-                            : "bg-white/90 border-black/8 text-[#1d1d1f] hover:bg-white"
+                            ? "bg-emerald-600 text-white border-emerald-400"
+                            : "bg-black/60 border-white/10 text-neutral-300 hover:bg-black/80"
                     }`}
                     title={invertY ? "Invert Y: Yoqilgan (Yuqori/Past teskari)" : "Invert Y: O'chiq (Standart)"}
                 >
@@ -295,10 +249,14 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
 
                 <button
                     onClick={toggleSound}
-                    className="flex h-11 w-11 items-center justify-center rounded-full border border-black/8 bg-white/90 text-[#1d1d1f] shadow-[0_8px_30px_rgba(0,0,0,0.06)] backdrop-blur-xl transition-all hover:bg-white hover:scale-105 active:scale-95 ring-1 ring-black/5"
-                    title={soundEnabled ? "Ovozni o'chirish" : "Ovozni yoqish"}
+                    className={`flex h-11 w-11 items-center justify-center rounded-full border transition-all shadow-sm backdrop-blur-xl ring-1 ring-white/10 ${
+                        soundEnabled
+                            ? "bg-emerald-600/90 text-white border-emerald-400 scale-105 shadow-[0_0_20px_rgba(16,185,129,0.5)]"
+                            : "bg-black/60 border-white/10 text-neutral-400 hover:bg-black/80 hover:text-white"
+                    }`}
+                    title={soundEnabled ? "Fon musiqasini o'chirish" : "Do'kon fon musiqasini yoqish"}
                 >
-                    {soundEnabled ? <Volume2 size={18} className="text-emerald-600" /> : <VolumeX size={18} className="text-[#86868b]" />}
+                    {soundEnabled ? <Volume2 size={18} className="text-white animate-pulse" /> : <VolumeX size={18} />}
                 </button>
             </div>
 
