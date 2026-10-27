@@ -15,7 +15,7 @@ export default function ShowroomControlsHelp({ lang, invertY = false, onToggleIn
     const t = translations[lang];
 
     return (
-        <div className="fixed bottom-7 left-6 z-30 select-none">
+        <div className="fixed bottom-7 left-6 z-30 select-none hidden sm:block">
             {isOpen ? (
                 <div className="w-72 rounded-2xl border border-black/8 bg-white/85 p-4 text-[#1d1d1f] shadow-[0_12px_40px_rgba(0,0,0,0.12)] backdrop-blur-2xl ring-1 ring-black/5 animate-in fade-in duration-200">
                     <div className="mb-3 flex items-center justify-between border-b border-black/8 pb-2">
