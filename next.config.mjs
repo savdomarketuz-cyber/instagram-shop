@@ -93,6 +93,14 @@ const nextConfig = {
         }
         return config;
     },
+    async rewrites() {
+        return [
+            {
+                source: '/media-proxy/:path*',
+                destination: 'https://media.velari.uz/:path*',
+            },
+        ];
+    },
     async headers() {
         return [
             {

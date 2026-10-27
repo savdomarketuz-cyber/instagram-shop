@@ -36,7 +36,7 @@ export default async function ShowroomPage({ params: { lang } }: { params: { lan
             .select(PUBLIC_PRODUCT_COLUMNS)
             .eq("is_deleted", false)
             .order("sales", { ascending: false })
-            .limit(30);
+            .limit(60);
 
         if (data && data.length > 0) {
             products = data.map(mapProduct);

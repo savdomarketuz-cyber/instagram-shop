@@ -5,7 +5,12 @@ import * as THREE from "three";
 import Link from "next/link";
 import { ArrowLeft, Volume2, VolumeX, MousePointer, Sparkles } from "lucide-react";
 import { Product } from "@/types";
-import { SHOWROOM_ITEMS, DOCK_TARGETS, ShowroomZone, mergeWithRealProducts, ShowroomItemConfig } from "./showroom-data";
+import {
+    buildShowroomStands,
+    DOCK_TARGETS,
+    ShowroomZone,
+    ShowroomBillboardStand
+} from "./showroom-data";
 import ProductDetailOverlay from "./ProductDetailOverlay";
 import NavigationDock from "./NavigationDock";
 import ShowroomControlsHelp from "./ShowroomControlsHelp";
@@ -14,6 +19,17 @@ import { translations } from "@/lib/translations";
 interface ShowroomCanvasProps {
     initialProducts: Product[];
     lang: "uz" | "ru";
+}
+
+/**
+ * Tasvirni CORS xatosiz yuklash uchun ichki Next.js rewrite proxy'ga yo'naltirish
+ */
+function getSafeImageUrl(url?: string): string {
+    if (!url) return "";
+    if (url.startsWith("https://media.velari.uz/")) {
+        return url.replace("https://media.velari.uz/", "/media-proxy/");
+    }
+    return url;
 }
 
 /**
@@ -105,6 +121,356 @@ function createStoneFloorTexture(): THREE.CanvasTexture {
     return tex;
 }
 
+/**
+ * Tutqich tagidagi yoyilgan yashil rangli nur teksturasi
+ */
+function createRadialGreenGlowTexture(): THREE.CanvasTexture {
+    const canvas = document.createElement("canvas");
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return new THREE.CanvasTexture(canvas);
+
+    const grad = ctx.createRadialGradient(128, 128, 16, 128, 128, 124);
+    grad.addColorStop(0, "rgba(16, 185, 129, 0.85)");
+    grad.addColorStop(0.35, "rgba(16, 185, 129, 0.45)");
+    grad.addColorStop(0.7, "rgba(5, 150, 105, 0.18)");
+    grad.addColorStop(1, "rgba(5, 150, 105, 0)");
+
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 256, 256);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.generateMipmaps = true;
+    return tex;
+}
+
+/**
+ * Reklama taxtasi ekrani uchun dinamik, tinimsiz aylanuvchi Canvas teksturasi
+ */
+function createBillboardTexture(
+    stand: ShowroomBillboardStand,
+    lang: "uz" | "ru"
+): { texture: THREE.CanvasTexture; cleanup: () => void } {
+    const canvas = document.createElement("canvas");
+    canvas.width = 512;
+    canvas.height = 1024;
+    const ctx = canvas.getContext("2d");
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.generateMipmaps = true;
+
+    if (!ctx) return { texture, cleanup: () => {} };
+
+    const items = stand.products;
+    const count = Math.max(1, items.length);
+    const cardHeight = 1024 / count; // 512px har bir tovar kartasi uchun
+
+    const renderCards = (images: (HTMLImageElement | null)[]) => {
+        ctx.clearRect(0, 0, 512, 1024);
+
+        for (let i = 0; i < count; i++) {
+            const product = items[i];
+            const startY = i * cardHeight;
+            const name = lang === "ru" ? (product.name_ru || product.name) : (product.name_uz || product.name);
+            const price = product.price || 0;
+            const oldPrice = product.oldPrice || (product as any).old_price;
+
+            // 1. Shishasimon qorong'i zamonaviy panel korpusi
+            ctx.fillStyle = "rgba(10, 16, 28, 0.90)";
+            ctx.beginPath();
+            ctx.roundRect(16, startY + 14, 480, cardHeight - 28, 22);
+            ctx.fill();
+
+            // 2. Nozik zumrad hoshiya (Neon border)
+            ctx.strokeStyle = "rgba(16, 185, 129, 0.45)";
+            ctx.lineWidth = 2.0;
+            ctx.stroke();
+
+            // 3. Shisha yaltirashi (Gloss gradient)
+            const gloss = ctx.createLinearGradient(0, startY + 14, 0, startY + 150);
+            gloss.addColorStop(0, "rgba(255, 255, 255, 0.08)");
+            gloss.addColorStop(1, "rgba(255, 255, 255, 0)");
+            ctx.fillStyle = gloss;
+            ctx.beginPath();
+            ctx.roundRect(16, startY + 14, 480, 120, [22, 22, 0, 0]);
+            ctx.fill();
+
+            // 4. Yuqori toifa nishoni
+            ctx.fillStyle = "#10b981";
+            ctx.font = "bold 13px system-ui, -apple-system, sans-serif";
+            const catTitle = lang === "ru" ? stand.categoryTitleRu : stand.categoryTitleUz;
+            ctx.fillText(catTitle.toUpperCase(), 36, startY + 46);
+
+            // Jonli yashil nuqta
+            ctx.fillStyle = "#34d399";
+            ctx.beginPath();
+            ctx.arc(460, startY + 42, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 5. Mahsulot rasmi
+            const img = images[i];
+            const imgAreaX = 46;
+            const imgAreaY = startY + 62;
+            const imgAreaW = 420;
+            const imgAreaH = 220;
+
+            if (img && img.complete && img.naturalWidth > 0) {
+                const scale = Math.min(imgAreaW / img.naturalWidth, imgAreaH / img.naturalHeight) * 0.94;
+                const dw = img.naturalWidth * scale;
+                const dh = img.naturalHeight * scale;
+                const dx = imgAreaX + (imgAreaW - dw) / 2;
+                const dy = imgAreaY + (imgAreaH - dh) / 2;
+
+                ctx.save();
+                ctx.shadowColor = "rgba(0, 0, 0, 0.65)";
+                ctx.shadowBlur = 18;
+                ctx.drawImage(img, dx, dy, dw, dh);
+                ctx.restore();
+            } else {
+                ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
+                ctx.beginPath();
+                ctx.roundRect(imgAreaX + 30, imgAreaY + 10, imgAreaW - 60, imgAreaH - 20, 16);
+                ctx.fill();
+
+                ctx.fillStyle = "#6ee7b7";
+                ctx.font = "bold 18px system-ui, -apple-system, sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("VELARI SHOWCASE", 256, imgAreaY + 105);
+                ctx.font = "13px system-ui";
+                ctx.fillStyle = "#94a3b8";
+                ctx.fillText("Original Retail", 256, imgAreaY + 130);
+                ctx.textAlign = "left";
+            }
+
+            // 6. Mahsulot nomi (2 qator silliq matn)
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 18px system-ui, -apple-system, sans-serif";
+            ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+            ctx.shadowBlur = 6;
+
+            const words = (name || "").split(" ");
+            let line1 = "";
+            let line2 = "";
+            for (const w of words) {
+                if ((line1 + " " + w).length < 32) {
+                    line1 += (line1 ? " " : "") + w;
+                } else if ((line2 + " " + w).length < 34) {
+                    line2 += (line2 ? " " : "") + w;
+                }
+            }
+            if (!line2 && words.length > 5) line2 = words.slice(line1.split(" ").length).join(" ");
+            if (line2.length > 36) line2 = line2.slice(0, 33) + "...";
+
+            ctx.fillText(line1, 36, startY + 314);
+            if (line2) {
+                ctx.fillText(line2, 36, startY + 340);
+            }
+            ctx.shadowBlur = 0;
+
+            // 7. EKRANNI TAGIDAGI NARX PLASHKASI
+            const priceBoxY = startY + 372;
+            ctx.fillStyle = "rgba(16, 185, 129, 0.16)";
+            ctx.beginPath();
+            ctx.roundRect(32, priceBoxY, 448, 86, 16);
+            ctx.fill();
+            ctx.strokeStyle = "rgba(16, 185, 129, 0.85)";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // "NARX"
+            ctx.fillStyle = "#a7f3d0";
+            ctx.font = "bold 11px system-ui, -apple-system, sans-serif";
+            ctx.fillText(lang === "ru" ? "ЦЕНА" : "NARX", 46, priceBoxY + 24);
+
+            // Asosiy narx
+            ctx.fillStyle = "#34d399";
+            ctx.font = "900 25px system-ui, -apple-system, sans-serif";
+            ctx.fillText(`${price.toLocaleString("uz-UZ")} SO'M`, 46, priceBoxY + 58);
+
+            // Eski narx (chizilgan)
+            if (oldPrice && oldPrice > price) {
+                ctx.fillStyle = "#9ca3af";
+                ctx.font = "500 13px system-ui";
+                const oldText = `${oldPrice.toLocaleString("uz-UZ")} so'm`;
+                const oldX = 46 + ctx.measureText(`${price.toLocaleString("uz-UZ")} SO'M`).width + 14;
+                if (oldX < 360) {
+                    ctx.fillText(oldText, oldX, priceBoxY + 56);
+                    ctx.strokeStyle = "#ef4444";
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(oldX - 2, priceBoxY + 52);
+                    ctx.lineTo(oldX + ctx.measureText(oldText).width + 2, priceBoxY + 52);
+                    ctx.stroke();
+                }
+            }
+
+            // "[ E ] KO'RISH" tugmasi
+            ctx.fillStyle = "#059669";
+            ctx.beginPath();
+            ctx.roundRect(368, priceBoxY + 24, 96, 38, 10);
+            ctx.fill();
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 13px system-ui, -apple-system, sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(lang === "ru" ? "ВИТРИНА" : "KO'RISH", 416, priceBoxY + 48);
+            ctx.textAlign = "left";
+        }
+
+        texture.needsUpdate = true;
+    };
+
+    const loadedImages: (HTMLImageElement | null)[] = items.map(() => null);
+
+    // Boshlang'ich render (placeholderlar bilan tezkor)
+    renderCards(loadedImages);
+
+    // Rasmlarni asinxron yuklash
+    items.forEach((p, idx) => {
+        if (!p.image) return;
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = getSafeImageUrl(p.image);
+        img.onload = () => {
+            loadedImages[idx] = img;
+            renderCards(loadedImages);
+        };
+        img.onerror = () => {
+            const fallbackImg = new Image();
+            fallbackImg.src = p.image;
+            fallbackImg.onload = () => {
+                loadedImages[idx] = fallbackImg;
+                renderCards(loadedImages);
+            };
+        };
+    });
+
+    return {
+        texture,
+        cleanup: () => {
+            texture.dispose();
+        }
+    };
+}
+
+/**
+ * 3D Rangsiz Shishali Ekran va Yashil Taglik Meshini yaratish
+ */
+function createBillboardMesh(
+    stand: ShowroomBillboardStand,
+    billboardTex: THREE.CanvasTexture,
+    greenGlowTex: THREE.CanvasTexture
+): THREE.Group {
+    const group = new THREE.Group();
+    group.position.set(...stand.position);
+
+    // 1. "TAGIDA BIROZ YOYILGAN YASHIL RANGLI TUTQICHI"
+    // A) Yoyilgan yashil nur diski (Table surface diffuse ambient glow disk)
+    const glowMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.85, 0.85),
+        new THREE.MeshBasicMaterial({
+            map: greenGlowTex,
+            transparent: true,
+            opacity: 0.65,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        })
+    );
+    glowMesh.rotation.x = -Math.PI / 2;
+    glowMesh.position.y = 0.005; // stol ustida
+    group.add(glowMesh);
+
+    // B) Metall zumrad taglik (Pedestal footplate)
+    const footMat = new THREE.MeshStandardMaterial({
+        color: 0x064e3b, // to'q zumrad
+        metalness: 0.85,
+        roughness: 0.25
+    });
+    const foot = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.20, 0.24, 0.024, 32),
+        footMat
+    );
+    foot.position.y = 0.012;
+    foot.castShadow = true;
+    foot.receiveShadow = true;
+    group.add(foot);
+
+    // C) Yashil metall bo'yin / tutqich (Angled vertical mounting bracket)
+    const bracketMat = new THREE.MeshStandardMaterial({
+        color: 0x10b981, // yorqin zumrad
+        metalness: 0.9,
+        roughness: 0.2
+    });
+    const stem = new THREE.Mesh(
+        new THREE.BoxGeometry(0.08, 0.22, 0.05),
+        bracketMat
+    );
+    stem.position.set(0, 0.12, -0.01);
+    stem.castShadow = true;
+    group.add(stem);
+
+    // D) Tutqich ustidagi biriktirgich (Screen clamp)
+    const clamp = new THREE.Mesh(
+        new THREE.BoxGeometry(0.24, 0.035, 0.055),
+        bracketMat
+    );
+    clamp.position.set(0, 0.22, 0);
+    group.add(clamp);
+
+    // 2. "HUDDI EKRANDEK TURSIN RANGSIZ SHISHALI EKRAN"
+    const screenGroup = new THREE.Group();
+    screenGroup.position.set(0, 0.74, 0);
+    screenGroup.rotation.x = -0.14; // Ergonomik ~8° orqaga egilish
+
+    // A) Rangsiz shisha korpusi (Colorless transparent glass slab)
+    const glassMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.45,
+        roughness: 0.08,
+        metalness: 0.12
+    });
+
+    const glassBody = new THREE.Mesh(
+        new THREE.BoxGeometry(0.72, 1.08, 0.02),
+        glassMat
+    );
+    glassBody.castShadow = true;
+    screenGroup.add(glassBody);
+
+    // B) Shisha chetidagi nozik grafit ramka (Thin dark edge bezel)
+    const bezelMat = new THREE.MeshStandardMaterial({
+        color: 0x1e293b,
+        metalness: 0.8,
+        roughness: 0.3
+    });
+    const bezel = new THREE.Mesh(
+        new THREE.BoxGeometry(0.74, 1.10, 0.014),
+        bezelMat
+    );
+    bezel.position.z = -0.004;
+    screenGroup.add(bezel);
+
+    // C) Tinimsiz skrol bo'lib turuvchi displey yuzasi (Display face)
+    const displayMat = new THREE.MeshBasicMaterial({
+        map: billboardTex,
+        transparent: true,
+        opacity: 0.96
+    });
+    const displayFace = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.68, 1.04),
+        displayMat
+    );
+    displayFace.position.z = 0.011; // shishaning old yuzasida
+    screenGroup.add(displayFace);
+
+    group.add(screenGroup);
+    return group;
+}
+
 export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvasProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -112,7 +478,7 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
     const [soundEnabled, setSoundEnabled] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isPointerLocked, setIsPointerLocked] = useState(false);
-    const [nearbyItem, setNearbyItem] = useState<{ config: ShowroomItemConfig; product: Product } | null>(null);
+    const [nearbyItem, setNearbyItem] = useState<{ stand: ShowroomBillboardStand; product: Product } | null>(null);
     const [isAimedAtItem, setIsAimedAtItem] = useState(false);
     const [invertY, setInvertY] = useState(false);
     const t = translations[lang];
@@ -120,7 +486,7 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
     // Simulyator o'yinchi va fizika holatlari
     const stateRef = useRef({
         mode: "FREE_ROAM" as "FREE_ROAM" | "INSPECT",
-        playerPos: new THREE.Vector3(0, 1.65, 7.5),
+        playerPos: new THREE.Vector3(0, 1.65, 8.5),
         velocity: new THREE.Vector3(0, 0, 0),
         verticalVelocity: 0,
         isGrounded: true,
@@ -128,44 +494,51 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
         pitch: -0.05,
         bobTimer: 0,
         bobOffset: new THREE.Vector3(0, 0, 0),
-        inspectCamPos: new THREE.Vector3(0, 1.65, 7.5),
-        inspectLookAt: new THREE.Vector3(0, 1.1, -1.0),
-        currentInspectLookAt: new THREE.Vector3(0, 1.1, -1.0),
+        inspectCamPos: new THREE.Vector3(0, 1.65, 8.5),
+        inspectLookAt: new THREE.Vector3(0, 1.1, -0.5),
+        currentInspectLookAt: new THREE.Vector3(0, 1.1, -0.5),
         keysPressed: {} as Record<string, boolean>,
         isDragging: false,
         previousMousePosition: { x: 0, y: 0 },
-        nearbyItemData: null as { config: ShowroomItemConfig; product: Product } | null,
+        nearbyItemData: null as { stand: ShowroomBillboardStand; product: Product } | null,
         soundEnabled: false,
         invertY: false,
     });
 
-    stateRef.current.soundEnabled = soundEnabled;
-    stateRef.current.invertY = invertY;
+    const toggleSound = useCallback(() => {
+        setSoundEnabled((prev) => {
+            const next = !prev;
+            stateRef.current.soundEnabled = next;
+            return next;
+        });
+    }, []);
+
+    const toggleInvertY = useCallback(() => {
+        setInvertY((prev) => {
+            const next = !prev;
+            stateRef.current.invertY = next;
+            return next;
+        });
+    }, []);
 
     const handleSelectZone = useCallback((zone: ShowroomZone) => {
         setActiveZone(zone);
-        setSelectedProduct(null);
-        stateRef.current.mode = "FREE_ROAM";
         const target = DOCK_TARGETS[zone];
-        stateRef.current.playerPos.set(...target.cameraPos);
-        stateRef.current.velocity.set(0, 0, 0);
-
-        const dx = target.lookAt[0] - target.cameraPos[0];
-        const dz = target.lookAt[2] - target.cameraPos[2];
-        stateRef.current.yaw = Math.atan2(dx, -dz);
-        stateRef.current.pitch = -0.08;
+        if (target) {
+            stateRef.current.mode = "FREE_ROAM";
+            stateRef.current.playerPos.set(...target.cameraPos);
+            const dx = target.lookAt[0] - target.cameraPos[0];
+            const dz = target.lookAt[2] - target.cameraPos[2];
+            stateRef.current.yaw = Math.atan2(dx, -dz);
+            stateRef.current.pitch = -0.05;
+        }
     }, []);
 
-    const handleSelectProduct = useCallback((item: { config: ShowroomItemConfig; product: Product }) => {
+    const handleSelectProduct = useCallback((item: { stand: ShowroomBillboardStand; product: Product }) => {
         setSelectedProduct(item.product);
-        setActiveZone(item.config.zone);
         stateRef.current.mode = "INSPECT";
-        stateRef.current.inspectCamPos.set(...item.config.focusPosition);
-        stateRef.current.inspectLookAt.set(...item.config.lookAtPosition);
-
-        if (document.pointerLockElement) {
-            document.exitPointerLock();
-        }
+        stateRef.current.inspectCamPos.set(...item.stand.focusPosition);
+        stateRef.current.inspectLookAt.set(...item.stand.lookAtPosition);
     }, []);
 
     const handleCloseOverlay = useCallback(() => {
@@ -180,31 +553,32 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
         // 1. SCENE & CAMERA
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xF5F5F7);
-        scene.fog = new THREE.FogExp2(0xF5F5F7, 0.012);
+        scene.fog = new THREE.FogExp2(0xF5F5F7, 0.022);
 
-        const camera = new THREE.PerspectiveCamera(56, window.innerWidth / window.innerHeight, 0.1, 80);
-        camera.position.set(0, 1.65, 7.5);
+        const camera = new THREE.PerspectiveCamera(
+            58,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            60
+        );
+        camera.position.set(0, 1.65, 8.5);
 
-        // 2. GPU GA MOSLASHGAN YENGIL RENDERER (Zero Frame Drops, Max 60 FPS)
+        // 2. RENDERER (Optimizatsiya qilingan GPU pipeline)
         const renderer = new THREE.WebGLRenderer({
-            antialias: false, // High DPI ekranlarda FPS ni tushirib yubormaslik uchun
             powerPreference: "high-performance",
-            alpha: false,
+            antialias: false,
             stencil: false,
             depth: true
         });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        // Pixel ratio 1.25 bilan cheklandi (4K ekranda ham GPU 60 FPS ushlaydi)
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.05;
 
-        // Soyalarni faqat 1 marta bittalab generatsiya qilish (Bake static shadows)
+        // Statik soyalar (Bake static shadows)
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFShadowMap;
         renderer.shadowMap.autoUpdate = false;
-        renderer.shadowMap.needsUpdate = true;
-
         container.appendChild(renderer.domElement);
 
         // 3. LIGHTING (Optimal GPU Light Setup)
@@ -229,7 +603,7 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
         windowFillLight.position.set(0, 6, -14);
         scene.add(windowFillLight);
 
-        // 3 ta stol ustidagi nuqtaviy yorug'liklar
+        // 4 ta stol ustidagi nuqtaviy studiya yoritgichlari
         const spot1 = new THREE.PointLight(0xfff6ea, 1.2, 8, 2);
         spot1.position.set(-5.5, 4.0, -0.5);
         scene.add(spot1);
@@ -242,156 +616,80 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
         spot3.position.set(5.5, 4.0, -0.5);
         scene.add(spot3);
 
-        // 4. ME'MORIY ELEMENTLAR VA TEKSTURALAR
-        const woodTexture = createOakWoodTexture();
-        const stoneTexture = createStoneFloorTexture();
+        const spot4 = new THREE.PointLight(0xfff6ea, 1.3, 8, 2);
+        spot4.position.set(0, 4.0, 3.5);
+        scene.add(spot4);
 
-        // Pol (Pietra Serena Sandstone)
-        const floorGeo = new THREE.PlaneGeometry(30, 32);
+        // 4. ME'MORIY ELEMENTLAR VA TEKSTURALAR
+        const stoneFloorTex = createStoneFloorTexture();
         const floorMat = new THREE.MeshStandardMaterial({
-            map: stoneTexture,
-            roughness: 0.32,
-            metalness: 0.02,
+            map: stoneFloorTex,
+            roughness: 0.85,
+            metalness: 0.05
         });
-        const floor = new THREE.Mesh(floorGeo, floorMat);
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(28, 28), floorMat);
         floor.rotation.x = -Math.PI / 2;
-        floor.position.y = 0;
         floor.receiveShadow = true;
         scene.add(floor);
 
-        const wallMat = new THREE.MeshStandardMaterial({
-            color: 0xFAFAFC,
-            roughness: 0.9,
-            metalness: 0.0
+        const ceilingMat = new THREE.MeshStandardMaterial({
+            color: 0xfcfcfd,
+            roughness: 0.95
+        });
+        const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(28, 28), ceilingMat);
+        ceiling.rotation.x = Math.PI / 2;
+        ceiling.position.y = 5.2;
+        scene.add(ceiling);
+
+        // Shift yorug'lik lentalari (Recessed LED troffers)
+        const lightStripMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        [-6, -2, 2, 6].forEach((xPos) => {
+            const strip = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 20), lightStripMat);
+            strip.rotation.x = Math.PI / 2;
+            strip.position.set(xPos, 5.18, 0);
+            scene.add(strip);
         });
 
-        const baseboardMat = new THREE.MeshStandardMaterial({
-            color: 0xD0D0D4,
-            roughness: 0.35,
-            metalness: 0.7
-        });
+        // Devorlar
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0xF5F5F7, roughness: 0.9 });
+        const backWall = new THREE.Mesh(new THREE.PlaneGeometry(28, 5.2), wallMat);
+        backWall.position.set(0, 2.6, -13);
+        backWall.receiveShadow = true;
+        scene.add(backWall);
 
-        // Orqa devor fasad ramkalari
-        const backWallLeft = new THREE.Mesh(new THREE.BoxGeometry(6.5, 8, 0.4), wallMat);
-        backWallLeft.position.set(-10.25, 4, -13);
-        backWallLeft.receiveShadow = true;
-        scene.add(backWallLeft);
-
-        const backWallRight = new THREE.Mesh(new THREE.BoxGeometry(6.5, 8, 0.4), wallMat);
-        backWallRight.position.set(10.25, 4, -13);
-        backWallRight.receiveShadow = true;
-        scene.add(backWallRight);
-
-        // Shaffof shisha fasad (GPU uchun tejamkor Standard Material)
-        const glassWindow = new THREE.Mesh(
-            new THREE.PlaneGeometry(14, 7.5),
-            new THREE.MeshStandardMaterial({
-                color: 0xffffff,
-                transparent: true,
-                opacity: 0.22,
-                roughness: 0.05,
-                metalness: 0.1
-            })
-        );
-        glassWindow.position.set(0, 4, -12.9);
-        scene.add(glassWindow);
-
-        // Alyuminiy ustunlar (Mullions)
-        const mullionMat = new THREE.MeshStandardMaterial({ color: 0xD8D8DC, metalness: 0.85, roughness: 0.25 });
-        [-7, -3.5, 0, 3.5, 7].forEach((mx) => {
-            const mulMesh = new THREE.Mesh(new THREE.BoxGeometry(0.08, 7.5, 0.12), mullionMat);
-            mulMesh.position.set(mx, 4, -12.85);
-            scene.add(mulMesh);
-        });
-
-        // Orqa maydon va osmon
-        const outdoorPlaza = new THREE.Mesh(
-            new THREE.PlaneGeometry(36, 18),
-            new THREE.MeshStandardMaterial({ color: 0xEDEBE4, roughness: 0.5 })
-        );
-        outdoorPlaza.rotation.x = -Math.PI / 2;
-        outdoorPlaza.position.set(0, -0.02, -22);
-        scene.add(outdoorPlaza);
-
-        const sky = new THREE.Mesh(
-            new THREE.PlaneGeometry(38, 15),
-            new THREE.MeshBasicMaterial({ color: 0xDFECF7 })
-        );
-        sky.position.set(0, 7.5, -28);
-        scene.add(sky);
-
-        // Devorlar va Plintuslar
-        const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 8, 30), wallMat);
-        leftWall.position.set(-13.5, 4, 0);
+        const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(28, 5.2), wallMat);
+        leftWall.position.set(-13, 2.6, 0);
+        leftWall.rotation.y = Math.PI / 2;
         leftWall.receiveShadow = true;
         scene.add(leftWall);
 
-        const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 8, 30), wallMat);
-        rightWall.position.set(13.5, 4, 0);
+        const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(28, 5.2), wallMat);
+        rightWall.position.set(13, 2.6, 0);
+        rightWall.rotation.y = -Math.PI / 2;
         rightWall.receiveShadow = true;
         scene.add(rightWall);
 
-        const leftBase = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.12, 30), baseboardMat);
-        leftBase.position.set(-13.28, 0.06, 0);
-        scene.add(leftBase);
-
-        const rightBase = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.12, 30), baseboardMat);
-        rightBase.position.set(13.28, 0.06, 0);
-        scene.add(rightBase);
-
-        // Shift va yorug'lik panellari
-        const ceiling = new THREE.Mesh(
-            new THREE.PlaneGeometry(30, 32),
-            new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.95 })
+        // Old panoramali shisha devor (Studiya manzarasi)
+        const frontWall = new THREE.Mesh(
+            new THREE.PlaneGeometry(28, 5.2),
+            new THREE.MeshStandardMaterial({
+                color: 0x93c5fd,
+                transparent: true,
+                opacity: 0.12,
+                roughness: 0.1,
+                metalness: 0.2
+            })
         );
-        ceiling.rotation.x = Math.PI / 2;
-        ceiling.position.y = 7.5;
-        scene.add(ceiling);
+        frontWall.position.set(0, 2.6, 13);
+        frontWall.rotation.y = Math.PI;
+        scene.add(frontWall);
 
-        [-6, -2, 2, 6].forEach((x) => {
-            const led = new THREE.Mesh(
-                new THREE.BoxGeometry(1.2, 0.04, 22),
-                new THREE.MeshBasicMaterial({ color: 0xFFFFFF })
-            );
-            led.position.set(x, 7.48, -1);
-            scene.add(led);
-        });
-
-        // 5. BRENDING - Markaziy devorda minimalist metall "VELARI"
-        const logoCanvas = document.createElement("canvas");
-        logoCanvas.width = 512;
-        logoCanvas.height = 128;
-        const ctx = logoCanvas.getContext("2d");
-        if (ctx) {
-            ctx.fillStyle = "rgba(0, 0, 0, 0)";
-            ctx.fillRect(0, 0, 512, 128);
-
-            ctx.fillStyle = "#1D1D1F";
-            ctx.font = "900 48px system-ui, -apple-system, sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText("V E L A R I", 256, 48);
-
-            ctx.fillStyle = "#6E6E73";
-            ctx.font = "700 13px system-ui, -apple-system, sans-serif";
-            ctx.letterSpacing = "4px";
-            ctx.fillText("PREMIUM EXPERIENCE STORE", 256, 88);
-        }
-
-        const logoTexture = new THREE.CanvasTexture(logoCanvas);
-        const logoMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(7, 1.75),
-            new THREE.MeshBasicMaterial({ map: logoTexture, transparent: true, side: THREE.DoubleSide })
-        );
-        logoMesh.position.set(0, 6.2, -12.75);
-        scene.add(logoMesh);
-
-        // 6. 3 TA YOG'OCH STOL (SOLID BLONDE OAK DISPLAY TABLES)
+        // 5. BLONDE OAK STOLLAR (Apple Store uslubidagi eman stollar)
+        const oakTex = createOakWoodTexture();
         const tableOakMat = new THREE.MeshStandardMaterial({
-            map: woodTexture,
-            color: 0xffffff,
-            roughness: 0.35,
-            metalness: 0.02
+            map: oakTex,
+            roughness: 0.42,
+            metalness: 0.05
         });
 
         const createPodium = (x: number, z: number, title: string) => {
@@ -418,24 +716,28 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
                 podiumGroup.add(legMesh);
             });
 
-            // Shaffof akril toifa nishoni
+            // Shaffof toifa nishoni
             const badgeCanvas = document.createElement("canvas");
             badgeCanvas.width = 256;
             badgeCanvas.height = 64;
-            const bCtx = badgeCanvas.getContext("2d");
-            if (bCtx) {
-                bCtx.fillStyle = "rgba(255, 255, 255, 0.92)";
-                bCtx.fillRect(0, 0, 256, 64);
-                bCtx.fillStyle = "#1D1D1F";
-                bCtx.font = "bold 20px system-ui, -apple-system, sans-serif";
-                bCtx.textAlign = "center";
-                bCtx.textBaseline = "middle";
-                bCtx.letterSpacing = "1.5px";
-                bCtx.fillText(title.toUpperCase(), 128, 32);
+            const bctx = badgeCanvas.getContext("2d");
+            if (bctx) {
+                bctx.fillStyle = "rgba(255, 255, 255, 0.92)";
+                bctx.roundRect(0, 0, 256, 64, 14);
+                bctx.fill();
+                bctx.strokeStyle = "rgba(16, 185, 129, 0.45)";
+                bctx.lineWidth = 2.5;
+                bctx.stroke();
+
+                bctx.fillStyle = "#064e3b";
+                bctx.font = "bold 20px system-ui, -apple-system, sans-serif";
+                bctx.textAlign = "center";
+                bctx.textBaseline = "middle";
+                bctx.fillText(title, 128, 32);
             }
             const badgeTex = new THREE.CanvasTexture(badgeCanvas);
             const badge = new THREE.Mesh(
-                new THREE.PlaneGeometry(1.5, 0.38),
+                new THREE.PlaneGeometry(0.75, 0.18),
                 new THREE.MeshBasicMaterial({ map: badgeTex, transparent: true })
             );
             badge.position.set(0, 0.85, 0.77);
@@ -444,372 +746,52 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
             scene.add(podiumGroup);
         };
 
-        createPodium(-5.5, -0.5, t.showroom.smartphones);
-        createPodium(0, -4.5, t.showroom.audioWearables);
-        createPodium(5.5, -0.5, t.showroom.gamingGadgets);
+        // 4 ta toifaviy vitrina stollari
+        createPodium(-5.5, -0.5, t.showroom.trimmers);
+        createPodium(0, -4.5, t.showroom.hairCare);
+        createPodium(5.5, -0.5, t.showroom.shavers);
+        createPodium(0, 3.5, t.showroom.gadgets);
 
-        // 7. TOVARLAR VA PROCEDURAL MODELLAR
-        const itemsWithProducts = mergeWithRealProducts(SHOWROOM_ITEMS, initialProducts);
+        // 6. HAQIQIY DB TOVARLARI ASOSIDAGI REKLAMA TAXTALARI (GLASS SCREENS)
+        const stands = buildShowroomStands(initialProducts);
         const interactiveMeshes: THREE.Object3D[] = [];
-        const animatedHotspots: { ring: THREE.Mesh; core: THREE.Mesh; itemId: string; baseY: number }[] = [];
-        const animatedSpinners: THREE.Object3D[] = [];
-        const productGroups: { group: THREE.Group; itemId: string }[] = [];
-        const textureLoader = new THREE.TextureLoader();
+        const animatedHotspots: { ring: THREE.Mesh; core: THREE.Mesh; standId: string; baseY: number }[] = [];
+        const scrollingTextures: THREE.CanvasTexture[] = [];
+        const cleanups: (() => void)[] = [];
 
-        // Standart tejamkor akril stend materiali
-        const standMat = new THREE.MeshStandardMaterial({
-            color: 0xffffff,
-            transparent: true,
-            opacity: 0.65,
-            roughness: 0.1,
-            metalness: 0.1
-        });
+        const greenGlowTex = createRadialGreenGlowTexture();
 
-        itemsWithProducts.forEach(({ config, product }) => {
-            const productGroup = new THREE.Group();
-            productGroup.position.set(...config.position);
+        stands.forEach((stand) => {
+            // Dinamik skroll bo'luvchi tekstura
+            const { texture: bbTex, cleanup } = createBillboardTexture(stand, lang);
+            scrollingTextures.push(bbTex);
+            cleanups.push(cleanup);
 
-            const standWidth = config.modelType === "box_product" ? 0.46 : 0.32;
-            const standDepth = config.modelType === "box_product" ? 0.38 : 0.28;
-            const stand = new THREE.Mesh(new THREE.BoxGeometry(standWidth, 0.04, standDepth), standMat);
-            stand.position.y = 0.02;
-            stand.castShadow = true;
-            stand.receiveShadow = true;
-            productGroup.add(stand);
+            // 3D Ekran va yashil tutqich meshi
+            const billboardMesh = createBillboardMesh(stand, bbTex, greenGlowTex);
 
-            if (config.modelType === "iphone" || config.modelType === "samsung") {
-                const isIPhone = config.modelType === "iphone";
-                const phoneGroup = new THREE.Group();
-                phoneGroup.position.set(0, 0.24, 0);
-                phoneGroup.rotation.x = -Math.PI * 0.18;
+            // Interaktiv reticle hitbox
+            const hitbox = new THREE.Mesh(
+                new THREE.BoxGeometry(0.85, 1.3, 0.45),
+                new THREE.MeshBasicMaterial({ visible: false })
+            );
+            hitbox.position.set(stand.position[0], stand.position[1] + 0.65, stand.position[2]);
+            hitbox.userData = {
+                isHotspot: true,
+                standId: stand.id,
+                itemData: { stand, product: stand.featuredProduct }
+            };
+            scene.add(hitbox);
+            interactiveMeshes.push(hitbox);
 
-                const phoneBody = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.24, 0.48, 0.024),
-                    new THREE.MeshStandardMaterial({
-                        color: isIPhone ? 0xd4af37 : 0x22262e,
-                        metalness: 0.85,
-                        roughness: 0.25
-                    })
-                );
-                phoneBody.castShadow = true;
-                phoneGroup.add(phoneBody);
-
-                const screen = new THREE.Mesh(
-                    new THREE.PlaneGeometry(0.22, 0.46),
-                    new THREE.MeshBasicMaterial({ color: isIPhone ? 0x050c18 : 0x0a101d })
-                );
-                screen.position.z = 0.013;
-                phoneGroup.add(screen);
-
-                const uiLine = new THREE.Mesh(
-                    new THREE.PlaneGeometry(0.18, 0.02),
-                    new THREE.MeshBasicMaterial({ color: isIPhone ? 0xf59e0b : 0x38bdf8 })
-                );
-                uiLine.position.set(0, -0.15, 0.014);
-                phoneGroup.add(uiLine);
-
-                const camBump = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.1, 0.1, 0.015),
-                    new THREE.MeshStandardMaterial({
-                        color: isIPhone ? 0xc5a028 : 0x1a1d24,
-                        metalness: 0.8,
-                        roughness: 0.3
-                    })
-                );
-                camBump.position.set(-0.05, 0.16, -0.016);
-                phoneGroup.add(camBump);
-
-                [-0.03, 0.03].forEach((lx, i) => {
-                    const lens = new THREE.Mesh(
-                        new THREE.CylinderGeometry(0.018, 0.018, 0.01, 12),
-                        new THREE.MeshStandardMaterial({ color: 0x020202, metalness: 0.9, roughness: 0.1 })
-                    );
-                    lens.rotation.x = Math.PI / 2;
-                    lens.position.set(-0.05 + lx, 0.16 + (i === 0 ? 0.02 : -0.02), -0.023);
-                    phoneGroup.add(lens);
-                });
-
-                productGroup.add(phoneGroup);
-            } else if (config.modelType === "airpods") {
-                const headphoneGroup = new THREE.Group();
-                headphoneGroup.position.set(0, 0.3, 0);
-
-                const hStand = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.015, 0.015, 0.45, 12),
-                    new THREE.MeshStandardMaterial({ color: 0x71717a, metalness: 0.85, roughness: 0.25 })
-                );
-                hStand.position.y = -0.08;
-                headphoneGroup.add(hStand);
-
-                const arc = new THREE.Mesh(
-                    new THREE.TorusGeometry(0.16, 0.016, 12, 24, Math.PI),
-                    new THREE.MeshStandardMaterial({ color: 0x3f3f46, metalness: 0.8, roughness: 0.3 })
-                );
-                arc.position.y = 0.14;
-                headphoneGroup.add(arc);
-
-                [-0.16, 0.16].forEach((cx) => {
-                    const cup = new THREE.Mesh(
-                        new THREE.CylinderGeometry(0.065, 0.065, 0.045, 18),
-                        new THREE.MeshStandardMaterial({ color: 0x52525b, metalness: 0.85, roughness: 0.25 })
-                    );
-                    cup.rotation.z = Math.PI / 2;
-                    cup.position.set(cx, 0.1, 0);
-                    headphoneGroup.add(cup);
-
-                    const cushion = new THREE.Mesh(
-                        new THREE.CylinderGeometry(0.06, 0.06, 0.02, 18),
-                        new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.9 })
-                    );
-                    cushion.rotation.z = Math.PI / 2;
-                    cushion.position.set(cx > 0 ? cx - 0.03 : cx + 0.03, 0.1, 0);
-                    headphoneGroup.add(cushion);
-                });
-
-                productGroup.add(headphoneGroup);
-            } else if (config.modelType === "watch") {
-                const watchGroup = new THREE.Group();
-                watchGroup.position.set(0, 0.18, 0);
-
-                const watchCase = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.18, 0.22, 0.06),
-                    new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.9, roughness: 0.2 })
-                );
-                watchCase.castShadow = true;
-                watchGroup.add(watchCase);
-
-                const screen = new THREE.Mesh(
-                    new THREE.PlaneGeometry(0.15, 0.18),
-                    new THREE.MeshBasicMaterial({ color: 0x050c18 })
-                );
-                screen.position.z = 0.031;
-                watchGroup.add(screen);
-
-                const btn = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.02, 0.06, 0.02),
-                    new THREE.MeshBasicMaterial({ color: 0xf97316 })
-                );
-                btn.position.set(-0.1, 0.02, 0);
-                watchGroup.add(btn);
-
-                const strap = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.12, 0.12, 0.14, 18, 1, true, -Math.PI / 2, Math.PI),
-                    new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.7 })
-                );
-                strap.rotation.z = Math.PI / 2;
-                strap.position.set(0, 0, -0.06);
-                watchGroup.add(strap);
-
-                productGroup.add(watchGroup);
-            } else if (config.modelType === "ps5") {
-                const ps5Group = new THREE.Group();
-                ps5Group.position.set(0, 0.35, 0);
-
-                const core = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.1, 0.65, 0.32),
-                    new THREE.MeshStandardMaterial({ color: 0x090a0f, metalness: 0.6, roughness: 0.2 })
-                );
-                core.castShadow = true;
-                ps5Group.add(core);
-
-                [-0.06, 0.06].forEach((wx) => {
-                    const wing = new THREE.Mesh(
-                        new THREE.BoxGeometry(0.025, 0.7, 0.36),
-                        new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3 })
-                    );
-                    wing.position.x = wx;
-                    wing.castShadow = true;
-                    ps5Group.add(wing);
-                });
-
-                const neonLine = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.02, 0.55, 0.02),
-                    new THREE.MeshBasicMaterial({ color: 0x0070d1 })
-                );
-                neonLine.position.set(0.05, 0.05, 0.18);
-                ps5Group.add(neonLine);
-
-                const pad = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.18, 0.06, 0.12),
-                    new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.4 })
-                );
-                pad.position.set(0.35, -0.3, 0.05);
-                pad.rotation.y = -Math.PI * 0.2;
-                ps5Group.add(pad);
-
-                productGroup.add(ps5Group);
-            } else if (config.modelType === "drone") {
-                const droneGroup = new THREE.Group();
-                droneGroup.position.set(0, 0.22, 0);
-
-                const dBody = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.2, 0.08, 0.28),
-                    new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.6, roughness: 0.3 })
-                );
-                dBody.castShadow = true;
-                droneGroup.add(dBody);
-
-                const dCam = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.04, 12, 12),
-                    new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.9, roughness: 0.1 })
-                );
-                dCam.position.set(0, -0.04, 0.15);
-                droneGroup.add(dCam);
-
-                const armOffsets = [
-                    [-0.18, 0.18],
-                    [0.18, 0.18],
-                    [-0.18, -0.18],
-                    [0.18, -0.18]
-                ];
-                armOffsets.forEach(([ax, az]) => {
-                    const arm = new THREE.Mesh(
-                        new THREE.CylinderGeometry(0.012, 0.012, 0.25, 6),
-                        new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8 })
-                    );
-                    arm.rotation.z = Math.PI / 2;
-                    arm.rotation.y = Math.atan2(az, ax);
-                    arm.position.set(ax * 0.6, 0, az * 0.6);
-                    droneGroup.add(arm);
-
-                    const motor = new THREE.Mesh(
-                        new THREE.CylinderGeometry(0.025, 0.025, 0.04, 10),
-                        new THREE.MeshStandardMaterial({ color: 0x0f172a })
-                    );
-                    motor.position.set(ax, 0.02, az);
-                    droneGroup.add(motor);
-
-                    const prop = new THREE.Mesh(
-                        new THREE.BoxGeometry(0.18, 0.006, 0.02),
-                        new THREE.MeshBasicMaterial({ color: 0x94a3b8 })
-                    );
-                    prop.position.set(ax, 0.045, az);
-                    droneGroup.add(prop);
-                    animatedSpinners.push(prop);
-                });
-
-                productGroup.add(droneGroup);
-            } else if (config.modelType === "box_product" && config.boxConfig) {
-                const boxGroup = new THREE.Group();
-                boxGroup.position.set(0, 0, 0);
-
-                const bWidth = config.boxConfig.width || 0.32;
-                const bHeight = config.boxConfig.height || 0.46;
-                const bDepth = config.boxConfig.depth || 0.14;
-                const brandColor = config.boxConfig.brandColor || 0x0c1424;
-
-                const frontTex = textureLoader.load(config.boxConfig.boxFront);
-                frontTex.colorSpace = THREE.SRGBColorSpace;
-
-                const sideTex = textureLoader.load(config.boxConfig.boxSide);
-                sideTex.colorSpace = THREE.SRGBColorSpace;
-
-                // 6 faces: [Right, Left, Top, Bottom, Front, Back]
-                const boxMaterials: THREE.Material[] = [
-                    new THREE.MeshStandardMaterial({
-                        map: sideTex,
-                        roughness: 0.35,
-                        metalness: 0.05
-                    }), // +X: O'ng yon (Right)
-                    new THREE.MeshStandardMaterial({
-                        map: sideTex,
-                        roughness: 0.35,
-                        metalness: 0.05
-                    }), // -X: Chap yon (Left)
-                    new THREE.MeshStandardMaterial({
-                        color: brandColor,
-                        roughness: 0.45,
-                        metalness: 0.05
-                    }), // +Y: Yuqori qopqoq (Top)
-                    new THREE.MeshStandardMaterial({
-                        color: 0x05070c,
-                        roughness: 0.5
-                    }), // -Y: Pastki taglik (Bottom)
-                    new THREE.MeshStandardMaterial({
-                        map: frontTex,
-                        roughness: 0.28,
-                        metalness: 0.08
-                    }), // +Z: Asosiy old panel (Front)
-                    new THREE.MeshStandardMaterial({
-                        color: brandColor,
-                        roughness: 0.45,
-                        metalness: 0.05
-                    })  // -Z: Orqa tomon (Back)
-                ];
-
-                const boxMesh = new THREE.Mesh(
-                    new THREE.BoxGeometry(bWidth, bHeight, bDepth),
-                    boxMaterials
-                );
-                boxMesh.position.set(0, bHeight / 2 + 0.04, -0.06);
-                boxMesh.castShadow = true;
-                boxMesh.receiveShadow = true;
-                boxGroup.add(boxMesh);
-
-                // Qutining oldida turgan mahsulot vitrinasi (2.5D Cutout Stand)
-                if (config.boxConfig.productCutout) {
-                    const cutoutTex = textureLoader.load(config.boxConfig.productCutout);
-                    cutoutTex.colorSpace = THREE.SRGBColorSpace;
-
-                    const pHeight = bHeight * 0.85;
-                    const pWidth = pHeight * (75 / 325);
-
-                    // Akril dumaloq podstavka
-                    const disc = new THREE.Mesh(
-                        new THREE.CylinderGeometry(0.075, 0.075, 0.016, 24),
-                        new THREE.MeshStandardMaterial({
-                            color: 0xffffff,
-                            transparent: true,
-                            opacity: 0.75,
-                            roughness: 0.1,
-                            metalness: 0.1
-                        })
-                    );
-                    disc.position.set(0, 0.048, 0.11);
-                    disc.castShadow = true;
-                    boxGroup.add(disc);
-
-                    // Trimmer tekisligi
-                    const productPlane = new THREE.Mesh(
-                        new THREE.PlaneGeometry(pWidth, pHeight),
-                        new THREE.MeshStandardMaterial({
-                            map: cutoutTex,
-                            transparent: true,
-                            alphaTest: 0.15,
-                            roughness: 0.3,
-                            metalness: 0.2,
-                            side: THREE.DoubleSide
-                        })
-                    );
-                    productPlane.position.set(0, pHeight / 2 + 0.056, 0.11);
-                    productPlane.castShadow = true;
-                    boxGroup.add(productPlane);
-
-                    // Nozik premium yashil/zumrad zamin aylanasi
-                    const accentGlow = new THREE.Mesh(
-                        new THREE.RingGeometry(0.075, 0.13, 24),
-                        new THREE.MeshBasicMaterial({
-                            color: 0x10b981,
-                            transparent: true,
-                            opacity: 0.35,
-                            side: THREE.DoubleSide
-                        })
-                    );
-                    accentGlow.rotation.x = -Math.PI / 2;
-                    accentGlow.position.set(0, 0.042, 0.11);
-                    boxGroup.add(accentGlow);
-                }
-
-                productGroup.add(boxGroup);
-            }
-
+            // Hotspot suzuvchi halqasi
             const hotspotGroup = new THREE.Group();
-            hotspotGroup.position.y = 0.85;
+            hotspotGroup.position.set(stand.position[0], stand.position[1] + 1.45, stand.position[2]);
 
             const ring = new THREE.Mesh(
-                new THREE.TorusGeometry(0.13, 0.012, 12, 24),
+                new THREE.TorusGeometry(0.12, 0.012, 12, 24),
                 new THREE.MeshStandardMaterial({
-                    color: 0xffffff,
+                    color: 0x10b981,
                     roughness: 0.2,
                     metalness: 0.1,
                     transparent: true,
@@ -820,27 +802,23 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
             hotspotGroup.add(ring);
 
             const core = new THREE.Mesh(
-                new THREE.SphereGeometry(0.036, 12, 12),
-                new THREE.MeshBasicMaterial({ color: 0x2D6E3E })
+                new THREE.SphereGeometry(0.032, 12, 12),
+                new THREE.MeshBasicMaterial({ color: 0x059669 })
             );
             hotspotGroup.add(core);
 
-            const hitbox = new THREE.Mesh(
-                new THREE.SphereGeometry(0.4, 10, 10),
-                new THREE.MeshBasicMaterial({ visible: false })
-            );
-            hitbox.userData = { isHotspot: true, itemId: config.id, itemData: { config, product } };
-            hotspotGroup.add(hitbox);
+            animatedHotspots.push({
+                ring,
+                core,
+                standId: stand.id,
+                baseY: stand.position[1] + 1.45
+            });
 
-            interactiveMeshes.push(hitbox);
-            animatedHotspots.push({ ring, core, itemId: config.id, baseY: 0.85 });
-            productGroups.push({ group: productGroup, itemId: config.id });
-
-            productGroup.add(hotspotGroup);
-            scene.add(productGroup);
+            scene.add(hotspotGroup);
+            scene.add(billboardMesh);
         });
 
-        // 8. O'YIN SIMULYATORI BOSHQARUVI (TO'G'RILANGAN SICHQONChA O'QLARI)
+        // 7. O'YIN SIMULYATORI BOSHQARUVI
         const raycaster = new THREE.Raycaster();
         const screenCenter = new THREE.Vector2(0, 0);
 
@@ -853,41 +831,35 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
         const handleMouseMove = (e: MouseEvent) => {
             if (document.pointerLockElement === container) {
                 const sensitivity = 0.0022;
-                // TO'G'RI X O'QI: Sichqoncha o'ngga surilsa yaw OSHADI (kamera o'ngga buriladi)
-                stateRef.current.yaw += e.movementX * sensitivity;
-
-                // TO'G'RI Y O'QI: Sichqoncha tepaga (oldinga) surilsa pitch OSHADI (tepaga qaraydi)
                 const yMultiplier = stateRef.current.invertY ? 1 : -1;
-                stateRef.current.pitch += e.movementY * sensitivity * yMultiplier;
 
+                stateRef.current.yaw += e.movementX * sensitivity;
+                stateRef.current.pitch += e.movementY * sensitivity * yMultiplier;
                 stateRef.current.pitch = Math.max(-1.48, Math.min(1.48, stateRef.current.pitch));
             } else if (stateRef.current.isDragging && stateRef.current.mode === "FREE_ROAM") {
                 const deltaX = e.clientX - stateRef.current.previousMousePosition.x;
                 const deltaY = e.clientY - stateRef.current.previousMousePosition.y;
-
-                // TO'G'RI X va Y drag harakati
-                stateRef.current.yaw += deltaX * 0.003;
                 const yMultiplier = stateRef.current.invertY ? 1 : -1;
-                stateRef.current.pitch += deltaY * 0.003 * yMultiplier;
 
+                stateRef.current.yaw += deltaX * 0.003;
+                stateRef.current.pitch += deltaY * 0.003 * yMultiplier;
                 stateRef.current.pitch = Math.max(-1.48, Math.min(1.48, stateRef.current.pitch));
                 stateRef.current.previousMousePosition = { x: e.clientX, y: e.clientY };
             }
         };
 
         const handleMouseDown = (e: MouseEvent) => {
-            if (e.button === 0) {
-                if (stateRef.current.mode === "FREE_ROAM") {
-                    if (document.pointerLockElement !== container) {
-                        container.requestPointerLock?.();
-                    } else {
-                        if (stateRef.current.nearbyItemData) {
-                            handleSelectProduct(stateRef.current.nearbyItemData);
-                        }
-                    }
-                }
-                stateRef.current.isDragging = true;
-                stateRef.current.previousMousePosition = { x: e.clientX, y: e.clientY };
+            if (e.target !== renderer.domElement) return;
+
+            if (!document.pointerLockElement && stateRef.current.mode === "FREE_ROAM") {
+                container.requestPointerLock?.();
+            }
+
+            stateRef.current.isDragging = true;
+            stateRef.current.previousMousePosition = { x: e.clientX, y: e.clientY };
+
+            if (stateRef.current.nearbyItemData) {
+                handleSelectProduct(stateRef.current.nearbyItemData);
             }
         };
 
@@ -920,10 +892,11 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
                 }
             }
 
-            if (key === "1") handleSelectZone("smartphones");
-            if (key === "2") handleSelectZone("audio_wearables");
-            if (key === "3") handleSelectZone("gaming_gadgets");
-            if (key === "4") handleSelectZone("all");
+            if (key === "1") handleSelectZone("trimmers");
+            if (key === "2") handleSelectZone("hair_care");
+            if (key === "3") handleSelectZone("shavers");
+            if (key === "4") handleSelectZone("gadgets");
+            if (key === "5" || key === "0") handleSelectZone("all");
         };
 
         const handleKeyUp = (e: KeyboardEvent) => {
@@ -936,24 +909,24 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
         window.addEventListener("keydown", handleKeyDown);
         window.addEventListener("keyup", handleKeyUp);
 
-        // 9. ANIMATION LOOP - ZERO ALLOCATION REUSABLE VECTORS (GARBAGE COLLECTORSIZ)
+        // 8. ANIMATION LOOP - ZERO ALLOCATION REUSABLE VECTORS
         let animationFrameId: number;
         let clock = new THREE.Clock();
         let frameCount = 0;
 
-        // Oldindan yaratilgan qayta ishlatiladigan scratch vektorlar (Heap allocation = 0!)
         const _forward = new THREE.Vector3();
         const _right = new THREE.Vector3();
         const _inputDir = new THREE.Vector3();
         const _targetVelocity = new THREE.Vector3();
         const _lookDirection = new THREE.Vector3();
         const _camTarget = new THREE.Vector3();
-        const _zeroVec = new THREE.Vector3(0, 0, 0);
 
+        // 4 ta stol to'siqlari (Obstacle Sliding)
         const obstacles = [
             { minX: -7.6, maxX: -3.4, minZ: -1.6, maxZ: 0.6 },
             { minX: -2.1, maxX: 2.1, minZ: -5.6, maxZ: -3.4 },
-            { minX: 3.4, maxX: 7.6, minZ: -1.6, maxZ: 0.6 }
+            { minX: 3.4, maxX: 7.6, minZ: -1.6, maxZ: 0.6 },
+            { minX: -2.1, maxX: 2.1, minZ: 2.4, maxZ: 4.6 }
         ];
 
         const animate = () => {
@@ -966,7 +939,7 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
                 const keys = stateRef.current.keysPressed;
                 const isSprinting = Boolean(keys["shift"]);
 
-                // 1) Qadam tashlash yo'nalish vektorlari
+                // 1) Yo'nalish hisoblash
                 const yaw = stateRef.current.yaw;
                 _forward.set(Math.sin(yaw), 0, -Math.cos(yaw));
                 _right.set(-_forward.z, 0, _forward.x);
@@ -981,14 +954,14 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
                     _inputDir.normalize();
                 }
 
-                // 2) Inertsiya va silliq tezlanish
+                // 2) Inertsiya
                 const baseSpeed = isSprinting ? 6.8 : 3.8;
                 _targetVelocity.copy(_inputDir).multiplyScalar(baseSpeed);
 
                 stateRef.current.velocity.x = THREE.MathUtils.lerp(stateRef.current.velocity.x, _targetVelocity.x, 10 * delta);
                 stateRef.current.velocity.z = THREE.MathUtils.lerp(stateRef.current.velocity.z, _targetVelocity.z, 10 * delta);
 
-                // 3) Gravitatsiya va sakrash
+                // 3) Gravitatsiya
                 stateRef.current.verticalVelocity -= 18.0 * delta;
                 stateRef.current.playerPos.y += stateRef.current.verticalVelocity * delta;
 
@@ -998,14 +971,14 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
                     stateRef.current.isGrounded = true;
                 }
 
-                // 4) TO'QNAShIShLAR VA SIRPANISh (Obstacle Sliding)
+                // 4) To'siqlardan sirpanish (Obstacle Sliding)
                 const currentPos = stateRef.current.playerPos;
                 const nextX = currentPos.x + stateRef.current.velocity.x * delta;
                 const nextZ = currentPos.z + stateRef.current.velocity.z * delta;
 
                 let canMoveX = true;
                 if (nextX < -12.4 || nextX > 12.4) canMoveX = false;
-                for (let i = 0; i < 3; i++) {
+                for (let i = 0; i < obstacles.length; i++) {
                     const obs = obstacles[i];
                     if (nextX >= obs.minX && nextX <= obs.maxX && currentPos.z >= obs.minZ && currentPos.z <= obs.maxZ) {
                         canMoveX = false;
@@ -1016,7 +989,7 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
 
                 let canMoveZ = true;
                 if (nextZ < -11.8 || nextZ > 11.2) canMoveZ = false;
-                for (let i = 0; i < 3; i++) {
+                for (let i = 0; i < obstacles.length; i++) {
                     const obs = obstacles[i];
                     if (currentPos.x >= obs.minX && currentPos.x <= obs.maxX && nextZ >= obs.minZ && nextZ <= obs.maxZ) {
                         canMoveZ = false;
@@ -1028,23 +1001,21 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
                 // 5) Head Bobbing
                 const horizontalSpeed = Math.hypot(stateRef.current.velocity.x, stateRef.current.velocity.z);
                 if (horizontalSpeed > 0.3 && stateRef.current.isGrounded) {
-                    stateRef.current.bobTimer += delta * (isSprinting ? 14 : 9.5);
-                    stateRef.current.bobOffset.y = Math.sin(stateRef.current.bobTimer) * (isSprinting ? 0.04 : 0.02);
-                    stateRef.current.bobOffset.x = Math.cos(stateRef.current.bobTimer * 0.5) * (isSprinting ? 0.025 : 0.012);
+                    const bobFreq = isSprinting ? 14 : 9;
+                    stateRef.current.bobTimer += delta * bobFreq;
+                    const bobAmplitude = isSprinting ? 0.045 : 0.025;
+                    stateRef.current.bobOffset.set(
+                        Math.cos(stateRef.current.bobTimer * 0.5) * bobAmplitude * 0.5,
+                        Math.sin(stateRef.current.bobTimer) * bobAmplitude,
+                        0
+                    );
                 } else {
-                    stateRef.current.bobOffset.lerp(_zeroVec, 8 * delta);
+                    stateRef.current.bobOffset.lerp(new THREE.Vector3(0, 0, 0), 8 * delta);
                 }
 
                 camera.position.copy(currentPos).add(stateRef.current.bobOffset);
 
-                // Dynamic FOV
-                const targetFov = isSprinting ? 62 : 56;
-                if (Math.abs(camera.fov - targetFov) > 0.05) {
-                    camera.fov = THREE.MathUtils.lerp(camera.fov, targetFov, 8 * delta);
-                    camera.updateProjectionMatrix();
-                }
-
-                // Kamera qarash vektori (Yaw + Pitch)
+                // 6) Kamera qarashi
                 const pitch = stateRef.current.pitch;
                 _lookDirection.set(
                     Math.sin(yaw) * Math.cos(pitch),
@@ -1054,33 +1025,33 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
                 _camTarget.copy(camera.position).add(_lookDirection);
                 camera.lookAt(_camTarget);
 
-                // 6) Proximity & Crosshair Raycast (Har 3 kadrda bir marta tekshiriladi — CPU 66% tejaladi!)
-                if (frameCount % 3 === 0) {
+                // 7) Har 2 kadrda nishon (Raycasting) tekshiruvi
+                if (frameCount % 2 === 0) {
                     raycaster.setFromCamera(screenCenter, camera);
                     const intersects = raycaster.intersectObjects(interactiveMeshes, false);
 
-                    let foundNearby: { config: ShowroomItemConfig; product: Product } | null = null;
+                    let foundNearby: { stand: ShowroomBillboardStand; product: Product } | null = null;
                     let isAiming = false;
 
-                    if (intersects.length > 0 && intersects[0].distance < 3.8) {
-                        const data = intersects[0].object.userData.itemData;
-                        if (data) {
-                            foundNearby = data;
+                    if (intersects.length > 0 && intersects[0].distance < 6.5) {
+                        const hitObj = intersects[0].object;
+                        if (hitObj.userData?.itemData) {
+                            foundNearby = hitObj.userData.itemData;
                             isAiming = true;
                         }
                     }
 
                     if (!foundNearby) {
-                        let minDistance = 2.4;
-                        for (let i = 0; i < itemsWithProducts.length; i++) {
-                            const item = itemsWithProducts[i];
+                        let minDistance = 2.8;
+                        for (let i = 0; i < stands.length; i++) {
+                            const stand = stands[i];
                             const dist = Math.hypot(
-                                currentPos.x - item.config.position[0],
-                                currentPos.z - item.config.position[2]
+                                currentPos.x - stand.position[0],
+                                currentPos.z - stand.position[2]
                             );
                             if (dist < minDistance) {
                                 minDistance = dist;
-                                foundNearby = item;
+                                foundNearby = { stand, product: stand.featuredProduct };
                             }
                         }
                     }
@@ -1088,42 +1059,29 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
                     stateRef.current.nearbyItemData = foundNearby;
                     setNearbyItem(foundNearby);
                     setIsAimedAtItem(isAiming);
-
-                    // Free roamda aylantirilgan tovarlarni asta-sekin boshlang'ich burchakka qaytarish
-                    for (let i = 0; i < productGroups.length; i++) {
-                        const pg = productGroups[i];
-                        if (Math.abs(pg.group.rotation.y) > 0.001) {
-                            pg.group.rotation.y = THREE.MathUtils.lerp(pg.group.rotation.y, 0, 0.05);
-                        }
-                    }
                 }
             } else {
-                // INSPECT REJIMI
+                // INSPECT REJIMI (Ekran oldiga silliq yaqinlashish)
                 camera.position.lerp(stateRef.current.inspectCamPos, 0.08);
                 stateRef.current.currentInspectLookAt.lerp(stateRef.current.inspectLookAt, 0.08);
                 camera.lookAt(stateRef.current.currentInspectLookAt);
-
-                const currentProductGroup = productGroups.find(pg => pg.itemId === selectedProduct?.id || selectedProduct?.id?.includes(pg.itemId));
-                if (currentProductGroup) {
-                    currentProductGroup.group.rotation.y += 0.008;
-                }
             }
 
-            // Dron parraklari aylanishi
-            for (let i = 0; i < animatedSpinners.length; i++) {
-                animatedSpinners[i].rotation.y += 0.35;
+            // 8) EKRANLARDA TINIMSIZ MAHSULOT RASMLARI SKROL BO'LISHI (GPU UV SCROLL)
+            for (let i = 0; i < scrollingTextures.length; i++) {
+                scrollingTextures[i].offset.y += 0.0006;
             }
 
-            // Hotspot suzishi
+            // 9) Hotspot suzishi
             const floatOffset = Math.sin(elapsed * 3.5) * 0.035;
             for (let i = 0; i < animatedHotspots.length; i++) {
-                const { ring, core, itemId, baseY } = animatedHotspots[i];
-                const isNearby = stateRef.current.nearbyItemData?.config.id === itemId;
+                const { ring, core, standId, baseY } = animatedHotspots[i];
+                const isNearby = stateRef.current.nearbyItemData?.stand.id === standId;
                 ring.position.y = baseY + floatOffset;
                 core.position.y = baseY + floatOffset;
                 ring.rotation.z += 0.015;
 
-                const targetScale = isNearby ? 1.4 : 1.0;
+                const targetScale = isNearby ? 1.35 : 1.0;
                 ring.scale.set(targetScale, targetScale, targetScale);
             }
 
@@ -1147,25 +1105,22 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
 
         return () => {
             cancelAnimationFrame(animationFrameId);
-            document.removeEventListener("pointerlockchange", handlePointerLockChange);
+            window.removeEventListener("resize", handleResize);
             window.removeEventListener("mousemove", handleMouseMove);
             window.removeEventListener("mousedown", handleMouseDown);
             window.removeEventListener("mouseup", handleMouseUp);
             window.removeEventListener("keydown", handleKeyDown);
             window.removeEventListener("keyup", handleKeyUp);
-            window.removeEventListener("resize", handleResize);
+            document.removeEventListener("pointerlockchange", handlePointerLockChange);
 
-            woodTexture.dispose();
-            stoneTexture.dispose();
-            logoTexture.dispose();
-
-            if (container.contains(renderer.domElement)) {
-                container.removeChild(renderer.domElement);
-            }
+            cleanups.forEach((c) => c());
+            stoneFloorTex.dispose();
+            oakTex.dispose();
+            greenGlowTex.dispose();
             renderer.dispose();
             scene.clear();
         };
-    }, [initialProducts, handleSelectProduct, handleCloseOverlay, handleSelectZone, selectedProduct, t]);
+    }, [initialProducts, handleSelectProduct, handleCloseOverlay, handleSelectZone, lang, t]);
 
     return (
         <div className="relative h-screen w-screen overflow-hidden bg-[#F5F5F7] select-none font-sans">
@@ -1176,7 +1131,7 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
             {!selectedProduct && (
                 <div className="pointer-events-none fixed inset-0 z-20 flex items-center justify-center">
                     <div
-                        className={`transition-all duration-150 rounded-full flex items-center justify-center ${
+                        className={`flex items-center justify-center rounded-full transition-all duration-150 ${
                             isAimedAtItem
                                 ? "h-6 w-6 border-2 border-emerald-500 bg-emerald-500/20 scale-125"
                                 : "h-2.5 w-2.5 bg-black/40 border border-white/60"
@@ -1202,7 +1157,7 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
                                 {lang === "ru" ? (nearbyItem.product.name_ru || nearbyItem.product.name) : (nearbyItem.product.name_uz || nearbyItem.product.name)}
                             </span>
                             <span className="text-[11px] font-semibold text-emerald-700">
-                                {nearbyItem.product.price.toLocaleString("uz-UZ")} so&apos;m • {lang === "ru" ? "Осмотреть и купить" : "Ko'rish va xarid"}
+                                {nearbyItem.product.price?.toLocaleString("uz-UZ")} so&apos;m • {lang === "ru" ? "Осмотреть и купить" : "Ko'rish va xarid"}
                             </span>
                         </div>
                     </button>
@@ -1228,48 +1183,56 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
                         <Sparkles size={20} className="absolute text-emerald-600" />
                     </div>
                     <span className="text-sm font-semibold tracking-wider uppercase text-[#86868b]">
-                        {lang === "ru" ? "Загрузка 3D Симулятора..." : "3D Simulyator yuklanmoqda..."}
+                        Showroom yuklanmoqda...
                     </span>
                 </div>
             )}
 
-            {/* Yuqori chap: Do'konga qaytish tugmasi */}
-            <div className="fixed top-6 left-6 z-30">
+            {/* Yuqori chap menyu: Chiqish tugmasi */}
+            <div className="fixed top-6 left-6 z-30 flex items-center gap-3">
                 <Link
                     href={`/${lang}`}
-                    className="flex items-center gap-2.5 rounded-2xl border border-black/8 bg-white/85 px-4 py-2.5 text-xs font-bold text-[#1d1d1f] shadow-md backdrop-blur-2xl transition-all duration-200 hover:bg-white hover:shadow-lg active:scale-95 ring-1 ring-black/5"
+                    className="flex h-11 items-center gap-2.5 rounded-full border border-black/8 bg-white/90 px-4 text-xs font-semibold text-[#1d1d1f] shadow-[0_8px_30px_rgba(0,0,0,0.06)] backdrop-blur-xl transition-all hover:bg-white hover:scale-105 active:scale-95 ring-1 ring-black/5"
                 >
                     <ArrowLeft size={16} />
                     <span>{t.showroom.backToShop}</span>
                 </Link>
             </div>
 
-            {/* Yuqori o'ng: Showroom brendi va Audio tugmasi */}
-            <div className="fixed top-6 right-6 z-30 flex items-center gap-3">
+            {/* Yuqori o'ng boshqaruv: Ovoz va Y-O'qi sozlamasi */}
+            <div className="fixed top-6 right-6 z-30 flex items-center gap-2">
                 <button
-                    onClick={() => setSoundEnabled(!soundEnabled)}
-                    className="flex h-10 w-10 items-center justify-center rounded-2xl border border-black/8 bg-white/85 text-[#1d1d1f] shadow-md backdrop-blur-2xl transition-all hover:bg-white active:scale-95 ring-1 ring-black/5"
-                    title={soundEnabled ? (lang === "ru" ? "Выключить звук" : "Ovozni o'chirish") : (lang === "ru" ? "Включить звук" : "Ovozni yoqish")}
+                    onClick={toggleInvertY}
+                    className={`flex h-11 px-3.5 items-center justify-center rounded-full border text-xs font-bold transition-all shadow-sm backdrop-blur-xl ring-1 ring-black/5 ${
+                        invertY
+                            ? "bg-emerald-600 text-white border-emerald-500"
+                            : "bg-white/90 border-black/8 text-[#1d1d1f] hover:bg-white"
+                    }`}
+                    title={invertY ? "Invert Y: Yoqilgan (Yuqori/Past teskari)" : "Invert Y: O'chiq (Standart)"}
                 >
-                    {soundEnabled ? <Volume2 size={17} className="text-emerald-600" /> : <VolumeX size={17} />}
+                    Y: {invertY ? "REV" : "NORM"}
+                </button>
+
+                <button
+                    onClick={toggleSound}
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-black/8 bg-white/90 text-[#1d1d1f] shadow-[0_8px_30px_rgba(0,0,0,0.06)] backdrop-blur-xl transition-all hover:bg-white hover:scale-105 active:scale-95 ring-1 ring-black/5"
+                    title={soundEnabled ? "Ovozni o'chirish" : "Ovozni yoqish"}
+                >
+                    {soundEnabled ? <Volume2 size={18} className="text-emerald-600" /> : <VolumeX size={18} className="text-[#86868b]" />}
                 </button>
             </div>
 
-            {/* Pastki Teleport Dok Menyusi */}
+            {/* O'yin qo'llanmasi (Boshqarish bo'yicha yo'riqnoma) */}
+            <ShowroomControlsHelp lang={lang} invertY={invertY} onToggleInvertY={toggleInvertY} />
+
+            {/* Pastki Navigatsiya Dock'i */}
             <NavigationDock
                 activeZone={activeZone}
                 lang={lang}
                 onSelectZone={handleSelectZone}
             />
 
-            {/* Chap pastki boshqaruv yordami (Invert Y sozlamasi bilan) */}
-            <ShowroomControlsHelp
-                lang={lang}
-                invertY={invertY}
-                onToggleInvertY={() => setInvertY(!invertY)}
-            />
-
-            {/* O'ng tomon: Mahsulot kartasi overlay'i */}
+            {/* Mahsulot tafsilotlari kartasi */}
             <ProductDetailOverlay
                 product={selectedProduct}
                 lang={lang}

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Smartphone, Headphones, Gamepad2, RotateCcw } from "lucide-react";
+import { Scissors, Wind, Sparkles, Headphones, RotateCcw } from "lucide-react";
 import { ShowroomZone } from "./showroom-data";
 import { translations } from "@/lib/translations";
 
@@ -16,19 +16,24 @@ export default function NavigationDock({ activeZone, lang, onSelectZone }: Navig
 
     const dockItems: { id: ShowroomZone; label: string; icon: React.ReactNode }[] = [
         {
-            id: "smartphones",
-            label: t.showroom.smartphones,
-            icon: <Smartphone size={17} />
+            id: "trimmers",
+            label: t.showroom.trimmers,
+            icon: <Scissors size={17} />
         },
         {
-            id: "audio_wearables",
-            label: t.showroom.audioWearables,
+            id: "hair_care",
+            label: t.showroom.hairCare,
+            icon: <Wind size={17} />
+        },
+        {
+            id: "shavers",
+            label: t.showroom.shavers,
+            icon: <Sparkles size={17} />
+        },
+        {
+            id: "gadgets",
+            label: t.showroom.gadgets,
             icon: <Headphones size={17} />
-        },
-        {
-            id: "gaming_gadgets",
-            label: t.showroom.gamingGadgets,
-            icon: <Gamepad2 size={17} />
         },
         {
             id: "all",

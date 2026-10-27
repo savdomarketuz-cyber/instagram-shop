@@ -1,281 +1,272 @@
 import { Product } from "@/types";
 
-export type ShowroomZone = "all" | "smartphones" | "audio_wearables" | "gaming_gadgets";
+export type ShowroomZone = "all" | "trimmers" | "hair_care" | "shavers" | "gadgets";
 
-export type ShowroomModelType = "iphone" | "samsung" | "airpods" | "watch" | "ps5" | "drone" | "box_product";
-
-export interface ShowroomBoxConfig {
-    boxFront: string;
-    boxSide: string;
-    productCutout?: string;
-    width?: number;
-    height?: number;
-    depth?: number;
-    brandColor?: number;
-}
-
-export interface ShowroomItemConfig {
+export interface ShowroomBillboardStand {
     id: string;
     zone: ShowroomZone;
-    position: [number, number, number]; // [x, y, z] on podium
+    categoryTitleUz: string;
+    categoryTitleRu: string;
+    position: [number, number, number]; // [x, y, z] on podium table
+    rotationY: number; // facing angle
     focusPosition: [number, number, number]; // Camera target when focusing
     lookAtPosition: [number, number, number]; // Where camera looks when focusing
-    defaultProduct: Product;
-    modelType: ShowroomModelType;
-    boxConfig?: ShowroomBoxConfig;
+    featuredProduct: Product; // Active product when inspected / clicked
+    products: Product[]; // 2-3 products continuously scrolling on this screen
 }
-
-export const SHOWROOM_ITEMS: ShowroomItemConfig[] = [
-    {
-        id: "iphone-16-pro-max",
-        zone: "smartphones",
-        position: [-6.3, 0.9, -0.5],
-        focusPosition: [-6.3, 1.45, 0.8],
-        lookAtPosition: [-6.3, 1.05, -0.5],
-        modelType: "iphone",
-        defaultProduct: {
-            id: "sr-iphone-16-pro-max",
-            name: "Apple iPhone 16 Pro Max 256GB Desert Titanium",
-            name_uz: "Apple iPhone 16 Pro Max 256GB Desert Titanium",
-            name_ru: "Apple iPhone 16 Pro Max 256GB Desert Titanium",
-            price: 15499000,
-            oldPrice: 16999000,
-            image: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&auto=format&fit=crop&q=80",
-            category: "smartphones",
-            category_uz: "Smartfonlar",
-            category_ru: "Смартфоны",
-            description: "Titan korpusli eng quvvatli iPhone. A18 Pro protsessor, yangi Camera Control tugmasi va batareyaning aqlbovar qilmas ishlash vaqti.",
-            description_uz: "Titan korpusli eng quvvatli iPhone. A18 Pro protsessor, yangi Camera Control tugmasi va batareyaning aqlbovar qilmas ishlash vaqti.",
-            description_ru: "Самый мощный iPhone в титановом корпусе. Процессор A18 Pro, новая кнопка Camera Control и непревзойденная автономность.",
-            stock: 12,
-            sales: 85,
-            rating: 5,
-            reviewCount: 38
-        }
-    },
-    {
-        id: "samsung-s24-ultra",
-        zone: "smartphones",
-        position: [-4.7, 0.9, -0.5],
-        focusPosition: [-4.7, 1.45, 0.8],
-        lookAtPosition: [-4.7, 1.05, -0.5],
-        modelType: "samsung",
-        defaultProduct: {
-            id: "sr-samsung-s24-ultra",
-            name: "Samsung Galaxy S24 Ultra 512GB Titanium Black",
-            name_uz: "Samsung Galaxy S24 Ultra 512GB Titanium Black",
-            name_ru: "Samsung Galaxy S24 Ultra 512GB Titanium Black",
-            price: 14200000,
-            oldPrice: 15300000,
-            image: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&auto=format&fit=crop&q=80",
-            category: "smartphones",
-            category_uz: "Smartfonlar",
-            category_ru: "Смартфоны",
-            description: "Galaxy AI imkoniyatlari, titan ramka, 200MP kamera va o'rnatilgan S-Pen stilusli flagman smartfon.",
-            description_uz: "Galaxy AI imkoniyatlari, titan ramka, 200MP kamera va o'rnatilgan S-Pen stilusli flagman smartfon.",
-            description_ru: "Флагман со встроенным искусственным интеллектом Galaxy AI, титановым корпусом, камерой 200МП и пером S-Pen.",
-            stock: 8,
-            sales: 64,
-            rating: 4.9,
-            reviewCount: 29
-        }
-    },
-    {
-        id: "airpods-max",
-        zone: "audio_wearables",
-        position: [-1.4, 0.9, -4.5],
-        focusPosition: [-1.4, 1.45, -3.2],
-        lookAtPosition: [-1.4, 1.1, -4.5],
-        modelType: "airpods",
-        defaultProduct: {
-            id: "sr-airpods-max",
-            name: "Apple AirPods Max Wireless Headphones Space Gray",
-            name_uz: "Apple AirPods Max Wireless Headphones Space Gray",
-            name_ru: "Беспроводные наушники Apple AirPods Max Space Gray",
-            price: 6890000,
-            oldPrice: 7500000,
-            image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&auto=format&fit=crop&q=80",
-            category: "audio",
-            category_uz: "Audio & Quloqchinlar",
-            category_ru: "Аудио и наушники",
-            description: "Yuqori aniqlikdagi Hi-Fi audio, faol shovqinni to'sish (ANC) va shaffoflik rejimi bilan mukammal quloqchin.",
-            description_uz: "Yuqori aniqlikdagi Hi-Fi audio, faol shovqinni to'sish (ANC) va shaffoflik rejimi bilan mukammal quloqchin.",
-            description_ru: "Высококачественный Hi-Fi звук, активное шумоподавление (ANC) и режим прозрачности в культовом дизайне.",
-            stock: 15,
-            sales: 92,
-            rating: 4.9,
-            reviewCount: 44
-        }
-    },
-    {
-        id: "vgr-v621",
-        zone: "audio_wearables",
-        position: [0, 0.9, -4.5],
-        focusPosition: [0, 1.42, -3.1],
-        lookAtPosition: [0, 1.15, -4.5],
-        modelType: "box_product",
-        boxConfig: {
-            boxFront: "/showroom/box-front.png",
-            boxSide: "/showroom/box-side.png",
-            productCutout: "/showroom/trimmer-transparent.png",
-            width: 0.32,
-            height: 0.46,
-            depth: 0.14,
-            brandColor: 0x0c1424
-        },
-        defaultProduct: {
-            id: "sr-vgr-v621",
-            name: "VGR V-621 Professional soch va soqol olish trimmeri",
-            name_uz: "VGR V-621 Professional soch va soqol olish trimmeri (Original Karobkasi)",
-            name_ru: "Профессиональный триммер для волос и бороды VGR V-621 (Оригинальная упаковка)",
-            price: 349000,
-            oldPrice: 420000,
-            image: "/showroom/vgr-v621-box.png",
-            category: "grooming",
-            category_uz: "Go'zallik & Parvarish",
-            category_ru: "Красота и уход",
-            description: "Haqiqiy original qadoq (Retail Box) va trimmer ko'rgazmasi. T-shaklidagi o'tkir zanglamas po'lat pichoqlar, kuchli turbomotor, 120 daqiqalik avtonom batareya va LED quvvat indikatori.",
-            description_uz: "Haqiqiy original qadoq (Retail Box) va trimmer ko'rgazmasi. T-shaklidagi o'tkir zanglamas po'lat pichoqlar, kuchli turbomotor, 120 daqiqalik avtonom batareya va LED quvvat indikatori.",
-            description_ru: "Демонстрация оригинальной розничной упаковки и триммера. Т-образное лезвие из нержавеющей стали, мощный мотор, 120 минут работы и LED дисплей.",
-            stock: 25,
-            sales: 140,
-            rating: 5,
-            reviewCount: 42
-        }
-    },
-    {
-        id: "apple-watch-ultra-2",
-        zone: "audio_wearables",
-        position: [1.4, 0.9, -4.5],
-        focusPosition: [1.4, 1.45, -3.2],
-        lookAtPosition: [1.4, 1.05, -4.5],
-        modelType: "watch",
-        defaultProduct: {
-            id: "sr-apple-watch-ultra-2",
-            name: "Apple Watch Ultra 2 GPS + Cellular 49mm Titanium",
-            name_uz: "Apple Watch Ultra 2 GPS + Cellular 49mm Titanium",
-            name_ru: "Apple Watch Ultra 2 GPS + Cellular 49mm Titanium",
-            price: 9350000,
-            oldPrice: 10100000,
-            image: "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=800&auto=format&fit=crop&q=80",
-            category: "smartwatches",
-            category_uz: "Aqlli soatlar",
-            category_ru: "Умные часы",
-            description: "Ekstremal sharoitlar va sportchilar uchun yaratilgan 49mm titan korpusli eng baquvvat Apple Watch.",
-            description_uz: "Ekstremal sharoitlar va sportchilar uchun yaratilgan 49mm titan korpusli eng baquvvat Apple Watch.",
-            description_ru: "Самые прочные Apple Watch в корпусе 49 мм из титана, созданные для экстремальных нагрузок и приключений.",
-            stock: 10,
-            sales: 47,
-            rating: 5,
-            reviewCount: 19
-        }
-    },
-    {
-        id: "playstation-5-slim",
-        zone: "gaming_gadgets",
-        position: [4.7, 0.9, -0.5],
-        focusPosition: [4.7, 1.45, 0.8],
-        lookAtPosition: [4.7, 1.1, -0.5],
-        modelType: "ps5",
-        defaultProduct: {
-            id: "sr-playstation-5-slim",
-            name: "Sony PlayStation 5 Slim 1TB Digital Edition White",
-            name_uz: "Sony PlayStation 5 Slim 1TB Digital Edition White",
-            name_ru: "Sony PlayStation 5 Slim 1TB Digital Edition White",
-            price: 6490000,
-            oldPrice: 7100000,
-            image: "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=800&auto=format&fit=crop&q=80",
-            category: "gaming",
-            category_uz: "O'yin konsollari",
-            category_ru: "Игровые приставки",
-            description: "Yangi ixcham dizayn, 1TB tezkor SSD va DualSense haptik boshqaruvi bilan keyingi avlod geyming tajribasi.",
-            description_uz: "Yangi ixcham dizayn, 1TB tezkor SSD va DualSense haptik boshqaruvi bilan keyingi avlod geyming tajribasi.",
-            description_ru: "Компактный дизайн, быстрый накопитель SSD 1TB и революционный геймпад DualSense с тактильной отдачей.",
-            stock: 14,
-            sales: 112,
-            rating: 5,
-            reviewCount: 76
-        }
-    },
-    {
-        id: "dji-mini-4-pro",
-        zone: "gaming_gadgets",
-        position: [6.3, 0.9, -0.5],
-        focusPosition: [6.3, 1.45, 0.8],
-        lookAtPosition: [6.3, 1.05, -0.5],
-        modelType: "drone",
-        defaultProduct: {
-            id: "sr-dji-mini-4-pro",
-            name: "DJI Mini 4 Pro Drone Fly More Combo RC 2",
-            name_uz: "DJI Mini 4 Pro Drone Fly More Combo RC 2",
-            name_ru: "Квадрокоптер DJI Mini 4 Pro Fly More Combo RC 2",
-            price: 11800000,
-            oldPrice: 12900000,
-            image: "https://images.unsplash.com/photo-1527977966376-1c8408f9f108?w=800&auto=format&fit=crop&q=80",
-            category: "drones",
-            category_uz: "Dronlar & Gadjetlar",
-            category_ru: "Дроны и гаджеты",
-            description: "4K/60fps HDR video, barcha yo'nalishli to'siqlarni aniqlash tizimi va 34 daqiqagacha uzoq parvoz.",
-            description_uz: "4K/60fps HDR video, barcha yo'nalishli to'siqlarni aniqlash tizimi va 34 daqiqagacha uzoq parvoz.",
-            description_ru: "Съемка 4K/60fps HDR, всенаправленное распознавание препятствий и до 34 минут чистого полета.",
-            stock: 6,
-            sales: 31,
-            rating: 4.8,
-            reviewCount: 15
-        }
-    }
-];
 
 export const DOCK_TARGETS: Record<ShowroomZone, { cameraPos: [number, number, number]; lookAt: [number, number, number] }> = {
     all: {
-        cameraPos: [0, 1.65, 7.5],
-        lookAt: [0, 1.1, -1.0]
+        cameraPos: [0, 1.65, 8.5],
+        lookAt: [0, 1.1, -0.5]
     },
-    smartphones: {
+    trimmers: {
         cameraPos: [-5.5, 1.65, 1.6],
-        lookAt: [-5.5, 1.0, -0.5]
+        lookAt: [-5.5, 1.05, -0.5]
     },
-    audio_wearables: {
-        cameraPos: [0, 1.65, -2.4],
-        lookAt: [0, 1.0, -4.5]
+    hair_care: {
+        cameraPos: [0, 1.65, -2.2],
+        lookAt: [0, 1.05, -4.5]
     },
-    gaming_gadgets: {
+    shavers: {
         cameraPos: [5.5, 1.65, 1.6],
-        lookAt: [5.5, 1.0, -0.5]
+        lookAt: [5.5, 1.05, -0.5]
+    },
+    gadgets: {
+        cameraPos: [0, 1.65, 5.8],
+        lookAt: [0, 1.05, 3.5]
     }
 };
 
 /**
- * DB'dan kelgan haqiqiy tovarlar bilan showroom konfiguratsiyasini boyitish
+ * DB'dagi haqiqiy tovarlar katalogi asosida showroom vitrina stendlarini generatsiya qilish.
+ * Barcha test ma'lumotlari olib tashlangan - faqat DB tovarlari.
  */
-export function mergeWithRealProducts(configs: ShowroomItemConfig[], realProducts: Product[]): { config: ShowroomItemConfig; product: Product }[] {
-    if (!realProducts || realProducts.length === 0) {
-        return configs.map(cfg => ({ config: cfg, product: cfg.defaultProduct }));
-    }
+export function buildShowroomStands(realProducts: Product[]): ShowroomBillboardStand[] {
+    const pool = (realProducts && realProducts.length > 0) ? realProducts : [];
 
-    return configs.map(cfg => {
-        let matched: Product | undefined;
+    // Fallback bitta tovar (agar DB bo'sh kelsa ham xato bermasligi uchun)
+    const fallbackItem: Product = pool[0] || {
+        id: "fallback-prod-1",
+        name: "VGR Professional Series",
+        name_uz: "VGR Professional Series",
+        name_ru: "VGR Professional Series",
+        price: 299000,
+        image: "/showroom/box-front.png",
+        category: "grooming",
+        stock: 10,
+        sales: 50,
+        rating: 5,
+        reviewCount: 20
+    };
 
-        if (cfg.modelType === "iphone") {
-            matched = realProducts.find(p => p.name?.toLowerCase().includes("iphone") || p.name_uz?.toLowerCase().includes("iphone"));
-        } else if (cfg.modelType === "samsung") {
-            matched = realProducts.find(p => p.name?.toLowerCase().includes("samsung") || p.name?.toLowerCase().includes("galaxy"));
-        } else if (cfg.modelType === "airpods") {
-            matched = realProducts.find(p => p.name?.toLowerCase().includes("airpods") || p.name?.toLowerCase().includes("headphone") || p.category?.includes("audio"));
-        } else if (cfg.modelType === "watch") {
-            matched = realProducts.find(p => p.name?.toLowerCase().includes("watch") || p.category?.includes("watch"));
-        } else if (cfg.modelType === "ps5") {
-            matched = realProducts.find(p => p.name?.toLowerCase().includes("playstation") || p.name?.toLowerCase().includes("ps5") || p.category?.includes("game"));
-        } else if (cfg.modelType === "drone") {
-            matched = realProducts.find(p => p.name?.toLowerCase().includes("dji") || p.name?.toLowerCase().includes("dron") || p.category?.includes("gadget"));
-        } else if (cfg.modelType === "box_product") {
-            // Box product prototipi uchun aniq maxsus konfiguratsiya ishlatiladi
-            matched = undefined;
+    const getItems = (bucket: Product[], startIdx: number, count: number): Product[] => {
+        const res: Product[] = [];
+        const source = bucket.length > 0 ? bucket : pool;
+        const validSource = source.length > 0 ? source : [fallbackItem];
+        for (let i = 0; i < count; i++) {
+            const idx = (startIdx + i) % validSource.length;
+            res.push(validSource[idx]);
         }
+        return res;
+    };
 
-        return {
-            config: cfg,
-            product: matched || cfg.defaultProduct
-        };
+    // 1. Haqiqiy toifalarga ajratish
+    const trimmers = pool.filter(p => {
+        const cat = String((p as any).category_id || p.category || "");
+        const name = ((p.name || "") + " " + (p.name_uz || "")).toLowerCase();
+        return cat === "406" || cat === "407" || name.includes("trimmer") || name.includes("mashinka") || name.includes("soch kesish");
     });
+
+    const hairCare = pool.filter(p => {
+        const cat = String((p as any).category_id || p.category || "");
+        const name = ((p.name || "") + " " + (p.name_uz || "")).toLowerCase();
+        return cat === "403" || cat === "404" || cat === "402" || cat === "410" || cat === "411" || name.includes("fen") || name.includes("stayler") || name.includes("dazmol") || name.includes("styler");
+    });
+
+    const shavers = pool.filter(p => {
+        const cat = String((p as any).category_id || p.category || "");
+        const name = ((p.name || "") + " " + (p.name_uz || "")).toLowerCase();
+        return cat === "408" || cat === "401" || cat === "412" || cat === "413" || cat === "430" || cat === "440" || name.includes("sheyver") || name.includes("britva") || name.includes("epil") || name.includes("ustara");
+    });
+
+    const gadgets = pool.filter(p => {
+        return !trimmers.includes(p) && !hairCare.includes(p) && !shavers.includes(p);
+    });
+
+    const stands: ShowroomBillboardStand[] = [];
+
+    // --- 1-STOL: TRIMMERLAR VA SOCH MASHINKALARI (Chap qanot, x = -5.5, z = -0.5) ---
+    const tProds1 = getItems(trimmers, 0, 2);
+    stands.push({
+        id: "trimmers-stand-1",
+        zone: "trimmers",
+        categoryTitleUz: "Trimmerlar & Kantovka",
+        categoryTitleRu: "Триммеры и Окантовка",
+        position: [-6.7, 0.91, -0.5],
+        rotationY: 0,
+        focusPosition: [-6.7, 1.45, 0.7],
+        lookAtPosition: [-6.7, 1.35, -0.5],
+        featuredProduct: tProds1[0],
+        products: tProds1
+    });
+
+    const tProds2 = getItems(trimmers, 2, 2);
+    stands.push({
+        id: "trimmers-stand-2",
+        zone: "trimmers",
+        categoryTitleUz: "Professional Trimmerlar",
+        categoryTitleRu: "Профессиональные Триммеры",
+        position: [-5.5, 0.91, -0.5],
+        rotationY: 0,
+        focusPosition: [-5.5, 1.45, 0.7],
+        lookAtPosition: [-5.5, 1.35, -0.5],
+        featuredProduct: tProds2[0],
+        products: tProds2
+    });
+
+    const tProds3 = getItems(trimmers, 4, 2);
+    stands.push({
+        id: "trimmers-stand-3",
+        zone: "trimmers",
+        categoryTitleUz: "Soch Kesish Mashinkalari",
+        categoryTitleRu: "Машинки для Стрижки",
+        position: [-4.3, 0.91, -0.5],
+        rotationY: 0,
+        focusPosition: [-4.3, 1.45, 0.7],
+        lookAtPosition: [-4.3, 1.35, -0.5],
+        featuredProduct: tProds3[0],
+        products: tProds3
+    });
+
+    // --- 2-STOL: FENLAR VA STAYLERLAR (Orqa markaz, x = 0.0, z = -4.5) ---
+    const hProds1 = getItems(hairCare, 0, 2);
+    stands.push({
+        id: "haircare-stand-1",
+        zone: "hair_care",
+        categoryTitleUz: "Professional Fenlar",
+        categoryTitleRu: "Профессиональные Фены",
+        position: [-1.2, 0.91, -4.5],
+        rotationY: 0,
+        focusPosition: [-1.2, 1.45, -3.3],
+        lookAtPosition: [-1.2, 1.35, -4.5],
+        featuredProduct: hProds1[0],
+        products: hProds1
+    });
+
+    const hProds2 = getItems(hairCare, 2, 2);
+    stands.push({
+        id: "haircare-stand-2",
+        zone: "hair_care",
+        categoryTitleUz: "Soch Dazmollari & Utijok",
+        categoryTitleRu: "Утюжки и Выпрямители",
+        position: [0.0, 0.91, -4.5],
+        rotationY: 0,
+        focusPosition: [0.0, 1.45, -3.3],
+        lookAtPosition: [0.0, 1.35, -4.5],
+        featuredProduct: hProds2[0],
+        products: hProds2
+    });
+
+    const hProds3 = getItems(hairCare, 4, 2);
+    stands.push({
+        id: "haircare-stand-3",
+        zone: "hair_care",
+        categoryTitleUz: "Staylerlar & Fen-Cho'tkalar",
+        categoryTitleRu: "Стайлеры и Фен-Щетки",
+        position: [1.2, 0.91, -4.5],
+        rotationY: 0,
+        focusPosition: [1.2, 1.45, -3.3],
+        lookAtPosition: [1.2, 1.35, -4.5],
+        featuredProduct: hProds3[0],
+        products: hProds3
+    });
+
+    // --- 3-STOL: SHEYVERLAR VA PARVARISH (O'ng qanot, x = 5.5, z = -0.5) ---
+    const sProds1 = getItems(shavers, 0, 2);
+    stands.push({
+        id: "shavers-stand-1",
+        zone: "shavers",
+        categoryTitleUz: "Elektr Sheyverlar & Britvalar",
+        categoryTitleRu: "Электробритвы и Шейверы",
+        position: [4.3, 0.91, -0.5],
+        rotationY: 0,
+        focusPosition: [4.3, 1.45, 0.7],
+        lookAtPosition: [4.3, 1.35, -0.5],
+        featuredProduct: sProds1[0],
+        products: sProds1
+    });
+
+    const sProds2 = getItems(shavers, 2, 2);
+    stands.push({
+        id: "shavers-stand-2",
+        zone: "shavers",
+        categoryTitleUz: "To'rli Ustaralar & Soqol",
+        categoryTitleRu: "Сеточные Бритвы",
+        position: [5.5, 0.91, -0.5],
+        rotationY: 0,
+        focusPosition: [5.5, 1.45, 0.7],
+        lookAtPosition: [5.5, 1.35, -0.5],
+        featuredProduct: sProds2[0],
+        products: sProds2
+    });
+
+    const sProds3 = getItems(shavers, 4, 2);
+    stands.push({
+        id: "shavers-stand-3",
+        zone: "shavers",
+        categoryTitleUz: "Epilyatorlar & Parvarish",
+        categoryTitleRu: "Эпиляторы и Уход",
+        position: [6.7, 0.91, -0.5],
+        rotationY: 0,
+        focusPosition: [6.7, 1.45, 0.7],
+        lookAtPosition: [6.7, 1.35, -0.5],
+        featuredProduct: sProds3[0],
+        products: sProds3
+    });
+
+    // --- 4-STOL: AUDIO, KALONKALAR VA GADJETLAR (Old orol, x = 0.0, z = 3.5) ---
+    const gProds1 = getItems(gadgets, 0, 2);
+    stands.push({
+        id: "gadgets-stand-1",
+        zone: "gadgets",
+        categoryTitleUz: "Bluetooth Kalonkalar",
+        categoryTitleRu: "Bluetooth Колонки",
+        position: [-1.2, 0.91, 3.5],
+        rotationY: 0,
+        focusPosition: [-1.2, 1.45, 4.7],
+        lookAtPosition: [-1.2, 1.35, 3.5],
+        featuredProduct: gProds1[0],
+        products: gProds1
+    });
+
+    const gProds2 = getItems(gadgets, 2, 2);
+    stands.push({
+        id: "gadgets-stand-2",
+        zone: "gadgets",
+        categoryTitleUz: "Quloqchinlar & Audio",
+        categoryTitleRu: "Наушники и Аудио",
+        position: [0.0, 0.91, 3.5],
+        rotationY: 0,
+        focusPosition: [0.0, 1.45, 4.7],
+        lookAtPosition: [0.0, 1.35, 3.5],
+        featuredProduct: gProds2[0],
+        products: gProds2
+    });
+
+    const gProds3 = getItems(gadgets, 4, 2);
+    stands.push({
+        id: "gadgets-stand-3",
+        zone: "gadgets",
+        categoryTitleUz: "Aksessuarlar & Quvvatlash",
+        categoryTitleRu: "Аксессуары и Зарядка",
+        position: [1.2, 0.91, 3.5],
+        rotationY: 0,
+        focusPosition: [1.2, 1.45, 4.7],
+        lookAtPosition: [1.2, 1.35, 3.5],
+        featuredProduct: gProds3[0],
+        products: gProds3
+    });
+
+    return stands;
 }
