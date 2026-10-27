@@ -43,15 +43,15 @@ export default function NavigationDock({ activeZone, lang, onSelectZone }: Navig
     ];
 
     return (
-        <div className="fixed bottom-7 left-1/2 z-30 -translate-x-1/2 animate-in fade-in slide-in-from-bottom duration-300">
-            <div className="flex items-center gap-1.5 rounded-2xl border border-black/8 bg-white/85 p-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.12)] backdrop-blur-2xl ring-1 ring-black/5">
+        <div className="fixed bottom-4 sm:bottom-7 left-1/2 z-30 -translate-x-1/2 max-w-[calc(100vw-1.5rem)] animate-in fade-in slide-in-from-bottom duration-300">
+            <div className="flex items-center gap-1 sm:gap-1.5 rounded-2xl border border-black/8 bg-white/90 p-1 sm:p-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.14)] backdrop-blur-2xl ring-1 ring-black/5 overflow-x-auto no-scrollbar">
                 {dockItems.map((item) => {
                     const isActive = activeZone === item.id;
                     return (
                         <button
                             key={item.id}
                             onClick={() => onSelectZone(item.id)}
-                            className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all duration-200 select-none active:scale-95 ${
+                            className={`flex items-center gap-1.5 sm:gap-2 rounded-xl px-2.5 sm:px-4 py-2 sm:py-2.5 text-[11px] sm:text-xs font-semibold transition-all duration-200 select-none whitespace-nowrap active:scale-95 ${
                                 isActive
                                     ? "bg-[#1d1d1f] text-white shadow-md"
                                     : "text-[#6e6e73] hover:text-[#1d1d1f] hover:bg-black/5"

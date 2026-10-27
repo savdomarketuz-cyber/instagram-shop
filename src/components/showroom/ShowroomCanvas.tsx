@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
 import Link from "next/link";
-import { ArrowLeft, Volume2, VolumeX, MousePointer, Sparkles } from "lucide-react";
+import { ArrowLeft, Volume2, VolumeX, MousePointer, Sparkles, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Zap } from "lucide-react";
 import { Product } from "@/types";
 import {
     buildShowroomStands,
@@ -867,6 +867,57 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
             stateRef.current.isDragging = false;
         };
 
+        // Mobil sensorli ekran (Touch drag look & tap inspect)
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isTouchDragging = false;
+        let touchStartTime = 0;
+
+        const handleTouchStart = (e: TouchEvent) => {
+            if (e.touches.length === 1) {
+                const target = e.target as HTMLElement;
+                if (target.closest("button") || target.closest("a") || target.closest(".no-drag")) {
+                    return;
+                }
+                const touch = e.touches[0];
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+                touchStartTime = Date.now();
+                isTouchDragging = true;
+            }
+        };
+
+        const handleTouchMove = (e: TouchEvent) => {
+            if (isTouchDragging && e.touches.length === 1 && stateRef.current.mode === "FREE_ROAM") {
+                const touch = e.touches[0];
+                const deltaX = touch.clientX - touchStartX;
+                const deltaY = touch.clientY - touchStartY;
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+
+                const touchSensitivity = 0.0042;
+                const yMultiplier = stateRef.current.invertY ? 1 : -1;
+
+                stateRef.current.yaw += deltaX * touchSensitivity;
+                stateRef.current.pitch += deltaY * touchSensitivity * yMultiplier;
+                stateRef.current.pitch = Math.max(-1.48, Math.min(1.48, stateRef.current.pitch));
+            }
+        };
+
+        const handleTouchEnd = () => {
+            if (isTouchDragging) {
+                const elapsedTap = Date.now() - touchStartTime;
+                if (elapsedTap < 280 && stateRef.current.nearbyItemData) {
+                    handleSelectProduct(stateRef.current.nearbyItemData);
+                }
+            }
+            isTouchDragging = false;
+        };
+
+        window.addEventListener("touchstart", handleTouchStart, { passive: true });
+        window.addEventListener("touchmove", handleTouchMove, { passive: true });
+        window.addEventListener("touchend", handleTouchEnd, { passive: true });
+
         const handleKeyDown = (e: KeyboardEvent) => {
             const key = e.key.toLowerCase();
             stateRef.current.keysPressed[key] = true;
@@ -1111,6 +1162,9 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
             window.removeEventListener("mouseup", handleMouseUp);
             window.removeEventListener("keydown", handleKeyDown);
             window.removeEventListener("keyup", handleKeyUp);
+            window.removeEventListener("touchstart", handleTouchStart);
+            window.removeEventListener("touchmove", handleTouchMove);
+            window.removeEventListener("touchend", handleTouchEnd);
             document.removeEventListener("pointerlockchange", handlePointerLockChange);
 
             cleanups.forEach((c) => c());
@@ -1144,29 +1198,111 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
 
             {/* GTA-STYLE INTERACTIVE PROMPT BANNER */}
             {nearbyItem && !selectedProduct && (
-                <div className="fixed bottom-24 left-1/2 z-30 -translate-x-1/2 animate-in fade-in slide-in-from-bottom-2 duration-150">
+                <div className="fixed bottom-20 sm:bottom-24 left-1/2 z-30 -translate-x-1/2 max-w-[calc(100vw-2rem)] w-auto animate-in fade-in slide-in-from-bottom-2 duration-150">
                     <button
                         onClick={() => handleSelectProduct(nearbyItem)}
-                        className="flex items-center gap-3 rounded-2xl border border-black/10 bg-white/95 px-5 py-3 shadow-[0_12px_35px_rgba(0,0,0,0.15)] backdrop-blur-2xl transition-all hover:scale-105 active:scale-95 ring-1 ring-black/5"
+                        className="flex items-center gap-2.5 sm:gap-3 rounded-2xl border border-black/10 bg-white/95 px-4 sm:px-5 py-2.5 sm:py-3 shadow-[0_12px_35px_rgba(0,0,0,0.18)] backdrop-blur-2xl transition-all hover:scale-105 active:scale-95 ring-1 ring-black/5"
                     >
                         <span className="flex h-7 px-2.5 items-center justify-center rounded-lg bg-emerald-600 text-xs font-black uppercase text-white shadow-sm tracking-wider">
                             E
                         </span>
-                        <div className="flex flex-col text-left">
-                            <span className="text-xs font-extrabold text-[#1d1d1f]">
+                        <div className="flex flex-col text-left overflow-hidden">
+                            <span className="line-clamp-1 text-xs font-extrabold text-[#1d1d1f]">
                                 {lang === "ru" ? (nearbyItem.product.name_ru || nearbyItem.product.name) : (nearbyItem.product.name_uz || nearbyItem.product.name)}
                             </span>
                             <span className="text-[11px] font-semibold text-emerald-700">
-                                {nearbyItem.product.price?.toLocaleString("uz-UZ")} so&apos;m • {lang === "ru" ? "Осмотреть и купить" : "Ko'rish va xarid"}
+                                {nearbyItem.product.price?.toLocaleString("uz-UZ")} so&apos;m • {lang === "ru" ? "Осмотреть" : "Ko'rish"}
                             </span>
                         </div>
                     </button>
                 </div>
             )}
 
-            {/* POINTER LOCK ISHORASI */}
+            {/* MOBIL BOSHQARUV TUGMALARI (Virtual Touch Walk D-Pad) */}
+            {!selectedProduct && !isLoading && (
+                <div className="fixed bottom-20 left-3 z-30 flex sm:hidden flex-col items-center select-none no-drag">
+                    <button
+                        onTouchStart={(e) => {
+                            e.stopPropagation();
+                            stateRef.current.keysPressed["w"] = true;
+                        }}
+                        onTouchEnd={(e) => {
+                            e.stopPropagation();
+                            stateRef.current.keysPressed["w"] = false;
+                        }}
+                        className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/60 bg-white/85 text-[#1d1d1f] shadow-lg backdrop-blur-xl active:bg-emerald-600 active:text-white transition-all active:scale-90 ring-1 ring-black/5"
+                        title="Oldinga yurish"
+                    >
+                        <ChevronUp size={24} />
+                    </button>
+
+                    <div className="flex items-center gap-1.5 my-1">
+                        <button
+                            onTouchStart={(e) => {
+                                e.stopPropagation();
+                                stateRef.current.keysPressed["a"] = true;
+                            }}
+                            onTouchEnd={(e) => {
+                                e.stopPropagation();
+                                stateRef.current.keysPressed["a"] = false;
+                            }}
+                            className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/60 bg-white/85 text-[#1d1d1f] shadow-lg backdrop-blur-xl active:bg-emerald-600 active:text-white transition-all active:scale-90 ring-1 ring-black/5"
+                            title="Chapga yurish"
+                        >
+                            <ChevronLeft size={24} />
+                        </button>
+
+                        <button
+                            onTouchStart={(e) => {
+                                e.stopPropagation();
+                                stateRef.current.keysPressed["shift"] = !stateRef.current.keysPressed["shift"];
+                            }}
+                            className={`flex h-10 w-10 items-center justify-center rounded-xl border text-[10px] font-black tracking-wider transition-all shadow-md active:scale-95 ${
+                                stateRef.current.keysPressed["shift"]
+                                    ? "bg-emerald-600 text-white border-emerald-500"
+                                    : "bg-white/80 text-[#1d1d1f] border-white/60"
+                            }`}
+                            title="Yugurish (Sprint)"
+                        >
+                            <Zap size={16} />
+                        </button>
+
+                        <button
+                            onTouchStart={(e) => {
+                                e.stopPropagation();
+                                stateRef.current.keysPressed["d"] = true;
+                            }}
+                            onTouchEnd={(e) => {
+                                e.stopPropagation();
+                                stateRef.current.keysPressed["d"] = false;
+                            }}
+                            className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/60 bg-white/85 text-[#1d1d1f] shadow-lg backdrop-blur-xl active:bg-emerald-600 active:text-white transition-all active:scale-90 ring-1 ring-black/5"
+                            title="O'ngga yurish"
+                        >
+                            <ChevronRight size={24} />
+                        </button>
+                    </div>
+
+                    <button
+                        onTouchStart={(e) => {
+                            e.stopPropagation();
+                            stateRef.current.keysPressed["s"] = true;
+                        }}
+                        onTouchEnd={(e) => {
+                            e.stopPropagation();
+                            stateRef.current.keysPressed["s"] = false;
+                        }}
+                        className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/60 bg-white/85 text-[#1d1d1f] shadow-lg backdrop-blur-xl active:bg-emerald-600 active:text-white transition-all active:scale-90 ring-1 ring-black/5"
+                        title="Orqaga yurish"
+                    >
+                        <ChevronDown size={24} />
+                    </button>
+                </div>
+            )}
+
+            {/* POINTER LOCK ISHORASI (Faqat kompyuterda) */}
             {!isPointerLocked && !selectedProduct && !isLoading && (
-                <div className="pointer-events-none fixed top-6 left-1/2 z-30 -translate-x-1/2 animate-in fade-in duration-300">
+                <div className="pointer-events-none fixed top-6 left-1/2 z-30 -translate-x-1/2 animate-in fade-in duration-300 hidden sm:block">
                     <div className="flex items-center gap-2 rounded-full border border-black/8 bg-white/90 px-4 py-2 text-xs font-semibold text-[#1d1d1f] shadow-lg backdrop-blur-xl ring-1 ring-black/5">
                         <MousePointer size={14} className="text-emerald-600 animate-bounce" />
                         <span>{lang === "ru" ? "Кликните для управления как в симуляторе (WASD + мышь)" : "Simulyator boshqaruviga kirish uchun ekranni bosing"}</span>

@@ -39,8 +39,8 @@ export default function ProductDetailOverlay({ product, lang, onClose }: Product
     };
 
     return (
-        <div className="fixed top-20 right-6 z-40 w-[360px] max-w-[calc(100vw-3rem)] animate-in fade-in slide-in-from-right duration-300">
-            <div className="relative overflow-hidden rounded-3xl border border-black/8 bg-white/90 p-6 text-[#1d1d1f] shadow-[0_24px_60px_rgba(0,0,0,0.14)] backdrop-blur-2xl ring-1 ring-black/5">
+        <div className="fixed bottom-4 inset-x-3 sm:bottom-auto sm:top-20 sm:right-6 sm:left-auto sm:w-[360px] z-40 max-w-[calc(100vw-1.5rem)] animate-in fade-in slide-in-from-bottom sm:slide-in-from-right duration-300">
+            <div className="relative max-h-[82vh] overflow-y-auto rounded-3xl border border-black/8 bg-white/95 p-5 sm:p-6 text-[#1d1d1f] shadow-[0_24px_60px_rgba(0,0,0,0.2)] backdrop-blur-2xl ring-1 ring-black/5">
                 {/* Orqa nozik nur */}
                 <div className="pointer-events-none absolute -top-24 -right-24 h-48 w-48 rounded-full bg-amber-500/10 blur-3xl" />
                 <div className="pointer-events-none absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-emerald-500/10 blur-3xl" />

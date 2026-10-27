@@ -11,7 +11,7 @@ interface ShowroomControlsHelpProps {
 }
 
 export default function ShowroomControlsHelp({ lang, invertY = false, onToggleInvertY }: ShowroomControlsHelpProps) {
-    const [isOpen, setIsOpen] = useState(true);
+    const [isOpen, setIsOpen] = useState(false);
     const t = translations[lang];
 
     return (
