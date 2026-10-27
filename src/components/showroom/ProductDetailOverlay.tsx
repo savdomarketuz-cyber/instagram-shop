@@ -40,22 +40,22 @@ export default function ProductDetailOverlay({ product, lang, onClose }: Product
 
     return (
         <div className="fixed top-20 right-6 z-40 w-[360px] max-w-[calc(100vw-3rem)] animate-in fade-in slide-in-from-right duration-300">
-            <div className="relative overflow-hidden rounded-3xl border border-white/20 bg-black/60 p-6 text-white shadow-2xl backdrop-blur-2xl ring-1 ring-white/10">
-                {/* Orqa neon nuri */}
-                <div className="pointer-events-none absolute -top-24 -right-24 h-48 w-48 rounded-full bg-emerald-500/20 blur-3xl" />
-                <div className="pointer-events-none absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-blue-500/20 blur-3xl" />
+            <div className="relative overflow-hidden rounded-3xl border border-black/8 bg-white/90 p-6 text-[#1d1d1f] shadow-[0_24px_60px_rgba(0,0,0,0.14)] backdrop-blur-2xl ring-1 ring-black/5">
+                {/* Orqa nozik nur */}
+                <div className="pointer-events-none absolute -top-24 -right-24 h-48 w-48 rounded-full bg-amber-500/10 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-emerald-500/10 blur-3xl" />
 
                 {/* Yopish tugmasi */}
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/70 transition-all hover:bg-white/20 hover:text-white active:scale-95"
+                    className="absolute top-4 right-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/5 text-[#6e6e73] transition-all hover:bg-black/10 hover:text-[#1d1d1f] active:scale-95"
                     title={lang === "ru" ? "Закрыть" : "Yopish"}
                 >
                     <X size={18} />
                 </button>
 
                 {/* Mahsulot rasmi */}
-                <div className="relative mb-5 flex h-48 w-full items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-b from-white/10 to-transparent p-4">
+                <div className="relative mb-5 flex h-48 w-full items-center justify-center overflow-hidden rounded-2xl bg-neutral-100/70 border border-black/5 p-4">
                     {product.image ? (
                         <div className="relative h-full w-full">
                             <Image
@@ -63,56 +63,56 @@ export default function ProductDetailOverlay({ product, lang, onClose }: Product
                                 alt={name}
                                 fill
                                 sizes="320px"
-                                className="object-contain drop-shadow-[0_15px_25px_rgba(0,0,0,0.5)] transition-transform duration-500 hover:scale-105"
+                                className="object-contain drop-shadow-[0_12px_20px_rgba(0,0,0,0.12)] transition-transform duration-500 hover:scale-105"
                             />
                         </div>
                     ) : (
-                        <Sparkles size={48} className="text-white/40" />
+                        <Sparkles size={48} className="text-neutral-400" />
                     )}
 
-                    <span className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-black/50 px-2.5 py-1 text-[11px] font-medium text-emerald-400 backdrop-blur-md">
-                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 shadow-sm border border-emerald-200/60 backdrop-blur-md">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                         {t.showroom.inStock}
                     </span>
                 </div>
 
                 {/* Kategoriya va Nomi */}
-                <div className="mb-3">
-                    <span className="text-[10px] font-bold tracking-wider text-white/50 uppercase">
+                <div className="mb-2">
+                    <span className="text-[10px] font-bold tracking-wider text-[#86868b] uppercase">
                         {category}
                     </span>
-                    <h3 className="line-clamp-2 text-base font-bold leading-snug text-white">
+                    <h3 className="line-clamp-2 text-base font-bold leading-snug text-[#1d1d1f]">
                         {name}
                     </h3>
                 </div>
 
                 {/* Tavsif (qisqa) */}
                 {description && (
-                    <p className="mb-4 line-clamp-2 text-xs text-white/70 leading-relaxed">
+                    <p className="mb-3 line-clamp-2 text-xs text-[#515154] leading-relaxed">
                         {description}
                     </p>
                 )}
 
                 {/* Narx */}
-                <div className="mb-5 flex items-baseline gap-2.5">
-                    <span className="text-xl font-extrabold text-white">
-                        {product.price.toLocaleString("uz-UZ")} <span className="text-xs font-semibold text-white/70">so&apos;m</span>
+                <div className="mb-4 flex items-baseline gap-2.5">
+                    <span className="text-xl font-extrabold text-[#1d1d1f]">
+                        {product.price.toLocaleString("uz-UZ")} <span className="text-xs font-semibold text-[#86868b]">so&apos;m</span>
                     </span>
                     {product.oldPrice && product.oldPrice > product.price && (
-                        <span className="text-xs text-white/40 line-through">
+                        <span className="text-xs text-[#86868b] line-through">
                             {product.oldPrice.toLocaleString("uz-UZ")} so&apos;m
                         </span>
                     )}
                 </div>
 
                 {/* Imtiyozlar mini nishonlari */}
-                <div className="mb-5 grid grid-cols-2 gap-2 border-y border-white/10 py-3 text-[11px] text-white/60">
+                <div className="mb-5 grid grid-cols-2 gap-2 border-y border-neutral-200/80 py-3 text-[11px] text-[#6e6e73]">
                     <div className="flex items-center gap-1.5">
-                        <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
+                        <ShieldCheck size={14} className="text-emerald-600 shrink-0" />
                         <span>100% Original</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <Truck size={14} className="text-blue-400 shrink-0" />
+                        <Truck size={14} className="text-[#0071e3] shrink-0" />
                         <span>Tez yetkazib berish</span>
                     </div>
                 </div>
@@ -123,8 +123,8 @@ export default function ProductDetailOverlay({ product, lang, onClose }: Product
                         onClick={handleAddToCart}
                         className={`flex h-11 w-full items-center justify-center gap-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 active:scale-98 ${
                             isAdded
-                                ? "bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.5)]"
-                                : "bg-white text-black hover:bg-neutral-100 shadow-[0_4px_20px_rgba(255,255,255,0.2)]"
+                                ? "bg-emerald-600 text-white shadow-[0_4px_16px_rgba(16,185,129,0.3)]"
+                                : "bg-[#1d1d1f] text-white hover:bg-black shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
                         }`}
                     >
                         {isAdded ? (
@@ -142,10 +142,10 @@ export default function ProductDetailOverlay({ product, lang, onClose }: Product
 
                     <Link
                         href={`/${lang}/products/${slug}`}
-                        className="flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/5 text-xs font-semibold text-white transition-all hover:bg-white/10 hover:border-white/30 active:scale-98"
+                        className="flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-black/10 bg-white/70 text-xs font-semibold text-[#1d1d1f] transition-all hover:bg-white hover:border-black/20 hover:shadow-sm active:scale-98"
                     >
                         <span>{t.showroom.viewDetails}</span>
-                        <ExternalLink size={13} className="text-white/70" />
+                        <ExternalLink size={13} className="text-[#86868b]" />
                     </Link>
                 </div>
             </div>

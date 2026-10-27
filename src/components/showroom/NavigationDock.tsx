@@ -39,7 +39,7 @@ export default function NavigationDock({ activeZone, lang, onSelectZone }: Navig
 
     return (
         <div className="fixed bottom-7 left-1/2 z-30 -translate-x-1/2 animate-in fade-in slide-in-from-bottom duration-300">
-            <div className="flex items-center gap-1.5 rounded-2xl border border-white/20 bg-black/70 p-1.5 shadow-[0_10px_35px_rgba(0,0,0,0.5)] backdrop-blur-2xl ring-1 ring-white/10">
+            <div className="flex items-center gap-1.5 rounded-2xl border border-black/8 bg-white/85 p-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.12)] backdrop-blur-2xl ring-1 ring-black/5">
                 {dockItems.map((item) => {
                     const isActive = activeZone === item.id;
                     return (
@@ -48,11 +48,11 @@ export default function NavigationDock({ activeZone, lang, onSelectZone }: Navig
                             onClick={() => onSelectZone(item.id)}
                             className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all duration-200 select-none active:scale-95 ${
                                 isActive
-                                    ? "bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.4)]"
-                                    : "text-white/70 hover:bg-white/10 hover:text-white"
+                                    ? "bg-[#1d1d1f] text-white shadow-md"
+                                    : "text-[#6e6e73] hover:text-[#1d1d1f] hover:bg-black/5"
                             }`}
                         >
-                            <span className={isActive ? "text-black" : "text-white/60"}>
+                            <span className={isActive ? "text-white" : "text-[#86868b]"}>
                                 {item.icon}
                             </span>
                             <span className="tracking-tight">{item.label}</span>

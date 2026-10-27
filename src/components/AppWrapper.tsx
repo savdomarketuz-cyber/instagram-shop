@@ -393,7 +393,7 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
 
     return (
         <div className={`
-            mx-auto ${isReels || isShowroom ? 'bg-black' : 'bg-white'} min-h-screen relative w-full max-w-full ${isShowroom ? '' : 'lg:max-w-[1600px]'} overflow-x-clip
+            mx-auto ${isReels ? 'bg-black' : isShowroom ? 'bg-[#F5F5F7]' : 'bg-white'} min-h-screen relative w-full max-w-full ${isShowroom ? '' : 'lg:max-w-[1600px]'} overflow-x-clip
             ${showNav ? (isReels ? '' : (pathWithoutLocale === '/' || isProductDetail) ? 'md:pt-28' : 'pt-16 md:pt-28') : ''}
         `}>
             <ConnectivityListener />

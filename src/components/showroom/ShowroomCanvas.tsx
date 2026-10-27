@@ -16,6 +16,110 @@ interface ShowroomCanvasProps {
     lang: "uz" | "ru";
 }
 
+/**
+ * Apple Store uslubidagi tabiiy yorqin eman (Blonde Oak) yog'och teksturasini yaratish
+ */
+function createOakWoodTexture(): THREE.CanvasTexture {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1024;
+    canvas.height = 512;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return new THREE.CanvasTexture(canvas);
+
+    // Tabiiy yorqin eman (Blonde European Oak) asosi
+    const grad = ctx.createLinearGradient(0, 0, 1024, 0);
+    grad.addColorStop(0.0, "#D9A86E");
+    grad.addColorStop(0.2, "#E2B883");
+    grad.addColorStop(0.4, "#D49F62");
+    grad.addColorStop(0.6, "#E5BC87");
+    grad.addColorStop(0.8, "#D7A56B");
+    grad.addColorStop(1.0, "#DCB079");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 1024, 512);
+
+    // Yupqa yog'och tolalari (Fine longitudinal wood grain)
+    for (let y = 0; y < 512; y += 2) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        let curY = y;
+        const alpha = 0.07 + Math.random() * 0.12;
+        ctx.strokeStyle = Math.random() > 0.4 ? `rgba(160, 110, 52, ${alpha})` : `rgba(240, 205, 155, ${alpha * 0.8})`;
+        ctx.lineWidth = 1.0 + Math.random() * 0.8;
+
+        for (let x = 0; x <= 1024; x += 24) {
+            curY += (Math.random() - 0.5) * 1.5;
+            ctx.lineTo(x, curY);
+        }
+        ctx.stroke();
+    }
+
+    // Organik yog'och halqalari (Quarter-sawn oak ray flecks)
+    for (let i = 0; i < 8; i++) {
+        const cx = 80 + i * 130 + (Math.random() - 0.5) * 40;
+        const cy = 256 + (Math.random() - 0.5) * 180;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, 90 + Math.random() * 50, 22 + Math.random() * 12, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(145, 92, 42, 0.08)";
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(2, 1);
+    return tex;
+}
+
+/**
+ * Apple Store Pietra Serena / Honed Sandstone tosh pol teksturasini yaratish
+ */
+function createStoneFloorTexture(): THREE.CanvasTexture {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1024;
+    canvas.height = 1024;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return new THREE.CanvasTexture(canvas);
+
+    // Oqish-qumrang silliqlangan tosh asosi
+    ctx.fillStyle = "#EAE7E0";
+    ctx.fillRect(0, 0, 1024, 1024);
+
+    // Nozik tabiiy tosh donachalari (Speckles)
+    for (let i = 0; i < 35000; i++) {
+        const x = Math.random() * 1024;
+        const y = Math.random() * 1024;
+        const s = Math.random() * 1.8;
+        const a = Math.random() * 0.12;
+        ctx.fillStyle = Math.random() > 0.5 ? `rgba(175, 170, 162, ${a})` : `rgba(255, 255, 255, ${a * 1.3})`;
+        ctx.fillRect(x, y, s, s);
+    }
+
+    // Katta me'moriy tosh plitalar chiziqlari (Apple Store pavers grid)
+    ctx.strokeStyle = "rgba(185, 180, 172, 0.45)";
+    ctx.lineWidth = 2;
+    for (let y = 0; y <= 1024; y += 128) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(1024, y);
+        ctx.stroke();
+
+        const rowOffset = (y / 128) % 2 === 0 ? 0 : 128;
+        for (let x = rowOffset; x <= 1024; x += 256) {
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x, y + 128);
+            ctx.stroke();
+        }
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(5, 5);
+    return tex;
+}
+
 export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvasProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -26,7 +130,7 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
 
     // Kamera va interaktiv holatlar
     const stateRef = useRef({
-        targetCamPos: new THREE.Vector3(0, 3.2, 9.5),
+        targetCamPos: new THREE.Vector3(0, 3.0, 9.5),
         targetLookAt: new THREE.Vector3(0, 1.1, -1.0),
         currentLookAt: new THREE.Vector3(0, 1.1, -1.0),
         isUserInteracting: false,
@@ -67,13 +171,13 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
         const container = containerRef.current;
         if (!container) return;
 
-        // 1. SCENE & CAMERA
+        // 1. SCENE & CAMERA (Apple Store Oq/Yorug' estetika)
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0a0c10);
-        scene.fog = new THREE.FogExp2(0x0a0c10, 0.022);
+        scene.background = new THREE.Color(0xF5F5F7); // Apple Signature Light Gray
+        scene.fog = new THREE.FogExp2(0xF5F5F7, 0.013);
 
-        const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 100);
-        camera.position.set(0, 3.2, 9.5);
+        const camera = new THREE.PerspectiveCamera(56, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 3.0, 9.5);
 
         // 2. RENDERER
         const renderer = new THREE.WebGLRenderer({
@@ -84,49 +188,59 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.15;
+        renderer.toneMappingExposure = 1.05;
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         container.appendChild(renderer.domElement);
 
-        // 3. LIGHTING (Apple Store + Cyber tech lighting)
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+        // 3. LIGHTING (Apple Store Studio & Natural Daylight)
+        // Kuchli diffused ambient yorug'lik
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.85);
         scene.add(ambientLight);
 
-        const mainDirLight = new THREE.DirectionalLight(0xffffff, 1.4);
-        mainDirLight.position.set(5, 12, 6);
-        mainDirLight.castShadow = true;
-        mainDirLight.shadow.mapSize.width = 2048;
-        mainDirLight.shadow.mapSize.height = 2048;
-        mainDirLight.shadow.camera.near = 0.5;
-        mainDirLight.shadow.camera.far = 30;
-        mainDirLight.shadow.camera.left = -15;
-        mainDirLight.shadow.camera.right = 15;
-        mainDirLight.shadow.camera.top = 15;
-        mainDirLight.shadow.camera.bottom = -15;
-        mainDirLight.shadow.bias = -0.0005;
-        scene.add(mainDirLight);
+        // Derazadan tushuvchi tabiiy quyosh nuri va yumshoq soyalar
+        const mainSunLight = new THREE.DirectionalLight(0xfffaed, 1.6);
+        mainSunLight.position.set(6, 14, 7);
+        mainSunLight.castShadow = true;
+        mainSunLight.shadow.mapSize.width = 2048;
+        mainSunLight.shadow.mapSize.height = 2048;
+        mainSunLight.shadow.camera.near = 0.5;
+        mainSunLight.shadow.camera.far = 32;
+        mainSunLight.shadow.camera.left = -16;
+        mainSunLight.shadow.camera.right = 16;
+        mainSunLight.shadow.camera.top = 16;
+        mainSunLight.shadow.camera.bottom = -16;
+        mainSunLight.shadow.bias = -0.0003;
+        scene.add(mainSunLight);
 
-        // Stol ustidagi yumshoq neon chiroqlar
-        const spot1 = new THREE.PointLight(0x38bdf8, 2.5, 9);
-        spot1.position.set(-5.5, 3.5, -0.5);
+        // Orqa panoramadan kiruvchi yumshoq kunduzgi osmon nuri
+        const windowFillLight = new THREE.DirectionalLight(0xe5f1fc, 0.9);
+        windowFillLight.position.set(0, 6, -14);
+        scene.add(windowFillLight);
+
+        // 3 ta yog'och stol ustidagi yumshoq iliq fokus chiroqlar
+        const spot1 = new THREE.PointLight(0xfff6ea, 1.4, 9);
+        spot1.position.set(-5.5, 4.2, -0.5);
         scene.add(spot1);
 
-        const spot2 = new THREE.PointLight(0xa78bfa, 2.8, 9);
-        spot2.position.set(0, 3.5, -4.5);
+        const spot2 = new THREE.PointLight(0xfff6ea, 1.5, 9);
+        spot2.position.set(0, 4.2, -4.5);
         scene.add(spot2);
 
-        const spot3 = new THREE.PointLight(0x10b981, 2.5, 9);
-        spot3.position.set(5.5, 3.5, -0.5);
+        const spot3 = new THREE.PointLight(0xfff6ea, 1.4, 9);
+        spot3.position.set(5.5, 4.2, -0.5);
         scene.add(spot3);
 
-        // 4. ARCHITECTURE (Floor, Walls, Ceiling, Panorama Window)
-        // Floor (Dark polished marble)
-        const floorGeo = new THREE.PlaneGeometry(28, 30);
+        // 4. ARCHITECTURE & TEXTURES
+        const woodTexture = createOakWoodTexture();
+        const stoneTexture = createStoneFloorTexture();
+
+        // Pol (Apple Store Pietra Serena Honed Sandstone)
+        const floorGeo = new THREE.PlaneGeometry(32, 34);
         const floorMat = new THREE.MeshStandardMaterial({
-            color: 0x11141a,
-            roughness: 0.18,
-            metalness: 0.35,
+            map: stoneTexture,
+            roughness: 0.28,
+            metalness: 0.04,
         });
         const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.rotation.x = -Math.PI / 2;
@@ -134,86 +248,122 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
         floor.receiveShadow = true;
         scene.add(floor);
 
-        // Pol ustidagi nafis yaltiroq aksent aylanalari
-        [-5.5, 0, 5.5].forEach((x, idx) => {
-            const z = idx === 1 ? -4.5 : -0.5;
-            const ringGeo = new THREE.RingGeometry(2.0, 2.06, 64);
-            const ringMat = new THREE.MeshBasicMaterial({
-                color: idx === 0 ? 0x38bdf8 : idx === 1 ? 0xa78bfa : 0x10b981,
-                transparent: true,
-                opacity: 0.4,
-                side: THREE.DoubleSide
-            });
-            const ring = new THREE.Mesh(ringGeo, ringMat);
-            ring.rotation.x = -Math.PI / 2;
-            ring.position.set(x, 0.01, z);
-            scene.add(ring);
-        });
-
-        // Devorlar
+        // Oq devorlar materiali (Clean Architectural White)
         const wallMat = new THREE.MeshStandardMaterial({
-            color: 0x181c24,
-            roughness: 0.85,
-            metalness: 0.1
+            color: 0xFAFAFC,
+            roughness: 0.88,
+            metalness: 0.02
         });
 
-        // Orqa devor (Panoramik oynali fasad ramkasi)
-        const backWallLeftGeo = new THREE.BoxGeometry(7, 8, 0.4);
+        // Alyuminiy plintus (Baseboard trim)
+        const baseboardMat = new THREE.MeshStandardMaterial({
+            color: 0xD0D0D4,
+            roughness: 0.35,
+            metalness: 0.7
+        });
+
+        // Orqa devor fasad ramkalari
+        const backWallLeftGeo = new THREE.BoxGeometry(6.5, 8, 0.4);
         const backWallLeft = new THREE.Mesh(backWallLeftGeo, wallMat);
-        backWallLeft.position.set(-10, 4, -13);
+        backWallLeft.position.set(-10.25, 4, -13);
         backWallLeft.receiveShadow = true;
         scene.add(backWallLeft);
 
-        const backWallRightGeo = new THREE.BoxGeometry(7, 8, 0.4);
+        const backWallRightGeo = new THREE.BoxGeometry(6.5, 8, 0.4);
         const backWallRight = new THREE.Mesh(backWallRightGeo, wallMat);
-        backWallRight.position.set(10, 4, -13);
+        backWallRight.position.set(10.25, 4, -13);
         backWallRight.receiveShadow = true;
         scene.add(backWallRight);
 
-        // Orqa panoramali shisha oyna
-        const windowGeo = new THREE.PlaneGeometry(13, 7.5);
+        // Orqa panoramali shaffof shisha fasad (Apple Glass Curtain Wall)
+        const windowGeo = new THREE.PlaneGeometry(14, 7.5);
         const windowMat = new THREE.MeshPhysicalMaterial({
-            color: 0x88ccff,
+            color: 0xffffff,
             transparent: true,
-            opacity: 0.25,
-            roughness: 0.05,
-            metalness: 0.1,
-            transmission: 0.85,
-            ior: 1.5,
+            opacity: 0.3,
+            roughness: 0.02,
+            metalness: 0.05,
+            transmission: 0.94,
+            ior: 1.52,
+            reflectivity: 0.4
         });
         const glassWindow = new THREE.Mesh(windowGeo, windowMat);
         glassWindow.position.set(0, 4, -12.9);
         scene.add(glassWindow);
 
-        // Orqadagi zamonaviy Cyber shahar silueti / osmon
-        const cityGroup = new THREE.Group();
-        cityGroup.position.set(0, 0, -18);
-        for (let i = -14; i <= 14; i += 2.2) {
-            const h = 4 + Math.abs(Math.sin(i * 1.5)) * 9;
-            const bGeo = new THREE.BoxGeometry(1.6, h, 1.6);
-            const bMat = new THREE.MeshStandardMaterial({
-                color: 0x07090e,
-                roughness: 0.9,
-            });
-            const building = new THREE.Mesh(bGeo, bMat);
-            building.position.set(i, h / 2 - 1, 0);
-            cityGroup.add(building);
+        // Shisha fasad vertikal alyuminiy ustunlari (Mullions)
+        const mullionMat = new THREE.MeshStandardMaterial({ color: 0xD8D8DC, metalness: 0.85, roughness: 0.25 });
+        [-7, -3.5, 0, 3.5, 7].forEach((mx) => {
+            const mulGeo = new THREE.BoxGeometry(0.08, 7.5, 0.12);
+            const mulMesh = new THREE.Mesh(mulGeo, mullionMat);
+            mulMesh.position.set(mx, 4, -12.85);
+            scene.add(mulMesh);
+        });
 
-            // Bino ustidagi neon chiroqlar
-            if (Math.random() > 0.4) {
-                const beaconGeo = new THREE.SphereGeometry(0.12, 8, 8);
-                const beaconMat = new THREE.MeshBasicMaterial({
-                    color: Math.random() > 0.5 ? 0xef4444 : 0x06b6d4
-                });
-                const beacon = new THREE.Mesh(beaconGeo, beaconMat);
-                beacon.position.set(i, h - 0.9, 0);
-                cityGroup.add(beacon);
-            }
-        }
-        scene.add(cityGroup);
+        // Orqa shisha ortidagi tashqi maydon (Sunlit Plaza / Apple Park Landscape)
+        const outdoorPlaza = new THREE.Mesh(
+            new THREE.PlaneGeometry(40, 20),
+            new THREE.MeshStandardMaterial({ color: 0xEDEBE4, roughness: 0.45 })
+        );
+        outdoorPlaza.rotation.x = -Math.PI / 2;
+        outdoorPlaza.position.set(0, -0.02, -22);
+        scene.add(outdoorPlaza);
 
-        // Chap va O'ng devorlar
-        const sideWallGeo = new THREE.BoxGeometry(0.4, 8, 28);
+        // Ochiq osmon foni
+        const skyGeo = new THREE.PlaneGeometry(42, 16);
+        const skyMat = new THREE.MeshBasicMaterial({ color: 0xDFECF7 });
+        const sky = new THREE.Mesh(skyGeo, skyMat);
+        sky.position.set(0, 7.5, -28);
+        scene.add(sky);
+
+        // Apple Store Ficus daraxtlari (Foster + Partners oq silindrik terrazzo idishlarda)
+        const createAppleTree = (x: number, y: number, z: number) => {
+            const treeGroup = new THREE.Group();
+            treeGroup.position.set(x, y, z);
+
+            // Oq Terrazzo tuvak (Planter)
+            const potGeo = new THREE.CylinderGeometry(0.5, 0.42, 0.75, 32);
+            const potMat = new THREE.MeshStandardMaterial({ color: 0xF2F0EA, roughness: 0.35 });
+            const pot = new THREE.Mesh(potGeo, potMat);
+            pot.position.y = 0.375;
+            pot.castShadow = true;
+            pot.receiveShadow = true;
+            treeGroup.add(pot);
+
+            // Tabiiy daraxt tanasi
+            const trunkGeo = new THREE.CylinderGeometry(0.06, 0.08, 1.8, 16);
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5C4033, roughness: 0.8 });
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.y = 1.4;
+            trunk.castShadow = true;
+            treeGroup.add(trunk);
+
+            // Yashil barglar toji (Lush Ficus canopy)
+            const leafMat1 = new THREE.MeshStandardMaterial({ color: 0x2D6E3E, roughness: 0.7 });
+            const leafMat2 = new THREE.MeshStandardMaterial({ color: 0x388E3C, roughness: 0.7 });
+
+            const canopy1 = new THREE.Mesh(new THREE.SphereGeometry(0.7, 16, 16), leafMat1);
+            canopy1.position.y = 2.4;
+            canopy1.scale.set(1, 1.15, 1);
+            canopy1.castShadow = true;
+            treeGroup.add(canopy1);
+
+            const canopy2 = new THREE.Mesh(new THREE.SphereGeometry(0.5, 14, 14), leafMat2);
+            canopy2.position.set(0.18, 2.7, 0.1);
+            canopy2.castShadow = true;
+            treeGroup.add(canopy2);
+
+            scene.add(treeGroup);
+        };
+
+        // Shisha ortidagi va xona ichidagi me'moriy daraxtlar
+        createAppleTree(-5.5, 0, -15.5);
+        createAppleTree(5.5, 0, -15.5);
+        createAppleTree(-11.5, 0, -2.5);
+        createAppleTree(11.5, 0, -2.5);
+
+        // Chap va O'ng oppoq devorlar
+        const sideWallGeo = new THREE.BoxGeometry(0.4, 8, 30);
         const leftWall = new THREE.Mesh(sideWallGeo, wallMat);
         leftWall.position.set(-13.5, 4, 0);
         leftWall.receiveShadow = true;
@@ -224,27 +374,36 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
         rightWall.receiveShadow = true;
         scene.add(rightWall);
 
-        // Shift va LED chiziqlar
-        const ceilingGeo = new THREE.PlaneGeometry(28, 30);
+        // Plintuslar (Baseboards)
+        const leftBase = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.12, 30), baseboardMat);
+        leftBase.position.set(-13.28, 0.06, 0);
+        scene.add(leftBase);
+
+        const rightBase = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.12, 30), baseboardMat);
+        rightBase.position.set(13.28, 0.06, 0);
+        scene.add(rightBase);
+
+        // Shift (Apple Store Pure White Ceiling)
+        const ceilingGeo = new THREE.PlaneGeometry(32, 34);
         const ceilingMat = new THREE.MeshStandardMaterial({
-            color: 0x12151d,
-            roughness: 0.9
+            color: 0xFFFFFF,
+            roughness: 0.95
         });
         const ceiling = new THREE.Mesh(ceilingGeo, ceilingMat);
         ceiling.rotation.x = Math.PI / 2;
         ceiling.position.y = 7.5;
         scene.add(ceiling);
 
-        // Shift LED panellari (Apple Store uslubidagi uzun parallelepiped chiziqlar)
+        // Shift yorug'lik panellari (Apple Store Luminous Stretch Ceiling Bays)
         [-6, -2, 2, 6].forEach((x) => {
-            const ledGeo = new THREE.BoxGeometry(0.8, 0.08, 20);
-            const ledMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const ledGeo = new THREE.BoxGeometry(1.2, 0.04, 22);
+            const ledMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
             const led = new THREE.Mesh(ledGeo, ledMat);
-            led.position.set(x, 7.45, -1);
+            led.position.set(x, 7.48, -1);
             scene.add(led);
         });
 
-        // 5. BRENDING - Markaziy devorda porlovchi "VELARI" yozuvi
+        // 5. BRENDING - Markaziy devorda minimalist metall "VELARI" yozuvi
         const logoCanvas = document.createElement("canvas");
         logoCanvas.width = 1024;
         logoCanvas.height = 256;
@@ -253,20 +412,17 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
             ctx.fillStyle = "rgba(0, 0, 0, 0)";
             ctx.fillRect(0, 0, 1024, 256);
 
-            // Neon Glow
-            ctx.shadowColor = "#38bdf8";
-            ctx.shadowBlur = 24;
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "900 84px system-ui, sans-serif";
+            // Apple Store uslubidagi silliq dark charcoal / metal harflar
+            ctx.fillStyle = "#1D1D1F";
+            ctx.font = "900 86px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.fillText("V E L A R I", 512, 100);
+            ctx.fillText("V E L A R I", 512, 95);
 
-            ctx.shadowBlur = 12;
-            ctx.fillStyle = "#38bdf8";
-            ctx.font = "700 24px system-ui, sans-serif";
-            ctx.letterSpacing = "6px";
-            ctx.fillText("PREMIUM TECH VIRTUAL SHOWROOM", 512, 175);
+            ctx.fillStyle = "#6E6E73";
+            ctx.font = "700 24px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
+            ctx.letterSpacing = "7px";
+            ctx.fillText("PREMIUM EXPERIENCE STORE", 512, 172);
         }
 
         const logoTexture = new THREE.CanvasTexture(logoCanvas);
@@ -280,82 +436,73 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
         logoMesh.position.set(0, 6.2, -12.75);
         scene.add(logoMesh);
 
-        // 6. 3 TA PODIUM (STOLLAR)
-        const createPodium = (x: number, z: number, glowColor: number, title: string) => {
+        // 6. 3 TA PODIUM - APPLE STORE FOSTER + PARTNERS NATURAL BLONDE OAK DISPLAY TABLES
+        const tableOakMat = new THREE.MeshStandardMaterial({
+            map: woodTexture,
+            color: 0xffffff,
+            roughness: 0.32,
+            metalness: 0.02
+        });
+
+        const createPodium = (x: number, z: number, title: string) => {
             const podiumGroup = new THREE.Group();
             podiumGroup.position.set(x, 0, z);
 
-            // Stol asosiy sirti (Top slab)
+            // Stol asosiy massiv yog'och sirti (Solid Blonde Oak Table Top)
             const topGeo = new THREE.BoxGeometry(3.6, 0.12, 1.5);
-            const topMat = new THREE.MeshStandardMaterial({
-                color: 0x1f242e,
-                roughness: 0.15,
-                metalness: 0.7,
-            });
-            const topMesh = new THREE.Mesh(topGeo, topMat);
+            const topMesh = new THREE.Mesh(topGeo, tableOakMat);
             topMesh.position.y = 0.85;
             topMesh.castShadow = true;
             topMesh.receiveShadow = true;
             podiumGroup.add(topMesh);
 
-            // Stol usti yorug'lik hoshiyasi
-            const borderGeo = new THREE.BoxGeometry(3.64, 0.02, 1.54);
-            const borderMat = new THREE.MeshBasicMaterial({ color: glowColor });
-            const borderMesh = new THREE.Mesh(borderGeo, borderMat);
-            borderMesh.position.y = 0.79;
-            podiumGroup.add(borderMesh);
+            // 4 ta massiv burchak yog'och oyoqlari (Apple Store solid oak square legs)
+            const legGeo = new THREE.BoxGeometry(0.22, 0.85, 0.22);
+            const legOffsets = [
+                [-1.55, -0.55],
+                [1.55, -0.55],
+                [-1.55, 0.55],
+                [1.55, 0.55]
+            ];
 
-            // Stol oyoqlari (Futuristik metall)
-            const legMat = new THREE.MeshStandardMaterial({
-                color: 0x0f1217,
-                roughness: 0.3,
-                metalness: 0.8
+            legOffsets.forEach(([lx, lz]) => {
+                const legMesh = new THREE.Mesh(legGeo, tableOakMat);
+                legMesh.position.set(lx, 0.425, lz);
+                legMesh.castShadow = true;
+                legMesh.receiveShadow = true;
+                podiumGroup.add(legMesh);
             });
-            const legGeo = new THREE.BoxGeometry(0.18, 0.8, 1.3);
-            const legLeft = new THREE.Mesh(legGeo, legMat);
-            legLeft.position.set(-1.5, 0.4, 0);
-            legLeft.castShadow = true;
-            podiumGroup.add(legLeft);
 
-            const legRight = new THREE.Mesh(legGeo, legMat);
-            legRight.position.set(1.5, 0.4, 0);
-            legRight.castShadow = true;
-            podiumGroup.add(legRight);
-
-            // Underglow neon chiroq (pastga tushuvchi neon)
-            const underglowGeo = new THREE.BoxGeometry(3.2, 0.04, 1.1);
-            const underglowMat = new THREE.MeshBasicMaterial({ color: glowColor });
-            const underglow = new THREE.Mesh(underglowGeo, underglowMat);
-            underglow.position.y = 0.05;
-            podiumGroup.add(underglow);
-
-            // Stol oldi nom taxtachasi
+            // Stol oldi shaffof akril toifalar nishoni (Apple Store Tabletop Placard)
             const badgeCanvas = document.createElement("canvas");
             badgeCanvas.width = 512;
             badgeCanvas.height = 128;
             const bCtx = badgeCanvas.getContext("2d");
             if (bCtx) {
-                bCtx.fillStyle = "rgba(0,0,0,0)";
-                bCtx.fillRect(0, 0, 512, 128);
-                bCtx.fillStyle = "#ffffff";
-                bCtx.font = "bold 34px system-ui, sans-serif";
+                bCtx.fillStyle = "rgba(255, 255, 255, 0.9)";
+                bCtx.roundRect ? bCtx.roundRect(0, 0, 512, 128, 24) : bCtx.fillRect(0, 0, 512, 128);
+                bCtx.fill();
+
+                bCtx.fillStyle = "#1D1D1F";
+                bCtx.font = "bold 34px system-ui, -apple-system, sans-serif";
                 bCtx.textAlign = "center";
                 bCtx.textBaseline = "middle";
+                bCtx.letterSpacing = "2px";
                 bCtx.fillText(title.toUpperCase(), 256, 64);
             }
             const badgeTex = new THREE.CanvasTexture(badgeCanvas);
-            const badgeGeo = new THREE.PlaneGeometry(1.6, 0.4);
+            const badgeGeo = new THREE.PlaneGeometry(1.5, 0.38);
             const badgeMat = new THREE.MeshBasicMaterial({ map: badgeTex, transparent: true });
             const badge = new THREE.Mesh(badgeGeo, badgeMat);
-            badge.position.set(0, 0.7, 0.76);
+            badge.position.set(0, 0.85, 0.77);
             podiumGroup.add(badge);
 
             scene.add(podiumGroup);
         };
 
-        createPodium(-5.5, -0.5, 0x38bdf8, t.showroom.smartphones);
-        createPodium(0, -4.5, 0xa78bfa, t.showroom.audioWearables);
-        createPodium(5.5, -0.5, 0x10b981, t.showroom.gamingGadgets);
+        createPodium(-5.5, -0.5, t.showroom.smartphones);
+        createPodium(0, -4.5, t.showroom.audioWearables);
+        createPodium(5.5, -0.5, t.showroom.gamingGadgets);
 
         // 7. TOVARLAR VA ULARNING PROCEDURAL 3D MODELLARI
         const itemsWithProducts = mergeWithRealProducts(SHOWROOM_ITEMS, initialProducts);
@@ -367,18 +514,20 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
             const productGroup = new THREE.Group();
             productGroup.position.set(...config.position);
 
-            // Akril stend podstavkasi
+            // Shaffof akril stend podstavkasi (Apple Store Clear Acrylic Display Stand)
             const standGeo = new THREE.BoxGeometry(0.32, 0.04, 0.28);
             const standMat = new THREE.MeshPhysicalMaterial({
                 color: 0xffffff,
                 transparent: true,
-                opacity: 0.4,
-                roughness: 0.1,
-                transmission: 0.9,
+                opacity: 0.85,
+                roughness: 0.05,
+                transmission: 0.94,
+                ior: 1.5,
             });
             const stand = new THREE.Mesh(standGeo, standMat);
             stand.position.y = 0.02;
             stand.castShadow = true;
+            stand.receiveShadow = true;
             productGroup.add(stand);
 
             // MODEL TYPE BO'YICHA 3D ELEMENTLAR:
@@ -606,13 +755,15 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
                 productGroup.add(droneGroup);
             }
 
-            // INTERACTIVE HOTSPOT (Suzuvchi neon halqa)
+            // INTERACTIVE HOTSPOT (Apple-style nozik interaktiv halqa)
             const hotspotGroup = new THREE.Group();
             hotspotGroup.position.y = 0.85;
 
-            const ringGeo = new THREE.TorusGeometry(0.14, 0.014, 16, 32);
-            const ringMat = new THREE.MeshBasicMaterial({
-                color: config.zone === "smartphones" ? 0x38bdf8 : config.zone === "audio_wearables" ? 0xa78bfa : 0x10b981,
+            const ringGeo = new THREE.TorusGeometry(0.13, 0.012, 16, 32);
+            const ringMat = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                roughness: 0.2,
+                metalness: 0.1,
                 transparent: true,
                 opacity: 0.85
             });
@@ -620,8 +771,8 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
             ring.rotation.x = Math.PI / 2;
             hotspotGroup.add(ring);
 
-            const coreGeo = new THREE.SphereGeometry(0.038, 16, 16);
-            const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const coreGeo = new THREE.SphereGeometry(0.036, 16, 16);
+            const coreMat = new THREE.MeshBasicMaterial({ color: 0x2D6E3E }); // Velari brand green core
             const core = new THREE.Mesh(coreGeo, coreMat);
             hotspotGroup.add(core);
 
@@ -798,7 +949,7 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
                 ring.position.y = baseY + floatOffset;
                 core.position.y = baseY + floatOffset;
 
-                ring.rotation.z += 0.02;
+                ring.rotation.z += 0.015;
 
                 const targetScale = isHovered ? 1.35 : 1.0;
                 ring.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.15);
@@ -835,6 +986,10 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
             window.removeEventListener("keyup", handleKeyUp);
             window.removeEventListener("resize", handleResize);
 
+            woodTexture.dispose();
+            stoneTexture.dispose();
+            logoTexture.dispose();
+
             if (container.contains(renderer.domElement)) {
                 container.removeChild(renderer.domElement);
             }
@@ -844,19 +999,19 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
     }, [initialProducts, handleSelectProduct, t]);
 
     return (
-        <div className="relative h-screen w-screen overflow-hidden bg-[#0a0c10] select-none font-sans">
+        <div className="relative h-screen w-screen overflow-hidden bg-[#F5F5F7] select-none font-sans">
             {/* 3D Canvas Conteyneri */}
             <div ref={containerRef} className="absolute inset-0 h-full w-full" />
 
             {/* Yuklanish ko'rsatkichi */}
             {isLoading && (
-                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#0a0c10] text-white">
+                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#F5F5F7] text-[#1d1d1f]">
                     <div className="relative mb-4 flex h-16 w-16 items-center justify-center">
                         <div className="absolute h-full w-full rounded-full border-2 border-emerald-500/20 animate-ping" />
-                        <div className="h-12 w-12 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin" />
-                        <Sparkles size={20} className="absolute text-emerald-400" />
+                        <div className="h-12 w-12 rounded-full border-2 border-emerald-600 border-t-transparent animate-spin" />
+                        <Sparkles size={20} className="absolute text-emerald-600" />
                     </div>
-                    <span className="text-sm font-semibold tracking-wider uppercase text-white/70">
+                    <span className="text-sm font-semibold tracking-wider uppercase text-[#86868b]">
                         {lang === "ru" ? "Загрузка 3D Шоурума..." : "3D Showroom yuklanmoqda..."}
                     </span>
                 </div>
@@ -866,7 +1021,7 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
             <div className="fixed top-6 left-6 z-30">
                 <Link
                     href={`/${lang}`}
-                    className="flex items-center gap-2.5 rounded-2xl border border-white/20 bg-black/60 px-4 py-2.5 text-xs font-bold text-white shadow-2xl backdrop-blur-2xl transition-all duration-200 hover:bg-white hover:text-black active:scale-95 ring-1 ring-white/10"
+                    className="flex items-center gap-2.5 rounded-2xl border border-black/8 bg-white/85 px-4 py-2.5 text-xs font-bold text-[#1d1d1f] shadow-md backdrop-blur-2xl transition-all duration-200 hover:bg-white hover:shadow-lg active:scale-95 ring-1 ring-black/5"
                 >
                     <ArrowLeft size={16} />
                     <span>{t.showroom.backToShop}</span>
@@ -877,10 +1032,10 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
             <div className="fixed top-6 right-6 z-30 flex items-center gap-3">
                 <button
                     onClick={() => setSoundEnabled(!soundEnabled)}
-                    className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/20 bg-black/60 text-white/70 shadow-2xl backdrop-blur-2xl transition-all hover:bg-white/20 hover:text-white active:scale-95 ring-1 ring-white/10"
+                    className="flex h-10 w-10 items-center justify-center rounded-2xl border border-black/8 bg-white/85 text-[#1d1d1f] shadow-md backdrop-blur-2xl transition-all hover:bg-white active:scale-95 ring-1 ring-black/5"
                     title={soundEnabled ? (lang === "ru" ? "Выключить звук" : "Ovozni o'chirish") : (lang === "ru" ? "Включить звук" : "Ovozni yoqish")}
                 >
-                    {soundEnabled ? <Volume2 size={17} className="text-emerald-400" /> : <VolumeX size={17} />}
+                    {soundEnabled ? <Volume2 size={17} className="text-emerald-600" /> : <VolumeX size={17} />}
                 </button>
             </div>
 
