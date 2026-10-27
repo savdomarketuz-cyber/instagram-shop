@@ -388,11 +388,12 @@ export default function AppWrapper({ children, lang }: { children: React.ReactNo
     }
 
     const isReels = pathWithoutLocale === "/reels";
-    const showNav = !isCheckout && !isPayment && !isChat;
+    const isShowroom = pathWithoutLocale === "/showroom";
+    const showNav = !isCheckout && !isPayment && !isChat && !isShowroom;
 
     return (
         <div className={`
-            mx-auto ${isReels ? 'bg-black' : 'bg-white'} min-h-screen relative w-full max-w-full lg:max-w-[1600px] overflow-x-clip
+            mx-auto ${isReels || isShowroom ? 'bg-black' : 'bg-white'} min-h-screen relative w-full max-w-full ${isShowroom ? '' : 'lg:max-w-[1600px]'} overflow-x-clip
             ${showNav ? (isReels ? '' : (pathWithoutLocale === '/' || isProductDetail) ? 'md:pt-28' : 'pt-16 md:pt-28') : ''}
         `}>
             <ConnectivityListener />
