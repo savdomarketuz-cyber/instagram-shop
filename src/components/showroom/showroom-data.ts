@@ -2,6 +2,18 @@ import { Product } from "@/types";
 
 export type ShowroomZone = "all" | "smartphones" | "audio_wearables" | "gaming_gadgets";
 
+export type ShowroomModelType = "iphone" | "samsung" | "airpods" | "watch" | "ps5" | "drone" | "box_product";
+
+export interface ShowroomBoxConfig {
+    boxFront: string;
+    boxSide: string;
+    productCutout?: string;
+    width?: number;
+    height?: number;
+    depth?: number;
+    brandColor?: number;
+}
+
 export interface ShowroomItemConfig {
     id: string;
     zone: ShowroomZone;
@@ -9,7 +21,8 @@ export interface ShowroomItemConfig {
     focusPosition: [number, number, number]; // Camera target when focusing
     lookAtPosition: [number, number, number]; // Where camera looks when focusing
     defaultProduct: Product;
-    modelType: "iphone" | "samsung" | "airpods" | "watch" | "ps5" | "drone";
+    modelType: ShowroomModelType;
+    boxConfig?: ShowroomBoxConfig;
 }
 
 export const SHOWROOM_ITEMS: ShowroomItemConfig[] = [
@@ -70,9 +83,9 @@ export const SHOWROOM_ITEMS: ShowroomItemConfig[] = [
     {
         id: "airpods-max",
         zone: "audio_wearables",
-        position: [-0.8, 0.9, -4.5],
-        focusPosition: [-0.8, 1.45, -3.2],
-        lookAtPosition: [-0.8, 1.1, -4.5],
+        position: [-1.4, 0.9, -4.5],
+        focusPosition: [-1.4, 1.45, -3.2],
+        lookAtPosition: [-1.4, 1.1, -4.5],
         modelType: "airpods",
         defaultProduct: {
             id: "sr-airpods-max",
@@ -95,11 +108,47 @@ export const SHOWROOM_ITEMS: ShowroomItemConfig[] = [
         }
     },
     {
+        id: "vgr-v621",
+        zone: "audio_wearables",
+        position: [0, 0.9, -4.5],
+        focusPosition: [0, 1.42, -3.1],
+        lookAtPosition: [0, 1.15, -4.5],
+        modelType: "box_product",
+        boxConfig: {
+            boxFront: "/showroom/box-front.png",
+            boxSide: "/showroom/box-side.png",
+            productCutout: "/showroom/trimmer-transparent.png",
+            width: 0.32,
+            height: 0.46,
+            depth: 0.14,
+            brandColor: 0x0c1424
+        },
+        defaultProduct: {
+            id: "sr-vgr-v621",
+            name: "VGR V-621 Professional soch va soqol olish trimmeri",
+            name_uz: "VGR V-621 Professional soch va soqol olish trimmeri (Original Karobkasi)",
+            name_ru: "Профессиональный триммер для волос и бороды VGR V-621 (Оригинальная упаковка)",
+            price: 349000,
+            oldPrice: 420000,
+            image: "/showroom/vgr-v621-box.png",
+            category: "grooming",
+            category_uz: "Go'zallik & Parvarish",
+            category_ru: "Красота и уход",
+            description: "Haqiqiy original qadoq (Retail Box) va trimmer ko'rgazmasi. T-shaklidagi o'tkir zanglamas po'lat pichoqlar, kuchli turbomotor, 120 daqiqalik avtonom batareya va LED quvvat indikatori.",
+            description_uz: "Haqiqiy original qadoq (Retail Box) va trimmer ko'rgazmasi. T-shaklidagi o'tkir zanglamas po'lat pichoqlar, kuchli turbomotor, 120 daqiqalik avtonom batareya va LED quvvat indikatori.",
+            description_ru: "Демонстрация оригинальной розничной упаковки и триммера. Т-образное лезвие из нержавеющей стали, мощный мотор, 120 минут работы и LED дисплей.",
+            stock: 25,
+            sales: 140,
+            rating: 5,
+            reviewCount: 42
+        }
+    },
+    {
         id: "apple-watch-ultra-2",
         zone: "audio_wearables",
-        position: [0.8, 0.9, -4.5],
-        focusPosition: [0.8, 1.45, -3.2],
-        lookAtPosition: [0.8, 1.05, -4.5],
+        position: [1.4, 0.9, -4.5],
+        focusPosition: [1.4, 1.45, -3.2],
+        lookAtPosition: [1.4, 1.05, -4.5],
         modelType: "watch",
         defaultProduct: {
             id: "sr-apple-watch-ultra-2",
@@ -219,6 +268,9 @@ export function mergeWithRealProducts(configs: ShowroomItemConfig[], realProduct
             matched = realProducts.find(p => p.name?.toLowerCase().includes("playstation") || p.name?.toLowerCase().includes("ps5") || p.category?.includes("game"));
         } else if (cfg.modelType === "drone") {
             matched = realProducts.find(p => p.name?.toLowerCase().includes("dji") || p.name?.toLowerCase().includes("dron") || p.category?.includes("gadget"));
+        } else if (cfg.modelType === "box_product") {
+            // Box product prototipi uchun aniq maxsus konfiguratsiya ishlatiladi
+            matched = undefined;
         }
 
         return {

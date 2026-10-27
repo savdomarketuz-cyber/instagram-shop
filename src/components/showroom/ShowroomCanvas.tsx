@@ -454,6 +454,7 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
         const animatedHotspots: { ring: THREE.Mesh; core: THREE.Mesh; itemId: string; baseY: number }[] = [];
         const animatedSpinners: THREE.Object3D[] = [];
         const productGroups: { group: THREE.Group; itemId: string }[] = [];
+        const textureLoader = new THREE.TextureLoader();
 
         // Standart tejamkor akril stend materiali
         const standMat = new THREE.MeshStandardMaterial({
@@ -468,7 +469,9 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
             const productGroup = new THREE.Group();
             productGroup.position.set(...config.position);
 
-            const stand = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.04, 0.28), standMat);
+            const standWidth = config.modelType === "box_product" ? 0.46 : 0.32;
+            const standDepth = config.modelType === "box_product" ? 0.38 : 0.28;
+            const stand = new THREE.Mesh(new THREE.BoxGeometry(standWidth, 0.04, standDepth), standMat);
             stand.position.y = 0.02;
             stand.castShadow = true;
             stand.receiveShadow = true;
@@ -686,6 +689,118 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
                 });
 
                 productGroup.add(droneGroup);
+            } else if (config.modelType === "box_product" && config.boxConfig) {
+                const boxGroup = new THREE.Group();
+                boxGroup.position.set(0, 0, 0);
+
+                const bWidth = config.boxConfig.width || 0.32;
+                const bHeight = config.boxConfig.height || 0.46;
+                const bDepth = config.boxConfig.depth || 0.14;
+                const brandColor = config.boxConfig.brandColor || 0x0c1424;
+
+                const frontTex = textureLoader.load(config.boxConfig.boxFront);
+                frontTex.colorSpace = THREE.SRGBColorSpace;
+
+                const sideTex = textureLoader.load(config.boxConfig.boxSide);
+                sideTex.colorSpace = THREE.SRGBColorSpace;
+
+                // 6 faces: [Right, Left, Top, Bottom, Front, Back]
+                const boxMaterials: THREE.Material[] = [
+                    new THREE.MeshStandardMaterial({
+                        map: sideTex,
+                        roughness: 0.35,
+                        metalness: 0.05
+                    }), // +X: O'ng yon (Right)
+                    new THREE.MeshStandardMaterial({
+                        map: sideTex,
+                        roughness: 0.35,
+                        metalness: 0.05
+                    }), // -X: Chap yon (Left)
+                    new THREE.MeshStandardMaterial({
+                        color: brandColor,
+                        roughness: 0.45,
+                        metalness: 0.05
+                    }), // +Y: Yuqori qopqoq (Top)
+                    new THREE.MeshStandardMaterial({
+                        color: 0x05070c,
+                        roughness: 0.5
+                    }), // -Y: Pastki taglik (Bottom)
+                    new THREE.MeshStandardMaterial({
+                        map: frontTex,
+                        roughness: 0.28,
+                        metalness: 0.08
+                    }), // +Z: Asosiy old panel (Front)
+                    new THREE.MeshStandardMaterial({
+                        color: brandColor,
+                        roughness: 0.45,
+                        metalness: 0.05
+                    })  // -Z: Orqa tomon (Back)
+                ];
+
+                const boxMesh = new THREE.Mesh(
+                    new THREE.BoxGeometry(bWidth, bHeight, bDepth),
+                    boxMaterials
+                );
+                boxMesh.position.set(0, bHeight / 2 + 0.04, -0.06);
+                boxMesh.castShadow = true;
+                boxMesh.receiveShadow = true;
+                boxGroup.add(boxMesh);
+
+                // Qutining oldida turgan mahsulot vitrinasi (2.5D Cutout Stand)
+                if (config.boxConfig.productCutout) {
+                    const cutoutTex = textureLoader.load(config.boxConfig.productCutout);
+                    cutoutTex.colorSpace = THREE.SRGBColorSpace;
+
+                    const pHeight = bHeight * 0.85;
+                    const pWidth = pHeight * (75 / 325);
+
+                    // Akril dumaloq podstavka
+                    const disc = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.075, 0.075, 0.016, 24),
+                        new THREE.MeshStandardMaterial({
+                            color: 0xffffff,
+                            transparent: true,
+                            opacity: 0.75,
+                            roughness: 0.1,
+                            metalness: 0.1
+                        })
+                    );
+                    disc.position.set(0, 0.048, 0.11);
+                    disc.castShadow = true;
+                    boxGroup.add(disc);
+
+                    // Trimmer tekisligi
+                    const productPlane = new THREE.Mesh(
+                        new THREE.PlaneGeometry(pWidth, pHeight),
+                        new THREE.MeshStandardMaterial({
+                            map: cutoutTex,
+                            transparent: true,
+                            alphaTest: 0.15,
+                            roughness: 0.3,
+                            metalness: 0.2,
+                            side: THREE.DoubleSide
+                        })
+                    );
+                    productPlane.position.set(0, pHeight / 2 + 0.056, 0.11);
+                    productPlane.castShadow = true;
+                    boxGroup.add(productPlane);
+
+                    // Nozik premium yashil/zumrad zamin aylanasi
+                    const accentGlow = new THREE.Mesh(
+                        new THREE.RingGeometry(0.075, 0.13, 24),
+                        new THREE.MeshBasicMaterial({
+                            color: 0x10b981,
+                            transparent: true,
+                            opacity: 0.35,
+                            side: THREE.DoubleSide
+                        })
+                    );
+                    accentGlow.rotation.x = -Math.PI / 2;
+                    accentGlow.position.set(0, 0.042, 0.11);
+                    boxGroup.add(accentGlow);
+                }
+
+                productGroup.add(boxGroup);
             }
 
             const hotspotGroup = new THREE.Group();
@@ -973,6 +1088,14 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
                     stateRef.current.nearbyItemData = foundNearby;
                     setNearbyItem(foundNearby);
                     setIsAimedAtItem(isAiming);
+
+                    // Free roamda aylantirilgan tovarlarni asta-sekin boshlang'ich burchakka qaytarish
+                    for (let i = 0; i < productGroups.length; i++) {
+                        const pg = productGroups[i];
+                        if (Math.abs(pg.group.rotation.y) > 0.001) {
+                            pg.group.rotation.y = THREE.MathUtils.lerp(pg.group.rotation.y, 0, 0.05);
+                        }
+                    }
                 }
             } else {
                 // INSPECT REJIMI
