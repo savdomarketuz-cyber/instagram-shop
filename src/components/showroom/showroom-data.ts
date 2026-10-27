@@ -179,19 +179,19 @@ export const SHOWROOM_ITEMS: ShowroomItemConfig[] = [
 
 export const DOCK_TARGETS: Record<ShowroomZone, { cameraPos: [number, number, number]; lookAt: [number, number, number] }> = {
     all: {
-        cameraPos: [0, 3.2, 9.5],
+        cameraPos: [0, 1.65, 7.5],
         lookAt: [0, 1.1, -1.0]
     },
     smartphones: {
-        cameraPos: [-5.5, 2.0, 2.8],
+        cameraPos: [-5.5, 1.65, 1.6],
         lookAt: [-5.5, 1.0, -0.5]
     },
     audio_wearables: {
-        cameraPos: [0, 2.0, -1.2],
+        cameraPos: [0, 1.65, -2.4],
         lookAt: [0, 1.0, -4.5]
     },
     gaming_gadgets: {
-        cameraPos: [5.5, 2.0, 2.8],
+        cameraPos: [5.5, 1.65, 1.6],
         lookAt: [5.5, 1.0, -0.5]
     }
 };

@@ -31,29 +31,47 @@ export default function ShowroomControlsHelp({ lang }: ShowroomControlsHelpProps
 
                     <div className="space-y-2 text-xs text-[#515154]">
                         <div className="flex items-center gap-2.5">
-                            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-black/5 border border-black/10 font-mono text-[11px] font-bold text-[#1d1d1f] shrink-0">
-                                <Move size={13} />
+                            <div className="flex h-6 w-14 items-center justify-center rounded-md bg-black/5 border border-black/10 font-mono text-[11px] font-bold text-[#1d1d1f] shrink-0">
+                                WASD
                             </div>
                             <span>
-                                <strong className="text-[#1d1d1f]">W, A, S, D</strong> {lang === "ru" ? "— ходить по залу" : "— do'konda yurish"}
+                                {lang === "ru" ? "Ходьба по залу" : "Do'konda erkin yurish"}
                             </span>
                         </div>
 
                         <div className="flex items-center gap-2.5">
-                            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-black/5 border border-black/10 font-mono text-[11px] font-bold text-[#1d1d1f] shrink-0">
-                                <Eye size={13} />
+                            <div className="flex h-6 w-14 items-center justify-center rounded-md bg-black/5 border border-black/10 font-mono text-[11px] font-bold text-[#1d1d1f] shrink-0">
+                                Shift
                             </div>
                             <span>
-                                <strong className="text-[#1d1d1f]">{lang === "ru" ? "Мышь" : "Sichqoncha"}</strong> {lang === "ru" ? "— обзор 360°" : "— 360° atrofga qarash"}
+                                {lang === "ru" ? "Бег (ускорение)" : "Yugurish (tezlanish)"}
                             </span>
                         </div>
 
                         <div className="flex items-center gap-2.5">
-                            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-black/5 border border-black/10 font-mono text-[11px] font-bold text-[#1d1d1f] shrink-0">
-                                <MousePointerClick size={13} />
+                            <div className="flex h-6 w-14 items-center justify-center rounded-md bg-black/5 border border-black/10 font-mono text-[11px] font-bold text-[#1d1d1f] shrink-0">
+                                Space
                             </div>
                             <span>
-                                <strong className="text-[#1d1d1f]">{lang === "ru" ? "Клик" : "Bosish"}</strong> {lang === "ru" ? "— осмотр и покупка" : "— tovar va xarid"}
+                                {lang === "ru" ? "Прыжок" : "Sakrash"}
+                            </span>
+                        </div>
+
+                        <div className="flex items-center gap-2.5">
+                            <div className="flex h-6 w-14 items-center justify-center rounded-md bg-emerald-500/10 border border-emerald-500/30 font-mono text-[11px] font-bold text-emerald-700 shrink-0">
+                                E / Klik
+                            </div>
+                            <span>
+                                {lang === "ru" ? "Осмотр и покупка" : "Tovar va xarid"}
+                            </span>
+                        </div>
+
+                        <div className="flex items-center gap-2.5">
+                            <div className="flex h-6 w-14 items-center justify-center rounded-md bg-black/5 border border-black/10 font-mono text-[11px] font-bold text-[#1d1d1f] shrink-0">
+                                ESC
+                            </div>
+                            <span>
+                                {lang === "ru" ? "Освободить мышь" : "Kursorni chiqarish"}
                             </span>
                         </div>
                     </div>
