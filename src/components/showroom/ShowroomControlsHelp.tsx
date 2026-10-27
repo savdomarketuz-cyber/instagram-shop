@@ -6,9 +6,11 @@ import { translations } from "@/lib/translations";
 
 interface ShowroomControlsHelpProps {
     lang: "uz" | "ru";
+    invertY?: boolean;
+    onToggleInvertY?: () => void;
 }
 
-export default function ShowroomControlsHelp({ lang }: ShowroomControlsHelpProps) {
+export default function ShowroomControlsHelp({ lang, invertY = false, onToggleInvertY }: ShowroomControlsHelpProps) {
     const [isOpen, setIsOpen] = useState(true);
     const t = translations[lang];
 
@@ -35,7 +37,7 @@ export default function ShowroomControlsHelp({ lang }: ShowroomControlsHelpProps
                                 WASD
                             </div>
                             <span>
-                                {lang === "ru" ? "Ходьба по залу" : "Do'konda erkin yurish"}
+                                {lang === "ru" ? "Ходьба по заlu" : "Do'konda erkin yurish"}
                             </span>
                         </div>
 
@@ -75,6 +77,28 @@ export default function ShowroomControlsHelp({ lang }: ShowroomControlsHelpProps
                             </span>
                         </div>
                     </div>
+
+                    {/* Invert Y O'qi sozlamasi */}
+                    {onToggleInvertY && (
+                        <div className="mt-3 pt-2.5 border-t border-black/8 flex items-center justify-between">
+                            <span className="text-[11px] font-medium text-[#6e6e73]">
+                                {lang === "ru" ? "Инверсия мыши Y" : "Teskari Y o'qi"}
+                            </span>
+                            <button
+                                onClick={onToggleInvertY}
+                                className={`w-8 h-4.5 rounded-full transition-colors relative flex items-center p-0.5 ${
+                                    invertY ? "bg-emerald-600" : "bg-neutral-300"
+                                }`}
+                                title={lang === "ru" ? "Инвертировать вертикальное движение мыши" : "Sichqonchaning vertikal harakatini teskari qilish"}
+                            >
+                                <span
+                                    className={`w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform duration-200 transform ${
+                                        invertY ? "translate-x-3.5" : "translate-x-0"
+                                    }`}
+                                />
+                            </button>
+                        </div>
+                    )}
                 </div>
             ) : (
                 <button
