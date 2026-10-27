@@ -250,6 +250,22 @@ export const translations = {
             noPosts: "Maqolalar topilmadi",
             relatedProducts: "Maqolaga oid mahsulotlar",
             backToList: "Barcha maqolalarga qaytish"
+        },
+        showroom: {
+            title: "3D Virtual Showroom",
+            subtitle: "Velari.uz interaktiv 3D do'koni",
+            backToShop: "Do'konga qaytish",
+            mobileRestrictedTitle: "🏛️ 3D Showroom faqat kompyuterda mavjud",
+            mobileRestrictedDesc: "To'liq 3D tajriba va erkin harakatlanish uchun iltimos, saytga noutbuk yoki kompyuterdan kiring.",
+            backToHome: "Bosh sahifaga qaytish",
+            smartphones: "Smartfonlar",
+            audioWearables: "Soatlar & Audio",
+            gamingGadgets: "Gadjetlar",
+            overview: "Umumiy ko'rinish",
+            controlsHint: "Boshqarish: WASD yoki strelkalar bilan yurish • Sichqoncha bilan 360° qarash • Mahsulot ustiga bosib ko'rish",
+            inStock: "Omborda mavjud",
+            viewDetails: "Batafsil ko'rish",
+            addedToCart: "Mahsulot savatga qo'shildi!"
         }
     },
     ru: {
@@ -502,6 +518,22 @@ export const translations = {
             noPosts: "Статьи не найдены",
             relatedProducts: "Товары из статьи",
             backToList: "Назад ко всем статьям"
+        },
+        showroom: {
+            title: "3D Виртуальный Шоурум",
+            subtitle: "Интерактивный 3D-магазин Velari.uz",
+            backToShop: "Вернуться в магазин",
+            mobileRestrictedTitle: "🏛️ 3D Шоурум доступен только на компьютере",
+            mobileRestrictedDesc: "Для полноценного 3D-опыта и свободного перемещения, пожалуйста, войдите с ноутбука или компьютера.",
+            backToHome: "На главную страницу",
+            smartphones: "Смартфоны",
+            audioWearables: "Часы и Аудио",
+            gamingGadgets: "Гаджеты",
+            overview: "Общий вид",
+            controlsHint: "Управление: WASD или стрелки для ходьбы • Мышь для обзора 360° • Кликните по товару для просмотра",
+            inStock: "В наличии",
+            viewDetails: "Подробнее",
+            addedToCart: "Товар добавлен в корзину!"
         }
     }
 };

@@ -503,6 +503,17 @@ export default function Navigation() {
 
                     <div className="hidden md:flex items-center gap-2 md:gap-6 shrink-0 h-full">
                         <Link
+                            href={l("/showroom")}
+                            onClick={() => videoPreWarmer.triggerHaptic("light")}
+                            className={`ios-icon-tap active:scale-95 flex flex-col items-center gap-1 group transition-colors duration-150 will-change-transform ${pathname === l('/showroom') ? 'text-black' : 'text-gray-400 hover:text-black'}`}
+                        >
+                            <div className="relative p-2 rounded-xl group-hover:bg-gray-50 transition-colors duration-150">
+                                <Sparkles size={22} strokeWidth={pathname === l('/showroom') ? 3 : 2} className="group-hover:scale-110 group-hover:rotate-12 group-hover:text-black transition-transform duration-200" />
+                            </div>
+                            <span className="text-[9px] font-black uppercase tracking-tighter hidden xl:block">{language === 'uz' ? 'Showroom' : 'Шоурум'}</span>
+                        </Link>
+
+                        <Link
                             href={l("/reels")}
                             onClick={() => videoPreWarmer.triggerHaptic("light")}
                             className={`ios-icon-tap active:scale-95 flex flex-col items-center gap-1 group transition-colors duration-150 will-change-transform ${pathname === l('/reels') ? 'text-black' : 'text-gray-400 hover:text-black'}`}
