@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { Product } from "@/types";
 import { ShowroomShowcaseStand } from "./showroom-data";
+import { STORE_POLYGON_VERTICES } from "./ShowroomWorld";
 
 export interface ObstacleBox {
     minX: number;
@@ -17,11 +18,11 @@ export interface ShowroomControlsCallbacks {
 
 export class ShowroomControls {
     public mode: "FREE_ROAM" | "INSPECT" = "FREE_ROAM";
-    public playerPos = new THREE.Vector3(0, 1.65, 9.2);
+    public playerPos = new THREE.Vector3(-17.0, 1.65, 3.0);
     public velocity = new THREE.Vector3(0, 0, 0);
     public verticalVelocity = 0;
     public isGrounded = true;
-    public yaw = 0;
+    public yaw = Math.PI / 2; // G'arbdan Sharqqa - do'kon markaziga qaragan
     public pitch = -0.05;
     public invertY = false;
 
@@ -55,25 +56,34 @@ export class ShowroomControls {
     private raycaster = new THREE.Raycaster();
     private tapVector = new THREE.Vector2();
 
-    // TO'SIQLAR: Markaziy doiraviy orol + Bo'lim stollari + Kassa + Fasad oynalari
+    // TO'SIQLAR: 7 ta bo'lim stollari va tokchalari (Xarita diagrammasi bo'yicha)
     private obstacles: ObstacleBox[] = [
-        // 1. Markaziy doiraviy orol (x: 0, z: 0)
-        { minX: -2.85, maxX: 2.85, minZ: -2.85, maxZ: 2.85 },
+        // 1. Markaziy "MOBILE & TABLETS" doiraviy oroli (x: 0, z: 0)
+        { minX: -2.4, maxX: 2.4, minZ: -2.4, maxZ: 2.4 },
 
-        // 2. Bo'lim stollari
-        { minX: -8.95, maxX: -4.05, minZ: -0.65, maxZ: 1.65 },   // Trimmerlar old (x: -6.5, z: 0.5)
-        { minX: -8.95, maxX: -4.05, minZ: -6.15, maxZ: -3.85 },  // Trimmerlar orqa (x: -6.5, z: -5.0)
-        { minX: -8.95, maxX: -4.05, minZ: 4.85, maxZ: 7.15 },    // Sheyverlar (x: -6.5, z: 6.0)
-        { minX: 4.05, maxX: 8.95, minZ: -6.65, maxZ: -4.35 },    // Fenlar (x: 6.5, z: -5.5)
-        { minX: 4.05, maxX: 8.95, minZ: -0.65, maxZ: 1.65 },     // Audio (x: 6.5, z: 0.5)
-        { minX: 9.05, maxX: 13.95, minZ: -0.15, maxZ: 2.15 },    // Checkout & Kassa (x: 11.5, z: 1.0)
+        // 2. Trimmerlar bo'lim stoli (x: -9.5, z: -4.5)
+        { minX: -11.8, maxX: -7.2, minZ: -5.4, maxZ: -3.6 },
 
-        // 3. Orqa TV devor
-        { minX: -6.5, maxX: 6.5, minZ: -13.8, maxZ: -12.5 },
+        // 3. Sheyverlar bo'lim stoli (x: -9.5, z: 5.0)
+        { minX: -11.8, maxX: -7.2, minZ: 4.1, maxZ: 5.9 },
 
-        // 4. Fasad oynalari (Eshik o'rtada -3.2 dan +3.2 gacha ochiq!)
-        { minX: -18.5, maxX: -3.2, minZ: 13.7, maxZ: 14.3 },     // Chap fasad oynasi
-        { minX: 3.2, maxX: 18.5, minZ: 13.7, maxZ: 14.3 }        // O'ng fasad oynasi
+        // 4. TV & Sound tokchasi va peshtaxtasi (x: 3.5, z: -7.8)
+        { minX: -0.9, maxX: 7.9, minZ: -8.4, maxZ: -7.2 },
+
+        // 5. Katta maishiy texnikalar tokchasi (x: -9.5, z: -9.2)
+        { minX: -13.9, maxX: -5.1, minZ: -10.2, maxZ: -8.6 },
+
+        // 6. Oshxona & mayda texnikalar tokchasi (x: -9.5, z: 9.2)
+        { minX: -13.9, maxX: -5.1, minZ: 8.6, maxZ: 10.2 },
+
+        // 7. Aksessuarlar va tarmoq tokchasi (x: 6.5, z: 8.5)
+        { minX: 2.1, maxX: 10.9, minZ: 7.9, maxZ: 9.1 },
+
+        // 8. Checkout & Kassa stollari (x: 18.0, z: -2.0 .. 1.9)
+        { minX: 17.2, maxX: 18.8, minZ: -2.6, maxZ: 2.5 },
+
+        // 9. Mijozlarga xizmat va servis stoli (x: 18.0, z: 5.5)
+        { minX: 17.2, maxX: 18.8, minZ: 4.0, maxZ: 7.0 }
     ];
 
     private _forward = new THREE.Vector3();
@@ -314,6 +324,79 @@ export class ShowroomControls {
         this.pitch = -0.05;
     }
 
+    private distToSegmentSq(px: number, pz: number, x1: number, z1: number, x2: number, z2: number): number {
+        const dx = x2 - x1;
+        const dz = z2 - z1;
+        const l2 = dx * dx + dz * dz;
+        if (l2 === 0) return (px - x1) * (px - x1) + (pz - z1) * (pz - z1);
+        let t = ((px - x1) * dx + (pz - z1) * dz) / l2;
+        t = Math.max(0, Math.min(1, t));
+        const nx = x1 + t * dx;
+        const nz = z1 + t * dz;
+        const ex = px - nx;
+        const ez = pz - nz;
+        return ex * ex + ez * ez;
+    }
+
+    private isInsideStorePolygon(px: number, pz: number): boolean {
+        let inside = false;
+        for (let i = 0, j = STORE_POLYGON_VERTICES.length - 1; i < STORE_POLYGON_VERTICES.length; j = i++) {
+            const xi = STORE_POLYGON_VERTICES[i][0];
+            const zi = STORE_POLYGON_VERTICES[i][1];
+            const xj = STORE_POLYGON_VERTICES[j][0];
+            const zj = STORE_POLYGON_VERTICES[j][1];
+            const intersect = ((zi > pz) !== (zj > pz)) && (px < ((xj - xi) * (pz - zi)) / (zj - zi) + xi);
+            if (intersect) inside = !inside;
+        }
+        return inside;
+    }
+
+    private canOccupy(px: number, pz: number): boolean {
+        // 1. Ichki stend va mebel to'siqlari bilan to'qnashuv
+        for (let i = 0; i < this.obstacles.length; i++) {
+            const obs = this.obstacles[i];
+            if (px >= obs.minX && px <= obs.maxX && pz >= obs.minZ && pz <= obs.maxZ) {
+                return false;
+            }
+        }
+
+        // 2. Tashqi ko'cha va asosiy kirish chegaralari (x < -20.0)
+        if (px < -20.0) {
+            // Ko'chadagi harakat chegaralari (Tiniq ko'k osmon ostidagi shahar ko'chasi)
+            if (px < -37.0 || pz < -11.0 || pz > 17.0) {
+                return false;
+            }
+            // Ko'chadan ichkariga kirish: faqatgina oynali eshik orqali (z: 1.2 .. 4.8) o'tish mumkin
+            if (px > -20.2 && (pz < 1.2 || pz > 4.8)) {
+                return false;
+            }
+            return true;
+        }
+
+        // 3. Do'kon ichidagi devorlar bilan to'qnashuv (x >= -20.0)
+        // Oynali eshik bo'lmagan joyda G'arbiy devor to'sadi
+        if (px < -19.7 && (pz < 1.2 || pz > 4.8)) {
+            return false;
+        }
+
+        // Xaritaning ko'pburchak shakli chegaralari ichida bo'lishi shart
+        if (px >= -19.6 && !this.isInsideStorePolygon(px, pz)) {
+            return false;
+        }
+
+        // Barcha 23 ta qattiq perimetr devorlariga 0.38m dan yaqin kelmaslik
+        const playerRadiusSq = 0.38 * 0.38;
+        for (let i = 1; i < STORE_POLYGON_VERTICES.length - 1; i++) {
+            const [x1, z1] = STORE_POLYGON_VERTICES[i];
+            const [x2, z2] = STORE_POLYGON_VERTICES[i + 1];
+            if (this.distToSegmentSq(px, pz, x1, z1, x2, z2) < playerRadiusSq) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /**
      * MINECRAFT FIZIKASI VA STOLLAR/DEVORLARDAN SIRPANISH (OBSTACLE SLIDING)
      */
@@ -358,40 +441,17 @@ export class ShowroomControls {
                 this.isGrounded = true;
             }
 
-            // 5) To'siqlardan sirpanish (Ichki zal va tashqi ko'cha)
+            // 5) To'siqlardan va me'moriy devorlardan silliq sirpanish (Smooth sliding)
             const nextX = this.playerPos.x + this.velocity.x * delta;
             const nextZ = this.playerPos.z + this.velocity.z * delta;
 
-            // X bo'yicha chegaralar (Zal ichida: -17.5 .. 17.5, Tashqi ko'chada: -25 .. 25)
-            const isOutside = this.playerPos.z > 14.2;
-            const boundX = isOutside ? 25.0 : 17.5;
-
-            let canMoveX = true;
-            if (nextX < -boundX || nextX > boundX) canMoveX = false;
-            for (let i = 0; i < this.obstacles.length; i++) {
-                const obs = this.obstacles[i];
-                if (nextX >= obs.minX && nextX <= obs.maxX && this.playerPos.z >= obs.minZ && this.playerPos.z <= obs.maxZ) {
-                    canMoveX = false;
-                    break;
-                }
-            }
-            if (canMoveX) {
+            if (this.canOccupy(nextX, this.playerPos.z)) {
                 this.playerPos.x = nextX;
             } else {
                 this.velocity.x = 0;
             }
 
-            // Z bo'yicha chegaralar (Orqa devor: -13.5, Tashqi ko'cha oxiri: +34.0)
-            let canMoveZ = true;
-            if (nextZ < -13.5 || nextZ > 34.0) canMoveZ = false;
-            for (let i = 0; i < this.obstacles.length; i++) {
-                const obs = this.obstacles[i];
-                if (this.playerPos.x >= obs.minX && this.playerPos.x <= obs.maxX && nextZ >= obs.minZ && nextZ <= obs.maxZ) {
-                    canMoveZ = false;
-                    break;
-                }
-            }
-            if (canMoveZ) {
+            if (this.canOccupy(this.playerPos.x, nextZ)) {
                 this.playerPos.z = nextZ;
             } else {
                 this.velocity.z = 0;

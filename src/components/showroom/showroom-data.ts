@@ -20,34 +20,34 @@ export type ShowroomBillboardStand = ShowroomShowcaseStand;
 
 export const DOCK_TARGETS: Record<ShowroomZone, { cameraPos: [number, number, number]; lookAt: [number, number, number] }> = {
     all: {
-        cameraPos: [0, 1.65, 11.0],
+        cameraPos: [-17.0, 1.65, 3.0],
         lookAt: [0, 1.2, 0.0]
     },
     trimmers: {
-        cameraPos: [-6.5, 1.65, 2.5],
-        lookAt: [-6.5, 1.1, -0.5]
+        cameraPos: [-9.5, 1.65, -4.5],
+        lookAt: [-9.5, 1.2, -8.0]
     },
     hair_care: {
-        cameraPos: [6.5, 1.65, -4.5],
-        lookAt: [6.5, 1.1, -7.0]
+        cameraPos: [3.5, 1.65, -4.5],
+        lookAt: [3.5, 1.2, -8.0]
     },
     shavers: {
-        cameraPos: [-6.5, 1.65, 8.5],
-        lookAt: [-6.5, 1.1, 6.0]
+        cameraPos: [-9.5, 1.65, 5.0],
+        lookAt: [-9.5, 1.2, 8.5]
     },
     gadgets: {
-        cameraPos: [0.0, 1.65, 3.8],
+        cameraPos: [0.0, 1.65, 4.2],
         lookAt: [0.0, 1.1, 0.0]
     },
     exterior: {
-        cameraPos: [0, 1.70, 22.0],
-        lookAt: [0, 2.6, 14.0]
+        cameraPos: [-26.0, 1.70, 3.0],
+        lookAt: [-20.0, 2.2, 3.0]
     }
 };
 
 /**
- * Namuna arxitektura diagrammasi asosida zallarga ajratilgan 48 ta to'liq vitrina stendini qurish.
- * Har bir zona (Markaziy Doira orol, TV & Sound, Trimmerlar, Fenlar, Sheyverlar, Kassa) o'ziga xos stendlarga ega.
+ * Xarita diagrammasi bo'yicha 48 ta to'liq vitrina stendini zallarga aniq joylashtirish.
+ * Markaziy doiraviy Mobile orol, TV & Sound devori, Katta maishiy texnikalar, Oshxona, Aksessuarlar va Kassa zonasi.
  */
 export function buildShowroomStands(realProducts: Product[]): ShowroomShowcaseStand[] {
     const pool = (realProducts && realProducts.length > 0) ? realProducts : [];
@@ -108,19 +108,17 @@ export function buildShowroomStands(realProducts: Product[]): ShowroomShowcaseSt
 
     const stands: ShowroomShowcaseStand[] = [];
 
-    // 1. MARKAZIY "MOBILE & GADGETS" DOIRAVIY OROL (Center Horseshoe / Circle Island - 6 ta stend)
-    const centerRadius = 2.4;
+    // 1. MARKAZIY "MOBILE & TABLETS" DOIRAVIY OROL (Center Island: x = 0, z = 0 - 6 ta stend)
+    const centerRadius = 2.1;
     for (let i = 0; i < 6; i++) {
-        // Doira bo'ylab 60 gradusdan joylashtirish
         const angle = (i * Math.PI) / 3;
         const posX = Math.sin(angle) * centerRadius;
         const posZ = Math.cos(angle) * centerRadius;
-        // Tashqariga qaragan
         const rotY = angle;
         const item = getItem(gadgets, i);
 
         stands.push({
-            id: `center-island-${i + 1}`,
+            id: `center-mobile-${i + 1}`,
             zone: "gadgets",
             categoryTitleUz: "Mobil & Smart Gadjetlar",
             categoryTitleRu: "Смартфоны и Гаджеты",
@@ -133,93 +131,158 @@ export function buildShowroomStands(realProducts: Product[]): ShowroomShowcaseSt
         });
     }
 
-    // 2. ORQA DEVOR BO'YIDAGI "TV & SOUND" BO'LIMI (Top Wall - 6 ta stend)
-    const tvXOffsets = [-5.0, -3.0, -1.0, 1.0, 3.0, 5.0];
+    // 2. "TV & SOUND" DEVOR VITRINALARI (Top-Center Wall: z = -7.8 - 6 ta stend)
+    const tvXOffsets = [0.0, 1.5, 3.0, 4.5, 6.0, 7.5];
     tvXOffsets.forEach((xPos, idx) => {
-        const item = getItem(pool, idx + 10);
+        const item = getItem(pool, idx + 8);
         stands.push({
             id: `tv-sound-${idx + 1}`,
             zone: "all",
             categoryTitleUz: "TV & Sound Tizimlari",
             categoryTitleRu: "ТВ и Аудиосистемы",
-            position: [xPos, 1.05, -11.0],
-            rotationY: 0, // Janubga (kirishga) qaragan
-            focusPosition: [xPos, 1.45, -9.6],
-            lookAtPosition: [xPos, 1.35, -11.0],
+            position: [xPos, 1.05, -7.8],
+            rotationY: 0,
+            focusPosition: [xPos, 1.45, -6.4],
+            lookAtPosition: [xPos, 1.35, -7.8],
             product: item,
             images: getProductImages(item)
         });
     });
 
-    // 3. CHAP QANOT "TRIMMERLAR & SOCH" (Left Wing - 2 ta stol x 6 tadan = 12 ta stend)
-    const addDoubleSidedTable = (
-        tableId: string,
-        zone: ShowroomZone,
-        titleUz: string,
-        titleRu: string,
-        centerX: number,
-        centerZ: number,
-        bucket: Product[],
-        startIdx: number
-    ) => {
-        const xOffs = [-1.3, 0.0, 1.3];
-        const zFront = centerZ + 0.45;
-        const zBack = centerZ - 0.45;
+    // 3. "KATTA MAISHIY TEXNIKALAR" (Top-Left Bay: x = -13 .. -7, z = -9.2 - 6 ta stend)
+    const appXOffsets = [-13.0, -11.5, -10.0, -8.5, -7.0, -5.5];
+    appXOffsets.forEach((xPos, idx) => {
+        const item = getItem(pool, idx + 15);
+        stands.push({
+            id: `appliances-${idx + 1}`,
+            zone: "all",
+            categoryTitleUz: "Katta Maishiy Texnikalar",
+            categoryTitleRu: "Крупная Бытовая Техника",
+            position: [xPos, 0.95, -9.2],
+            rotationY: 0,
+            focusPosition: [xPos, 1.40, -7.8],
+            lookAtPosition: [xPos, 1.30, -9.2],
+            product: item,
+            images: getProductImages(item)
+        });
+    });
 
-        // Old tomon (Kirishga qaraydi)
-        xOffs.forEach((xOff, i) => {
-            const px = centerX + xOff;
-            const item = getItem(bucket, startIdx + i);
-            stands.push({
-                id: `${tableId}-f-${i + 1}`,
-                zone,
-                categoryTitleUz: titleUz,
-                categoryTitleRu: titleRu,
-                position: [px, 0.92, zFront],
-                rotationY: 0,
-                focusPosition: [px, 1.38, zFront + 1.2],
-                lookAtPosition: [px, 1.30, zFront],
-                product: item,
-                images: getProductImages(item)
-            });
+    // 4. "TRIMMERLAR & SOCH PARVARISHI" (Left Wing Table: x = -9.5, z = -4.5 - 6 ta stend, 2 taraflama)
+    const trimX = [-11.0, -9.5, -8.0];
+    trimX.forEach((px, i) => {
+        const itemF = getItem(trimmers, i);
+        stands.push({
+            id: `trimmers-f-${i + 1}`,
+            zone: "trimmers",
+            categoryTitleUz: "Professional Trimmerlar",
+            categoryTitleRu: "Профессиональные Триммеры",
+            position: [px, 0.92, -4.1],
+            rotationY: 0,
+            focusPosition: [px, 1.38, -2.9],
+            lookAtPosition: [px, 1.30, -4.1],
+            product: itemF,
+            images: getProductImages(itemF)
         });
 
-        // Orqa tomon (Devorga qaraydi)
-        xOffs.forEach((xOff, i) => {
-            const px = centerX + xOff;
-            const item = getItem(bucket, startIdx + i + 3);
-            stands.push({
-                id: `${tableId}-b-${i + 1}`,
-                zone,
-                categoryTitleUz: titleUz,
-                categoryTitleRu: titleRu,
-                position: [px, 0.92, zBack],
-                rotationY: Math.PI,
-                focusPosition: [px, 1.38, zBack - 1.2],
-                lookAtPosition: [px, 1.30, zBack],
-                product: item,
-                images: getProductImages(item)
-            });
+        const itemB = getItem(trimmers, i + 3);
+        stands.push({
+            id: `trimmers-b-${i + 1}`,
+            zone: "trimmers",
+            categoryTitleUz: "Soch Kesish Mashinkalari",
+            categoryTitleRu: "Машинки для Стрижки",
+            position: [px, 0.92, -4.9],
+            rotationY: Math.PI,
+            focusPosition: [px, 1.38, -6.1],
+            lookAtPosition: [px, 1.30, -4.9],
+            product: itemB,
+            images: getProductImages(itemB)
         });
-    };
+    });
 
-    // Trimmerlar 1-stol (Old chap: x = -6.5, z = 0.5)
-    addDoubleSidedTable("trimmers-front", "trimmers", "Professional Trimmerlar", "Профессиональные Триммеры", -6.5, 0.5, trimmers, 0);
+    // 5. "OSHXONA VA MAYDA TEXNIKALAR" (Bottom-Left Bay: x = -13 .. -7, z = 9.2 - 6 ta stend)
+    const kitchenX = [-13.0, -11.5, -10.0, -8.5, -7.0, -5.5];
+    kitchenX.forEach((xPos, idx) => {
+        const item = getItem(pool, idx + 22);
+        stands.push({
+            id: `kitchen-${idx + 1}`,
+            zone: "shavers",
+            categoryTitleUz: "Oshxona & Mayda Texnikalar",
+            categoryTitleRu: "Техника для Кухни",
+            position: [xPos, 0.95, 9.2],
+            rotationY: Math.PI,
+            focusPosition: [xPos, 1.40, 7.8],
+            lookAtPosition: [xPos, 1.30, 9.2],
+            product: item,
+            images: getProductImages(item)
+        });
+    });
 
-    // Trimmerlar 2-stol (Orqa chap: x = -6.5, z = -5.0)
-    addDoubleSidedTable("trimmers-rear", "trimmers", "Soch Kesish Mashinkalari", "Машинки для Стрижки", -6.5, -5.0, trimmers, 6);
+    // 6. "SHEYVERLAR & PARVARISH" (Bottom-Left Gondola: x = -9.5, z = 5.0 - 6 ta stend, 2 taraflama)
+    trimX.forEach((px, i) => {
+        const itemF = getItem(shavers, i);
+        stands.push({
+            id: `shavers-f-${i + 1}`,
+            zone: "shavers",
+            categoryTitleUz: "Sheyverlar & Ustara",
+            categoryTitleRu: "Шейверы и Бритвы",
+            position: [px, 0.92, 5.4],
+            rotationY: 0,
+            focusPosition: [px, 1.38, 6.6],
+            lookAtPosition: [px, 1.30, 5.4],
+            product: itemF,
+            images: getProductImages(itemF)
+        });
 
-    // 4. "SHEYVERLAR & PARVARISH" (Bottom Left Gondola: x = -6.5, z = 6.0 - 6 ta stend)
-    addDoubleSidedTable("shavers-island", "shavers", "Sheyverlar & Ustara", "Шейверы и Бритвы", -6.5, 6.0, shavers, 0);
+        const itemB = getItem(shavers, i + 3);
+        stands.push({
+            id: `shavers-b-${i + 1}`,
+            zone: "shavers",
+            categoryTitleUz: "Erkaklar Parvarishi",
+            categoryTitleRu: "Мужской Уход",
+            position: [px, 0.92, 4.6],
+            rotationY: Math.PI,
+            focusPosition: [px, 1.38, 3.4],
+            lookAtPosition: [px, 1.30, 4.6],
+            product: itemB,
+            images: getProductImages(itemB)
+        });
+    });
 
-    // 5. O'NG QANOT "FENLAR & GO'ZALLIK" (Right Wing Top: x = 6.5, z = -5.5 - 6 ta stend)
-    addDoubleSidedTable("haircare-island", "hair_care", "Fenlar & Staylerlar", "Фены и Стайлеры", 6.5, -5.5, hairCare, 0);
+    // 7. "AKSESSUARLAR VA TARMOQ" (Bottom-Center Gondola: x = 6.0, z = 8.5 - 6 ta stend)
+    const accX = [3.5, 5.0, 6.5, 8.0, 9.5, 11.0];
+    accX.forEach((xPos, idx) => {
+        const item = getItem(gadgets, idx + 6);
+        stands.push({
+            id: `accessories-${idx + 1}`,
+            zone: "gadgets",
+            categoryTitleUz: "Aksessuarlar & Tarmoq",
+            categoryTitleRu: "Аксессуары и Сеть",
+            position: [xPos, 0.95, 8.5],
+            rotationY: Math.PI,
+            focusPosition: [xPos, 1.40, 7.1],
+            lookAtPosition: [xPos, 1.30, 8.5],
+            product: item,
+            images: getProductImages(item)
+        });
+    });
 
-    // 6. "AKSESSUARLAR & BLUETOOTH AUDIO" (Right Wing Center: x = 6.5, z = 0.5 - 6 ta stend)
-    addDoubleSidedTable("audio-island", "gadgets", "Audio & Quloqchinlar", "Наушники и Аудио", 6.5, 0.5, gadgets, 6);
-
-    // 7. "CHECKOUT & SERVIS ZONASI" (Far Right Service Area: x = 11.5, z = 1.0 - 6 ta stend)
-    addDoubleSidedTable("checkout-zone", "all", "Kassa & Premium Aksessuarlar", "Касса и Аксессуары", 11.5, 1.0, pool, 24);
+    // 8. "CHECKOUT & SERVIS KASSA" (Right Wing: x = 18.0, z = 0.0 - 6 ta stend)
+    const checkZ = [-2.5, -1.5, -0.5, 0.5, 1.5, 2.5];
+    checkZ.forEach((zPos, idx) => {
+        const item = getItem(hairCare, idx);
+        stands.push({
+            id: `checkout-stand-${idx + 1}`,
+            zone: "hair_care",
+            categoryTitleUz: "Fenlar & Premium Aksessuarlar",
+            categoryTitleRu: "Фены и Аксессуары",
+            position: [18.0, 0.95, zPos],
+            rotationY: -Math.PI / 2, // G'arbga (ichkariga) qaragan
+            focusPosition: [16.6, 1.40, zPos],
+            lookAtPosition: [18.0, 1.30, zPos],
+            product: item,
+            images: getProductImages(item)
+        });
+    });
 
     return stands;
 }

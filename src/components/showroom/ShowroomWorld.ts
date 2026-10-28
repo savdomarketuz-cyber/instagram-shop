@@ -28,7 +28,51 @@ export function calculateResponsiveCameraFov(width: number, height: number): num
 }
 
 /**
- * OCHROQ, TABIIY ILIQ YONG'OQ (WARM WALNUT / TEAK) YOG'OCH TEKSTURASI
+ * XARITA DIAGRAMMASI SHAKLIDAGI DO'KON PERIMETR KOORDINATALARI (NO-RECTANGLE CUSTOM SHAPE)
+ */
+export const STORE_POLYGON_VERTICES: [number, number][] = [
+    // 1. ASOSIY KIRISH FOYESI (G'arbiy qanot, x ≈ -20 .. -16)
+    [-20.0, 1.0],
+    [-20.0, 5.0],   // Kirish oynali eshiklari joylashgan devor
+    [-17.0, 6.5],   // Kirish foye burchagi
+    [-15.0, 6.0],
+
+    // 2. OSHXONA VA MAYDA TEXNIKALAR (Janubi-g'arbiy zal, z: 6 .. 10.5)
+    [-15.0, 10.5],  // Qavariq burchak
+    [-4.0, 10.5],   // Janubiy devor
+    [-3.0, 7.5],    // Ichki burilish
+    [1.0, 7.5],
+
+    // 3. AKSESSUARLAR VA TARMOQ (Janubiy markaziy zal, z: 7.5 .. 10.5)
+    [1.0, 10.5],
+    [11.0, 10.5],   // Janubiy devor
+    [12.5, 7.5],    // Ichki burilish
+
+    // 4. MIJOZLARGA XIZMAT VA SERVIS (Janubi-sharqiy zal, x: 12.5 .. 22.5, z: 7.5)
+    [22.5, 7.5],
+    [24.0, 4.0],    // 45° qiya burchak
+
+    // 5. CHECKOUT VA SKLAD (Sharqiy devor, x ≈ 24.0)
+    [24.0, -3.0],   // Kassa sharqiy devori
+    [24.0, -7.5],   // Sklad burchagi
+    [12.0, -7.5],   // Sklad shimoliy devori
+    [10.5, -5.5],   // TV & Sound ga o'tish
+
+    // 6. TV & SOUND (Shimoliy markaziy zal, z ≈ -5.5 .. -8.5)
+    [9.0, -8.5],
+    [-2.0, -8.5],   // TV devori
+    [-3.5, -5.5],   // Ichki burilish
+
+    // 7. KATTA MAISHIY TEXNIKALAR (Shimoli-g'arbiy zal, z ≈ -5.5 .. -10.5)
+    [-5.0, -10.5],
+    [-15.0, -10.5], // Shimoliy devor
+    [-17.0, -6.5],  // Shimoli-g'arbiy 45° qiya burchak
+    [-17.0, -1.0],  // Kirish foye shimoliy devori
+    [-20.0, 1.0]    // Asosiy kirishga qaytish
+];
+
+/**
+ * ILIQ, TABIIY YONG'OQ (WARM WALNUT) YOG'OCH TEKSTURASI
  */
 function createWarmWalnutTexture(): THREE.CanvasTexture {
     const canvas = document.createElement("canvas");
@@ -37,7 +81,6 @@ function createWarmWalnutTexture(): THREE.CanvasTexture {
     const ctx = canvas.getContext("2d");
     if (!ctx) return new THREE.CanvasTexture(canvas);
 
-    // Iliq, qimmatbaho yong'oq yog'ochi rangi (qop-qora emas, tabiiy oltin-jigarrang tuslar)
     const grad = ctx.createLinearGradient(0, 0, 512, 0);
     grad.addColorStop(0.0, "#563821");
     grad.addColorStop(0.25, "#6E482C");
@@ -71,63 +114,44 @@ function createWarmWalnutTexture(): THREE.CanvasTexture {
 }
 
 /**
- * YENGIL OCH KULRANG POL VA ZAMONAVIY NEON YASHIL/ZANGORI NAVIGATSIYA CHIZIQLARI (NAMUNA RASMDAGIDEK)
+ * XARITA BO'YICHA POL TEKSTURASI VA NAVIGATSIYA OQIM CHIZIQLARI
  */
-function createDiagramStyleFloorTexture(): THREE.CanvasTexture {
+function createDiagramFloorTexture(): THREE.CanvasTexture {
     const canvas = document.createElement("canvas");
     canvas.width = 1024;
     canvas.height = 1024;
     const ctx = canvas.getContext("2d");
     if (!ctx) return new THREE.CanvasTexture(canvas);
 
-    // Clean Apple/Retail light grey epoxy floor
-    ctx.fillStyle = "#EAECEF";
+    ctx.fillStyle = "#ECEFF3";
     ctx.fillRect(0, 0, 1024, 1024);
 
-    // Katta 1.2m x 1.2m plita choklari
-    ctx.strokeStyle = "rgba(180, 186, 196, 0.65)";
-    ctx.lineWidth = 2.5;
-    for (let y = 0; y <= 1024; y += 128) {
+    // 1.2m x 1.2m plita choklari
+    ctx.strokeStyle = "rgba(195, 202, 212, 0.65)";
+    ctx.lineWidth = 2.0;
+    for (let y = 0; y <= 1024; y += 64) {
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(1024, y);
         ctx.stroke();
     }
-    for (let x = 0; x <= 1024; x += 128) {
+    for (let x = 0; x <= 1024; x += 64) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, 1024);
         ctx.stroke();
     }
 
-    // Namuna rasmdagi yashil/zangori navigatsiya oqim chiziqlari (Circuit flow lines)
-    ctx.strokeStyle = "rgba(16, 185, 129, 0.40)";
-    ctx.lineWidth = 4.0;
-    ctx.beginPath();
-    ctx.moveTo(128, 0);
-    ctx.lineTo(128, 512);
-    ctx.lineTo(512, 512);
-    ctx.lineTo(512, 1024);
-    ctx.stroke();
-
-    ctx.strokeStyle = "rgba(6, 182, 212, 0.35)";
-    ctx.lineWidth = 3.5;
-    ctx.beginPath();
-    ctx.moveTo(896, 0);
-    ctx.lineTo(896, 640);
-    ctx.lineTo(512, 640);
-    ctx.stroke();
-
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(4, 4);
+    tex.repeat.set(12, 8);
     tex.generateMipmaps = true;
     return tex;
 }
 
 /**
- * KO'CHA ASFALTI VA OQ YO'L CHIZIQLARI
+ * TASHQI KO'CHA ASFALTI
  */
 function createStreetAsphaltTexture(): THREE.CanvasTexture {
     const canvas = document.createElement("canvas");
@@ -160,9 +184,7 @@ function createStreetAsphaltTexture(): THREE.CanvasTexture {
 }
 
 /**
- * UZOQDAN HAM 100% O'TA TINIQ (BLURSIZ) 3:4 MAHSULOT TEKSTURASI
- * Kalit sir: generateMipmaps = false va minFilter = THREE.LinearFilter!
- * WebGL mipmap downsampling qilib blurlab tashlamaydi, doim to'liq aniqlikda turadi!
+ * UZOQDAN HAM O'TA TINIQ (MIPMAPSIZ) 3:4 MAHSULOT TEKSTURASI
  */
 export function createUltraSharpProductTexture(
     images: string[]
@@ -172,14 +194,14 @@ export function createUltraSharpProductTexture(
     dispose: () => void;
 } {
     const canvas = document.createElement("canvas");
-    canvas.width = 1024; // 3:4 nisbatda yuqori sifatli canvas (1024 x 1365)
+    canvas.width = 1024;
     canvas.height = 1365;
     const ctx = canvas.getContext("2d");
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
-    texture.generateMipmaps = false; // Mipmap blurini butunlay yo'q qilish!
-    texture.minFilter = THREE.LinearFilter; // Uzoqda ham to'liq rezolyutsiyadagi tasvir
+    texture.generateMipmaps = false;
+    texture.minFilter = THREE.LinearFilter;
     texture.magFilter = THREE.LinearFilter;
 
     const loadedImgs: (HTMLImageElement | null)[] = images.map(() => null);
@@ -190,18 +212,16 @@ export function createUltraSharpProductTexture(
         if (!ctx || isDisposed) return;
         ctx.clearRect(0, 0, 1024, 1365);
 
-        // 1. Shaffof shisha orqa fon
+        // Shaffof shisha ramka
         ctx.fillStyle = "rgba(255, 255, 255, 0.04)";
         ctx.beginPath();
         ctx.roundRect(16, 16, 992, 1333, 36);
         ctx.fill();
 
-        // Nozik yorqin zumrad neon hoshiya
         ctx.strokeStyle = "rgba(16, 185, 129, 0.70)";
         ctx.lineWidth = 4.0;
         ctx.stroke();
 
-        // 2. Mahsulot fotosurati — TO'LIQ 3:4 EKRANDA (Uzoqdan tiniq ko'rinishi uchun yirik va kontrast)
         if (img && img.complete && img.naturalWidth > 0) {
             const pad = 36;
             const targetW = 1024 - pad * 2;
@@ -220,7 +240,7 @@ export function createUltraSharpProductTexture(
             ctx.restore();
         } else {
             ctx.fillStyle = "#10b981";
-            ctx.font = "bold 44px system-ui, -apple-system, sans-serif";
+            ctx.font = "bold 44px system-ui, sans-serif";
             ctx.textAlign = "center";
             ctx.fillText("VELARI PREMIUM", 512, 680);
             ctx.font = "24px system-ui";
@@ -228,7 +248,6 @@ export function createUltraSharpProductTexture(
             ctx.fillText("Yuklanmoqda...", 512, 730);
         }
 
-        // Ko'p rasmli bo'lsa pastki nuqtalar
         if (images.length > 1) {
             const dotY = 1320;
             const totalDots = Math.min(images.length, 5);
@@ -246,7 +265,6 @@ export function createUltraSharpProductTexture(
 
     render(null);
 
-    // Rasmlarni yuklash
     images.forEach((url, i) => {
         const img = new Image();
         img.crossOrigin = "anonymous";
@@ -254,9 +272,7 @@ export function createUltraSharpProductTexture(
         img.onload = () => {
             if (isDisposed) return;
             loadedImgs[i] = img;
-            if (i === currentIndex) {
-                render(img);
-            }
+            if (i === currentIndex) render(img);
         };
         img.onerror = () => {
             if (isDisposed) return;
@@ -287,7 +303,7 @@ export function createUltraSharpProductTexture(
 }
 
 /**
- * 3x4 EKRAN TAGIDAGI ALOHIDA BO'RTIB CHIQQAN ELEKTRON NARX PLASHKASI (ESKI VA YANGI NARX)
+ * 3x4 EKRAN TAGIDAGI ALOHIDA BO'RTIB CHIQQAN ELEKTRON NARX PLASHKASI
  */
 function createProtrudingPriceTexture(
     price: number,
@@ -305,24 +321,20 @@ function createProtrudingPriceTexture(
 
     if (!ctx) return texture;
 
-    // OLED qora-zumrad korpus
     ctx.fillStyle = "rgba(10, 16, 24, 0.98)";
     ctx.beginPath();
     ctx.roundRect(8, 8, 584, 164, 24);
     ctx.fill();
 
-    // Zumrad hoshiya
     ctx.strokeStyle = "rgba(16, 185, 129, 0.90)";
     ctx.lineWidth = 3.5;
     ctx.stroke();
 
-    // Asosiy narx
     ctx.fillStyle = "#34d399";
-    ctx.font = "900 48px system-ui, -apple-system, sans-serif";
+    ctx.font = "900 48px system-ui, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText(`${price.toLocaleString("uz-UZ")} SO'M`, 300, oldPrice && oldPrice > price ? 82 : 106);
 
-    // Eski narx (chizilgan)
     if (oldPrice && oldPrice > price) {
         ctx.fillStyle = "#9ca3af";
         ctx.font = "600 28px system-ui";
@@ -372,14 +384,15 @@ export class ShowroomWorld {
         const width = window.innerWidth;
         const height = window.innerHeight;
 
-        // 1. SAHNA & KAMERA — KO'CHADAGI OSMON YORQIN KO'K RANGDA (REAL SKY BLUE)
+        // 1. SAHNA & KAMERA — TINIQ KO'K OSMON
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x60a5fa); // Go'zal tiniq osmon ko'k rangi!
-        this.scene.fog = new THREE.FogExp2(0x93c5fd, 0.010); // Yumshoq havo atmosferasi
+        this.scene.fog = new THREE.FogExp2(0x93c5fd, 0.008);
 
         const initialFov = calculateResponsiveCameraFov(width, height);
-        this.camera = new THREE.PerspectiveCamera(initialFov, width / height, 0.1, 80);
-        this.camera.position.set(0, 1.65, 11.0);
+        this.camera = new THREE.PerspectiveCamera(initialFov, width / height, 0.1, 90);
+        // Boshlang'ich kamera: Asosiy kirish oynali eshiklari ichida, zalga qaragan
+        this.camera.position.set(-17.0, 1.65, 3.0);
 
         // 2. RENDERER
         this.renderer = new THREE.WebGLRenderer({
@@ -391,170 +404,188 @@ export class ShowroomWorld {
         this.renderer.setSize(width, height);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 1.18;
+        this.renderer.toneMappingExposure = 1.20;
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
         container.appendChild(this.renderer.domElement);
 
         // 3. TEKSTURALAR
-        this.floorTex = createDiagramStyleFloorTexture();
+        this.floorTex = createDiagramFloorTexture();
         this.warmWalnutTex = createWarmWalnutTexture();
         this.streetTex = createStreetAsphaltTexture();
 
-        // 4. YORUG'LIK (Quyosh nuri + zal yoritgichlari)
+        // 4. YORUG'LIK (Quyosh nuri + zal ichki yoritgichlari)
         this.setupLighting();
 
-        // 5. DO'KON ME'MORCHILIGI: OCH OQISH DEVORLAR, TEKIS MAT QORA SHIFT VA 45° LED CHIROQLAR
-        this.setupArchitecture();
+        // 5. XARITA POLIGONI BO'YICHA NO-RECTANGLE XONA (POL, SHIFT VA PERIMETR DEVORLARI)
+        this.setupCustomShapedBuilding();
 
-        // 6. OYNALI ESHIKLAR, TASHQI KO'CHA, BINO FASADI VA VELARI 3D LOGO
-        this.setupEntranceAndStreet();
+        // 6. G'ARBIY OYNALI KIRISH ESHIKLARI VA TASHQI KO'CHA (KO'K OSMON BILAN)
+        this.setupEntranceAndExteriorStreet();
 
-        // 7. NAMUNA DIAGRAMMA ZALLARI: MARKAZIY DOIRAVIY OROL, TV & SOUND WALL, GONDOLALAR
+        // 7. POLdagi NEON OQIM CHIZIQLARI (CIRCUIT NAVIGATION LINES)
+        this.setupFloorNavigationLines();
+
+        // 8. DIAGRAMMADAGI BARCHA BO'LIMLAR (MOBILE OROL, TV WALL, KATTA MAISHIY, CHECKOUT, SERVIS)
         this.setupDepartmentStructures();
 
-        // 8. 48 TA 3:4 TINIQ VITRINA EKRANLARI VA BO'RTIB CHIQQAN NARX PLASHKALARI
+        // 9. 48 TA VITRINA STENDLARI
         this.setupShowcaseStands(stands);
     }
 
     private setupLighting() {
-        // Yumshoq ambient fon
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.35);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
         this.scene.add(ambientLight);
 
-        // Quyosh nuri (Tashqi ko'chadan tushuvchi tabiiy iliq quyosh)
-        const sunLight = new THREE.DirectionalLight(0xfffaed, 1.8);
-        sunLight.position.set(8, 16, 20);
+        // Tashqi quyosh nuri (G'arbiy oynali kirish eshiklaridan ichkariga tushuvchi)
+        const sunLight = new THREE.DirectionalLight(0xfffaed, 1.9);
+        sunLight.position.set(-28, 16, 3);
         sunLight.castShadow = true;
         sunLight.shadow.mapSize.width = 2048;
         sunLight.shadow.mapSize.height = 2048;
         sunLight.shadow.camera.near = 1.0;
-        sunLight.shadow.camera.far = 45;
-        sunLight.shadow.camera.left = -20;
-        sunLight.shadow.camera.right = 20;
-        sunLight.shadow.camera.top = 20;
-        sunLight.shadow.camera.bottom = -20;
+        sunLight.shadow.camera.far = 65;
+        sunLight.shadow.camera.left = -25;
+        sunLight.shadow.camera.right = 25;
+        sunLight.shadow.camera.top = 25;
+        sunLight.shadow.camera.bottom = -25;
         sunLight.shadow.bias = -0.0003;
         sunLight.shadow.radius = 2.0;
         this.scene.add(sunLight);
 
-        // Zal ichki yorug'ligi
-        const storeLight = new THREE.DirectionalLight(0xf8fafc, 1.4);
-        storeLight.position.set(0, 12, -2);
-        this.scene.add(storeLight);
+        // Zal ichki ship chiroqlari
+        const interiorLight = new THREE.DirectionalLight(0xf1f5f9, 1.5);
+        interiorLight.position.set(0, 14, 0);
+        this.scene.add(interiorLight);
 
-        // Zallar ustidagi nuqtaviy nuqsonli chiroqlar
-        const spotPositions = [
-            [0.0, 4.5, 0.0],   // Markaziy doira
-            [0.0, 4.5, -10.0], // TV wall
-            [-6.5, 4.5, 0.0],  // Trimmerlar
-            [-6.5, 4.5, -5.0],
-            [6.5, 4.5, -5.0],  // Fenlar
-            [6.5, 4.5, 0.0],   // Gadjetlar
-            [11.5, 4.5, 1.0]   // Kassa
+        // Zallardagi nuqtaviy studiya chiroqlari
+        const spots = [
+            [-17.0, 4.2, 3.0], // Kirish foye
+            [0.0, 4.5, 0.0],   // Markaziy Mobile doira
+            [3.5, 4.5, -7.0],  // TV & Sound
+            [-9.5, 4.5, -8.0], // Katta maishiy
+            [-9.5, 4.5, 7.5],  // Oshxona
+            [6.0, 4.5, 7.5],   // Aksessuarlar
+            [18.0, 4.5, 0.0]   // Checkout & Servis
         ];
-        spotPositions.forEach(([x, y, z]) => {
-            const spot = new THREE.PointLight(0xfff5ea, 1.1, 9.0, 2);
+        spots.forEach(([x, y, z]) => {
+            const spot = new THREE.PointLight(0xfff6eb, 1.2, 10.0, 2);
             spot.position.set(x, y, z);
             this.scene.add(spot);
         });
     }
 
-    private setupArchitecture() {
-        // 1. POL — OCH KULRANG EPOKSI POL (NAVIGATSIYA CHIZIQLARI BILAN)
+    /**
+     * SIZ BERGAN XARITA CHIZMASI SHAKLIDAGI HAQIQIY NO-RECTANGLE XONA (POL, DEVORLAR, SHIFT)
+     */
+    private setupCustomShapedBuilding() {
+        const floorShape = new THREE.Shape();
+        const p0 = STORE_POLYGON_VERTICES[0];
+        floorShape.moveTo(p0[0], p0[1]);
+
+        for (let i = 1; i < STORE_POLYGON_VERTICES.length; i++) {
+            const pt = STORE_POLYGON_VERTICES[i];
+            floorShape.lineTo(pt[0], pt[1]);
+        }
+        floorShape.closePath();
+
+        // 1. POL (Xaritaning aniq ko'pburchak shaklidagi poli)
+        const floorGeo = new THREE.ShapeGeometry(floorShape);
+        floorGeo.rotateX(-Math.PI / 2); // 3D sahnaga gorizontal yotqizish
+
         const floorMat = new THREE.MeshStandardMaterial({
             map: this.floorTex,
             roughness: 0.45,
-            metalness: 0.10
+            metalness: 0.08
         });
-        const floor = new THREE.Mesh(new THREE.PlaneGeometry(36, 28), floorMat);
-        floor.rotation.x = -Math.PI / 2;
-        floor.position.set(0, 0, 0); // Z: -14 .. +14
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.position.set(0, 0, 0);
         floor.receiveShadow = true;
         this.scene.add(floor);
 
-        // 2. SHIFT — TEKIS MAT QORA (APPLE CYBERSTORE)
+        // 2. SHIFT (Xaritaning ko'pburchak shaklidagi mat qora shifti)
+        const ceilingGeo = new THREE.ShapeGeometry(floorShape);
+        ceilingGeo.rotateX(Math.PI / 2);
+
         const ceilingMat = new THREE.MeshStandardMaterial({
-            color: 0x0c0e12,
+            color: 0x0C0E12,
             roughness: 0.95
         });
-        const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(36, 28), ceilingMat);
-        ceiling.rotation.x = Math.PI / 2;
-        ceiling.position.set(0, 5.4, 0);
+        const ceiling = new THREE.Mesh(ceilingGeo, ceilingMat);
+        ceiling.position.set(0, 5.2, 0);
         this.scene.add(ceiling);
 
-        // 3. SHIFTDA 45 GRADUS BURCHAKDA BIR-BIRIGA QARAMA-QARSHI UZUNCHOQ LED CHIROQLAR (CHEVRON LIGHTS)
+        // Shiftga 45 gradusli chevron chiroqlar
         const ledMat = new THREE.MeshStandardMaterial({
             color: 0xffffff,
             emissive: 0xffffff,
             emissiveIntensity: 2.2,
             roughness: 0.2
         });
-        const fixtureMat = new THREE.MeshStandardMaterial({ color: 0x1f242d });
-
-        const createChevronFixture = (x: number, z: number, len: number, angleDeg: number) => {
-            const group = new THREE.Group();
-            group.position.set(x, 5.36, z);
-            group.rotation.y = (angleDeg * Math.PI) / 180;
-
-            const box = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.08, len), fixtureMat);
-            group.add(box);
-
-            const emitter = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.03, len - 0.08), ledMat);
-            emitter.position.y = -0.04;
-            group.add(emitter);
-
-            this.scene.add(group);
+        const createChevron = (x: number, z: number, len: number, angle: number) => {
+            const g = new THREE.Group();
+            g.position.set(x, 5.16, z);
+            g.rotation.y = (angle * Math.PI) / 180;
+            const b = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.08, len), new THREE.MeshStandardMaterial({ color: 0x1E242E }));
+            g.add(b);
+            const e = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.03, len - 0.08), ledMat);
+            e.position.y = -0.04;
+            g.add(e);
+            this.scene.add(g);
         };
-
-        [-9, 0, 9].forEach((xOff) => {
+        [-10, 0, 10, 18].forEach((xOff) => {
             [-5, 3].forEach((zOff) => {
-                createChevronFixture(xOff, zOff, 10.0, 45);
-                createChevronFixture(xOff, zOff, 10.0, -45);
+                createChevron(xOff, zOff, 8.5, 45);
+                createChevron(xOff, zOff, 8.5, -45);
             });
         });
 
-        // 4. DEVORLAR — FOYDALANUVCHI SO'RAGAN OCH OQISH ZAMONAVIY DEVOR RANGI (LIGHT ARCHITECTURAL OFF-WHITE)
-        const wallMat = new THREE.MeshStandardMaterial({ color: 0xEEF1F5, roughness: 0.85 });
-
-        // Orqa devor (TV & Sound wall)
-        const backWall = new THREE.Mesh(new THREE.PlaneGeometry(36, 5.4), wallMat);
-        backWall.position.set(0, 2.7, -14);
-        backWall.receiveShadow = true;
-        this.scene.add(backWall);
-
-        // Chap devor
-        const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(28, 5.4), wallMat);
-        leftWall.position.set(-18, 2.7, 0);
-        leftWall.rotation.y = Math.PI / 2;
-        leftWall.receiveShadow = true;
-        this.scene.add(leftWall);
-
-        // O'ng devor
-        const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(28, 5.4), wallMat);
-        rightWall.position.set(18, 2.7, 0);
-        rightWall.rotation.y = -Math.PI / 2;
-        rightWall.receiveShadow = true;
-        this.scene.add(rightWall);
-
-        // Namuna rasmdagi zangori neon devor cheti konturlari (Cyan neon perimeter strip)
+        // 3. XARITA PERIMETRI BO'YLAB DEVORLAR (OCH OQISH ICHKI DEVOR, TASHQI NAVY KORPUS VA ZANGORI NEON CHIZIQ)
+        const wallInnerMat = new THREE.MeshStandardMaterial({ color: 0xEEF1F5, roughness: 0.85 });
         const cyanNeonMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
-        const leftPerimeter = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 28), cyanNeonMat);
-        leftPerimeter.position.set(-17.92, 5.3, 0);
-        this.scene.add(leftPerimeter);
 
-        const rightPerimeter = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 28), cyanNeonMat);
-        rightPerimeter.position.set(17.92, 5.3, 0);
-        this.scene.add(rightPerimeter);
+        for (let i = 0; i < STORE_POLYGON_VERTICES.length - 1; i++) {
+            const [x1, z1] = STORE_POLYGON_VERTICES[i];
+            const [x2, z2] = STORE_POLYGON_VERTICES[i + 1];
 
-        const backPerimeter = new THREE.Mesh(new THREE.BoxGeometry(36, 0.08, 0.08), cyanNeonMat);
-        backPerimeter.position.set(0, 5.3, -13.92);
-        this.scene.add(backPerimeter);
+            // Agar bu kirish oynali eshigi devori bo'lsa (x1 === -20, z: 1 .. 5), uni alohida shisha qilamiz
+            if (x1 === -20.0 && x2 === -20.0) {
+                continue;
+            }
+
+            const dx = x2 - x1;
+            const dz = z2 - z1;
+            const length = Math.hypot(dx, dz);
+            const angle = Math.atan2(dx, dz);
+            const midX = (x1 + x2) / 2;
+            const midZ = (z1 + z2) / 2;
+
+            // Devor bloki
+            const wallMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(0.28, 5.2, length),
+                wallInnerMat
+            );
+            wallMesh.position.set(midX, 2.6, midZ);
+            wallMesh.rotation.y = angle;
+            wallMesh.receiveShadow = true;
+            this.scene.add(wallMesh);
+
+            // Devor tepasidagi neon zangori kontur (Diagrammadagi neon konturlar kabi)
+            const neonLine = new THREE.Mesh(
+                new THREE.BoxGeometry(0.08, 0.08, length),
+                cyanNeonMat
+            );
+            neonLine.position.set(midX, 5.16, midZ);
+            neonLine.rotation.y = angle;
+            this.scene.add(neonLine);
+        }
     }
 
-    private setupEntranceAndStreet() {
-        // 1. OYNALI ESHIKLAR VA PANORAMA FASAD (Z: 14.0)
+    /**
+     * G'ARBIY OYNALI KIRISH ESHIKLARI VA TASHQI KO'CHA (TINIQ KO'K OSMON)
+     */
+    private setupEntranceAndExteriorStreet() {
         const glassMat = new THREE.MeshStandardMaterial({
             color: 0x93c5fd,
             transparent: true,
@@ -564,62 +595,73 @@ export class ShowroomWorld {
         });
         const frameMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.85, roughness: 0.25 });
 
-        // Chap fasad oynalari (-18 dan -3.2 gacha)
-        const leftFacade = new THREE.Mesh(new THREE.PlaneGeometry(14.8, 5.4), glassMat);
-        leftFacade.position.set(-10.6, 2.7, 14.0);
-        leftFacade.rotation.y = Math.PI;
-        this.scene.add(leftFacade);
-
-        // O'ng fasad oynalari (+3.2 dan +18 gacha)
-        const rightFacade = new THREE.Mesh(new THREE.PlaneGeometry(14.8, 5.4), glassMat);
-        rightFacade.position.set(10.6, 2.7, 14.0);
-        rightFacade.rotation.y = Math.PI;
-        this.scene.add(rightFacade);
-
-        // O'rtadagi avtomatik suriluvchi shaffof oynali eshiklar (Haqiqiy shisha eshik qanotlari)
-        const doorLeafGeo = new THREE.BoxGeometry(1.6, 4.2, 0.05);
-        const doorLeaf1 = new THREE.Mesh(doorLeafGeo, glassMat);
-        doorLeaf1.position.set(-1.8, 2.1, 14.0); // Yarim ochiq holatda
+        // 1. ASOSIY KIRISH OYNALI ESHIKLARI (X: -20.0, Z: 1.0 .. 5.0 oralig'ida)
+        // 2 ta suriluvchi shisha eshik qanotlari
+        const doorLeaf1 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 4.2, 1.4), glassMat);
+        doorLeaf1.position.set(-20.0, 2.1, 1.8);
         this.scene.add(doorLeaf1);
 
-        const doorLeaf2 = new THREE.Mesh(doorLeafGeo, glassMat);
-        doorLeaf2.position.set(1.8, 2.1, 14.0);
+        const doorLeaf2 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 4.2, 1.4), glassMat);
+        doorLeaf2.position.set(-20.0, 2.1, 4.2);
         this.scene.add(doorLeaf2);
 
-        // Eshik tutqichlari (Metall vertikal tutqichlar)
+        // Eshik metall tutqichlari
         const handleGeo = new THREE.CylinderGeometry(0.025, 0.025, 1.4, 16);
-        const handle1 = new THREE.Mesh(handleGeo, frameMat);
-        handle1.position.set(-1.1, 1.8, 14.05);
-        this.scene.add(handle1);
+        const h1 = new THREE.Mesh(handleGeo, frameMat);
+        h1.position.set(-19.95, 1.8, 2.4);
+        this.scene.add(h1);
 
-        const handle2 = new THREE.Mesh(handleGeo, frameMat);
-        handle2.position.set(1.1, 1.8, 14.05);
-        this.scene.add(handle2);
+        const h2 = new THREE.Mesh(handleGeo, frameMat);
+        h2.position.set(-19.95, 1.8, 3.6);
+        this.scene.add(h2);
 
-        // Eshik tepasidagi metall peshtoq va harakat datchigi
-        const doorHeader = new THREE.Mesh(new THREE.BoxGeometry(6.6, 0.45, 0.25), frameMat);
-        doorHeader.position.set(0, 4.5, 14.0);
-        this.scene.add(doorHeader);
+        // Eshik peshtoqiga neon "ASOSIY KIRISH" tablichkasi
+        const signCanvas = document.createElement("canvas");
+        signCanvas.width = 512;
+        signCanvas.height = 96;
+        const sctx = signCanvas.getContext("2d");
+        if (sctx) {
+            sctx.fillStyle = "rgba(15, 23, 42, 0.95)";
+            sctx.roundRect(0, 0, 512, 96, 20);
+            sctx.fill();
+            sctx.strokeStyle = "#00f0ff";
+            sctx.lineWidth = 4;
+            sctx.stroke();
 
-        // 2. TASHQI KO'CHA (Z: 14.0 dan 38.0 gacha) — TINIQ KO'K OSMON OSTIDA
+            sctx.fillStyle = "#ffffff";
+            sctx.font = "900 36px system-ui, sans-serif";
+            sctx.textAlign = "center";
+            sctx.shadowColor = "#00f0ff";
+            sctx.shadowBlur = 15;
+            sctx.fillText("ASOSIY KIRISH", 256, 60);
+        }
+        const signTex = new THREE.CanvasTexture(signCanvas);
+        const signMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.45), new THREE.MeshBasicMaterial({ map: signTex, side: THREE.DoubleSide }));
+        signMesh.position.set(-19.95, 4.4, 3.0);
+        signMesh.rotation.y = Math.PI / 2; // Ichkariga qaragan
+        this.scene.add(signMesh);
+
+        // 2. TASHQI KO'CHA PLAZASI (X: -20 dan -44 gacha) — TINIQ KO'K OSMON
         const streetMat = new THREE.MeshStandardMaterial({
             map: this.streetTex,
             roughness: 0.85
         });
-        const street = new THREE.Mesh(new THREE.PlaneGeometry(54, 26), streetMat);
+        const street = new THREE.Mesh(new THREE.PlaneGeometry(24, 34), streetMat);
         street.rotation.x = -Math.PI / 2;
-        street.position.set(0, -0.01, 26.5);
+        street.position.set(-32.0, -0.01, 3.0);
         street.receiveShadow = true;
         this.scene.add(street);
 
-        // Piyodalar yo'lagi (Trotuar) do'kon oldida (Z: 14.0 dan 18.0 gacha)
-        const sidewalkMat = new THREE.MeshStandardMaterial({ color: 0xCBD5E1, roughness: 0.7 });
-        const sidewalk = new THREE.Mesh(new THREE.BoxGeometry(40, 0.12, 4.0), sidewalkMat);
-        sidewalk.position.set(0, 0.05, 16.0);
+        // Trotuar
+        const sidewalk = new THREE.Mesh(
+            new THREE.BoxGeometry(4.0, 0.12, 30.0),
+            new THREE.MeshStandardMaterial({ color: 0xCBD5E1, roughness: 0.7 })
+        );
+        sidewalk.position.set(-22.0, 0.05, 3.0);
         sidewalk.receiveShadow = true;
         this.scene.add(sidewalk);
 
-        // BINO FASADIDAGI VELARI 3D NEON LOGO
+        // BINO TASHQI FASADIDAGI ULKAN VELARI 3D LOGOTIPI (Ko'chadan qaraganda ko'rinadi)
         const logoCanvas = document.createElement("canvas");
         logoCanvas.width = 1024;
         logoCanvas.height = 256;
@@ -628,8 +670,7 @@ export class ShowroomWorld {
             lctx.fillStyle = "rgba(15, 23, 42, 0.95)";
             lctx.roundRect(16, 16, 992, 224, 32);
             lctx.fill();
-
-            lctx.strokeStyle = "rgba(0, 240, 255, 0.85)";
+            lctx.strokeStyle = "#00f0ff";
             lctx.lineWidth = 6;
             lctx.stroke();
 
@@ -642,7 +683,6 @@ export class ShowroomWorld {
 
             lctx.fillStyle = "#38bdf8";
             lctx.font = "bold 26px system-ui";
-            lctx.shadowBlur = 12;
             lctx.fillText("SUPERSTORE & CONCEPT SHOWROOM", 512, 190);
         }
         const logoTex = new THREE.CanvasTexture(logoCanvas);
@@ -650,226 +690,229 @@ export class ShowroomWorld {
             new THREE.PlaneGeometry(5.4, 1.35),
             new THREE.MeshStandardMaterial({ map: logoTex, emissive: 0x0284c7, emissiveIntensity: 0.4 })
         );
-        logoMesh.position.set(0, 4.2, 14.16);
+        logoMesh.position.set(-20.15, 4.4, 3.0);
+        logoMesh.rotation.y = -Math.PI / 2; // Ko'chaga qaragan
         this.scene.add(logoMesh);
 
-        // Ko'chadagi zamonaviy osmono'par binolar (Osmon ko'k fonida)
-        const buildingMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
+        // Shahar binolari silueti (Ko'k osmon ostida)
+        const bMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
         [
-            [-24, 11, 32, 9, 22, 9],
-            [-13, 14, 36, 11, 28, 11],
-            [13, 16, 36, 12, 32, 11],
-            [24, 12, 32, 9, 24, 9]
+            [-36, 12, -8, 8, 24, 8],
+            [-40, 16, 3, 10, 32, 10],
+            [-36, 14, 14, 8, 28, 8]
         ].forEach(([bx, by, bz, bw, bh, bd]) => {
-            const b = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), buildingMat);
+            const b = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), bMat);
             b.position.set(bx, by, bz);
             this.scene.add(b);
         });
     }
 
-    private setupDepartmentStructures() {
-        const cyanGlowMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
-        const whiteGlossMat = new THREE.MeshStandardMaterial({ color: 0xF8FAFC, roughness: 0.25, metalness: 0.1 });
+    /**
+     * POLDA YASHIL VA ZANGORI NAVIGATSIYA OQIM CHIZIQLARI (CIRCUIT NAVIGATION LINES)
+     */
+    private setupFloorNavigationLines() {
+        const lineMatCyan = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.85 });
+        const lineMatGreen = new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.85 });
 
-        // 1. MARKAZIY "MOBILE & TABLETS" DOIRAVIY OROL (NAMUNA RASMDAGIDEK)
-        // Markaziy yarim doira/horseshoe barpeshta (radius 2.4m)
+        const createPathSegment = (x: number, z: number, w: number, h: number, mat: THREE.Material) => {
+            const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+            mesh.rotation.x = -Math.PI / 2;
+            mesh.position.set(x, 0.006, z);
+            this.scene.add(mesh);
+        };
+
+        // Kirishdan markazga asosiy oqim (X: -19 dan 0 gacha)
+        createPathSegment(-9.5, 3.0, 19.0, 0.16, lineMatCyan);
+
+        // Oshxonaga shoxlanish
+        createPathSegment(-10.0, 5.5, 0.16, 5.0, lineMatGreen);
+        createPathSegment(-10.0, 8.0, 4.0, 0.16, lineMatGreen);
+
+        // Katta maishiyga shoxlanish
+        createPathSegment(-10.0, 0.0, 0.16, 6.0, lineMatCyan);
+        createPathSegment(-10.0, -3.0, 4.0, 0.16, lineMatCyan);
+
+        // Markaziy Mobile orolini aylanib o'tuvchi chiziq
+        createPathSegment(0.0, 3.2, 5.0, 0.16, lineMatCyan);
+        createPathSegment(2.5, 0.0, 0.16, 6.4, lineMatCyan);
+
+        // Checkout & Kassaga to'g'ridan-to'g'ri eltuvchi asosiy chiziq
+        createPathSegment(10.0, 0.0, 15.0, 0.16, lineMatCyan);
+        createPathSegment(17.5, 0.0, 0.16, 5.0, lineMatGreen);
+    }
+
+    /**
+     * DIAGRAMMADAGI BARCHA BO'LIMLAR ME'MORCHILIGI (MOBILE ROTUNDA, TV WALL, GONDOLALAR, KASSA)
+     */
+    private setupDepartmentStructures() {
+        const whiteGlossMat = new THREE.MeshStandardMaterial({ color: 0xF8FAFC, roughness: 0.25, metalness: 0.1 });
+        const cyanGlowMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
+
+        // 1. MARKAZIY "MOBILE & TABLETS" DOIRAVIY OROL (DIAGRAMMA MARKAZIDAGIDEK)
+        // Markaziy doiraviy counter (radius 2.1m)
         const centerIsland = new THREE.Mesh(
-            new THREE.CylinderGeometry(2.6, 2.6, 0.88, 36, 1, false, 0, Math.PI * 2),
+            new THREE.CylinderGeometry(2.3, 2.3, 0.88, 36),
             whiteGlossMat
         );
         centerIsland.position.set(0, 0.44, 0);
         centerIsland.castShadow = true;
-        centerIsland.receiveShadow = true;
         this.scene.add(centerIsland);
 
         // Doira ostidagi neon zangori nur uzugi (Cyan underglow)
         const ringGlow = new THREE.Mesh(
-            new THREE.TorusGeometry(2.65, 0.04, 12, 36),
+            new THREE.TorusGeometry(2.35, 0.04, 12, 36),
             cyanGlowMat
         );
         ringGlow.rotation.x = Math.PI / 2;
         ringGlow.position.set(0, 0.05, 0);
         this.scene.add(ringGlow);
 
-        // Markaziy osma neon zona belgisi: "MOBILE & TABLETS"
-        const centerSignCanvas = document.createElement("canvas");
-        centerSignCanvas.width = 512;
-        centerSignCanvas.height = 96;
-        const csctx = centerSignCanvas.getContext("2d");
-        if (csctx) {
-            csctx.fillStyle = "rgba(15, 23, 42, 0.9)";
-            csctx.roundRect(0, 0, 512, 96, 20);
-            csctx.fill();
-            csctx.strokeStyle = "#00f0ff";
-            csctx.lineWidth = 4;
-            csctx.stroke();
+        // Markaziy neon sarlavha: "MOBILE & TABLETS"
+        const mobileSign = this.createNeonSign("MOBILE & TABLETS", 2.4, 0.45);
+        mobileSign.position.set(0, 3.8, 0);
+        this.scene.add(mobileSign);
 
-            csctx.fillStyle = "#ffffff";
-            csctx.font = "900 36px system-ui";
-            csctx.textAlign = "center";
-            csctx.shadowColor = "#00f0ff";
-            csctx.shadowBlur = 15;
-            csctx.fillText("MOBILE & TABLETS", 256, 60);
-        }
-        const centerSignTex = new THREE.CanvasTexture(centerSignCanvas);
-        const centerSign = new THREE.Mesh(
-            new THREE.PlaneGeometry(2.4, 0.45),
-            new THREE.MeshBasicMaterial({ map: centerSignTex, side: THREE.DoubleSide })
-        );
-        centerSign.position.set(0, 3.8, 0);
-        this.scene.add(centerSign);
-
-        // 2. ORQA DEVOR "TV & SOUND" DEKORATSIYALARI (Z = -12.0)
-        const tvWallCanvas = document.createElement("canvas");
-        tvWallCanvas.width = 512;
-        tvWallCanvas.height = 96;
-        const tvctx = tvWallCanvas.getContext("2d");
-        if (tvctx) {
-            tvctx.fillStyle = "rgba(15, 23, 42, 0.9)";
-            tvctx.roundRect(0, 0, 512, 96, 20);
-            tvctx.fill();
-            tvctx.strokeStyle = "#00f0ff";
-            tvctx.lineWidth = 4;
-            tvctx.stroke();
-
-            tvctx.fillStyle = "#ffffff";
-            tvctx.font = "900 38px system-ui";
-            tvctx.textAlign = "center";
-            tvctx.shadowColor = "#00f0ff";
-            tvctx.shadowBlur = 15;
-            tvctx.fillText("TV & SOUND", 256, 60);
-        }
-        const tvSignTex = new THREE.CanvasTexture(tvWallCanvas);
-        const tvSign = new THREE.Mesh(
-            new THREE.PlaneGeometry(2.8, 0.52),
-            new THREE.MeshBasicMaterial({ map: tvSignTex })
-        );
-        tvSign.position.set(0, 4.0, -13.85);
+        // 2. "TV & SOUND" DEVORI (Shimoliy devor: x = 3.5, z = -8.2)
+        const tvSign = this.createNeonSign("TV & SOUND", 2.6, 0.48);
+        tvSign.position.set(3.5, 4.2, -8.3);
         this.scene.add(tvSign);
 
-        // 3. TO'Q EMAS, OCHROQ TABIIY YONG'OQ (WARM WALNUT) BO'LIM STOLLARI
-        const tableOakMat = new THREE.MeshStandardMaterial({
+        // 3 ta katta devor TV ekranlari
+        const tvMat = new THREE.MeshStandardMaterial({ color: 0x050810, roughness: 0.1, metalness: 0.8 });
+        [1.0, 3.5, 6.0].forEach((tx) => {
+            const tv = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.15, 0.08), tvMat);
+            tv.position.set(tx, 2.5, -8.3);
+            this.scene.add(tv);
+        });
+
+        // 3. "KATTA MAISHIY TEXNIKALAR" (Shimoli-g'arbiy zal)
+        const appSign = this.createNeonSign("KATTA MAISHIY TEXNIKALAR", 3.2, 0.48);
+        appSign.position.set(-9.5, 4.2, -10.3);
+        this.scene.add(appSign);
+
+        // Muzlatgichlar va kir yuvish mashinalari 3D qatori
+        const fridgeMat = new THREE.MeshStandardMaterial({ color: 0xE2E8F0, metalness: 0.4, roughness: 0.2 });
+        [-12.0, -10.5, -9.0].forEach((fx) => {
+            const fridge = new THREE.Mesh(new THREE.BoxGeometry(0.85, 1.85, 0.8), fridgeMat);
+            fridge.position.set(fx, 0.925, -9.8);
+            this.scene.add(fridge);
+        });
+
+        // 4. "OSHXONA VA MAYDA TEXNIKALAR" (Janubi-g'arbiy zal)
+        const kitchenSign = this.createNeonSign("OSHXONA VA MAYDA TEXNIKALAR", 3.2, 0.48);
+        kitchenSign.position.set(-9.5, 4.2, 10.3);
+        this.scene.add(kitchenSign);
+
+        // 5. "AKSESSUARLAR VA TARMOQ" (Janubiy markaziy zal)
+        const accSign = this.createNeonSign("AKSESSUARLAR VA TARMOQ", 3.0, 0.48);
+        accSign.position.set(6.0, 4.2, 10.3);
+        this.scene.add(accSign);
+
+        // 6. "CHECKOUT - KASSA" (Sharqiy zal: x = 18.0, z = -1.0)
+        const checkSign = this.createNeonSign("CHECKOUT - KASSA", 2.6, 0.48);
+        checkSign.position.set(18.0, 4.2, -1.0);
+        checkSign.rotation.y = -Math.PI / 2;
+        this.scene.add(checkSign);
+
+        // 4 ta kassa stollari va monitorlar
+        const deskMat = new THREE.MeshStandardMaterial({ color: 0x1E293B, roughness: 0.3 });
+        const monMat = new THREE.MeshStandardMaterial({ color: 0x0F172A, metalness: 0.9 });
+        [-2.0, -0.7, 0.6, 1.9].forEach((cz) => {
+            const desk = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.95, 0.8), deskMat);
+            desk.position.set(18.0, 0.475, cz);
+            this.scene.add(desk);
+
+            const mon = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.38, 0.55), monMat);
+            mon.position.set(17.9, 1.15, cz);
+            this.scene.add(mon);
+        });
+
+        // 7. "MIJOZLARGA XIZMAT VA SERVIS" (Janubi-sharqiy zal: x = 18.0, z = 5.5)
+        const servSign = this.createNeonSign("MIJOZLARGA XIZMAT VA SERVIS", 3.0, 0.48);
+        servSign.position.set(18.0, 4.2, 5.5);
+        servSign.rotation.y = -Math.PI / 2;
+        this.scene.add(servSign);
+
+        // Servis stollari
+        const servDesk = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.95, 2.8), deskMat);
+        servDesk.position.set(18.0, 0.475, 5.5);
+        this.scene.add(servDesk);
+
+        // 8. OCHROQ TABIIY YONG'OQ BO'LIM STOLLARI
+        const tableMat = new THREE.MeshStandardMaterial({
             map: this.warmWalnutTex,
             roughness: 0.38,
             metalness: 0.05
         });
 
-        const createPodium = (x: number, z: number, title: string) => {
-            const group = new THREE.Group();
-            group.position.set(x, 0, z);
-
-            const top = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.12, 1.6), tableOakMat);
-            top.position.y = 0.85;
+        const createTable = (x: number, z: number, w: number, d: number) => {
+            const top = new THREE.Mesh(new THREE.BoxGeometry(w, 0.12, d), tableMat);
+            top.position.set(x, 0.85, z);
             top.castShadow = true;
             top.receiveShadow = true;
-            group.add(top);
+            this.scene.add(top);
 
-            const legGeo = new THREE.BoxGeometry(0.22, 0.85, 0.22);
+            const legGeo = new THREE.BoxGeometry(0.2, 0.85, 0.2);
             [
-                [-1.85, -0.62],
-                [1.85, -0.62],
-                [-1.85, 0.62],
-                [1.85, 0.62]
+                [-w / 2 + 0.25, -d / 2 + 0.25],
+                [w / 2 - 0.25, -d / 2 + 0.25],
+                [-w / 2 + 0.25, d / 2 - 0.25],
+                [w / 2 - 0.25, d / 2 - 0.25]
             ].forEach(([lx, lz]) => {
-                const leg = new THREE.Mesh(legGeo, tableOakMat);
-                leg.position.set(lx, 0.425, lz);
-                leg.castShadow = true;
-                group.add(leg);
+                const leg = new THREE.Mesh(legGeo, tableMat);
+                leg.position.set(x + lx, 0.425, z + lz);
+                this.scene.add(leg);
             });
-
-            // Stol oldidagi toifa nishoni
-            const badgeCanvas = document.createElement("canvas");
-            badgeCanvas.width = 320;
-            badgeCanvas.height = 76;
-            const bctx = badgeCanvas.getContext("2d");
-            if (bctx) {
-                bctx.fillStyle = "rgba(248, 250, 252, 0.95)";
-                bctx.roundRect(0, 0, 320, 76, 16);
-                bctx.fill();
-                bctx.strokeStyle = "rgba(16, 185, 129, 0.8)";
-                bctx.lineWidth = 3.5;
-                bctx.stroke();
-
-                bctx.fillStyle = "#064e3b";
-                bctx.font = "bold 24px system-ui, sans-serif";
-                bctx.textAlign = "center";
-                bctx.textBaseline = "middle";
-                bctx.fillText(title, 160, 38);
-            }
-            const badgeTex = new THREE.CanvasTexture(badgeCanvas);
-            const badge = new THREE.Mesh(
-                new THREE.PlaneGeometry(0.85, 0.20),
-                new THREE.MeshBasicMaterial({ map: badgeTex })
-            );
-            badge.position.set(0, 0.85, 0.82);
-            group.add(badge);
-
-            this.scene.add(group);
         };
 
-        // 5 ta asosiy bo'lim stollari
-        createPodium(-6.5, 0.5, "Trimmerlar & Soch");
-        createPodium(-6.5, -5.0, "Soch Mashinkalari");
-        createPodium(-6.5, 6.0, "Sheyverlar & Ustara");
-        createPodium(6.5, -5.5, "Fenlar & Staylerlar");
-        createPodium(6.5, 0.5, "Audio & Quloqchinlar");
-
-        // 4. CHECKOUT & SERVIS ZONASI (O'NG QANOT, NAMUNA RASMDAGIDEK)
-        const deskMat = new THREE.MeshStandardMaterial({ color: 0x1E293B, roughness: 0.3 });
-        const checkoutDesk = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.95, 1.4), deskMat);
-        checkoutDesk.position.set(11.5, 0.475, 1.0);
-        checkoutDesk.castShadow = true;
-        this.scene.add(checkoutDesk);
-
-        // Kassa monitorlari
-        const monitorMat = new THREE.MeshStandardMaterial({ color: 0x0F172A, metalness: 0.9 });
-        [-1.2, 0, 1.2].forEach((mx) => {
-            const mon = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.05), monitorMat);
-            mon.position.set(11.5 + mx, 1.25, 0.9);
-            this.scene.add(mon);
-        });
-
-        // Checkout sarlavhasi
-        const checkCanvas = document.createElement("canvas");
-        checkCanvas.width = 512;
-        checkCanvas.height = 96;
-        const cctx = checkCanvas.getContext("2d");
-        if (cctx) {
-            cctx.fillStyle = "rgba(15, 23, 42, 0.9)";
-            cctx.roundRect(0, 0, 512, 96, 20);
-            cctx.fill();
-            cctx.strokeStyle = "#00f0ff";
-            cctx.lineWidth = 4;
-            cctx.stroke();
-
-            cctx.fillStyle = "#ffffff";
-            cctx.font = "900 36px system-ui";
-            cctx.textAlign = "center";
-            cctx.shadowColor = "#00f0ff";
-            cctx.shadowBlur = 15;
-            cctx.fillText("CHECKOUT & SERVICE", 256, 60);
-        }
-        const checkTex = new THREE.CanvasTexture(checkCanvas);
-        const checkSign = new THREE.Mesh(
-            new THREE.PlaneGeometry(2.4, 0.45),
-            new THREE.MeshBasicMaterial({ map: checkTex })
-        );
-        checkSign.position.set(11.5, 3.8, 1.0);
-        this.scene.add(checkSign);
+        // Bo'lim stollari
+        createTable(-9.5, -4.5, 4.2, 1.4); // Trimmerlar
+        createTable(-9.5, 5.0, 4.2, 1.4);  // Sheyverlar
+        createTable(-9.5, -9.2, 8.5, 0.9); // Katta maishiy tokcha
+        createTable(-9.5, 9.2, 8.5, 0.9);  // Oshxona tokcha
+        createTable(3.5, -7.8, 8.5, 0.9);  // TV & Sound tokcha
+        createTable(6.5, 8.5, 8.5, 0.9);   // Aksessuarlar tokcha
     }
 
+    private createNeonSign(text: string, w: number, h: number): THREE.Mesh {
+        const canvas = document.createElement("canvas");
+        canvas.width = 512;
+        canvas.height = 96;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+            ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+            ctx.roundRect(0, 0, 512, 96, 20);
+            ctx.fill();
+            ctx.strokeStyle = "#00f0ff";
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "900 34px system-ui, sans-serif";
+            ctx.textAlign = "center";
+            ctx.shadowColor = "#00f0ff";
+            ctx.shadowBlur = 15;
+            ctx.fillText(text, 256, 60);
+        }
+        const tex = new THREE.CanvasTexture(canvas);
+        return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
+    }
+
+    /**
+     * 48 TA VITRINA STENDLARI (3:4 SHAFSHOF EKRAN + BO'RTIB CHIQQAN NARX PLASHKASI)
+     */
     private setupShowcaseStands(stands: ShowroomShowcaseStand[]) {
         stands.forEach((stand) => {
             const showcaseGroup = new THREE.Group();
             showcaseGroup.position.set(...stand.position);
             showcaseGroup.rotation.y = stand.rotationY;
 
-            // 1. Shaffof shisha 3:4 ekran (W: 1.0m, H: 1.33m — BOLD 3:4 RETAIL TOTEM)
+            // 1. Shaffof shisha 3:4 ekran (W: 1.0m, H: 1.33m)
             const screenGroup = new THREE.Group();
             screenGroup.position.set(0, 0.78, 0);
             screenGroup.rotation.x = -0.08;
 
-            // A) Rangsiz shisha korpus
+            // Rangsiz shisha korpus
             const glassBody = new THREE.Mesh(
                 new THREE.BoxGeometry(1.0, 1.33, 0.02),
                 new THREE.MeshStandardMaterial({
@@ -884,7 +927,7 @@ export class ShowroomWorld {
             glassBody.castShadow = true;
             screenGroup.add(glassBody);
 
-            // B) Uzoqdan ham o'ta tiniq 3:4 tovar displeyi (LinearFilter, mipmapsiz!)
+            // Uzoqdan ham o'ta tiniq 3:4 displey (LinearFilter, mipmapsiz!)
             const { texture: displayTex, updateImage, dispose: texDispose } = createUltraSharpProductTexture(stand.images);
             this.cleanups.push(texDispose);
 
@@ -954,9 +997,6 @@ export class ShowroomWorld {
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     }
 
-    /**
-     * KADR ANIMATSIYASI — 3 SONIYADA KO'RINTURGAN STENDLARNING RASMI ALMASHINADI
-     */
     public update(delta: number) {
         const camPos = this.camera.position;
 
@@ -967,7 +1007,6 @@ export class ShowroomWorld {
             const standPos = sc.mesh.position;
             const distSq = (camPos.x - standPos.x) ** 2 + (camPos.z - standPos.z) ** 2;
 
-            // Faqat 15 metr radiusdagi stendlar yangilanadi
             if (distSq < 225) {
                 sc.slideTimer += delta;
                 if (sc.slideTimer >= 3.0) {
