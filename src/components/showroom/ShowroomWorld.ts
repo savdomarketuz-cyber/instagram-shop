@@ -373,6 +373,7 @@ export class ShowroomWorld {
     public showcases: ShowcaseController[] = [];
     public cleanups: (() => void)[] = [];
     public ceilingMesh: THREE.Mesh | null = null;
+    public ceilingGroup: THREE.Group = new THREE.Group();
     public departmentBadges: THREE.Group[] = [];
 
     private floorTex: THREE.CanvasTexture;
@@ -380,8 +381,8 @@ export class ShowroomWorld {
     private streetTex: THREE.CanvasTexture;
 
     public setCeilingVisible(visible: boolean) {
-        if (this.ceilingMesh) {
-            this.ceilingMesh.visible = visible;
+        if (this.ceilingGroup) {
+            this.ceilingGroup.visible = visible;
         }
         this.departmentBadges.forEach(badge => {
             badge.visible = !visible; // 2D xaritada ko'rinadi
@@ -519,7 +520,10 @@ export class ShowroomWorld {
         floor.receiveShadow = true;
         this.scene.add(floor);
 
-        // 2. SHIFT (2D ko'rinishda yashirish imkoni bilan)
+        // 2. SHIFT VA SHIFT CHIROQLARI (2D ko'rinishda birga yashirish imkoni bilan)
+        this.ceilingGroup = new THREE.Group();
+        this.scene.add(this.ceilingGroup);
+
         const ceilingGeo = new THREE.ShapeGeometry(floorShape);
         ceilingGeo.rotateX(Math.PI / 2);
         ceilingGeo.computeVertexNormals();
@@ -531,7 +535,7 @@ export class ShowroomWorld {
         });
         this.ceilingMesh = new THREE.Mesh(ceilingGeo, ceilingMat);
         this.ceilingMesh.position.set(0, 5.2, 0);
-        this.scene.add(this.ceilingMesh);
+        this.ceilingGroup.add(this.ceilingMesh);
 
         // Shiftga 45 gradusli chevron chiroqlar
         const ledMat = new THREE.MeshStandardMaterial({
@@ -549,7 +553,7 @@ export class ShowroomWorld {
             const e = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.03, len - 0.08), ledMat);
             e.position.y = -0.04;
             g.add(e);
-            this.scene.add(g);
+            this.ceilingGroup.add(g);
         };
         [-16, -8, 0, 8, 16, 22].forEach((xOff) => {
             [-8, 0, 8].forEach((zOff) => {
