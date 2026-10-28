@@ -55,21 +55,25 @@ export class ShowroomControls {
     private raycaster = new THREE.Raycaster();
     private tapVector = new THREE.Vector2();
 
-    // TO'SIQLAR: 8 ta to'q yong'oq stol + Fasad oynalari + Xona/Ko'cha chegaralari
+    // TO'SIQLAR: Markaziy doiraviy orol + Bo'lim stollari + Kassa + Fasad oynalari
     private obstacles: ObstacleBox[] = [
-        // 8 ta stol (uzunligi 4.2m x kengligi 1.6m + o'yinchi radiusi 0.35m)
-        { minX: -7.95, maxX: -3.05, minZ: -0.15, maxZ: 2.15 },   // Trimmerlar (x: -5.5, z: 1.0)
-        { minX: -7.95, maxX: -3.05, minZ: -5.65, maxZ: -3.35 },  // Fenlar (x: -5.5, z: -4.5)
-        { minX: 3.05, maxX: 7.95, minZ: -0.15, maxZ: 2.15 },    // Sheyverlar (x: 5.5, z: 1.0)
-        { minX: 3.05, maxX: 7.95, minZ: -5.65, maxZ: -3.35 },   // Audio (x: 5.5, z: -4.5)
-        { minX: -2.45, maxX: 2.45, minZ: -2.65, maxZ: -0.35 },   // Markaziy Flagman (x: 0, z: -1.5)
-        { minX: -2.45, maxX: 2.45, minZ: -8.15, maxZ: -5.85 },   // Markaziy Orqa (x: 0, z: -7.0)
-        { minX: -12.95, maxX: -8.05, minZ: -2.65, maxZ: -0.35 }, // Chap qanot (x: -10.5, z: -1.5)
-        { minX: 8.05, maxX: 12.95, minZ: -2.65, maxZ: -0.35 },  // O'ng qanot (x: 10.5, z: -1.5)
+        // 1. Markaziy doiraviy orol (x: 0, z: 0)
+        { minX: -2.85, maxX: 2.85, minZ: -2.85, maxZ: 2.85 },
 
-        // Fasad shisha devorlari (Kirish o'rtada -3.0 dan +3.0 gacha ochiq)
-        { minX: -15.5, maxX: -3.0, minZ: 10.7, maxZ: 11.3 },     // Chap fasad oynasi
-        { minX: 3.0, maxX: 15.5, minZ: 10.7, maxZ: 11.3 }        // O'ng fasad oynasi
+        // 2. Bo'lim stollari
+        { minX: -8.95, maxX: -4.05, minZ: -0.65, maxZ: 1.65 },   // Trimmerlar old (x: -6.5, z: 0.5)
+        { minX: -8.95, maxX: -4.05, minZ: -6.15, maxZ: -3.85 },  // Trimmerlar orqa (x: -6.5, z: -5.0)
+        { minX: -8.95, maxX: -4.05, minZ: 4.85, maxZ: 7.15 },    // Sheyverlar (x: -6.5, z: 6.0)
+        { minX: 4.05, maxX: 8.95, minZ: -6.65, maxZ: -4.35 },    // Fenlar (x: 6.5, z: -5.5)
+        { minX: 4.05, maxX: 8.95, minZ: -0.65, maxZ: 1.65 },     // Audio (x: 6.5, z: 0.5)
+        { minX: 9.05, maxX: 13.95, minZ: -0.15, maxZ: 2.15 },    // Checkout & Kassa (x: 11.5, z: 1.0)
+
+        // 3. Orqa TV devor
+        { minX: -6.5, maxX: 6.5, minZ: -13.8, maxZ: -12.5 },
+
+        // 4. Fasad oynalari (Eshik o'rtada -3.2 dan +3.2 gacha ochiq!)
+        { minX: -18.5, maxX: -3.2, minZ: 13.7, maxZ: 14.3 },     // Chap fasad oynasi
+        { minX: 3.2, maxX: 18.5, minZ: 13.7, maxZ: 14.3 }        // O'ng fasad oynasi
     ];
 
     private _forward = new THREE.Vector3();
@@ -358,9 +362,9 @@ export class ShowroomControls {
             const nextX = this.playerPos.x + this.velocity.x * delta;
             const nextZ = this.playerPos.z + this.velocity.z * delta;
 
-            // X bo'yicha chegaralar (Zal ichida: -14.2 .. 14.2, Tashqi ko'chada: -22 .. 22)
-            const isOutside = this.playerPos.z > 11.2;
-            const boundX = isOutside ? 22.0 : 14.2;
+            // X bo'yicha chegaralar (Zal ichida: -17.5 .. 17.5, Tashqi ko'chada: -25 .. 25)
+            const isOutside = this.playerPos.z > 14.2;
+            const boundX = isOutside ? 25.0 : 17.5;
 
             let canMoveX = true;
             if (nextX < -boundX || nextX > boundX) canMoveX = false;
@@ -377,9 +381,9 @@ export class ShowroomControls {
                 this.velocity.x = 0;
             }
 
-            // Z bo'yicha chegaralar (Orqa devor: -11.6, Tashqi ko'cha oxiri: +26.0)
+            // Z bo'yicha chegaralar (Orqa devor: -13.5, Tashqi ko'cha oxiri: +34.0)
             let canMoveZ = true;
-            if (nextZ < -11.6 || nextZ > 26.0) canMoveZ = false;
+            if (nextZ < -13.5 || nextZ > 34.0) canMoveZ = false;
             for (let i = 0; i < this.obstacles.length; i++) {
                 const obs = this.obstacles[i];
                 if (this.playerPos.x >= obs.minX && this.playerPos.x <= obs.maxX && nextZ >= obs.minZ && nextZ <= obs.maxZ) {
