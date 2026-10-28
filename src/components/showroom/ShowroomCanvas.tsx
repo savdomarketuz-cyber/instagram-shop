@@ -18,6 +18,7 @@ import VirtualJoystick from "./VirtualJoystick";
 import ProductDetailOverlay from "./ProductDetailOverlay";
 import NavigationDock from "./NavigationDock";
 import ShowroomControlsHelp from "./ShowroomControlsHelp";
+import ShowroomMiniMap from "./ShowroomMiniMap";
 import { translations } from "@/lib/translations";
 
 interface ShowroomCanvasProps {
@@ -38,6 +39,9 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
     const [isPointerLocked, setIsPointerLocked] = useState(false);
     const [invertY, setInvertY] = useState(false);
     const [isTouchDevice, setIsTouchDevice] = useState(false);
+    const [viewMode, setViewMode] = useState<"3D" | "2D">("3D");
+    const [playerCoords, setPlayerCoords] = useState<{ x: number; z: number }>({ x: -19, z: 3 });
+    const [playerYaw, setPlayerYaw] = useState<number>(Math.PI / 2);
 
     const t = translations[lang];
 
@@ -69,10 +73,24 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
         });
     }, []);
 
+    const toggleViewMode = useCallback(() => {
+        if (controlsRef.current && worldRef.current) {
+            const nextMode = controlsRef.current.toggleViewMode();
+            const is2D = nextMode === "TOP_DOWN_2D";
+            worldRef.current.setCeilingVisible(!is2D);
+            setViewMode(is2D ? "2D" : "3D");
+        }
+    }, []);
+
     const handleSelectZone = useCallback((zone: ShowroomZone) => {
         setActiveZone(zone);
         const target = DOCK_TARGETS[zone];
         if (target && controlsRef.current) {
+            if (controlsRef.current.mode === "TOP_DOWN_2D") {
+                controlsRef.current.setViewMode("FREE_ROAM");
+                worldRef.current?.setCeilingVisible(true);
+                setViewMode("3D");
+            }
             controlsRef.current.teleportTo(target.cameraPos, target.lookAt);
         }
     }, []);
@@ -135,6 +153,11 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
                 },
                 onPointerLockChange: (locked) => {
                     setIsPointerLocked(locked);
+                },
+                onViewModeChange: (mode) => {
+                    const is2D = mode === "TOP_DOWN_2D";
+                    world.setCeilingVisible(!is2D);
+                    setViewMode(is2D ? "2D" : "3D");
                 }
             }
         );
@@ -143,13 +166,14 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
 
         // 4. ANIMATSIYA VA RENDER HALQASI (60 FPS OPTIMALLASHGAN)
         let animationFrameId: number;
+        let frameCount = 0;
         const clock = new THREE.Clock();
 
         const animate = () => {
             animationFrameId = requestAnimationFrame(animate);
             const delta = Math.min(clock.getDelta(), 0.1);
 
-            // Fizika yangilanishi
+            // Fizika va kamera yangilanishi
             controls.update(delta);
 
             // Stendlardagi rasmlar har 3 soniyada avtomatik navbatlanishi
@@ -157,6 +181,13 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
 
             // Render
             world.render();
+
+            // Har 6-kadrda Mini-Map pozitsiyasini sinxronlash (60 FPS ga ta'sir qilmaydi)
+            frameCount++;
+            if (frameCount % 6 === 0) {
+                setPlayerCoords({ x: controls.playerPos.x, z: controls.playerPos.z });
+                setPlayerYaw(controls.yaw);
+            }
         };
 
         animate();
@@ -233,8 +264,21 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
                 </Link>
             </div>
 
-            {/* YUQORI O'NG BOSHQARUV: OVOZ (AMBIENT LOUNGE MUSIC) VA Y-O'QI SOZLAMASI */}
+            {/* YUQORI O'NG BOSHQARUV: 2D XARITA, OVOZ VA Y-O'QI SOZLAMASI */}
             <div className="fixed top-6 right-6 z-30 flex items-center gap-2">
+                <button
+                    onClick={toggleViewMode}
+                    className={`flex h-11 px-3.5 sm:px-4 items-center gap-1.5 sm:gap-2 rounded-full border text-xs font-bold transition-all shadow-[0_8px_30px_rgba(0,0,0,0.3)] backdrop-blur-xl ring-1 ring-white/10 ${
+                        viewMode === "2D"
+                            ? "bg-cyan-500 text-black border-cyan-300 shadow-[0_0_25px_rgba(6,182,212,0.6)] scale-105"
+                            : "bg-black/60 border-white/10 text-white hover:bg-black/80 hover:scale-105"
+                    }`}
+                    title={viewMode === "2D" ? (lang === "ru" ? "Вернуться в 3D" : "3D Sayrga qaytish") : (lang === "ru" ? "2D План магазина" : "2D Do'kon xaritasi")}
+                >
+                    <span className="text-sm">{viewMode === "2D" ? "🚶" : "🗺️"}</span>
+                    <span>{viewMode === "2D" ? (t.showroom as any).view3d || "3D Sayr" : (t.showroom as any).view2d || "2D Xarita"}</span>
+                </button>
+
                 <button
                     onClick={toggleInvertY}
                     className={`flex h-11 px-3.5 items-center justify-center rounded-full border text-xs font-bold transition-all shadow-sm backdrop-blur-xl ring-1 ring-white/10 ${
@@ -259,6 +303,18 @@ export default function ShowroomCanvas({ initialProducts, lang }: ShowroomCanvas
                     {soundEnabled ? <Volume2 size={18} className="text-white animate-pulse" /> : <VolumeX size={18} />}
                 </button>
             </div>
+
+            {/* 2D DO'KON XARITASI VA RADAR (HUD) */}
+            {!isLoading && (
+                <ShowroomMiniMap
+                    playerPos={playerCoords}
+                    playerYaw={playerYaw}
+                    viewMode={viewMode}
+                    onToggleViewMode={toggleViewMode}
+                    onTeleportZone={handleSelectZone}
+                    lang={lang}
+                />
+            )}
 
             {/* O'YIN QO'LLANMASI (Faqat kompyuter ekranida) */}
             <ShowroomControlsHelp lang={lang} invertY={invertY} onToggleInvertY={toggleInvertY} />

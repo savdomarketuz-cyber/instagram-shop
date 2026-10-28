@@ -14,11 +14,12 @@ export interface ShowroomControlsCallbacks {
     onSelectProduct: (item: { stand: ShowroomShowcaseStand; product: Product }) => void;
     onCloseOverlay: () => void;
     onPointerLockChange?: (locked: boolean) => void;
+    onViewModeChange?: (mode: "FREE_ROAM" | "TOP_DOWN_2D") => void;
 }
 
 export class ShowroomControls {
-    public mode: "FREE_ROAM" | "INSPECT" = "FREE_ROAM";
-    public playerPos = new THREE.Vector3(-17.0, 1.65, 3.0);
+    public mode: "FREE_ROAM" | "TOP_DOWN_2D" | "INSPECT" = "FREE_ROAM";
+    public playerPos = new THREE.Vector3(-19.0, 1.65, 3.0);
     public velocity = new THREE.Vector3(0, 0, 0);
     public verticalVelocity = 0;
     public isGrounded = true;
@@ -33,6 +34,11 @@ export class ShowroomControls {
     public inspectCamPos = new THREE.Vector3(0, 1.65, 8.5);
     public inspectLookAt = new THREE.Vector3(0, 1.1, -0.5);
     private currentInspectLookAt = new THREE.Vector3(0, 1.1, -0.5);
+
+    // 2D Tepadan ko'rish (Top-Down / Bird's eye) kamerasi
+    public topDownCamPos = new THREE.Vector3(2.5, 38.0, 12.0);
+    public topDownLookAt = new THREE.Vector3(2.5, 0.0, 0.0);
+    private currentTopDownLookAt = new THREE.Vector3(2.5, 0.0, 0.0);
 
     // Kiritish
     private keysPressed: Record<string, boolean> = {};
@@ -56,34 +62,44 @@ export class ShowroomControls {
     private raycaster = new THREE.Raycaster();
     private tapVector = new THREE.Vector2();
 
-    // TO'SIQLAR: 7 ta bo'lim stollari va tokchalari (Xarita diagrammasi bo'yicha)
+    // TO'SIQLAR: 7 ta bo'lim stollari, tokchalari va to'siq devorlari
     private obstacles: ObstacleBox[] = [
-        // 1. Markaziy "MOBILE & TABLETS" doiraviy oroli (x: 0, z: 0)
-        { minX: -2.4, maxX: 2.4, minZ: -2.4, maxZ: 2.4 },
+        // 1. Markaziy "MOBILE & TABLETS" oroli va podlari
+        { minX: -2.7, maxX: 2.7, minZ: -2.7, maxZ: 2.7 },
+        { minX: -2.8, maxX: 2.8, minZ: -3.5, maxZ: -2.1 },
+        { minX: -4.5, maxX: -3.1, minZ: -0.4, maxZ: 1.8 },
+        { minX: 3.1, maxX: 4.5, minZ: -0.4, maxZ: 1.8 },
 
-        // 2. Trimmerlar bo'lim stoli (x: -9.5, z: -4.5)
-        { minX: -11.8, maxX: -7.2, minZ: -5.4, maxZ: -3.6 },
+        // 2. TV & Sound stollari va devori
+        { minX: 4.0, maxX: 13.5, minZ: -10.3, maxZ: -8.7 },
+        { minX: 4.0, maxX: 13.5, minZ: -7.3, maxZ: -5.7 },
+        { minX: 0.0, maxX: 14.5, minZ: -14.2, maxZ: -13.2 },
 
-        // 3. Sheyverlar bo'lim stoli (x: -9.5, z: 5.0)
-        { minX: -11.8, maxX: -7.2, minZ: 4.1, maxZ: 5.9 },
+        // 3. Katta maishiy texnikalar stollari & tokchalari
+        { minX: -16.0, maxX: -5.0, minZ: -10.3, maxZ: -8.7 },
 
-        // 4. TV & Sound tokchasi va peshtaxtasi (x: 3.5, z: -7.8)
-        { minX: -0.9, maxX: 7.9, minZ: -8.4, maxZ: -7.2 },
+        // 4. Oshxona & mayda texnikalar gondolalari
+        { minX: -16.0, maxX: -5.0, minZ: 9.2, maxZ: 10.8 },
 
-        // 5. Katta maishiy texnikalar tokchasi (x: -9.5, z: -9.2)
-        { minX: -13.9, maxX: -5.1, minZ: -10.2, maxZ: -8.6 },
+        // 5. Aksessuarlar va tarmoq gondolalari
+        { minX: 3.5, maxX: 14.0, minZ: 9.2, maxZ: 10.8 },
 
-        // 6. Oshxona & mayda texnikalar tokchasi (x: -9.5, z: 9.2)
-        { minX: -13.9, maxX: -5.1, minZ: 8.6, maxZ: 10.2 },
+        // 6. Checkout bo'limining ichki to'siq devori (Partition Wall)
+        { minX: 15.7, maxX: 16.3, minZ: -5.5, maxZ: -0.8 },
+        { minX: 15.7, maxX: 16.3, minZ: 2.2, maxZ: 5.0 },
+        { minX: 17.0, maxX: 25.0, minZ: -0.6, maxZ: 0.6 }, // Kassa stollari
 
-        // 7. Aksessuarlar va tarmoq tokchasi (x: 6.5, z: 8.5)
-        { minX: 2.1, maxX: 10.9, minZ: 7.9, maxZ: 9.1 },
+        // 7. Sklad va Checkout ajratuvchi devor
+        { minX: 16.0, maxX: 28.0, minZ: -5.8, maxZ: -5.2 },
 
-        // 8. Checkout & Kassa stollari (x: 18.0, z: -2.0 .. 1.9)
-        { minX: 17.2, maxX: 18.8, minZ: -2.6, maxZ: 2.5 },
+        // 8. Servis va Checkout ajratuvchi devor
+        { minX: 16.0, maxX: 28.0, minZ: 4.7, maxZ: 5.3 },
 
-        // 9. Mijozlarga xizmat va servis stoli (x: 18.0, z: 5.5)
-        { minX: 17.2, maxX: 18.8, minZ: 4.0, maxZ: 7.0 }
+        // 9. Servis stollari
+        { minX: 17.5, maxX: 25.5, minZ: 7.7, maxZ: 9.3 },
+
+        // 10. Kirishdagi resepshn va aravalar
+        { minX: -19.0, maxX: -16.0, minZ: 1.2, maxZ: 2.8 }
     ];
 
     private _forward = new THREE.Vector3();
@@ -351,6 +367,32 @@ export class ShowroomControls {
         return inside;
     }
 
+    public toggleViewMode(): "FREE_ROAM" | "TOP_DOWN_2D" {
+        if (this.mode === "FREE_ROAM") {
+            this.mode = "TOP_DOWN_2D";
+            this.velocity.set(0, 0, 0);
+            this.callbacks.onViewModeChange?.("TOP_DOWN_2D");
+            if (document.pointerLockElement) {
+                document.exitPointerLock?.();
+            }
+        } else {
+            this.mode = "FREE_ROAM";
+            this.callbacks.onViewModeChange?.("FREE_ROAM");
+        }
+        return this.mode as "FREE_ROAM" | "TOP_DOWN_2D";
+    }
+
+    public setViewMode(mode: "FREE_ROAM" | "TOP_DOWN_2D") {
+        this.mode = mode;
+        if (mode === "TOP_DOWN_2D") {
+            this.velocity.set(0, 0, 0);
+            if (document.pointerLockElement) {
+                document.exitPointerLock?.();
+            }
+        }
+        this.callbacks.onViewModeChange?.(mode);
+    }
+
     private canOccupy(px: number, pz: number): boolean {
         // 1. Ichki stend va mebel to'siqlari bilan to'qnashuv
         for (let i = 0; i < this.obstacles.length; i++) {
@@ -360,31 +402,31 @@ export class ShowroomControls {
             }
         }
 
-        // 2. Tashqi ko'cha va asosiy kirish chegaralari (x < -20.0)
-        if (px < -20.0) {
+        // 2. Tashqi ko'cha va asosiy kirish chegaralari (x < -22.0)
+        if (px < -22.0) {
             // Ko'chadagi harakat chegaralari (Tiniq ko'k osmon ostidagi shahar ko'chasi)
-            if (px < -37.0 || pz < -11.0 || pz > 17.0) {
+            if (px < -42.0 || pz < -14.0 || pz > 14.0) {
                 return false;
             }
             // Ko'chadan ichkariga kirish: faqatgina oynali eshik orqali (z: 1.2 .. 4.8) o'tish mumkin
-            if (px > -20.2 && (pz < 1.2 || pz > 4.8)) {
+            if (px > -22.2 && (pz < 1.2 || pz > 4.8)) {
                 return false;
             }
             return true;
         }
 
-        // 3. Do'kon ichidagi devorlar bilan to'qnashuv (x >= -20.0)
+        // 3. Do'kon ichidagi devorlar bilan to'qnashuv (x >= -22.0)
         // Oynali eshik bo'lmagan joyda G'arbiy devor to'sadi
-        if (px < -19.7 && (pz < 1.2 || pz > 4.8)) {
+        if (px < -21.7 && (pz < 1.2 || pz > 4.8)) {
             return false;
         }
 
         // Xaritaning ko'pburchak shakli chegaralari ichida bo'lishi shart
-        if (px >= -19.6 && !this.isInsideStorePolygon(px, pz)) {
+        if (px >= -21.6 && !this.isInsideStorePolygon(px, pz)) {
             return false;
         }
 
-        // Barcha 23 ta qattiq perimetr devorlariga 0.38m dan yaqin kelmaslik
+        // Barcha 24 ta qattiq perimetr devorlariga 0.38m dan yaqin kelmaslik
         const playerRadiusSq = 0.38 * 0.38;
         for (let i = 1; i < STORE_POLYGON_VERTICES.length - 1; i++) {
             const [x1, z1] = STORE_POLYGON_VERTICES[i];
@@ -401,7 +443,12 @@ export class ShowroomControls {
      * MINECRAFT FIZIKASI VA STOLLAR/DEVORLARDAN SIRPANISH (OBSTACLE SLIDING)
      */
     public update(delta: number) {
-        if (this.mode === "FREE_ROAM") {
+        if (this.mode === "TOP_DOWN_2D") {
+            // 2D TEPADAN KO'RISH REJIMI (Qush parvozi)
+            this.camera.position.lerp(this.topDownCamPos, 0.08);
+            this.currentTopDownLookAt.lerp(this.topDownLookAt, 0.08);
+            this.camera.lookAt(this.currentTopDownLookAt);
+        } else if (this.mode === "FREE_ROAM") {
             // 1) Kameraning gorizontal yo'nalishi
             this._forward.set(Math.sin(this.yaw), 0, -Math.cos(this.yaw));
             this._right.set(-this._forward.z, 0, this._forward.x);
