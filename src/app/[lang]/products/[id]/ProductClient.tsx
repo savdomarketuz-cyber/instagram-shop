@@ -30,7 +30,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { mapProduct, mapComment } from "@/lib/mappers";
 import { translations } from "@/lib/translations";
-import { Loader2, Plus, Minus, ShoppingBag, Heart, Star, Check, Truck, Clock, ShieldCheck, RefreshCw, Store as StoreIcon, ChevronRight, ChevronLeft, ChevronDown, Maximize2, X } from "lucide-react";
+import { Loader2, Plus, Minus, ShoppingBag, Heart, Star, Check, Truck, Clock, ShieldCheck, RefreshCw, Store as StoreIcon, ChevronRight, ChevronLeft, ChevronDown, Maximize2, X, BookOpen } from "lucide-react";
 import Link from "next/link";
 import { getDeliveryDateText } from "@/lib/date-utils";
 import Image from "next/image";
@@ -55,6 +55,10 @@ const ReviewsSection = dynamic(() => import("@/components/product/ReviewsSection
 });
 const ProductDescriptionModal = dynamic(() => import("@/components/product/ProductDescriptionModal").then(m => ({ default: m.ProductDescriptionModal })), { ssr: false });
 import { ProductSpecifications } from "@/components/product/ProductSpecifications";
+const BookCanvasReader = dynamic(
+    () => import("@/components/reader/BookCanvasReader").then((mod) => mod.BookCanvasReader),
+    { ssr: false }
+);
 const RelatedProducts = dynamic(() => import("@/components/product/RelatedProducts").then(mod => ({ default: mod.RelatedProducts })), {
     loading: () => <div className="h-80 animate-pulse bg-gray-50 rounded-[50px] mx-10 my-20" />,
     ssr: false,
@@ -168,6 +172,32 @@ export default function ProductClient({
     const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
     const [popularLoading, setPopularLoading] = useState(false);
+    const [isReaderOpen, setIsReaderOpen] = useState(false);
+
+    const isFree = !product?.price || Number(product.price) <= 0;
+    const hasReadableBook = useMemo(() => {
+        if (!product) return false;
+        return Boolean(product.archive_identifier || product.archive_url || product.pdf_url || product.link || product.author);
+    }, [product]);
+
+    const handleOpenReader = useCallback(() => {
+        videoPreWarmer.triggerHaptic("medium");
+        if (product && (hasReadableBook || isFree)) {
+            setIsReaderOpen(true);
+        } else {
+            showToast(language === 'uz' ? "Mutolaa havolasi tayyorlanmoqda..." : "Ссылка формируется...");
+        }
+    }, [product, hasReadableBook, isFree, language, showToast]);
+
+    // Agar URL da ?read=1 yoki #read bo'lsa avtomatik mutolaa modalini ochish
+    useEffect(() => {
+        if (typeof window !== "undefined" && product && (hasReadableBook || isFree)) {
+            const searchParams = new URLSearchParams(window.location.search);
+            if (searchParams.get("read") === "1" || window.location.hash === "#read") {
+                setIsReaderOpen(true);
+            }
+        }
+    }, [product, hasReadableBook, isFree]);
     const [maxDesktopLoadIndex, setMaxDesktopLoadIndex] = useState(0);
     const desktopThumbRef = useRef<HTMLDivElement>(null);
 
@@ -1016,6 +1046,14 @@ export default function ProductClient({
                         {/* 1. Header & Price */}
                         <div className="bg-white p-8 lg:p-10 rounded-[32px] border border-gray-100 shadow-sm">
                             {/* <p>: sahifada yagona <h1> — mobil ProductInfo'da */}
+                            {product.author && (
+                                <div className="flex items-center gap-2 mb-3 bg-[#EDF7F0] w-fit px-3 py-1.5 rounded-xl border border-[#D5EBD9]">
+                                    <span className="font-bold text-[11px] uppercase tracking-wider text-[#2D6E3E]">
+                                        {language === 'uz' ? 'Muallif:' : 'Автор:'}
+                                    </span>
+                                    <span className="font-bold text-sm text-[#111612]">{product.author}</span>
+                                </div>
+                            )}
                             <p className="text-2xl lg:text-3xl font-semibold tracking-tight text-[#111612] mb-3 leading-snug">
                                 {product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name}
                             </p>
@@ -1029,8 +1067,14 @@ export default function ProductClient({
                             )}
 
                              <div className="flex flex-col gap-1 mb-6">
-                                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{t.common.price}</p>
-                                {personalOffer ? (
+                                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{product.author ? (language === 'uz' ? 'Kitob narxi' : 'Стоимость книги') : t.common.price}</p>
+                                {isFree ? (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-2xl lg:text-3xl font-extrabold text-[#2D6E3E] bg-[#EDF7F0] px-4 py-1.5 rounded-2xl border border-[#D5EBD9]">
+                                            {language === 'uz' ? 'Bepul mutolaa' : 'Бесплатное чтение'}
+                                        </span>
+                                    </div>
+                                ) : personalOffer ? (
                                     // Shaxsiy chegirma: faqat 2 narx — eski narx (chizilgan) + shaxsiy narx. Oraliq narx yo'q.
                                     <>
                                         <div className="flex items-center gap-2 mb-1">
@@ -1127,7 +1171,15 @@ export default function ProductClient({
                             {/* Action Buttons */}
                             <div className="grid grid-cols-1 gap-3 mt-8">
                                 <div className="flex gap-3 items-stretch">
-                                    {totalStock <= 0 ? (
+                                    {isFree ? (
+                                        <button 
+                                            onClick={handleOpenReader}
+                                            className="glass-prominent-button flex-1 h-[52px] text-base font-bold rounded-[var(--radius-control)] flex items-center justify-center gap-2"
+                                        >
+                                            <BookOpen size={20} strokeWidth={2.4} />
+                                            <span>{language === 'uz' ? "Mutolaa qilish (O'qish)" : "Читать онлайн"}</span>
+                                        </button>
+                                    ) : totalStock <= 0 ? (
                                         <button
                                             disabled
                                             className="w-full h-[52px] text-sm font-semibold rounded-[var(--radius-control)] bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 border border-gray-200 select-none"
@@ -1336,7 +1388,16 @@ export default function ProductClient({
                 }}
             >
                 <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
-                    {totalStock <= 0 ? (
+                    {isFree ? (
+                        <button
+                            onClick={handleOpenReader}
+                            className="glass-prominent-button flex-1 text-sm font-semibold flex items-center justify-center gap-2"
+                            style={{ height: 48, borderRadius: 16 }}
+                        >
+                            <BookOpen size={18} color="#fff" strokeWidth={2.4} />
+                            <span>{language === 'uz' ? "Mutolaa qilish" : "Читать"}</span>
+                        </button>
+                    ) : totalStock <= 0 ? (
                         <button
                             disabled
                             className="flex-1 text-sm font-semibold bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 border border-gray-200 select-none"
@@ -1494,6 +1555,17 @@ export default function ProductClient({
                         </div>
                     )}
                 </div>
+            )}
+
+            {/* In-browser Interactive BookReader (Canvas + IndexedDB cache) */}
+            {isReaderOpen && product && (
+                <BookCanvasReader
+                    productId={product.id}
+                    bookTitle={product[language === 'uz' ? 'name_uz' : 'name_ru'] || product.name}
+                    coverUrl={product.image || (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : null)}
+                    language={language}
+                    onClose={() => setIsReaderOpen(false)}
+                />
             )}
         </div>
     );

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useStore } from "@/store/store";
 
 /**
  * DynamicFavicon
- * Toza oppoq dumaloq favikonda katta qalin VELARI. yozuvi va
- * savatda tovar bo'lsa jonli qizil nishon (live badge) chizadi.
+ * Do'kon uchun: Toza oppoq dumaloq favikonda katta qalin VELARI. yozuvi va savat nishoni.
+ * Kutubxona uchun: Elegant zumrad kitob va oltin xatcho'p (bookmark) belgisi.
  */
 export default function DynamicFavicon() {
     const cart = useStore((state) => state.cart);
@@ -14,6 +14,10 @@ export default function DynamicFavicon() {
 
     useEffect(() => {
         if (typeof window === "undefined") return;
+
+        const isLibrary = process.env.NEXT_PUBLIC_APP_THEME === "library" || 
+            window.location.host.includes("book") || 
+            window.location.host.includes("kutubxona");
 
         let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
         if (!link) {
@@ -30,50 +34,86 @@ export default function DynamicFavicon() {
         if (!ctx) return;
 
         const center = size / 2;
-        const radius = size / 2 - 0.5;
 
-        // 1. Butun maydonni egallovchi Toza Oppoq Doira (Full White Circle)
+        if (isLibrary) {
+            // --- KUTUBXONA FAVIKONI (Zamonaviy zumrad kitob) ---
+            ctx.clearRect(0, 0, size, size);
+
+            // Dumaloq orqa fon
+            ctx.beginPath();
+            ctx.arc(center, center, size / 2 - 1, 0, Math.PI * 2);
+            ctx.fillStyle = "#0F172A";
+            ctx.fill();
+
+            // Kitob varaqlari (yashil gradient)
+            const bookGrad = ctx.createLinearGradient(14, 14, 50, 50);
+            bookGrad.addColorStop(0, "#10B981");
+            bookGrad.addColorStop(1, "#059669");
+
+            ctx.fillStyle = bookGrad;
+            // Chap sahifa
+            ctx.beginPath();
+            ctx.roundRect(14, 18, 16, 28, 4);
+            ctx.fill();
+
+            // O'ng sahifa
+            ctx.beginPath();
+            ctx.roundRect(34, 18, 16, 28, 4);
+            ctx.fill();
+
+            // Oltin xatcho'p (ribbon)
+            ctx.fillStyle = "#F59E0B";
+            ctx.beginPath();
+            ctx.moveTo(30, 16);
+            ctx.lineTo(34, 16);
+            ctx.lineTo(34, 38);
+            ctx.lineTo(32, 35);
+            ctx.lineTo(30, 38);
+            ctx.closePath();
+            ctx.fill();
+
+            if (link) {
+                link.href = canvas.toDataURL("image/png");
+            }
+            return;
+        }
+
+        // --- DO'KON FAVIKONI (Oq fonda VELARI.) ---
+        const radius = size / 2 - 0.5;
         ctx.clearRect(0, 0, size, size);
         ctx.beginPath();
         ctx.arc(center, center, radius, 0, Math.PI * 2);
         ctx.fillStyle = "#FFFFFF";
         ctx.fill();
 
-        // 2. Maksimal Katta va Qalin VELARI. Yozuvi (Mitti tabda ham tiniq ko'rinishi uchun)
         ctx.fillStyle = "#0F1410";
         ctx.font = "900 15px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.letterSpacing = "-0.4px";
 
-        // VELARI matni
         ctx.fillText("VELARI", center - 2, center + 1);
 
-        // Yashil nuqta .
         ctx.fillStyle = "#2D6E3E";
         ctx.beginPath();
         ctx.arc(center + 26, center + 3.5, 2.2, 0, Math.PI * 2);
         ctx.fill();
 
-        // 3. Savatda tovar bo'lsa Jonli Qizil Nishon (Cart Badge)
         if (cartCount > 0) {
             const badgeRadius = 10;
             const badgeX = size - badgeRadius - 0.5;
             const badgeY = badgeRadius + 0.5;
 
-            // Oq chegara
             ctx.beginPath();
             ctx.arc(badgeX, badgeY, badgeRadius + 2, 0, Math.PI * 2);
             ctx.fillStyle = "#FFFFFF";
             ctx.fill();
 
-            // Qizil nishon
             ctx.beginPath();
             ctx.arc(badgeX, badgeY, badgeRadius, 0, Math.PI * 2);
             ctx.fillStyle = "#EF4444";
             ctx.fill();
 
-            // Soni
             ctx.fillStyle = "#FFFFFF";
             ctx.font = "bold 11px -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif";
             ctx.textAlign = "center";

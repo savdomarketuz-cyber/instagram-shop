@@ -3,7 +3,7 @@
 import { memo, useState, useRef, useEffect, useMemo, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, Star, Minus, Plus, Sparkles, Truck, Store, Clapperboard } from "lucide-react";
+import { Heart, Star, Minus, Plus, Sparkles, Truck, Store, Clapperboard, BookOpen } from "lucide-react";
 import { useStore } from "@/store/store";
 import { Product, CartItem } from "@/types";
 import { TranslationKeys } from "@/lib/translations";
@@ -150,6 +150,16 @@ export const ProductCard = memo(({
   const isWished = wishlist.some(w => w.id === item.id);
   const personalPct = useStore(s => s.personalOffers[item.id] || 0);
   const hasPersonal = personalPct > 0;
+  const isBook = Boolean(
+    item.author || 
+    item.archive_identifier || 
+    item.archive_url || 
+    item.pdf_url || 
+    item.file_format || 
+    (item.category && String(item.category).toLowerCase().includes("kitob")) ||
+    (typeof process !== "undefined" && process.env.NEXT_PUBLIC_APP_THEME === "library")
+  );
+  const isFree = !item.price || Number(item.price) <= 0;
   const totalStock = item.stockDetails
     ? Object.values(item.stockDetails).reduce((a, b) => a + (Number(b) || 0), 0)
     : 0;
@@ -179,6 +189,7 @@ export const ProductCard = memo(({
 
   const name = (language === "uz" ? item.name_uz : item.name_ru) || item.name;
   const brandName = brandLabel || "";
+  const productUrl = `/${language}/products/${getProductSlug(item, language)}`;
 
   const fmtPrice = (n: number) => {
     const s = n.toLocaleString("ru-RU");
@@ -410,7 +421,28 @@ export const ProductCard = memo(({
               </span>
             </div>
           )}
-          {brandName && (
+          {isBook ? (
+            item.author ? (
+              <div style={{
+                fontSize: 10.5,
+                color: "#2D6E3E",
+                fontWeight: 700,
+                letterSpacing: -0.1,
+                marginBottom: 2,
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}>
+                <span style={{ fontSize: 9, opacity: 0.75, textTransform: "uppercase", fontWeight: 800 }}>
+                  {language === "uz" ? "Muallif:" : "Автор:"}
+                </span>
+                <span>{item.author}</span>
+              </div>
+            ) : null
+          ) : brandName ? (
             <div style={{
               fontSize: 10,
               color: "#737D75",
@@ -421,7 +453,7 @@ export const ProductCard = memo(({
             }}>
               {brandName}
             </div>
-          )}
+          ) : null}
 
           <div style={{
             fontSize: 13.5,
@@ -453,6 +485,23 @@ export const ProductCard = memo(({
 
           {/* Price */}
           {(() => {
+            if (isFree) {
+              return (
+                <div style={{ marginTop: "auto", paddingTop: 8, display: "flex", alignItems: "baseline" }}>
+                  <span style={{
+                    fontSize: 12.5,
+                    fontWeight: 800,
+                    color: "#2D6E3E",
+                    background: "#EDF7F0",
+                    padding: "3px 8px",
+                    borderRadius: 8,
+                    letterSpacing: -0.2,
+                  }}>
+                    {language === "uz" ? "Bepul mutolaa" : "Бесплатно"}
+                  </span>
+                </div>
+              );
+            }
             const displayPrice = hasPersonal ? Math.round(item.price * (1 - personalPct / 100)) : item.price;
             const struck = hasPersonal
               ? (item.oldPrice && item.oldPrice > item.price ? item.oldPrice : item.price)
@@ -480,9 +529,40 @@ export const ProductCard = memo(({
         </div>
       </Link>
 
-      {/* Cart controls — full-bleed 0px padding */}
+      {/* Cart / Reader controls — full-bleed 0px padding */}
       <div style={{ marginTop: "auto", width: "100%" }}>
-        {isInCart ? (
+        {isFree ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              videoPreWarmer.triggerHaptic("medium");
+              router.push(`${productUrl}#read`);
+            }}
+            className="active:scale-[0.98] transition-transform duration-120 select-none"
+            style={{
+              width: "100%",
+              height: 42,
+              borderRadius: 0,
+              background: "linear-gradient(135deg, #1E293B 0%, #0F172A 100%)",
+              color: "#fff",
+              border: "none",
+              fontSize: 13,
+              fontWeight: 600,
+              letterSpacing: -0.1,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              WebkitTapHighlightColor: "transparent",
+            }}
+          >
+            <BookOpen size={15} strokeWidth={2.4} />
+            <span>{language === "uz" ? "Mutolaa qilish" : "Читать"}</span>
+          </button>
+        ) : isInCart ? (
           <div style={{
             width: "100%",
             height: 42,

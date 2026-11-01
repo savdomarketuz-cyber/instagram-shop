@@ -48,6 +48,16 @@ export const ProductInfo = ({
             )}
 
             {/* Name */}
+            {product.author && (
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#EDF7F0", border: "1px solid #D5EBD9", borderRadius: 8, padding: "4px 10px", marginBottom: 8 }}>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: GREEN, letterSpacing: 0.5, textTransform: "uppercase" }}>
+                        {language === "uz" ? "Muallif:" : "Автор:"}
+                    </span>
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: "#111612" }}>
+                        {product.author}
+                    </span>
+                </div>
+            )}
             <h1 style={{ fontSize: 21, fontWeight: 600, letterSpacing: -0.3, color: "var(--velari-ink)", lineHeight: 1.3, margin: "0 0 8px" }}>
                 {name}
             </h1>
@@ -69,7 +79,13 @@ export const ProductInfo = ({
             {/* Price card */}
             <div className="glass-card" style={{ padding: "16px 18px", marginBottom: 14 }}>
                 <span style={{ fontSize: 11, fontWeight: 600, color: "var(--velari-muted)", letterSpacing: 0.3, textTransform: "uppercase", display: "block", marginBottom: 4 }}>{t.common.price}</span>
-                {hasPersonal ? (
+                {(!product.price || Number(product.price) <= 0) ? (
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.4, color: GREEN }}>
+                            {language === "uz" ? "Bepul mutolaa" : "Бесплатное чтение"}
+                        </span>
+                    </div>
+                ) : hasPersonal ? (
                     // Shaxsiy chegirma: faqat 2 narx — yakuniy shaxsiy narx + chizilgan asl narx
                     <>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>

@@ -3,6 +3,7 @@ import { verifyJwt } from "@/lib/jwt-utils";
 import { makeImageVariants, isVariantableImage, type ImageVariants } from "@/lib/image-variants";
 import { putObject } from "@/lib/s3-put";
 import { getAdminSecret } from "@/lib/secrets";
+import { saveUploadedBookLocally } from "@/lib/local-books";
 
 export const maxDuration = 60; // Vercel: max 60s on Hobby, 300s on Pro
 
@@ -68,6 +69,8 @@ export async function POST(req: NextRequest) {
         if (mime.startsWith("image/"))  folder = "admin/images";
         if (mime.startsWith("audio/"))  folder = "admin/audio";
         if (mime.startsWith("video/"))  folder = "admin/video";
+        if (mime === "application/pdf" || extFromName === "pdf") folder = "books/pdf";
+        if (mime === "application/pdf" || extFromName === "pdf") saveUploadedBookLocally(buffer, `${ts}_${safeName}`);
 
         const ext = variants ? "avif" : (extFromName || (mime.startsWith("video/") ? "mp4" : "bin"));
         const baseNoExt = safeName.split(".")[0];

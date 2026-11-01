@@ -8,6 +8,7 @@
         "start": "next start",
         "lint": "next lint",
         "typecheck": "node --max-old-space-size=6144 ./node_modules/typescript/bin/tsc --noEmit",
+        "sync:kutubxona": "node scripts/sync-to-kutubxona.mjs",
         "embed": "node scripts/embed-products.mjs",
         "embed:force": "node scripts/embed-products.mjs --force",
         "embed:images": "node scripts/embed-product-images.mjs",
