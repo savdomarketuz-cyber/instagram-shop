@@ -62,8 +62,8 @@ export async function POST(req: NextRequest) {
 
 async function notifyAdminNewReturn(orderId: string, reason: string) {
     try {
-        const ADMIN_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-        const ADMIN_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+        const ADMIN_BOT_TOKEN = process.env.TELEGRAM_ADMIN_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
+        const ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_ID || process.env.TELEGRAM_CHAT_ID;
         
         if (!ADMIN_BOT_TOKEN || !ADMIN_CHAT_ID) return;
 

@@ -12,7 +12,7 @@ const GREEN_DEEP = "#1F5A30";
 const GREEN_TINT = "#EAF3EC";
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
-const BOT_USERNAME = "velari_uz_xabarnoma_bot";
+const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "velarizu_bot";
 
 // Brauzerda base64url (Telegram /start payload uchun)
 function toB64Url(s: string): string {

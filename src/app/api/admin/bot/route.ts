@@ -14,7 +14,7 @@ import { runFullSystemDiagnostic } from "@/lib/health-checker";
 
 const ADMIN_BOT_TOKEN = process.env.TELEGRAM_ADMIN_BOT_TOKEN;
 const TELEGRAM_API = `https://api.telegram.org/bot${ADMIN_BOT_TOKEN}`;
-const ADMIN_ID = process.env.TELEGRAM_ADMIN_ID || "5572037414";
+const ADMIN_ID = process.env.TELEGRAM_ADMIN_ID || "8035949982";
 
 // Bosh boshqaruv menyusi (Reply Keyboard)
 const ADMIN_MAIN_KEYBOARD = {

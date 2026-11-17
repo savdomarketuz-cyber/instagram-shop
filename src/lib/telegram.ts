@@ -375,7 +375,7 @@ function escapeHtml(str: string): string {
 
 export async function forwardCustomerSupportMessage(customerChatId: string, customerPhone: string | null, customerName: string | null, messageText: string) {
     try {
-        const adminId = process.env.TELEGRAM_ADMIN_ID || "5572037414";
+        const adminId = process.env.TELEGRAM_ADMIN_ID || "8035949982";
         const adminBotToken = process.env.TELEGRAM_ADMIN_BOT_TOKEN;
         const customerBotToken = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN;
 

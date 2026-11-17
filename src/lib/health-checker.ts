@@ -32,7 +32,7 @@ export interface FullDiagnosticReport {
 
 const ADMIN_BOT_TOKEN = process.env.TELEGRAM_ADMIN_BOT_TOKEN;
 const CUSTOMER_BOT_TOKEN = process.env.TELEGRAM_CUSTOMER_BOT_TOKEN;
-const ADMIN_ID = process.env.TELEGRAM_ADMIN_ID || "5572037414";
+const ADMIN_ID = process.env.TELEGRAM_ADMIN_ID || "8035949982";
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY_1 || process.env.GROQ_API_KEY_2 || process.env.GROQ_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY_1 || process.env.GEMINI_API_KEY_2 || process.env.GEMINI_API_KEY;
